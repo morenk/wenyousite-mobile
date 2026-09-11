@@ -7,6 +7,7 @@ import 'package:wenyousite_mobile/core/application/document_saver.dart';
 import 'package:wenyousite_mobile/core/application/image_gallery.dart';
 import 'package:wenyousite_mobile/core/application/profile_cache_invalidation.dart';
 import 'package:wenyousite_mobile/core/application/visibility_cache_invalidation.dart';
+import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/platform/android_background_notification_gateway.dart';
 import 'package:wenyousite_mobile/core/platform/device_document_saver.dart';
 import 'package:wenyousite_mobile/core/platform/device_image_gallery.dart';
@@ -257,6 +258,9 @@ List<Override> productionProviderOverrides() => [
   ),
   mediaUploadGatewayPortProvider.overrideWith(
     (ref) => ref.watch(mediaUploadGatewayAdapterProvider),
+  ),
+  mediaUploadSessionScopePortProvider.overrideWith(
+    (ref) => ref.watch(sessionScopeProvider),
   ),
   appCapabilitiesProvider.overrideWith((ref) {
     final contract = ref.watch(

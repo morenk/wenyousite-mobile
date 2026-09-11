@@ -5,6 +5,7 @@ import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
+import 'package:wenyousite_mobile/core/media/media_display.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/drafts/application/content_drafts_controller.dart';
@@ -15,6 +16,7 @@ Future<void> showContentDraftsSheet({
   required Object draftSessionKey,
   required String currentContent,
   required ValueChanged<String> onRestore,
+  ValueChanged<Map<String, MediaDisplay>>? onRestoreDisplays,
 }) {
   return showModalBottomSheet<void>(
     context: context,
@@ -27,6 +29,7 @@ Future<void> showContentDraftsSheet({
         draftSessionKey: draftSessionKey,
         currentContent: currentContent,
         onRestore: onRestore,
+        onRestoreDisplays: onRestoreDisplays,
       ),
     ),
   );
@@ -37,12 +40,14 @@ class ContentDraftsSheet extends ConsumerStatefulWidget {
     required this.draftSessionKey,
     required this.currentContent,
     required this.onRestore,
+    this.onRestoreDisplays,
     super.key,
   });
 
   final Object draftSessionKey;
   final String currentContent;
   final ValueChanged<String> onRestore;
+  final ValueChanged<Map<String, MediaDisplay>>? onRestoreDisplays;
 
   @override
   ConsumerState<ContentDraftsSheet> createState() => _ContentDraftsSheetState();
@@ -132,6 +137,7 @@ class _ContentDraftsSheetState extends ConsumerState<ContentDraftsSheet> {
               state: state,
               currentContent: widget.currentContent,
               onRestore: widget.onRestore,
+              onRestoreDisplays: widget.onRestoreDisplays,
             ),
           },
         ),
@@ -146,12 +152,14 @@ class _ReadyDrafts extends ConsumerWidget {
     required this.state,
     required this.currentContent,
     required this.onRestore,
+    this.onRestoreDisplays,
   });
 
   final Object draftSessionKey;
   final ContentDraftsState state;
   final String currentContent;
   final ValueChanged<String> onRestore;
+  final ValueChanged<Map<String, MediaDisplay>>? onRestoreDisplays;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -274,6 +282,7 @@ class _ReadyDrafts extends ConsumerWidget {
             canSave: canSave,
             state: state,
             onRestore: onRestore,
+            onRestoreDisplays: onRestoreDisplays,
           ),
           if (slot != state.usage.maxSlots) SizedBox(height: tokens.space8),
         ],
@@ -394,6 +403,7 @@ class _DraftSlotCard extends ConsumerWidget {
     required this.canSave,
     required this.state,
     required this.onRestore,
+    this.onRestoreDisplays,
   });
 
   final Object draftSessionKey;
@@ -403,6 +413,7 @@ class _DraftSlotCard extends ConsumerWidget {
   final bool canSave;
   final ContentDraftsState state;
   final ValueChanged<String> onRestore;
+  final ValueChanged<Map<String, MediaDisplay>>? onRestoreDisplays;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -571,6 +582,7 @@ class _DraftSlotCard extends ConsumerWidget {
       );
       if (!confirmed || !context.mounted) return;
     }
+    onRestoreDisplays?.call(fresh.mediaDisplays);
     onRestore(fresh.content);
     Navigator.pop(context);
   }

@@ -135,7 +135,9 @@ class PostComposerEditorRegion extends StatelessWidget {
                             // ignore: experimental_member_use
                             customLeadingBlockBuilder:
                                 wenyouEditorLeadingBlockBuilder(context),
-                            embedBuilders: wenyouEditorEmbedBuilders(),
+                            embedBuilders: wenyouEditorEmbedBuilders(
+                              mediaDisplays: editorSession.mediaDisplays,
+                            ),
                             customShortcuts: editorSession.clipboardShortcuts,
                             customActions: editorSession.clipboardActions,
                             contextMenuBuilder: editorSession.buildContextMenu,

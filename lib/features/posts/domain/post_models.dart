@@ -1,3 +1,4 @@
+import 'package:wenyousite_mobile/core/media/media_display.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 
 enum PostReplyOrder {
@@ -45,6 +46,7 @@ class PostItem {
     required this.subthreadId,
     required this.author,
     required this.content,
+    this.mediaDisplays = const {},
     required this.version,
     required this.createdAt,
     required this.updatedAt,
@@ -67,6 +69,7 @@ class PostItem {
   final String subthreadId;
   final PostAuthor author;
   final String content;
+  final Map<String, MediaDisplay> mediaDisplays;
   final int version;
   final DateTime createdAt;
   final DateTime updatedAt;

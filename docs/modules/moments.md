@@ -46,6 +46,8 @@
 
 ## 6. 状态模型和数据流
 
+完整展示候选：动态／回复图片与表情详情、全屏及默认保存使用完整 display；动态列表继续静态海报，详情继续原有可见性／轮播／后台规则。动态编辑加载、上传结果和本地草稿往返携带展示描述，原 mediaId／URL 保持。批量上传处理中窗口结束显示可继续查询，同一任务续查不重复上传。见[全场景候选记录](../architecture/animation-webp-all-surfaces.md)，待负责人验收。
+
 `MomentFeedController` 以 main/user target 隔离公开列表、游标、刷新、分页和单条互动写入；本人收藏由 `MomentBookmarkListController` 以必填 folderId 建立独立分页，保留本人收藏 DTO 的 `bookmarkFolderId` 与 `canInteract`，移动/取消后本地移除并权威刷新。`BookmarkFolderCatalogController` 通过动态专属仓储读取/创建目录，不与主题目录混用。`MomentMedia` 保存主图、显式派生 URL、contentType、animated 和尺寸，单独提供列表静态候选与详情播放预览；原有编辑器候选保持不变；仓储和搜索映射器对所有非空 URL fail-closed。`MomentFeedList` 通过滚动通知触发接近底部分页，因此独立页面可使用自身滚动位置，嵌入本人主页时也可继承父级滚动协调器；卡片与全宽尾部状态由同一懒加载瀑布流维护几何，稳定 Key 在刷新重排和分页追加时恢复既有卡片位置。`MomentDetailController` 同时读取详情与主评论；切换顶层顺序只重载一次主评论首页并清空原 cursor 与已展开回复。根评论内嵌回复与楼中楼分页均保留后端返回顺序，楼中楼分页固定请求 `OLDEST`。带评论坐标时，独立且按会话隔离的 `momentCommentContextProvider` 并行读取上下文；展示投影按 ID 去重，以上下文目标覆盖重复项，将缺失主评论按当前顺序注入，并把目标回复按最早顺序展开。上下文不改写普通列表 cursor，也不触发 `fetchComments` 或 `fetchReplies` 分页扫描。`MomentComposerController` 负责创建幂等键、编辑版本、冲突重试和删除确认结果；动态仓储与本机草稿存储端口位于 `moments/application`。用户在 `40002` 后选择“保留我的内容”时，控制器先读取最新详情和权限，再以最新 `version` 重交当前表单；选择“使用最新内容”时清除本机草稿并重载详情。动态发布页为未完成图片保留本地输入、独立任务状态和完成结果，最多两张在途；全部完成后一次按原顺序并入已上传列表。评论仍按页面实例消费单图上传任务。
 
 信息流与详情的点赞/收藏状态记录精确在途动作，只锁定对应控件并保留旧选中投影，直到服务端回包覆盖。详情互动栏始终展示四个统计值并使用 Foundation 紧凑格式，TalkBack 保留动作名称、选中状态、单位和服务端精确原值；评论项暴露发表评论按钮语义，本人动态的加油累计保持只读语义。可写消费者统一使用 Foundation v6.9.0 的点赞/收藏语义色、透明选中容器和官方实心图标变体；搜索等只读消费者始终显示中性线性图标，不暴露按钮或 toggled 语义。
@@ -131,7 +133,7 @@ media/application 提供相册与上传端口、唯一任务状态、取消、�
 
 ## 13. 最近审查的契约版本和后端提交
 
-本轮展示契约来源：API `5.22.0-dev.20260912.2`、Backend `94934be265e36e2f6dba2fbc8b53e58e2755fa52`；新增display／mediaDisplays，消费者接入与真机验收另行记录。仅既有 `markdown-editor-list-v1-fixtures.json` 保留 `062412601b3a8dbf4f64494115a2445d312dd53d` 来源与SHA-256，见 contracts/markdown-editor-list-v1-source.json；不将该独立语料误标为本轮主来源。
+本轮展示契约来源：API `5.22.0-dev.20260912.2`、Backend `94934be265e36e2f6dba2fbc8b53e58e2755fa52`；新增 display／mediaDisplays；消费者已形成候选，检查与负责人验收见本任务 PR 和全场景记录。仅既有 `markdown-editor-list-v1-fixtures.json` 保留 `062412601b3a8dbf4f64494115a2445d312dd53d` 来源与SHA-256，见 contracts/markdown-editor-list-v1-source.json；不将该独立语料误标为本轮主来源。
 
 2026-09-11 列表契约候选同步：Backend `062412601b3a8dbf4f64494115a2445d312dd53d`，OpenAPI `5.20.1-dev.20260911.1`；新增 editor-list v1 revision 2，夹具最初固定于 `aa1bcbd4d087f03a17817e9eca8bcd1f92bb53da`。同时同步收藏夹计数按当前用户可见性统计的契约说明；字段形状、块边界 v1 revision 2 与既有消费代码保持；列表消费者及真机验收仍待完成，见[列表统一排查](../architecture/editor-list-unification-investigation.md)。
 

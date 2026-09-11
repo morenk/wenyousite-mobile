@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
+import 'package:wenyousite_mobile/core/media/media_display.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/drafts/application/content_drafts_controller.dart';
 import 'package:wenyousite_mobile/features/drafts/data/content_draft_repository.dart';
@@ -12,6 +13,38 @@ import '../../support/foundation_test_fonts.dart';
 
 void main() {
   setUpAll(loadFoundationTestFonts);
+
+  testWidgets('云草稿恢复先传授权展示映射，正文仍保留原 URL', (tester) async {
+    const source = 'https://cdn.example/original.gif';
+    const display = MediaDisplay(
+      url: 'https://cdn.example/full.webp',
+      width: 320,
+      height: 180,
+      bytes: 180,
+      animated: true,
+      frameCount: 2,
+      durationMs: 360,
+      loopCount: 2,
+    );
+    final repository = _FakeRepository(
+      [_draft(slot: 1)],
+      freshContent: '![图片]($source)',
+      freshDisplays: {source: display},
+    );
+    final controller = ContentDraftsController(repository, autoStart: false);
+    await controller.load();
+    final events = <Object>[];
+    await _pumpSheet(
+      tester,
+      controller,
+      currentContent: '',
+      onRestoreDisplays: (values) => events.add(values[source]!.url),
+      onRestore: events.add,
+    );
+    await tester.tap(find.byKey(const Key('content-draft-restore-1')));
+    await tester.pumpAndSettle();
+    expect(events, [display.url, '![图片]($source)']);
+  });
 
   testWidgets('360dp 窄屏完整展示用量和五个草稿位且无横向溢出', (tester) async {
     tester.view.physicalSize = const Size(360, 800);
@@ -191,6 +224,7 @@ Future<void> _pumpSheet(
   ContentDraftsController controller, {
   required String currentContent,
   ValueChanged<String>? onRestore,
+  ValueChanged<Map<String, MediaDisplay>>? onRestoreDisplays,
 }) async {
   await tester.pumpWidget(
     ProviderScope(
@@ -206,6 +240,7 @@ Future<void> _pumpSheet(
             draftSessionKey: _testDraftSessionKey,
             currentContent: currentContent,
             onRestore: onRestore ?? (_) {},
+            onRestoreDisplays: onRestoreDisplays,
           ),
         ),
       ),
@@ -215,11 +250,17 @@ Future<void> _pumpSheet(
 }
 
 class _FakeRepository implements ContentDraftRepository {
-  _FakeRepository(List<ContentDraft> drafts, {this.conflictOnce = false})
-    : _drafts = [...drafts];
+  _FakeRepository(
+    List<ContentDraft> drafts, {
+    this.conflictOnce = false,
+    this.freshContent = '云端最新版',
+    this.freshDisplays = const {},
+  }) : _drafts = [...drafts];
 
   final List<ContentDraft> _drafts;
   final bool conflictOnce;
+  final String freshContent;
+  final Map<String, MediaDisplay> freshDisplays;
   final List<int?> createdSlots = [];
   final List<String> removedIds = [];
   final List<int> removeVersions = [];
@@ -258,7 +299,8 @@ class _FakeRepository implements ContentDraftRepository {
       id: current.id,
       userId: current.userId,
       slot: current.slot,
-      content: '云端最新版',
+      content: freshContent,
+      mediaDisplays: freshDisplays,
       version: current.version + 1,
       createdAt: current.createdAt,
       updatedAt: current.updatedAt.add(const Duration(minutes: 1)),

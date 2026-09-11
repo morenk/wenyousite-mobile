@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:wenyousite_mobile/core/media/media_display.dart';
+
 const maxMediaImageBytes = 10 * 1024 * 1024;
 
 enum MediaUploadStage { preparing, uploading, confirming, processing }
@@ -146,6 +148,7 @@ class UploadedEditorImage {
   const UploadedEditorImage({
     required this.mediaId,
     required this.url,
+    this.display,
     this.thumbnailUrl,
     this.feedUrl,
     this.mediumUrl,
@@ -157,6 +160,7 @@ class UploadedEditorImage {
 
   final String mediaId;
   final String url;
+  final MediaDisplay? display;
   final String? thumbnailUrl;
   final String? feedUrl;
   final String? mediumUrl;
@@ -165,8 +169,32 @@ class UploadedEditorImage {
   final int? width;
   final int? height;
 
-  List<String> get previewUrls =>
-      _orderedUrls([thumbnailUrl, feedUrl, mediumUrl, url]);
+  List<String> get previewUrls => _orderedUrls([
+    for (final preview in [thumbnailUrl, feedUrl, mediumUrl])
+      if (display == null || preview != url) preview,
+    display?.url ?? url,
+  ]);
+}
+
+/// 已确认上传的媒体仍在处理；后续只能查询这个身份，不能重复上传。
+class PendingMediaUpload {
+  const PendingMediaUpload({required this.mediaId, required this.purpose});
+
+  final String mediaId;
+  final MediaUploadPurpose purpose;
+}
+
+class MediaProcessingPending implements Exception {
+  const MediaProcessingPending(this.upload);
+
+  final PendingMediaUpload upload;
+}
+
+/// 查询失败不等于仍在处理；保留身份用于允许的显式恢复。
+class MediaProcessingLookupFailure implements Exception {
+  const MediaProcessingLookupFailure(this.upload, this.cause);
+  final PendingMediaUpload upload;
+  final Object cause;
 }
 
 List<String> _orderedUrls(Iterable<String?> values) {

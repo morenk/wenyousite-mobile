@@ -6,8 +6,6 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:markdown/markdown.dart' as md;
 import 'package:url_launcher/url_launcher.dart';
-import 'package:wenyousite_foundation/wenyousite_foundation.dart';
-import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_alignment.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_empty_paragraphs.dart';
@@ -15,16 +13,15 @@ import 'package:wenyousite_mobile/core/markdown/markdown_inline_boundary.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_quote_line_syntax.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_reader_paragraph_syntax.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_source_protection.dart';
+import 'package:wenyousite_mobile/core/media/media_display.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_link.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_reference.dart';
-import 'package:wenyousite_mobile/core/navigation/wenyou_page_transitions.dart';
-import 'package:wenyousite_mobile/core/widgets/content_image_viewer_page.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_body_divider.dart';
-import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_dice_node.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_inline_text_elements.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_internal_reference_text.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_markdown_body.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_markdown_image.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_markdown_inline_builder.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_rich_text_style_spec.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_selectable_action_region.dart';
@@ -42,6 +39,7 @@ class WenyouMarkdown extends StatefulWidget {
   const WenyouMarkdown({
     required this.data,
     this.diceLabels = const {},
+    this.mediaDisplays = const {},
     this.diceSemantics = const {},
     this.diceDetails = const {},
     this.onInternalLink,
@@ -56,6 +54,7 @@ class WenyouMarkdown extends StatefulWidget {
   });
 
   final String data;
+  final Map<String, MediaDisplay> mediaDisplays;
   final Map<String, String> diceLabels;
   final Map<String, String> diceSemantics;
   final Map<String, WenyouDiceRollDetail> diceDetails;
@@ -112,6 +111,9 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
     }
     if (!mapEquals(oldWidget.diceDetails, widget.diceDetails)) {
       _diceDetails.value = Map.unmodifiable(widget.diceDetails);
+    }
+    if (!mapEquals(oldWidget.mediaDisplays, widget.mediaDisplays)) {
+      _renderedBody = null;
     }
     if (oldWidget.data != widget.data ||
         oldWidget.enablePlainTextFastPath != widget.enablePlainTextFastPath) {
@@ -321,8 +323,9 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
     },
     onTapLink: (_, href, _) => _openLink(context, href),
     imageBuilder: (uri, title, alt) {
-      final image = _MarkdownImage(
+      final image = WenyouMarkdownImage(
         uri: uri,
+        display: widget.mediaDisplays[uri.toString()],
         title: title,
         alt: alt,
         onAddToStickers: widget.onAddImageToStickers == null
@@ -743,137 +746,6 @@ class _DiceMarkdownBuilder extends WenyouMarkdownInlineBuilder {
           onLongPress: onLongPress,
         );
       },
-    );
-  }
-}
-
-class _MarkdownImage extends StatelessWidget {
-  const _MarkdownImage({
-    required this.uri,
-    this.title,
-    this.alt,
-    this.onAddToStickers,
-    this.onLongPress,
-    this.blockAlignment = WenyouTextAlignment.left,
-  });
-
-  final Uri uri;
-  final String? title;
-  final String? alt;
-  final Future<String> Function(Uri uri)? onAddToStickers;
-  final VoidCallback? onLongPress;
-  final WenyouTextAlignment blockAlignment;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = context.wenyouTokens;
-    final isSticker = title?.startsWith('wenyousite-sticker:') == true;
-
-    Widget preserveBlockImageRow(Widget child) {
-      if (isSticker) return child;
-      return SizedBox(
-        key: ValueKey('markdown-block-image-row-$uri'),
-        width: double.infinity,
-        child: Align(
-          alignment: switch (blockAlignment) {
-            WenyouTextAlignment.left => AlignmentDirectional.centerStart,
-            WenyouTextAlignment.center => Alignment.center,
-            WenyouTextAlignment.right => AlignmentDirectional.centerEnd,
-          },
-          child: child,
-        ),
-      );
-    }
-
-    if (!MarkdownContent.isSafeImage(uri)) {
-      return preserveBlockImageRow(
-        Semantics(
-          label: '已阻止不安全图片${alt == null ? '' : '：$alt'}',
-          onLongPress: onLongPress,
-          child: GestureDetector(
-            onLongPress: onLongPress,
-            child: WenyouIcon(
-              WenyouIconIds.statusImageUnavailable,
-              color: tokens.mutedText,
-            ),
-          ),
-        ),
-      );
-    }
-    final fallback = ColoredBox(
-      color: tokens.softPanel,
-      child: Center(
-        child: WenyouIcon(WenyouIconIds.actionImage, color: tokens.mutedText),
-      ),
-    );
-    final image = WenyouCachedImage(
-      imageUrl: uri.toString(),
-      fit: BoxFit.contain,
-      placeholder: (_, _) => fallback,
-      errorWidget: (_, _, _) => Semantics(
-        label: '图片加载失败${alt == null ? '' : '：$alt'}',
-        child: fallback,
-      ),
-    );
-    final imageContent = ClipRRect(
-      borderRadius: BorderRadius.circular(tokens.radius12),
-      child: isSticker
-          ? SizedBox.square(dimension: 96, child: image)
-          : ConstrainedBox(
-              constraints: const BoxConstraints(maxHeight: 420),
-              child: image,
-            ),
-    );
-    if (isSticker) {
-      return Semantics(
-        container: true,
-        image: true,
-        label: alt?.trim().isNotEmpty == true ? alt!.trim() : '收藏表情',
-        excludeSemantics: true,
-        onLongPress: onLongPress,
-        child: GestureDetector(
-          onLongPress: onLongPress,
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              imageContent,
-              // Image render objects do not contribute text to SelectionArea.
-              // Keep the reading label selectable without painting a duplicate.
-              const IgnorePointer(
-                child: ExcludeSemantics(
-                  child: Opacity(opacity: 0, child: Text('[表情]')),
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-    final imageAlt = alt?.trim() ?? '';
-    final descriptiveAlt = imageAlt == '图片' ? '' : imageAlt;
-    return preserveBlockImageRow(
-      Semantics(
-        button: true,
-        image: true,
-        label: descriptiveAlt.isEmpty ? '查看正文图片原图' : '查看正文图片原图：$descriptiveAlt',
-        onLongPress: onLongPress,
-        child: InkWell(
-          key: ValueKey('markdown-image-$uri'),
-          borderRadius: BorderRadius.circular(tokens.radius12),
-          onLongPress: onLongPress,
-          onTap: () => pushWenyouFullscreenPage<void>(
-            context: context,
-            builder: (_) => ContentImageViewerPage.single(
-              url: uri.toString(),
-              alt: imageAlt,
-              onAddToStickers: onAddToStickers == null
-                  ? null
-                  : (_) => onAddToStickers!(uri),
-            ),
-          ),
-          child: imageContent,
-        ),
-      ),
     );
   }
 }

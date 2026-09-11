@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_dice_contract.dart';
+import 'package:wenyousite_mobile/core/media/media_display.dart';
 
 /// Visibility accepted by the thread creation workflow.
 enum ThreadComposeVisibility {
@@ -49,6 +50,7 @@ class ThreadRemoteDraft {
     required this.defaultSubthreadId,
     required this.defaultSubthreadVersion,
     required this.title,
+    this.mediaDisplays = const {},
     required this.categorySlug,
     required this.visibility,
     required this.tags,
@@ -62,6 +64,7 @@ class ThreadRemoteDraft {
   final int defaultSubthreadVersion;
   final int? bodyVersion;
   final String title;
+  final Map<String, MediaDisplay> mediaDisplays;
   final String? categorySlug;
   final ThreadComposeVisibility visibility;
   final List<String> tags;
@@ -161,6 +164,7 @@ class ThreadSnapshotMetadata {
   const ThreadSnapshotMetadata({
     required this.ownerId,
     required this.title,
+    this.mediaDisplays = const {},
     required this.categorySlug,
     required this.visibility,
     required this.tags,
@@ -169,6 +173,7 @@ class ThreadSnapshotMetadata {
 
   final String ownerId;
   final String title;
+  final Map<String, MediaDisplay> mediaDisplays;
   final String? categorySlug;
   final ThreadComposeVisibility visibility;
   final List<String> tags;
@@ -180,6 +185,7 @@ class ThreadSnapshotMetadata {
       'schemaVersion': 1,
       'ownerId': ownerId,
       'title': title,
+      'mediaDisplays': mediaDisplaysToJson(mediaDisplays),
       'categorySlug': categorySlug,
       'visibility': visibility.wireValue,
       'tags': tags,
@@ -240,6 +246,7 @@ class ThreadSnapshotMetadata {
         }
       }
       return ThreadSnapshotMetadata(
+        mediaDisplays: mediaDisplaysFromJson(data['mediaDisplays']),
         ownerId: ownerId,
         title: title,
         categorySlug: categorySlug as String?,

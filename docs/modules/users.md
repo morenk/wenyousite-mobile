@@ -33,6 +33,8 @@
 
 ## 6. 状态模型和数据流
 
+完整展示候选：头像 avatarDisplay 和主页背景 display 在仓储映射为展示 URL，修改仍提交媒体 ID；不扩展动画头像上传策略。个人最近回复保留授权 mediaDisplays 供正文消费，列表文本摘要策略不变；个人主页主题封面复用共享完整／小预览选择。见[全场景候选记录](../architecture/animation-webp-all-surfaces.md)，待负责人验收。
+
 公开页和“我的”内容区共享 `PublicUserContentSectionSliver`，主题及最近回复按视口惰性构建。资料、活动汇总、页签和分页/错误区使用独立适配器，保留既有内容宽度、页签缓存、PageStorage 与嵌套滚动协作；不以 shrink-wrap 内层长列表替代。活动统计定位的是稳定的内容标题或页签锚点。
 
 `PublicUserController` 管理公开资料、活动汇总与四个内容分区；活动汇总拥有独立加载/失败状态，不阻塞资料和内容。同一控制器的本人内容模式跳过重复公开资料读取，进入概览时并行读取活动汇总与最近回复，开放全部本人分区并复用既有分页与竞态保护；本人动态复用 moments feed，收藏从资料操作区进入 social bookmark 页面。本人内容与 `MeProfileController` 的刷新状态均保留已加载快照，只以非阻断失败反馈结束刷新；页面协调器只调用手势开始时的当前页签刷新入口。`MeProfileController` 管理本人资料、用户名及简介/公开内容写入；资料编辑页另以字段级草稿基线跟踪简介和三个公开开关，服务端头像、背景或用户名回写时只更新未修改字段，保存成功后才整体提交新基线。公开资料、本人资料、头像与背景写入由 `users/application` 端口表达，`main.dart` 组合根绑定生成客户端 data 适配器；users 控制器与私聊目标解析都不直接导入 users data。相册与裁剪处理端口、头像格式策略和归一化取景描述属于 `media/application`，系统相册、背景输入校验与引擎图片处理实现在 `media/data`；`AvatarController` 与 `ProfileCoverController` 只映射共享上传状态，并编排本地预览、写入/移除、取消和失败恢复，不导入 Dio 或 media data 实现。背景控制器并行启动缺失画幅的上传，已完成的 `mediaId` 和尚未上传的裁剪结果在失败时保留，重试不会重复取景或已完成上传；底层 media 协调器继续保证单路解码压缩与最多双路传输。成功只把服务端背景和更新时间合并回本人资料。公开页用本人 ID 排除自我操作后，消费 social 的目标关系 family；关系状态独立串行化写入并在页内覆盖公开资料的关系标记与粉丝数。关系列表由 social 的独立 target family 管理，本人目标使用专用端点。公开、私有和关系列表 DTO 分别映射，不互相复用。
@@ -119,7 +121,7 @@
 
 ## 13. 最近审查的契约版本和后端提交
 
-本轮展示契约来源：API `5.22.0-dev.20260912.2`、Backend `94934be265e36e2f6dba2fbc8b53e58e2755fa52`；新增display／mediaDisplays，消费者接入与真机验收另行记录。仅既有 `markdown-editor-list-v1-fixtures.json` 保留 `062412601b3a8dbf4f64494115a2445d312dd53d` 来源与SHA-256，见 contracts/markdown-editor-list-v1-source.json；不将该独立语料误标为本轮主来源。
+本轮展示契约来源：API `5.22.0-dev.20260912.2`、Backend `94934be265e36e2f6dba2fbc8b53e58e2755fa52`；新增 display／mediaDisplays；消费者已形成候选，检查与负责人验收见本任务 PR 和全场景记录。仅既有 `markdown-editor-list-v1-fixtures.json` 保留 `062412601b3a8dbf4f64494115a2445d312dd53d` 来源与SHA-256，见 contracts/markdown-editor-list-v1-source.json；不将该独立语料误标为本轮主来源。
 
 2026-09-11 列表契约候选同步：Backend `062412601b3a8dbf4f64494115a2445d312dd53d`，OpenAPI `5.20.1-dev.20260911.1`；新增 editor-list v1 revision 2，夹具最初固定于 `aa1bcbd4d087f03a17817e9eca8bcd1f92bb53da`。同时同步收藏夹计数按当前用户可见性统计的契约说明；字段形状、块边界 v1 revision 2 与既有消费代码保持；列表消费者及真机验收仍待完成，见[列表统一排查](../architecture/editor-list-unification-investigation.md)。
 

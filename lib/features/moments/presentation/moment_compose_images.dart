@@ -172,7 +172,9 @@ class MomentComposeImageStrip extends StatelessWidget {
             key: const Key('moment-compose-upload-failure'),
             message: failure.userMessage,
             detail: failure.resolvedPresentation.problemDetail,
-            tone: WenyouStatusTone.error,
+            tone: uploadState.phase == MediaUploadTaskPhase.processingPending
+                ? WenyouStatusTone.neutral
+                : WenyouStatusTone.error,
             action: Wrap(
               spacing: tokens.space8,
               children: [
@@ -185,7 +187,9 @@ class MomentComposeImageStrip extends StatelessWidget {
                   TextButton(
                     key: const Key('moment-compose-retry-upload'),
                     onPressed: onRetryUpload,
-                    child: const Text('重新上传'),
+                    child: Text(
+                      uploadState.pendingUpload == null ? '重新上传' : '继续查询',
+                    ),
                   ),
               ],
             ),
@@ -206,6 +210,7 @@ class MomentComposeImageStrip extends StatelessWidget {
       MediaUploadTaskPhase.uploading => '正在上传图片$position…',
       MediaUploadTaskPhase.confirming => '正在确认图片$position…',
       MediaUploadTaskPhase.processing => '正在处理图片$position…',
+      MediaUploadTaskPhase.processingPending => '图片仍在处理中，可继续查询。',
       MediaUploadTaskPhase.idle || MediaUploadTaskPhase.failed => '',
     };
   }

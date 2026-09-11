@@ -43,9 +43,11 @@
 
 ## 6. 状态模型和数据流
 
+完整展示候选：私聊图片与表情气泡和大图选择完整 display，默认保存亦使用展示源，原媒体 ID 保持。待发送上传队列保留 PROCESSING 与查询失败的媒体身份，用户继续查询只执行同 ID GET，完成后才发送消息；明确查询错误保留原类型，不伪装仍在处理。账号／会话范围切换取消并清空队列。见[全场景候选记录](../architecture/animation-webp-all-surfaces.md)，待负责人验收。
+
 未读控制器只负责单次读取；应用壳在认证且前台时用唯一的 30 秒定时器统一触发通知、未读消息与待处理请求刷新。Android 后台尽力提醒登录后固定开启；离开前台后，后台协调器在 Flutter 进程仍获系统调度时全程每 30 秒尽力检查，前一轮未完成时跳过节拍。每轮先读未读/请求总数，只有计数增长才按需读取 INBOX/REQUESTS 首屏并比较会话 `lastMessage.id + unreadCount + status` 指纹；详情读取或系统卡片展示失败时不推进未读与会话指纹，下一节拍继续重试。恢复前台、退出登录、任务被划掉或进程被系统回收即停止。
 
-会话列表按 view 使用独立 autoDispose family；未读消息与待处理请求由进程内控制器每 30 秒读取。会话详情维护升序消息、历史 cursor、服务端增量 anchor 与本地发送状态；本地消息使用 `optimistic:<clientRequestId>` 标识和 `sending / failed / sent` 状态，服务端回包原位替换，增量 anchor 永远跳过本地消息。历史分页、最近窗口刷新、增量轮询和乐观消息按 ID 去重并用 `createdAt + id` 排序，最近窗口对账不会丢弃已经加载的历史。会话列表的 `contentPreview` 直接消费服务端脱敏投影：站内传送门转为可读名称、邀请 token 转为“邀请传送门”并规范化空白；完整消息页继续持有服务端原始正文，复制时只为系统剪贴板临时投影行内原子的可见 label，客户端不从完整正文反推列表预览。私聊读写端口位于 `direct_messages/application`，API 适配器由 `main.dart` 组合根绑定，控制器不导入具体 data 仓储。输入器只负责选图和本地附件预览；已有会话的 application 按乐观消息 ID 持有待发送输入、进度和已完成 `mediaId`，通过 media 上传端口启动可取消操作，但不接触 Dio 或预签名 URL。新私聊目标解析使用独立控制器文件并通过 `users/application` 公共端口读取目标资料，保持原 provider 接口且不依赖 users data。加载、提交与失败状态位于 application，domain 只保留业务模型和草稿校验。data 适配器拒绝重复 ID、异常游标、会话 ID/目标用户不匹配、撤回后仍携带正文/媒体、非安全 URL、状态与权限矛盾以及未读总数不一致；控制器额外确认每条消息包含当前会话的另一位参与者，异常时整页停止展示。接受、拒绝、已读和撤回成功后重新校准角标，角标刷新失败不回滚已确认的业务结果。
+会话列表按 view 使用独立 autoDispose family；未读消息与待处理请求由进程内控制器每 30 秒读取。会话详情维护升序消息、历史 cursor、服务端增量 anchor 与本地发送状态；本地消息使用 `optimistic:<clientRequestId>` 标识和 `sending / processingPending / failed / sent` 状态，服务端回包原位替换，增量 anchor 永远跳过本地消息。历史分页、最近窗口刷新、增量轮询和乐观消息按 ID 去重并用 `createdAt + id` 排序，最近窗口对账不会丢弃已经加载的历史。会话列表的 `contentPreview` 直接消费服务端脱敏投影：站内传送门转为可读名称、邀请 token 转为“邀请传送门”并规范化空白；完整消息页继续持有服务端原始正文，复制时只为系统剪贴板临时投影行内原子的可见 label，客户端不从完整正文反推列表预览。私聊读写端口位于 `direct_messages/application`，API 适配器由 `main.dart` 组合根绑定，控制器不导入具体 data 仓储。输入器只负责选图和本地附件预览；已有会话的 application 按乐观消息 ID 持有待发送输入、进度和已完成 `mediaId`，通过 media 上传端口启动可取消操作，但不接触 Dio 或预签名 URL。新私聊目标解析使用独立控制器文件并通过 `users/application` 公共端口读取目标资料，保持原 provider 接口且不依赖 users data。加载、提交与失败状态位于 application，domain 只保留业务模型和草稿校验。data 适配器拒绝重复 ID、异常游标、会话 ID/目标用户不匹配、撤回后仍携带正文/媒体、非安全 URL、状态与权限矛盾以及未读总数不一致；控制器额外确认每条消息包含当前会话的另一位参与者，异常时整页停止展示。接受、拒绝、已读和撤回成功后重新校准角标，角标刷新失败不回滚已确认的业务结果。
 
 `DirectMessageMedia` 保存主图、medium、thumbnail、contentType、animated 与可空 `width/height`，并给 presentation 提供去重后的有序预览候选。会话 application 为待发送图片保存仅限当前页面生命周期的输入字节、上传进度与已完成 `mediaId`；失败重试跳过已经完成的步骤，成功、放弃或页面释放即清除。宽高有效时 presentation 计算 contain 尺寸并只向图片解码器传递实际限制轴，避免宽高同时固定造成变形；尺寸缺失时不猜测比例，先显示角色占位，图片解码后使用固有比例。
 
@@ -104,7 +106,7 @@ capability 由 app 组合层从启动契约注入，前台生命周期由应用�
 
 ## 13. 最近审查的契约版本和后端提交
 
-本轮展示契约来源：API `5.22.0-dev.20260912.2`、Backend `94934be265e36e2f6dba2fbc8b53e58e2755fa52`；新增display／mediaDisplays，消费者接入与真机验收另行记录。仅既有 `markdown-editor-list-v1-fixtures.json` 保留 `062412601b3a8dbf4f64494115a2445d312dd53d` 来源与SHA-256，见 contracts/markdown-editor-list-v1-source.json；不将该独立语料误标为本轮主来源。
+本轮展示契约来源：API `5.22.0-dev.20260912.2`、Backend `94934be265e36e2f6dba2fbc8b53e58e2755fa52`；新增 display／mediaDisplays；消费者已形成候选，检查与负责人验收见本任务 PR 和全场景记录。仅既有 `markdown-editor-list-v1-fixtures.json` 保留 `062412601b3a8dbf4f64494115a2445d312dd53d` 来源与SHA-256，见 contracts/markdown-editor-list-v1-source.json；不将该独立语料误标为本轮主来源。
 
 2026-09-11 列表契约候选同步：Backend `062412601b3a8dbf4f64494115a2445d312dd53d`，OpenAPI `5.20.1-dev.20260911.1`；新增 editor-list v1 revision 2，夹具最初固定于 `aa1bcbd4d087f03a17817e9eca8bcd1f92bb53da`。同时同步收藏夹计数按当前用户可见性统计的契约说明；字段形状、块边界 v1 revision 2 与既有消费代码保持；列表消费者及真机验收仍待完成，见[列表统一排查](../architecture/editor-list-unification-investigation.md)。
 

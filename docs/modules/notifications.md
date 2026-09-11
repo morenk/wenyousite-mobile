@@ -31,6 +31,8 @@
 
 ## 6. 状态模型和数据流
 
+通知发送者头像消费 avatarDisplay 展示地址，旧 null 延用原地址；通知权限、导航、摘要和读取状态不变。对应完整展示候选仍待负责人验收。
+
 `NotificationFilter` 是 domain 内的纯 Dart 值对象，只携带筛选标识、事件集合和查询值；Foundation 分组目录与显示名称留在 application。仓储端口只导出值对象，data 不再通过端口间接依赖展示目录或应用状态，筛选行为与文案保持不变。
 
 通知长列表采用单一滚动视口与惰性 Sliver 行，错误横幅和分页入口独立于数据行。删除不解释或改写 cursor，即使其字节恰好等于已删 ID；当前页删空而仍有下一页时保留加载更多，真正失效的游标仍由 `40007` 触发首页恢复。
@@ -98,7 +100,7 @@ V1 仅 API 拉取，不做 FCM、WebSocket、SSE、后台唤醒或后台角标�
 
 ## 13. 最近审查的契约版本和后端提交
 
-本轮展示契约来源：API `5.22.0-dev.20260912.2`、Backend `94934be265e36e2f6dba2fbc8b53e58e2755fa52`；新增display／mediaDisplays，消费者接入与真机验收另行记录。仅既有 `markdown-editor-list-v1-fixtures.json` 保留 `062412601b3a8dbf4f64494115a2445d312dd53d` 来源与SHA-256，见 contracts/markdown-editor-list-v1-source.json；不将该独立语料误标为本轮主来源。
+本轮展示契约来源：API `5.22.0-dev.20260912.2`、Backend `94934be265e36e2f6dba2fbc8b53e58e2755fa52`；新增 display／mediaDisplays；消费者已形成候选，检查与负责人验收见本任务 PR 和全场景记录。仅既有 `markdown-editor-list-v1-fixtures.json` 保留 `062412601b3a8dbf4f64494115a2445d312dd53d` 来源与SHA-256，见 contracts/markdown-editor-list-v1-source.json；不将该独立语料误标为本轮主来源。
 
 2026-09-11 列表契约候选同步：Backend `062412601b3a8dbf4f64494115a2445d312dd53d`，OpenAPI `5.20.1-dev.20260911.1`；新增 editor-list v1 revision 2，夹具最初固定于 `aa1bcbd4d087f03a17817e9eca8bcd1f92bb53da`。同时同步收藏夹计数按当前用户可见性统计的契约说明；字段形状、块边界 v1 revision 2 与既有消费代码保持；列表消费者及真机验收仍待完成，见[列表统一排查](../architecture/editor-list-unification-investigation.md)。
 

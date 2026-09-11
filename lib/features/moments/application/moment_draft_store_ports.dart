@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wenyousite_mobile/core/media/media_display.dart';
 import 'package:wenyousite_mobile/core/models/editor_models.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
 
@@ -44,6 +45,7 @@ class MomentLocalDraft {
         {
           'mediaId': image.mediaId,
           'url': image.url,
+          'display': image.display?.toJson(),
           'thumbnailUrl': image.thumbnailUrl,
           'feedUrl': image.feedUrl,
           'mediumUrl': image.mediumUrl,
@@ -77,6 +79,7 @@ class MomentLocalDraft {
           UploadedEditorImage(
             mediaId: mediaId,
             url: url,
+            display: cachedMediaDisplayFromJson(rawImage['display']),
             thumbnailUrl: rawImage['thumbnailUrl'] as String?,
             feedUrl: rawImage['feedUrl'] as String?,
             mediumUrl: rawImage['mediumUrl'] as String?,

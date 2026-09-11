@@ -79,6 +79,8 @@
 
 ## 6. 状态模型和数据流
 
+完整展示候选：主题正文、楼层及回复的授权 mediaDisplays 按各自响应映射；阅读、大图和编辑器使用完整 WebP，远端草稿／本地快照恢复映射但不改写正文身份。可选本地映射坏项不会阻断标题、owner 或 remoteDraft 恢复。见[全场景候选记录](../architecture/animation-webp-all-surfaces.md)，待负责人验收。
+
 快翻复用页面 ScrollController，由 ReadingQuickScrollController 持有页面内开关、普通拖动期间冻结的滚动范围与按住末端跟随状态及可见正文锚点；每帧最多合并一次滑杆滚动。首次懒布局收缩了偏大的范围时，主列表在布局内校正映射，避免滑杆只到一半就被夹到末尾；校正范围用于松手及再次拖动，正文集合、锚点尺寸或作用域变化时失效。开关工具或发起快翻主动解除深链自动对齐，避免旧目标在布局变化后抢回位置。可见锚点只登记已布局内容，排除无有效 Sliver 几何的保活项；没有全量预布局或新增图片预取。首尾跳转最多校正 12 帧，连续两帧稳定后结束，未抵达时提供重试；用户滚动、筛选变化和页面释放取消旧校正。工具栏改变视口时保持普通阅读位置，尾部空间不足时遵循滚动边界约束。
 
 内嵌楼中楼不可见回复目标兼容（2026-09-09 负责人验收通过）：预览与独立讨论共同接受 `replyToPostId` 非空、`replyToPost` 为 null 的合法响应，保留可见回复正文，目标用户名维持空值降级，不因一条目标不可见的回复拒绝整个楼层页。目标详情存在时仍校验 ID、作者和父楼关联，见[候选验收记录](../architecture/reply-pagination-acceptance.md)。
@@ -233,7 +235,7 @@
 
 ## 13. 最近审查的契约版本和后端提交
 
-本轮展示契约来源：API `5.22.0-dev.20260912.2`、Backend `94934be265e36e2f6dba2fbc8b53e58e2755fa52`；新增display／mediaDisplays，消费者接入与真机验收另行记录。仅既有 `markdown-editor-list-v1-fixtures.json` 保留 `062412601b3a8dbf4f64494115a2445d312dd53d` 来源与SHA-256，见 contracts/markdown-editor-list-v1-source.json；不将该独立语料误标为本轮主来源。
+本轮展示契约来源：API `5.22.0-dev.20260912.2`、Backend `94934be265e36e2f6dba2fbc8b53e58e2755fa52`；新增 display／mediaDisplays；消费者已形成候选，检查与负责人验收见本任务 PR 和全场景记录。仅既有 `markdown-editor-list-v1-fixtures.json` 保留 `062412601b3a8dbf4f64494115a2445d312dd53d` 来源与SHA-256，见 contracts/markdown-editor-list-v1-source.json；不将该独立语料误标为本轮主来源。
 
 2026-09-11 列表契约候选同步：Backend `062412601b3a8dbf4f64494115a2445d312dd53d`，OpenAPI `5.20.1-dev.20260911.1`；新增 editor-list v1 revision 2，夹具最初固定于 `aa1bcbd4d087f03a17817e9eca8bcd1f92bb53da`。同时同步收藏夹计数按当前用户可见性统计的契约说明；字段形状、块边界 v1 revision 2 与既有消费代码保持；列表消费者及真机验收仍待完成，见[列表统一排查](../architecture/editor-list-unification-investigation.md)。
 

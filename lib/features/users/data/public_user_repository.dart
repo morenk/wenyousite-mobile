@@ -4,6 +4,7 @@ import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/network/media_display_mapper.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/thread_feed/thread_feed_mapping.dart';
 import 'package:wenyousite_mobile/features/thread_feed/thread_feed_models.dart';
@@ -31,7 +32,9 @@ class ApiPublicUserRepository implements PublicUserRepository {
       return PublicUserProfileModel(
         id: dto.id,
         username: dto.username,
-        avatarUrl: _safeHttpUrl(dto.avatar),
+        avatarUrl: _safeHttpUrl(
+          mapAvatarDisplayUrl(dto.avatar, dto.avatarDisplay),
+        ),
         bio: bio == null || bio.isEmpty ? null : bio,
         profileCover: mapProfileCover(dto.profileCover),
         level: dto.level?.toInt() ?? 0,
@@ -181,7 +184,9 @@ class ApiPublicUserRepository implements PublicUserRepository {
       isPublished: dto.published,
       ownerId: dto.owner.id,
       ownerName: dto.owner.username,
-      ownerAvatarUrl: _safeHttpUrl(dto.owner.avatar),
+      ownerAvatarUrl: _safeHttpUrl(
+        mapAvatarDisplayUrl(dto.owner.avatar, dto.owner.avatarDisplay),
+      ),
       ownerLevel: dto.owner.level.toInt(),
       createdAt: dto.createdAt,
       lastActivityAt: latestThreadActivityAt(
@@ -216,7 +221,9 @@ class ApiPublicUserRepository implements PublicUserRepository {
       isPublished: dto.published,
       ownerId: dto.owner.id,
       ownerName: dto.owner.username,
-      ownerAvatarUrl: _safeHttpUrl(dto.owner.avatar),
+      ownerAvatarUrl: _safeHttpUrl(
+        mapAvatarDisplayUrl(dto.owner.avatar, dto.owner.avatarDisplay),
+      ),
       ownerLevel: dto.owner.level.toInt(),
       createdAt: dto.createdAt,
       lastActivityAt: latestThreadActivityAt(
@@ -242,6 +249,7 @@ class ApiPublicUserRepository implements PublicUserRepository {
   PublicUserReplyModel _mapReply(RecentReplyResponseDto dto) {
     final source = dto.preview.trim().isEmpty ? dto.content : dto.preview;
     return PublicUserReplyModel(
+      mediaDisplays: mapMarkdownMediaDisplays(dto.mediaDisplays),
       id: dto.id,
       threadId: dto.threadId,
       threadTitle: dto.thread.title,

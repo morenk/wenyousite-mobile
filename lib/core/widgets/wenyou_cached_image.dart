@@ -23,6 +23,7 @@ class WenyouCachedImage extends StatefulWidget {
     this.cacheHeight,
     this.useOldImageOnUrlChange = false,
     this.onImageReady,
+    this.enableRetry = false,
     super.key,
   });
 
@@ -38,6 +39,7 @@ class WenyouCachedImage extends StatefulWidget {
   final int? cacheHeight;
   final bool useOldImageOnUrlChange;
   final VoidCallback? onImageReady;
+  final bool enableRetry;
 
   @override
   State<WenyouCachedImage> createState() => _WenyouCachedImageState();
@@ -72,7 +74,7 @@ class _WenyouCachedImageState extends State<WenyouCachedImage> {
     final imageUrl = urls[safeIndex];
     final devicePixelRatio = MediaQuery.devicePixelRatioOf(context);
     return CachedNetworkImage(
-      key: ValueKey(imageUrl),
+      key: ValueKey((imageUrl, _generation)),
       imageUrl: imageUrl,
       imageBuilder: widget.onImageReady == null
           ? null
@@ -102,8 +104,20 @@ class _WenyouCachedImageState extends State<WenyouCachedImage> {
           return widget.placeholder?.call(context, failedUrl) ??
               const SizedBox.shrink();
         }
-        return widget.errorWidget?.call(context, failedUrl, error) ??
+        final failure =
+            widget.errorWidget?.call(context, failedUrl, error) ??
             const SizedBox.shrink();
+        if (!widget.enableRetry) return failure;
+        return Stack(
+          alignment: Alignment.center,
+          children: [
+            failure,
+            TextButton(
+              onPressed: () => unawaited(_retry(imageUrl)),
+              child: const Text('重新加载图片'),
+            ),
+          ],
+        );
       },
       fadeInDuration: Duration.zero,
       fadeOutDuration: Duration.zero,
@@ -124,6 +138,21 @@ class _WenyouCachedImageState extends State<WenyouCachedImage> {
       }
     }
     return result.isEmpty ? const ['about:blank'] : result;
+  }
+
+  Future<void> _retry(String url) async {
+    final generation = _generation;
+    try {
+      await WenyouCachedImage.evictFromCache(url);
+    } on Object {
+      // 本地缓存无法清理时保留失败状态，让用户再次重试。
+      return;
+    }
+    if (!mounted || generation != _generation) return;
+    setState(() {
+      _generation += 1;
+      _readyNotified = false;
+    });
   }
 
   void _scheduleReady() {

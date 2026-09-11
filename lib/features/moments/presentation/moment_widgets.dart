@@ -482,7 +482,7 @@ class _MomentGalleryPage extends StatelessWidget {
       child: MomentPlaybackImage(
         key: Key('moment-content-image-$index'),
         previewUrls: image.playbackPreviewUrls,
-        animationUrl: image.isAnimated ? image.url : null,
+        animationUrl: image.isAnimated ? image.playbackUrl : null,
         allowPlayback: allowPlayback,
         semanticLabel: '第 ${index + 1} 张图片',
         width: double.infinity,
@@ -506,6 +506,7 @@ Future<void> openMomentGallery(
         WenyouImageViewerItem(
           id: image.id,
           url: image.url,
+          display: image.display,
           fallbackUrls: (image.isAnimated ? <String>[] : image.contentUrls)
               .where((url) => url != image.url)
               .toList(growable: false),
@@ -518,7 +519,7 @@ Future<void> openMomentGallery(
       return image.isAnimated
           ? MomentPlaybackImage(
               previewUrls: image.playbackPreviewUrls,
-              animationUrl: image.url,
+              animationUrl: image.playbackUrl,
               allowPlayback: current,
               foregroundColor: context.wenyouTokens.onImageViewerBackground,
               width: double.infinity,

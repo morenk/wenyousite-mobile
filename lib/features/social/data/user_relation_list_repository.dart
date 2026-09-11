@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/network/media_display_mapper.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/social/application/user_relation_list_repository_ports.dart';
 import 'package:wenyousite_mobile/features/social/domain/user_relation_list_models.dart';
@@ -74,7 +75,9 @@ class ApiUserRelationListRepository implements UserRelationListRepository {
     return UserRelationListItem(
       userId: author.id,
       username: author.username,
-      avatarUrl: _safeHttpUrl(author.avatar),
+      avatarUrl: _safeHttpUrl(
+        mapAvatarDisplayUrl(author.avatar, author.avatarDisplay),
+      ),
       level: author.level.toInt(),
       relatedAt: relatedAt,
     );

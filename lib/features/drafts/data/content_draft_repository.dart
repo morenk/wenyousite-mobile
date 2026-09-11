@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
+import 'package:wenyousite_mobile/core/network/media_display_mapper.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/drafts/application/content_draft_repository_ports.dart';
 import 'package:wenyousite_mobile/features/drafts/domain/content_draft_models.dart';
@@ -123,6 +124,7 @@ class ApiContentDraftRepository implements ContentDraftRepository {
       userId: dto.userId,
       slot: dto.slot.toInt(),
       content: dto.content,
+      mediaDisplays: mapMarkdownMediaDisplays(dto.mediaDisplays),
       version: dto.version.toInt(),
       createdAt: dto.createdAt,
       updatedAt: dto.updatedAt,
