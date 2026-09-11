@@ -12,7 +12,7 @@ abstract final class MarkdownClipboardText {
     String markdown, {
     Map<String, String> diceLabels = const {},
   }) => projectDelta(
-    MarkdownDeltaCodec.decode(markdown).delta,
+    MarkdownDeltaCodec.decode(markdown, imageAlignment: true).delta,
     diceLabels: diceLabels,
   );
 

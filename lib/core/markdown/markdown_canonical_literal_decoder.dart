@@ -1,5 +1,6 @@
 import 'package:flutter_quill/quill_delta.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_delta_line_metadata.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_rich_line_decoder.dart';
 
 class MarkdownCanonicalLiteralDecodeResult {
@@ -64,12 +65,17 @@ class MarkdownCanonicalLiteralDecoder {
     }
     if (literalIndex != masked.literals.length) return null;
 
+    final lineAttributes = {
+      ...richLine.lineAttributes,
+      if (MarkdownContent.hasWhitespaceGuards(source))
+        MarkdownDeltaLineMetadata.guardedWhitespaceKey: true,
+    };
     final candidate = Delta.from(decoded)
-      ..insert('\n', {...richLine.lineAttributes, sourceBreakAttribute: false});
+      ..insert('\n', {...lineAttributes, sourceBreakAttribute: false});
     if (!preservesSource(candidate)) return null;
     return MarkdownCanonicalLiteralDecodeResult(
       delta: decoded,
-      lineAttributes: richLine.lineAttributes,
+      lineAttributes: lineAttributes,
     );
   }
 }

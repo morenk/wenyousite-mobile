@@ -93,7 +93,11 @@ threads 页面消费主题互动和订阅控制器，moments 提供独立动态�
 
 ## 13. 最近审查的契约版本和后端提交
 
-2026-09-11 已复核并同步契约 `5.20.0-dev.20260909.1`，后端 `0ee2c0de1d9c570e495e778be6661b074b7a4bef`。生成客户端增加可空 `coverMedia` 和 `previewVariants`；本模块继续消费原 `coverImages`，动画预览接入由独立切片负责。以下保留此前行为验收来源。
+2026-09-11 合并来源同步：Backend `8bf370f6ef5357535683aa6d3f8c03bd2d08d108`，包含发布权限修复；通过既有脚本重新导出后仅来源元数据变化，OpenAPI、块边界 v1 revision 2 及其他共享契约字节不变。模块行为与候选验收状态保持，前次部署回滚、公网核验及安装包溯源见[块边界验收](../architecture/markdown-block-boundaries-acceptance.md)。
+
+2026-09-11 契约来源登记：Backend `a91cbb8b605223c596af299be22c5547f69e25b9`，块边界 v1 revision 2。HTTP OpenAPI 未变化，本模块既有接口行为与验收状态保持；富文本消费者候选见[块边界验收](../architecture/markdown-block-boundaries-acceptance.md)。
+
+2026-09-11 契约增量审查：同步 `5.20.0-dev.20260909.1`，后端及公网 `0ee2c0de1d9c570e495e778be6661b074b7a4bef`。新增可空 `coverMedia` 与 `previewVariants` 的生成模型；现有页面读取行为不变，封面播放消费留在独立切片。表情接口、正文语料及 Foundation v6.9.0 不变。下列历史审查记录保留其当时范围。
 
 契约 `5.18.0-dev.20260905.1`；Markdown v5；后端 `3338028459561565c788d5236fb64db84a2ae538`；Foundation `v6.9.0`（`5888132`）。主题帖目录不再消费已废弃的动态兼容计数，动态目录改用独立端点。
 

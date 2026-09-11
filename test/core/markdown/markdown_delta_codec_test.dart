@@ -623,10 +623,10 @@ void main() {
       ),
       isTrue,
     );
-    expect(MarkdownDeltaCodec.encode(document.delta), '---\n\n* * *\n___');
+    expect(MarkdownDeltaCodec.encode(document.delta), '---\n\n---\n\n---');
     expect(
       MarkdownDeltaCodec.encode(MarkdownDeltaCodec.decode(' ---\n--- ').delta),
-      ' ---\n--- ',
+      '---\n\n---',
     );
   });
 

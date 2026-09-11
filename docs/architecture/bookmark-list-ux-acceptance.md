@@ -1,6 +1,6 @@
 # 收藏页布局候选验收
 
-状态：候选修复／待负责人验收。负责人原始反馈日期：2026-09-11。
+状态：验收失败／继续排查（收藏计数）；布局候选仍待负责人验收。负责人原始反馈日期：2026-09-11。合并授权不等同于原场景验收通过。
 
 ## 原始场景与已确认原因
 
@@ -26,13 +26,16 @@
 
 ## 负责人手测
 
-候选源码 `67082fec4c3b576b272a4c36bc3f4889d5ffc00b`，任务分支 `codex/20260911-bookmark-list-ux`，评审 [PR #20](https://github.com/morenk/wenyousite-mobile/pull/20)。未合并、未发布、未执行 ADB 安装。
+候选源码 `67082fec4c3b576b272a4c36bc3f4889d5ffc00b`，任务分支 `codex/20260911-bookmark-list-ux`，评审 [PR #20](https://github.com/morenk/wenyousite-mobile/pull/20)。负责人已授权合并；未正式发布。已按后续授权覆盖安装 Debug，保留原数据且未改正式包。
 
 - APK：`D:/code/wenyousite/recovery/bookmark-list-ux-67082fe/wenyou-debug-bookmark-list-ux-67082fe.apk`，203,745,950 字节。
 - 实际包名 `site.wenyou.app.debug`，应用名“温油站 Debug”，versionName `0.7.0-dev.1-debug`、versionCode `94`，最低 API 26；Debug 包保留 ARM32、ARM64、x86_64。
 - SHA-256：`0611e73d011b63c46f8ae8b4ad5c8eb4d6b536d1c7b3272a591cff8729b5af01`。apksigner 验签通过，APK 与日志复制前后逐项核对 SHA-256；同目录保留 manifest.json、校验文件和构建／门禁／回归日志。
 - Windows `flutter build apk --debug` 成功，使用仅本次进程生效的 Gradle 2GB 堆、单 worker、单次 daemon 限制；构建应用源码与上述提交一致。保留既有图片压缩插件 KGP 和 SDK XML 兼容警告，详见 `bookmark-ux-build.log`。
-- 原截图主题、封面及负责人真实设备尚未在候选包上复验。相同构建号不能证明旧 Debug 已更新；后续若授权 ADB 安装，须再次核对目标包更新时间及设备内 APK 哈希。
+- ADB 安装目标已核对为 `site.wenyou.app.debug`；设备报告更新时间从 `2026-09-11 04:12:02` 变为 `2026-09-11 04:22:33`。通过 `pm path` 定位已安装的 `base.apk` 并执行 `sha256sum`，与上述候选包完整 SHA-256 一致。安装不代替原截图主题、封面与操作体验验收。
+- 安装后负责人反馈默认主题夹显示 1 条而列表为空。后端子任务中负责人回传的最小只读聚合确认：原始收藏记录 1、可见记录 0，唯一原因为 `content_deleted`；证据不是移动端代理直接读取账号取得。后端 [PR #15](https://github.com/morenk/wenyousite-backend/pull/15) 已合并 `b785336c5b31cb228f3021650b9de1c39ade02e5`，部署后仍须原账号复验；本次不把合并或原自动测试通过记为问题关闭。
+- 合并前整合 Mobile `origin/dev` 的 `764d7ad`，保留块边界和动态图片行为。契约文件及生成客户端沿用该集成基线，不回退到原候选较旧来源；后端收藏计数新语义的消费者同步与公网复验尚待完成。
+- 整合后 `flutter analyze --fatal-infos --fatal-warnings` 零问题；7 组收藏仓储、控制器、页面及首页测试共 78 项通过（含新增 24 张 Golden 和首页基线），格式、架构、21 个模块文档检查通过。合并阶段没有重新执行全量门禁或构建新 APK；上面的全量结果与 APK 仍对应原候选，不能混作合并源码的新安装包。
 
 1. 打开候选应用“温油站 Debug”，确认包名 `site.wenyou.app.debug`，进入原截图所在的收藏夹和主题。
 2. 核对卡片下方没有外置管理按钮；标题右侧更多入口完整，长标题与图标不重叠，封面、摘要和统计仍可阅读。
