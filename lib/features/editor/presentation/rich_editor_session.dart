@@ -11,6 +11,7 @@ import 'package:uuid/uuid.dart';
 import 'package:wenyousite_mobile/core/diagnostics/failure_diagnostics.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_line_metadata.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_submission_guard.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_clipboard.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_clipboard_gateway.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_clipboard_paste.dart';
@@ -354,6 +355,7 @@ class RichEditorSession extends ChangeNotifier {
         controller.document.toDelta(),
         imageAlignment: imageAlignment,
       );
+      MarkdownSubmissionGuard.validate(markdown);
       _serializedLength = markdown.length;
       if (_serializedLength > maximumSerializedLength) {
         _setOperationFailure(
