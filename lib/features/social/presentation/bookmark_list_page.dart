@@ -462,6 +462,7 @@ ThreadFeedCardModel _threadModel(BookmarkListItem item) {
     preview: item.preview,
     tags: item.tags,
     coverImageUrls: item.coverImageUrls,
+    coverMedia: item.coverMedia,
     memberCount: item.memberCount,
     playerCount: item.playerCount,
     postCount: item.postCount,

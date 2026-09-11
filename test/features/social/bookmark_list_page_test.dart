@@ -12,12 +12,42 @@ import 'package:wenyousite_mobile/features/app_shell/presentation/bookmark_folde
 import 'package:wenyousite_mobile/features/social/data/bookmark_list_repository.dart';
 import 'package:wenyousite_mobile/features/social/domain/bookmark_list_models.dart';
 import 'package:wenyousite_mobile/features/social/presentation/bookmark_list_page.dart';
+import 'package:wenyousite_mobile/features/thread_feed/application/cover_animation_source_ports.dart';
+import 'package:wenyousite_mobile/features/thread_feed/presentation/cover_playback_scope.dart';
 import 'package:wenyousite_mobile/features/thread_feed/thread_feed_catalog.dart';
+import 'package:wenyousite_mobile/features/thread_feed/thread_feed_models.dart';
 
+import '../../support/cover_playback_test_support.dart';
 import '../../support/fake_thread_category_catalog.dart';
 import '../../support/foundation_test_fonts.dart';
 
 void main() {
+  testWidgets('真实收藏列表多封面同时可见即播，轻滑和卸载保持生命周期', (tester) async {
+    tester.view.physicalSize = const Size(400, 1200);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await cachePlaybackTestPoster(tester);
+    final source = RecordingCoverSource();
+    final repository = _FakeRepository(
+      items: [
+        for (var i = 0; i < 5; i++) _item('bookmark-$i', animation: true),
+      ],
+    );
+    final router = _router(
+      initialLocation: '/bookmarks/threads/folders/folder-default',
+    );
+    addTearDown(router.dispose);
+    await tester.pumpWidget(_app(repository, router, source: source));
+    await tester.pumpAndSettle();
+    expect(source.urls.length, greaterThanOrEqualTo(2));
+    final active = source.tokens.where((token) => !token.isCancelled).toList();
+    await tester.drag(find.byType(Scrollable).last, const Offset(0, -25));
+    await tester.pumpAndSettle();
+    expect(active.every((token) => !token.isCancelled), isTrue);
+    await tester.pumpWidget(const SizedBox());
+    expect(source.tokens.every((token) => token.isCancelled), isTrue);
+  });
   setUpAll(loadFoundationTestFonts);
   testWidgets('收藏管理入口位于卡片内且不再外置两种按钮', (tester) async {
     final repository = _FakeRepository(items: [_item('bookmark-1')]);
@@ -521,11 +551,14 @@ GoRouter _router({String initialLocation = '/'}) {
 Widget _app(
   BookmarkListRepository repository,
   GoRouter router, {
+  CoverAnimationSource? source,
   bool dark = false,
   double textScale = 1,
 }) {
   return ProviderScope(
     overrides: [
+      if (source != null)
+        coverAnimationSourceProvider.overrideWithValue(source),
       bookmarkListRepositoryProvider.overrideWithValue(repository),
       bookmarkFolderCatalogProvider.overrideWith((ref, kind) => repository),
       threadCategoryCatalogRepositoryProvider.overrideWithValue(
@@ -541,7 +574,7 @@ Widget _app(
         ).copyWith(textScaler: TextScaler.linear(textScale)),
         child: RepaintBoundary(
           key: const Key('bookmark-visual'),
-          child: child!,
+          child: source == null ? child! : CoverPlaybackScope(child: child!),
         ),
       ),
     ),
@@ -689,13 +722,25 @@ BookmarkFolderItem _folder(
 BookmarkListItem _item(
   String bookmarkId, {
   String? folderId = 'folder-default',
+  bool animation = false,
   String? title,
   String? preview,
 }) {
   return BookmarkListItem(
     bookmarkId: bookmarkId,
     folderId: folderId,
-    threadId: bookmarkId == 'bookmark-1' ? 'thread-1' : 'thread-2',
+    threadId: animation
+        ? bookmarkId
+        : bookmarkId == 'bookmark-1'
+        ? 'thread-1'
+        : 'thread-2',
+    coverMedia: animation
+        ? ThreadFeedCoverMedia(
+            url: 'https://cdn.example/$bookmarkId.gif',
+            animated: true,
+            posterUrl: playbackTestPoster,
+          )
+        : null,
     title: title ?? (bookmarkId == 'bookmark-1' ? '雾港来信' : '收藏 $bookmarkId'),
     preview: preview,
     categorySlug: 'DEDUCTION',
