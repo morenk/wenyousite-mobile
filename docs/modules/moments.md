@@ -82,7 +82,7 @@ media/application 提供相册与上传端口、唯一任务状态、取消、�
 
 ## 11. 测试场景与验收条件
 
-动态图规则候选／待负责人验收：自动回归覆盖资源选择、真实双帧 GIF、可见性与失败重试；设备原场景尚待复验。参见[动态图验收记录](../architecture/moment-animation-acceptance.md)。
+动态图规则负责人验收通过：自动回归覆盖资源选择、真实双帧 GIF、可见性与失败重试；负责人于 2026-09-11 对已安装候选 `55a81be` 明确验收通过。参见[动态图验收记录](../architecture/moment-animation-acceptance.md)。
 
 - [x] 已接入的 17 个 operationId 的分页、DTO、幂等、版本、删除确认与评论上下文层级有仓储测试。
 - [x] 未知枚举、不安全 URL、重复 ID、异常计数/层级和图片/表情互斥采用 fail-closed。
