@@ -1,5 +1,8 @@
+import 'dart:ui' show Tristate;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/widgets/reading_quick_scroll.dart';
 
@@ -37,24 +40,67 @@ void main() {
 
   testWidgets('工具栏占独立空间，开关保留正文宽度和阅读位置', (tester) async {
     final state = await mount(tester);
-    state.scroll.jumpTo(240);
-    await tester.pumpAndSettle();
-    final before = tester.getRect(find.byKey(const Key('reading-body')));
-    await tester.tap(find.byKey(const Key('reading-quick-scroll-toggle')));
-    await tester.pumpAndSettle();
-    final after = tester.getRect(find.byKey(const Key('reading-body')));
-    final bar = tester.getRect(
-      find.byKey(const Key('reading-quick-scroll-bar')),
-    );
-    expect(after.width, before.width);
-    expect(after.height, lessThan(before.height));
-    expect(after.bottom, lessThanOrEqualTo(bar.top));
-    expect(state.scroll.offset, 240);
-    expect(state.navigationCount, 1);
-    await tester.tap(find.text('收起'));
-    await tester.pumpAndSettle();
-    expect(state.scroll.offset, 240);
-    expect(tester.getRect(find.byKey(const Key('reading-body'))), before);
+    final semantics = tester.ensureSemantics();
+    try {
+      final toggle = find.byKey(const Key('reading-quick-scroll-toggle'));
+      expect(find.byTooltip('快翻'), findsOneWidget);
+      expect(find.text('快翻'), findsNothing);
+      expect(
+        tester
+            .widget<WenyouIcon>(
+              find.descendant(of: toggle, matching: find.byType(WenyouIcon)),
+            )
+            .semanticId,
+        WenyouIconIds.actionReadingQuickScroll,
+      );
+      expect(tester.getSize(toggle).width, greaterThanOrEqualTo(48));
+      expect(tester.getSize(toggle).height, greaterThanOrEqualTo(48));
+      expect(
+        tester
+            .getSemantics(toggle)
+            .getSemanticsData()
+            .flagsCollection
+            .isToggled,
+        Tristate.isFalse,
+      );
+      state.scroll.jumpTo(240);
+      await tester.pumpAndSettle();
+      final before = tester.getRect(find.byKey(const Key('reading-body')));
+      await tester.tap(find.byKey(const Key('reading-quick-scroll-toggle')));
+      await tester.pumpAndSettle();
+      expect(
+        tester
+            .getSemantics(toggle)
+            .getSemanticsData()
+            .flagsCollection
+            .isToggled,
+        Tristate.isTrue,
+      );
+      expect(tester.getSemantics(toggle).label, '快翻');
+      final after = tester.getRect(find.byKey(const Key('reading-body')));
+      final bar = tester.getRect(
+        find.byKey(const Key('reading-quick-scroll-bar')),
+      );
+      expect(after.width, before.width);
+      expect(after.height, lessThan(before.height));
+      expect(after.bottom, lessThanOrEqualTo(bar.top));
+      expect(state.scroll.offset, 240);
+      expect(state.navigationCount, 1);
+      await tester.tap(find.text('收起'));
+      await tester.pumpAndSettle();
+      expect(
+        tester
+            .getSemantics(toggle)
+            .getSemanticsData()
+            .flagsCollection
+            .isToggled,
+        Tristate.isFalse,
+      );
+      expect(state.scroll.offset, 240);
+      expect(tester.getRect(find.byKey(const Key('reading-body'))), before);
+    } finally {
+      semantics.dispose();
+    }
   });
 
   testWidgets('长单层内实时移动，每帧合并且分页不改变本次拖动映射', (tester) async {

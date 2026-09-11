@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/reading_quick_scroll_controller.dart';
@@ -14,14 +15,20 @@ class ReadingQuickScrollAction extends StatelessWidget {
   Widget build(BuildContext context) => ListenableBuilder(
     listenable: controller,
     builder: (context, _) => Semantics(
+      button: true,
+      enabled: controller.enabled,
       toggled: controller.isOpen,
-      child: TextButton(
+      label: '快翻',
+      excludeSemantics: true,
+      onTap: controller.enabled ? controller.toggle : null,
+      child: IconButton(
         key: const Key('reading-quick-scroll-toggle'),
-        style: TextButton.styleFrom(
+        tooltip: '快翻',
+        style: IconButton.styleFrom(
           minimumSize: Size.square(context.wenyouTokens.minimumTouchTarget),
         ),
         onPressed: controller.enabled ? controller.toggle : null,
-        child: const Text('快翻'),
+        icon: const WenyouIcon(WenyouIconIds.actionReadingQuickScroll),
       ),
     ),
   );
