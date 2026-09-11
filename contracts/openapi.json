@@ -18605,7 +18605,7 @@
   "info": {
     "title": "温油站 API",
     "description": "温油站共同创作社区后端接口文档 | [前端接入指南](../docs/frontend-guide.md)",
-    "version": "5.22.0-dev.20260912.1",
+    "version": "5.22.0-dev.20260912.2",
     "contact": {}
   },
   "tags": [
@@ -19248,6 +19248,16 @@
       "MentionCandidateDto": {
         "type": "object",
         "properties": {
+          "avatarDisplay": {
+            "nullable": true,
+            "description": "头像完整 WebP 展示资源；avatar 保留来源身份",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MediaDisplayResponseDto"
+              }
+            ]
+          },
           "id": {
             "type": "string"
           },
@@ -20928,6 +20938,16 @@
       "NotificationFromUserResponseDto": {
         "type": "object",
         "properties": {
+          "avatarDisplay": {
+            "nullable": true,
+            "description": "头像完整 WebP 展示资源；avatar 保留来源身份",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MediaDisplayResponseDto"
+              }
+            ]
+          },
           "id": {
             "type": "string"
           },
@@ -22420,6 +22440,16 @@
       "InviteOwnerResponseDto": {
         "type": "object",
         "properties": {
+          "avatarDisplay": {
+            "nullable": true,
+            "description": "头像完整 WebP 展示资源；avatar 保留来源身份",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MediaDisplayResponseDto"
+              }
+            ]
+          },
           "id": {
             "type": "string",
             "description": "楼主用户 ID"
@@ -27356,6 +27386,16 @@
       "SearchUserResponseDto": {
         "type": "object",
         "properties": {
+          "avatarDisplay": {
+            "nullable": true,
+            "description": "头像完整 WebP 展示资源；avatar 保留来源身份",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MediaDisplayResponseDto"
+              }
+            ]
+          },
           "id": {
             "type": "string",
             "description": "用户 ID"
@@ -27436,6 +27476,13 @@
       "SearchPostResponseDto": {
         "type": "object",
         "properties": {
+          "mediaDisplays": {
+            "description": "已授权正文的精确来源映射",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MarkdownMediaDisplayResponseDto"
+            }
+          },
           "kind": {
             "type": "string",
             "enum": [

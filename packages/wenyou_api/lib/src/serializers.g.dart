@@ -789,6 +789,12 @@ Serializers _$serializers =
           )
           ..addBuilderFactory(
             const FullType(BuiltList, const [
+              const FullType(MarkdownMediaDisplayResponseDto),
+            ]),
+            () => ListBuilder<MarkdownMediaDisplayResponseDto>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [
               const FullType(DiceRollResponseDto),
             ]),
             () => ListBuilder<DiceRollResponseDto>(),

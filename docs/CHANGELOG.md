@@ -1,5 +1,12 @@
 # 移动端变更记录
 
+## 完整 WebP 契约补充来源
+
+- 主契约正常同步 Backend `94934be265e36e2f6dba2fbc8b53e58e2755fa52`、API `5.22.0-dev.20260912.2`，补齐头像投影与正文搜索映射；既有列表语料仍单独固定 `062412601b3a8dbf4f64494115a2445d312dd53d`。
+- 固定读取 Backend 实际编码产物 `contracts/fixtures/media-display`，Flutter codec 验证三帧红/红/蓝、300/600/600ms、两轮循环以及文件 SHA-256；不以独立合成素材代替实际编码器证据。
+- 来源确定性测试覆盖二进制产物，契约与编码器语料共 7 项通过；业务接入和设备验收以本目标后续候选记录为准。
+
+
 ## 完整展示资源契约同步（待消费接入／待验收）
 
 - 主机器契约与展示语料来自 Backend `9c568c1bf709640be40293ce2e2bd41ff9b1e964`、API `5.22.0-dev.20260912.1`，正规生成可空 display／mediaDisplays、头像与背景展示投影；同步 `media-display-v1-fixtures.json` 和完整展示说明。

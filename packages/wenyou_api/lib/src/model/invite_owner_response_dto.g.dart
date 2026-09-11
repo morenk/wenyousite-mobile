@@ -8,6 +8,8 @@ part of 'invite_owner_response_dto.dart';
 
 class _$InviteOwnerResponseDto extends InviteOwnerResponseDto {
   @override
+  final MediaDisplayResponseDto? avatarDisplay;
+  @override
   final String id;
   @override
   final String username;
@@ -19,6 +21,7 @@ class _$InviteOwnerResponseDto extends InviteOwnerResponseDto {
   ]) => (InviteOwnerResponseDtoBuilder()..update(updates))._build();
 
   _$InviteOwnerResponseDto._({
+    this.avatarDisplay,
     required this.id,
     required this.username,
     this.avatar,
@@ -36,6 +39,7 @@ class _$InviteOwnerResponseDto extends InviteOwnerResponseDto {
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
     return other is InviteOwnerResponseDto &&
+        avatarDisplay == other.avatarDisplay &&
         id == other.id &&
         username == other.username &&
         avatar == other.avatar;
@@ -44,6 +48,7 @@ class _$InviteOwnerResponseDto extends InviteOwnerResponseDto {
   @override
   int get hashCode {
     var _$hash = 0;
+    _$hash = $jc(_$hash, avatarDisplay.hashCode);
     _$hash = $jc(_$hash, id.hashCode);
     _$hash = $jc(_$hash, username.hashCode);
     _$hash = $jc(_$hash, avatar.hashCode);
@@ -54,6 +59,7 @@ class _$InviteOwnerResponseDto extends InviteOwnerResponseDto {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'InviteOwnerResponseDto')
+          ..add('avatarDisplay', avatarDisplay)
           ..add('id', id)
           ..add('username', username)
           ..add('avatar', avatar))
@@ -64,6 +70,12 @@ class _$InviteOwnerResponseDto extends InviteOwnerResponseDto {
 class InviteOwnerResponseDtoBuilder
     implements Builder<InviteOwnerResponseDto, InviteOwnerResponseDtoBuilder> {
   _$InviteOwnerResponseDto? _$v;
+
+  MediaDisplayResponseDtoBuilder? _avatarDisplay;
+  MediaDisplayResponseDtoBuilder get avatarDisplay =>
+      _$this._avatarDisplay ??= MediaDisplayResponseDtoBuilder();
+  set avatarDisplay(MediaDisplayResponseDtoBuilder? avatarDisplay) =>
+      _$this._avatarDisplay = avatarDisplay;
 
   String? _id;
   String? get id => _$this._id;
@@ -84,6 +96,7 @@ class InviteOwnerResponseDtoBuilder
   InviteOwnerResponseDtoBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
+      _avatarDisplay = $v.avatarDisplay?.toBuilder();
       _id = $v.id;
       _username = $v.username;
       _avatar = $v.avatar;
@@ -106,21 +119,38 @@ class InviteOwnerResponseDtoBuilder
   InviteOwnerResponseDto build() => _build();
 
   _$InviteOwnerResponseDto _build() {
-    final _$result =
-        _$v ??
-        _$InviteOwnerResponseDto._(
-          id: BuiltValueNullFieldError.checkNotNull(
-            id,
-            r'InviteOwnerResponseDto',
-            'id',
-          ),
-          username: BuiltValueNullFieldError.checkNotNull(
-            username,
-            r'InviteOwnerResponseDto',
-            'username',
-          ),
-          avatar: avatar,
+    _$InviteOwnerResponseDto _$result;
+    try {
+      _$result =
+          _$v ??
+          _$InviteOwnerResponseDto._(
+            avatarDisplay: _avatarDisplay?.build(),
+            id: BuiltValueNullFieldError.checkNotNull(
+              id,
+              r'InviteOwnerResponseDto',
+              'id',
+            ),
+            username: BuiltValueNullFieldError.checkNotNull(
+              username,
+              r'InviteOwnerResponseDto',
+              'username',
+            ),
+            avatar: avatar,
+          );
+    } catch (_) {
+      late String _$failedField;
+      try {
+        _$failedField = 'avatarDisplay';
+        _avatarDisplay?.build();
+      } catch (e) {
+        throw BuiltValueNestedFieldError(
+          r'InviteOwnerResponseDto',
+          _$failedField,
+          e.toString(),
         );
+      }
+      rethrow;
+    }
     replace(_$result);
     return _$result;
   }

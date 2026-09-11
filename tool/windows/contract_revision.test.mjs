@@ -56,6 +56,9 @@ test('固定部署祖先导出同一 SHA，拒绝远端 dev 以外提交且不�
       'rich-text-behavior-v1.schema.json',
       'rich-text-behavior-results-v1.schema.json',
       'media-display-v1-fixtures.json',
+      'fixtures/media-display/duplicate-frames.gif',
+      'fixtures/media-display/duplicate-frames.webp',
+      'fixtures/media-display/manifest.json',
     ]) {
       assert.deepEqual(
         fs.readFileSync(path.join(mobile, 'contracts', name)),
