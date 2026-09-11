@@ -554,7 +554,10 @@ class DirectConversationController
       if (!mounted) return false;
       final processing = error is MediaProcessingPending;
       final failure = processing
-          ? const ApiFailure(userMessage: '图片仍在处理中，点按继续查询，无需重新上传。')
+          ? const ApiFailure(
+              source: FailureSource.expected,
+              reason: FailureReason.timeout,
+            )
           : _asFailure(
               error is MediaProcessingLookupFailure ? error.cause : error,
               '消息发送失败，请重试。',

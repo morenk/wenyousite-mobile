@@ -73,7 +73,11 @@ class DirectMessagePendingMediaJobs {
               pending,
               onProgress: progressChanged,
             )
-          : throw const ApiFailure(userMessage: '暂时无法查询图片，请稍后重新打开。');
+          : throw const ApiFailure(
+              source: FailureSource.device,
+              reason: FailureReason.unknown,
+              recoveryAction: FailureRecoveryAction.reopen,
+            );
       job.operation = operation;
       return operation.result
           .then((image) {

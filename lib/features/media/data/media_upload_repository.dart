@@ -228,11 +228,15 @@ class ApiMediaUploadRepository
       if (media == null) {
         throw MediaProcessingLookupFailure(
           pending,
-          const ApiFailure(userMessage: '图片查询失败，请稍后继续查询。'),
+          const ApiFailure.invalidResponse(
+            diagnosticCode: 'media_query_missing_data',
+          ),
         );
       }
       if (media.id != mediaId) {
-        throw const ApiFailure(userMessage: '图片加载失败，请重新打开。');
+        throw const ApiFailure.invalidResponse(
+          diagnosticCode: 'media_query_identity_mismatch',
+        );
       }
       if (media.status == MediaResponseDtoStatusEnum.COMPLETED) {
         return _completedImage(media, purpose);
@@ -304,6 +308,7 @@ class ApiMediaUploadRepository
     if (!_matchesPurpose(media.purpose, expectedPurpose)) {
       throw const ApiFailure(userMessage: '图片用途与当前操作不一致，请重新选择。');
     }
+    if (media.display case final display?) _safeUrl(display.url);
     return UploadedEditorImage(
       display: mapMediaDisplay(media.display),
       mediaId: media.id,
@@ -341,7 +346,9 @@ class ApiMediaUploadRepository
   String _safeUrl(String value) {
     final uri = Uri.tryParse(value.trim());
     if (uri == null || !_isSafeMediaUri(uri)) {
-      throw const ApiFailure(userMessage: '图片处理完成，但公开地址不安全。');
+      throw const ApiFailure.invalidResponse(
+        diagnosticCode: 'media_url_unsafe',
+      );
     }
     return uri.toString();
   }
@@ -428,7 +435,13 @@ class RepositoryMediaUploadGateway
       result: repository is ResumableMediaUploadRepository
           ? (repository as ResumableMediaUploadRepository)
                 .resumeImageProcessing(upload, cancelToken: cancelToken)
-          : Future.error(const ApiFailure(userMessage: '暂时无法查询图片，请稍后重新打开。')),
+          : Future.error(
+              const ApiFailure(
+                source: FailureSource.device,
+                reason: FailureReason.unknown,
+                recoveryAction: FailureRecoveryAction.reopen,
+              ),
+            ),
       cancelToken: cancelToken,
     );
   }

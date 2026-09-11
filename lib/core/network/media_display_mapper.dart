@@ -27,7 +27,9 @@ MediaDisplay? mapMediaDisplay(MediaDisplayResponseDto? dto) {
     });
   } on FormatException {
     // 已声明却损坏的 display 不能被当成历史 null 后改下原 GIF。
-    throw const ApiFailure(userMessage: '图片加载失败，请重新加载。');
+    throw const ApiFailure.invalidResponse(
+      diagnosticCode: 'media_display_invalid',
+    );
   }
 }
 
@@ -38,7 +40,9 @@ Map<String, MediaDisplay> mapMarkdownMediaDisplays(
   final seen = <String>{};
   for (final value in values ?? const <MarkdownMediaDisplayResponseDto>[]) {
     if (!seen.add(value.sourceUrl)) {
-      throw const ApiFailure(userMessage: '图片加载失败，请重新加载。');
+      throw const ApiFailure.invalidResponse(
+        diagnosticCode: 'media_display_duplicate_source',
+      );
     }
     final display = mapMediaDisplay(value.display);
     if (display != null) result[value.sourceUrl] = display;

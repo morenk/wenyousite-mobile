@@ -566,6 +566,7 @@ class _DirectMessageBubbleState extends ConsumerState<DirectMessageBubble> {
     final sending =
         widget.message.deliveryState == DirectMessageDeliveryState.sending;
     final failed = widget.message.canRetryDelivery;
+    final failureTip = widget.failure?.userMessage ?? '发送失败，点按处理';
     final processing =
         widget.message.deliveryState ==
         DirectMessageDeliveryState.processingPending;
@@ -682,7 +683,7 @@ class _DirectMessageBubbleState extends ConsumerState<DirectMessageBubble> {
                       'direct-message-delivery-failed-${widget.message.id}',
                     ),
                     onPressed: openActions,
-                    tooltip: widget.failure?.userMessage ?? '发送失败，点按处理',
+                    tooltip: processing ? '图片处理中，点按继续查询' : failureTip,
                     visualDensity: VisualDensity.compact,
                     icon: WenyouIcon(
                       processing

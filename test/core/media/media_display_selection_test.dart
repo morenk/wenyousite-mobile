@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyou_api/wenyou_api.dart';
+import 'package:wenyousite_mobile/core/application/user_facing_failure.dart';
 import 'package:wenyousite_mobile/core/media/media_display.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/media_display_mapper.dart';
@@ -85,7 +86,15 @@ void main() {
       MediaDisplayResponseDto.serializer,
       raw,
     )!;
-    expect(() => mapMediaDisplay(dto), throwsA(isA<ApiFailure>()));
+    expect(() => mapMediaDisplay(dto), throwsA(_invalidDisplay));
+    final entry = standardSerializers.deserializeWith(
+      MarkdownMediaDisplayResponseDto.serializer,
+      {'sourceUrl': sample['sourceUrl'], 'display': sample['display']},
+    )!;
+    expect(
+      () => mapMarkdownMediaDisplays([entry, entry]),
+      throwsA(_invalidDisplay),
+    );
   });
   test('完整动画可在无 poster 时播放，动态列表仍只取静态资源', () {
     final sample = cases.firstWhere((item) => item['id'] == 'full-animation');
@@ -120,3 +129,12 @@ void main() {
     expect(uploaded.previewUrls, [display.url]);
   });
 }
+
+final _invalidDisplay = isA<ApiFailure>()
+    .having((e) => e.reason, 'reason', FailureReason.contractViolation)
+    .having((e) => e.legacyUserMessage, 'legacy copy', isNull)
+    .having(
+      (e) => UserFacingFailure.fromApi(e).message,
+      'presentation',
+      '当前内容暂时无法显示，请重新加载。',
+    );

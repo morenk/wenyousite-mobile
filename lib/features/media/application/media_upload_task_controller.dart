@@ -258,7 +258,11 @@ class MediaUploadTaskController
               pending,
               onProgress: onProgress,
             )
-          : throw const ApiFailure(userMessage: '暂时无法查询图片，请稍后重新打开。');
+          : throw const ApiFailure(
+              source: FailureSource.device,
+              reason: FailureReason.unknown,
+              recoveryAction: FailureRecoveryAction.reopen,
+            );
       if (!_isCurrent(runId)) {
         operation.cancel();
         return null;
@@ -311,7 +315,10 @@ class MediaUploadTaskController
         phase: MediaUploadTaskPhase.processingPending,
         pendingUpload: pending.upload,
         failure: const MediaUploadFailure(
-          failure: ApiFailure(userMessage: '图片仍在处理中，可稍后继续查询。'),
+          failure: ApiFailure(
+            source: FailureSource.expected,
+            reason: FailureReason.timeout,
+          ),
           presentation: UserFacingFailure(
             title: '图片仍在处理中',
             message: '已保留上传结果，继续查询无需重新上传。',
