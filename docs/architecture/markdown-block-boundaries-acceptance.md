@@ -2,6 +2,8 @@
 
 ## 当前状态与范围
 
+2026-09-11 后续授权：用户已明确授权本轮合并与部署，用于先在公网 Web 验证。Backend PR #17 合并为 `5b766305e21d2a39bd53bb0c3aacc05fad81152f` 后，Mobile 通过既有同步脚本更新来源元数据，契约内容不变。公网与 Mobile 合并结果见“合并来源同步与公网复核”。下述冻结候选及历史门禁记录保留原始 revision 和结果，不将合并授权视为负责人验收通过。
+
 2026-09-11：候选实现／本地验证与 Debug APK 已交付／待负责人验收。任务分支 `codex/20260911-markdown-block-boundaries` 从 fetch 后的 `origin/dev`（`dbba204dd5d43252a400ff50a4db7348415d62f3`）建立，独立 Windows Worktree 为 `C:\Users\quhui\.codex\worktrees\202d\wenyousite-mobile`。已同步 Backend revision 2 并补充消费者实现与回归；原 revision 1 的 8 项空白行预期已在共享版本中修订。完整门禁仅公网部署 revision 检查失败，详见最终验证；不能视为原问题修复完成。
 
 目标是统一已有 Markdown v5 对齐块边界并保护阅读、编辑、保存重开、草稿和剪贴板链路。不扩大格式或 URL 白名单，不迁移旧内容，不修改 HTTP 字段、字体、Foundation 视觉规范、摘要紧凑规则或段内粘贴继承目标段落对齐的行为。
@@ -108,7 +110,7 @@ Backend `169b336` 独立确认：仅转义链接括号但保留裸 `ftp://exampl
 
 ## 后续验收条件
 
-公网检查在 `tool/verify_production_api.dart` 中要求 `actualRevision == expectedRevision`，比较完整 SHA 精确相等，不比较祖先关系或契约内容哈希。因此仅部署 Backend 候选 `169b336` 或最终合并提交，不会使当前来源固定为 `a91cbb8` 的检查自动通过。取得明确合并与部署授权后，须以实际已发布 Backend 的完整 SHA，通过既有 `tool/sync_backend_contract.ps1` 更新消费者契约来源元数据，核验共享契约字节及 Markdown v5 未变，再复跑公网检查与受影响门禁；若契约实际变化，按独立契约同步切片处理。当前继续固定已提交的 `a91cbb8` 共享语料，不修改校验器、不提前同步未发布来源或部署。
+公网检查在 `tool/verify_production_api.dart` 中要求 `actualRevision == expectedRevision`，比较完整 SHA 精确相等，不比较祖先关系或契约内容哈希。因此仅部署 Backend 候选 `169b336` 或最终合并提交，不会使原来源固定为 `a91cbb8` 的检查自动通过。取得明确合并与部署授权后，须以实际已发布 Backend 的完整 SHA，通过既有 `tool/sync_backend_contract.ps1` 更新消费者契约来源元数据，核验共享契约字节及 Markdown v5 未变，再复跑公网检查与受影响门禁；若契约实际变化，按独立契约同步切片处理。本轮授权后的来源同步另记下节；原 `a91cbb8` 语料及独立验证产物保持溯源，不改写历史证据或校验器。
 
 Backend revision 2 已由独立 chore `3a3d94b` 同步；自动验证已按上节记录。真机必须使用本候选 Debug APK，应用包名为 `site.wenyou.app.debug`，不能凭相同构建号认为其他包名已更新。若后续授权 ADB 安装，须核对实际复验包名、安装后更新时间及设备内 APK SHA-256。
 
@@ -121,3 +123,11 @@ Backend revision 2 已由独立 chore `3a3d94b` 同步；自动验证已按上�
 5. 在 Web 与 Android 间进行双向打开／修改／重开，分别检查可见行、空段、样式、逐块对齐和手工空格；由负责人明确反馈通过或失败。
 
 当前尚未安装或执行上述真机验收。候选交付不关闭原问题，负责人未回复不算通过。
+
+## 合并来源同步与公网复核
+
+按用户本轮明确授权，在原 Windows 任务执行 `pwsh -NoProfile -File tool/sync_backend_contract.ps1 -BackendPath D:/code/wenyousite/references/wenyousite-backend -Revision 5b766305e21d2a39bd53bb0c3aacc05fad81152f`，从已合并 Backend 重新导出。`contracts` 唯一差异为 `backend-contract.properties` 的来源 SHA；OpenAPI、所有共享 fixture、Markdown v5 图片对齐与空白行契约、契约 CHANGELOG 和移动端指南均无差异。块边界 fixture SHA-256 仍为 `822509411fbf3379847a04ec64a4a32ddb1bb8fb96aecbf38b395b049134fda9`。
+
+本次只更新来源元数据和必要文档；225 份消费者审计语料保留生成时的 `a91cbb8` 来源，运行时代码、测试、依赖声明与 Android 配置不变。候选 APK 继续对应 `05996c08` 及其已记录哈希，不宣称针对新文档提交重新构建；本轮不安装或正式发布 Android 包。负责人尚未完成公网／真机验收，保留任务分支、Worktree、APK 与日志。
+
+来源同步后 `npm ci`、OpenAPI 校验与 `npm run api:check` 通过，生成客户端及依赖锁文件零差异；21 模块文档检查通过，`contract_revision.test.mjs` 的固定来源导出／拒绝非 dev 祖先回归通过。记录为 `build/block-boundary-deployed-source-check.log`、`build/block-boundary-deployed-docs.log`、`build/block-boundary-deployed-tool-test.log`。公网部署确认及与并发合入 PR #25 的组合复核继续记录，不以历史 APK 代表后续组合源码。
