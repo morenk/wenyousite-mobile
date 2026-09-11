@@ -23,11 +23,14 @@ class MarkdownCanonicalLiteralDecoder {
     required String literalTextAttribute,
     required String internalReferenceEmbed,
     required String sourceBreakAttribute,
+    bool inlineOnly = false,
     required bool Function(Delta candidate) preservesSource,
   }) {
     final masked = MarkdownContent.maskCanonicalLiteralLine(source);
     if (masked == null) return null;
-    final richLine = MarkdownRichLineDecoder.decode(masked.source);
+    final richLine = inlineOnly
+        ? MarkdownRichLineDecoder.decodeInline(masked.source)
+        : MarkdownRichLineDecoder.decode(masked.source);
     if (richLine == null) return null;
 
     final decoded = Delta();

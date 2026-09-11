@@ -29,6 +29,7 @@ final class MarkdownDeltaRichLines {
   static MarkdownRichLine? decode(
     String source, {
     bool protocolTextOnly = false,
+    bool inlineOnly = false,
     required String Function(Delta) encode,
   }) {
     if (!protocolTextOnly &&
@@ -38,7 +39,10 @@ final class MarkdownDeltaRichLines {
             source.contains('!['))) {
       return null;
     }
-    final richLine = MarkdownRichLineDecoder.decode(source);
+    final decode = inlineOnly
+        ? MarkdownRichLineDecoder.decodeInline
+        : MarkdownRichLineDecoder.decode;
+    final richLine = decode(source);
     if (richLine == null) return null;
 
     final candidate = Delta();
@@ -55,7 +59,7 @@ final class MarkdownDeltaRichLines {
           RegExp(r'(^|[\s>])<?https?://').hasMatch(source)) {
         return null;
       }
-      final reparsed = MarkdownRichLineDecoder.decode(encoded);
+      final reparsed = decode(encoded);
       if (reparsed == null || !richLine.semanticallyEquivalentTo(reparsed)) {
         return null;
       }

@@ -7,6 +7,16 @@ abstract final class MarkdownEditableBlockSyntax {
   static final _list = RegExp(r'^( {0,6})(-|1\.)(?:[\t ](.*))?$', dotAll: true);
   static final _onlyAsciiSpace = RegExp(r'^[\t ]*$');
 
+  /// 阅读复制允许去掉合法的 ATX 结束标记；普通编辑保留既有源码语义。
+  static ({int level, String content})? readerHeading(String source) {
+    final match = RegExp(
+      r'^(#{2,3})[\t ]+(.+?)[\t ]+#+[\t ]*$',
+    ).firstMatch(source);
+    return match == null
+        ? null
+        : (level: match.group(1)!.length, content: match.group(2)!);
+  }
+
   static ({int level, String content})? heading(String source) {
     final match = _heading.firstMatch(source);
     if (match == null) return null;

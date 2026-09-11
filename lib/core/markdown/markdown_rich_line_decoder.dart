@@ -71,10 +71,13 @@ class MarkdownRichLineDecoder {
   /// Maps CommonMark list markers accepted by the reader to the editor's
   /// canonical markers without changing ordinary paragraph text.
   static String canonicalizeReaderBlockPrefix(String source) {
-    final heading = RegExp(
-      r'^(#{2,3})[\t ]+(.+?)[\t ]+#+[\t ]*$',
-    ).firstMatch(source);
-    if (heading != null) return '${heading.group(1)} ${heading.group(2)}';
+    final heading = MarkdownEditableBlockSyntax.readerHeading(source);
+    if (heading != null) {
+      return MarkdownEditableBlockSyntax.headingLine(
+        heading.level,
+        heading.content,
+      );
+    }
     final quote = MarkdownContent.quoteLineContent(source);
     if (quote != null) return quote.isEmpty ? '>' : '> $quote';
     final bullet = RegExp(r'^( {0,6})[-+*][\t ]+(.+)$').firstMatch(source);
@@ -140,7 +143,13 @@ class MarkdownRichLineDecoder {
   /// Keeps reader semantics when valid Markdown nesting cannot be represented
   /// losslessly by the editor's mutually exclusive inline attributes.
   static MarkdownRichLine? decodeEditable(String source) {
-    final decoded = decode(source);
+    return _editable(decode(source));
+  }
+
+  static MarkdownRichLine? decodeEditableInline(String source) =>
+      _editable(decodeInline(source));
+
+  static MarkdownRichLine? _editable(MarkdownRichLine? decoded) {
     if (decoded == null) return null;
     final hasFormatting =
         decoded.lineAttributes.isNotEmpty ||
