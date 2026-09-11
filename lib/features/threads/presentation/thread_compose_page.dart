@@ -58,6 +58,7 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
     _editorSession = RichEditorSession(
       initialMarkdown: '',
       clipboardScope: ref.read(sessionScopeProvider),
+      blockAlignment: ref.read(appCapabilitiesProvider).markdownAlignment,
       imageAlignment: ref.read(appCapabilitiesProvider).markdownImageAlignment,
       onMarkdownChanged: (markdown) {
         ref.read(threadComposeControllerProvider.notifier).updateBody(markdown);
@@ -625,6 +626,10 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
 
   Future<void> _flushSnapshot() async {
     if (!await _editorSession.flush()) return;
+    await _saveCurrentSnapshot();
+  }
+
+  Future<void> _saveCurrentSnapshot() async {
     if (!mounted) return;
     final state = ref.read(threadComposeControllerProvider);
     if (state.phase == ThreadComposePhase.ready) {
@@ -640,7 +645,13 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
     ref
         .read(mediaUploadTaskControllerProvider(_uploadTaskId).notifier)
         .cancel();
-    await _flushSnapshot();
+    // 编码失败保留当前编辑；旧快照的成功状态不能证明本次内容已保存。
+    if (!_editorSession.canCloseProtectedSource &&
+        !await _editorSession.flush()) {
+      _preparingPop = false;
+      return;
+    }
+    await _saveCurrentSnapshot();
     if (!mounted) return;
     final latest = ref.read(threadComposeControllerProvider);
     if (latest.phase == ThreadComposePhase.ready &&

@@ -7,6 +7,7 @@ import 'package:wenyousite_mobile/core/markdown/markdown_delta_line_metadata.dar
 import 'package:wenyousite_mobile/core/markdown/markdown_paragraph_boundaries.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_clipboard_paste.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_document_alignment.dart';
+import 'package:wenyousite_mobile/features/editor/presentation/editor_selection_history.dart';
 
 /// Marks literal source at the exact offset before async changes can race.
 class LiteralTextQuillController extends QuillController {
@@ -15,6 +16,41 @@ class LiteralTextQuillController extends QuillController {
     required super.selection,
     required super.config,
   });
+
+  final _selectionHistory = EditorSelectionHistory();
+
+  /// 复合命令的正文变化与最终选区一起附着于同一原生历史条目。
+  void runEditCommand(void Function() command) =>
+      _selectionHistory.record(this, command);
+
+  @override
+  void undo() => _selectionHistory.restore(this, super.undo, undo: true);
+
+  @override
+  void redo() => _selectionHistory.restore(this, super.redo, undo: false);
+
+  @override
+  void formatText(
+    int index,
+    int len,
+    Attribute? attribute, {
+    bool shouldNotifyListeners = true,
+  }) => _selectionHistory.record(
+    this,
+    () => super.formatText(
+      index,
+      len,
+      attribute,
+      shouldNotifyListeners: shouldNotifyListeners,
+    ),
+  );
+
+  @override
+  void compose(Delta delta, TextSelection textSelection, ChangeSource source) =>
+      _selectionHistory.record(
+        this,
+        () => super.compose(delta, textSelection, source),
+      );
 
   @override
   Style getSelectionStyle() {
@@ -52,6 +88,25 @@ class LiteralTextQuillController extends QuillController {
     TextSelection? textSelection, {
     bool ignoreFocus = false,
     bool shouldNotifyListeners = true,
+  }) => _selectionHistory.record(
+    this,
+    () => _replaceLiteralText(
+      index,
+      len,
+      data,
+      textSelection,
+      ignoreFocus: ignoreFocus,
+      shouldNotifyListeners: shouldNotifyListeners,
+    ),
+  );
+
+  void _replaceLiteralText(
+    int index,
+    int len,
+    Object? data,
+    TextSelection? textSelection, {
+    required bool ignoreFocus,
+    required bool shouldNotifyListeners,
   }) {
     final before = document.toDelta();
     final preservesLink =

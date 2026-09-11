@@ -428,7 +428,8 @@ class MarkdownContent {
     if (_emptyParagraph.hasMatch(line) || isQuotedEmptyParagraphLine(line)) {
       return false;
     }
-    for (final match in _htmlToken.allMatches(line)) {
+    // 已闭合行内代码中的尖括号是可见文字，不是待执行的 HTML。
+    for (final match in _htmlToken.allMatches(_maskInlineCode(line))) {
       if (_isEscaped(line, match.start)) continue;
       final token = match.group(0)!;
       if (RegExp(
@@ -469,8 +470,22 @@ class MarkdownContent {
       while (index + length < line.length && line[index + length] == '`') {
         length += 1;
       }
-      final delimiter = '`' * length;
-      final closing = line.indexOf(delimiter, index + length);
+      var closing = -1;
+      var search = index + length;
+      while (search < line.length) {
+        final next = line.indexOf('`', search);
+        if (next < 0) break;
+        var end = next + 1;
+        while (end < line.length && line[end] == '`') {
+          end++;
+        }
+        // CommonMark 只用长度完全相同的反引号串闭合代码区。
+        if (end - next == length) {
+          closing = next;
+          break;
+        }
+        search = end;
+      }
       if (closing < 0) {
         index += length;
         continue;
