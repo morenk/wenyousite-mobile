@@ -4,7 +4,6 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_capabilities.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
@@ -18,7 +17,6 @@ import 'package:wenyousite_mobile/features/stickers/domain/sticker_models.dart';
 import 'package:wenyousite_mobile/features/stickers/presentation/sticker_collection_page.dart';
 
 import '../../support/fake_image_crop_processor.dart';
-import '../../support/foundation_icon_finder.dart';
 
 void main() {
   testWidgets('应用内 capability 覆盖作用域中打开表情包不会触发 Provider 断言', (tester) async {
@@ -89,7 +87,7 @@ void main() {
     expect(gateway.input?.purpose, MediaUploadPurpose.stickerSource);
     expect(repository.importedSources.single, isA<StickerMediaSource>());
     expect(find.text('1/200 个收藏'), findsOneWidget);
-    expect(find.text('已添加到表情收藏。'), findsOneWidget);
+    expect(find.text('已添加到表情收藏。'), findsNothing);
   });
 
   testWidgets('上传失败后重试同一文件，完成后才导入收藏', (tester) async {
@@ -124,7 +122,7 @@ void main() {
     expect(identical(gateway.inputs.first, gateway.inputs.last), isTrue);
     expect(repository.importedSources, hasLength(1));
     expect(find.text('1/200 个收藏'), findsOneWidget);
-    expect(find.text('已添加到表情收藏。'), findsOneWidget);
+    expect(find.text('已添加到表情收藏。'), findsNothing);
   });
 
   testWidgets('上传中取消会立即恢复管理页且不导入媒体', (tester) async {
@@ -152,7 +150,7 @@ void main() {
     expect(find.text('正在上传图片 50%'), findsOneWidget);
     expect(
       tester
-          .widget<FilledButton>(find.byKey(const Key('stickers-add-gallery')))
+          .widget<OutlinedButton>(find.byKey(const Key('stickers-add-gallery')))
           .onPressed,
       isNull,
     );
@@ -167,14 +165,14 @@ void main() {
     expect(repository.importedSources, isEmpty);
     expect(
       tester
-          .widget<FilledButton>(find.byKey(const Key('stickers-add-gallery')))
+          .widget<OutlinedButton>(find.byKey(const Key('stickers-add-gallery')))
           .onPressed,
       isNotNull,
     );
   });
 
   for (final width in [360.0, 400.0, 600.0]) {
-    testWidgets('$width dp 收藏、排序与移除列表无布局溢出', (tester) async {
+    testWidgets('$width dp 表情网格无布局溢出', (tester) async {
       tester.view.devicePixelRatio = 1;
       tester.view.physicalSize = Size(width, 760);
       addTearDown(tester.view.resetDevicePixelRatio);
@@ -197,7 +195,15 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('2/200 个收藏'), findsOneWidget);
-      expect(findFoundationIcon(WenyouIconIds.actionReorder), findsNWidgets(2));
+      expect(find.byType(ReorderableListView), findsNothing);
+      expect(
+        find.byKey(const ValueKey('sticker-drag-favorite-1')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('sticker-remove-favorite-1')),
+        findsNothing,
+      );
       expect(tester.takeException(), isNull);
     });
   }

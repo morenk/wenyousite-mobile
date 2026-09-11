@@ -28,7 +28,7 @@ void main() {
     final locatedOffset = harnessKey.currentState!.offset;
     expect(locatedOffset, greaterThan(1000));
 
-    await tester.drag(find.byType(ListView), const Offset(0, 400));
+    await tester.drag(find.byType(CustomScrollView), const Offset(0, 400));
     await tester.pumpAndSettle();
     final userOffset = harnessKey.currentState!.offset;
     expect(userOffset, lessThan(locatedOffset));
@@ -54,6 +54,7 @@ class _RevealHarness extends StatefulWidget {
 class _RevealHarnessState extends State<_RevealHarness> {
   final _controller = ScrollController();
   final _targetKey = GlobalKey();
+  final _itemListKey = GlobalKey();
   final _reveal = DiscussionTargetRevealCoordinator();
   final _items = [
     for (var index = 0; index < 45; index += 1) 'item-$index',
@@ -91,6 +92,7 @@ class _RevealHarnessState extends State<_RevealHarness> {
       itemCount: _items.length,
       ready: true,
       targetKey: _targetKey,
+      itemListKey: _itemListKey,
       scrollController: _controller,
       isMounted: () => mounted,
       requestRebuild: () => setState(() {}),
@@ -103,32 +105,37 @@ class _RevealHarnessState extends State<_RevealHarness> {
             isMounted: () => mounted,
             requestRebuild: () => setState(() {}),
           ),
-          child: ListView.builder(
+          child: CustomScrollView(
             controller: _controller,
-            itemExtent: 80,
-            itemCount: _items.length,
-            itemBuilder: (context, index) {
-              final id = _items[index];
-              final isTarget = id == 'target';
-              return DiscussionKeepAlive(
-                key: ValueKey('reveal-item-$id'),
-                child: SizedBox(
-                  key: isTarget ? _targetKey : null,
-                  child: Text(
-                    '第 $index 项',
-                    key: isTarget ? const Key('reveal-target') : null,
-                  ),
-                ),
-              );
-            },
-            findChildIndexCallback: (key) {
-              final value = key is ValueKey<String> ? key.value : null;
-              if (value == null || !value.startsWith('reveal-item-')) {
-                return null;
-              }
-              final index = _items.indexOf(value.substring(12));
-              return index < 0 ? null : index;
-            },
+            slivers: [
+              SliverFixedExtentList.builder(
+                key: _itemListKey,
+                itemExtent: 80,
+                itemCount: _items.length,
+                itemBuilder: (context, index) {
+                  final id = _items[index];
+                  final isTarget = id == 'target';
+                  return DiscussionKeepAlive(
+                    key: ValueKey('reveal-item-$id'),
+                    child: SizedBox(
+                      key: isTarget ? _targetKey : null,
+                      child: Text(
+                        '第 $index 项',
+                        key: isTarget ? const Key('reveal-target') : null,
+                      ),
+                    ),
+                  );
+                },
+                findChildIndexCallback: (key) {
+                  final value = key is ValueKey<String> ? key.value : null;
+                  if (value == null || !value.startsWith('reveal-item-')) {
+                    return null;
+                  }
+                  final index = _items.indexOf(value.substring(12));
+                  return index < 0 ? null : index;
+                },
+              ),
+            ],
           ),
         ),
       ),

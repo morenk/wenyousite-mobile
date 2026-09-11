@@ -200,6 +200,8 @@ class _$BookmarkThreadResponseDto extends BookmarkThreadResponseDto {
   final String preview;
   @override
   final BuiltList<String> coverImages;
+  @override
+  final ThreadCoverMediaResponseDto? coverMedia;
 
   factory _$BookmarkThreadResponseDto([
     void Function(BookmarkThreadResponseDtoBuilder)? updates,
@@ -224,6 +226,7 @@ class _$BookmarkThreadResponseDto extends BookmarkThreadResponseDto {
     required this.count,
     required this.preview,
     required this.coverImages,
+    this.coverMedia,
   }) : super._();
   @override
   BookmarkThreadResponseDto rebuild(
@@ -255,7 +258,8 @@ class _$BookmarkThreadResponseDto extends BookmarkThreadResponseDto {
         topicTags == other.topicTags &&
         count == other.count &&
         preview == other.preview &&
-        coverImages == other.coverImages;
+        coverImages == other.coverImages &&
+        coverMedia == other.coverMedia;
   }
 
   @override
@@ -279,6 +283,7 @@ class _$BookmarkThreadResponseDto extends BookmarkThreadResponseDto {
     _$hash = $jc(_$hash, count.hashCode);
     _$hash = $jc(_$hash, preview.hashCode);
     _$hash = $jc(_$hash, coverImages.hashCode);
+    _$hash = $jc(_$hash, coverMedia.hashCode);
     _$hash = $jf(_$hash);
     return _$hash;
   }
@@ -303,7 +308,8 @@ class _$BookmarkThreadResponseDto extends BookmarkThreadResponseDto {
           ..add('topicTags', topicTags)
           ..add('count', count)
           ..add('preview', preview)
-          ..add('coverImages', coverImages))
+          ..add('coverImages', coverImages)
+          ..add('coverMedia', coverMedia))
         .toString();
   }
 }
@@ -399,6 +405,12 @@ class BookmarkThreadResponseDtoBuilder
   set coverImages(ListBuilder<String>? coverImages) =>
       _$this._coverImages = coverImages;
 
+  ThreadCoverMediaResponseDtoBuilder? _coverMedia;
+  ThreadCoverMediaResponseDtoBuilder get coverMedia =>
+      _$this._coverMedia ??= ThreadCoverMediaResponseDtoBuilder();
+  set coverMedia(ThreadCoverMediaResponseDtoBuilder? coverMedia) =>
+      _$this._coverMedia = coverMedia;
+
   BookmarkThreadResponseDtoBuilder() {
     BookmarkThreadResponseDto._defaults(this);
   }
@@ -424,6 +436,7 @@ class BookmarkThreadResponseDtoBuilder
       _count = $v.count.toBuilder();
       _preview = $v.preview;
       _coverImages = $v.coverImages.toBuilder();
+      _coverMedia = $v.coverMedia?.toBuilder();
       _$v = null;
     }
     return this;
@@ -506,6 +519,7 @@ class BookmarkThreadResponseDtoBuilder
               'preview',
             ),
             coverImages: coverImages.build(),
+            coverMedia: _coverMedia?.build(),
           );
     } catch (_) {
       late String _$failedField;
@@ -524,6 +538,8 @@ class BookmarkThreadResponseDtoBuilder
 
         _$failedField = 'coverImages';
         coverImages.build();
+        _$failedField = 'coverMedia';
+        _coverMedia?.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
           r'BookmarkThreadResponseDto',

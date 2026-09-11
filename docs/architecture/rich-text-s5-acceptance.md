@@ -59,7 +59,7 @@ VPS 已提交 Web PR #14，准备独立 S5 预检、真实 UI/API 用例与运�
 
 阶段计划 PR #16 已合入 `dev`，合并提交 `9e28bfaea8a32b14fb04a623cd1353ab5108949e`；核对任务提交完整进入目标分支、目录空闲干净及两份临时提交/PR 文案已在 Git/GitHub 留存后，已清理其本地/远端分支及 `mobile-rich-text-stability-plan` Worktree。
 
-已安装旧候选 APK 另存于 Windows `D:/code/wenyousite/artifacts/rich-text-stability/20260910-candidate/app-debug.apk`，SHA-256 与第 2 节相同，防止后续整合构建覆盖唯一复验制品。实现和 S5 验收 Worktree 暂保留，待负责人原场景复验结束后再清理；主工作目录有其他活跃任务，本任务不切换或同步其 checkout。
+已安装旧候选 APK 另存于 Windows `D:/code/wenyousite/artifacts/rich-text-stability/20260910-candidate/app-debug.apk`，SHA-256 与第 2 节相同，防止后续整合构建覆盖唯一复验制品。实现和 S5 验收 Worktree 暂保留，待负责人原场景复验结束后再清理；开始时主工作目录有其他活跃任务，整合在独立 Worktree 完成；只有结束时重新确认主目录空闲、干净且位于 dev，才允许 fast-forward 同步，不能覆盖其他任务现场。
 
 Backend #12 已合入 dev，合并提交 2a2847a829b24227b8b6e0930ef63af9b6436546；后端完整检查 2165 项 Jest 与 17 项离线测试通过，本地/远端任务分支及对应临时 Worktree 已清理。Web #13 已合入 dev，合并提交 6859f00c305b7c63a62fc2d3f709d811c55f2dc0；完整检查 3078 项测试及定向浏览器回归通过。Web S5 PR #14 已合入 dev，合并提交 c893ae29363e0085e22295a5997e9f346ff6021b；完整检查与 2 项预检测试通过。运行源码固定 6859f00，工具提交单独记录为 5773c48；实际预检返回 blocked-credentials，未登录或写入。受专用账号与验收现场约束的两个 Web 分支、Worktree 及 c3 旧预览保留。上述合并均未部署或重启服务。
 

@@ -13,12 +13,71 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/home/data/home_repository.dart';
 import 'package:wenyousite_mobile/features/home/domain/home_models.dart';
 import 'package:wenyousite_mobile/features/home/presentation/home_page.dart';
+import 'package:wenyousite_mobile/features/thread_feed/application/cover_animation_source_ports.dart';
+import 'package:wenyousite_mobile/features/thread_feed/presentation/cover_playback_scope.dart';
 
+import '../../support/cover_playback_test_support.dart';
 import '../../support/foundation_icon_finder.dart';
 import '../../support/foundation_test_fonts.dart';
 
 void main() {
   setUpAll(loadFoundationTestFonts);
+  testWidgets('真实首页多个可见动画立即请求且轻滑不重启', (tester) async {
+    tester.view.physicalSize = const Size(400, 1100);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await cachePlaybackTestPoster(tester);
+    final source = RecordingCoverSource();
+    final repository = _FakeHomeRepository(
+      items: [
+        for (var i = 0; i < 5; i++)
+          ThreadFeedCardModel(
+            id: 'animation-$i',
+            createdAt: DateTime.utc(2026, 9, 11),
+            title: '动画 $i',
+            status: ThreadFeedStatus.recruiting,
+            ownerName: '作者',
+            ownerLevel: 1,
+            memberCount: 1,
+            postCount: 1,
+            coverMedia: ThreadFeedCoverMedia(
+              url: 'https://cdn.example/home-$i.gif',
+              animated: true,
+              posterUrl: playbackTestPoster,
+            ),
+          ),
+      ],
+    );
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          homeRepositoryProvider.overrideWithValue(repository),
+          coverAnimationSourceProvider.overrideWithValue(source),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          builder: (_, child) => CoverPlaybackScope(child: child!),
+          home: const HomePage(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(source.urls.length, greaterThanOrEqualTo(2));
+    final active = source.tokens.where((token) => !token.isCancelled).toList();
+    final firstCalls = source.urls
+        .where((url) => url.endsWith('home-0.gif'))
+        .length;
+    await tester.drag(find.byType(Scrollable).first, const Offset(0, -25));
+    await tester.pumpAndSettle();
+    expect(active.every((token) => !token.isCancelled), isTrue);
+    expect(
+      source.urls.where((url) => url.endsWith('home-0.gif')).length,
+      firstCalls,
+    );
+    await tester.pumpWidget(const SizedBox());
+    expect(source.tokens.every((token) => token.isCancelled), isTrue);
+  });
 
   testWidgets('首页展示独立主题卡片并可切换分类', (tester) async {
     final repository = _FakeHomeRepository();
@@ -595,6 +654,11 @@ final _threadWithCover = ThreadFeedCardModel(
     'https://example.com/cover.jpg',
     'https://example.com/ignored-second-cover.jpg',
   ],
+  coverMedia: const ThreadFeedCoverMedia(
+    url: 'https://example.com/cover.jpg',
+    animated: false,
+    posterUrl: 'https://example.com/cover.jpg',
+  ),
   memberCount: 5,
   playerCount: 2,
   postCount: 12,

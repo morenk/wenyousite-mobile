@@ -11,6 +11,43 @@ import 'package:wenyousite_mobile/features/moments/presentation/moment_detail_co
 import 'package:wenyousite_mobile/features/moments/presentation/moment_detail_page.dart';
 
 void main() {
+  for (final isReply in [false, true]) {
+    testWidgets('动态${isReply ? '楼中楼' : '主评论'}长内容定位保留作者开头', (tester) async {
+      final content = List.filled(80, '较长的评论正文，开头不能滚出阅读区。').join('\n');
+      final reply = _comment(
+        id: 'long-reply',
+        parentId: 'long-root',
+        content: content,
+        createdAt: DateTime.utc(2026, 8, 1),
+      );
+      final root = _root(
+        id: 'long-root',
+        content: isReply ? '主评论上下文' : content,
+        createdAt: DateTime.utc(2026, 8, 1),
+        replyCount: isReply ? 1 : 0,
+        replies: isReply ? [reply] : [],
+      );
+      final targetId = isReply ? reply.id : root.id;
+      await tester.pumpWidget(
+        _app(
+          _TargetRepository(
+            context: MomentCommentContext(
+              root: root,
+              target: isReply ? reply : root,
+            ),
+          ),
+          targetCommentId: targetId,
+        ),
+      );
+      await tester.pumpAndSettle();
+      final target = tester.getRect(
+        find.byKey(ValueKey('target-frame-$targetId')),
+      );
+      final viewport = tester.getRect(find.byType(CustomScrollView));
+      expect(target.height, greaterThan(viewport.height));
+      expect(target.top, closeTo(viewport.top, 1));
+    });
+  }
   for (final cancel in [true, false]) {
     testWidgets('定位评论删除${cancel ? '取消保留原文' : '成功结束定位且不报错'}', (tester) async {
       final root = _root(

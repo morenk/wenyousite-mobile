@@ -3,18 +3,20 @@ import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_line_metadata.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_dice_contract.dart';
+import 'package:wenyousite_mobile/features/editor/presentation/reader_markdown_list_text.dart';
 
 /// Decodes reader Markdown while keeping protocol atoms independent from the
 /// surrounding inline styles that Quill cannot apply to embeds.
 Delta decodeReaderMarkdownClipboard(String markdown) {
   final masked = _maskReaderAtoms(markdown);
   final decoded = MarkdownDeltaCodec.decodeReaderClipboard(masked.markdown);
+  final readable = _projectUnsupportedLists(decoded.delta);
   if (masked.atoms.isEmpty) {
-    return _normalizeReaderBlockSpacing(decoded.delta);
+    return _normalizeReaderBlockSpacing(readable);
   }
 
   final output = Delta();
-  for (final operation in decoded.delta.operations) {
+  for (final operation in readable.operations) {
     final data = operation.data;
     if (data is! String || !masked.containsPlaceholder(data)) {
       output.insert(data, operation.attributes);
@@ -35,6 +37,32 @@ Delta decodeReaderMarkdownClipboard(String markdown) {
     _insertStyledText(output, data.substring(start), operation.attributes);
   }
   return _normalizeReaderBlockSpacing(output);
+}
+
+Delta _projectUnsupportedLists(Delta source) {
+  final output = Delta();
+  for (final operation in source.operations) {
+    final data = operation.data;
+    final payload = data is Map
+        ? data[MarkdownDeltaCodec.compatibilityEmbed]
+        : null;
+    if (payload is! Map ||
+        payload['reason'] != MarkdownCodecIssueKind.unsupportedList.name ||
+        payload['raw'] is! String) {
+      output.insert(data, operation.attributes);
+      continue;
+    }
+    final lines = readerMarkdownListText(payload['raw'] as String).split('\n');
+    for (var i = 0; i < lines.length; i++) {
+      if (i > 0) output.insert('\n');
+      if (lines[i].isNotEmpty) {
+        output.insert(lines[i], {
+          MarkdownDeltaCodec.literalTextAttribute: true,
+        });
+      }
+    }
+  }
+  return output;
 }
 
 /// Removes Markdown-only spacing that is not an empty paragraph in the reader.

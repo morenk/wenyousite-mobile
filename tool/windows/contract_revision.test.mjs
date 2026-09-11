@@ -56,6 +56,10 @@ test('固定部署祖先导出同一 SHA，拒绝远端 dev 以外提交且不�
         `共享行为契约必须逐字同步：${name}`,
       );
     }
+    assert.deepEqual(
+      fs.readFileSync(path.join(mobile, 'contracts/markdown-editor-list-v1-fixtures.json')),
+      fs.readFileSync(path.join(backend, 'contracts/markdown-editor-list-v1-fixtures.json')),
+    );
     git('checkout', '-b', 'unpublished');
     fs.writeFileSync(path.join(backend, 'docs/private-branch.md'), 'unpublished');
     git('add', '.');

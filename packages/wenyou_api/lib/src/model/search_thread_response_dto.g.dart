@@ -200,6 +200,8 @@ class _$SearchThreadResponseDto extends SearchThreadResponseDto {
   @override
   final BuiltList<String> coverImages;
   @override
+  final ThreadCoverMediaResponseDto? coverMedia;
+  @override
   final num? relevance;
 
   factory _$SearchThreadResponseDto([
@@ -225,6 +227,7 @@ class _$SearchThreadResponseDto extends SearchThreadResponseDto {
     required this.count,
     required this.preview,
     required this.coverImages,
+    this.coverMedia,
     this.relevance,
   }) : super._();
   @override
@@ -258,6 +261,7 @@ class _$SearchThreadResponseDto extends SearchThreadResponseDto {
         count == other.count &&
         preview == other.preview &&
         coverImages == other.coverImages &&
+        coverMedia == other.coverMedia &&
         relevance == other.relevance;
   }
 
@@ -282,6 +286,7 @@ class _$SearchThreadResponseDto extends SearchThreadResponseDto {
     _$hash = $jc(_$hash, count.hashCode);
     _$hash = $jc(_$hash, preview.hashCode);
     _$hash = $jc(_$hash, coverImages.hashCode);
+    _$hash = $jc(_$hash, coverMedia.hashCode);
     _$hash = $jc(_$hash, relevance.hashCode);
     _$hash = $jf(_$hash);
     return _$hash;
@@ -308,6 +313,7 @@ class _$SearchThreadResponseDto extends SearchThreadResponseDto {
           ..add('count', count)
           ..add('preview', preview)
           ..add('coverImages', coverImages)
+          ..add('coverMedia', coverMedia)
           ..add('relevance', relevance))
         .toString();
   }
@@ -404,6 +410,12 @@ class SearchThreadResponseDtoBuilder
   set coverImages(ListBuilder<String>? coverImages) =>
       _$this._coverImages = coverImages;
 
+  ThreadCoverMediaResponseDtoBuilder? _coverMedia;
+  ThreadCoverMediaResponseDtoBuilder get coverMedia =>
+      _$this._coverMedia ??= ThreadCoverMediaResponseDtoBuilder();
+  set coverMedia(ThreadCoverMediaResponseDtoBuilder? coverMedia) =>
+      _$this._coverMedia = coverMedia;
+
   num? _relevance;
   num? get relevance => _$this._relevance;
   set relevance(num? relevance) => _$this._relevance = relevance;
@@ -433,6 +445,7 @@ class SearchThreadResponseDtoBuilder
       _count = $v.count.toBuilder();
       _preview = $v.preview;
       _coverImages = $v.coverImages.toBuilder();
+      _coverMedia = $v.coverMedia?.toBuilder();
       _relevance = $v.relevance;
       _$v = null;
     }
@@ -516,6 +529,7 @@ class SearchThreadResponseDtoBuilder
               'preview',
             ),
             coverImages: coverImages.build(),
+            coverMedia: _coverMedia?.build(),
             relevance: relevance,
           );
     } catch (_) {
@@ -535,6 +549,8 @@ class SearchThreadResponseDtoBuilder
 
         _$failedField = 'coverImages';
         coverImages.build();
+        _$failedField = 'coverMedia';
+        _coverMedia?.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
           r'SearchThreadResponseDto',

@@ -75,6 +75,19 @@ class MomentMedia {
   final int? width;
   final int? height;
 
+  bool get isAnimated => animated || contentType?.toLowerCase() == 'image/gif';
+
+  // GIF 只有 thumbnail 保证静态；列表任何类型都禁止回退到原图。
+  List<String> get staticFeedUrls => _orderedMediaUrls(
+    isAnimated ? [thumbnailUrl] : [feedUrl, thumbnailUrl, mediumUrl],
+  ).where((candidate) => candidate != url).toList(growable: false);
+
+  List<String> get playbackPreviewUrls => isAnimated
+      ? _orderedMediaUrls([
+          thumbnailUrl,
+        ]).where((candidate) => candidate != url).toList(growable: false)
+      : contentUrls;
+
   List<String> get feedUrls =>
       _orderedMediaUrls([feedUrl, thumbnailUrl, mediumUrl, url]);
 

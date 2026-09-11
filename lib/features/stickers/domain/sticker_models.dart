@@ -70,6 +70,28 @@ class StickerCollection {
   final List<StickerImport> pendingImports;
 
   bool get isFull => items.length + pendingImports.length >= limit;
+
+  /// 排序只改变位置，资产、最近使用顺序和处理中任务保持原值。
+  StickerCollection withOrder(List<String> ids) {
+    final byId = {for (final item in items) item.id: item};
+    final ordered = [
+      for (final (position, id) in ids.indexed)
+        UserSticker(
+          id: id,
+          position: position,
+          asset: byId[id]!.asset,
+          markdown: byId[id]!.markdown,
+          lastUsedAt: byId[id]!.lastUsedAt,
+        ),
+    ];
+    return StickerCollection(
+      version: version,
+      limit: limit,
+      items: List.unmodifiable(ordered),
+      recent: recent,
+      pendingImports: pendingImports,
+    );
+  }
 }
 
 sealed class StickerImportSource {

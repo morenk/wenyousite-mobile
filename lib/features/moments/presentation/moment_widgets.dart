@@ -16,6 +16,7 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_level_badge.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_time_text.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
+import 'package:wenyousite_mobile/features/moments/presentation/moment_playback_image.dart';
 import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
 import 'package:wenyousite_mobile/features/stickers/domain/sticker_models.dart';
 
@@ -408,6 +409,7 @@ class _MomentGalleryState extends ConsumerState<MomentGallery> {
                           image: images[index],
                           index: index,
                           imageCount: images.length,
+                          allowPlayback: index == _index,
                         ),
                       ),
                       if (images.length > 1)
@@ -463,86 +465,29 @@ class _MomentGalleryPage extends StatelessWidget {
     required this.image,
     required this.index,
     required this.imageCount,
+    required this.allowPlayback,
   });
 
   final MomentMedia image;
   final int index;
   final int imageCount;
+  final bool allowPlayback;
 
   @override
   Widget build(BuildContext context) {
-    final tokens = context.wenyouTokens;
     return Semantics(
       key: Key('moment-image-$index'),
       image: true,
       label: '第 ${index + 1} 张动态图片，共 $imageCount 张',
-      excludeSemantics: true,
-      child: WenyouCachedImage(
+      child: MomentPlaybackImage(
         key: Key('moment-content-image-$index'),
-        imageUrl: image.bestContentUrl,
-        fallbackImageUrls: image.contentUrls.skip(1).toList(growable: false),
+        previewUrls: image.playbackPreviewUrls,
+        animationUrl: image.isAnimated ? image.url : null,
+        allowPlayback: allowPlayback,
+        semanticLabel: '第 ${index + 1} 张图片',
         width: double.infinity,
         height: double.infinity,
         fit: BoxFit.contain,
-        placeholder: (_, _) => _MomentImageStatus(
-          icon: const SizedBox.square(
-            dimension: 20,
-            child: CircularProgressIndicator(strokeWidth: 2),
-          ),
-          label: '第 ${index + 1} 张图片加载中',
-        ),
-        errorWidget: (_, _, _) => _MomentImageStatus(
-          icon: WenyouIcon(
-            WenyouIconIds.statusImageUnavailable,
-            color: tokens.mutedText,
-          ),
-          label: '第 ${index + 1} 张图片加载失败',
-          detail: '点按查看原图',
-        ),
-      ),
-    );
-  }
-}
-
-class _MomentImageStatus extends StatelessWidget {
-  const _MomentImageStatus({
-    required this.icon,
-    required this.label,
-    this.detail,
-  });
-
-  final Widget icon;
-  final String label;
-  final String? detail;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = context.wenyouTokens;
-    return Center(
-      child: Padding(
-        padding: EdgeInsets.all(tokens.space16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            icon,
-            SizedBox(height: tokens.space8),
-            Text(
-              label,
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.wenyouCaption,
-            ),
-            if (detail != null) ...[
-              SizedBox(height: tokens.space4),
-              Text(
-                detail!,
-                textAlign: TextAlign.center,
-                style: Theme.of(
-                  context,
-                ).textTheme.wenyouCaption.copyWith(color: tokens.mutedText),
-              ),
-            ],
-          ],
-        ),
       ),
     );
   }
@@ -554,24 +499,41 @@ Future<void> openMomentGallery(
   int initialIndex, {
   Future<String> Function(WenyouImageViewerItem item)? onAddToStickers,
 }) {
+  final bucket = PageStorage.maybeOf(context);
+  Widget buildViewer(BuildContext context) => ContentImageViewerPage(
+    items: [
+      for (final image in images)
+        WenyouImageViewerItem(
+          id: image.id,
+          url: image.url,
+          fallbackUrls: (image.isAnimated ? <String>[] : image.contentUrls)
+              .where((url) => url != image.url)
+              .toList(growable: false),
+          semanticLabel: '动态图片',
+        ),
+    ],
+    initialIndex: initialIndex,
+    imageBuilder: (context, index, current) {
+      final image = images[index];
+      return image.isAnimated
+          ? MomentPlaybackImage(
+              previewUrls: image.playbackPreviewUrls,
+              animationUrl: image.url,
+              allowPlayback: current,
+              foregroundColor: context.wenyouTokens.onImageViewerBackground,
+              width: double.infinity,
+              height: double.infinity,
+            )
+          : null;
+    },
+    closeKey: const Key('moment-gallery-close'),
+    onAddToStickers: onAddToStickers,
+  );
   return pushWenyouFullscreenPage<void>(
     context: context,
-    builder: (_) => ContentImageViewerPage(
-      items: [
-        for (final image in images)
-          WenyouImageViewerItem(
-            id: image.id,
-            url: image.url,
-            fallbackUrls: image.contentUrls
-                .where((url) => url != image.url)
-                .toList(growable: false),
-            semanticLabel: '动态图片',
-          ),
-      ],
-      initialIndex: initialIndex,
-      closeKey: const Key('moment-gallery-close'),
-      onAddToStickers: onAddToStickers,
-    ),
+    builder: (context) => bucket == null
+        ? buildViewer(context)
+        : PageStorage(bucket: bucket, child: buildViewer(context)),
   );
 }
 
@@ -583,9 +545,18 @@ class MomentCoverImage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
+    final urls = media.staticFeedUrls;
+    if (urls.isEmpty) {
+      return ColoredBox(
+        color: tokens.softPanel,
+        child: const Center(
+          child: WenyouIcon(WenyouIconIds.statusImageUnavailable),
+        ),
+      );
+    }
     return WenyouCachedImage(
-      imageUrl: media.bestFeedUrl,
-      fallbackImageUrls: media.feedUrls.skip(1).toList(growable: false),
+      imageUrl: urls.first,
+      fallbackImageUrls: urls.skip(1).toList(growable: false),
       fit: BoxFit.cover,
       cacheWidth: 320,
       placeholder: (_, _) => ColoredBox(

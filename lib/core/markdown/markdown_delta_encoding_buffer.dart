@@ -1,6 +1,8 @@
 import 'package:wenyousite_mobile/core/markdown/markdown_alignment.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_codec_types.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_editor_document.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_list_structure.dart';
 
 /// Writes already-encoded Markdown lines while enforcing the alignment
 /// marker rules across physical Quill lines that form one Markdown paragraph.
@@ -15,6 +17,21 @@ final class MarkdownDeltaEncodingBuffer {
   var _previousLineWasParagraphShape = false;
   var _previousLineWasImageBlock = false;
   var _previousLineWasLiteral = false;
+  final _listRows = <MarkdownListRow>[];
+  bool _listEndsWithBreak = false;
+
+  void finishLists() {
+    if (_listRows.isEmpty) return;
+    if (output.isNotEmpty &&
+        (_listRows.first.content.isEmpty || _previousLineWasLiteral)) {
+      _ensureBlankLine();
+    }
+    output.write(MarkdownListStructure.write(_listRows));
+    if (_listEndsWithBreak) output.write('\n');
+    _listRows.clear();
+    _previousLineWasParagraphShape = false;
+    _openParagraphAlignment = null;
+  }
 
   void writeLine(
     String encodedLine,
@@ -23,6 +40,29 @@ final class MarkdownDeltaEncodingBuffer {
     required String literalLineAttribute,
     required String emptyParagraphAttribute,
   }) {
+    if (attributes?['list'] case final String list) {
+      if (_alignmentFrom(attributes?['align']) != WenyouTextAlignment.left) {
+        throw const MarkdownCodecException('当前正文块不能使用对齐格式');
+      }
+      _listRows.add(
+        MarkdownListRow(
+          ordered: list == 'ordered',
+          depth: attributes?['indent'] as int? ?? 0,
+          content: encodedLine,
+        ),
+      );
+      _listEndsWithBreak = attributes?[sourceBreakAttribute] != false;
+      return;
+    }
+    final followsList = _listRows.isNotEmpty;
+    finishLists();
+    if (followsList && encodedLine.isNotEmpty) _ensureBlankLine();
+    if (followsList && encodedLine.startsWith(' ')) {
+      encodedLine = MarkdownContent.protectUnsafeWhitespace(
+        encodedLine,
+        minimumIndent: 1,
+      );
+    }
     final alignment = _alignmentFrom(attributes?['align']);
     final header = attributes?['header'];
     final isHeading = header == 2 || header == 3;

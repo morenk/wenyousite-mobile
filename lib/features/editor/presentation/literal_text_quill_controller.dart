@@ -55,16 +55,29 @@ class LiteralTextQuillController extends QuillController {
   @override
   Style getSelectionStyle() {
     final selected = super.getSelectionStyle();
-    if (!selection.isCollapsed ||
-        toggledStyle.attributes.containsKey(Attribute.header.key)) {
-      return selected;
-    }
-    // Quill 在行首收集样式时会排除标题；空标题重开后仍应显示真实行样式。
-    final line = document.queryChild(selection.start).node;
-    final header = line is Line
-        ? line.style.attributes[Attribute.header.key]
-        : null;
-    return header == null ? selected : selected.put(header);
+    if (!selection.isCollapsed) return selected;
+    final actual = _actualLineStyle(selection.start);
+    if (actual == null) return selected;
+    // Quill 空行会沿前文收集样式；行内续写可以继承，块归属必须来自当前行。
+    // 工具栏状态、格式切换和回车共用该事实，不再逐种格式修补空状态。
+    return Style.attr({
+      for (final entry in selected.attributes.entries)
+        if (entry.value.scope != AttributeScope.block) entry.key: entry.value,
+      for (final entry in actual.attributes.entries)
+        if (entry.value.scope == AttributeScope.block) entry.key: entry.value,
+    }).mergeAll(
+      Style.attr({
+        for (final entry in toggledStyle.attributes.entries)
+          if (entry.value.scope == AttributeScope.block) entry.key: entry.value,
+      }),
+    );
+  }
+
+  Style? _actualLineStyle(int position) {
+    final line = document.queryChild(position).node;
+    if (line is! Line) return null;
+    final parent = line.parent;
+    return parent is Block ? parent.style.mergeAll(line.style) : line.style;
   }
 
   @override
@@ -246,10 +259,8 @@ class LiteralTextQuillController extends QuillController {
 
   Object? _plainNewline(Object? data, int index) {
     if (data != '\n') return null;
-    final line = document.queryChild(index).node;
-    final attributes = line is Line
-        ? line.style.attributes
-        : document.collectStyle(index, 0).attributes;
+    final attributes =
+        (_actualLineStyle(index) ?? document.collectStyle(index, 0)).attributes;
     if (attributes.containsKey('header') ||
         attributes.containsKey('list') ||
         attributes.containsKey('code-block') ||
