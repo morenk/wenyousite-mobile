@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:markdown/markdown.dart' as md;
 import 'package:wenyousite_mobile/core/markdown/markdown_alignment.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_editable_block_syntax.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_inline_boundary.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_inline_code_source.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_reference.dart';
@@ -70,10 +71,13 @@ class MarkdownRichLineDecoder {
   /// Maps CommonMark list markers accepted by the reader to the editor's
   /// canonical markers without changing ordinary paragraph text.
   static String canonicalizeReaderBlockPrefix(String source) {
-    final heading = RegExp(
-      r'^(#{2,3})[\t ]+(.+?)[\t ]+#+[\t ]*$',
-    ).firstMatch(source);
-    if (heading != null) return '${heading.group(1)} ${heading.group(2)}';
+    final heading = MarkdownEditableBlockSyntax.readerHeading(source);
+    if (heading != null) {
+      return MarkdownEditableBlockSyntax.headingLine(
+        heading.level,
+        heading.content,
+      );
+    }
     final quote = MarkdownContent.quoteLineContent(source);
     if (quote != null) return quote.isEmpty ? '>' : '> $quote';
     final bullet = RegExp(r'^( {0,6})[-+*][\t ]+(.+)$').firstMatch(source);
@@ -90,36 +94,35 @@ class MarkdownRichLineDecoder {
   static bool isReaderThematicBreak(String source) =>
       MarkdownAlignmentContract.isThematicBreak(source);
 
-  static MarkdownRichLine? decode(String source) {
+  static MarkdownRichLine? decode(String source) => _decode(source, false);
+  static MarkdownRichLine? decodeInline(String source) => _decode(source, true);
+
+  static MarkdownRichLine? _decode(String source, bool inlineOnly) {
     var inlineSource = source;
     final lineAttributes = <String, dynamic>{};
-    // 空标题也是合法的块；先选 H2/H3、再输入文字时不能将标记读成正文。
-    final heading = RegExp(r'^(#{2,3})(?:[\t ]+(.*))?$').firstMatch(source);
+    final heading = MarkdownEditableBlockSyntax.heading(source);
     final quote = source.contains('\n')
         ? RegExp(
             r'^ {0,3}>[\t ]?(.*)$',
             dotAll: true,
           ).firstMatch(source)?.group(1)
         : MarkdownContent.quoteLineContent(source);
-    final list = RegExp(
-      r'^( {0,6})(- |1\. )(.+)$',
-      dotAll: true,
-    ).firstMatch(source);
-    if (heading != null) {
-      lineAttributes['header'] = heading.group(1)!.length;
-      inlineSource = heading.group(2) ?? '';
+    final list = MarkdownEditableBlockSyntax.listItem(source);
+    if (inlineOnly) {
+      // 容器解析已完成；这里的标记属于条目正文。
+    } else if (heading != null) {
+      lineAttributes['header'] = heading.level;
+      inlineSource = heading.content;
     } else if (quote != null) {
       lineAttributes['blockquote'] = true;
       inlineSource = quote;
     } else if (list != null) {
-      final spaces = list.group(1)!.length;
-      final content = list.group(3)!;
-      if (spaces.isOdd || RegExp(r'^\[[ xX]\]\s').hasMatch(content)) {
+      if (RegExp(r'^\[[ xX]\](?:\s|$)').hasMatch(list.content)) {
         return null;
       }
-      lineAttributes['list'] = list.group(2) == '- ' ? 'bullet' : 'ordered';
-      if (spaces > 0) lineAttributes['indent'] = spaces ~/ 2;
-      inlineSource = content;
+      lineAttributes['list'] = list.ordered ? 'ordered' : 'bullet';
+      if (list.indent > 0) lineAttributes['indent'] = list.indent;
+      inlineSource = list.content;
     }
 
     inlineSource = MarkdownInlineBoundary.canonicalize(inlineSource);
@@ -140,7 +143,13 @@ class MarkdownRichLineDecoder {
   /// Keeps reader semantics when valid Markdown nesting cannot be represented
   /// losslessly by the editor's mutually exclusive inline attributes.
   static MarkdownRichLine? decodeEditable(String source) {
-    final decoded = decode(source);
+    return _editable(decode(source));
+  }
+
+  static MarkdownRichLine? decodeEditableInline(String source) =>
+      _editable(decodeInline(source));
+
+  static MarkdownRichLine? _editable(MarkdownRichLine? decoded) {
     if (decoded == null) return null;
     final hasFormatting =
         decoded.lineAttributes.isNotEmpty ||

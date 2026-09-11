@@ -45,6 +45,10 @@ test('固定部署祖先导出同一 SHA，拒绝远端 dev 以外提交且不�
     assert.ok(metadata.split('\n').includes(`contractVersion=${apiVersion}`));
     assert.doesNotMatch(metadata, new RegExp(branchHead));
     assert.equal(fs.readFileSync(path.join(mobile, 'contracts/CHANGELOG.md'), 'utf8'), git('show', `${deployed}:contracts/CHANGELOG.md`) + '\n');
+    assert.deepEqual(
+      fs.readFileSync(path.join(mobile, 'contracts/markdown-editor-list-v1-fixtures.json')),
+      fs.readFileSync(path.join(backend, 'contracts/markdown-editor-list-v1-fixtures.json')),
+    );
     git('checkout', '-b', 'unpublished');
     fs.writeFileSync(path.join(backend, 'docs/private-branch.md'), 'unpublished');
     git('add', '.');

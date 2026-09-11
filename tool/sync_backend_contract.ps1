@@ -146,6 +146,7 @@ $contractFiles = @(
   @{ Source = $editorClipboardSource; Destination = (Split-Path -Leaf $editorClipboardSource) },
   @{ Source = 'contracts/markdown-v5-image-alignment-fixtures.json'; Destination = 'markdown-v5-image-alignment-fixtures.json' },
   @{ Source = 'contracts/markdown-editor-newline-v1-fixtures.json'; Destination = 'markdown-editor-newline-v1-fixtures.json' },
+  @{ Source = 'contracts/markdown-editor-list-v1-fixtures.json'; Destination = 'markdown-editor-list-v1-fixtures.json' },
   @{ Source = 'contracts/markdown-block-boundary-v1-fixtures.json'; Destination = 'markdown-block-boundary-v1-fixtures.json' },
   @{ Source = 'contracts/mobile-push-v1-fixtures.json'; Destination = 'mobile-push-v1-fixtures.json' },
   @{ Source = 'contracts/mobile-push-v1.schema.json'; Destination = 'mobile-push-v1.schema.json' },

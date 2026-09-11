@@ -130,13 +130,22 @@ void main() {
   });
 
   for (var indent = 0; indent <= 3; indent++) {
-    test('$indent 级列表保留合法缩进并能与行内组合往返', () {
-      final controller = _selectedController();
-      addTearDown(controller.dispose);
-      WenyouEditorFormatPolicy.toggle(controller, Attribute.ul);
-      if (indent > 0) {
-        controller.formatSelection(Attribute.getIndentLevel(indent));
+    test('$indent 级列表保留真实父项并能与行内组合往返', () {
+      final rows = Delta();
+      for (var parent = 0; parent < indent; parent++) {
+        rows.insert('父项');
+        rows.insert('\n', {'list': 'bullet', if (parent > 0) 'indent': parent});
       }
+      rows.insert('正文');
+      rows.insert('\n', {'list': 'bullet', if (indent > 0) 'indent': indent});
+      final controller = QuillController(
+        document: Document.fromDelta(rows),
+        selection: TextSelection(
+          baseOffset: indent * 3,
+          extentOffset: indent * 3 + 2,
+        ),
+      );
+      addTearDown(controller.dispose);
       WenyouEditorFormatPolicy.toggle(controller, Attribute.bold);
       WenyouEditorFormatPolicy.toggle(controller, Attribute.italic);
       WenyouEditorFormatPolicy.toggle(controller, Attribute.strikeThrough);

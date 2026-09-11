@@ -3,6 +3,7 @@ import 'package:wenyousite_mobile/core/markdown/markdown_alignment.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_canonical_literal_decoder.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_codec_types.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_delta_block_encoder.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_block_validator.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_encoding_buffer.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_extension_nodes.dart';
@@ -12,8 +13,7 @@ import 'package:wenyousite_mobile/core/markdown/markdown_delta_rich_lines.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_semantics.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_dice_contract.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_editor_document.dart';
-import 'package:wenyousite_mobile/core/markdown/markdown_inline_boundary.dart';
-import 'package:wenyousite_mobile/core/markdown/markdown_inline_code_source.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_editor_projection.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_paragraph_boundaries.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_quote_paragraphs.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_rich_line_decoder.dart';
@@ -40,18 +40,13 @@ class MarkdownDeltaCodec {
   static const emptyParagraphAttribute = MarkdownDeltaLineMetadata.emptyKey;
   static const sourceBreakAttribute = MarkdownDeltaLineMetadata.sourceBreakKey;
   static const literalLineAttribute = MarkdownDeltaLineMetadata.literalLineKey;
-  static const literalTextAttribute = 'wenyou_literal_text';
+  static const literalTextAttribute =
+      MarkdownDeltaBlockEncoder.literalTextAttribute;
   static const alignmentAttribute = 'align';
 
   static const _allPlayersLabel = '@全体玩家';
   static const _stickerPrefix = 'wenyousite-sticker:v1:';
 
-  static final _openingFence = RegExp(r'^ {0,3}(`{3,}|~{3,})');
-  static final _closingFence = RegExp(r'^ {0,3}(`{3,}|~{3,})[\t ]*$');
-  static final _emptyParagraph = RegExp(
-    r'^ {0,3}<br\s*/?>[\t ]*$',
-    caseSensitive: false,
-  );
   static final _mention = RegExp(
     r'^\[(@[^\]\r\n]{1,32})\]\(/users/([a-zA-Z0-9_-]+)\)',
   );
@@ -83,126 +78,68 @@ class MarkdownDeltaCodec {
       markdown,
       imageAlignment: imageAlignment,
     );
-    final source = editorDocument.toMarkdown();
     final delta = Delta();
     final issues = <MarkdownCodecIssue>[];
     final diceNodeIds = <String>{};
-    final lines = source.split('\n');
-    final literalLines = MarkdownContent.unsupportedLineIndexes(
-      source,
+    for (final line in editorDocument.editableLines(
       imageAlignment: imageAlignment,
-    );
-    final alignmentAnalysis = MarkdownAlignmentContract.analyzeLines(
-      lines,
-      imageAlignment: imageAlignment,
-    );
-    final validAlignmentMarkers = alignmentAnalysis.validMarkerLines;
-    _Fence? fence;
-
-    for (var lineIndex = 0; lineIndex < lines.length; lineIndex++) {
-      final line = lines[lineIndex];
-      if (validAlignmentMarkers.contains(lineIndex)) continue;
-      final multilineEnd =
-          alignmentAnalysis.protection.multilineCodeRanges[lineIndex];
-      if (multilineEnd != null && !literalLines.contains(lineIndex)) {
-        final rich = MarkdownRichLineDecoder.decode(
-          alignmentAnalysis.protection.multilineCodeSources[lineIndex]!,
-        );
-        if (rich != null) {
-          MarkdownDeltaRichLines.append(rich, delta);
-          final direction = alignmentAnalysis.alignmentForLine(lineIndex);
-          delta.insert('\n', {
-            ...rich.lineAttributes,
-            if (direction != WenyouTextAlignment.left)
-              alignmentAttribute: direction.name,
-            if (multilineEnd == lines.length - 1) sourceBreakAttribute: false,
-            if (validAlignmentMarkers.contains(multilineEnd + 1))
-              MarkdownParagraphBoundaries.key: 1,
-          });
-          lineIndex = multilineEnd;
-          continue;
-        }
-      }
-      final opening = _openingFence.firstMatch(line)?.group(1);
-      var isProtocolEmptyParagraph = false;
-      Map<String, dynamic>? richLineAttributes;
-      if (literalLines.contains(lineIndex)) {
-        delta.insert(line);
-        richLineAttributes = const {literalLineAttribute: true};
-      } else if (fence != null) {
-        delta.insert(line);
-        final closing = _closingFence.firstMatch(line)?.group(1);
-        if (closing != null &&
-            closing[0] == fence.marker &&
-            closing.length >= fence.length) {
-          fence = null;
-        }
-      } else if (opening != null) {
-        fence = _Fence(opening[0], opening.length);
-        delta.insert(line);
-      } else if (MarkdownContent.isQuotedEmptyParagraphLine(line)) {
-        richLineAttributes = const {'blockquote': true};
-        isProtocolEmptyParagraph = true;
-      } else if (MarkdownContent.isEmptyQuoteLine(line)) {
-        // Keep paragraph separators inside the quote, so Quill groups both
-        // sides into one block instead of displaying a literal marker.
-        richLineAttributes = const {'blockquote': true};
-      } else if (_emptyParagraph.hasMatch(line)) {
-        // 独占 <br /> 是协议空段，不进入可编辑文本。
-        isProtocolEmptyParagraph = true;
-      } else if (MarkdownRichLineDecoder.isReaderThematicBreak(line)) {
-        delta.insert({
-          horizontalRuleEmbed: const {'version': 1},
-        });
-      } else if (MarkdownContent.hasCanonicalLiteralEncoding(line)) {
-        richLineAttributes = _decodeInlineLine(
-          line,
-          delta,
-          issues,
-          diceNodeIds,
-        );
-      } else {
-        final richSource = readerClipboard
-            ? MarkdownRichLineDecoder.canonicalizeReaderBlockPrefix(line)
-            : line;
-        final richLine =
-            _tryDecodeRichLine(richSource) ??
-            (readerClipboard
-                ? MarkdownRichLineDecoder.decodeEditable(richSource)
-                : null);
-        if (richLine == null) {
-          richLineAttributes = _decodeInlineLine(
-            line,
+      readerClipboard: readerClipboard,
+    )) {
+      switch (line.kind) {
+        case MarkdownEditorLineKind.unsupportedList:
+          _insertCompatibility(
             delta,
             issues,
-            diceNodeIds,
+            MarkdownCodecIssueKind.unsupportedList,
+            line.source,
+            '这段列表暂时无法编辑，原文已保留',
           );
-        } else {
-          MarkdownDeltaRichLines.append(richLine, delta);
-          richLineAttributes = richLine.lineAttributes;
-        }
+        case MarkdownEditorLineKind.literal:
+          delta.insert(line.source);
+        case MarkdownEditorLineKind.horizontalRule:
+          delta.insert({
+            horizontalRuleEmbed: const {'version': 1},
+          });
+        case MarkdownEditorLineKind.emptyParagraph:
+        case MarkdownEditorLineKind.sourceSeparator:
+          break;
+        case MarkdownEditorLineKind.text:
+          final content = line.content;
+          final rich = MarkdownContent.hasCanonicalLiteralEncoding(content)
+              ? null
+              : _tryDecodeRichLine(content);
+          final editable =
+              rich ??
+              (readerClipboard
+                  ? MarkdownRichLineDecoder.decodeEditableInline(content)
+                  : null);
+          if (editable == null) {
+            _decodeInlineLine(content, delta, issues, diceNodeIds);
+          } else {
+            MarkdownDeltaRichLines.append(editable, delta);
+          }
       }
-
-      final isLastLine = lineIndex == lines.length - 1;
       final attributes = <String, dynamic>{
-        ...?richLineAttributes,
-        if (MarkdownContent.hasWhitespaceGuards(line))
-          MarkdownDeltaLineMetadata.guardedWhitespaceKey: true,
-        // marker 是独立段落边界；即使源码没有空行，也不能把前段和目标段合并。
-        if (validAlignmentMarkers.contains(lineIndex + 1) &&
-            line.isNotEmpty &&
-            richLineAttributes?['header'] == null &&
-            richLineAttributes?['list'] == null &&
-            richLineAttributes?['blockquote'] != true)
-          MarkdownParagraphBoundaries.key: 1,
-        if (alignmentAnalysis.alignmentForLine(lineIndex) case final alignment
-            when alignment != WenyouTextAlignment.left)
-          alignmentAttribute: alignment.name,
-        if (isProtocolEmptyParagraph) emptyParagraphAttribute: true,
-        if ((line.isEmpty && lines.length > 1) ||
-            MarkdownContent.isEmptyQuoteLine(line))
+        'header': ?line.headingLevel,
+        if (line.quote) 'blockquote': true,
+        if (line.listRow case final row?) ...{
+          'list': row.ordered ? 'ordered' : 'bullet',
+          if (row.depth > 0) 'indent': row.depth,
+        },
+        if (line.alignment != WenyouTextAlignment.left)
+          alignmentAttribute: line.alignment.name,
+        if (line.kind == MarkdownEditorLineKind.literal)
+          literalLineAttribute: true,
+        if (line.kind == MarkdownEditorLineKind.emptyParagraph)
+          emptyParagraphAttribute: true,
+        if (line.sourceSeparator)
           MarkdownDeltaLineMetadata.sourceSeparatorAttribute: true,
-        if (isLastLine) sourceBreakAttribute: false,
+        if (line.paragraphBoundaryAfter) MarkdownParagraphBoundaries.key: 1,
+        if (MarkdownContent.hasWhitespaceGuards(line.source))
+          MarkdownDeltaLineMetadata.guardedWhitespaceKey: true,
+        if (MarkdownContent.hasLeadingWhitespaceGuard(line.source))
+          MarkdownDeltaLineMetadata.guardedLeadingWhitespaceKey: true,
+        if (!line.hasSourceBreak) sourceBreakAttribute: false,
       };
       delta.insert('\n', attributes.isEmpty ? null : attributes);
     }
@@ -222,6 +159,7 @@ class MarkdownDeltaCodec {
     if (!MarkdownDeltaSemantics.equivalent(delta, reopened)) {
       throw const MarkdownCodecException('正文无法安全保存，请撤销最近的格式操作');
     }
+    MarkdownDeltaBlockValidator.validateListReading(delta, encoded);
     return encoded;
   }
 
@@ -270,6 +208,7 @@ class MarkdownDeltaCodec {
       _encodeEmbed(Map<String, dynamic>.from(data), line);
     }
     inline.flush();
+    encodingBuffer.finishLists();
     if (line.isNotEmpty) encodingBuffer.output.write(line);
     final encoded = sanitizeUnsupported
         ? MarkdownContent.literalizeUnsupported(
@@ -539,12 +478,13 @@ class MarkdownDeltaCodec {
     literalTextAttribute: literalTextAttribute,
     internalReferenceEmbed: internalReferenceEmbed,
     sourceBreakAttribute: sourceBreakAttribute,
+    inlineOnly: true,
     preservesSource: (candidate) {
       try {
         final encoded = _encode(candidate, false);
         if (encoded == source) return true;
-        final original = MarkdownRichLineDecoder.decode(source);
-        final canonical = MarkdownRichLineDecoder.decode(encoded);
+        final original = MarkdownRichLineDecoder.decodeInline(source);
+        final canonical = MarkdownRichLineDecoder.decodeInline(encoded);
         return original != null &&
             canonical != null &&
             original.semanticallyEquivalentTo(canonical);
@@ -560,6 +500,7 @@ class MarkdownDeltaCodec {
   }) => MarkdownDeltaRichLines.decode(
     source,
     protocolTextOnly: protocolTextOnly,
+    inlineOnly: true,
     encode: (delta) => _encode(delta, false),
   );
   static bool _encodeText(
@@ -575,14 +516,16 @@ class MarkdownDeltaCodec {
       final isLineBreak = index < value.length && value[index] == '\n';
       if (!isLineBreak && index != value.length) continue;
       if (index > start) {
-        if (attributes != null) _validateTextAttributes(attributes);
+        if (attributes != null) {
+          MarkdownDeltaBlockEncoder.validateTextAttributes(attributes);
+        }
         inline.add(value.substring(start, index), attributes);
         lineHasLiteralText =
             lineHasLiteralText || attributes?[literalTextAttribute] == true;
       }
       if (!isLineBreak) break;
       inline.flush();
-      final encodedLine = _encodeLine(
+      final encodedLine = MarkdownDeltaBlockEncoder.encode(
         line.toString(),
         attributes,
         containsLiteralText: lineHasLiteralText,
@@ -599,114 +542,6 @@ class MarkdownDeltaCodec {
       start = index + 1;
     }
     return lineHasLiteralText;
-  }
-
-  static void _validateTextAttributes(Map<String, dynamic> attributes) {
-    _rejectUnknownAttributes(attributes, const {
-      'bold',
-      'italic',
-      'strike',
-      'code',
-      'link',
-      emptyParagraphAttribute,
-      sourceBreakAttribute,
-      literalLineAttribute,
-      literalTextAttribute,
-      MarkdownInlineCodeSource.key,
-      MarkdownDeltaLineMetadata.guardedWhitespaceKey,
-      alignmentAttribute,
-      'header',
-      'list',
-      'blockquote',
-      'indent',
-    });
-  }
-
-  static String _encodeLine(
-    String content,
-    Map<String, dynamic>? attributes, {
-    required bool containsLiteralText,
-  }) {
-    if (attributes == null || attributes.isEmpty) {
-      return containsLiteralText
-          ? MarkdownContent.protectUnsafeWhitespace(content)
-          : content;
-    }
-    _validateTextAttributes(attributes);
-    if (attributes[literalLineAttribute] == true) {
-      final incompatible = attributes.keys.where(
-        (key) => key != literalLineAttribute && key != sourceBreakAttribute,
-      );
-      if (incompatible.isNotEmpty) {
-        throw const MarkdownCodecException('字面源码行不能携带其他富文本属性');
-      }
-      return MarkdownContent.literalizeLine(content);
-    }
-    if (attributes[emptyParagraphAttribute] == true) {
-      if (content.isNotEmpty ||
-          attributes.containsKey('header') ||
-          attributes.containsKey('list') ||
-          attributes.containsKey('indent')) {
-        throw const MarkdownCodecException('这段内容暂时无法安全编辑');
-      }
-      return attributes['blockquote'] == true ? '> <br />' : '<br />';
-    }
-
-    final canonicalContent = MarkdownInlineBoundary.canonicalize(content);
-
-    final indentValue = attributes['indent'];
-    final indent = switch (indentValue) {
-      null => 0,
-      int value when value >= 0 && value <= 3 => value,
-      _ => throw const MarkdownCodecException('列表缩进只支持 0～3 级'),
-    };
-    final header = attributes['header'];
-    final list = attributes['list'];
-    final quote = attributes['blockquote'] == true;
-    final blockStyleCount =
-        (header == null ? 0 : 1) + (list == null ? 0 : 1) + (quote ? 1 : 0);
-    if (blockStyleCount > 1) {
-      throw const MarkdownCodecException('同一行不能组合标题、列表和引用');
-    }
-    final hasUnsafeWhitespace =
-        canonicalContent.startsWith('    ') ||
-        canonicalContent.startsWith('\t') ||
-        RegExp(r' {2,}$').hasMatch(canonicalContent);
-    if (hasUnsafeWhitespace &&
-        blockStyleCount == 0 &&
-        (containsLiteralText ||
-            attributes[MarkdownDeltaLineMetadata.guardedWhitespaceKey] ==
-                true)) {
-      return MarkdownContent.protectUnsafeWhitespace(canonicalContent);
-    }
-    if (header != null) {
-      if (header != 2 && header != 3) {
-        throw const MarkdownCodecException('编辑器只支持二级与三级标题');
-      }
-      return '${'#' * (header as int)} $canonicalContent';
-    }
-    if (list != null) {
-      if (list != 'bullet' && list != 'ordered') {
-        throw const MarkdownCodecException('编辑器列表类型不受支持');
-      }
-      final prefix = list == 'ordered' ? '1. ' : '- ';
-      return '${'  ' * indent}$prefix$canonicalContent';
-    }
-    if (quote) return canonicalContent.isEmpty ? '>' : '> $canonicalContent';
-    if (indent != 0) {
-      throw const MarkdownCodecException('只有列表行可以携带缩进');
-    }
-    return canonicalContent;
-  }
-
-  static void _rejectUnknownAttributes(
-    Map<String, dynamic> attributes,
-    Set<String> allowed,
-  ) {
-    final unknown = attributes.keys.where((key) => !allowed.contains(key));
-    if (unknown.isNotEmpty) {
-      throw MarkdownCodecException('遇到不支持的富文本属性：${unknown.join(', ')}');
-    }
   }
 
   static void _encodeEmbed(Map<String, dynamic> embed, StringBuffer output) {
@@ -786,6 +621,9 @@ class MarkdownDeltaCodec {
         }
         output.write('[$label](${reference.location})');
       case compatibilityEmbed:
+        if (payload['reason'] == MarkdownCodecIssueKind.unsupportedList.name) {
+          throw const MarkdownCodecException('这段列表暂时无法编辑，原文已保留');
+        }
         output.write(_requiredString(payload, 'raw', type));
       case horizontalRuleEmbed:
         output.write(MarkdownEditorDocument.horizontalRuleMarker);
@@ -873,11 +711,4 @@ class MarkdownDeltaCodec {
       value.startsWith('<') && value.endsWith('>')
       ? value.substring(1, value.length - 1)
       : value;
-}
-
-class _Fence {
-  const _Fence(this.marker, this.length);
-
-  final String marker;
-  final int length;
 }
