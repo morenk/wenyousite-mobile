@@ -68,6 +68,7 @@ void main() {
     expect(editorStyles.quote?.decoration, spec.quoteDecoration);
     expect(readingStyles.blockquoteDecoration, spec.quoteDecoration);
     expect(readingStyles.listBullet, spec.listMarker);
+    expect(editorStyles.leading?.style, readingStyles.listBullet);
     expect(
       readingStyles.horizontalRuleDecoration,
       spec.horizontalRuleDecoration,
