@@ -57,7 +57,7 @@
 
 ## 13. 最近审查的契约版本和后端提交
 
-2026-09-11 合并来源同步：Backend `5b766305e21d2a39bd53bb0c3aacc05fad81152f`，通过既有脚本重新导出后仅来源元数据变化；OpenAPI、块边界 v1 revision 2 及其他共享契约字节不变。模块行为与候选验收状态保持，公网核验及安装包溯源见[块边界验收](../architecture/markdown-block-boundaries-acceptance.md)。
+2026-09-11 合并来源同步：Backend `8bf370f6ef5357535683aa6d3f8c03bd2d08d108`，包含发布权限修复；通过既有脚本重新导出后仅来源元数据变化，OpenAPI、块边界 v1 revision 2 及其他共享契约字节不变。模块行为与候选验收状态保持，前次部署回滚、公网核验及安装包溯源见[块边界验收](../architecture/markdown-block-boundaries-acceptance.md)。
 
 2026-09-11 契约来源登记：Backend `a91cbb8b605223c596af299be22c5547f69e25b9`，块边界 v1 revision 2。HTTP OpenAPI 未变化，本模块既有接口行为与验收状态保持；富文本消费者候选见[块边界验收](../architecture/markdown-block-boundaries-acceptance.md)。
 

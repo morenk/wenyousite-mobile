@@ -126,6 +126,10 @@ Backend revision 2 已由独立 chore `3a3d94b` 同步；自动验证已按上�
 
 ## 合并来源同步与公网复核
 
+当前来源更新为 Backend `8bf370f6ef5357535683aa6d3f8c03bd2d08d108`，包含发布权限修复；此前 `5b766305` 部署因权限故障回滚到 `0ee2c0d`，未据此合并 Mobile。按治理交接再次通过同一同步脚本、相同只读镜像及显式完整 SHA 导出，仍只有来源元数据变化；所有契约字节与块边界 fixture 哈希不变。运行时代码、834 项组合回归对应的测试实现及既有 APK 未改动，不重复全量测试或构建。公网健康确认后才执行精确来源检查及 PR 合并；前次同步与验证记录如下保留。
+
+对 `8bf370f6` 来源复跑 OpenAPI 校验、`npm run api:check` 及 21 模块文档检查，全部通过；生成流程结束后确认生成客户端、源码、测试、Android 配置和依赖锁文件零差异，`git diff --check` 通过。日志为 `build/block-boundary-redeploy-source-check.log` 与 `build/block-boundary-redeploy-docs.log`。
+
 按用户本轮明确授权，在原 Windows 任务执行 `pwsh -NoProfile -File tool/sync_backend_contract.ps1 -BackendPath D:/code/wenyousite/references/wenyousite-backend -Revision 5b766305e21d2a39bd53bb0c3aacc05fad81152f`，从已合并 Backend 重新导出。`contracts` 唯一差异为 `backend-contract.properties` 的来源 SHA；OpenAPI、所有共享 fixture、Markdown v5 图片对齐与空白行契约、契约 CHANGELOG 和移动端指南均无差异。块边界 fixture SHA-256 仍为 `822509411fbf3379847a04ec64a4a32ddb1bb8fb96aecbf38b395b049134fda9`。
 
 本次只更新来源元数据和必要文档；225 份消费者审计语料保留生成时的 `a91cbb8` 来源，运行时代码、测试、依赖声明与 Android 配置不变。候选 APK 继续对应 `05996c08` 及其已记录哈希，不宣称针对新文档提交重新构建；本轮不安装或正式发布 Android 包。负责人尚未完成公网／真机验收，保留任务分支、Worktree、APK 与日志。
