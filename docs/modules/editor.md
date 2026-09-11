@@ -199,4 +199,6 @@ Delta 仅存在页面内存，后端、服务端主题草稿和 Drift 都保存 
 
 ## 14. 相关代码与架构文档
 
+跨端稳定性工作按[专项实施计划](../architecture/rich-text-stability-plan.md)、[基线与问题台账](../architecture/rich-text-stability-baseline.md)和[首批操作矩阵提案](../architecture/rich-text-stability-matrix.md)推进；这些文档不替代当前正文契约或原问题的负责人验收记录。
+
 通用会话、工具栏、提及和快照端口：`lib/features/editor/`；跨 feature 只通过根级 `editor.dart` / `editor_persistence.dart` façade 消费。主题创作页面、控制器与 API 适配器：`lib/features/threads/`；帖子工作流：`lib/features/posts/`；普通 Markdown 中立解析与 Delta Codec：`lib/core/markdown/`；数据库：`lib/core/storage/app_database.dart`。参见[Codec 架构](../architecture/editor-codec.md)、[Foundation 实现审计](../architecture/foundation-compliance-audit.md)、[草稿](drafts.md)、[媒体](media.md)、[语义图标](../architecture/icons.md)、[Foundation v6.9.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.9.0/docs/platforms/mobile.md)。

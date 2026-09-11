@@ -22,6 +22,8 @@
 
 ## 当前优先级
 
+富文本跨端稳定性专项沿用[阶段计划](docs/architecture/rich-text-stability-plan.md)、[三端历史基线](docs/architecture/rich-text-stability-baseline.md)和[共享操作矩阵提案](docs/architecture/rich-text-stability-matrix.md)。这些记录描述 2026-09-10 的审查现场；当前依赖和后续整改以上方最新基线及下述整改计划为准。
+
 编辑器系统整改已于 2026-09-11 获负责人授权开始：按[正文语义整改计划](docs/architecture/editor-semantics-remediation-plan.md)依次登记入口、统一移动端结构消费、覆盖连续编辑状态、核对跨端独立结果并交付真机候选。当前 `1a66b68b` 列表候选仍待验收，不把局部检查通过记为整个编辑器整改完成。
 
 当前空块格式排查：负责人反馈空列表仍报错，已扩展为格式状态、纯空白输入与独立阅读语义的系统性候选，尚待完整检查和负责人验收。历史嵌套有序列表的缩进映射另需跨端补齐，当前必须阻止有损保存，详见[空块格式验收](docs/architecture/editor-empty-block-acceptance.md)。
