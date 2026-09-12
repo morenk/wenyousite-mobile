@@ -325,6 +325,7 @@ class _PlayerSubscriptionSheet extends ConsumerWidget {
                       contentPadding: EdgeInsets.zero,
                       leading: WenyouAvatar(
                         username: candidate.username,
+                        avatarUrl: candidate.avatarUrl,
                         size: 40,
                       ),
                       title: Text(candidate.username),

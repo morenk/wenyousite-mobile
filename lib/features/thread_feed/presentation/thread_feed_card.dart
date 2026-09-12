@@ -68,6 +68,7 @@ class ThreadFeedCard extends StatelessWidget {
                     key: Key('home-thread-cover-${thread.id}'),
                     posterUrl: thread.coverMedia?.staticUrl,
                     animationUrl: thread.coverMedia?.animationUrl,
+                    hasVerifiedDisplay: thread.coverMedia?.display != null,
                     previewVariants:
                         thread.coverMedia?.previewVariants ?? const [],
                   ),

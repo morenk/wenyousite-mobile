@@ -1,9 +1,12 @@
+import 'package:wenyousite_mobile/core/media/media_display.dart';
+
 class ContentDraft {
   const ContentDraft({
     required this.id,
     required this.userId,
     required this.slot,
     required this.content,
+    this.mediaDisplays = const {},
     required this.version,
     required this.createdAt,
     required this.updatedAt,
@@ -13,6 +16,7 @@ class ContentDraft {
   final String userId;
   final int slot;
   final String content;
+  final Map<String, MediaDisplay> mediaDisplays;
   final int version;
   final DateTime createdAt;
   final DateTime updatedAt;

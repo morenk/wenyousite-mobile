@@ -20,6 +20,7 @@ class ThreadFeedCover extends StatefulWidget {
   const ThreadFeedCover({
     this.posterUrl,
     this.animationUrl,
+    this.hasVerifiedDisplay = false,
     this.animationLoader = loadCoverAnimation,
     this.previewVariants = const [],
     this.posterBuilder,
@@ -30,6 +31,7 @@ class ThreadFeedCover extends StatefulWidget {
 
   final String? posterUrl;
   final String? animationUrl;
+  final bool hasVerifiedDisplay;
   final CoverAnimationLoader animationLoader;
   final List<ThreadFeedCoverPreviewVariant> previewVariants;
   final CoverPosterBuilder? posterBuilder;
@@ -48,6 +50,7 @@ class _ThreadFeedCoverState extends State<ThreadFeedCover> {
   CoverPlaybackCoordinator? _coordinator;
   bool _enabled = false;
   bool _posterReady = false;
+  bool get _canPrepare => widget.hasVerifiedDisplay || _posterReady;
   int _posterGeneration = 0;
 
   @override
@@ -107,7 +110,8 @@ class _ThreadFeedCoverState extends State<ThreadFeedCover> {
   void didUpdateWidget(covariant ThreadFeedCover oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.posterUrl != widget.posterUrl ||
-        oldWidget.animationUrl != widget.animationUrl) {
+        oldWidget.animationUrl != widget.animationUrl ||
+        oldWidget.hasVerifiedDisplay != widget.hasVerifiedDisplay) {
       _phase.value = CoverPlaybackPhase.idle;
       _posterReady = false;
       _posterGeneration++;
@@ -119,10 +123,7 @@ class _ThreadFeedCoverState extends State<ThreadFeedCover> {
   void _registerAfterLayout() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      if (_enabled &&
-          _posterReady &&
-          widget.posterUrl != null &&
-          widget.animationUrl != null) {
+      if (_enabled && _canPrepare && widget.animationUrl != null) {
         _coordinator?.register(_token, _measure);
       } else {
         _coordinator?.unregister(_token);
@@ -132,7 +133,7 @@ class _ThreadFeedCoverState extends State<ThreadFeedCover> {
   }
 
   void _selectionChanged() {
-    _phase.value = !_enabled || !_posterReady
+    _phase.value = !_enabled || !_canPrepare
         ? CoverPlaybackPhase.idle
         : _coordinator?.isActive(_token) == true
         ? CoverPlaybackPhase.playing
@@ -149,12 +150,13 @@ class _ThreadFeedCoverState extends State<ThreadFeedCover> {
     if (!mounted || generation != _posterGeneration) return;
     _posterGeneration++;
     _posterReady = false;
+    if (widget.hasVerifiedDisplay) return;
     _phase.value = CoverPlaybackPhase.idle;
     _coordinator?.unregister(_token);
   }
 
   CoverPlaybackGeometry? _measure() {
-    if (!mounted || !_enabled || !_posterReady) return null;
+    if (!mounted || !_enabled || !_canPrepare) return null;
     // 嵌套 Navigator 的本页可能仍 current，父 Navigator 已被详情/弹窗覆盖。
     var routeContext = context;
     final seen = <NavigatorState>{};
@@ -244,7 +246,9 @@ class _ThreadFeedCoverState extends State<ThreadFeedCover> {
       child: AspectRatio(
         key: _boundsKey,
         aspectRatio: 16 / 9,
-        child: widget.animationUrl == null || widget.posterUrl == null
+        child:
+            widget.animationUrl == null ||
+                (!widget.hasVerifiedDisplay && widget.posterUrl == null)
             ? poster
             : LayoutBuilder(
                 builder: (context, constraints) {
@@ -259,6 +263,7 @@ class _ThreadFeedCoverState extends State<ThreadFeedCover> {
                     devicePixelRatio: ratio,
                   );
                   return ControlledCoverAnimation(
+                    enableRetry: widget.hasVerifiedDisplay,
                     url: url!,
                     decodeWidth: (constraints.maxWidth * ratio).round().clamp(
                       1,

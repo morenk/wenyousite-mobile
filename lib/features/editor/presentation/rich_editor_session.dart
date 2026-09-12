@@ -13,6 +13,7 @@ import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_line_metadata.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_editing_compatibility.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_submission_guard.dart';
+import 'package:wenyousite_mobile/core/media/media_display.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_clipboard.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_clipboard_gateway.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_clipboard_paste.dart';
@@ -46,6 +47,7 @@ class RichEditorOperationFailure {
 class RichEditorSession extends ChangeNotifier {
   RichEditorSession({
     required String initialMarkdown,
+    Map<String, MediaDisplay> initialMediaDisplays = const {},
     required this.onMarkdownChanged,
     this.codecDebounce = const Duration(milliseconds: 120),
     this.maximumSerializedLength = 10000,
@@ -63,6 +65,7 @@ class RichEditorSession extends ChangeNotifier {
            clipboardGateway ??
            _legacyClipboardGateway(readClipboardText, writeClipboardText),
        _clipboardStore = clipboardStore ?? wenyouEditorClipboardStore {
+    _mediaDisplays = Map.unmodifiable(initialMediaDisplays);
     _siteClipboardParser =
         siteClipboardParser ??
         WenyouSiteClipboardParser(imageAlignment: imageAlignment);
@@ -86,6 +89,14 @@ class RichEditorSession extends ChangeNotifier {
     _listenToDocument(document);
     _protectUnsupportedSource(initialMarkdown, decoded);
     focusNode.addListener(_onFocusChanged);
+  }
+
+  late Map<String, MediaDisplay> _mediaDisplays;
+  Map<String, MediaDisplay> get mediaDisplays => _mediaDisplays;
+
+  void replaceMediaDisplays(Map<String, MediaDisplay> values) {
+    _mediaDisplays = Map.unmodifiable(values);
+    notifyListeners();
   }
 
   final Duration codecDebounce;
@@ -312,6 +323,7 @@ class RichEditorSession extends ChangeNotifier {
   void scheduleExternalMarkdown({
     required String markdown,
     required int revision,
+    Map<String, MediaDisplay>? mediaDisplays,
     RichEditorSelectionPlacement selection =
         RichEditorSelectionPlacement.preserve,
   }) {
@@ -320,17 +332,23 @@ class RichEditorSession extends ChangeNotifier {
     final binding = WidgetsBinding.instance;
     binding.addPostFrameCallback((_) {
       if (_disposed || revision != _scheduledExternalRevision) return;
-      applyExternalMarkdown(markdown, selection: selection);
+      applyExternalMarkdown(
+        markdown,
+        selection: selection,
+        mediaDisplays: mediaDisplays,
+      );
     });
     binding.ensureVisualUpdate();
   }
 
   void applyExternalMarkdown(
     String markdown, {
+    Map<String, MediaDisplay>? mediaDisplays,
     RichEditorSelectionPlacement selection =
         RichEditorSelectionPlacement.preserve,
   }) {
     _codecTimer?.cancel();
+    if (mediaDisplays != null) _mediaDisplays = Map.unmodifiable(mediaDisplays);
     _applyingDocument = true;
     _documentGeneration += 1;
     try {
@@ -471,10 +489,12 @@ class RichEditorSession extends ChangeNotifier {
 
   void insertBlockImage({
     required String url,
+    MediaDisplay? display,
     String alt = '图片',
     String? title,
   }) {
     if (controller.readOnly) return;
+    if (display != null) _mediaDisplays = {..._mediaDisplays, url: display};
     _replaceSelectionWithBlockEmbed(
       Embeddable(MarkdownDeltaCodec.imageEmbed, {
         'version': 1,
@@ -490,9 +510,11 @@ class RichEditorSession extends ChangeNotifier {
     required TextSelection selection,
     required String assetId,
     required String url,
+    MediaDisplay? display,
     String alt = '表情',
   }) {
     if (controller.readOnly) return;
+    if (display != null) _mediaDisplays = {..._mediaDisplays, url: display};
     _replaceSelectionWithInlineEmbed(
       Embeddable(MarkdownDeltaCodec.stickerEmbed, {
         'version': 1,

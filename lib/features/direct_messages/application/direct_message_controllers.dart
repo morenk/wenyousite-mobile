@@ -2,14 +2,13 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
-import 'package:wenyousite_mobile/app/app_capabilities.dart';
+
 import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
 import 'package:wenyousite_mobile/core/application/visibility_cache_invalidation.dart';
 import 'package:wenyousite_mobile/core/application/write_reconciler.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/models/paging.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
-import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/direct_messages/application/direct_message_pending_media.dart';
 import 'package:wenyousite_mobile/features/direct_messages/application/direct_message_repository_ports.dart';
 import 'package:wenyousite_mobile/features/direct_messages/domain/direct_message_models.dart';
@@ -26,40 +25,6 @@ export 'direct_message_states.dart';
 export 'direct_unread_controller.dart';
 
 typedef DirectMessageRequestIdFactory = String Function();
-
-final directMessagesEnabledProvider = Provider<bool>(
-  (ref) => ref.watch(
-    appCapabilitiesProvider.select(
-      (capabilities) => capabilities.directMessages,
-    ),
-  ),
-  dependencies: [appCapabilitiesProvider],
-);
-
-final directUnreadControllerProvider =
-    StateNotifierProvider<DirectUnreadController, DirectUnreadState>(
-      (ref) {
-        ref.watch(viewerScopeProvider);
-        final authenticated = ref.watch(
-          sessionControllerProvider.select(
-            (session) => session.isAuthenticated,
-          ),
-        );
-        final enabled = ref.watch(directMessagesEnabledProvider);
-        return DirectUnreadController(
-          ref.watch(directMessageRepositoryProvider),
-          autoStart: authenticated && enabled,
-        );
-      },
-      // This provider is read from the app shell while the server-advertised
-      // capability is scoped by WenyouApp (and overridden by feature tests).
-      // Declaring the dependency keeps Riverpod in the same override scope.
-      dependencies: [
-        viewerScopeProvider,
-        directMessagesEnabledProvider,
-        directMessageRepositoryProvider,
-      ],
-    );
 
 class DirectConversationListController
     extends StateNotifier<DirectConversationListState> {
@@ -455,7 +420,7 @@ class DirectConversationController
         .where((item) => item.id == optimisticMessageId)
         .firstOrNull;
     if (state.phase != DirectConversationPhase.ready ||
-        message?.deliveryState != DirectMessageDeliveryState.failed ||
+        message?.canRetryDelivery != true ||
         (message?.localDraft == null &&
             !(_pendingMediaJobs?.contains(optimisticMessageId) ?? false))) {
       return false;
@@ -536,7 +501,16 @@ class DirectConversationController
       return true;
     } on Object catch (error) {
       if (!mounted) return false;
-      final failure = mapApplicationFailure(error, '消息发送失败，请重试。');
+      final processing = error is MediaProcessingPending;
+      final failure = processing
+          ? const ApiFailure(
+              source: FailureSource.expected,
+              reason: FailureReason.timeout,
+            )
+          : mapApplicationFailure(
+              error is MediaProcessingLookupFailure ? error.cause : error,
+              '消息发送失败，请重试。',
+            );
       final failures = Map<String, ApiFailure>.of(state.sendFailures)
         ..[optimisticMessageId] = failure;
       state = state.copyWith(
@@ -544,7 +518,9 @@ class DirectConversationController
             .map(
               (item) => item.id == optimisticMessageId
                   ? item.copyWith(
-                      deliveryState: DirectMessageDeliveryState.failed,
+                      deliveryState: processing
+                          ? DirectMessageDeliveryState.processingPending
+                          : DirectMessageDeliveryState.failed,
                     )
                   : item,
             )
@@ -559,18 +535,14 @@ class DirectConversationController
 
   Future<bool> retrySend() async {
     final message = state.messages
-        .where(
-          (item) => item.deliveryState == DirectMessageDeliveryState.failed,
-        )
+        .where((item) => item.canRetryDelivery)
         .lastOrNull;
     return message == null ? false : retryMessage(message.id);
   }
 
   void abandonFailedDraft() {
     final message = state.messages
-        .where(
-          (item) => item.deliveryState == DirectMessageDeliveryState.failed,
-        )
+        .where((item) => item.canRetryDelivery)
         .lastOrNull;
     if (message != null) abandonFailedMessage(message.id);
   }
@@ -579,7 +551,7 @@ class DirectConversationController
     final message = state.messages
         .where((item) => item.id == optimisticMessageId)
         .firstOrNull;
-    if (message?.deliveryState != DirectMessageDeliveryState.failed) return;
+    if (message?.canRetryDelivery != true) return;
     final failures = Map<String, ApiFailure>.of(state.sendFailures)
       ..remove(optimisticMessageId);
     final pending = Map<String, PendingDirectMessageMedia>.of(

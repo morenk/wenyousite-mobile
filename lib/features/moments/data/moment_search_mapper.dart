@@ -1,5 +1,6 @@
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/network/media_display_mapper.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
 
 /// 将动态搜索 DTO 收敛为与动态信息流共享的展示模型。
@@ -66,7 +67,10 @@ class MomentSearchMapper {
     return MomentAuthor(
       id: _requiredText(dto.id, '作者 ID'),
       username: _requiredText(dto.username, '作者用户名'),
-      avatarUrl: _optionalHttpUri(dto.avatar, '作者头像'),
+      avatarUrl: _optionalHttpUri(
+        mapAvatarDisplayUrl(dto.avatar, dto.avatarDisplay),
+        '作者头像',
+      ),
       level: _nonNegativeInteger(dto.level, '作者等级'),
     );
   }
@@ -78,6 +82,7 @@ class MomentSearchMapper {
       throw const ApiFailure(userMessage: '图片加载失败，请重新搜索。');
     }
     return MomentMedia(
+      display: mapMediaDisplay(dto.display),
       id: _requiredText(dto.id, '图片 ID'),
       url: _requiredHttpUri(dto.url, '图片地址'),
       thumbnailUrl: _optionalHttpUri(dto.thumbnailUrl, '图片缩略图地址'),

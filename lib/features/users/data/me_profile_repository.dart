@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/network/media_display_mapper.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/users/application/user_repository_ports.dart';
 import 'package:wenyousite_mobile/features/users/data/profile_cover_mapper.dart';
@@ -28,7 +29,9 @@ class ApiMeProfileRepository implements MeProfileRepository {
         id: dto.id,
         email: dto.email,
         username: dto.username,
-        avatarUrl: _safeHttpUrl(dto.avatar),
+        avatarUrl: _safeHttpUrl(
+          mapAvatarDisplayUrl(dto.avatar, dto.avatarDisplay),
+        ),
         bio: _safeBio(dto.bio),
         profileCover: mapProfileCover(dto.profileCover),
         level: dto.level.toInt(),
@@ -71,7 +74,9 @@ class ApiMeProfileRepository implements MeProfileRepository {
       return MeProfileUpdateResult(
         email: dto.email,
         username: dto.username,
-        avatarUrl: _safeHttpUrl(dto.avatar),
+        avatarUrl: _safeHttpUrl(
+          mapAvatarDisplayUrl(dto.avatar, dto.avatarDisplay),
+        ),
         bio: _safeBio(dto.bio),
         profileCover: mapProfileCover(dto.profileCover),
         level: dto.level.toInt(),

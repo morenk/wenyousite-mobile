@@ -110,6 +110,7 @@ class DirectMessageImage extends StatelessWidget {
                   maxDimension: maxDimension,
                 );
                 final image = WenyouCachedImage(
+                  enableRetry: media.display != null,
                   imageUrl: media.displayUrl,
                   fallbackImageUrls: media.displayUrls
                       .skip(1)
@@ -148,6 +149,7 @@ class DirectMessageImage extends StatelessWidget {
       context: context,
       builder: (_) => ContentImageViewerPage.single(
         url: media.url,
+        display: media.display,
         fallbackUrls: media.displayUrls
             .where((url) => url != media.url)
             .toList(growable: false),

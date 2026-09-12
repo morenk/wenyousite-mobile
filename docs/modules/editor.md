@@ -68,6 +68,8 @@ v5 独立图片保存时会与前后正文、协议空段及其他块保持 Mark
 
 ## 6. 状态模型和数据流
 
+完整展示（负责人已验收）：RichEditorSession 保存会话内精确 sourceUrl→display 映射，上传图片与表情插入、编辑重开和草稿恢复都把映射交给嵌入组件；显示用完整 WebP，Markdown／Delta 的来源身份与复制结果保持原 URL。复制通过模型生成，不创建临时网络图片；坏 WebP 显式重试同源，不回退大 GIF。见[全场景验收记录](../architecture/animation-webp-all-surfaces.md)。
+
 分隔后的空列表项候选统一整篇保存校验的解析规则：与本站阅读、列表写出共用独占空段和代码保护，所有列表状态均检查类型、实际深度、父项及直属内容空状态；不再只有空项才进入另一套 GFM 计数逻辑。负责人反馈的第二组末项空白问题仍待新包验收，上一候选结果为验收失败，见[记录](../architecture/editor-list-candidate-acceptance.md)。
 
 系统整改候选以 `MarkdownEditorDocument` 的结构化编辑投影作为 Codec 的块归属来源，正文、标题、引用、列表、真实空段、语法分隔和兼容源码分别表示。正常编辑与阅读复制复用该投影；复制允许的格式降级单独控制，不改变正常保存的保真要求。空光标的块样式从当前行与容器读取，避免把前文的引用／列表误显示为当前选中格式；行内续写样式及尚未输入的样式继续遵循原操作规则。该候选与新增的连续操作、架构约束见[系统整改计划](../architecture/editor-semantics-remediation-plan.md)，尚待负责人验收。
@@ -189,7 +191,7 @@ S5 于 2026-09-10 启动，已按要求安装 Debug 候选并核验设备内 APK
 
 ## 13. 最近审查的契约版本和后端提交
 
-本轮展示契约来源：API `5.22.0-dev.20260912.2`、Backend `6fdfa00eaf1f3056ba30f2ffbc529d12eed1c823`；新增display／mediaDisplays，消费者接入与真机验收另行记录。仅既有 `markdown-editor-list-v1-fixtures.json` 保留 `062412601b3a8dbf4f64494115a2445d312dd53d` 来源与SHA-256，见 contracts/markdown-editor-list-v1-source.json；不将该独立语料误标为本轮主来源。
+本轮展示契约来源：API `5.22.0-dev.20260912.2`、Backend `6fdfa00eaf1f3056ba30f2ffbc529d12eed1c823`；新增 display／mediaDisplays；消费者已获负责人验收，检查与合并整合见本任务 PR 和全场景记录。仅既有 `markdown-editor-list-v1-fixtures.json` 保留 `062412601b3a8dbf4f64494115a2445d312dd53d` 来源与SHA-256，见 contracts/markdown-editor-list-v1-source.json；不将该独立语料误标为本轮主来源。
 
 2026-09-11 列表契约候选同步：Backend `062412601b3a8dbf4f64494115a2445d312dd53d`，OpenAPI `5.20.1-dev.20260911.1`；新增 editor-list v1 revision 2，夹具最初固定于 `aa1bcbd4d087f03a17817e9eca8bcd1f92bb53da`。同时同步收藏夹计数按当前用户可见性统计的契约说明；字段形状、块边界 v1 revision 2 与既有消费代码保持；列表消费者现已形成结构适配候选，真机验收待完成，见[候选验收记录](../architecture/editor-list-candidate-acceptance.md)。
 

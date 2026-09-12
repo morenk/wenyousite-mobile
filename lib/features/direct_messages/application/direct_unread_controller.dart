@@ -1,10 +1,47 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wenyousite_mobile/app/app_capabilities.dart';
 import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
+import 'package:wenyousite_mobile/core/application/visibility_cache_invalidation.dart';
+import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/direct_messages/application/direct_message_repository_ports.dart';
 import 'package:wenyousite_mobile/features/direct_messages/application/direct_message_states.dart';
 import 'package:wenyousite_mobile/features/direct_messages/domain/direct_message_models.dart';
+
+final directMessagesEnabledProvider = Provider<bool>(
+  (ref) => ref.watch(
+    appCapabilitiesProvider.select(
+      (capabilities) => capabilities.directMessages,
+    ),
+  ),
+  dependencies: [appCapabilitiesProvider],
+);
+
+final directUnreadControllerProvider =
+    StateNotifierProvider<DirectUnreadController, DirectUnreadState>(
+      (ref) {
+        ref.watch(viewerScopeProvider);
+        final authenticated = ref.watch(
+          sessionControllerProvider.select(
+            (session) => session.isAuthenticated,
+          ),
+        );
+        final enabled = ref.watch(directMessagesEnabledProvider);
+        return DirectUnreadController(
+          ref.watch(directMessageRepositoryProvider),
+          autoStart: authenticated && enabled,
+        );
+      },
+      // This provider is read from the app shell while the server-advertised
+      // capability is scoped by WenyouApp (and overridden by feature tests).
+      // Declaring the dependency keeps Riverpod in the same override scope.
+      dependencies: [
+        viewerScopeProvider,
+        directMessagesEnabledProvider,
+        directMessageRepositoryProvider,
+      ],
+    );
 
 class DirectUnreadController extends StateNotifier<DirectUnreadState> {
   DirectUnreadController(this._repository, {bool autoStart = true})

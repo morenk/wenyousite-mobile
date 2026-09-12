@@ -137,6 +137,7 @@ class _PostComposerOpeningState extends ConsumerState<PostComposerOpening> {
           )
         : PostComposerBaseline(
             content: latest.content,
+            mediaDisplays: latest.mediaDisplays,
             postId: latest.id,
             version: latest.version,
           );
@@ -188,7 +189,15 @@ class _PostComposerOpeningState extends ConsumerState<PostComposerOpening> {
           version: baseline.version,
           postId: baseline.postId,
         ),
-        baseline: baseline,
+        baseline: PostComposerBaseline(
+          content: baseline.content,
+          postId: baseline.postId,
+          version: baseline.version,
+          mediaDisplays: {
+            ...?widget.initialDraft?.mediaDisplays,
+            ...baseline.mediaDisplays,
+          },
+        ),
       );
     });
   }

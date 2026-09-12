@@ -5,6 +5,7 @@ import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/network/api_call.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
+import 'package:wenyousite_mobile/core/network/media_display_mapper.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/moments/data/moment_search_mapper.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
@@ -170,7 +171,9 @@ class ApiSearchRepository implements SearchRepository {
       isPublished: dto.published,
       ownerId: dto.owner.id,
       ownerName: dto.owner.username,
-      ownerAvatarUrl: _safeHttpUrl(dto.owner.avatar),
+      ownerAvatarUrl: _safeHttpUrl(
+        mapAvatarDisplayUrl(dto.owner.avatar, dto.owner.avatarDisplay),
+      ),
       ownerLevel: dto.owner.level.toInt(),
       createdAt: dto.createdAt,
       lastActivityAt: latestThreadActivityAt(
@@ -215,7 +218,9 @@ class ApiSearchRepository implements SearchRepository {
     return SearchUserResult(
       id: dto.id,
       username: dto.username,
-      avatarUrl: _safeHttpUrl(dto.avatar),
+      avatarUrl: _safeHttpUrl(
+        mapAvatarDisplayUrl(dto.avatar, dto.avatarDisplay),
+      ),
       bio: bio == null || bio.isEmpty ? null : bio,
     );
   }
@@ -232,6 +237,7 @@ class ApiSearchRepository implements SearchRepository {
       floorNumber: dto.floorNumber?.toInt(),
       parentPostId: dto.parentPostId,
       content: dto.content,
+      mediaDisplays: mapMarkdownMediaDisplays(dto.mediaDisplays),
       preview: MarkdownContent.toPlainTextPreview(dto.content),
       authorId: dto.author.id,
       authorName: dto.author.username,

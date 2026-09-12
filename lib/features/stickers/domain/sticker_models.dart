@@ -1,9 +1,12 @@
+import 'package:wenyousite_mobile/core/media/media_display.dart';
+
 enum StickerImportStatus { processing, completed, failed }
 
 class StickerAsset {
   const StickerAsset({
     required this.id,
     required this.url,
+    this.display,
     required this.thumbnailUrl,
     required this.width,
     required this.height,
@@ -14,6 +17,7 @@ class StickerAsset {
 
   final String id;
   final String url;
+  final MediaDisplay? display;
   final String thumbnailUrl;
   final int width;
   final int height;

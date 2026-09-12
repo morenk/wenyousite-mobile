@@ -28,6 +28,8 @@
 
 ## 6. 状态模型和数据流
 
+账单关联用户头像消费 avatarDisplay 展示地址，旧 null 保持原地址；不修改钱包金额、权限、账单或写入流程。对应完整展示候选仍待负责人验收。
+
 钱包以单一 CustomScrollView 承载余额、签到与惰性收支流水。共享 Sliver 面板直接消费全局 CardTheme 的形状与边框和 Foundation 内边距，不把长流水塞入预构建 Column；加载、空错和分页入口仍独立保留，金额与游标语义不变。
 
 签到反馈只在 `claimedNow=true` 时出现；经验为 0 或 2 时都只显示本次温油；重复领取只更新可查的签到状态，不再次提示领取。日活经验与首个有效行为共享每日额度，仓储按契约校验 0～2 的整数范围。内容发布、回复、点赞及加油经验由后端 Outbox 异步结算；移动端不在写入成功时预加经验、不硬编码各类奖励额度，也不合成升级提示。“我的”重新进入或在可见时恢复前台会重读资料，仍可下拉刷新；签到立即失效资料缓存，奖励结算可能稍晚于写入成功。
@@ -87,7 +89,7 @@ app-shell 只负责会话、前后台与北京时间边界的签到调度及非�
 
 ## 13. 最近审查的契约版本和后端提交
 
-本轮展示契约来源：API `5.22.0-dev.20260912.2`、Backend `6fdfa00eaf1f3056ba30f2ffbc529d12eed1c823`；新增display／mediaDisplays，消费者接入与真机验收另行记录。仅既有 `markdown-editor-list-v1-fixtures.json` 保留 `062412601b3a8dbf4f64494115a2445d312dd53d` 来源与SHA-256，见 contracts/markdown-editor-list-v1-source.json；不将该独立语料误标为本轮主来源。
+本轮展示契约来源：API `5.22.0-dev.20260912.2`、Backend `6fdfa00eaf1f3056ba30f2ffbc529d12eed1c823`；新增 display／mediaDisplays；消费者已获负责人验收，检查与合并整合见本任务 PR 和全场景记录。仅既有 `markdown-editor-list-v1-fixtures.json` 保留 `062412601b3a8dbf4f64494115a2445d312dd53d` 来源与SHA-256，见 contracts/markdown-editor-list-v1-source.json；不将该独立语料误标为本轮主来源。
 
 2026-09-11 列表契约候选同步：Backend `062412601b3a8dbf4f64494115a2445d312dd53d`，OpenAPI `5.20.1-dev.20260911.1`；新增 editor-list v1 revision 2，夹具最初固定于 `aa1bcbd4d087f03a17817e9eca8bcd1f92bb53da`。同时同步收藏夹计数按当前用户可见性统计的契约说明；字段形状、块边界 v1 revision 2 与既有消费代码保持；列表消费者及真机验收仍待完成，见[列表统一排查](../architecture/editor-list-unification-investigation.md)。
 

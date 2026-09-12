@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/network/media_display_mapper.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_invitation_repository_ports.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_invitation_models.dart';
@@ -64,7 +65,10 @@ class ApiThreadInvitationRepository implements ThreadInvitationRepository {
         },
         ownerId: thread.owner.id,
         ownerName: thread.owner.username,
-        ownerAvatarUrl: thread.owner.avatar,
+        ownerAvatarUrl: mapAvatarDisplayUrl(
+          thread.owner.avatar,
+          thread.owner.avatarDisplay,
+        ),
         memberCount: thread.memberCount.toInt(),
         createdAt: thread.createdAt,
         alreadyJoined: dto.alreadyJoined,

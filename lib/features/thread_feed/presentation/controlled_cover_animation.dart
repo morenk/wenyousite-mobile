@@ -51,6 +51,7 @@ class ControlledCoverAnimation extends StatefulWidget {
     this.codecFactory = decodeCoverAnimation,
     this.onFirstFrameDecoded,
     this.onFirstFramePainted,
+    this.enableRetry = false,
     super.key,
   });
 
@@ -69,6 +70,7 @@ class ControlledCoverAnimation extends StatefulWidget {
 
   /// 对应 RawImage 所在帧完成绘制后通知，不等同显示屏已完成扫描。
   final VoidCallback? onFirstFramePainted;
+  final bool enableRetry;
 
   @override
   State<ControlledCoverAnimation> createState() =>
@@ -83,6 +85,7 @@ class _ControlledCoverAnimationState extends State<ControlledCoverAnimation> {
   int _generation = 0;
   int _framesShown = 0;
   bool _started = false;
+  bool _failed = false;
   Duration? _frameDuration;
   bool _firstPaintScheduled = false;
 
@@ -179,6 +182,7 @@ class _ControlledCoverAnimationState extends State<ControlledCoverAnimation> {
     } on Object {
       if (_current(generation)) {
         _release();
+        _failed = true;
         setState(() {});
       }
     }
@@ -217,6 +221,7 @@ class _ControlledCoverAnimationState extends State<ControlledCoverAnimation> {
     } on Object {
       if (_current(generation)) {
         _release();
+        _failed = true;
         setState(() {});
       }
     }
@@ -263,11 +268,28 @@ class _ControlledCoverAnimationState extends State<ControlledCoverAnimation> {
   void _stop() {
     _generation++;
     _started = false;
+    _failed = false;
     _release();
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_playing && _failed && widget.enableRetry) {
+      return Stack(
+        alignment: Alignment.center,
+        children: [
+          widget.poster,
+          TextButton(
+            onPressed: () {
+              _stop();
+              _sync();
+              setState(() {});
+            },
+            child: const Text('重新加载图片'),
+          ),
+        ],
+      );
+    }
     if (!_playing || _frame == null) return widget.poster;
     if (!_firstPaintScheduled && widget.onFirstFramePainted != null) {
       _firstPaintScheduled = true;

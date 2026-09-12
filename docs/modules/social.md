@@ -35,6 +35,8 @@
 
 点赞、收藏、关注与官方/玩家订阅采用乐观展示：请求发起即改变选中态及可推算的数量，成功再采用权威计数/记录；新增订阅用独立的待提交选择投影，不伪造记录 ID。单目标写入串行，期间保留图标或开关。收藏夹选定后先关闭弹层并显示本次修改，成功提示只在写入确认后显示；失败在原页面反馈并允许重新选择。主题收藏移动/取消立即调整当前列表及目录数量，明确失败恢复原位置与不透明游标。结果不明沿用权威回读，不自动重发。已于 2026-09-13 获负责人确认通过并授权合并，见 [乐观更新验收](../architecture/optimistic-interactions-acceptance.md)。
 
+关系、订阅与收藏响应中的头像消费 avatarDisplay 展示地址，主题封面复用共享 display／preview 选择；玩家发言订阅面板把候选展示地址传入共享头像组件，只有缺图或真实加载失败时才回退用户名首个可读字符。收藏媒体身份与既有权限／分页保持。对应完整展示候选仍待负责人验收。
+
 `ThreadInteractionTarget` 管理详情点赞与快捷收藏，并通过可选投影读取端口采用最新主题详情；`BookmarkFolderCatalogController` 以内容类型为 family key，分别保存主题与动态目录、数量和创建状态。`BookmarkListController` 以必填主题 folderId 为 key；动态侧 `MomentBookmarkListController` 保存当前目录分页、失效 cursor 恢复和移动/取消的唯一在途动作。主题收藏 DTO 在 data 层映射为包含完整主题卡字段与收藏管理 ID 的展示模型，动态本人收藏 DTO 额外保留 `bookmarkFolderId` 与缺失按 true 兼容的 `canInteract`。主题订阅控制器以 `threadId` 为 family key，内部观察稳定 `SessionScope` 并只用当前 `accountId` 过滤本人候选；状态保存当前主题订阅、玩家候选、独立的 `candidateFailure` 与唯一在途目标。`UserRelationTarget` 管理关系写入并可采用公开用户关系投影，`UserRelationListTarget` 管理公开/本人列表。端口由应用组合根按类型绑定，控制器不导入具体 data 仓储。校准中的动作保存中性结果状态和问题编号；所有状态均为 autoDispose，当前不建立跨页面事件总线。
 
 收藏主题卡只接收共享分类展示值，不接收 slug 字符串。分类目录与收藏页分别加载；目录加载中可暂时省略该段，首次失败显示“分类暂不可用”，不会回退显示 `DEDUCTION` 等底层值。
@@ -80,6 +82,7 @@ threads 页面消费主题互动和订阅控制器，moments 提供独立动态�
 - [x] 官方更新与玩家发言订阅可逆，管理者隐藏、候选过滤、候选独立失败/重试、竞态恢复及 360/400/600dp 布局通过。
 - [x] 订阅创建超时和 `40904` 经精确列表记录确认后收敛成功；相反投影、读取失败、页面销毁和旧响应保持安全状态。
 - [x] 玩家候选 viewer 只来自当前稳定会话；账号 A 打开面板后切到账号 B 或退出时旧面板当帧隐藏并关闭，B 账号重新加载且不能操作 A 的订阅。
+- [x] 玩家候选的 avatarDisplay 展示地址贯通仓储与订阅面板；非空地址不能在列表层被丢弃，缺图或加载失败仍按共享规则降级。
 - [x] 点赞、收藏、关注与拉黑在未知写入结果后采用最新详情/关系投影，确认期间重复点击不产生第二次写入。
 - [x] 本人收藏首屏/分页/空错刷新、稳定主题导航、记录 ID 取消与多宽度布局通过。
 - [x] 统一收藏页直接展示默认收藏夹内容，以“主题 / 动态”页签切换类型，并用紧凑筛选菜单承载默认与自建收藏夹；大量收藏夹可滚动到最后一项，不使用 Chip 堆叠目录。
@@ -98,7 +101,7 @@ threads 页面消费主题互动和订阅控制器，moments 提供独立动态�
 
 ## 13. 最近审查的契约版本和后端提交
 
-本轮展示契约来源：API `5.22.0-dev.20260912.2`、Backend `6fdfa00eaf1f3056ba30f2ffbc529d12eed1c823`；新增display／mediaDisplays，消费者接入与真机验收另行记录。仅既有 `markdown-editor-list-v1-fixtures.json` 保留 `062412601b3a8dbf4f64494115a2445d312dd53d` 来源与SHA-256，见 contracts/markdown-editor-list-v1-source.json；不将该独立语料误标为本轮主来源。
+本轮展示契约来源：API `5.22.0-dev.20260912.2`、Backend `6fdfa00eaf1f3056ba30f2ffbc529d12eed1c823`；新增 display／mediaDisplays；消费者已获负责人验收，检查与合并整合见本任务 PR 和全场景记录。仅既有 `markdown-editor-list-v1-fixtures.json` 保留 `062412601b3a8dbf4f64494115a2445d312dd53d` 来源与SHA-256，见 contracts/markdown-editor-list-v1-source.json；不将该独立语料误标为本轮主来源。
 
 2026-09-11 列表契约候选同步：Backend `062412601b3a8dbf4f64494115a2445d312dd53d`，OpenAPI `5.20.1-dev.20260911.1`；新增 editor-list v1 revision 2，夹具最初固定于 `aa1bcbd4d087f03a17817e9eca8bcd1f92bb53da`。同时同步收藏夹计数按当前用户可见性统计的契约说明；字段形状、块边界 v1 revision 2 与既有消费代码保持；列表消费者及真机验收仍待完成，见[列表统一排查](../architecture/editor-list-unification-investigation.md)。
 

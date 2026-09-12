@@ -1,4 +1,5 @@
 import 'package:wenyousite_mobile/core/domain/domain_validation_exception.dart';
+import 'package:wenyousite_mobile/core/media/media_display.dart';
 
 const directMessageMaxLength = 1000;
 
@@ -44,7 +45,7 @@ enum DirectConversationStatus { pending, accepted, declined, canceled, unknown }
 
 enum DirectRequestDirection { none, incoming, outgoing, unknown }
 
-enum DirectMessageDeliveryState { sent, sending, failed }
+enum DirectMessageDeliveryState { sent, sending, processingPending, failed }
 
 enum DirectContactState {
   fresh,
@@ -141,6 +142,7 @@ class DirectMessageMedia {
   const DirectMessageMedia({
     required this.id,
     required this.url,
+    this.display,
     required this.isSticker,
     this.thumbnailUrl,
     this.mediumUrl,
@@ -152,6 +154,7 @@ class DirectMessageMedia {
 
   final String id;
   final String url;
+  final MediaDisplay? display;
   final String? thumbnailUrl;
   final String? mediumUrl;
   final String? contentType;
@@ -161,6 +164,7 @@ class DirectMessageMedia {
   final bool animated;
 
   List<String> get displayUrls {
+    if (display != null) return [display!.url];
     final result = <String>[];
     for (final value in [mediumUrl, thumbnailUrl, url]) {
       final normalized = value?.trim();
@@ -346,6 +350,10 @@ class DirectMessage {
   final DirectMessageDraft? localDraft;
 
   bool get isRecalled => recalledAt != null;
+  bool get canRetryDelivery =>
+      deliveryState == DirectMessageDeliveryState.failed ||
+      deliveryState == DirectMessageDeliveryState.processingPending;
+
   bool get isOptimistic => deliveryState != DirectMessageDeliveryState.sent;
   bool isMine(String otherUserId) => senderId != otherUserId;
 

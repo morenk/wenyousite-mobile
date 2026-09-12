@@ -163,6 +163,7 @@ class ThreadSubthreadBody extends ConsumerWidget {
             WenyouMarkdown(
               key: Key('thread-body-${subthread.id}'),
               data: body.markdown,
+              mediaDisplays: body.mediaDisplays,
               diceLabels: threadDiceLabels(body.diceRolls),
               diceSemantics: threadDiceSemantics(body.diceRolls),
               diceDetails: threadDiceDetails(body.diceRolls),
@@ -176,6 +177,7 @@ class ThreadSubthreadBody extends ConsumerWidget {
               key: Key('thread-body-${subthread.id}'),
               postId: body.postId!,
               data: body.markdown,
+              mediaDisplays: body.mediaDisplays,
               diceLabels: threadDiceLabels(body.diceRolls),
               diceSemantics: threadDiceSemantics(body.diceRolls),
               diceDetails: threadDiceDetails(body.diceRolls),
@@ -472,6 +474,7 @@ class ThreadFloorCard extends ConsumerWidget {
                     StickerPostMarkdown(
                       postId: floor.id,
                       data: floor.body.markdown,
+                      mediaDisplays: floor.body.mediaDisplays,
                       diceLabels: threadDiceLabels(floor.body.diceRolls),
                       diceSemantics: threadDiceSemantics(floor.body.diceRolls),
                       diceDetails: threadDiceDetails(floor.body.diceRolls),
@@ -651,6 +654,7 @@ class _FloorInlineReplyCard extends StatelessWidget {
             StickerPostMarkdown(
               postId: reply.id,
               data: reply.body.markdown,
+              mediaDisplays: reply.body.mediaDisplays,
               diceLabels: threadDiceLabels(reply.body.diceRolls),
               diceSemantics: threadDiceSemantics(reply.body.diceRolls),
               diceDetails: threadDiceDetails(reply.body.diceRolls),

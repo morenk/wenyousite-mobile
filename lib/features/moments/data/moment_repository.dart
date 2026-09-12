@@ -5,6 +5,7 @@ import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
+import 'package:wenyousite_mobile/core/network/media_display_mapper.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/moments/application/moment_repository_ports.dart';
 import 'package:wenyousite_mobile/features/moments/data/moment_comment_context_mapper.dart';
@@ -761,7 +762,10 @@ class ApiMomentRepository implements MomentRepository {
     return MomentAuthor(
       id: _requiredText(dto.id, '作者 ID'),
       username: _requiredText(dto.username, '作者用户名'),
-      avatarUrl: _optionalHttpUri(dto.avatar, '作者头像'),
+      avatarUrl: _optionalHttpUri(
+        mapAvatarDisplayUrl(dto.avatar, dto.avatarDisplay),
+        '作者头像',
+      ),
       level: _nonNegativeInteger(dto.level, '作者等级'),
     );
   }
@@ -776,6 +780,7 @@ class ApiMomentRepository implements MomentRepository {
       );
     }
     return MomentMedia(
+      display: mapMediaDisplay(dto.display),
       id: _requiredText(dto.id, '图片 ID'),
       url: _requiredHttpUri(dto.url, '图片地址'),
       thumbnailUrl: _optionalHttpUri(dto.thumbnailUrl, '图片缩略图地址'),
@@ -798,6 +803,7 @@ class ApiMomentRepository implements MomentRepository {
       );
     }
     return MomentSticker(
+      display: mapMediaDisplay(dto.display),
       id: _requiredText(dto.id, '表情 ID'),
       url: _requiredHttpUri(dto.url, '表情地址'),
       thumbnailUrl: _requiredHttpUri(dto.thumbnailUrl, '表情缩略图地址'),

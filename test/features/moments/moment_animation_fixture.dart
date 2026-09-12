@@ -16,11 +16,13 @@ class MomentAnimationFixture {
   late final CacheManager cache;
   final requests = <String>[];
   final failures = <String>{};
+  final responseBytes = <String, int>{};
 
   static Future<void> run(
     WidgetTester tester,
-    Future<void> Function(MomentAnimationFixture fixture) body,
-  ) async {
+    Future<void> Function(MomentAnimationFixture fixture) body, {
+    Map<String, Uint8List> resources = const {},
+  }) async {
     final directory = (await tester.runAsync(
       () => Directory.systemTemp.createTemp('moment-animation-'),
     ))!;
@@ -47,15 +49,40 @@ class MomentAnimationFixture {
     fixture.cache = CacheManager(
       Config(
         directory.path.split(Platform.pathSeparator).last,
-        repo: JsonCacheInfoRepository.withFile(
-          File('${directory.path}/cache.json'),
-        ),
+        // 全展示源回归只测 HTTP/解码；内存文件系统避免把 Windows 索引
+        // 定时落盘混入这些场景，磁盘缓存另由专门的 source 测试覆盖。
+        repo: resources.isEmpty
+            ? JsonCacheInfoRepository.withFile(
+                File('${directory.path}/cache.json'),
+              )
+            : NonStoringObjectProvider(),
+        fileSystem: resources.isEmpty
+            ? IOFileSystem(directory.path.split(Platform.pathSeparator).last)
+            : MemoryCacheSystem(),
         fileService: HttpFileService(
           httpClient: MockClient((request) async {
             final url = request.url.toString();
             fixture.requests.add(url);
             if (fixture.failures.contains(url)) {
               return http.Response('failed', 503);
+            }
+            if (resources[url] case final Uint8List resource) {
+              fixture.responseBytes.update(
+                url,
+                (value) => value + resource.length,
+                ifAbsent: () => resource.length,
+              );
+              return http.Response.bytes(
+                resource,
+                200,
+                headers: {
+                  'content-type': url.endsWith('.webp')
+                      ? 'image/webp'
+                      : url.endsWith('.gif')
+                      ? 'image/gif'
+                      : 'image/png',
+                },
+              );
             }
             final isStill = url.contains('still');
             final isAnimation = !url.contains('thumb') && !isStill;

@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/network/media_display_mapper.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/users/application/user_repository_ports.dart';
 import 'package:wenyousite_mobile/features/users/domain/me_profile_models.dart';
@@ -24,7 +25,9 @@ class ApiAvatarRepository implements AvatarRepository {
       if (user == null) {
         throw const ApiFailure(userMessage: '头像设置失败，请重新加载资料确认。');
       }
-      final avatarUrl = _safeHttpUrl(user.avatar);
+      final avatarUrl = _safeHttpUrl(
+        mapAvatarDisplayUrl(user.avatar, user.avatarDisplay),
+      );
       if (avatarUrl == null) {
         throw const ApiFailure(userMessage: '头像设置结果缺少安全图片地址，请重新加载资料确认。');
       }

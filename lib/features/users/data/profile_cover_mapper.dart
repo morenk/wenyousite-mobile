@@ -1,4 +1,5 @@
 import 'package:wenyou_api/wenyou_api.dart';
+import 'package:wenyousite_mobile/core/network/media_display_mapper.dart';
 import 'package:wenyousite_mobile/features/users/domain/profile_cover_models.dart';
 
 ProfileCoverModel? mapProfileCover(ProfileCoverResponseDto? dto) {
@@ -8,6 +9,7 @@ ProfileCoverModel? mapProfileCover(ProfileCoverResponseDto? dto) {
     mediumUrl: dto.mediumUrl,
     width: dto.width,
     height: dto.height,
+    display: dto.display,
   );
   if (web == null) return null;
   final mobileDto = dto.mobile;
@@ -18,6 +20,7 @@ ProfileCoverModel? mapProfileCover(ProfileCoverResponseDto? dto) {
           mediumUrl: mobileDto.mediumUrl,
           width: mobileDto.width,
           height: mobileDto.height,
+          display: mobileDto.display,
         );
   return ProfileCoverModel(web: web, mobile: mobile);
 }
@@ -27,12 +30,13 @@ ProfileCoverVariant? _mapVariant({
   required String? mediumUrl,
   required num? width,
   required num? height,
+  required MediaDisplayResponseDto? display,
 }) {
   final safeOriginal = _safeHttpUrl(url);
   if (safeOriginal == null) return null;
   final safeMedium = _safeHttpUrl(mediumUrl);
   return ProfileCoverVariant(
-    url: safeMedium ?? safeOriginal,
+    url: mapMediaDisplay(display)?.url ?? safeMedium ?? safeOriginal,
     width: _positiveInt(width),
     height: _positiveInt(height),
   );

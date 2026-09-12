@@ -47,6 +47,15 @@ class ApiFailure implements Exception {
     this.cause,
   }) : legacyUserMessage = userMessage;
 
+  /// 响应数据无法消费时只记录分类，展示文案由 UserFacingFailure 映射。
+  const ApiFailure.invalidResponse({required String diagnosticCode})
+    : this(
+        source: FailureSource.content,
+        reason: FailureReason.contractViolation,
+        recoveryAction: FailureRecoveryAction.refresh,
+        diagnosticCode: diagnosticCode,
+      );
+
   factory ApiFailure.contractViolation({
     required String userMessage,
     required String diagnosticCode,

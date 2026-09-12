@@ -122,7 +122,7 @@ class MomentCommentBody extends ConsumerWidget {
                           child: MomentPlaybackImage(
                             previewUrls: comment.media!.playbackPreviewUrls,
                             animationUrl: comment.media!.isAnimated
-                                ? comment.media!.url
+                                ? comment.media!.playbackUrl
                                 : null,
                             allowPlayback: true,
                             width: double.infinity,
@@ -145,6 +145,7 @@ class MomentCommentBody extends ConsumerWidget {
                     MomentMedia(
                       id: sticker.id,
                       url: sticker.url,
+                      display: sticker.display,
                       thumbnailUrl: sticker.thumbnailUrl,
                       mediumUrl: sticker.mediumUrl,
                       animated: sticker.animated,
@@ -160,7 +161,9 @@ class MomentCommentBody extends ConsumerWidget {
                   ),
                   child: !comment.sticker!.animated
                       ? WenyouCachedImage(
-                          imageUrl: comment.sticker!.mediumUrl,
+                          imageUrl:
+                              comment.sticker!.display?.url ??
+                              comment.sticker!.mediumUrl,
                           fit: BoxFit.contain,
                         )
                       : SizedBox.fromSize(
@@ -183,7 +186,8 @@ class MomentCommentBody extends ConsumerWidget {
                                     )
                                     .toList(),
                             animationUrl: comment.sticker!.animated
-                                ? comment.sticker!.url
+                                ? comment.sticker!.display?.url ??
+                                      comment.sticker!.url
                                 : null,
                             allowPlayback: true,
                             width: double.infinity,

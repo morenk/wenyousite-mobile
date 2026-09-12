@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,6 +12,7 @@ import 'package:wenyousite_mobile/features/editor/presentation/editor_toolbar.da
 import 'package:wenyousite_mobile/features/media/application/image_crop_ports.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
 import 'package:wenyousite_mobile/features/media/data/media_upload_repository.dart';
+import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_thread_context_ports.dart';
 import 'package:wenyousite_mobile/features/posts/data/post_repository.dart';
 import 'package:wenyousite_mobile/features/posts/presentation/post_replies_page.dart';
@@ -17,6 +20,7 @@ import 'package:wenyousite_mobile/features/stickers/application/sticker_collecti
 
 import '../../support/deterministic_test_fonts.dart';
 import '../../support/fake_image_crop_processor.dart';
+import '../moments/moment_animation_fixture.dart';
 import 'post_replies_page_test_support.dart';
 
 void registerPostRepliesPageComposerMediaCases() {
@@ -359,150 +363,210 @@ void registerPostRepliesPageComposerMediaCases() {
   });
 
   testWidgets('回复编辑器选图后直接上传并写入统一图片节点', (tester) async {
-    tester.view.devicePixelRatio = 1;
-    tester.view.physicalSize = const Size(360, 800);
-    addTearDown(tester.view.resetDevicePixelRatio);
-    addTearDown(tester.view.resetPhysicalSize);
-    final container = ProviderContainer(
-      overrides: [
-        tokenStoreProvider.overrideWithValue(
-          PostRepliesPageTestMemoryTokenStore(),
-        ),
-        sessionRemoteProvider.overrideWithValue(
-          PostRepliesPageTestFakeSessionRemote(),
-        ),
-        stickersEnabledProvider.overrideWithValue(false),
-        postRepositoryProvider.overrideWithValue(
-          PostRepliesPageTestFakePostRepository(),
-        ),
-        imageCropProcessorPortProvider.overrideWithValue(
-          const FakePassThroughImageCropProcessor(),
-        ),
-        editorImagePickerPortProvider.overrideWithValue(
-          PostRepliesPageTestFakeEditorImagePicker(),
-        ),
-        mediaUploadGatewayPortProvider.overrideWithValue(
-          RepositoryMediaUploadGateway(
-            PostRepliesPageTestFakeMediaUploadRepository(),
+    await MomentAnimationFixture.run(
+      tester,
+      (fixture) async {
+        tester.view.devicePixelRatio = 1;
+        tester.view.physicalSize = const Size(360, 800);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        addTearDown(tester.view.resetPhysicalSize);
+        final container = ProviderContainer(
+          overrides: [
+            tokenStoreProvider.overrideWithValue(
+              PostRepliesPageTestMemoryTokenStore(),
+            ),
+            sessionRemoteProvider.overrideWithValue(
+              PostRepliesPageTestFakeSessionRemote(),
+            ),
+            stickersEnabledProvider.overrideWithValue(false),
+            postRepositoryProvider.overrideWithValue(
+              PostRepliesPageTestFakePostRepository(),
+            ),
+            imageCropProcessorPortProvider.overrideWithValue(
+              const _ReplyImageCropProcessor(),
+            ),
+            editorImagePickerPortProvider.overrideWithValue(
+              PostRepliesPageTestFakeEditorImagePicker(),
+            ),
+            mediaUploadGatewayPortProvider.overrideWithValue(
+              RepositoryMediaUploadGateway(
+                PostRepliesPageTestFakeMediaUploadRepository(),
+              ),
+            ),
+          ],
+        );
+        addTearDown(container.dispose);
+        await container
+            .read(sessionControllerProvider.notifier)
+            .authenticate(postRepliesPageTestTokensFor('author-1'));
+
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: container,
+            child: MaterialApp(
+              theme: AppTheme.light,
+              home: const PostRepliesPage(
+                threadId: 'thread',
+                rootPostId: 'root',
+              ),
+            ),
           ),
-        ),
-      ],
-    );
-    addTearDown(container.dispose);
-    await container
-        .read(sessionControllerProvider.notifier)
-        .authenticate(postRepliesPageTestTokensFor('author-1'));
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('post-reply-compose')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('editor-image')));
+        await postRepliesPageTestConfirmImageCrop(tester);
+        await _settleEditorImage(tester);
 
-    await tester.pumpWidget(
-      UncontrolledProviderScope(
-        container: container,
-        child: MaterialApp(
-          theme: AppTheme.light,
-          home: const PostRepliesPage(threadId: 'thread', rootPostId: 'root'),
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('post-reply-compose')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('editor-image')));
-    await postRepliesPageTestConfirmImageCrop(tester);
-    await tester.pumpAndSettle();
-
-    expect(find.text('描述这张图片'), findsNothing);
-    final editor = tester.widget<QuillEditor>(
-      find.byKey(const Key('post-composer-body')),
-    );
-    expect(
-      MarkdownDeltaCodec.encode(editor.controller.document.toDelta()),
-      contains('![图片](https://cdn.example.com/reply.png)'),
+        expect(find.text('描述这张图片'), findsNothing);
+        final editor = tester.widget<QuillEditor>(
+          find.byKey(const Key('post-composer-body')),
+        );
+        expect(
+          MarkdownDeltaCodec.encode(editor.controller.document.toDelta()),
+          contains('![图片](https://cdn.example.com/reply.png)'),
+        );
+        expect(fixture.requests, ['https://cdn.example.com/reply.png']);
+      },
+      resources: {
+        'https://cdn.example.com/reply.png': File(
+          'test/fixtures/animation-webp-all-surfaces/poster.png',
+        ).readAsBytesSync(),
+      },
     );
   });
 
   testWidgets('回复图片上传失败后可复用原图片重试且只插入一次', (tester) async {
-    tester.view.devicePixelRatio = 1;
-    tester.view.physicalSize = const Size(360, 800);
-    addTearDown(tester.view.resetDevicePixelRatio);
-    addTearDown(tester.view.resetPhysicalSize);
-    final uploadGateway =
-        PostRepliesPageTestFailingThenSuccessfulMediaUploadGateway();
-    final container = ProviderContainer(
-      overrides: [
-        tokenStoreProvider.overrideWithValue(
-          PostRepliesPageTestMemoryTokenStore(),
-        ),
-        sessionRemoteProvider.overrideWithValue(
-          PostRepliesPageTestFakeSessionRemote(),
-        ),
-        stickersEnabledProvider.overrideWithValue(false),
-        postRepositoryProvider.overrideWithValue(
-          PostRepliesPageTestFakePostRepository(),
-        ),
-        imageCropProcessorPortProvider.overrideWithValue(
-          const FakePassThroughImageCropProcessor(),
-        ),
-        editorImagePickerPortProvider.overrideWithValue(
-          PostRepliesPageTestFakeEditorImagePicker(),
-        ),
-        mediaUploadGatewayPortProvider.overrideWithValue(uploadGateway),
-      ],
-    );
-    addTearDown(container.dispose);
-    await container
-        .read(sessionControllerProvider.notifier)
-        .authenticate(postRepliesPageTestTokensFor('author-1'));
-    await tester.pumpWidget(
-      UncontrolledProviderScope(
-        container: container,
-        child: MaterialApp(
-          theme: AppTheme.light,
-          home: const PostRepliesPage(threadId: 'thread', rootPostId: 'root'),
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('post-reply-compose')));
-    await tester.pumpAndSettle();
-    await postRepliesPageTestReplaceComposerText(tester, '保留的回复正文');
+    await MomentAnimationFixture.run(
+      tester,
+      (fixture) async {
+        tester.view.devicePixelRatio = 1;
+        tester.view.physicalSize = const Size(360, 800);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        addTearDown(tester.view.resetPhysicalSize);
+        final uploadGateway =
+            PostRepliesPageTestFailingThenSuccessfulMediaUploadGateway();
+        final container = ProviderContainer(
+          overrides: [
+            tokenStoreProvider.overrideWithValue(
+              PostRepliesPageTestMemoryTokenStore(),
+            ),
+            sessionRemoteProvider.overrideWithValue(
+              PostRepliesPageTestFakeSessionRemote(),
+            ),
+            stickersEnabledProvider.overrideWithValue(false),
+            postRepositoryProvider.overrideWithValue(
+              PostRepliesPageTestFakePostRepository(),
+            ),
+            imageCropProcessorPortProvider.overrideWithValue(
+              const _ReplyImageCropProcessor(),
+            ),
+            editorImagePickerPortProvider.overrideWithValue(
+              PostRepliesPageTestFakeEditorImagePicker(),
+            ),
+            mediaUploadGatewayPortProvider.overrideWithValue(uploadGateway),
+          ],
+        );
+        addTearDown(container.dispose);
+        await container
+            .read(sessionControllerProvider.notifier)
+            .authenticate(postRepliesPageTestTokensFor('author-1'));
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: container,
+            child: MaterialApp(
+              theme: AppTheme.light,
+              home: const PostRepliesPage(
+                threadId: 'thread',
+                rootPostId: 'root',
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('post-reply-compose')));
+        await tester.pumpAndSettle();
+        await postRepliesPageTestReplaceComposerText(tester, '保留的回复正文');
 
-    await tester.tap(find.byKey(const Key('editor-image')));
-    await postRepliesPageTestConfirmImageCrop(tester);
-    await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('editor-image')));
+        await postRepliesPageTestConfirmImageCrop(tester);
+        await _settleEditorImage(tester);
 
-    expect(find.text('图片处理失败'), findsOneWidget);
-    expect(find.textContaining('问题编号：request-one'), findsOneWidget);
-    expect(find.byKey(const Key('post-composer-retry-upload')), findsOneWidget);
-    var editor = tester.widget<QuillEditor>(
-      find.byKey(const Key('post-composer-body')),
-    );
-    var markdown = MarkdownDeltaCodec.encode(
-      editor.controller.document.toDelta(),
-    );
-    expect(markdown, contains('保留的回复正文'));
-    expect(markdown, isNot(contains('wenyou_image')));
+        expect(find.text('图片处理失败'), findsOneWidget);
+        expect(find.textContaining('问题编号：request-one'), findsOneWidget);
+        expect(
+          find.byKey(const Key('post-composer-retry-upload')),
+          findsOneWidget,
+        );
+        var editor = tester.widget<QuillEditor>(
+          find.byKey(const Key('post-composer-body')),
+        );
+        var markdown = MarkdownDeltaCodec.encode(
+          editor.controller.document.toDelta(),
+        );
+        expect(markdown, contains('保留的回复正文'));
+        expect(markdown, isNot(contains('wenyou_image')));
 
-    expect(editor.controller.readOnly, isFalse);
-    expect(
-      tester
-          .widget<WenyouComposerDock>(
-            find.byKey(const Key('post-composer-toolbar')),
-          )
-          .enabled,
-      isTrue,
-    );
+        expect(editor.controller.readOnly, isFalse);
+        expect(
+          tester
+              .widget<WenyouComposerDock>(
+                find.byKey(const Key('post-composer-toolbar')),
+              )
+              .enabled,
+          isTrue,
+        );
 
-    await tester.tap(find.byKey(const Key('post-composer-retry-upload')));
-    await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('post-composer-retry-upload')));
+        await _settleEditorImage(tester);
 
-    editor = tester.widget<QuillEditor>(
-      find.byKey(const Key('post-composer-body')),
+        editor = tester.widget<QuillEditor>(
+          find.byKey(const Key('post-composer-body')),
+        );
+        markdown = MarkdownDeltaCodec.encode(
+          editor.controller.document.toDelta(),
+        );
+        expect(uploadGateway.inputs, hasLength(2));
+        expect(uploadGateway.inputs[1], same(uploadGateway.inputs[0]));
+        const retriedImage = '![图片](https://cdn.example.com/retried-reply.png)';
+        expect(markdown.replaceFirst(retriedImage, ''), contains('保留的回复正文'));
+        expect(retriedImage.allMatches(markdown), hasLength(1));
+        expect(
+          find.byKey(const Key('post-composer-retry-upload')),
+          findsNothing,
+        );
+        expect(fixture.requests, ['https://cdn.example.com/retried-reply.png']);
+      },
+      resources: {
+        'https://cdn.example.com/retried-reply.png': File(
+          'test/fixtures/animation-webp-all-surfaces/poster.png',
+        ).readAsBytesSync(),
+      },
     );
-    markdown = MarkdownDeltaCodec.encode(editor.controller.document.toDelta());
-    expect(uploadGateway.inputs, hasLength(2));
-    expect(uploadGateway.inputs[1], same(uploadGateway.inputs[0]));
-    const retriedImage = '![图片](https://cdn.example.com/retried-reply.png)';
-    expect(markdown.replaceFirst(retriedImage, ''), contains('保留的回复正文'));
-    expect(retriedImage.allMatches(markdown), hasLength(1));
-    expect(find.byKey(const Key('post-composer-retry-upload')), findsNothing);
   });
+}
+
+Future<void> _settleEditorImage(WidgetTester tester) async {
+  for (var i = 0; i < 5; i++) {
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 30)),
+    );
+    await tester.pump(const Duration(milliseconds: 100));
+  }
+  await tester.pumpAndSettle();
+}
+
+class _ReplyImageCropProcessor extends FakePassThroughImageCropProcessor {
+  const _ReplyImageCropProcessor();
+  @override
+  Future<CropImageSource> prepare(MediaUploadInput input) async =>
+      CropImageSource(
+        original: input,
+        previewBytes: File(
+          'test/fixtures/animation-webp-all-surfaces/poster.png',
+        ).readAsBytesSync(),
+        width: 320,
+        height: 180,
+      );
 }
