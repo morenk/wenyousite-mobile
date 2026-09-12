@@ -70,6 +70,9 @@ void main() {
             as AndroidNotificationChannel;
     expect(channel.id, 'wenyou_messages_v1');
     expect(channel.importance, Importance.high);
+    expect(channel.playSound, isTrue);
+    // 插件 sound 为 null 时使用 RingtoneManager.TYPE_NOTIFICATION 默认 URI。
+    expect(channel.sound, isNull);
     verify(
       () => plugin.initialize(
         settings: any(named: 'settings'),
@@ -166,6 +169,7 @@ void main() {
     expect(androidDetails.category, AndroidNotificationCategory.message);
     expect(androidDetails.icon, 'ic_stat_wenyou');
     expect(androidDetails.playSound, isTrue);
+    expect(androidDetails.sound, isNull);
     expect(androidDetails.enableVibration, isTrue);
     expect(androidDetails.ongoing, isFalse);
     expect(androidDetails.autoCancel, isTrue);

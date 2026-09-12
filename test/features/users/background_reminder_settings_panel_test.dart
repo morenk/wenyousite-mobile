@@ -3,10 +3,46 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/application/background_execution.dart';
+import 'package:wenyousite_mobile/core/application/background_online_reminders.dart';
 import 'package:wenyousite_mobile/core/application/background_reminder_preference.dart';
 import 'package:wenyousite_mobile/features/users/presentation/background_reminder_settings_panel.dart';
 
 void main() {
+  testWidgets('拒绝授权后账号设置提供手动重试，成功移除权限提示', (tester) async {
+    final gateway = _Gateway();
+    final container = ProviderContainer(
+      overrides: [
+        backgroundExecutionGatewayProvider.overrideWithValue(_Execution()),
+        backgroundNotificationGatewayProvider.overrideWithValue(gateway),
+      ],
+    );
+    addTearDown(container.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const Scaffold(
+            body: SingleChildScrollView(
+              child: BackgroundReminderSettingsPanel(),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(gateway.requests, 0);
+    await tester.ensureVisible(find.text('申请权限'));
+    await tester.tap(find.text('申请权限'));
+    await tester.pumpAndSettle();
+    expect(gateway.requests, 1);
+    expect(find.text('申请权限'), findsOneWidget);
+    gateway.grant = true;
+    await tester.tap(find.text('申请权限'));
+    await tester.pumpAndSettle();
+    expect(gateway.requests, 2);
+    expect(find.text('申请权限'), findsNothing);
+  });
   for (final scale in [1.0, 2.0]) {
     testWidgets('360dp $scale 字号开关和系统频道入口可用', (tester) async {
       tester.view.devicePixelRatio = 1;
@@ -80,4 +116,28 @@ class _Execution extends UnsupportedBackgroundExecutionGateway {
   Future<void> openNotificationSettings() async {
     settingsOpened++;
   }
+}
+
+class _Gateway implements BackgroundNotificationGateway {
+  bool grant = false;
+  bool enabled = false;
+  int requests = 0;
+  @override
+  bool get isSupported => true;
+  @override
+  Stream<String> get notificationTaps => const Stream.empty();
+  @override
+  Future<void> initialize() async {}
+  @override
+  Future<bool> canNotify() async => enabled;
+  @override
+  Future<bool> requestPermission() async {
+    requests++;
+    return enabled = grant;
+  }
+
+  @override
+  Future<String?> takeLaunchPayload() async => null;
+  @override
+  Future<void> showAlerts(List<BackgroundLocalAlert> alerts) async {}
 }

@@ -88,10 +88,18 @@ class BackgroundOnlineController extends StateNotifier<BackgroundOnlineState> {
 
   final BackgroundNotificationGateway _gateway;
   int _operationEpoch = 0;
+  Future<void>? _permissionRequest;
 
-  /// Requests notification access when an authenticated foreground session is
-  /// ready and the device preference permits background reminders.
-  Future<void> activateForAuthenticatedSession() async {
+  /// 登录、切号和恢复只读取权限；系统授权框必须由明确点击触发。
+  Future<void> activateForAuthenticatedSession() => refreshPermission();
+
+  Future<void> requestPermissionFromUser() {
+    return _permissionRequest ??= _requestPermission().whenComplete(() {
+      _permissionRequest = null;
+    });
+  }
+
+  Future<void> _requestPermission() async {
     if (!state.supported) return;
     final epoch = ++_operationEpoch;
     state = const BackgroundOnlineState(supported: true);
@@ -117,6 +125,8 @@ class BackgroundOnlineController extends StateNotifier<BackgroundOnlineState> {
   }
 
   Future<void> refreshPermission() async {
+    // 系统授权框返回时的 resumed 不得抢先覆盖仍在途的授权结果。
+    if (_permissionRequest != null) return _permissionRequest;
     if (!state.supported) return;
     final epoch = ++_operationEpoch;
     try {

@@ -49,11 +49,26 @@ class BackgroundReminderSettingsPanel extends ConsumerWidget {
                     )
                   : null,
             ),
+          if (online.permissionDenied)
+            ListTile(
+              title: const Text('允许消息通知'),
+              subtitle: const Text('若系统不再询问，可在下方系统设置中开启。'),
+              trailing: TextButton(
+                onPressed: online.isLoading
+                    ? null
+                    : () => unawaited(
+                        ref
+                            .read(backgroundOnlineControllerProvider.notifier)
+                            .requestPermissionFromUser(),
+                      ),
+                child: const Text('申请权限'),
+              ),
+            ),
           const Divider(height: 1),
           ListTile(
             key: const Key('background-reminder-system-settings'),
             title: const Text('系统消息通知设置'),
-            subtitle: const Text('管理横幅、声音和锁屏显示'),
+            subtitle: const Text('新消息可开启悬浮通知、选择系统默认提示音；常驻通知保持静音。'),
             trailing: const WenyouIcon(WenyouIconIds.navigationNext),
             onTap: () => unawaited(_openSettings(context, execution)),
           ),

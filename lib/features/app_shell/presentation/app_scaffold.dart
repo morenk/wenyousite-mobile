@@ -18,6 +18,7 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_unread_indicator.dart';
 import 'package:wenyousite_mobile/features/app_shell/application/background_online_poller.dart';
 import 'package:wenyousite_mobile/features/app_shell/application/background_online_reminder_coordinator.dart';
 import 'package:wenyousite_mobile/features/app_shell/application/background_reminder_runtime.dart';
+import 'package:wenyousite_mobile/features/app_shell/presentation/notification_permission_guidance.dart';
 import 'package:wenyousite_mobile/features/direct_messages/application/direct_message_controllers.dart';
 import 'package:wenyousite_mobile/features/notifications/application/notification_controllers.dart';
 
@@ -150,7 +151,7 @@ class _AppScaffoldState extends ConsumerState<AppScaffold>
     final shellIndex = widget.navigationShell.currentIndex;
     final navigationIndex = shellIndex < 2 ? shellIndex : shellIndex + 1;
     return Scaffold(
-      body: widget.navigationShell,
+      body: NotificationPermissionGuidance(child: widget.navigationShell),
       bottomNavigationBar: DecoratedBox(
         decoration: BoxDecoration(
           border: Border(top: BorderSide(color: tokens.border)),
@@ -367,9 +368,7 @@ class _AppScaffoldState extends ConsumerState<AppScaffold>
       _queueBackgroundOnlineNotice(failureMessage);
       return;
     }
-    if (next.permissionDenied && previous?.permissionDenied != true) {
-      _queueBackgroundOnlineNotice('系统通知未开启，后台消息提醒暂不可用，请在系统设置中开启温油站通知。');
-    }
+    // 权限未开由一次性引导和账号设置保留可操作入口，不反复弹短暂提示。
   }
 
   void _queueBackgroundOnlineNotice(String message) {
