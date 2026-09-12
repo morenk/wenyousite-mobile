@@ -1,6 +1,6 @@
 # 通知授权引导与默认提示音候选验收
 
-状态：候选／待负责人验收。沿用 Android 常驻提醒任务分支与 [PR #32](https://github.com/morenk/wenyousite-mobile/pull/32)，不合并或正式发布。
+状态：负责人验收通过（2026-09-13）。负责人在最终候选 `bac2746e` 上确认通过，并授权 [PR #32](https://github.com/morenk/wenyousite-mobile/pull/32) 合并清理；不包含正式发布。以下保留候选阶段记录，最终确认见[点击已读与文案验收](notification-read-acceptance.md)。
 
 ## 原始反馈与边界
 

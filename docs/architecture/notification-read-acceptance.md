@@ -1,6 +1,6 @@
 # 系统消息点击同步已读候选验收
 
-状态：候选／待负责人验收，沿用 [PR #32](https://github.com/morenk/wenyousite-mobile/pull/32)，不合并或发布。
+状态：负责人验收通过（2026-09-13）。负责人针对已直接覆盖安装的 `bac2746ee1ea34441a0e21da2156707cd19fd1bc` 候选反馈“可以了，验证通过，直接合并清理分支吧”，授权 [PR #32](https://github.com/morenk/wenyousite-mobile/pull/32) 合并至 dev 并清理任务分支；不包含正式发布。以下保留候选阶段记录。
 
 ## 原始反馈与原因
 
