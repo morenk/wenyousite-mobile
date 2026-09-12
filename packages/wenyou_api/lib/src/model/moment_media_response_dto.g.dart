@@ -8,6 +8,8 @@ part of 'moment_media_response_dto.dart';
 
 class _$MomentMediaResponseDto extends MomentMediaResponseDto {
   @override
+  final MediaDisplayResponseDto? display;
+  @override
   final String id;
   @override
   final String url;
@@ -31,6 +33,7 @@ class _$MomentMediaResponseDto extends MomentMediaResponseDto {
   ]) => (MomentMediaResponseDtoBuilder()..update(updates))._build();
 
   _$MomentMediaResponseDto._({
+    this.display,
     required this.id,
     required this.url,
     this.thumbnailUrl,
@@ -54,6 +57,7 @@ class _$MomentMediaResponseDto extends MomentMediaResponseDto {
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
     return other is MomentMediaResponseDto &&
+        display == other.display &&
         id == other.id &&
         url == other.url &&
         thumbnailUrl == other.thumbnailUrl &&
@@ -68,6 +72,7 @@ class _$MomentMediaResponseDto extends MomentMediaResponseDto {
   @override
   int get hashCode {
     var _$hash = 0;
+    _$hash = $jc(_$hash, display.hashCode);
     _$hash = $jc(_$hash, id.hashCode);
     _$hash = $jc(_$hash, url.hashCode);
     _$hash = $jc(_$hash, thumbnailUrl.hashCode);
@@ -84,6 +89,7 @@ class _$MomentMediaResponseDto extends MomentMediaResponseDto {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'MomentMediaResponseDto')
+          ..add('display', display)
           ..add('id', id)
           ..add('url', url)
           ..add('thumbnailUrl', thumbnailUrl)
@@ -100,6 +106,12 @@ class _$MomentMediaResponseDto extends MomentMediaResponseDto {
 class MomentMediaResponseDtoBuilder
     implements Builder<MomentMediaResponseDto, MomentMediaResponseDtoBuilder> {
   _$MomentMediaResponseDto? _$v;
+
+  MediaDisplayResponseDtoBuilder? _display;
+  MediaDisplayResponseDtoBuilder get display =>
+      _$this._display ??= MediaDisplayResponseDtoBuilder();
+  set display(MediaDisplayResponseDtoBuilder? display) =>
+      _$this._display = display;
 
   String? _id;
   String? get id => _$this._id;
@@ -144,6 +156,7 @@ class MomentMediaResponseDtoBuilder
   MomentMediaResponseDtoBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
+      _display = $v.display?.toBuilder();
       _id = $v.id;
       _url = $v.url;
       _thumbnailUrl = $v.thumbnailUrl;
@@ -172,31 +185,48 @@ class MomentMediaResponseDtoBuilder
   MomentMediaResponseDto build() => _build();
 
   _$MomentMediaResponseDto _build() {
-    final _$result =
-        _$v ??
-        _$MomentMediaResponseDto._(
-          id: BuiltValueNullFieldError.checkNotNull(
-            id,
-            r'MomentMediaResponseDto',
-            'id',
-          ),
-          url: BuiltValueNullFieldError.checkNotNull(
-            url,
-            r'MomentMediaResponseDto',
-            'url',
-          ),
-          thumbnailUrl: thumbnailUrl,
-          feedUrl: feedUrl,
-          mediumUrl: mediumUrl,
-          contentType: contentType,
-          width: width,
-          height: height,
-          animated: BuiltValueNullFieldError.checkNotNull(
-            animated,
-            r'MomentMediaResponseDto',
-            'animated',
-          ),
+    _$MomentMediaResponseDto _$result;
+    try {
+      _$result =
+          _$v ??
+          _$MomentMediaResponseDto._(
+            display: _display?.build(),
+            id: BuiltValueNullFieldError.checkNotNull(
+              id,
+              r'MomentMediaResponseDto',
+              'id',
+            ),
+            url: BuiltValueNullFieldError.checkNotNull(
+              url,
+              r'MomentMediaResponseDto',
+              'url',
+            ),
+            thumbnailUrl: thumbnailUrl,
+            feedUrl: feedUrl,
+            mediumUrl: mediumUrl,
+            contentType: contentType,
+            width: width,
+            height: height,
+            animated: BuiltValueNullFieldError.checkNotNull(
+              animated,
+              r'MomentMediaResponseDto',
+              'animated',
+            ),
+          );
+    } catch (_) {
+      late String _$failedField;
+      try {
+        _$failedField = 'display';
+        _display?.build();
+      } catch (e) {
+        throw BuiltValueNestedFieldError(
+          r'MomentMediaResponseDto',
+          _$failedField,
+          e.toString(),
         );
+      }
+      rethrow;
+    }
     replace(_$result);
     return _$result;
   }

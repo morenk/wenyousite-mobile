@@ -8,6 +8,8 @@ part of 'user_profile.dart';
 
 class _$UserProfile extends UserProfile {
   @override
+  final MediaDisplayResponseDto? avatarDisplay;
+  @override
   final String id;
   @override
   final String email;
@@ -24,6 +26,7 @@ class _$UserProfile extends UserProfile {
       (UserProfileBuilder()..update(updates))._build();
 
   _$UserProfile._({
+    this.avatarDisplay,
     required this.id,
     required this.email,
     required this.username,
@@ -42,6 +45,7 @@ class _$UserProfile extends UserProfile {
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
     return other is UserProfile &&
+        avatarDisplay == other.avatarDisplay &&
         id == other.id &&
         email == other.email &&
         username == other.username &&
@@ -53,6 +57,7 @@ class _$UserProfile extends UserProfile {
   @override
   int get hashCode {
     var _$hash = 0;
+    _$hash = $jc(_$hash, avatarDisplay.hashCode);
     _$hash = $jc(_$hash, id.hashCode);
     _$hash = $jc(_$hash, email.hashCode);
     _$hash = $jc(_$hash, username.hashCode);
@@ -66,6 +71,7 @@ class _$UserProfile extends UserProfile {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'UserProfile')
+          ..add('avatarDisplay', avatarDisplay)
           ..add('id', id)
           ..add('email', email)
           ..add('username', username)
@@ -78,6 +84,12 @@ class _$UserProfile extends UserProfile {
 
 class UserProfileBuilder implements Builder<UserProfile, UserProfileBuilder> {
   _$UserProfile? _$v;
+
+  MediaDisplayResponseDtoBuilder? _avatarDisplay;
+  MediaDisplayResponseDtoBuilder get avatarDisplay =>
+      _$this._avatarDisplay ??= MediaDisplayResponseDtoBuilder();
+  set avatarDisplay(MediaDisplayResponseDtoBuilder? avatarDisplay) =>
+      _$this._avatarDisplay = avatarDisplay;
 
   String? _id;
   String? get id => _$this._id;
@@ -110,6 +122,7 @@ class UserProfileBuilder implements Builder<UserProfile, UserProfileBuilder> {
   UserProfileBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
+      _avatarDisplay = $v.avatarDisplay?.toBuilder();
       _id = $v.id;
       _email = $v.email;
       _username = $v.username;
@@ -135,32 +148,49 @@ class UserProfileBuilder implements Builder<UserProfile, UserProfileBuilder> {
   UserProfile build() => _build();
 
   _$UserProfile _build() {
-    final _$result =
-        _$v ??
-        _$UserProfile._(
-          id: BuiltValueNullFieldError.checkNotNull(id, r'UserProfile', 'id'),
-          email: BuiltValueNullFieldError.checkNotNull(
-            email,
-            r'UserProfile',
-            'email',
-          ),
-          username: BuiltValueNullFieldError.checkNotNull(
-            username,
-            r'UserProfile',
-            'username',
-          ),
-          avatar: avatar,
-          role: BuiltValueNullFieldError.checkNotNull(
-            role,
-            r'UserProfile',
-            'role',
-          ),
-          level: BuiltValueNullFieldError.checkNotNull(
-            level,
-            r'UserProfile',
-            'level',
-          ),
+    _$UserProfile _$result;
+    try {
+      _$result =
+          _$v ??
+          _$UserProfile._(
+            avatarDisplay: _avatarDisplay?.build(),
+            id: BuiltValueNullFieldError.checkNotNull(id, r'UserProfile', 'id'),
+            email: BuiltValueNullFieldError.checkNotNull(
+              email,
+              r'UserProfile',
+              'email',
+            ),
+            username: BuiltValueNullFieldError.checkNotNull(
+              username,
+              r'UserProfile',
+              'username',
+            ),
+            avatar: avatar,
+            role: BuiltValueNullFieldError.checkNotNull(
+              role,
+              r'UserProfile',
+              'role',
+            ),
+            level: BuiltValueNullFieldError.checkNotNull(
+              level,
+              r'UserProfile',
+              'level',
+            ),
+          );
+    } catch (_) {
+      late String _$failedField;
+      try {
+        _$failedField = 'avatarDisplay';
+        _avatarDisplay?.build();
+      } catch (e) {
+        throw BuiltValueNestedFieldError(
+          r'UserProfile',
+          _$failedField,
+          e.toString(),
         );
+      }
+      rethrow;
+    }
     replace(_$result);
     return _$result;
   }

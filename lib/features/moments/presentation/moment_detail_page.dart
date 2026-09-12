@@ -52,6 +52,7 @@ class _MomentDetailPageState extends ConsumerState<MomentDetailPage> {
 
   final _scrollController = ScrollController();
   final _targetKey = GlobalKey();
+  final _itemListKey = GlobalKey();
   final _targetReveal = DiscussionTargetRevealCoordinator();
   var _commentComposerOpen = false;
   MomentCommentDraft? _commentDraft;
@@ -237,6 +238,7 @@ class _MomentDetailPageState extends ConsumerState<MomentDetailPage> {
                     )
                   else
                     SliverList.builder(
+                      key: _itemListKey,
                       itemCount: projection.comments.length,
                       itemBuilder: (context, index) {
                         final comment = projection.comments[index];
@@ -344,6 +346,7 @@ class _MomentDetailPageState extends ConsumerState<MomentDetailPage> {
           state.phase == MomentLoadPhase.ready &&
           projection.targetRootIndex >= 0,
       targetKey: _targetKey,
+      itemListKey: _itemListKey,
       scrollController: _scrollController,
       isMounted: () => mounted,
       requestRebuild: () => setState(() {}),

@@ -4,6 +4,7 @@
 
 // ignore_for_file: unused_element
 import 'package:built_collection/built_collection.dart';
+import 'package:wenyou_api/src/model/media_display_response_dto.dart';
 import 'package:wenyou_api/src/model/thread_cover_preview_variant_response_dto.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
@@ -13,12 +14,17 @@ part 'thread_cover_media_response_dto.g.dart';
 /// ThreadCoverMediaResponseDto
 ///
 /// Properties:
+/// * [display] - 完整 WebP 展示资源；缺少或为空时为兼容历史媒体
 /// * [url] - 第一张普通正文图片的原始播放地址，与 coverImages[0] 一致；未知媒体不得自动请求
 /// * [animated] - 可信的动画属性；无法确认、未完成或历史 GIF 返回 null
 /// * [posterUrl] - 可用于列表静止状态的第一帧静态地址；未知时返回 null，客户端显示占位，禁止回退加载原图
 /// * [previewVariants] - 可选列表动画变体，按单帧像素面积升序；缺失或 null 时，只有已确认 animated=true 且有独立静态 poster 的媒体可受控回退原 url
 @BuiltValue()
 abstract class ThreadCoverMediaResponseDto implements Built<ThreadCoverMediaResponseDto, ThreadCoverMediaResponseDtoBuilder> {
+  /// 完整 WebP 展示资源；缺少或为空时为兼容历史媒体
+  @BuiltValueField(wireName: r'display')
+  MediaDisplayResponseDto? get display;
+
   /// 第一张普通正文图片的原始播放地址，与 coverImages[0] 一致；未知媒体不得自动请求
   @BuiltValueField(wireName: r'url')
   String get url;
@@ -58,6 +64,13 @@ class _$ThreadCoverMediaResponseDtoSerializer implements PrimitiveSerializer<Thr
     ThreadCoverMediaResponseDto object, {
     FullType specifiedType = FullType.unspecified,
   }) sync* {
+    if (object.display != null) {
+      yield r'display';
+      yield serializers.serialize(
+        object.display,
+        specifiedType: const FullType.nullable(MediaDisplayResponseDto),
+      );
+    }
     yield r'url';
     yield serializers.serialize(
       object.url,
@@ -103,6 +116,14 @@ class _$ThreadCoverMediaResponseDtoSerializer implements PrimitiveSerializer<Thr
       final key = serializedList[i] as String;
       final value = serializedList[i + 1];
       switch (key) {
+        case r'display':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(MediaDisplayResponseDto),
+          ) as MediaDisplayResponseDto?;
+          if (valueDes == null) continue;
+          result.display.replace(valueDes);
+          break;
         case r'url':
           final valueDes = serializers.deserialize(
             value,

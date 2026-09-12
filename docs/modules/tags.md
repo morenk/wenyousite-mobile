@@ -48,6 +48,9 @@
 
 ## 10. 跨模块约束
 
+所有主题封面统一复用[只读主题信息流](thread-feed.md)的首帧、停稳中心单张播放、省流量与生命周期规则；本模块不另建动画调度器，点击继续进入详情。
+
+
 本模块页面排版统一遵循[移动端视觉基线](../architecture/visual-baseline.md)中的 Foundation v6.9.0 语义文字角色，不自定义字号或直接依赖 Material 字体槽位。
 
 主题条目复用 thread_feed 的公开读模型与发现卡片组件：每项是占满内容列的独立细边框圆角卡片，唯一安全首图在卡片内以整宽 16:9 展示，无图不预留图片舞台；tags 不反向依赖 home。详情和管理入口由 threads 模块提供，验证恢复复用 auth/settings 路由。公开主题列表与详情的导航标签统一使用无图标、`#` 前缀、Foundation `brandStrong` 和 600 字重的纯文字入口，不带常驻底色、描边、圆角或胶囊轮廓，不消费服务端局部颜色表达状态，也不借用点赞专色；管理主页面只用普通文字汇总名称，可移除胶囊只存在于标签编辑 Sheet，不与阅读态混用。列表优先显示最多三个标签，只有三个按真实宽度放不下时才减少可见项，并把超过上限或因宽度隐藏的项汇总到不可点击的 `+N`；详情标签栏保持单行并随标题滚出，不吸顶、不用 `+N` 隐藏任何标签。导航标签的外围仍保留至少 48dp 触控区，非交互标签按内容收缩。
@@ -68,9 +71,21 @@
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `5.21.0-dev.20260911.1`；Markdown v5；后端 `88ad7be52722c2fa2810515badd2a2ec4d2d2cfd`；Foundation `v6.9.0`（`5888132`）。
+本轮展示契约来源：API `5.22.0-dev.20260912.2`、Backend `6fdfa00eaf1f3056ba30f2ffbc529d12eed1c823`；新增display／mediaDisplays，消费者接入与真机验收另行记录。仅既有 `markdown-editor-list-v1-fixtures.json` 保留 `062412601b3a8dbf4f64494115a2445d312dd53d` 来源与SHA-256，见 contracts/markdown-editor-list-v1-source.json；不将该独立语料误标为本轮主来源。
 
-本轮来源为已合并的 newline v1 revision 2 契约；HTTP 与其他契约不变，公网后端仍运行旧 revision。公网仍为 `e8d0fd6cb193ab5e9a1c2c51c03382ef300adc0c`，移动端对齐适配与跨端验收另行推进。
+2026-09-11 列表契约候选同步：Backend `062412601b3a8dbf4f64494115a2445d312dd53d`，OpenAPI `5.20.1-dev.20260911.1`；新增 editor-list v1 revision 2，夹具最初固定于 `aa1bcbd4d087f03a17817e9eca8bcd1f92bb53da`。同时同步收藏夹计数按当前用户可见性统计的契约说明；字段形状、块边界 v1 revision 2 与既有消费代码保持；列表消费者及真机验收仍待完成，见[列表统一排查](../architecture/editor-list-unification-investigation.md)。
+
+2026-09-11 契约审查：同步 Backend `b785336c5b31cb228f3021650b9de1c39ade02e5`、`5.20.1-dev.20260911.1`，收藏夹数量明确为当前用户可见总数。仅契约说明、生成字段文档与版本变化；本模块既有行为及单独验收状态保持。此时公网仍为 `8bf370f`／5.20.0，部署核验单独记录。
+
+2026-09-11 合并来源同步：Backend `8bf370f6ef5357535683aa6d3f8c03bd2d08d108`，包含发布权限修复；通过既有脚本重新导出后仅来源元数据变化，OpenAPI、块边界 v1 revision 2 及其他共享契约字节不变。模块行为与候选验收状态保持，前次部署回滚、公网核验及安装包溯源见[块边界验收](../architecture/markdown-block-boundaries-acceptance.md)。
+
+2026-09-11 契约来源登记：Backend `a91cbb8b605223c596af299be22c5547f69e25b9`，块边界 v1 revision 2。HTTP OpenAPI 未变化，本模块既有接口行为与验收状态保持；富文本消费者候选见[块边界验收](../architecture/markdown-block-boundaries-acceptance.md)。
+
+2026-09-11 增量登记：契约 `5.20.0-dev.20260909.1`，后端及公网 `0ee2c0de1d9c570e495e778be6661b074b7a4bef`。本次仅兼容新增列表封面媒体及预览变体生成模型，本模块行为与已列明的验收状态保持原样；下列记录保留历史审查范围。
+
+契约 `5.18.0-dev.20260905.1`；Markdown v5；后端 `3338028459561565c788d5236fb64db84a2ae538`；Foundation `v6.9.0`（`5888132`）。
+
+本轮从固定候选提交同步富文本行为 v1 测试契约；既有 newline/v7/clipboard 与 HTTP/OpenAPI 内容不变，不据此推断候选已部署。新增行为执行与历史保护仍在专项实施中；既有负责人验收保持原范围。
 
 ## 14. 相关代码与架构文档
 

@@ -365,6 +365,7 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
     _editorSession = RichEditorSession(
       initialMarkdown: widget.target.initialContent,
       clipboardScope: _openedSessionScope,
+      blockAlignment: ref.read(appCapabilitiesProvider).markdownAlignment,
       imageAlignment: ref.read(appCapabilitiesProvider).markdownImageAlignment,
       initialSelection: RichEditorSelectionPlacement.end,
       onMarkdownChanged: (markdown) {
@@ -752,7 +753,8 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
     ref
         .read(mediaUploadTaskControllerProvider(_uploadTaskId).notifier)
         .cancel();
-    if (!await _editorSession.flush()) {
+    if (!_editorSession.canCloseProtectedSource &&
+        !await _editorSession.flush()) {
       _preparingClose = false;
       _reportDismissEnabled(true);
       return;

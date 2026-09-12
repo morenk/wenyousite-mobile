@@ -22,6 +22,7 @@ class WenyouCachedImage extends StatefulWidget {
     this.cacheWidth,
     this.cacheHeight,
     this.useOldImageOnUrlChange = false,
+    this.onImageReady,
     super.key,
   });
 
@@ -36,6 +37,7 @@ class WenyouCachedImage extends StatefulWidget {
   final int? cacheWidth;
   final int? cacheHeight;
   final bool useOldImageOnUrlChange;
+  final VoidCallback? onImageReady;
 
   @override
   State<WenyouCachedImage> createState() => _WenyouCachedImageState();
@@ -49,6 +51,7 @@ class _WenyouCachedImageState extends State<WenyouCachedImage> {
   var _index = 0;
   var _advanceScheduled = false;
   var _generation = 0;
+  var _readyNotified = false;
 
   @override
   void didUpdateWidget(covariant WenyouCachedImage oldWidget) {
@@ -58,6 +61,7 @@ class _WenyouCachedImageState extends State<WenyouCachedImage> {
       _index = 0;
       _advanceScheduled = false;
       _generation += 1;
+      _readyNotified = false;
     }
   }
 
@@ -70,6 +74,23 @@ class _WenyouCachedImageState extends State<WenyouCachedImage> {
     return CachedNetworkImage(
       key: ValueKey(imageUrl),
       imageUrl: imageUrl,
+      imageBuilder: widget.onImageReady == null
+          ? null
+          : (context, provider) {
+              _scheduleReady();
+              return Image(
+                image: ResizeImage.resizeIfNeeded(
+                  _physicalPixels(widget.cacheWidth, devicePixelRatio),
+                  _physicalPixels(widget.cacheHeight, devicePixelRatio),
+                  provider,
+                ),
+                width: widget.width,
+                height: widget.height,
+                fit: widget.fit,
+                alignment: widget.alignment,
+                filterQuality: FilterQuality.low,
+              );
+            },
       width: widget.width,
       height: widget.height,
       fit: widget.fit,
@@ -103,6 +124,15 @@ class _WenyouCachedImageState extends State<WenyouCachedImage> {
       }
     }
     return result.isEmpty ? const ['about:blank'] : result;
+  }
+
+  void _scheduleReady() {
+    if (_readyNotified) return;
+    _readyNotified = true;
+    final generation = _generation;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && generation == _generation) widget.onImageReady?.call();
+    });
   }
 
   void _scheduleAdvance(int failedIndex) {

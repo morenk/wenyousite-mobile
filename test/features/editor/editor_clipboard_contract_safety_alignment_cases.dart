@@ -50,7 +50,7 @@ void registerEditorClipboardContractSafetyAlignmentCases() {
       '设定目录占位\n\n'
       '- **第一项**[传送门](/threads/$threadId?post=$firstPostId)\n'
       '- **第二项**[传送门](/threads/$threadId?post=$secondPostId)\n'
-      '<br />',
+      '\n<br />',
     );
   });
 
@@ -105,7 +105,7 @@ void registerEditorClipboardContractSafetyAlignmentCases() {
     );
     expect(
       MarkdownDeltaCodec.encode(delta),
-      '## 标题\n\n> 制表符引用\n\n- 多空格项目\n1. 有序项目\n\n'
+      '## 标题\n\n> 制表符引用\n\n-   多空格项目\n1. 有序项目\n\n'
       '---\n\n---\n\n---\n\n---',
     );
   });

@@ -359,7 +359,7 @@ packages:
     source: sdk
     version: "0.0.0"
   flutter_cache_manager:
-    dependency: transitive
+    dependency: "direct dev"
     description:
       name: flutter_cache_manager
       sha256: "1de7849213b4c73c85aca7e0ac687a9a5d82ccdb594366b9dcc26cb6a2189cd2"
@@ -1629,11 +1629,11 @@ packages:
     dependency: "direct main"
     description:
       path: "packages/flutter"
-      ref: "v6.9.0"
-      resolved-ref: "5888132fb604482a53964c192bb0e1a2874a9a64"
+      ref: "v6.11.0"
+      resolved-ref: ba9a237040de3969525ad814f08ef343a5de902d
       url: "https://github.com/morenk/wenyousite-foundation.git"
     source: git
-    version: "6.9.0"
+    version: "6.11.0"
   win32:
     dependency: transitive
     description:

@@ -119,7 +119,7 @@ void registerRichEditorSessionDocumentTransactionsCases() {
     expect(emitted.last, '上文下文');
   });
 
-  testWidgets('保存前即使会话未标脏也从当前 Delta 重新编码', (tester) async {
+  testWidgets('未编辑的不支持表格保留原文，不再静默转义覆盖', (tester) async {
     const unsupported = '| 名称 | 数值 |\n| --- | ---: |\n| 骰子 | 20 |';
     final emitted = <String>[];
     final session = RichEditorSession(
@@ -129,8 +129,25 @@ void registerRichEditorSessionDocumentTransactionsCases() {
     addTearDown(session.dispose);
 
     expect(session.isDirty, isFalse);
+    expect(await session.flush(), isFalse);
+    expect(session.isSourceProtected, isTrue);
+    expect(session.canCloseProtectedSource, isTrue);
+    expect(emitted, isEmpty);
+  });
+
+  testWidgets('保存前即使会话未标脏也从当前 Delta 重新编码', (tester) async {
+    final emitted = <String>[];
+    final session = RichEditorSession(
+      initialMarkdown: '旧正文',
+      onMarkdownChanged: emitted.add,
+    );
+    addTearDown(session.dispose);
+    session.controller.document = Document.fromDelta(
+      MarkdownDeltaCodec.decode('**新正文**').delta,
+    );
+    expect(session.isDirty, isFalse);
     expect(await session.flush(), isTrue);
-    expect(emitted, [MarkdownContent.literalizeUnsupported(unsupported)]);
+    expect(emitted, ['**新正文**']);
   });
 
   testWidgets('历史空段重开编辑后写入规范标记且段数不变', (tester) async {

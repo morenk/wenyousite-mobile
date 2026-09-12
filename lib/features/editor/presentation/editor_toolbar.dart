@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
@@ -15,6 +16,7 @@ import 'package:wenyousite_mobile/features/editor/presentation/editor_format_pol
 import 'package:wenyousite_mobile/features/editor/presentation/editor_more_tray.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_toolbar_buttons.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_toolbar_input_tray.dart';
+import 'package:wenyousite_mobile/features/editor/presentation/literal_text_quill_controller.dart';
 
 export 'package:wenyousite_mobile/features/editor/presentation/editor_capabilities.dart'
     show WenyouEditorCapabilities;
@@ -641,7 +643,9 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
 
   Future<void> _runExternal(Future<void> Function() action) async {
     _preservedSelection = widget.controller.selection;
-    final documentLength = widget.controller.document.length;
+    final documentSignature = jsonEncode(
+      widget.controller.document.toDelta().toJson(),
+    );
     widget.onInteractionChanged?.call(true);
     try {
       await action();
@@ -649,7 +653,8 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
       if (mounted) {
         final selection = _preservedSelection;
         if (selection != null &&
-            widget.controller.document.length == documentLength &&
+            jsonEncode(widget.controller.document.toDelta().toJson()) ==
+                documentSignature &&
             selection.end <= widget.controller.document.length - 1) {
           widget.controller.updateSelection(selection, ChangeSource.local);
         }
@@ -817,16 +822,25 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
         'indent': null,
       });
     }
-    widget.controller.compose(change, selection, ChangeSource.local);
     final cursor =
         start +
         (needsLeadingNewline ? 1 : 0) +
         1 +
         (needsTrailingNewline || end < plain.length - 1 ? 1 : 0);
-    widget.controller.updateSelection(
-      TextSelection.collapsed(offset: cursor),
-      ChangeSource.local,
-    );
+    void insert() {
+      widget.controller.compose(change, selection, ChangeSource.local);
+      widget.controller.updateSelection(
+        TextSelection.collapsed(offset: cursor),
+        ChangeSource.local,
+      );
+    }
+
+    final controller = widget.controller;
+    if (controller is LiteralTextQuillController) {
+      controller.runEditCommand(insert);
+    } else {
+      insert();
+    }
   }
 }
 

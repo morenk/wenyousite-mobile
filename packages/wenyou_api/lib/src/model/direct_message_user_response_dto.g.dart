@@ -8,6 +8,8 @@ part of 'direct_message_user_response_dto.dart';
 
 class _$DirectMessageUserResponseDto extends DirectMessageUserResponseDto {
   @override
+  final MediaDisplayResponseDto? avatarDisplay;
+  @override
   final String id;
   @override
   final String username;
@@ -21,6 +23,7 @@ class _$DirectMessageUserResponseDto extends DirectMessageUserResponseDto {
   ]) => (DirectMessageUserResponseDtoBuilder()..update(updates))._build();
 
   _$DirectMessageUserResponseDto._({
+    this.avatarDisplay,
     required this.id,
     required this.username,
     this.avatar,
@@ -39,6 +42,7 @@ class _$DirectMessageUserResponseDto extends DirectMessageUserResponseDto {
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
     return other is DirectMessageUserResponseDto &&
+        avatarDisplay == other.avatarDisplay &&
         id == other.id &&
         username == other.username &&
         avatar == other.avatar &&
@@ -48,6 +52,7 @@ class _$DirectMessageUserResponseDto extends DirectMessageUserResponseDto {
   @override
   int get hashCode {
     var _$hash = 0;
+    _$hash = $jc(_$hash, avatarDisplay.hashCode);
     _$hash = $jc(_$hash, id.hashCode);
     _$hash = $jc(_$hash, username.hashCode);
     _$hash = $jc(_$hash, avatar.hashCode);
@@ -59,6 +64,7 @@ class _$DirectMessageUserResponseDto extends DirectMessageUserResponseDto {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'DirectMessageUserResponseDto')
+          ..add('avatarDisplay', avatarDisplay)
           ..add('id', id)
           ..add('username', username)
           ..add('avatar', avatar)
@@ -74,6 +80,12 @@ class DirectMessageUserResponseDtoBuilder
           DirectMessageUserResponseDtoBuilder
         > {
   _$DirectMessageUserResponseDto? _$v;
+
+  MediaDisplayResponseDtoBuilder? _avatarDisplay;
+  MediaDisplayResponseDtoBuilder get avatarDisplay =>
+      _$this._avatarDisplay ??= MediaDisplayResponseDtoBuilder();
+  set avatarDisplay(MediaDisplayResponseDtoBuilder? avatarDisplay) =>
+      _$this._avatarDisplay = avatarDisplay;
 
   String? _id;
   String? get id => _$this._id;
@@ -99,6 +111,7 @@ class DirectMessageUserResponseDtoBuilder
   DirectMessageUserResponseDtoBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
+      _avatarDisplay = $v.avatarDisplay?.toBuilder();
       _id = $v.id;
       _username = $v.username;
       _avatar = $v.avatar;
@@ -122,26 +135,43 @@ class DirectMessageUserResponseDtoBuilder
   DirectMessageUserResponseDto build() => _build();
 
   _$DirectMessageUserResponseDto _build() {
-    final _$result =
-        _$v ??
-        _$DirectMessageUserResponseDto._(
-          id: BuiltValueNullFieldError.checkNotNull(
-            id,
-            r'DirectMessageUserResponseDto',
-            'id',
-          ),
-          username: BuiltValueNullFieldError.checkNotNull(
-            username,
-            r'DirectMessageUserResponseDto',
-            'username',
-          ),
-          avatar: avatar,
-          isDeactivated: BuiltValueNullFieldError.checkNotNull(
-            isDeactivated,
-            r'DirectMessageUserResponseDto',
-            'isDeactivated',
-          ),
+    _$DirectMessageUserResponseDto _$result;
+    try {
+      _$result =
+          _$v ??
+          _$DirectMessageUserResponseDto._(
+            avatarDisplay: _avatarDisplay?.build(),
+            id: BuiltValueNullFieldError.checkNotNull(
+              id,
+              r'DirectMessageUserResponseDto',
+              'id',
+            ),
+            username: BuiltValueNullFieldError.checkNotNull(
+              username,
+              r'DirectMessageUserResponseDto',
+              'username',
+            ),
+            avatar: avatar,
+            isDeactivated: BuiltValueNullFieldError.checkNotNull(
+              isDeactivated,
+              r'DirectMessageUserResponseDto',
+              'isDeactivated',
+            ),
+          );
+    } catch (_) {
+      late String _$failedField;
+      try {
+        _$failedField = 'avatarDisplay';
+        _avatarDisplay?.build();
+      } catch (e) {
+        throw BuiltValueNestedFieldError(
+          r'DirectMessageUserResponseDto',
+          _$failedField,
+          e.toString(),
         );
+      }
+      rethrow;
+    }
     replace(_$result);
     return _$result;
   }

@@ -10,6 +10,7 @@ import 'package:wenyousite_mobile/features/moments/data/moment_search_mapper.dar
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
 import 'package:wenyousite_mobile/features/search/application/search_repository_ports.dart';
 import 'package:wenyousite_mobile/features/search/domain/search_models.dart';
+import 'package:wenyousite_mobile/features/thread_feed/thread_feed_mapping.dart';
 import 'package:wenyousite_mobile/features/thread_feed/thread_feed_models.dart';
 
 export 'package:wenyousite_mobile/features/search/application/search_repository_ports.dart'
@@ -192,6 +193,7 @@ class ApiSearchRepository implements SearchRepository {
           .whereType<String>()
           .take(1)
           .toList(growable: false),
+      coverMedia: mapThreadFeedCoverMedia(dto.coverMedia, dto.coverImages),
     );
   }
 

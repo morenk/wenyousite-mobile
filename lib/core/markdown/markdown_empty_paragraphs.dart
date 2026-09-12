@@ -1,5 +1,5 @@
-import 'package:markdown/markdown.dart' as md;
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_source_protection.dart';
 
 /// Compatibility rules for Markdown v3 empty paragraphs.
 ///
@@ -76,7 +76,9 @@ class MarkdownEmptyParagraphs {
   /// ordinary paragraph boundaries remain unchanged.
   static String prepareForLineEditor(String markdown) {
     final lines = recoverLegacy(markdown).split('\n');
+    final protectedLines = _protectedLineIndexes(lines);
     for (var index = 0; index < lines.length; index++) {
+      if (protectedLines.contains(index)) continue;
       if (_emptyParagraph.hasMatch(lines[index])) lines[index] = '<br />';
       if (MarkdownContent.isQuotedEmptyParagraphLine(lines[index])) {
         lines[index] = '> <br />';
@@ -86,6 +88,10 @@ class MarkdownEmptyParagraphs {
     final output = <String>[];
     var index = 0;
     while (index < lines.length) {
+      if (protectedLines.contains(index)) {
+        output.add(lines[index++]);
+        continue;
+      }
       if (MarkdownContent.isEmptyQuoteLine(lines[index])) {
         final start = index;
         while (index < lines.length &&
@@ -136,86 +142,7 @@ class MarkdownEmptyParagraphs {
   }
 
   static Set<int> _protectedLineIndexes(List<String> lines) {
-    final collector = _ProtectedLineCollector(lines);
-    md.Document(
-      blockSyntaxes: [
-        _RecordingFencedCodeSyntax(collector),
-        _RecordingIndentedCodeSyntax(collector),
-        _RecordingHtmlBlockSyntax(collector),
-      ],
-    ).parseLines(lines);
-    return collector.indexes;
-  }
-}
-
-class _ProtectedLineCollector {
-  _ProtectedLineCollector(this.sourceLines);
-
-  final List<String> sourceLines;
-  final indexes = <int>{};
-
-  int? begin(md.BlockParser parser) {
-    if (!_isTopLevel(parser)) return null;
-    return parser.lines.indexOf(parser.current);
-  }
-
-  void finish(md.BlockParser parser, int? start) {
-    if (start == null) return;
-    final end = parser.isDone
-        ? sourceLines.length
-        : parser.lines.indexOf(parser.current);
-    for (var index = start; index < end; index++) {
-      indexes.add(index);
-    }
-  }
-
-  bool _isTopLevel(md.BlockParser parser) {
-    if (parser.lines.length != sourceLines.length) return false;
-    for (var index = 0; index < sourceLines.length; index++) {
-      if (parser.lines[index].content != sourceLines[index]) return false;
-    }
-    return true;
-  }
-}
-
-class _RecordingFencedCodeSyntax extends md.FencedCodeBlockSyntax {
-  _RecordingFencedCodeSyntax(this.collector);
-
-  final _ProtectedLineCollector collector;
-
-  @override
-  md.Node parse(md.BlockParser parser) {
-    final start = collector.begin(parser);
-    final node = super.parse(parser);
-    collector.finish(parser, start);
-    return node;
-  }
-}
-
-class _RecordingIndentedCodeSyntax extends md.CodeBlockSyntax {
-  _RecordingIndentedCodeSyntax(this.collector);
-
-  final _ProtectedLineCollector collector;
-
-  @override
-  md.Node parse(md.BlockParser parser) {
-    final start = collector.begin(parser);
-    final node = super.parse(parser);
-    collector.finish(parser, start);
-    return node;
-  }
-}
-
-class _RecordingHtmlBlockSyntax extends md.HtmlBlockSyntax {
-  _RecordingHtmlBlockSyntax(this.collector);
-
-  final _ProtectedLineCollector collector;
-
-  @override
-  md.Node parse(md.BlockParser parser) {
-    final start = collector.begin(parser);
-    final node = super.parse(parser);
-    collector.finish(parser, start);
-    return node;
+    final protection = MarkdownSourceProtection.analyze(lines);
+    return {...protection.blockLines, ...protection.codeLines};
   }
 }

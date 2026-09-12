@@ -27,10 +27,13 @@ class WenyouEditorClipboardResolution {
 class WenyouEditorClipboardStore {
   WenyouEditorClipboardStore({
     DateTime Function()? now,
+    String Function()? createDiceId,
     this.maximumAge = const Duration(minutes: 10),
-  }) : _now = now ?? DateTime.now;
+  }) : _now = now ?? DateTime.now,
+       _createDiceId = createDiceId ?? (() => const Uuid().v4());
 
   final DateTime Function() _now;
+  final String Function() _createDiceId;
   final Duration maximumAge;
   _EditorClipboardPayload? _payload;
 
@@ -99,10 +102,7 @@ class WenyouEditorClipboardStore {
     return WenyouEditorClipboardResolution.structured(transformed);
   }
 
-  static Delta _transformDiceIdentity(
-    Delta source, {
-    required bool regenerateDice,
-  }) {
+  Delta _transformDiceIdentity(Delta source, {required bool regenerateDice}) {
     final json = source
         .toJson()
         .map((operation) {
@@ -113,7 +113,7 @@ class WenyouEditorClipboardStore {
           final rawPayload = insertMap[MarkdownDiceContract.embedType];
           if (rawPayload is! Map) return copy;
           final dicePayload = Map<String, dynamic>.from(rawPayload);
-          dicePayload['nodeId'] = const Uuid().v4();
+          dicePayload['nodeId'] = _createDiceId();
           insertMap[MarkdownDiceContract.embedType] = dicePayload;
           copy['insert'] = insertMap;
           return copy;

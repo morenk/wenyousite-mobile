@@ -1,6 +1,9 @@
 [CmdletBinding()]
 param(
   [switch]$BuildDebugApk,
+  # Windows 开发机同时运行多项任务时限制测试进程数，仍执行全部测试。
+  [ValidateRange(1, 64)]
+  [int]$TestConcurrency = 1,
   # 候选契约尚未部署时仍可收集其他检查；任一失败仍返回非零。
   [switch]$ContinueAfterFailure
 )
@@ -45,6 +48,7 @@ function Invoke-WenyouCheckStep {
 }
 
 Invoke-WenyouCheckStep 'Validate OpenAPI' $npmCommand @('run', 'api:validate')
+Invoke-WenyouCheckStep 'Verify pinned contract source' $dartCommand @('run', 'tool/check_contract_sources.dart')
 Invoke-WenyouCheckStep 'Regenerate and verify API client' $npmCommand @('run', 'api:check')
 Invoke-WenyouCheckStep 'Verify production contract and Markdown compatibility' $npmCommand @(
   'run',
@@ -83,7 +87,10 @@ Invoke-WenyouCheckStep 'Check mobile API coverage' $dartCommand @(
   'tool/audit_api_coverage.dart',
   '--require-complete'
 )
-Invoke-WenyouCheckStep 'Run Flutter tests' $flutterCommand @('test')
+Invoke-WenyouCheckStep 'Run Flutter tests' $flutterCommand @(
+  'test',
+  "--concurrency=$TestConcurrency"
+)
 Invoke-WenyouCheckStep 'Run Windows release tooling tests' $npmCommand @(
   'run',
   'test:release-tool'

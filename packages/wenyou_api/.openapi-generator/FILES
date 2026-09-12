@@ -244,7 +244,9 @@ lib/src/model/latest_thread_post_response_dto.dart
 lib/src/model/login_dto.dart
 lib/src/model/logout_dto.dart
 lib/src/model/mark_direct_conversation_read_dto.dart
+lib/src/model/markdown_media_display_response_dto.dart
 lib/src/model/media_confirm_upload200_response.dart
+lib/src/model/media_display_response_dto.dart
 lib/src/model/media_get_media200_response.dart
 lib/src/model/media_get_upload_url201_response.dart
 lib/src/model/media_reissue_upload_url200_response.dart

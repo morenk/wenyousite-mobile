@@ -74,6 +74,8 @@ class _$FloorResponseDtoKindEnumSerializer
 
 class _$FloorResponseDto extends FloorResponseDto {
   @override
+  final BuiltList<MarkdownMediaDisplayResponseDto>? mediaDisplays;
+  @override
   final String id;
   @override
   final String threadId;
@@ -117,6 +119,7 @@ class _$FloorResponseDto extends FloorResponseDto {
   ]) => (FloorResponseDtoBuilder()..update(updates))._build();
 
   _$FloorResponseDto._({
+    this.mediaDisplays,
     required this.id,
     required this.threadId,
     required this.subthreadId,
@@ -149,6 +152,7 @@ class _$FloorResponseDto extends FloorResponseDto {
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
     return other is FloorResponseDto &&
+        mediaDisplays == other.mediaDisplays &&
         id == other.id &&
         threadId == other.threadId &&
         subthreadId == other.subthreadId &&
@@ -173,6 +177,7 @@ class _$FloorResponseDto extends FloorResponseDto {
   @override
   int get hashCode {
     var _$hash = 0;
+    _$hash = $jc(_$hash, mediaDisplays.hashCode);
     _$hash = $jc(_$hash, id.hashCode);
     _$hash = $jc(_$hash, threadId.hashCode);
     _$hash = $jc(_$hash, subthreadId.hashCode);
@@ -199,6 +204,7 @@ class _$FloorResponseDto extends FloorResponseDto {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'FloorResponseDto')
+          ..add('mediaDisplays', mediaDisplays)
           ..add('id', id)
           ..add('threadId', threadId)
           ..add('subthreadId', subthreadId)
@@ -225,6 +231,13 @@ class _$FloorResponseDto extends FloorResponseDto {
 class FloorResponseDtoBuilder
     implements Builder<FloorResponseDto, FloorResponseDtoBuilder> {
   _$FloorResponseDto? _$v;
+
+  ListBuilder<MarkdownMediaDisplayResponseDto>? _mediaDisplays;
+  ListBuilder<MarkdownMediaDisplayResponseDto> get mediaDisplays =>
+      _$this._mediaDisplays ??= ListBuilder<MarkdownMediaDisplayResponseDto>();
+  set mediaDisplays(
+    ListBuilder<MarkdownMediaDisplayResponseDto>? mediaDisplays,
+  ) => _$this._mediaDisplays = mediaDisplays;
 
   String? _id;
   String? get id => _$this._id;
@@ -317,6 +330,7 @@ class FloorResponseDtoBuilder
   FloorResponseDtoBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
+      _mediaDisplays = $v.mediaDisplays?.toBuilder();
       _id = $v.id;
       _threadId = $v.threadId;
       _subthreadId = $v.subthreadId;
@@ -360,6 +374,7 @@ class FloorResponseDtoBuilder
       _$result =
           _$v ??
           _$FloorResponseDto._(
+            mediaDisplays: _mediaDisplays?.build(),
             id: BuiltValueNullFieldError.checkNotNull(
               id,
               r'FloorResponseDto',
@@ -419,6 +434,9 @@ class FloorResponseDtoBuilder
     } catch (_) {
       late String _$failedField;
       try {
+        _$failedField = 'mediaDisplays';
+        _mediaDisplays?.build();
+
         _$failedField = 'diceRolls';
         diceRolls.build();
 

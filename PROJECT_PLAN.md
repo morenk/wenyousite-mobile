@@ -4,10 +4,15 @@
 
 ## 当前基线
 
+- 2026-09-11 列表契约候选：当前任务整合移动端 `765f023` 的既有开发基线，并同步后端 `062412601b3a8dbf4f64494115a2445d312dd53d`。OpenAPI 升至 `5.20.1-dev.20260911.1`，补充收藏夹计数的可见性口径，字段形状不变；新增 editor-list v1 revision 2。规范样例可以独立读取，移动端原文读取、结构编码和负责人验收尚未完成，见[列表统一排查](docs/architecture/editor-list-unification-investigation.md)。
+
+- 2026-09-11 契约同步：本任务分支已同步后端 `0ee2c0de1d9c570e495e778be6661b074b7a4bef` 的 `5.20.0-dev.20260909.1`，生成客户端增加可空封面媒体与动画预览字段，暂不接入播放。同日 01:16 完整门禁已确认公网更新至该契约及精确 revision，主题响应兼容检查通过；下列旧契约条目保留此前交付背景。
+
 - 客户端：开发版本 `0.7.0-dev.1+94`，线上正式版本仍为 `0.7.0+93`；新正式 APK 仅支持 Android 8+ ARM64，全部字体保留。正式包名 `site.wenyou.app`，Debug 包名 `site.wenyou.app.debug`，真机性能包名 `site.wenyou.app.profile`；本次只生成本地验收制品，不晋级线上更新策略。
-- 后端契约：`5.18.0-dev.20260905.1`，来源 `3338028459561565c788d5236fb64db84a2ae538`；本轮同步 newline v1 revision 2 的手动回车对齐规则，HTTP SDK 与其他语料不变。最近一次公网 `/meta` 实测仍为 `e8d0fd6cb193ab5e9a1c2c51c03382ef300adc0c`；移动端手动回车对齐已验收，线上部署版本及跨端效果仍待独立核验。签到经验、主题帖档案导出、子贴主楼层置顶、Markdown v5、编辑器往返 v7、剪贴板 v2 与独立图片块对齐保持原能力。
+- 后端契约：`5.20.1-dev.20260911.1`，来源 `b785336c5b31cb228f3021650b9de1c39ade02e5`；收藏夹可见计数语义已同步。2026-09-11 同步时公网仍为 `8bf370f`／5.20.0，公网版本核验另行记录。
 - 正文契约：公网当前激活 Markdown v5；客户端兼容 `{3, 4, 5}`，独占一行的普通图片可使用左、中、右块对齐；站内引用契约：`wenyousite-internal-reference` v1。
-- 视觉依赖：Foundation `v6.9.0`。
+- 视觉依赖：Foundation `v6.11.0`。
+- 表情网格及共享排序动画：2026-09-11 负责人真机验收通过并授权合并；表情管理采用五列紧凑网格、长按排序与静默乐观保存，子贴排序复用抬起／落下反馈。未取得 Profile 帧时间采样，见[验收记录](docs/architecture/sticker-grid-acceptance.md)。
 - 空正文选择 H2/H3：2026-09-09 负责人在覆盖安装的 Debug 包 `1c7fb8a6` 上验收通过，原问题修复完成，见[空标题验收](docs/architecture/editor-empty-heading-acceptance.md)。
 - 引用长文本溢出：2026-09-09 负责人在 Debug 包 `562a7954` 上验收通过；按实际行内内容高度排版，保留既有分页和删除调整。源码与验收记录见 [引用溢出验收](docs/architecture/quote-text-overflow-acceptance.md)。
 - 性能基线：Android 真机 Profile 三轮 60 Hz 门禁覆盖外观切换、共享转场、动态流和 Markdown 时间线；机器可读结果见 `tool/performance/android_profile_baseline.json`。
@@ -17,7 +22,13 @@
 
 ## 当前优先级
 
-回车对齐反馈已于 2026-09-09 取得负责人验收通过：移动端手动 Enter 新段恢复默认左对齐、长句自动折行保留整段方向，相邻正文段落不增加空行。对应源码 `1fe9435`、Debug 包 `db2c8965`，负责人已授权合并 PR #12 并清理任务分支；完整检查及保留制品见[手动回车对齐验收](docs/architecture/editor-manual-alignment-acceptance.md)。三个远端 PR 已合并，最近一次公网后端检查仍为旧 revision；Web 部署与全部线上跨端组合未在本任务独立核验。
+富文本跨端稳定性专项沿用[阶段计划](docs/architecture/rich-text-stability-plan.md)、[三端历史基线](docs/architecture/rich-text-stability-baseline.md)和[共享操作矩阵提案](docs/architecture/rich-text-stability-matrix.md)。这些记录描述 2026-09-10 的审查现场；当前依赖和后续整改以上方最新基线及下述整改计划为准。
+
+编辑器系统整改已于 2026-09-11 获负责人授权开始：按[正文语义整改计划](docs/architecture/editor-semantics-remediation-plan.md)依次登记入口、统一移动端结构消费、覆盖连续编辑状态、核对跨端独立结果并交付真机候选。当前 `1a66b68b` 列表候选仍待验收，不把局部检查通过记为整个编辑器整改完成。
+
+当前空块格式排查：负责人反馈空列表仍报错，已扩展为格式状态、纯空白输入与独立阅读语义的系统性候选，尚待完整检查和负责人验收。历史嵌套有序列表的缩进映射另需跨端补齐，当前必须阻止有损保存，详见[空块格式验收](docs/architecture/editor-empty-block-acceptance.md)。
+
+回车对齐反馈已于 2026-09-09 取得负责人验收通过：移动端手动 Enter 新段恢复默认左对齐、长句自动折行保留整段方向，相邻正文段落不增加空行。对应源码 `1fe9435`、Debug 包 `db2c8965`，负责人已授权合并 PR #12 并清理任务分支；完整检查及保留制品见[手动回车对齐验收](docs/architecture/editor-manual-alignment-acceptance.md)。三个远端 PR 已合并，本轮后端部署来源核对通过；Web 部署与全部线上跨端组合未在本任务独立核验。
 
 本轮新增图片输入兼容性加固：统一引擎解码与无损中间图，原始失败图片已完成本地旧实现失败／候选通过对照，负责人于 2026-09-09 在 Debug 构建 94 上确认原问题真机验收通过并授权合并。完整 Android 原生矩阵与大图性能仍待补充验证，范围和限制见[图片兼容性验收](docs/architecture/image-input-compatibility-acceptance.md)。
 

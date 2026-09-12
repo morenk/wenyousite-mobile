@@ -8,6 +8,8 @@ part of 'profile_cover_variant_response_dto.dart';
 
 class _$ProfileCoverVariantResponseDto extends ProfileCoverVariantResponseDto {
   @override
+  final MediaDisplayResponseDto? display;
+  @override
   final String url;
   @override
   final String? mediumUrl;
@@ -21,6 +23,7 @@ class _$ProfileCoverVariantResponseDto extends ProfileCoverVariantResponseDto {
   ]) => (ProfileCoverVariantResponseDtoBuilder()..update(updates))._build();
 
   _$ProfileCoverVariantResponseDto._({
+    this.display,
     required this.url,
     this.mediumUrl,
     this.width,
@@ -39,6 +42,7 @@ class _$ProfileCoverVariantResponseDto extends ProfileCoverVariantResponseDto {
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
     return other is ProfileCoverVariantResponseDto &&
+        display == other.display &&
         url == other.url &&
         mediumUrl == other.mediumUrl &&
         width == other.width &&
@@ -48,6 +52,7 @@ class _$ProfileCoverVariantResponseDto extends ProfileCoverVariantResponseDto {
   @override
   int get hashCode {
     var _$hash = 0;
+    _$hash = $jc(_$hash, display.hashCode);
     _$hash = $jc(_$hash, url.hashCode);
     _$hash = $jc(_$hash, mediumUrl.hashCode);
     _$hash = $jc(_$hash, width.hashCode);
@@ -59,6 +64,7 @@ class _$ProfileCoverVariantResponseDto extends ProfileCoverVariantResponseDto {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'ProfileCoverVariantResponseDto')
+          ..add('display', display)
           ..add('url', url)
           ..add('mediumUrl', mediumUrl)
           ..add('width', width)
@@ -74,6 +80,12 @@ class ProfileCoverVariantResponseDtoBuilder
           ProfileCoverVariantResponseDtoBuilder
         > {
   _$ProfileCoverVariantResponseDto? _$v;
+
+  MediaDisplayResponseDtoBuilder? _display;
+  MediaDisplayResponseDtoBuilder get display =>
+      _$this._display ??= MediaDisplayResponseDtoBuilder();
+  set display(MediaDisplayResponseDtoBuilder? display) =>
+      _$this._display = display;
 
   String? _url;
   String? get url => _$this._url;
@@ -98,6 +110,7 @@ class ProfileCoverVariantResponseDtoBuilder
   ProfileCoverVariantResponseDtoBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
+      _display = $v.display?.toBuilder();
       _url = $v.url;
       _mediumUrl = $v.mediumUrl;
       _width = $v.width;
@@ -121,18 +134,35 @@ class ProfileCoverVariantResponseDtoBuilder
   ProfileCoverVariantResponseDto build() => _build();
 
   _$ProfileCoverVariantResponseDto _build() {
-    final _$result =
-        _$v ??
-        _$ProfileCoverVariantResponseDto._(
-          url: BuiltValueNullFieldError.checkNotNull(
-            url,
-            r'ProfileCoverVariantResponseDto',
-            'url',
-          ),
-          mediumUrl: mediumUrl,
-          width: width,
-          height: height,
+    _$ProfileCoverVariantResponseDto _$result;
+    try {
+      _$result =
+          _$v ??
+          _$ProfileCoverVariantResponseDto._(
+            display: _display?.build(),
+            url: BuiltValueNullFieldError.checkNotNull(
+              url,
+              r'ProfileCoverVariantResponseDto',
+              'url',
+            ),
+            mediumUrl: mediumUrl,
+            width: width,
+            height: height,
+          );
+    } catch (_) {
+      late String _$failedField;
+      try {
+        _$failedField = 'display';
+        _display?.build();
+      } catch (e) {
+        throw BuiltValueNestedFieldError(
+          r'ProfileCoverVariantResponseDto',
+          _$failedField,
+          e.toString(),
         );
+      }
+      rethrow;
+    }
     replace(_$result);
     return _$result;
   }
