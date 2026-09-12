@@ -235,11 +235,12 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
                     ),
           },
         ),
-        floatingActionButton: readyRoot == null
-            ? null
-            : KeyedSubtree(
-                key: _composeObstructionKey,
-                child: WenyouComposerAction(
+        // 保持测量节点稳定，避免切号期间 Scaffold 同时保留新旧发表入口。
+        floatingActionButton: KeyedSubtree(
+          key: _composeObstructionKey,
+          child: readyRoot == null
+              ? const SizedBox.shrink()
+              : WenyouComposerAction(
                   key: const Key('post-reply-compose'),
                   label: session.isAuthenticated ? '发表回复…' : '登录后发表回复',
                   icon: session.isAuthenticated
@@ -257,7 +258,7 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
                           queryParameters: {'returnTo': _location()},
                         ),
                 ),
-              ),
+        ),
         floatingActionButtonAnimator: FloatingActionButtonAnimator.noAnimation,
       ),
     );
