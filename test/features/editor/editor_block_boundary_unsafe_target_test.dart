@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/rich_editor_session.dart';
 import '../../support/block_boundary_fixtures.dart';
-import '../../support/foundation_test_fonts.dart';
+import '../../support/deterministic_test_fonts.dart';
 import '../posts/post_replies_page_test_support.dart';
 
 void main() {
-  setUpAll(loadFoundationTestFonts);
+  setUpAll(loadDeterministicTestFonts);
   final source =
       (loadBlockBoundaryFixture()['cases'] as List)
               .cast<Map<String, dynamic>>()

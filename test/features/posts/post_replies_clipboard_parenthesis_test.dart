@@ -3,12 +3,13 @@ import 'package:flutter/services.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_clipboard.dart';
+
+import '../../support/deterministic_test_fonts.dart';
 import '../../support/editor_test_paste.dart';
-import '../../support/foundation_test_fonts.dart';
 import 'post_replies_page_test_support.dart';
 
 void main() {
-  setUpAll(loadFoundationTestFonts);
+  setUpAll(loadDeterministicTestFonts);
   testWidgets('楼中楼真实复制菜单粘贴发布重开只呈现阅读文字', (tester) async {
     const source =
         '1. 项目\n'

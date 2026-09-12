@@ -5,8 +5,10 @@ import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 ///
 /// Presentation code consumes these roles instead of Material slot names so
 /// that hierarchy survives Flutter theme-default changes. Size, line height
-/// and family stay centralized here; callers may still adjust state color or
-/// a local emphasis weight when the component contract requires it.
+/// stay centralized here. Font families deliberately remain unset so Flutter
+/// uses the platform default and its system fallback; callers may still adjust
+/// state color or a local emphasis weight when the component contract requires
+/// it.
 extension WenyouSemanticTextStyles on TextTheme {
   TextStyle get wenyouPageTitle => displayLarge!;
 
@@ -63,33 +65,19 @@ extension WenyouSemanticTextStyles on TextTheme {
 TextStyle wenyouFoundationTypeStyle(
   TextStyle base,
   String role, {
-  String? fontFamily,
   FontWeight? fontWeight,
   Color? color,
 }) {
   return base.copyWith(
     color: color,
-    fontFamily: fontFamily ?? _typeFamily(role),
-    fontFamilyFallback: WenyouFoundationTypography.chineseFallback,
     fontSize: _typeSize(role),
     height: _typeHeight(role),
     fontWeight: fontWeight ?? _typeWeight(role),
   );
 }
 
-TextStyle _utilityRole(TextStyle base) => base.copyWith(
-  fontFamily: WenyouFoundationTypography.utility,
-  fontFamilyFallback: WenyouFoundationTypography.chineseFallback,
-  fontFeatures: const [FontFeature.tabularFigures()],
-);
-
-String _typeFamily(String role) {
-  return switch (WenyouFoundationTypography.mobileFamilies[role]!) {
-    'display' => WenyouFoundationTypography.display,
-    'utility' => WenyouFoundationTypography.utility,
-    _ => WenyouFoundationTypography.body,
-  };
-}
+TextStyle _utilityRole(TextStyle base) =>
+    base.copyWith(fontFeatures: const [FontFeature.tabularFigures()]);
 
 double _typeSize(String role) => WenyouFoundationTypography.mobileSizes[role]!;
 

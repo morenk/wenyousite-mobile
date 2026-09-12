@@ -5,10 +5,10 @@ import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_toolbar.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/rich_editor_session.dart';
 
-import '../../support/foundation_test_fonts.dart';
+import '../../support/deterministic_test_fonts.dart';
 
 void main() {
-  setUpAll(loadFoundationTestFonts);
+  setUpAll(loadDeterministicTestFonts);
   for (final sticker in [false, true]) {
     testWidgets(sticker ? '等长表情替换完成后不恢复旧选区' : '工具栏分隔线 fallback 重做恢复最终选区', (
       tester,

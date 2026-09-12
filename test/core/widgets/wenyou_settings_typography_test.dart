@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 
 void main() {
-  testWidgets('设置与管理界面按 Foundation 功能标题语境使用正文字体 600', (tester) async {
+  testWidgets('设置与管理标题保持 body 语义的 600 字重并继承系统字体', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
         theme: AppTheme.light,
@@ -25,20 +24,16 @@ void main() {
     );
     final base = AppTheme.light;
     expect(
-      base.textTheme.wenyouPageTitle.fontFamily,
-      WenyouFoundationTypography.display,
-    );
-    expect(
       scoped.textTheme.wenyouPageTitle.fontFamily,
-      WenyouFoundationTypography.body,
+      base.textTheme.wenyouPageTitle.fontFamily,
     );
     expect(
       scoped.textTheme.wenyouSectionTitle.fontFamily,
-      WenyouFoundationTypography.body,
+      base.textTheme.wenyouSectionTitle.fontFamily,
     );
     expect(
       scoped.textTheme.wenyouSubsectionTitle.fontFamily,
-      WenyouFoundationTypography.body,
+      base.textTheme.wenyouSubsectionTitle.fontFamily,
     );
     expect(
       scoped.textTheme.wenyouPageTitle.fontSize,
@@ -53,16 +48,20 @@ void main() {
     expect(scoped.textTheme.wenyouSubsectionTitle.fontWeight, FontWeight.w600);
     expect(
       scoped.appBarTheme.titleTextStyle?.fontFamily,
-      WenyouFoundationTypography.body,
+      base.appBarTheme.titleTextStyle?.fontFamily,
     );
     expect(scoped.appBarTheme.titleTextStyle?.fontWeight, FontWeight.w600);
     expect(
       scoped.dialogTheme.titleTextStyle?.fontFamily,
-      WenyouFoundationTypography.body,
+      base.dialogTheme.titleTextStyle?.fontFamily,
     );
     expect(
       scoped.textTheme.wenyouUtilityCaption.fontFamily,
-      WenyouFoundationTypography.utility,
+      base.textTheme.wenyouUtilityCaption.fontFamily,
+    );
+    expect(
+      scoped.textTheme.wenyouUtilityCaption.fontFeatures,
+      contains(const FontFeature.tabularFigures()),
     );
   });
 }

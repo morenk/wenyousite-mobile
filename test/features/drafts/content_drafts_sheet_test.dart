@@ -8,10 +8,10 @@ import 'package:wenyousite_mobile/features/drafts/data/content_draft_repository.
 import 'package:wenyousite_mobile/features/drafts/domain/content_draft_models.dart';
 import 'package:wenyousite_mobile/features/drafts/presentation/content_drafts_sheet.dart';
 
-import '../../support/foundation_test_fonts.dart';
+import '../../support/deterministic_test_fonts.dart';
 
 void main() {
-  setUpAll(loadFoundationTestFonts);
+  setUpAll(loadDeterministicTestFonts);
 
   testWidgets('360dp 窄屏完整展示用量和五个草稿位且无横向溢出', (tester) async {
     tester.view.physicalSize = const Size(360, 800);

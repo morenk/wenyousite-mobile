@@ -16,14 +16,14 @@ import 'package:wenyousite_mobile/features/posts/presentation/post_composer_shee
 import 'package:wenyousite_mobile/features/posts/presentation/post_composer_targets.dart';
 import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
 
-import '../../support/foundation_test_fonts.dart';
+import '../../support/deterministic_test_fonts.dart';
 import '../../support/rich_text_behavior_projection.dart';
 import '../../support/rich_text_behavior_report.dart';
 
 class _Repository extends Mock implements PostRepository {}
 
 void main() {
-  setUpAll(loadFoundationTestFonts);
+  setUpAll(loadDeterministicTestFonts);
   final report = RichTextBehaviorReport('save');
   final fixture =
       jsonDecode(

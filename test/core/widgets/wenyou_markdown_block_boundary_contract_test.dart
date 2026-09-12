@@ -7,11 +7,11 @@ import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_markdown.dart';
 import '../../support/block_boundary_fixtures.dart';
-import '../../support/foundation_test_fonts.dart';
+import '../../support/deterministic_test_fonts.dart';
 import '../../support/markdown_rendered_text.dart';
 
 void main() {
-  setUpAll(loadFoundationTestFonts);
+  setUpAll(loadDeterministicTestFonts);
   final fixture = loadBlockBoundaryFixture();
   for (final item in (fixture['cases'] as List).cast<Map<String, dynamic>>()) {
     if (item['supported'] != true) continue;

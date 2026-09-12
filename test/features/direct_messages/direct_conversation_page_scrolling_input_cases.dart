@@ -5,11 +5,11 @@ import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/direct_messages/application/direct_message_controllers.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
-import '../../support/foundation_test_fonts.dart';
+import '../../support/deterministic_test_fonts.dart';
 import 'direct_conversation_page_test_support.dart';
 
 void registerDirectConversationPageScrollingInputCases() {
-  setUpAll(loadFoundationTestFonts);
+  setUpAll(loadDeterministicTestFonts);
   testWidgets('图片上传中取消会立即解除等待并保留正文', (tester) async {
     final repository = DirectConversationPageTestFakeRepository();
     final router = directConversationPageTestRouter();

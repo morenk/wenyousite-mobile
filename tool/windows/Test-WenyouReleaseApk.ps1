@@ -19,10 +19,7 @@ function Test-WenyouReleaseApk {
     }
     $required = @(
       'lib/arm64-v8a/libapp.so',
-      'lib/arm64-v8a/libflutter.so',
-      'assets/flutter_assets/packages/wenyousite_foundation/fonts/LXGWWenKaiLite-Medium.ttf',
-      'assets/flutter_assets/packages/wenyousite_foundation/fonts/NotoSansSC-Variable.ttf',
-      'assets/flutter_assets/packages/wenyousite_foundation/fonts/Nunito-Variable.ttf'
+      'lib/arm64-v8a/libflutter.so'
     )
     foreach ($name in $required) {
       $entries = @($archive.Entries | Where-Object { $_.FullName -ceq $name })
@@ -30,10 +27,25 @@ function Test-WenyouReleaseApk {
         throw "Release APK requires exactly one non-empty entry: $name"
       }
     }
+    $forbiddenFonts = @(
+      $archive.Entries | Where-Object {
+        $_.FullName -match '(?i)(NotoSansSC|LXGW|WenKai|Nunito|WenyouGoldenText)'
+      }
+    )
+    if ($forbiddenFonts.Count -ne 0) {
+      $names = $forbiddenFonts.FullName -join ', '
+      throw "Release APK contains removed UI or test fonts: $names"
+    }
+    $functionalFonts = @(
+      $archive.Entries | Where-Object {
+        $_.FullName -match '(?i)(MaterialIcons|KaTeX|\.otf$|\.ttf$)'
+      }
+    )
     return [pscustomobject]@{
       abi = 'arm64-v8a'
       nativeLibraryCount = $native.Count
-      preservedFonts = 3
+      bundledUiFonts = 0
+      functionalFontEntries = $functionalFonts.Count
       apkSize = (Get-Item -LiteralPath $resolved).Length
     }
   }

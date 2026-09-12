@@ -1,5 +1,11 @@
 # 移动端变更记录
 
+## Foundation v7 系统字体迁移候选（2026-09-12，待负责人真机验收）
+
+- 固定消费正式 Foundation `v7.0.0`（`a3f722bb9514712ff857065cd210c91414e907e4`），正文、标题、数字和品牌文字不再绑定应用字体，继续保留 body/display/utility 角色、字号、行高、字重及 utility tabular figures。
+- 删除 Release 中 Noto Sans SC、LXGW WenKai、Nunito 注册与资源；Golden/Widget 改用只位于 `test/support` 的确定性字体子集和 Material Icons，发布门禁拒绝旧 UI 字体或测试字体进入 APK。
+- 自动布局与 Golden 审查、Debug/Release 构建和包体对比见[系统字体迁移验收记录](architecture/system-font-migration-acceptance.md)；Android 8、较新 Android 和两种厂商系统字体仍须负责人使用候选 APK 复验。
+
 ## 主贴发言权限验收与合并准备（2026-09-12）
 
 - 负责人对候选 5d4ed7a 明确授权“可以合并清理分支了”，本次功能验收认可；不因此声称真实数据库或跨端联网测试已执行。

@@ -17,10 +17,10 @@ import 'package:wenyousite_mobile/features/notifications/application/notificatio
 import 'package:wenyousite_mobile/features/notifications/data/notification_repository.dart';
 import 'package:wenyousite_mobile/features/notifications/domain/notification_models.dart';
 
-import '../../support/foundation_test_fonts.dart';
+import '../../support/deterministic_test_fonts.dart';
 
 void main() {
-  setUpAll(loadFoundationTestFonts);
+  setUpAll(loadDeterministicTestFonts);
 
   testWidgets('删空当前页但还有下一页时保留加载更多入口', (tester) async {
     final repository = _FakeRepository(items: [_item('only')], hasMore: true);

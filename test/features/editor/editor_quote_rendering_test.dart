@@ -8,10 +8,10 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_markdown.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_text_styles.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/rich_editor_session.dart';
 
-import '../../support/foundation_test_fonts.dart';
+import '../../support/deterministic_test_fonts.dart';
 
 void main() {
-  setUpAll(loadFoundationTestFonts);
+  setUpAll(loadDeterministicTestFonts);
 
   for (final sample in [
     (name: 'paragraphs', separator: '>'),

@@ -8,11 +8,11 @@ import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_detail_interaction_bar.dart';
 
+import '../../support/deterministic_test_fonts.dart';
 import '../../support/foundation_icon_finder.dart';
-import '../../support/foundation_test_fonts.dart';
 
 void main() {
-  setUpAll(loadFoundationTestFonts);
+  setUpAll(loadDeterministicTestFonts);
 
   testWidgets('360dp 动态详情将四项互动统一为图标与数字', (tester) async {
     tester.view.devicePixelRatio = 1;
@@ -80,7 +80,14 @@ void main() {
       final text = tester.widget<Text>(
         find.descendant(of: action, matching: find.byType(Text)),
       );
-      expect(text.style?.fontFamily, WenyouFoundationTypography.utility);
+      expect(
+        text.style?.fontFamily,
+        ThemeData.light().textTheme.bodySmall!.fontFamily,
+      );
+      expect(
+        text.style?.fontFeatures,
+        contains(const FontFeature.tabularFigures()),
+      );
       expect(text.style?.fontWeight, FontWeight.w400);
       expect(text.style?.fontSize, 12);
     }

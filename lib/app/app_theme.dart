@@ -60,12 +60,7 @@ abstract final class AppTheme {
     final baseTextTheme =
         (brightness == Brightness.dark ? ThemeData.dark() : ThemeData.light())
             .textTheme
-            .apply(
-              fontFamily: WenyouFoundationTypography.body,
-              fontFamilyFallback: WenyouFoundationTypography.chineseFallback,
-              bodyColor: tokens.text,
-              displayColor: tokens.text,
-            );
+            .apply(bodyColor: tokens.text, displayColor: tokens.text);
     final pageTitle = wenyouFoundationTypeStyle(
       baseTextTheme.displayLarge!,
       'pageTitle',
@@ -99,13 +94,11 @@ abstract final class AppTheme {
       titleLarge: wenyouFoundationTypeStyle(
         baseTextTheme.titleLarge!,
         'sectionTitle',
-        fontFamily: WenyouFoundationTypography.body,
         fontWeight: FontWeight.w600,
       ),
       titleMedium: wenyouFoundationTypeStyle(
         baseTextTheme.titleMedium!,
         'subsectionTitle',
-        fontFamily: WenyouFoundationTypography.body,
         fontWeight: FontWeight.w600,
       ),
       titleSmall: wenyouFoundationTypeStyle(

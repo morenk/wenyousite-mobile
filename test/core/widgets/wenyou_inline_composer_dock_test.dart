@@ -8,10 +8,10 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_atomic_text_editor.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_inline_composer_dock.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 
-import '../../support/foundation_test_fonts.dart';
+import '../../support/deterministic_test_fonts.dart';
 
 void main() {
-  setUpAll(loadFoundationTestFonts);
+  setUpAll(loadDeterministicTestFonts);
 
   for (final width in [320.0, 360.0, 400.0, 600.0]) {
     testWidgets('$width dp 输入框独占首行且操作保持 48dp', (tester) async {

@@ -4,11 +4,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_inline_text_elements.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
 
-import '../../support/foundation_test_fonts.dart';
+import '../../support/deterministic_test_fonts.dart';
 import 'post_replies_page_test_support.dart';
 
 void main() {
-  setUpAll(loadFoundationTestFonts);
+  setUpAll(loadDeterministicTestFonts);
 
   testWidgets('反馈楼层打开、编辑行内代码、保存及重开保留可见行和样式', (tester) async {
     final repository = _InlineCodePostRepository();

@@ -14,10 +14,10 @@ import 'package:wenyousite_mobile/features/threads/domain/subthread_management_m
 import 'package:wenyousite_mobile/features/threads/presentation/subthread_editor_page.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/subthread_management_page.dart';
 
-import '../../support/foundation_test_fonts.dart';
+import '../../support/deterministic_test_fonts.dart';
 
 void main() {
-  setUpAll(loadFoundationTestFonts);
+  setUpAll(loadDeterministicTestFonts);
 
   testWidgets('目录只展示非默认子贴及正文状态', (tester) async {
     await _pumpWorkspace(tester, _FakeRepository());
