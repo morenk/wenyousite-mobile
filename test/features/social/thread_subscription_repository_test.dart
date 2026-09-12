@@ -42,6 +42,10 @@ void main() {
 
     expect(candidates.map((item) => item.userId), ['player-1']);
     expect(candidates.single.username, '骰子猫');
+    expect(
+      candidates.single.avatarUrl,
+      'https://cdn.example.com/player-1-avatar.webp',
+    );
   });
 
   test('创建两类订阅提交正确 DTO，并按记录 ID 取消', () async {
@@ -240,11 +244,29 @@ ThreadMemberResponseDto _member(
       ..role = role
       ..playerMarked = playerMarked
       ..joinedAt = DateTime.utc(2026, 8, 10)
-      ..user.update(
-        (user) => user
+      ..user.update((user) {
+        user
           ..id = userId
           ..username = username
-          ..level = 3,
-      ),
+          ..level = 3;
+        if (userId == 'player-1') {
+          user
+            ..avatar = 'https://cdn.example.com/player-1-avatar.gif'
+            ..avatarDisplay.replace(_avatarDisplay());
+        }
+      }),
   );
 }
+
+MediaDisplayResponseDto _avatarDisplay() => MediaDisplayResponseDto(
+  (display) => display
+    ..url = 'https://cdn.example.com/player-1-avatar.webp'
+    ..contentType = MediaDisplayResponseDtoContentTypeEnum.imageSlashWebp
+    ..width = 256
+    ..height = 256
+    ..bytes = 12345
+    ..animated = true
+    ..frameCount = 8
+    ..durationMs = 800
+    ..loopCount = 0,
+);

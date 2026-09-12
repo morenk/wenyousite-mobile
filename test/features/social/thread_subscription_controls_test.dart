@@ -10,6 +10,7 @@ import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/network/session_remote.dart';
 import 'package:wenyousite_mobile/core/storage/token_store.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/social/data/thread_subscription_repository.dart';
 import 'package:wenyousite_mobile/features/social/domain/thread_subscription_models.dart';
@@ -56,6 +57,24 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('取消订阅'), findsOneWidget);
     expect(repository.createdTargets, [null, 'player-1']);
+  });
+
+  testWidgets('玩家列表把候选头像地址传入共享头像组件', (tester) async {
+    final container = await _authenticatedContainer(_FakeRepository());
+    addTearDown(container.dispose);
+    await tester.pumpWidget(_app(container));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('thread-subscription-players')));
+    await tester.pumpAndSettle();
+
+    final avatar = tester.widget<WenyouAvatar>(
+      find.descendant(
+        of: find.byKey(const Key('thread-subscription-candidate-player-1')),
+        matching: find.byType(WenyouAvatar),
+      ),
+    );
+    expect(avatar.avatarUrl, 'https://cdn.example.com/player-1-avatar.webp');
   });
 
   testWidgets('切换账号或退出会话时关闭旧账号的玩家订阅面板', (tester) async {
@@ -384,6 +403,7 @@ class _FakeRepository implements ThreadSubscriptionRepository {
       ThreadSubscriptionCandidate(
         userId: 'player-1',
         username: '骰子猫',
+        avatarUrl: 'https://cdn.example.com/player-1-avatar.webp',
         level: 3,
       ),
     ];
