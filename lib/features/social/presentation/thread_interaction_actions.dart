@@ -181,6 +181,7 @@ class ThreadInteractionActions extends ConsumerWidget {
       return;
     }
     final folder = await showBookmarkFolderPicker(
+      closeBeforeWrite: true,
       context: context,
       catalog: bookmarkCatalog,
       onConfirm: (folderId) async {

@@ -9,6 +9,94 @@ import 'package:wenyousite_mobile/features/notifications/data/notification_repos
 import 'package:wenyousite_mobile/features/notifications/domain/notification_models.dart';
 
 void main() {
+  test('通知删除期间不回读旧计数，结算回调只恢复一次', () async {
+    final repository = _FakeRepository(unreadCount: 2);
+    final unread = NotificationUnreadController(repository, autoStart: false);
+    addTearDown(unread.dispose);
+    await unread.refresh();
+    final settle = unread.beginRemoval(isUnread: true);
+    await unread.refresh(force: true);
+    expect(unread.state.count, 1);
+    repository.unreadFailure = const ApiFailure(userMessage: '网络不可用');
+    settle(false);
+    settle(false);
+    await _settle();
+    expect(unread.state.count, 2);
+  });
+
+  test('通知删除失败不能恢复后续全部已读清空的角标', () async {
+    final repository = _FakeRepository(unreadCount: 2);
+    final unread = NotificationUnreadController(repository, autoStart: false);
+    addTearDown(unread.dispose);
+    await unread.refresh();
+    final settle = unread.beginRemoval(isUnread: true);
+    unread.clear();
+    repository.unreadFailure = const ApiFailure(userMessage: '网络不可用');
+    settle(false);
+    await _settle();
+    expect(unread.state.count, 0);
+  });
+
+  test('删除失败且角标回读断网时仍恢复本地未读数', () async {
+    final gate = Completer<void>();
+    final repository = _FakeRepository(
+      unreadCount: 2,
+      removeOperation: (_) => gate.future,
+      pages: {
+        (NotificationFilters.all, null): CursorPage(
+          items: [_item('one')],
+          hasMore: false,
+        ),
+      },
+    );
+    final unread = NotificationUnreadController(repository);
+    final controller = NotificationListController(repository, unread);
+    addTearDown(controller.dispose);
+    addTearDown(unread.dispose);
+    await _settle();
+    final operation = controller.remove('one');
+    expect(unread.state.count, 1);
+    repository.unreadFailure = const ApiFailure(userMessage: '网络不可用');
+    gate.completeError(const ApiFailure(userMessage: '删除失败'));
+    expect(await operation, isFalse);
+    await _settle();
+    expect(controller.state.items.single.id, 'one');
+    expect(unread.state.count, 2);
+  });
+
+  test('删除通知立即移除和扣角标，明确失败恢复原位置', () async {
+    final gate = Completer<void>();
+    final repository = _FakeRepository(
+      unreadCount: 2,
+      removeOperation: (_) => gate.future,
+      pages: {
+        (NotificationFilters.all, null): CursorPage(
+          items: [_item('one'), _item('two')],
+          cursor: 'opaque',
+          hasMore: true,
+        ),
+      },
+    );
+    final unread = NotificationUnreadController(repository);
+    final controller = NotificationListController(repository, unread);
+    addTearDown(controller.dispose);
+    addTearDown(unread.dispose);
+    await _settle();
+    final operation = controller.remove('one');
+    final during = controller.state;
+    final count = unread.state.count;
+    gate.completeError(
+      const ApiFailure(userMessage: '删除失败', businessCode: 40300),
+    );
+    expect(await operation, isFalse);
+    await _settle();
+    expect(during.items.map((item) => item.id), ['two']);
+    expect(count, 1);
+    expect(controller.state.items.map((item) => item.id), ['one', 'two']);
+    expect(controller.state.cursor, 'opaque');
+    expect(unread.state.count, 2);
+  });
+
   test('筛选与分页使用各自服务端游标', () async {
     final repository = _FakeRepository(
       pages: {
@@ -335,6 +423,7 @@ class _FakeRepository implements NotificationRepository {
     this.pages = const {},
     this.unreadCount = 0,
     this.setReadOperation,
+    this.removeOperation,
     this.markAllFailure,
     this.fetchPageOperation,
   });
@@ -342,7 +431,9 @@ class _FakeRepository implements NotificationRepository {
   final Map<(NotificationFilter, String?), CursorPage<NotificationListItem>>
   pages;
   int unreadCount;
+  ApiFailure? unreadFailure;
   final Future<void> Function(String id)? setReadOperation;
+  final Future<void> Function(String id)? removeOperation;
   final ApiFailure? markAllFailure;
   final Future<CursorPage<NotificationListItem>> Function(
     NotificationFilter filter,
@@ -366,7 +457,10 @@ class _FakeRepository implements NotificationRepository {
   }
 
   @override
-  Future<int> fetchUnreadCount() async => unreadCount;
+  Future<int> fetchUnreadCount() async {
+    if (unreadFailure != null) throw unreadFailure!;
+    return unreadCount;
+  }
 
   @override
   Future<void> markAllRead() async {
@@ -377,6 +471,7 @@ class _FakeRepository implements NotificationRepository {
 
   @override
   Future<void> remove(String id) async {
+    await removeOperation?.call(id);
     removedIds.add(id);
     if (unreadCount > 0) unreadCount--;
   }

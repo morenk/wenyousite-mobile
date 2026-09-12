@@ -30,6 +30,11 @@ class UserRelationController extends StateNotifier<UserRelationState> {
     final wasFollowing = before.isFollowing;
     final epoch = ++_actionEpoch;
     state = state.copyWith(
+      isFollowing: !wasFollowing,
+      followerCount: (before.followerCount + (wasFollowing ? -1 : 1)).clamp(
+        0,
+        1 << 31,
+      ),
       pendingAction: UserRelationAction.follow,
       clearFeedback: true,
     );

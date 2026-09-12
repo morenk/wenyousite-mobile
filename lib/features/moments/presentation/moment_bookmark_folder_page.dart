@@ -301,6 +301,7 @@ class _MomentBookmarkFolderPageState
     }
     final repository = ref.read(momentBookmarkRepositoryProvider);
     final folder = await showBookmarkFolderPicker(
+      closeBeforeWrite: true,
       context: context,
       catalog: repository,
       mode: BookmarkFolderPickerMode.move,

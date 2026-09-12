@@ -358,7 +358,7 @@ void main() {
     expect(find.textContaining('问题编号：bookmark-remove-request'), findsOneWidget);
   });
 
-  testWidgets('取消在途保留加载入口并阻止重复写入', (tester) async {
+  testWidgets('取消在途立即移除卡片且不会重复写入', (tester) async {
     final gate = Completer<void>();
     final repository = _FakeRepository(items: [_item('bookmark-1')])
       ..removeGate = gate;
@@ -372,17 +372,8 @@ void main() {
     await tester.pump(const Duration(milliseconds: 400));
 
     final manage = find.byKey(const Key('bookmark-manage-bookmark-1'));
-    expect(tester.widget<IconButton>(manage).onPressed, isNull);
-    expect(
-      find.descendant(
-        of: manage,
-        matching: find.byType(CircularProgressIndicator),
-      ),
-      findsOneWidget,
-    );
-    await tester.tap(manage);
-    await tester.pump();
-    expect(find.text('主题=thread-1'), findsNothing);
+    expect(manage, findsNothing);
+    expect(find.text('已取消收藏。'), findsNothing);
     expect(repository.removedIds, ['bookmark-1']);
     gate.complete();
     await tester.pumpAndSettle();

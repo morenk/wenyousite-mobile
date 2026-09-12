@@ -71,6 +71,19 @@ class StickerCollection {
 
   bool get isFull => items.length + pendingImports.length >= limit;
 
+  StickerCollection withoutFavorite(String id) {
+    final retained = items
+        .where((item) => item.id != id)
+        .toList(growable: false);
+    return StickerCollection(
+      version: version,
+      limit: limit,
+      items: retained,
+      recent: recent.where((item) => item.id != id).toList(growable: false),
+      pendingImports: pendingImports,
+    ).withOrder(retained.map((item) => item.id).toList(growable: false));
+  }
+
   /// 排序只改变位置，资产、最近使用顺序和处理中任务保持原值。
   StickerCollection withOrder(List<String> ids) {
     final byId = {for (final item in items) item.id: item};

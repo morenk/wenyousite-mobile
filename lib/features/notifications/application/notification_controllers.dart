@@ -21,9 +21,11 @@ class NotificationUnreadController
 
   final NotificationRepository _repository;
   final _requestEpoch = RequestEpoch();
+  var _pendingRemovals = 0;
+  var _clearRevision = 0;
 
   Future<void> refresh({bool force = false}) async {
-    if (!mounted || (state.isLoading && !force)) return;
+    if (!mounted || _pendingRemovals > 0 || (state.isLoading && !force)) return;
     final epoch = _requestEpoch.begin();
     state = NotificationUnreadState(count: state.count, isLoading: true);
     try {
@@ -44,7 +46,30 @@ class NotificationUnreadController
     _setCount(state.count - 1);
   }
 
-  void clear() => _setCount(0);
+  void clear() {
+    ++_clearRevision;
+    _setCount(0);
+  }
+
+  /// 删除结算前暂停计数回读；断网失败也能恢复本次扣减。
+  void Function(bool) beginRemoval({required bool isUnread}) {
+    if (!mounted) return (_) {};
+    ++_pendingRemovals;
+    final clearRevision = _clearRevision;
+    final amount = isUnread && state.count > 0 ? 1 : 0;
+    _setCount(state.count - amount);
+    var settled = false;
+    return (succeeded) {
+      if (!mounted || settled) return;
+      settled = true;
+      --_pendingRemovals;
+      // 后续全部已读已清空角标时，不能重新增加旧通知。
+      if (!succeeded && clearRevision == _clearRevision) {
+        _setCount(state.count + amount);
+      }
+      if (_pendingRemovals == 0) unawaited(refresh(force: true));
+    };
+  }
 
   void _setCount(int value) {
     if (!mounted) return;
@@ -206,17 +231,24 @@ class NotificationListController extends StateNotifier<NotificationListState> {
     if (item == null) return false;
     final epoch = _requestEpoch.current;
     final before = state;
-    state = _readyFrom(
-      before,
+    state = NotificationListState(
+      phase: NotificationListPhase.ready,
+      filter: before.filter,
+      items: [
+        for (final candidate in before.items)
+          if (candidate.id != id) candidate,
+      ],
+      cursor: before.cursor,
+      hasMore: before.hasMore,
+      loadMoreFailure: before.loadMoreFailure,
       pendingId: id,
       pendingAction: NotificationPendingAction.remove,
-      clearFailures: true,
     );
+    final settleUnread = _unread.beginRemoval(isUnread: !item.isRead);
     try {
       await _repository.remove(id);
+      settleUnread(true);
       if (!mounted) return false;
-      if (!item.isRead) _unread.decrement();
-      unawaited(_unread.refresh(force: true));
       if (!_requestEpoch.isCurrent(epoch)) return false;
       final updated = before.items
           .where((candidate) => candidate.id != id)
@@ -232,13 +264,29 @@ class NotificationListController extends StateNotifier<NotificationListState> {
       );
       return true;
     } on Object catch (error) {
+      settleUnread(false);
       if (!mounted) return false;
-      unawaited(_unread.refresh(force: true));
       if (!_requestEpoch.isCurrent(epoch)) return false;
-      state = _readyFrom(
-        before,
-        actionFailure: mapApplicationFailure(error, '通知没有删除，请稍后重试。'),
-      );
+      final failure = mapApplicationFailure(error, '通知没有删除，请稍后重试。');
+      if (failure.hasUnknownWriteOutcome) {
+        try {
+          final page = await _repository.fetchPage(filter: before.filter);
+          if (!mounted || !_requestEpoch.isCurrent(epoch)) return false;
+          // 首屏缺少目标不能证明删除，保留失败反馈但展示重新读取的列表。
+          state = NotificationListState(
+            phase: NotificationListPhase.ready,
+            filter: before.filter,
+            items: page.items,
+            cursor: page.cursor,
+            hasMore: page.hasMore,
+            actionFailure: failure,
+          );
+          return false;
+        } on Object {
+          if (!mounted || !_requestEpoch.isCurrent(epoch)) return false;
+        }
+      }
+      state = _readyFrom(before, actionFailure: failure);
       return false;
     }
   }
