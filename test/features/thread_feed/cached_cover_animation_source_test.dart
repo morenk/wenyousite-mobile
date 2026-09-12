@@ -338,8 +338,11 @@ void main() {
     await failed;
     expect((await source.load(address(), CancelToken())).fromCache, isFalse);
     expect(requests, 3);
+    // 播放不等待落盘；模拟重新打开前先结束旧实例的持久化。
+    await source.disk.flush();
     final reopened = create()..changeViewer('account-c', purge: false);
     expect((await reopened.load(address(), CancelToken())).fromCache, isFalse);
+    await reopened.disk.flush();
     final index = await File('${directory.path}/index.json').readAsString();
     expect(index, isNot(contains('account-')));
     expect(await fileCount(), 1);
