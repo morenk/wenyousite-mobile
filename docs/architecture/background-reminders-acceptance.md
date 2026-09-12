@@ -32,6 +32,8 @@
 - 将 f99996a0 的旧 poller 与当前“后台不读取通知未读数”回归复制到隔离 build 目录执行，确认旧实现因两次 fetchUnreadCount 调用而失败，当前实现通过；未修改工作源码或扩大到共享后端数据。
 - 完整门禁、最终候选 APK 与安装身份见本记录后续交付条目。
 - 首次完整门禁在分析阶段发现 build 目录中旧实现对照测试副本的 import 排序问题；该副本只用于确认旧实现失败，已移除，保留失败日志。没有关闭 lint 或放宽检查，完整门禁重新执行。
+- 随后旧基线完整门禁已通过分析、契约、架构、文档及 3664 项测试（1 项既有跳过），尚未跑完时发现 dev 已合入负责人验收的乐观更新 PR #31。为避免交付旧体验，停止该轮剩余测试并保留日志，不将这轮记为完整通过。
+- 任务分支整合至 origin/dev e5eea0de；仅 CHANGELOG 的两个新增记录需人工并列保留，业务源码无冲突。整合后的功能提交为 a1af3d3d，重新通过统一入口 npm run check -- -TestConcurrency 2 验证并构建；未合并 dev、打 Tag 或上传 RainS3。
 
 ## 负责人真机手测清单
 
@@ -51,7 +53,10 @@
 ## 候选安装包身份
 
 - 本地版本：0.7.0-dev.1+94；APK versionName 为 0.7.0-dev.1-debug，包名 site.wenyou.app.debug，应用名“温油站 Debug”。不覆盖 site.wenyou.app 正式版，不执行数据清除或卸载。
-- 最终 Debug 构建及 apksigner v2 签名验证通过；SHA-256：733dfdcbcc6bf853482a663569125a49fec1d6a7fc45995bb4eca6ef8477220c。
+- 整合前阶段 Debug 构建及 apksigner v2 签名验证通过，SHA-256：733dfdcbcc6bf853482a663569125a49fec1d6a7fc45995bb4eca6ef8477220c；该阶段包未安装，不作为最终候选。
+- 最终整合候选来自 a1af3d3d（基于 e5eea0de），Debug 构建及签名验证通过；SHA-256：9bce7774043b2c581c92fd1c22cb5394e0c3c1c74a6e31e2405114b49fec7ba1。包名与版本仍如上，必须核对本哈希。
 - aapt 对实际 APK 的权限检查确认新增 FOREGROUND_SERVICE / FOREGROUND_SERVICE_SPECIAL_USE，消息振动使用既有 VIBRATE；未混入 WAKE_LOCK、RECEIVE_BOOT_COMPLETED、精确闹钟、悬浮窗或电池优化豁免权限。
 - 安装前确认连接的 2509FPN0BC 为 Android 16 / API 36，近期温油站进程为 Debug 包；旧包更新时间 2026-09-13 02:09:56，同为构建号 94，但 SHA-256 为 50b20bfd782c4d17581f8b6dbaf0fd096792db388934577aa9b5ebf397f146fd。因此本次以包名、实际 APK 哈希与更新时间共同确认覆盖，不能仅凭构建号判断。
-- 当前针对性回归：47 项通过；架构与 21 个模块文档检查通过。完整门禁、候选提交与实际覆盖安装结果在交付前补充。
+- 针对性回归 47 项通过。最终源码 a1af3d3d34ea432bf0e9ab9f26a9b0d568268686 的完整 npm run check -- -TestConcurrency 2 通过：Flutter 4463 项通过、1 项既有显式 Sentry 联网验收跳过，Windows 发布工具 17 项通过；格式、应用/生成客户端分析、架构、21 模块文档、API 覆盖、生成一致性与公网契约核验均通过。完整日志保留在本地 build/background-reminders-check-integrated.log。
+- 2026-09-13 03:38:35（Asia/Shanghai）按负责人授权执行 adb install -r，返回 Success。再次读取 site.wenyou.app.debug 的包路径、版本、更新时间及设备内 base.apk SHA-256，确认与最终候选 9bce7774…9fec7ba1 完全一致。安装前旧版本号同为 94，实际哈希及更新时间均已变化；未卸载、清数据或覆盖正式包。
+- 仅完成安装与包身份验证，未代替负责人执行真实双消息、横幅/勿扰/锁屏与连续 30 分钟验收；状态继续为“候选／待负责人验收”。
