@@ -70,6 +70,9 @@ void main() {
             as AndroidNotificationChannel;
     expect(channel.id, 'wenyou_messages_v1');
     expect(channel.importance, Importance.high);
+    expect(channel.playSound, isTrue);
+    // 插件 sound 为 null 时使用 RingtoneManager.TYPE_NOTIFICATION 默认 URI。
+    expect(channel.sound, isNull);
     verify(
       () => plugin.initialize(
         settings: any(named: 'settings'),
@@ -165,6 +168,36 @@ void main() {
     expect(androidDetails.visibility, NotificationVisibility.private);
     expect(androidDetails.category, AndroidNotificationCategory.message);
     expect(androidDetails.icon, 'ic_stat_wenyou');
+    expect(androidDetails.playSound, isTrue);
+    expect(androidDetails.sound, isNull);
+    expect(androidDetails.enableVibration, isTrue);
+    expect(androidDetails.ongoing, isFalse);
+    expect(androidDetails.autoCancel, isTrue);
+  });
+
+  test('用户降低消息频道重要性仍允许普通通知，不重建频道覆盖选择', () async {
+    when(() => android.getNotificationChannels()).thenAnswer(
+      (_) async => const [
+        AndroidNotificationChannel(
+          'wenyou_messages_v1',
+          '新消息提醒',
+          importance: Importance.low,
+          playSound: false,
+          enableVibration: false,
+        ),
+      ],
+    );
+    final gateway = AndroidBackgroundNotificationGateway(
+      plugin: plugin,
+      androidPlugin: android,
+    );
+    expect(await gateway.canNotify(), isTrue);
+    expect(await gateway.canNotify(), isTrue);
+    verify(() => android.createNotificationChannel(any())).called(1);
+    verifyNever(
+      () =>
+          android.deleteNotificationChannel(channelId: any(named: 'channelId')),
+    );
   });
 }
 

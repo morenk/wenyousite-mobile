@@ -76,7 +76,8 @@ class BackgroundOnlineState {
   final bool permissionDenied;
   final String? failureMessage;
 
-  bool get canRun => supported && !isLoading && !permissionDenied;
+  bool get canRun =>
+      supported && !isLoading && !permissionDenied && failureMessage == null;
 }
 
 class BackgroundOnlineController extends StateNotifier<BackgroundOnlineState> {
@@ -87,10 +88,18 @@ class BackgroundOnlineController extends StateNotifier<BackgroundOnlineState> {
 
   final BackgroundNotificationGateway _gateway;
   int _operationEpoch = 0;
+  Future<void>? _permissionRequest;
 
-  /// Requests notification access when an authenticated foreground session is
-  /// ready. The best-effort polling policy itself is always enabled.
-  Future<void> activateForAuthenticatedSession() async {
+  /// 登录、切号和恢复只读取权限；系统授权框必须由明确点击触发。
+  Future<void> activateForAuthenticatedSession() => refreshPermission();
+
+  Future<void> requestPermissionFromUser() {
+    return _permissionRequest ??= _requestPermission().whenComplete(() {
+      _permissionRequest = null;
+    });
+  }
+
+  Future<void> _requestPermission() async {
     if (!state.supported) return;
     final epoch = ++_operationEpoch;
     state = const BackgroundOnlineState(supported: true);
@@ -116,6 +125,8 @@ class BackgroundOnlineController extends StateNotifier<BackgroundOnlineState> {
   }
 
   Future<void> refreshPermission() async {
+    // 系统授权框返回时的 resumed 不得抢先覆盖仍在途的授权结果。
+    if (_permissionRequest != null) return _permissionRequest;
     if (!state.supported) return;
     final epoch = ++_operationEpoch;
     try {
@@ -139,10 +150,23 @@ class BackgroundOnlineController extends StateNotifier<BackgroundOnlineState> {
 
   Future<void> markPermissionDenied() async {
     if (!mounted || !state.supported) return;
+    _operationEpoch++;
     state = BackgroundOnlineState(
       supported: state.supported,
       isLoading: false,
       permissionDenied: true,
+    );
+  }
+
+  void markExecutionUnavailable({required bool blocked}) {
+    if (!mounted || !state.supported) return;
+    _operationEpoch++;
+    state = BackgroundOnlineState(
+      supported: true,
+      isLoading: false,
+      failureMessage: blocked
+          ? '后台消息提醒不可用，请在系统设置中开启温油站通知及后台消息提醒。'
+          : '后台消息提醒启动或运行失败，请回到温油站后重试。',
     );
   }
 
@@ -189,13 +213,24 @@ enum BackgroundNotificationDestination {
 }
 
 class BackgroundNotificationPayload {
-  const BackgroundNotificationPayload._(this.destination, {this.value});
+  const BackgroundNotificationPayload._(
+    this.destination, {
+    this.value,
+    this.notificationId,
+    this.recipientId,
+  });
 
-  factory BackgroundNotificationPayload.notification(String? location) {
+  factory BackgroundNotificationPayload.notification(
+    String? location, {
+    String? notificationId,
+    String? recipientId,
+  }) {
     final safeLocation = _safeNotificationLocation(location);
     return BackgroundNotificationPayload._(
       BackgroundNotificationDestination.notification,
       value: safeLocation,
+      notificationId: recipientId == null ? null : notificationId,
+      recipientId: notificationId == null ? null : recipientId,
     );
   }
 
@@ -210,11 +245,15 @@ class BackgroundNotificationPayload {
 
   final BackgroundNotificationDestination destination;
   final String? value;
+  final String? notificationId;
+  final String? recipientId;
 
   String encode() => jsonEncode({
     'v': 1,
     'type': destination.name,
     if (value != null) 'value': value,
+    if (notificationId != null) 'notificationId': notificationId,
+    if (recipientId != null) 'recipientId': recipientId,
   });
 
   String get location => switch (destination) {
@@ -231,9 +270,22 @@ class BackgroundNotificationPayload {
       if (decoded is! Map<String, dynamic> || decoded['v'] != 1) return null;
       final type = decoded['type'];
       final value = decoded['value'];
+      final notificationId = decoded['notificationId'];
+      final recipientId = decoded['recipientId'];
+      if (notificationId != null || recipientId != null) {
+        if (type != BackgroundNotificationDestination.notification.name ||
+            !_validReceiptId(notificationId) ||
+            !_validReceiptId(recipientId)) {
+          return null;
+        }
+      }
       if (type == BackgroundNotificationDestination.notification.name) {
         if (value != null && value is! String) return null;
-        return BackgroundNotificationPayload.notification(value as String?);
+        return BackgroundNotificationPayload.notification(
+          value as String?,
+          notificationId: notificationId as String?,
+          recipientId: recipientId as String?,
+        );
       }
       if (type == BackgroundNotificationDestination.directMessage.name &&
           value is String &&
@@ -250,6 +302,11 @@ class BackgroundNotificationPayload {
     return null;
   }
 }
+
+bool _validReceiptId(Object? value) =>
+    value is String &&
+    value.length <= 200 &&
+    RegExp(r'^[a-zA-Z0-9_-]+$').hasMatch(value);
 
 String? _safeNotificationLocation(String? location) {
   final value = location?.trim();

@@ -25,6 +25,9 @@ class AndroidBackgroundNotificationGateway
     '新消息提醒',
     description: '温油站通知和私聊的新消息提醒',
     importance: Importance.high,
+    // sound 留空时插件使用系统默认通知音；不指定自带音频或重建旧频道。
+    playSound: true,
+    enableVibration: true,
   );
 
   final FlutterLocalNotificationsPlugin _plugin;
@@ -117,6 +120,10 @@ class AndroidBackgroundNotificationGateway
             icon: 'ic_stat_wenyou',
             importance: Importance.high,
             priority: Priority.high,
+            playSound: true,
+            enableVibration: true,
+            autoCancel: true,
+            ongoing: false,
             groupKey: _groupKey,
             visibility: NotificationVisibility.private,
             category: AndroidNotificationCategory.message,

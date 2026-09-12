@@ -4,6 +4,30 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/core/application/background_online_reminders.dart';
 
 void main() {
+  test('系统通知已读载荷携带成对通知与接收人 ID，兼容旧载荷', () {
+    final payload = BackgroundNotificationPayload.notification(
+      '/threads/t1',
+      notificationId: 'n1',
+      recipientId: 'u1',
+    );
+    final parsed = BackgroundNotificationPayload.tryParse(payload.encode())!;
+    expect(parsed.notificationId, 'n1');
+    expect(parsed.recipientId, 'u1');
+    expect(
+      BackgroundNotificationPayload.tryParse(
+        '{"v":1,"type":"notification","value":"/threads/t1"}',
+      )!.notificationId,
+      isNull,
+    );
+    for (final raw in [
+      '{"v":1,"type":"notification","notificationId":"n1"}',
+      '{"v":1,"type":"notification","notificationId":7,"recipientId":"u1"}',
+      '{"v":1,"type":"notification","notificationId":"../n1","recipientId":"u1"}',
+      '{"v":1,"type":"messageCenter","notificationId":"n1","recipientId":"u1"}',
+    ]) {
+      expect(BackgroundNotificationPayload.tryParse(raw), isNull);
+    }
+  });
   test('本地通知载荷只接受 v1 安全目标并对未知载荷回退失败', () {
     final direct = const BackgroundNotificationPayload.directMessage(
       'conversation / 1',
@@ -27,7 +51,7 @@ void main() {
     );
   });
 
-  test('登录后固定开启并主动请求通知权限', () async {
+  test('登录与重复恢复只读取权限，用户点击才请求', () async {
     final gateway = _FakeGateway(
       notificationsEnabled: false,
       permissionRequestResult: true,
@@ -37,6 +61,11 @@ void main() {
     await _settleLoad(controller);
 
     await controller.activateForAuthenticatedSession();
+    await controller.activateForAuthenticatedSession();
+    await controller.refreshPermission();
+    expect(gateway.requestCalls, 0);
+    expect(controller.state.permissionDenied, isTrue);
+    await controller.requestPermissionFromUser();
     expect(gateway.requestCalls, 1);
     expect(controller.state.permissionDenied, isFalse);
     expect(controller.state.canRun, isTrue);
@@ -51,10 +80,45 @@ void main() {
     addTearDown(controller.dispose);
     await _settleLoad(controller);
 
-    await controller.activateForAuthenticatedSession();
+    await controller.requestPermissionFromUser();
     expect(gateway.requestCalls, 1);
     expect(controller.state.permissionDenied, isTrue);
     expect(controller.state.canRun, isFalse);
+  });
+
+  test('连续点击和授权框恢复事件合并，拒绝后不会被登录再次申请', () async {
+    final pending = Completer<bool>();
+    final gateway = _FakeGateway(
+      notificationsEnabled: false,
+      permissionRequestResult: false,
+    )..pendingPermission = pending.future;
+    final controller = BackgroundOnlineController(gateway);
+    addTearDown(controller.dispose);
+    await _settleLoad(controller);
+    final first = controller.requestPermissionFromUser();
+    final second = controller.requestPermissionFromUser();
+    final resume = controller.refreshPermission();
+    await Future<void>.delayed(Duration.zero);
+    expect(gateway.requestCalls, 1);
+    pending.complete(false);
+    await Future.wait([first, second, resume]);
+    await controller.activateForAuthenticatedSession();
+    expect(gateway.requestCalls, 1);
+    expect(controller.state.permissionDenied, isTrue);
+  });
+
+  test('授权异常显示可重试错误，不自动循环申请', () async {
+    final gateway = _FakeGateway(
+      notificationsEnabled: false,
+      permissionRequestResult: false,
+    )..failRequest = true;
+    final controller = BackgroundOnlineController(gateway);
+    addTearDown(controller.dispose);
+    await _settleLoad(controller);
+    await controller.requestPermissionFromUser();
+    expect(controller.state.failureMessage, isNotNull);
+    expect(controller.state.canRun, isFalse);
+    expect(gateway.requestCalls, 1);
   });
 }
 
@@ -73,6 +137,8 @@ class _FakeGateway implements BackgroundNotificationGateway {
   bool notificationsEnabled;
   final bool permissionRequestResult;
   int requestCalls = 0;
+  Future<bool>? pendingPermission;
+  bool failRequest = false;
 
   @override
   bool get isSupported => true;
@@ -89,8 +155,10 @@ class _FakeGateway implements BackgroundNotificationGateway {
   @override
   Future<bool> requestPermission() async {
     requestCalls++;
-    notificationsEnabled = permissionRequestResult;
-    return permissionRequestResult;
+    if (failRequest) throw StateError('permission failed');
+    notificationsEnabled =
+        await (pendingPermission ?? Future.value(permissionRequestResult));
+    return notificationsEnabled;
   }
 
   @override
