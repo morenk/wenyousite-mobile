@@ -8,6 +8,8 @@ part of 'recent_reply_response_dto.dart';
 
 class _$RecentReplyResponseDto extends RecentReplyResponseDto {
   @override
+  final BuiltList<MarkdownMediaDisplayResponseDto>? mediaDisplays;
+  @override
   final String id;
   @override
   final DateTime createdAt;
@@ -35,6 +37,7 @@ class _$RecentReplyResponseDto extends RecentReplyResponseDto {
   ]) => (RecentReplyResponseDtoBuilder()..update(updates))._build();
 
   _$RecentReplyResponseDto._({
+    this.mediaDisplays,
     required this.id,
     required this.createdAt,
     this.floorNumber,
@@ -60,6 +63,7 @@ class _$RecentReplyResponseDto extends RecentReplyResponseDto {
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
     return other is RecentReplyResponseDto &&
+        mediaDisplays == other.mediaDisplays &&
         id == other.id &&
         createdAt == other.createdAt &&
         floorNumber == other.floorNumber &&
@@ -76,6 +80,7 @@ class _$RecentReplyResponseDto extends RecentReplyResponseDto {
   @override
   int get hashCode {
     var _$hash = 0;
+    _$hash = $jc(_$hash, mediaDisplays.hashCode);
     _$hash = $jc(_$hash, id.hashCode);
     _$hash = $jc(_$hash, createdAt.hashCode);
     _$hash = $jc(_$hash, floorNumber.hashCode);
@@ -94,6 +99,7 @@ class _$RecentReplyResponseDto extends RecentReplyResponseDto {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'RecentReplyResponseDto')
+          ..add('mediaDisplays', mediaDisplays)
           ..add('id', id)
           ..add('createdAt', createdAt)
           ..add('floorNumber', floorNumber)
@@ -112,6 +118,13 @@ class _$RecentReplyResponseDto extends RecentReplyResponseDto {
 class RecentReplyResponseDtoBuilder
     implements Builder<RecentReplyResponseDto, RecentReplyResponseDtoBuilder> {
   _$RecentReplyResponseDto? _$v;
+
+  ListBuilder<MarkdownMediaDisplayResponseDto>? _mediaDisplays;
+  ListBuilder<MarkdownMediaDisplayResponseDto> get mediaDisplays =>
+      _$this._mediaDisplays ??= ListBuilder<MarkdownMediaDisplayResponseDto>();
+  set mediaDisplays(
+    ListBuilder<MarkdownMediaDisplayResponseDto>? mediaDisplays,
+  ) => _$this._mediaDisplays = mediaDisplays;
 
   String? _id;
   String? get id => _$this._id;
@@ -170,6 +183,7 @@ class RecentReplyResponseDtoBuilder
   RecentReplyResponseDtoBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
+      _mediaDisplays = $v.mediaDisplays?.toBuilder();
       _id = $v.id;
       _createdAt = $v.createdAt;
       _floorNumber = $v.floorNumber;
@@ -205,6 +219,7 @@ class RecentReplyResponseDtoBuilder
       _$result =
           _$v ??
           _$RecentReplyResponseDto._(
+            mediaDisplays: _mediaDisplays?.build(),
             id: BuiltValueNullFieldError.checkNotNull(
               id,
               r'RecentReplyResponseDto',
@@ -244,6 +259,9 @@ class RecentReplyResponseDtoBuilder
     } catch (_) {
       late String _$failedField;
       try {
+        _$failedField = 'mediaDisplays';
+        _mediaDisplays?.build();
+
         _$failedField = 'thread';
         thread.build();
 

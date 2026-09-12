@@ -44,6 +44,7 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
   final _scrollController = ScrollController();
   final _composerDrafts = <String, PostComposerDraft>{};
   final _targetReveal = DiscussionTargetRevealCoordinator();
+  final _composeObstructionKey = GlobalKey();
   late final _quickScroll = ReadingQuickScrollController(
     scrollController: _scrollController,
     onUserNavigation: _targetReveal.releaseForUserNavigation,
@@ -158,6 +159,13 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
         ),
         body: ReadingProgressViewport(
           controller: _quickScroll,
+          hasMore: state.hasMore,
+          loading: state.isPrefetchingReplies,
+          loadFailed:
+              state.transientFailure != null &&
+              state.retryAction == PostDiscussionRetryAction.loadMore,
+          onRetry: () => ref.read(provider.notifier).loadMore(),
+          bottomObstructionKey: _composeObstructionKey,
           child: switch (state.phase) {
             PostDiscussionPhase.loading => const WenyouPageBody(
               maxWidth: 600,
@@ -227,36 +235,30 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
                     ),
           },
         ),
-        bottomNavigationBar: ReadingQuickScrollBar(
-          controller: _quickScroll,
-          hasMore: state.hasMore,
-          loading: state.isPrefetchingReplies,
-          loadFailed:
-              state.transientFailure != null &&
-              state.retryAction == PostDiscussionRetryAction.loadMore,
-          onRetry: () => ref.read(provider.notifier).loadMore(),
-          bottomSafeArea: true,
+        // 保持测量节点稳定，避免切号期间 Scaffold 同时保留新旧发表入口。
+        floatingActionButton: KeyedSubtree(
+          key: _composeObstructionKey,
+          child: readyRoot == null
+              ? const SizedBox.shrink()
+              : WenyouComposerAction(
+                  key: const Key('post-reply-compose'),
+                  label: session.isAuthenticated ? '发表回复…' : '登录后发表回复',
+                  icon: session.isAuthenticated
+                      ? WenyouIconIds.actionReply
+                      : WenyouIconIds.actionLogin,
+                  onPressed: session.isAuthenticated
+                      ? () => _compose(
+                          context,
+                          ref,
+                          provider,
+                          postReplyTarget(readyRoot, readyRoot),
+                        )
+                      : () => context.pushNamed(
+                          'login',
+                          queryParameters: {'returnTo': _location()},
+                        ),
+                ),
         ),
-        floatingActionButton: readyRoot == null
-            ? null
-            : WenyouComposerAction(
-                key: const Key('post-reply-compose'),
-                label: session.isAuthenticated ? '发表回复…' : '登录后发表回复',
-                icon: session.isAuthenticated
-                    ? WenyouIconIds.actionReply
-                    : WenyouIconIds.actionLogin,
-                onPressed: session.isAuthenticated
-                    ? () => _compose(
-                        context,
-                        ref,
-                        provider,
-                        postReplyTarget(readyRoot, readyRoot),
-                      )
-                    : () => context.pushNamed(
-                        'login',
-                        queryParameters: {'returnTo': _location()},
-                      ),
-              ),
         floatingActionButtonAnimator: FloatingActionButtonAnimator.noAnimation,
       ),
     );

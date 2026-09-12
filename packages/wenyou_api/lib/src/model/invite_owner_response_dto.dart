@@ -3,6 +3,7 @@
 //
 
 // ignore_for_file: unused_element
+import 'package:wenyou_api/src/model/media_display_response_dto.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 
@@ -11,11 +12,16 @@ part 'invite_owner_response_dto.g.dart';
 /// InviteOwnerResponseDto
 ///
 /// Properties:
+/// * [avatarDisplay] - 头像完整 WebP 展示资源；avatar 保留来源身份
 /// * [id] - 楼主用户 ID
 /// * [username] - 楼主用户名
 /// * [avatar] - 楼主头像 URL
 @BuiltValue()
 abstract class InviteOwnerResponseDto implements Built<InviteOwnerResponseDto, InviteOwnerResponseDtoBuilder> {
+  /// 头像完整 WebP 展示资源；avatar 保留来源身份
+  @BuiltValueField(wireName: r'avatarDisplay')
+  MediaDisplayResponseDto? get avatarDisplay;
+
   /// 楼主用户 ID
   @BuiltValueField(wireName: r'id')
   String get id;
@@ -51,6 +57,13 @@ class _$InviteOwnerResponseDtoSerializer implements PrimitiveSerializer<InviteOw
     InviteOwnerResponseDto object, {
     FullType specifiedType = FullType.unspecified,
   }) sync* {
+    if (object.avatarDisplay != null) {
+      yield r'avatarDisplay';
+      yield serializers.serialize(
+        object.avatarDisplay,
+        specifiedType: const FullType.nullable(MediaDisplayResponseDto),
+      );
+    }
     yield r'id';
     yield serializers.serialize(
       object.id,
@@ -89,6 +102,14 @@ class _$InviteOwnerResponseDtoSerializer implements PrimitiveSerializer<InviteOw
       final key = serializedList[i] as String;
       final value = serializedList[i + 1];
       switch (key) {
+        case r'avatarDisplay':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(MediaDisplayResponseDto),
+          ) as MediaDisplayResponseDto?;
+          if (valueDes == null) continue;
+          result.avatarDisplay.replace(valueDes);
+          break;
         case r'id':
           final valueDes = serializers.deserialize(
             value,

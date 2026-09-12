@@ -4,6 +4,7 @@
 
 // ignore_for_file: unused_element
 import 'package:built_collection/built_collection.dart';
+import 'package:wenyou_api/src/model/media_display_response_dto.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 
@@ -12,6 +13,7 @@ part 'media_response_dto.g.dart';
 /// MediaResponseDto
 ///
 /// Properties:
+/// * [display] - 完整 WebP 展示资源；缺少或为空时为兼容历史媒体
 /// * [id]
 /// * [userId]
 /// * [url] - 正式媒体地址；静态图为归一化母版，GIF 为保留的动画原件
@@ -29,6 +31,10 @@ part 'media_response_dto.g.dart';
 /// * [createdAt]
 @BuiltValue()
 abstract class MediaResponseDto implements Built<MediaResponseDto, MediaResponseDtoBuilder> {
+  /// 完整 WebP 展示资源；缺少或为空时为兼容历史媒体
+  @BuiltValueField(wireName: r'display')
+  MediaDisplayResponseDto? get display;
+
   @BuiltValueField(wireName: r'id')
   String get id;
 
@@ -107,6 +113,13 @@ class _$MediaResponseDtoSerializer implements PrimitiveSerializer<MediaResponseD
     MediaResponseDto object, {
     FullType specifiedType = FullType.unspecified,
   }) sync* {
+    if (object.display != null) {
+      yield r'display';
+      yield serializers.serialize(
+        object.display,
+        specifiedType: const FullType.nullable(MediaDisplayResponseDto),
+      );
+    }
     yield r'id';
     yield serializers.serialize(
       object.id,
@@ -205,6 +218,14 @@ class _$MediaResponseDtoSerializer implements PrimitiveSerializer<MediaResponseD
       final key = serializedList[i] as String;
       final value = serializedList[i + 1];
       switch (key) {
+        case r'display':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(MediaDisplayResponseDto),
+          ) as MediaDisplayResponseDto?;
+          if (valueDes == null) continue;
+          result.display.replace(valueDes);
+          break;
         case r'id':
           final valueDes = serializers.deserialize(
             value,

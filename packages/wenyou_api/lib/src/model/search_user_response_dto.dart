@@ -3,6 +3,7 @@
 //
 
 // ignore_for_file: unused_element
+import 'package:wenyou_api/src/model/media_display_response_dto.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 
@@ -11,12 +12,17 @@ part 'search_user_response_dto.g.dart';
 /// SearchUserResponseDto
 ///
 /// Properties:
+/// * [avatarDisplay] - 头像完整 WebP 展示资源；avatar 保留来源身份
 /// * [id] - 用户 ID
 /// * [username] - 用户名
 /// * [avatar] - 头像 URL
 /// * [bio] - 个人简介
 @BuiltValue()
 abstract class SearchUserResponseDto implements Built<SearchUserResponseDto, SearchUserResponseDtoBuilder> {
+  /// 头像完整 WebP 展示资源；avatar 保留来源身份
+  @BuiltValueField(wireName: r'avatarDisplay')
+  MediaDisplayResponseDto? get avatarDisplay;
+
   /// 用户 ID
   @BuiltValueField(wireName: r'id')
   String get id;
@@ -56,6 +62,13 @@ class _$SearchUserResponseDtoSerializer implements PrimitiveSerializer<SearchUse
     SearchUserResponseDto object, {
     FullType specifiedType = FullType.unspecified,
   }) sync* {
+    if (object.avatarDisplay != null) {
+      yield r'avatarDisplay';
+      yield serializers.serialize(
+        object.avatarDisplay,
+        specifiedType: const FullType.nullable(MediaDisplayResponseDto),
+      );
+    }
     yield r'id';
     yield serializers.serialize(
       object.id,
@@ -99,6 +112,14 @@ class _$SearchUserResponseDtoSerializer implements PrimitiveSerializer<SearchUse
       final key = serializedList[i] as String;
       final value = serializedList[i + 1];
       switch (key) {
+        case r'avatarDisplay':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(MediaDisplayResponseDto),
+          ) as MediaDisplayResponseDto?;
+          if (valueDes == null) continue;
+          result.avatarDisplay.replace(valueDes);
+          break;
         case r'id':
           final valueDes = serializers.deserialize(
             value,

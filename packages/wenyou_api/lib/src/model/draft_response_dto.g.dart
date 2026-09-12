@@ -8,6 +8,8 @@ part of 'draft_response_dto.dart';
 
 class _$DraftResponseDto extends DraftResponseDto {
   @override
+  final BuiltList<MarkdownMediaDisplayResponseDto>? mediaDisplays;
+  @override
   final String id;
   @override
   final String userId;
@@ -27,6 +29,7 @@ class _$DraftResponseDto extends DraftResponseDto {
   ]) => (DraftResponseDtoBuilder()..update(updates))._build();
 
   _$DraftResponseDto._({
+    this.mediaDisplays,
     required this.id,
     required this.userId,
     required this.slot,
@@ -47,6 +50,7 @@ class _$DraftResponseDto extends DraftResponseDto {
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
     return other is DraftResponseDto &&
+        mediaDisplays == other.mediaDisplays &&
         id == other.id &&
         userId == other.userId &&
         slot == other.slot &&
@@ -59,6 +63,7 @@ class _$DraftResponseDto extends DraftResponseDto {
   @override
   int get hashCode {
     var _$hash = 0;
+    _$hash = $jc(_$hash, mediaDisplays.hashCode);
     _$hash = $jc(_$hash, id.hashCode);
     _$hash = $jc(_$hash, userId.hashCode);
     _$hash = $jc(_$hash, slot.hashCode);
@@ -73,6 +78,7 @@ class _$DraftResponseDto extends DraftResponseDto {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'DraftResponseDto')
+          ..add('mediaDisplays', mediaDisplays)
           ..add('id', id)
           ..add('userId', userId)
           ..add('slot', slot)
@@ -87,6 +93,13 @@ class _$DraftResponseDto extends DraftResponseDto {
 class DraftResponseDtoBuilder
     implements Builder<DraftResponseDto, DraftResponseDtoBuilder> {
   _$DraftResponseDto? _$v;
+
+  ListBuilder<MarkdownMediaDisplayResponseDto>? _mediaDisplays;
+  ListBuilder<MarkdownMediaDisplayResponseDto> get mediaDisplays =>
+      _$this._mediaDisplays ??= ListBuilder<MarkdownMediaDisplayResponseDto>();
+  set mediaDisplays(
+    ListBuilder<MarkdownMediaDisplayResponseDto>? mediaDisplays,
+  ) => _$this._mediaDisplays = mediaDisplays;
 
   String? _id;
   String? get id => _$this._id;
@@ -123,6 +136,7 @@ class DraftResponseDtoBuilder
   DraftResponseDtoBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
+      _mediaDisplays = $v.mediaDisplays?.toBuilder();
       _id = $v.id;
       _userId = $v.userId;
       _slot = $v.slot;
@@ -149,45 +163,62 @@ class DraftResponseDtoBuilder
   DraftResponseDto build() => _build();
 
   _$DraftResponseDto _build() {
-    final _$result =
-        _$v ??
-        _$DraftResponseDto._(
-          id: BuiltValueNullFieldError.checkNotNull(
-            id,
-            r'DraftResponseDto',
-            'id',
-          ),
-          userId: BuiltValueNullFieldError.checkNotNull(
-            userId,
-            r'DraftResponseDto',
-            'userId',
-          ),
-          slot: BuiltValueNullFieldError.checkNotNull(
-            slot,
-            r'DraftResponseDto',
-            'slot',
-          ),
-          content: BuiltValueNullFieldError.checkNotNull(
-            content,
-            r'DraftResponseDto',
-            'content',
-          ),
-          version: BuiltValueNullFieldError.checkNotNull(
-            version,
-            r'DraftResponseDto',
-            'version',
-          ),
-          createdAt: BuiltValueNullFieldError.checkNotNull(
-            createdAt,
-            r'DraftResponseDto',
-            'createdAt',
-          ),
-          updatedAt: BuiltValueNullFieldError.checkNotNull(
-            updatedAt,
-            r'DraftResponseDto',
-            'updatedAt',
-          ),
+    _$DraftResponseDto _$result;
+    try {
+      _$result =
+          _$v ??
+          _$DraftResponseDto._(
+            mediaDisplays: _mediaDisplays?.build(),
+            id: BuiltValueNullFieldError.checkNotNull(
+              id,
+              r'DraftResponseDto',
+              'id',
+            ),
+            userId: BuiltValueNullFieldError.checkNotNull(
+              userId,
+              r'DraftResponseDto',
+              'userId',
+            ),
+            slot: BuiltValueNullFieldError.checkNotNull(
+              slot,
+              r'DraftResponseDto',
+              'slot',
+            ),
+            content: BuiltValueNullFieldError.checkNotNull(
+              content,
+              r'DraftResponseDto',
+              'content',
+            ),
+            version: BuiltValueNullFieldError.checkNotNull(
+              version,
+              r'DraftResponseDto',
+              'version',
+            ),
+            createdAt: BuiltValueNullFieldError.checkNotNull(
+              createdAt,
+              r'DraftResponseDto',
+              'createdAt',
+            ),
+            updatedAt: BuiltValueNullFieldError.checkNotNull(
+              updatedAt,
+              r'DraftResponseDto',
+              'updatedAt',
+            ),
+          );
+    } catch (_) {
+      late String _$failedField;
+      try {
+        _$failedField = 'mediaDisplays';
+        _mediaDisplays?.build();
+      } catch (e) {
+        throw BuiltValueNestedFieldError(
+          r'DraftResponseDto',
+          _$failedField,
+          e.toString(),
         );
+      }
+      rethrow;
+    }
     replace(_$result);
     return _$result;
   }

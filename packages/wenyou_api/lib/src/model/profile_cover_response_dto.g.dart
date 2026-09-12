@@ -8,6 +8,8 @@ part of 'profile_cover_response_dto.dart';
 
 class _$ProfileCoverResponseDto extends ProfileCoverResponseDto {
   @override
+  final MediaDisplayResponseDto? display;
+  @override
   final String url;
   @override
   final String? mediumUrl;
@@ -23,6 +25,7 @@ class _$ProfileCoverResponseDto extends ProfileCoverResponseDto {
   ]) => (ProfileCoverResponseDtoBuilder()..update(updates))._build();
 
   _$ProfileCoverResponseDto._({
+    this.display,
     required this.url,
     this.mediumUrl,
     this.width,
@@ -42,6 +45,7 @@ class _$ProfileCoverResponseDto extends ProfileCoverResponseDto {
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
     return other is ProfileCoverResponseDto &&
+        display == other.display &&
         url == other.url &&
         mediumUrl == other.mediumUrl &&
         width == other.width &&
@@ -52,6 +56,7 @@ class _$ProfileCoverResponseDto extends ProfileCoverResponseDto {
   @override
   int get hashCode {
     var _$hash = 0;
+    _$hash = $jc(_$hash, display.hashCode);
     _$hash = $jc(_$hash, url.hashCode);
     _$hash = $jc(_$hash, mediumUrl.hashCode);
     _$hash = $jc(_$hash, width.hashCode);
@@ -64,6 +69,7 @@ class _$ProfileCoverResponseDto extends ProfileCoverResponseDto {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'ProfileCoverResponseDto')
+          ..add('display', display)
           ..add('url', url)
           ..add('mediumUrl', mediumUrl)
           ..add('width', width)
@@ -77,6 +83,12 @@ class ProfileCoverResponseDtoBuilder
     implements
         Builder<ProfileCoverResponseDto, ProfileCoverResponseDtoBuilder> {
   _$ProfileCoverResponseDto? _$v;
+
+  MediaDisplayResponseDtoBuilder? _display;
+  MediaDisplayResponseDtoBuilder get display =>
+      _$this._display ??= MediaDisplayResponseDtoBuilder();
+  set display(MediaDisplayResponseDtoBuilder? display) =>
+      _$this._display = display;
 
   String? _url;
   String? get url => _$this._url;
@@ -107,6 +119,7 @@ class ProfileCoverResponseDtoBuilder
   ProfileCoverResponseDtoBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
+      _display = $v.display?.toBuilder();
       _url = $v.url;
       _mediumUrl = $v.mediumUrl;
       _width = $v.width;
@@ -136,6 +149,7 @@ class ProfileCoverResponseDtoBuilder
       _$result =
           _$v ??
           _$ProfileCoverResponseDto._(
+            display: _display?.build(),
             url: BuiltValueNullFieldError.checkNotNull(
               url,
               r'ProfileCoverResponseDto',
@@ -149,6 +163,9 @@ class ProfileCoverResponseDtoBuilder
     } catch (_) {
       late String _$failedField;
       try {
+        _$failedField = 'display';
+        _display?.build();
+
         _$failedField = 'mobile';
         _mobile?.build();
       } catch (e) {

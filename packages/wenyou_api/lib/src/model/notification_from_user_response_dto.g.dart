@@ -9,6 +9,8 @@ part of 'notification_from_user_response_dto.dart';
 class _$NotificationFromUserResponseDto
     extends NotificationFromUserResponseDto {
   @override
+  final MediaDisplayResponseDto? avatarDisplay;
+  @override
   final String id;
   @override
   final String username;
@@ -24,6 +26,7 @@ class _$NotificationFromUserResponseDto
   ]) => (NotificationFromUserResponseDtoBuilder()..update(updates))._build();
 
   _$NotificationFromUserResponseDto._({
+    this.avatarDisplay,
     required this.id,
     required this.username,
     this.avatar,
@@ -43,6 +46,7 @@ class _$NotificationFromUserResponseDto
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
     return other is NotificationFromUserResponseDto &&
+        avatarDisplay == other.avatarDisplay &&
         id == other.id &&
         username == other.username &&
         avatar == other.avatar &&
@@ -53,6 +57,7 @@ class _$NotificationFromUserResponseDto
   @override
   int get hashCode {
     var _$hash = 0;
+    _$hash = $jc(_$hash, avatarDisplay.hashCode);
     _$hash = $jc(_$hash, id.hashCode);
     _$hash = $jc(_$hash, username.hashCode);
     _$hash = $jc(_$hash, avatar.hashCode);
@@ -65,6 +70,7 @@ class _$NotificationFromUserResponseDto
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'NotificationFromUserResponseDto')
+          ..add('avatarDisplay', avatarDisplay)
           ..add('id', id)
           ..add('username', username)
           ..add('avatar', avatar)
@@ -81,6 +87,12 @@ class NotificationFromUserResponseDtoBuilder
           NotificationFromUserResponseDtoBuilder
         > {
   _$NotificationFromUserResponseDto? _$v;
+
+  MediaDisplayResponseDtoBuilder? _avatarDisplay;
+  MediaDisplayResponseDtoBuilder get avatarDisplay =>
+      _$this._avatarDisplay ??= MediaDisplayResponseDtoBuilder();
+  set avatarDisplay(MediaDisplayResponseDtoBuilder? avatarDisplay) =>
+      _$this._avatarDisplay = avatarDisplay;
 
   String? _id;
   String? get id => _$this._id;
@@ -109,6 +121,7 @@ class NotificationFromUserResponseDtoBuilder
   NotificationFromUserResponseDtoBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
+      _avatarDisplay = $v.avatarDisplay?.toBuilder();
       _id = $v.id;
       _username = $v.username;
       _avatar = $v.avatar;
@@ -133,27 +146,44 @@ class NotificationFromUserResponseDtoBuilder
   NotificationFromUserResponseDto build() => _build();
 
   _$NotificationFromUserResponseDto _build() {
-    final _$result =
-        _$v ??
-        _$NotificationFromUserResponseDto._(
-          id: BuiltValueNullFieldError.checkNotNull(
-            id,
-            r'NotificationFromUserResponseDto',
-            'id',
-          ),
-          username: BuiltValueNullFieldError.checkNotNull(
-            username,
-            r'NotificationFromUserResponseDto',
-            'username',
-          ),
-          avatar: avatar,
-          level: BuiltValueNullFieldError.checkNotNull(
-            level,
-            r'NotificationFromUserResponseDto',
-            'level',
-          ),
-          deletedAt: deletedAt,
+    _$NotificationFromUserResponseDto _$result;
+    try {
+      _$result =
+          _$v ??
+          _$NotificationFromUserResponseDto._(
+            avatarDisplay: _avatarDisplay?.build(),
+            id: BuiltValueNullFieldError.checkNotNull(
+              id,
+              r'NotificationFromUserResponseDto',
+              'id',
+            ),
+            username: BuiltValueNullFieldError.checkNotNull(
+              username,
+              r'NotificationFromUserResponseDto',
+              'username',
+            ),
+            avatar: avatar,
+            level: BuiltValueNullFieldError.checkNotNull(
+              level,
+              r'NotificationFromUserResponseDto',
+              'level',
+            ),
+            deletedAt: deletedAt,
+          );
+    } catch (_) {
+      late String _$failedField;
+      try {
+        _$failedField = 'avatarDisplay';
+        _avatarDisplay?.build();
+      } catch (e) {
+        throw BuiltValueNestedFieldError(
+          r'NotificationFromUserResponseDto',
+          _$failedField,
+          e.toString(),
         );
+      }
+      rethrow;
+    }
     replace(_$result);
     return _$result;
   }

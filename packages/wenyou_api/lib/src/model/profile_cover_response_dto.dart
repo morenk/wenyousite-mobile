@@ -4,6 +4,7 @@
 
 // ignore_for_file: unused_element
 import 'package:wenyou_api/src/model/profile_cover_variant_response_dto.dart';
+import 'package:wenyou_api/src/model/media_display_response_dto.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 
@@ -12,6 +13,7 @@ part 'profile_cover_response_dto.g.dart';
 /// ProfileCoverResponseDto
 ///
 /// Properties:
+/// * [display] - 完整 WebP 展示资源；缺少或为空时为兼容历史媒体
 /// * [url] - 背景图原图地址
 /// * [mediumUrl] - 800px WebP 中图地址
 /// * [width]
@@ -19,6 +21,10 @@ part 'profile_cover_response_dto.g.dart';
 /// * [mobile] - 移动端 2:1 裁切；历史背景图可能为空
 @BuiltValue()
 abstract class ProfileCoverResponseDto implements Built<ProfileCoverResponseDto, ProfileCoverResponseDtoBuilder> {
+  /// 完整 WebP 展示资源；缺少或为空时为兼容历史媒体
+  @BuiltValueField(wireName: r'display')
+  MediaDisplayResponseDto? get display;
+
   /// 背景图原图地址
   @BuiltValueField(wireName: r'url')
   String get url;
@@ -60,6 +66,13 @@ class _$ProfileCoverResponseDtoSerializer implements PrimitiveSerializer<Profile
     ProfileCoverResponseDto object, {
     FullType specifiedType = FullType.unspecified,
   }) sync* {
+    if (object.display != null) {
+      yield r'display';
+      yield serializers.serialize(
+        object.display,
+        specifiedType: const FullType.nullable(MediaDisplayResponseDto),
+      );
+    }
     yield r'url';
     yield serializers.serialize(
       object.url,
@@ -108,6 +121,14 @@ class _$ProfileCoverResponseDtoSerializer implements PrimitiveSerializer<Profile
       final key = serializedList[i] as String;
       final value = serializedList[i + 1];
       switch (key) {
+        case r'display':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(MediaDisplayResponseDto),
+          ) as MediaDisplayResponseDto?;
+          if (valueDes == null) continue;
+          result.display.replace(valueDes);
+          break;
         case r'url':
           final valueDes = serializers.deserialize(
             value,

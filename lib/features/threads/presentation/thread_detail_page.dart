@@ -244,6 +244,12 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
       ),
       body: ReadingProgressViewport(
         controller: _quickScroll,
+        hasMore: state.hasMore,
+        loading: state.isPrefetchingFloors,
+        loadFailed:
+            state.transientFailure != null &&
+            state.retryAction == ThreadDetailRetryAction.loadMore,
+        onRetry: () => ref.read(provider.notifier).loadMore(),
         child: switch (state.phase) {
           ThreadDetailPhase.loading => const ThreadDetailLoadingState(),
           ThreadDetailPhase.failed => ThreadDetailFatalState(
@@ -316,15 +322,6 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
           ? Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                ReadingQuickScrollBar(
-                  controller: _quickScroll,
-                  hasMore: state.hasMore,
-                  loading: state.isPrefetchingFloors,
-                  loadFailed:
-                      state.transientFailure != null &&
-                      state.retryAction == ThreadDetailRetryAction.loadMore,
-                  onRetry: () => ref.read(provider.notifier).loadMore(),
-                ),
                 KeyedSubtree(
                   key: _renderGeometry.bottomBarKey,
                   child: ThreadDetailBottomBar(

@@ -197,6 +197,8 @@ class _$MediaResponseDtoStatusEnumSerializer
 
 class _$MediaResponseDto extends MediaResponseDto {
   @override
+  final MediaDisplayResponseDto? display;
+  @override
   final String id;
   @override
   final String userId;
@@ -232,6 +234,7 @@ class _$MediaResponseDto extends MediaResponseDto {
   ]) => (MediaResponseDtoBuilder()..update(updates))._build();
 
   _$MediaResponseDto._({
+    this.display,
     required this.id,
     required this.userId,
     required this.url,
@@ -260,6 +263,7 @@ class _$MediaResponseDto extends MediaResponseDto {
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
     return other is MediaResponseDto &&
+        display == other.display &&
         id == other.id &&
         userId == other.userId &&
         url == other.url &&
@@ -280,6 +284,7 @@ class _$MediaResponseDto extends MediaResponseDto {
   @override
   int get hashCode {
     var _$hash = 0;
+    _$hash = $jc(_$hash, display.hashCode);
     _$hash = $jc(_$hash, id.hashCode);
     _$hash = $jc(_$hash, userId.hashCode);
     _$hash = $jc(_$hash, url.hashCode);
@@ -302,6 +307,7 @@ class _$MediaResponseDto extends MediaResponseDto {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'MediaResponseDto')
+          ..add('display', display)
           ..add('id', id)
           ..add('userId', userId)
           ..add('url', url)
@@ -324,6 +330,12 @@ class _$MediaResponseDto extends MediaResponseDto {
 class MediaResponseDtoBuilder
     implements Builder<MediaResponseDto, MediaResponseDtoBuilder> {
   _$MediaResponseDto? _$v;
+
+  MediaDisplayResponseDtoBuilder? _display;
+  MediaDisplayResponseDtoBuilder get display =>
+      _$this._display ??= MediaDisplayResponseDtoBuilder();
+  set display(MediaDisplayResponseDtoBuilder? display) =>
+      _$this._display = display;
 
   String? _id;
   String? get id => _$this._id;
@@ -393,6 +405,7 @@ class MediaResponseDtoBuilder
   MediaResponseDtoBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
+      _display = $v.display?.toBuilder();
       _id = $v.id;
       _userId = $v.userId;
       _url = $v.url;
@@ -427,57 +440,74 @@ class MediaResponseDtoBuilder
   MediaResponseDto build() => _build();
 
   _$MediaResponseDto _build() {
-    final _$result =
-        _$v ??
-        _$MediaResponseDto._(
-          id: BuiltValueNullFieldError.checkNotNull(
-            id,
-            r'MediaResponseDto',
-            'id',
-          ),
-          userId: BuiltValueNullFieldError.checkNotNull(
-            userId,
-            r'MediaResponseDto',
-            'userId',
-          ),
-          url: BuiltValueNullFieldError.checkNotNull(
-            url,
-            r'MediaResponseDto',
-            'url',
-          ),
-          thumbnailUrl: thumbnailUrl,
-          feedUrl: feedUrl,
-          mediumUrl: mediumUrl,
-          key: BuiltValueNullFieldError.checkNotNull(
-            key,
-            r'MediaResponseDto',
-            'key',
-          ),
-          contentType: contentType,
-          size: size,
-          width: width,
-          height: height,
-          purpose: BuiltValueNullFieldError.checkNotNull(
-            purpose,
-            r'MediaResponseDto',
-            'purpose',
-          ),
-          animated: BuiltValueNullFieldError.checkNotNull(
-            animated,
-            r'MediaResponseDto',
-            'animated',
-          ),
-          status: BuiltValueNullFieldError.checkNotNull(
-            status,
-            r'MediaResponseDto',
-            'status',
-          ),
-          createdAt: BuiltValueNullFieldError.checkNotNull(
-            createdAt,
-            r'MediaResponseDto',
-            'createdAt',
-          ),
+    _$MediaResponseDto _$result;
+    try {
+      _$result =
+          _$v ??
+          _$MediaResponseDto._(
+            display: _display?.build(),
+            id: BuiltValueNullFieldError.checkNotNull(
+              id,
+              r'MediaResponseDto',
+              'id',
+            ),
+            userId: BuiltValueNullFieldError.checkNotNull(
+              userId,
+              r'MediaResponseDto',
+              'userId',
+            ),
+            url: BuiltValueNullFieldError.checkNotNull(
+              url,
+              r'MediaResponseDto',
+              'url',
+            ),
+            thumbnailUrl: thumbnailUrl,
+            feedUrl: feedUrl,
+            mediumUrl: mediumUrl,
+            key: BuiltValueNullFieldError.checkNotNull(
+              key,
+              r'MediaResponseDto',
+              'key',
+            ),
+            contentType: contentType,
+            size: size,
+            width: width,
+            height: height,
+            purpose: BuiltValueNullFieldError.checkNotNull(
+              purpose,
+              r'MediaResponseDto',
+              'purpose',
+            ),
+            animated: BuiltValueNullFieldError.checkNotNull(
+              animated,
+              r'MediaResponseDto',
+              'animated',
+            ),
+            status: BuiltValueNullFieldError.checkNotNull(
+              status,
+              r'MediaResponseDto',
+              'status',
+            ),
+            createdAt: BuiltValueNullFieldError.checkNotNull(
+              createdAt,
+              r'MediaResponseDto',
+              'createdAt',
+            ),
+          );
+    } catch (_) {
+      late String _$failedField;
+      try {
+        _$failedField = 'display';
+        _display?.build();
+      } catch (e) {
+        throw BuiltValueNestedFieldError(
+          r'MediaResponseDto',
+          _$failedField,
+          e.toString(),
         );
+      }
+      rethrow;
+    }
     replace(_$result);
     return _$result;
   }

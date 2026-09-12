@@ -8,6 +8,8 @@ part of 'thread_cover_media_response_dto.dart';
 
 class _$ThreadCoverMediaResponseDto extends ThreadCoverMediaResponseDto {
   @override
+  final MediaDisplayResponseDto? display;
+  @override
   final String url;
   @override
   final bool? animated;
@@ -21,6 +23,7 @@ class _$ThreadCoverMediaResponseDto extends ThreadCoverMediaResponseDto {
   ]) => (ThreadCoverMediaResponseDtoBuilder()..update(updates))._build();
 
   _$ThreadCoverMediaResponseDto._({
+    this.display,
     required this.url,
     this.animated,
     this.posterUrl,
@@ -39,6 +42,7 @@ class _$ThreadCoverMediaResponseDto extends ThreadCoverMediaResponseDto {
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
     return other is ThreadCoverMediaResponseDto &&
+        display == other.display &&
         url == other.url &&
         animated == other.animated &&
         posterUrl == other.posterUrl &&
@@ -48,6 +52,7 @@ class _$ThreadCoverMediaResponseDto extends ThreadCoverMediaResponseDto {
   @override
   int get hashCode {
     var _$hash = 0;
+    _$hash = $jc(_$hash, display.hashCode);
     _$hash = $jc(_$hash, url.hashCode);
     _$hash = $jc(_$hash, animated.hashCode);
     _$hash = $jc(_$hash, posterUrl.hashCode);
@@ -59,6 +64,7 @@ class _$ThreadCoverMediaResponseDto extends ThreadCoverMediaResponseDto {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'ThreadCoverMediaResponseDto')
+          ..add('display', display)
           ..add('url', url)
           ..add('animated', animated)
           ..add('posterUrl', posterUrl)
@@ -74,6 +80,12 @@ class ThreadCoverMediaResponseDtoBuilder
           ThreadCoverMediaResponseDtoBuilder
         > {
   _$ThreadCoverMediaResponseDto? _$v;
+
+  MediaDisplayResponseDtoBuilder? _display;
+  MediaDisplayResponseDtoBuilder get display =>
+      _$this._display ??= MediaDisplayResponseDtoBuilder();
+  set display(MediaDisplayResponseDtoBuilder? display) =>
+      _$this._display = display;
 
   String? _url;
   String? get url => _$this._url;
@@ -102,6 +114,7 @@ class ThreadCoverMediaResponseDtoBuilder
   ThreadCoverMediaResponseDtoBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
+      _display = $v.display?.toBuilder();
       _url = $v.url;
       _animated = $v.animated;
       _posterUrl = $v.posterUrl;
@@ -130,6 +143,7 @@ class ThreadCoverMediaResponseDtoBuilder
       _$result =
           _$v ??
           _$ThreadCoverMediaResponseDto._(
+            display: _display?.build(),
             url: BuiltValueNullFieldError.checkNotNull(
               url,
               r'ThreadCoverMediaResponseDto',
@@ -142,6 +156,9 @@ class ThreadCoverMediaResponseDtoBuilder
     } catch (_) {
       late String _$failedField;
       try {
+        _$failedField = 'display';
+        _display?.build();
+
         _$failedField = 'previewVariants';
         _previewVariants?.build();
       } catch (e) {

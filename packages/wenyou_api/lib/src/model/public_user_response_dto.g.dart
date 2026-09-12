@@ -169,6 +169,8 @@ class _$PublicUserResponseDtoAccountStatusEnumSerializer
 
 class _$PublicUserResponseDto extends PublicUserResponseDto {
   @override
+  final MediaDisplayResponseDto? avatarDisplay;
+  @override
   final String id;
   @override
   final String username;
@@ -214,6 +216,7 @@ class _$PublicUserResponseDto extends PublicUserResponseDto {
   ]) => (PublicUserResponseDtoBuilder()..update(updates))._build();
 
   _$PublicUserResponseDto._({
+    this.avatarDisplay,
     required this.id,
     required this.username,
     this.avatar,
@@ -248,6 +251,7 @@ class _$PublicUserResponseDto extends PublicUserResponseDto {
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
     return other is PublicUserResponseDto &&
+        avatarDisplay == other.avatarDisplay &&
         id == other.id &&
         username == other.username &&
         avatar == other.avatar &&
@@ -273,6 +277,7 @@ class _$PublicUserResponseDto extends PublicUserResponseDto {
   @override
   int get hashCode {
     var _$hash = 0;
+    _$hash = $jc(_$hash, avatarDisplay.hashCode);
     _$hash = $jc(_$hash, id.hashCode);
     _$hash = $jc(_$hash, username.hashCode);
     _$hash = $jc(_$hash, avatar.hashCode);
@@ -300,6 +305,7 @@ class _$PublicUserResponseDto extends PublicUserResponseDto {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'PublicUserResponseDto')
+          ..add('avatarDisplay', avatarDisplay)
           ..add('id', id)
           ..add('username', username)
           ..add('avatar', avatar)
@@ -327,6 +333,12 @@ class _$PublicUserResponseDto extends PublicUserResponseDto {
 class PublicUserResponseDtoBuilder
     implements Builder<PublicUserResponseDto, PublicUserResponseDtoBuilder> {
   _$PublicUserResponseDto? _$v;
+
+  MediaDisplayResponseDtoBuilder? _avatarDisplay;
+  MediaDisplayResponseDtoBuilder get avatarDisplay =>
+      _$this._avatarDisplay ??= MediaDisplayResponseDtoBuilder();
+  set avatarDisplay(MediaDisplayResponseDtoBuilder? avatarDisplay) =>
+      _$this._avatarDisplay = avatarDisplay;
 
   String? _id;
   String? get id => _$this._id;
@@ -426,6 +438,7 @@ class PublicUserResponseDtoBuilder
   PublicUserResponseDtoBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
+      _avatarDisplay = $v.avatarDisplay?.toBuilder();
       _id = $v.id;
       _username = $v.username;
       _avatar = $v.avatar;
@@ -470,6 +483,7 @@ class PublicUserResponseDtoBuilder
       _$result =
           _$v ??
           _$PublicUserResponseDto._(
+            avatarDisplay: _avatarDisplay?.build(),
             id: BuiltValueNullFieldError.checkNotNull(
               id,
               r'PublicUserResponseDto',
@@ -502,6 +516,9 @@ class PublicUserResponseDtoBuilder
     } catch (_) {
       late String _$failedField;
       try {
+        _$failedField = 'avatarDisplay';
+        _avatarDisplay?.build();
+
         _$failedField = 'profileCover';
         _profileCover?.build();
 
