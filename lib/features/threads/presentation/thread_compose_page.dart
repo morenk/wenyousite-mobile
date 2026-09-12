@@ -520,6 +520,10 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
   }
 
   void _insertBlockImage(UploadedEditorImage image) {
+    // 上传完成回调先于下一帧 build；用当前状态解除上传锁，避免丢弃图片。
+    // 仍保留发布中及 RichEditorSession 对不支持原文的只读保护。
+    _editorSession.readOnly =
+        ref.read(threadComposeControllerProvider).isSubmitting || _uploading;
     _editorSession.insertBlockImage(url: image.url, display: image.display);
   }
 
