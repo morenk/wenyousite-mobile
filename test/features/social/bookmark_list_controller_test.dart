@@ -8,6 +8,37 @@ import 'package:wenyousite_mobile/features/social/data/bookmark_list_repository.
 import 'package:wenyousite_mobile/features/social/domain/bookmark_list_models.dart';
 
 void main() {
+  for (final move in [false, true]) {
+    test('收藏列表立即移除与更新数量，失败恢复位置和游标：移动 $move', () async {
+      final gate = Completer<void>();
+      final repository = _FakeRepository(writeGate: gate);
+      final controller = BookmarkListController(
+        repository,
+        initialFolderId: 'folder-default',
+      );
+      addTearDown(controller.dispose);
+      await _settle();
+      final before = controller.state;
+      final operation = move
+          ? controller.moveBookmark('bookmark-1', 'folder-custom')
+          : controller.removeBookmark('bookmark-1');
+      final during = controller.state;
+      gate.completeError(
+        const ApiFailure(userMessage: '操作失败', businessCode: 40300),
+      );
+      expect(await operation, isFalse);
+      expect(during.items, isEmpty);
+      expect(during.folderById('folder-default')!.bookmarkCount, 0);
+      expect(during.folderById('folder-custom')!.bookmarkCount, move ? 2 : 1);
+      expect(
+        controller.state.items.map((item) => item.bookmarkId),
+        before.items.map((item) => item.bookmarkId),
+      );
+      expect(controller.state.cursor, before.cursor);
+      expect(controller.state.folders, before.folders);
+    });
+  }
+
   test('从收藏夹内容路由进入时首屏直接请求目标收藏夹', () async {
     final repository = _FakeRepository(
       fetchHandler: ({cursor, folderId}) async => CursorPage(
@@ -296,12 +327,14 @@ typedef _FetchHandler =
 class _FakeRepository implements BookmarkListRepository {
   _FakeRepository({
     this.fetchHandler,
+    this.writeGate,
     this.folderFailure,
     this.removeFailure,
     this.loadMoreCompleter,
     this.folderCompleter,
   });
 
+  final Completer<void>? writeGate;
   final _FetchHandler? fetchHandler;
   final ApiFailure? folderFailure;
   final ApiFailure? removeFailure;
@@ -360,6 +393,7 @@ class _FakeRepository implements BookmarkListRepository {
 
   @override
   Future<void> move(String bookmarkId, String folderId) async {
+    await writeGate?.future;
     moves.add((bookmarkId: bookmarkId, folderId: folderId));
     final index = _items.indexWhere((item) => item.bookmarkId == bookmarkId);
     if (index < 0) throw StateError('missing bookmark');
@@ -385,6 +419,7 @@ class _FakeRepository implements BookmarkListRepository {
 
   @override
   Future<void> remove(String bookmarkId) async {
+    await writeGate?.future;
     if (removeFailure != null) throw removeFailure!;
     removedIds.add(bookmarkId);
     _items.removeWhere((item) => item.bookmarkId == bookmarkId);

@@ -29,6 +29,7 @@ class ThreadSubscriptionController
   var _actionEpoch = 0;
 
   Future<void> load() async {
+    if (state.isPending) return;
     final epoch = ++_loadEpoch;
     final candidateEpoch = ++_candidateEpoch;
     state = const ThreadSubscriptionState.loading();
@@ -122,7 +123,7 @@ class ThreadSubscriptionController
   }) async {
     final desiredSubscribed = existing == null;
     final epoch = ++_actionEpoch;
-    _beginAction(type, targetUserId: targetUserId);
+    _beginAction(type, desiredSubscribed, targetUserId: targetUserId);
     final before = state.subscriptions;
     final outcome = await _reconciler
         .run<ThreadSubscriptionRecord?, List<ThreadSubscriptionRecord>>(
@@ -161,6 +162,7 @@ class ThreadSubscriptionController
               isLoadingCandidates: state.isLoadingCandidates,
               candidateFailure: state.candidateFailure,
               pendingType: type,
+              pendingSubscribed: desiredSubscribed,
               pendingTargetUserId: targetUserId,
               actionOutcome: WriteOutcomeStatus.confirming,
               actionRequestId: progress.requestId,
@@ -216,6 +218,7 @@ class ThreadSubscriptionController
       failure: state.failure,
       candidateFailure: state.candidateFailure,
       pendingType: state.pendingType,
+      pendingSubscribed: state.pendingSubscribed,
       pendingTargetUserId: state.pendingTargetUserId,
       successMessage: state.successMessage,
     );
@@ -234,6 +237,7 @@ class ThreadSubscriptionController
       failure: state.failure,
       candidateFailure: state.candidateFailure,
       pendingType: state.pendingType,
+      pendingSubscribed: state.pendingSubscribed,
       pendingTargetUserId: state.pendingTargetUserId,
       actionFailure: state.actionFailure,
       actionOutcome: state.actionOutcome,
@@ -243,7 +247,11 @@ class ThreadSubscriptionController
     return message;
   }
 
-  void _beginAction(ThreadSubscriptionType type, {String? targetUserId}) {
+  void _beginAction(
+    ThreadSubscriptionType type,
+    bool subscribed, {
+    String? targetUserId,
+  }) {
     state = ThreadSubscriptionState(
       phase: ThreadSubscriptionPhase.ready,
       subscriptions: state.subscriptions,
@@ -251,6 +259,7 @@ class ThreadSubscriptionController
       isLoadingCandidates: state.isLoadingCandidates,
       candidateFailure: state.candidateFailure,
       pendingType: type,
+      pendingSubscribed: subscribed,
       pendingTargetUserId: targetUserId,
     );
   }
@@ -313,6 +322,7 @@ class ThreadSubscriptionController
           ? null
           : (candidateFailure ?? state.candidateFailure),
       pendingType: state.pendingType,
+      pendingSubscribed: state.pendingSubscribed,
       pendingTargetUserId: state.pendingTargetUserId,
       actionFailure: state.actionFailure,
       actionOutcome: state.actionOutcome,

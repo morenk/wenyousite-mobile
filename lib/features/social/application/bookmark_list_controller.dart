@@ -26,6 +26,7 @@ class BookmarkListController extends StateNotifier<BookmarkListState> {
   var _folderEpoch = 0;
 
   Future<void> load() async {
+    if (state.pendingBookmarkId != null) return;
     final selectedFolderId = state.selectedFolderId;
     final listEpoch = ++_listEpoch;
     final folderEpoch = ++_folderEpoch;
@@ -277,70 +278,84 @@ class BookmarkListController extends StateNotifier<BookmarkListState> {
 
   Future<bool> moveBookmark(String bookmarkId, String folderId) async {
     if (state.phase != BookmarkListPhase.ready || state.isBusy) return false;
-    BookmarkListItem? item;
-    for (final candidate in state.items) {
-      if (candidate.bookmarkId == bookmarkId) {
-        item = candidate;
-        break;
-      }
-    }
-    if (item == null || state.folderById(folderId) == null) return false;
-    if (item.folderId == folderId) return false;
-    state = state.copyWith(
-      pendingBookmarkId: bookmarkId,
-      pendingAction: BookmarkPendingAction.move,
-      actionFailure: null,
-    );
-    try {
-      await _repository.move(bookmarkId, folderId);
-      if (!mounted) return false;
-      final fallbackItems = state.selectedFolderId == null
-          ? state.items
-                .map(
-                  (candidate) => candidate.bookmarkId == bookmarkId
-                      ? candidate.copyWithFolderId(folderId)
-                      : candidate,
-                )
-                .toList(growable: false)
-          : state.items
-                .where((candidate) => candidate.bookmarkId != bookmarkId)
-                .toList(growable: false);
-      await _refreshAfterMutation(fallbackItems);
-      return true;
-    } on Object catch (error) {
-      if (!mounted) return false;
-      state = state.copyWith(
-        pendingBookmarkId: null,
-        pendingAction: null,
-        actionFailure: _asFailure(error, '移动收藏失败，请稍后重试。'),
-      );
+    final item = state.items
+        .where((item) => item.bookmarkId == bookmarkId)
+        .firstOrNull;
+    if (item == null ||
+        state.folderById(folderId) == null ||
+        item.folderId == folderId) {
       return false;
     }
+    return _mutateBookmark(item, folderId: folderId);
   }
 
   Future<bool> removeBookmark(String bookmarkId) async {
     if (state.phase != BookmarkListPhase.ready || state.isBusy) return false;
-    if (!state.items.any((item) => item.bookmarkId == bookmarkId)) return false;
+    final item = state.items
+        .where((item) => item.bookmarkId == bookmarkId)
+        .firstOrNull;
+    if (item == null) return false;
+    return _mutateBookmark(item);
+  }
+
+  Future<bool> _mutateBookmark(
+    BookmarkListItem item, {
+    String? folderId,
+  }) async {
+    final before = state;
+    final epoch = ++_listEpoch;
+    ++_folderEpoch;
+    final items = [
+      for (final candidate in before.items)
+        if (candidate.bookmarkId != item.bookmarkId)
+          candidate
+        else if (folderId != null && before.selectedFolderId == null)
+          candidate.copyWithFolderId(folderId),
+    ];
+    final folders = [
+      for (final folder in before.folders)
+        BookmarkFolderItem(
+          id: folder.id,
+          name: folder.name,
+          isDefault: folder.isDefault,
+          createdAt: folder.createdAt,
+          bookmarkCount:
+              (folder.bookmarkCount +
+                      (folder.id == item.folderId ? -1 : 0) +
+                      (folder.id == folderId ? 1 : 0))
+                  .clamp(0, 1 << 31),
+        ),
+    ];
     state = state.copyWith(
-      pendingBookmarkId: bookmarkId,
-      pendingAction: BookmarkPendingAction.remove,
+      items: items,
+      folders: folders,
+      pendingBookmarkId: item.bookmarkId,
+      pendingAction: folderId == null
+          ? BookmarkPendingAction.remove
+          : BookmarkPendingAction.move,
       actionFailure: null,
     );
     try {
-      await _repository.remove(bookmarkId);
-      if (!mounted) return false;
-      final fallbackItems = state.items
-          .where((item) => item.bookmarkId != bookmarkId)
-          .toList(growable: false);
-      await _refreshAfterMutation(fallbackItems);
+      if (folderId == null) {
+        await _repository.remove(item.bookmarkId);
+      } else {
+        await _repository.move(item.bookmarkId, folderId);
+      }
+      if (!mounted || epoch != _listEpoch) return false;
+      await _refreshAfterMutation(items);
       return true;
     } on Object catch (error) {
-      if (!mounted) return false;
-      state = state.copyWith(
-        pendingBookmarkId: null,
-        pendingAction: null,
-        actionFailure: _asFailure(error, '取消收藏失败，请稍后重试。'),
+      if (!mounted || epoch != _listEpoch) return false;
+      final failure = _asFailure(
+        error,
+        folderId == null ? '取消收藏失败，请重试。' : '移动收藏失败，请重试。',
       );
+      state = before.copyWith(actionFailure: failure);
+      if (failure.hasUnknownWriteOutcome) {
+        // 分页缺少目标不能证明删除成功，只校准当前目录，不重复发送写请求。
+        await refresh();
+        if (mounted) state = state.copyWith(actionFailure: failure);
+      }
       return false;
     }
   }

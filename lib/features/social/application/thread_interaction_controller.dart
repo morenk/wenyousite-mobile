@@ -30,6 +30,8 @@ class ThreadInteractionController
     final wasLiked = before.isLiked;
     final epoch = ++_actionEpoch;
     state = state.copyWith(
+      isLiked: !wasLiked,
+      likeCount: (before.likeCount + (wasLiked ? -1 : 1)).clamp(0, 1 << 31),
       pendingAction: ThreadInteractionAction.like,
       clearFeedback: true,
     );
@@ -95,6 +97,7 @@ class ThreadInteractionController
       return false;
     }
     state = state.copyWith(
+      isBookmarked: !wasBookmarked,
       pendingAction: ThreadInteractionAction.bookmark,
       clearFeedback: true,
     );

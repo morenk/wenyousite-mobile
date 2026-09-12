@@ -105,6 +105,7 @@ class BookmarkListView extends ConsumerWidget {
         },
         onMove: (item) async {
           final folder = await showBookmarkFolderPicker(
+            closeBeforeWrite: true,
             context: context,
             catalog: ref.read(bookmarkListRepositoryProvider),
             mode: BookmarkFolderPickerMode.move,

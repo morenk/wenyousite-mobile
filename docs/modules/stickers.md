@@ -30,6 +30,8 @@
 
 ## 6. 状态模型和数据流
 
+确认移除收藏表情后立即从收藏及最近使用列表移除，并重新编号展示位置；保留已确认版本，禁止同一集合写入并发。明确失败恢复两份列表及位置；结果不明读取完整收藏，只有确认目标不存在才判定完成，读取失败保留最近确认集合和操作失败提示。已实现的连续拖动乐观排序保持原行为。本次移除已于 2026-09-13 获负责人确认通过并授权合并，见 [乐观更新验收](../architecture/optimistic-interactions-acceptance.md)。
+
 完整展示（负责人已验收）：StickerAsset 携带完整 display，插入正文／编辑器、动态回复和私聊后使用完整 WebP；收藏导入参数与 markdown 仍为原资产身份。选择／管理面板保持既有静态 thumbnail 策略，不因格式选择开启动画。见[全场景验收记录](../architecture/animation-webp-all-surfaces.md)。
 
 `StickerCollectionController` 保存收藏夹、唯一在途写动作、动作目标、失败幂等来源和后台处理轮询。拖动落位立即更新共享收藏顺序并校准 position，后台串行保存；请求中允许继续拖动，只保留最新待保存顺序，下一请求使用上一次确认的版本。成功仅合并已确认版本，不回放旧顺序、不展示排序成功提示；管理页添加／移除成功也直接通过网格变化反馈，不插入成功横幅。排序期间阻止刷新和其他写操作，已在途的读取通过 epoch 失效，轮询不能覆盖乐观顺序；账号作用域销毁后丢弃迟到回调。收藏表情端口位于 `stickers/application`，API 适配器由 `main.dart` 组合根绑定，控制器不导入具体 data 仓储。相册选择、上传阶段、进度、取消与同文件重试属于每个管理页实例独立的 `media/application` autoDispose 任务，不进入收藏夹状态；上传成功后才把 `mediaId` 交给 `StickerCollectionController`。它显式依赖 capability 和仓储的 scoped provider，确保 `WenyouApp` 内层覆盖服务端能力时控制器在同一作用域创建，不触发 Riverpod 依赖断言。data 适配器把生成 DTO 映射为独立领域模型，应用贴纸专属错误目录，并校验正整数版本/尺寸、连续位置、唯一 ID、安全 HTTP(S) URL、最近列表属于收藏和 pending 仅含 PROCESSING。导入 POST 成功后立即重读收藏；处理中任务完成后再次校准。

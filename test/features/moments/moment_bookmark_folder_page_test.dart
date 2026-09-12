@@ -8,7 +8,6 @@ import 'package:wenyousite_mobile/core/application/bookmark_folder_catalog.dart'
 import 'package:wenyousite_mobile/core/models/bookmark_folder_models.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
-import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/moments/application/moment_bookmark_repository_ports.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_bookmark_folder_page.dart';
@@ -33,22 +32,15 @@ void main() {
     await tester.tap(find.byKey(const Key('moment-bookmark-remove-moment-1')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
-    expect(tester.widget<IconButton>(manage).onPressed, isNull);
-    expect(
-      find.descendant(
-        of: manage,
-        matching: find.byType(CircularProgressIndicator),
-      ),
-      findsOneWidget,
-    );
-    await tester.tap(manage);
+    expect(manage, findsNothing);
+    expect(find.text('已取消收藏。'), findsNothing);
     expect(repository.removes, ['moment-1']);
     gate.complete();
     await tester.pumpAndSettle();
     expect(find.text('已取消收藏。'), findsOneWidget);
   });
 
-  testWidgets('移动失败只在选择弹窗报错，取消收藏失败仍有反馈', (tester) async {
+  testWidgets('移动失败关闭弹窗并恢复卡片，取消失败仍有反馈', (tester) async {
     final repository = _PageRepository(card: _card('moment-1'))
       ..failWrites = true;
     await tester.pumpWidget(_app(repository));
@@ -63,13 +55,12 @@ void main() {
     await tester.pump();
     await tester.tap(find.byKey(const Key('bookmark-folder-picker-confirm')));
     await tester.pumpAndSettle();
-    expect(find.byType(WenyouFailureBanner), findsOneWidget);
-    expect(find.byType(SnackBar), findsNothing);
-    final context = tester.element(
+    expect(
       find.byKey(const Key('bookmark-folder-picker-confirm')),
+      findsNothing,
     );
-    Navigator.of(context).pop();
-    await tester.pumpAndSettle();
+    expect(find.byType(SnackBar), findsOneWidget);
+    expect(find.text('已移动到“稍后阅读”。'), findsNothing);
     await tester.tap(find.byKey(const Key('moment-bookmark-manage-moment-1')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('moment-bookmark-remove-moment-1')));

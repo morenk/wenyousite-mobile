@@ -427,6 +427,7 @@ class _MomentDetailPageState extends ConsumerState<MomentDetailPage> {
     }
     if (!canInteract) return;
     final folder = await showBookmarkFolderPicker(
+      closeBeforeWrite: true,
       context: context,
       catalog: ref.read(
         bookmarkFolderCatalogProvider(BookmarkFolderContentKind.moment),

@@ -10,6 +10,38 @@ import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
 import '../../support/moment_test_draft_store.dart';
 
 void main() {
+  for (final bookmark in [false, true]) {
+    test('详情互动立即显示且失败不覆盖同时发送的评论：收藏 $bookmark', () async {
+      final gate = Completer<MomentActionResult>();
+      final repository = _PendingDetailInteraction(gate);
+      final controller = MomentDetailController(
+        repository,
+        'moment-1',
+        autoStart: false,
+      );
+      addTearDown(controller.dispose);
+      await controller.load();
+      final operation = bookmark
+          ? controller.toggleBookmark(folderId: 'folder')
+          : controller.toggleLike();
+      final during = controller.state.detail!.card;
+      await controller.sendComment(const MomentCommentInput(content: '新评论'));
+      final count = controller.state.detail!.card.commentCount;
+      gate.completeError(
+        const ApiFailure(userMessage: '操作失败', businessCode: 40300),
+      );
+      expect(await operation, isFalse);
+      expect(bookmark ? during.viewerBookmarked : during.viewerLiked, isTrue);
+      expect(controller.state.detail!.card.commentCount, count);
+      expect(
+        bookmark
+            ? controller.state.detail!.card.viewerBookmarked
+            : controller.state.detail!.card.viewerLiked,
+        isFalse,
+      );
+    });
+  }
+
   test('信息流游标失效自动回到首屏，点赞收藏采用服务端计数', () async {
     final repository = _FeedRepository();
     final controller = MomentFeedController(
@@ -397,3 +429,17 @@ MomentRootComment _rootComment() => MomentRootComment(
   replyCount: 1,
   replies: [_reply()],
 );
+
+class _PendingDetailInteraction extends _DetailRepository {
+  _PendingDetailInteraction(this.gate);
+  final Completer<MomentActionResult> gate;
+  @override
+  Future<MomentActionResult> setLike(String momentId, {required bool active}) =>
+      gate.future;
+  @override
+  Future<MomentActionResult> setBookmark(
+    String momentId, {
+    required bool active,
+    String? folderId,
+  }) => gate.future;
+}

@@ -256,8 +256,11 @@ class StickerCollectionController
 
   Future<bool> remove(String favoriteId) async {
     if (state.collection == null || state.isBusy) return false;
+    final before = state.collection!;
+    if (!before.items.any((item) => item.id == favoriteId)) return false;
     ++_epoch;
     state = state.copyWith(
+      collection: before.withoutFavorite(favoriteId),
       action: StickerAction.removing,
       actionTarget: favoriteId,
       transientFailure: null,
@@ -275,10 +278,31 @@ class StickerCollectionController
       return true;
     } on Object catch (error) {
       if (!mounted) return false;
+      final failure = _asFailure(error, '表情没有移除成功，请重试。');
+      var confirmed = before;
+      if (failure.hasUnknownWriteOutcome) {
+        try {
+          confirmed = await _repository.fetchCollection();
+          if (!mounted) return false;
+          if (!confirmed.items.any((item) => item.id == favoriteId)) {
+            state = StickerCollectionState(
+              phase: StickerCollectionPhase.ready,
+              collection: confirmed,
+              successMessage: '已从收藏中移除。',
+            );
+            _syncPolling();
+            return true;
+          }
+        } on Object {
+          // 保留最近确认的收藏，失败反馈不能被二次读取错误覆盖。
+        }
+      }
+      if (!mounted) return false;
       state = state.copyWith(
+        collection: confirmed,
         action: null,
         actionTarget: null,
-        transientFailure: _asFailure(error, '表情没有移除成功，请重试。'),
+        transientFailure: failure,
       );
       return false;
     }

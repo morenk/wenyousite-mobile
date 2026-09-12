@@ -4,11 +4,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
 import 'package:wenyousite_mobile/core/application/visibility_cache_invalidation.dart';
+import 'package:wenyousite_mobile/core/application/write_reconciler.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/models/paging.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/moments/application/moment_repository_ports.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
+
+import 'moment_optimistic_actions.dart';
 
 export 'moment_composer_controller.dart';
 
@@ -96,6 +99,7 @@ class MomentFeedController extends StateNotifier<MomentFeedState> {
   Future<void> loadMore() async {
     if (state.phase != MomentLoadPhase.ready ||
         state.isLoadingMore ||
+        state.pendingMomentActions.isNotEmpty ||
         !state.hasMore) {
       return;
     }
@@ -145,65 +149,72 @@ class MomentFeedController extends StateNotifier<MomentFeedState> {
     String? folderId,
   }) async {
     if (state.pendingMomentActions.containsKey(card.id)) return false;
+    final before = state.items.where((item) => item.id == card.id).firstOrNull;
+    if (before == null) return false;
     if (bookmark &&
-        !card.viewerBookmarked &&
-        (!card.canInteract || folderId == null || folderId.trim().isEmpty)) {
+        !before.viewerBookmarked &&
+        (!before.canInteract || folderId == null || folderId.trim().isEmpty)) {
       state = state.copyWith(
         transientFailure: ApiFailure(
-          userMessage: card.canInteract ? '请选择收藏夹。' : '这条动态暂时无法收藏。',
+          userMessage: before.canInteract ? '请选择收藏夹。' : '这条动态暂时无法收藏。',
         ),
       );
       return false;
     }
-    final action = bookmark
-        ? MomentInteractionAction.bookmark
-        : MomentInteractionAction.like;
+
+    ++_epoch; // 旧分页/刷新不能覆盖本次点按；不同动态仍可分别提交。
+    final optimistic = optimisticMomentAction(
+      before,
+      bookmark: bookmark,
+      folderId: folderId,
+    );
     state = state.copyWith(
-      pendingMomentActions: {...state.pendingMomentActions, card.id: action},
+      items: [
+        for (final item in state.items)
+          if (item.id == card.id) optimistic else item,
+      ],
+      isRefreshing: false,
+      isLoadingMore: false,
+      pendingMomentActions: {
+        ...state.pendingMomentActions,
+        card.id: bookmark
+            ? MomentInteractionAction.bookmark
+            : MomentInteractionAction.like,
+      },
       transientFailure: null,
     );
-    try {
-      final result = bookmark
-          ? await _repository.setBookmark(
-              card.id,
-              active: !card.viewerBookmarked,
-              folderId: folderId,
-            )
-          : await _repository.setLike(card.id, active: !card.viewerLiked);
-      if (!mounted) return false;
-      final updated = state.items
-          .map((item) {
-            if (item.id != card.id) return item;
-            return bookmark
-                ? item.copyWith(
-                    bookmarkCount: result.count,
-                    viewerBookmarked: result.active,
-                  )
-                : item.copyWith(
-                    likeCount: result.count,
-                    viewerLiked: result.active,
-                  );
-          })
-          .toList(growable: false);
-      state = state.copyWith(
-        items: List.unmodifiable(updated),
-        pendingMomentActions: {...state.pendingMomentActions}..remove(card.id),
-      );
-      return true;
-    } on Object catch (error) {
-      if (!mounted) return false;
-      state = state.copyWith(
-        pendingMomentActions: {...state.pendingMomentActions}..remove(card.id),
-        transientFailure: _asFailure(
-          error,
-          bookmark ? '收藏状态没有更新，请重试。' : '点赞状态没有更新，请重试。',
-        ),
-      );
-      return false;
-    }
+    final outcome = await writeMomentAction(
+      _repository,
+      before,
+      bookmark: bookmark,
+      folderId: folderId,
+      isCurrent: () => mounted,
+    );
+    if (!mounted || outcome.isDiscarded) return false;
+    final confirmed = confirmedMomentAction(
+      before,
+      outcome,
+      bookmark: bookmark,
+      folderId: folderId,
+    );
+    state = state.copyWith(
+      items: [
+        for (final item in state.items)
+          if (item.id == card.id)
+            projectMomentAction(item, confirmed, bookmark: bookmark)
+          else
+            item,
+      ],
+      pendingMomentActions: {...state.pendingMomentActions}..remove(card.id),
+      transientFailure: outcome.status == WriteOutcomeStatus.completed
+          ? null
+          : outcome.failure,
+    );
+    return outcome.status == WriteOutcomeStatus.completed;
   }
 
   Future<void> _loadFirstPage({required bool refreshing}) async {
+    if (state.pendingMomentActions.isNotEmpty) return;
     final epoch = ++_epoch;
     final retained = refreshing ? state.items : const <MomentCard>[];
     state = state.copyWith(
@@ -396,9 +407,12 @@ class MomentDetailController extends StateNotifier<MomentDetailState> {
   final MomentRequestIdFactory _requestIdFactory;
   final Map<String, String> _commentRequestIds = {};
   var _epoch = 0;
+  var _interactionRevision = 0;
 
   Future<void> load() async {
+    if (state.pendingMomentAction != null) return;
     final epoch = ++_epoch;
+    final interactionRevision = _interactionRevision;
     final retained = state.detail;
     state = state.copyWith(
       phase: retained == null ? MomentLoadPhase.loading : MomentLoadPhase.ready,
@@ -415,7 +429,17 @@ class MomentDetailController extends StateNotifier<MomentDetailState> {
         ),
       ]);
       if (!mounted || epoch != _epoch) return;
-      final detail = values[0] as MomentDetail;
+      var detail = values[0] as MomentDetail;
+      final currentCard = state.detail?.card;
+      if (interactionRevision != _interactionRevision && currentCard != null) {
+        detail = detail.copyWith(
+          card: projectMomentAction(
+            projectMomentAction(detail.card, currentCard, bookmark: false),
+            currentCard,
+            bookmark: true,
+          ),
+        );
+      }
       final page = values[1] as CursorPage<MomentRootComment>;
       state = state.copyWith(
         phase: MomentLoadPhase.ready,
@@ -556,44 +580,46 @@ class MomentDetailController extends StateNotifier<MomentDetailState> {
       );
       return false;
     }
+    ++_interactionRevision;
     state = state.copyWith(
+      detail: detail.copyWith(
+        card: optimisticMomentAction(
+          card,
+          bookmark: bookmark,
+          folderId: folderId,
+        ),
+      ),
+      isRefreshing: false,
       pendingMomentAction: bookmark
           ? MomentInteractionAction.bookmark
           : MomentInteractionAction.like,
       transientFailure: null,
     );
-    try {
-      final result = bookmark
-          ? await _repository.setBookmark(
-              momentId,
-              active: !card.viewerBookmarked,
-              folderId: folderId,
-            )
-          : await _repository.setLike(momentId, active: !card.viewerLiked);
-      if (!mounted) return false;
-      final updatedCard = bookmark
-          ? card.copyWith(
-              bookmarkCount: result.count,
-              viewerBookmarked: result.active,
-              bookmarkFolderId: result.active ? folderId : null,
-            )
-          : card.copyWith(likeCount: result.count, viewerLiked: result.active);
-      state = state.copyWith(
-        detail: detail.copyWith(card: updatedCard),
-        pendingMomentAction: null,
-      );
-      return true;
-    } on Object catch (error) {
-      if (!mounted) return false;
-      state = state.copyWith(
-        pendingMomentAction: null,
-        transientFailure: _asFailure(
-          error,
-          bookmark ? '收藏状态没有更新，请重试。' : '点赞状态没有更新，请重试。',
-        ),
-      );
-      return false;
-    }
+    final outcome = await writeMomentAction(
+      _repository,
+      card,
+      bookmark: bookmark,
+      folderId: folderId,
+      isCurrent: () => mounted,
+    );
+    if (!mounted || outcome.isDiscarded) return false;
+    final confirmed = confirmedMomentAction(
+      card,
+      outcome,
+      bookmark: bookmark,
+      folderId: folderId,
+    );
+    final latest = state.detail!;
+    state = state.copyWith(
+      detail: latest.copyWith(
+        card: projectMomentAction(latest.card, confirmed, bookmark: bookmark),
+      ),
+      pendingMomentAction: null,
+      transientFailure: outcome.status == WriteOutcomeStatus.completed
+          ? null
+          : outcome.failure,
+    );
+    return outcome.status == WriteOutcomeStatus.completed;
   }
 
   Future<MomentComment?> sendComment(MomentCommentInput input) async {

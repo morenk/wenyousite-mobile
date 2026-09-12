@@ -2,13 +2,13 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
-import 'package:wenyousite_mobile/app/app_capabilities.dart';
+
 import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
 import 'package:wenyousite_mobile/core/application/visibility_cache_invalidation.dart';
+import 'package:wenyousite_mobile/core/application/write_reconciler.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/models/paging.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
-import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/direct_messages/application/direct_message_pending_media.dart';
 import 'package:wenyousite_mobile/features/direct_messages/application/direct_message_repository_ports.dart';
 import 'package:wenyousite_mobile/features/direct_messages/domain/direct_message_models.dart';
@@ -18,70 +18,13 @@ import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart
 
 import 'direct_message_state_helpers.dart';
 import 'direct_message_states.dart';
+import 'direct_unread_controller.dart';
 
 export 'direct_conversation_target_controller.dart';
 export 'direct_message_states.dart';
+export 'direct_unread_controller.dart';
 
 typedef DirectMessageRequestIdFactory = String Function();
-
-final directMessagesEnabledProvider = Provider<bool>(
-  (ref) => ref.watch(
-    appCapabilitiesProvider.select(
-      (capabilities) => capabilities.directMessages,
-    ),
-  ),
-  dependencies: [appCapabilitiesProvider],
-);
-
-class DirectUnreadController extends StateNotifier<DirectUnreadState> {
-  DirectUnreadController(this._repository, {bool autoStart = true})
-    : super(const DirectUnreadState()) {
-    if (autoStart) unawaited(refresh());
-  }
-
-  final DirectMessageRepository _repository;
-
-  Future<void> refresh() async {
-    if (state.isLoading) return;
-    state = DirectUnreadState(counts: state.counts, isLoading: true);
-    try {
-      final counts = await _repository.fetchUnreadCounts();
-      if (!mounted) return;
-      state = DirectUnreadState(counts: counts);
-    } on Object catch (error) {
-      if (!mounted) return;
-      state = DirectUnreadState(
-        counts: state.counts,
-        failure: _asFailure(error, '私聊未读数同步失败。'),
-      );
-    }
-  }
-}
-
-final directUnreadControllerProvider =
-    StateNotifierProvider<DirectUnreadController, DirectUnreadState>(
-      (ref) {
-        ref.watch(viewerScopeProvider);
-        final authenticated = ref.watch(
-          sessionControllerProvider.select(
-            (session) => session.isAuthenticated,
-          ),
-        );
-        final enabled = ref.watch(directMessagesEnabledProvider);
-        return DirectUnreadController(
-          ref.watch(directMessageRepositoryProvider),
-          autoStart: authenticated && enabled,
-        );
-      },
-      // This provider is read from the app shell while the server-advertised
-      // capability is scoped by WenyouApp (and overridden by feature tests).
-      // Declaring the dependency keeps Riverpod in the same override scope.
-      dependencies: [
-        viewerScopeProvider,
-        directMessagesEnabledProvider,
-        directMessageRepositoryProvider,
-      ],
-    );
 
 class DirectConversationListController
     extends StateNotifier<DirectConversationListState> {
@@ -115,7 +58,7 @@ class DirectConversationListController
       state = DirectConversationListState(
         phase: DirectConversationListPhase.failed,
         view: _view,
-        failure: _asFailure(error, '私聊会话列表加载失败。'),
+        failure: mapApplicationFailure(error, '私聊会话列表加载失败。'),
       );
     }
   }
@@ -142,7 +85,7 @@ class DirectConversationListController
       if (!mounted || epoch != _epoch) return;
       state = before.copyWith(
         isRefreshing: false,
-        transientFailure: _asFailure(error, '私聊会话刷新失败，请重试。'),
+        transientFailure: mapApplicationFailure(error, '私聊会话刷新失败，请重试。'),
       );
     }
   }
@@ -184,7 +127,7 @@ class DirectConversationListController
       if (!mounted || epoch != _epoch) return;
       state = before.copyWith(
         isLoadingMore: false,
-        transientFailure: _asFailure(error, '更多私聊会话加载失败。'),
+        transientFailure: mapApplicationFailure(error, '更多私聊会话加载失败。'),
       );
     }
   }
@@ -215,6 +158,7 @@ class DirectConversationController
     DirectMessageRequestIdFactory? requestIdFactory,
     MediaUploadGateway? mediaUploadGateway,
     this._onUnreadChanged,
+    this._onOptimisticRead,
   }) : _requestIdFactory = requestIdFactory ?? const Uuid().v4,
        _pollInterval = pollInterval,
        super(const DirectConversationState.loading()) {
@@ -231,6 +175,7 @@ class DirectConversationController
   final Duration _pollInterval;
   final Duration _catchUpPollInterval;
   final Future<void> Function()? _onUnreadChanged;
+  final void Function(bool) Function(DirectConversation)? _onOptimisticRead;
   late final DirectMessagePendingMediaJobs? _pendingMediaJobs;
   Timer? _pollTimer;
   var _epoch = 0;
@@ -241,6 +186,7 @@ class DirectConversationController
   Future<void>? _markReadInFlight;
 
   Future<void> loadInitial() async {
+    if (state.isMutating || _markReadInFlight != null) return;
     final epoch = ++_epoch;
     state = const DirectConversationState.loading();
     try {
@@ -264,12 +210,13 @@ class DirectConversationController
       if (!mounted || epoch != _epoch) return;
       state = DirectConversationState(
         phase: DirectConversationPhase.failed,
-        failure: _asFailure(error, '私聊会话加载失败。'),
+        failure: mapApplicationFailure(error, '私聊会话加载失败。'),
       );
     }
   }
 
   Future<void> refresh({bool resetPagination = false}) async {
+    if (state.isMutating || _markReadInFlight != null) return;
     if (state.phase != DirectConversationPhase.ready) {
       await loadInitial();
       return;
@@ -305,7 +252,7 @@ class DirectConversationController
       if (!mounted || epoch != _epoch) return;
       state = directConversationReadFailure(
         state,
-        _asFailure(error, '私聊会话刷新失败，请重试。'),
+        mapApplicationFailure(error, '私聊会话刷新失败，请重试。'),
       );
     }
   }
@@ -352,7 +299,7 @@ class DirectConversationController
       if (!mounted || epoch != _epoch) return;
       state = directConversationReadFailure(
         state,
-        _asFailure(error, '更早消息加载失败。'),
+        mapApplicationFailure(error, '更早消息加载失败。'),
       );
     }
   }
@@ -430,7 +377,9 @@ class DirectConversationController
         stickerAssetId: stickerAssetId,
       );
     } on Object catch (error) {
-      state = state.copyWith(transientFailure: _asFailure(error, '消息内容不符合要求。'));
+      state = state.copyWith(
+        transientFailure: mapApplicationFailure(error, '消息内容不符合要求。'),
+      );
       return false;
     }
     final pendingJobs = _pendingMediaJobs;
@@ -558,7 +507,7 @@ class DirectConversationController
               source: FailureSource.expected,
               reason: FailureReason.timeout,
             )
-          : _asFailure(
+          : mapApplicationFailure(
               error is MediaProcessingLookupFailure ? error.cause : error,
               '消息发送失败，请重试。',
             );
@@ -661,7 +610,7 @@ class DirectConversationController
       state = state.copyWith(
         action: null,
         actionTargetId: null,
-        transientFailure: _asFailure(error, '消息请求处理失败，请重试。'),
+        transientFailure: mapApplicationFailure(error, '消息请求处理失败，请重试。'),
       );
       return false;
     }
@@ -674,34 +623,43 @@ class DirectConversationController
         conversation == null) {
       return false;
     }
-    final before = state;
     final archived = conversation.archivedAt == null;
-    state = before.copyWith(
+    ++_epoch;
+    state = state.copyWith(
+      conversation: conversation.copyWith(
+        archivedAt: archived ? DateTime.now() : null,
+      ),
+      isRefreshing: false,
+      isLoadingOlder: false,
       action: DirectConversationAction.archiving,
       transientFailure: null,
     );
-    try {
-      final updated = await _repository.setArchived(
-        conversationId: _conversationId,
-        archived: archived,
-      );
-      if (!mounted) return false;
-      state = state.copyWith(
-        conversation: updated,
-        action: null,
-        actionTargetId: null,
-        transientFailure: null,
-      );
-      return true;
-    } on Object catch (error) {
-      if (!mounted) return false;
-      state = state.copyWith(
-        action: null,
-        actionTargetId: null,
-        transientFailure: _asFailure(error, '会话归档操作失败，请重试。'),
-      );
+    final outcome = await const WriteReconciler()
+        .run<DirectConversation, DirectConversation>(
+          write: () => _repository.setArchived(
+            conversationId: _conversationId,
+            archived: archived,
+          ),
+          read: () => _repository.fetchConversation(_conversationId),
+          targetReached: (value) => (value.archivedAt != null) == archived,
+          failureMessage: '会话归档操作失败，请重试。',
+          isCurrent: () => mounted,
+        );
+    if (!mounted || outcome.isDiscarded || state.conversation == null) {
       return false;
     }
+    final confirmed = outcome.projection ?? outcome.writeValue ?? conversation;
+    state = state.copyWith(
+      conversation: state.conversation!.copyWith(
+        archivedAt: confirmed.archivedAt,
+      ),
+      action: null,
+      actionTargetId: null,
+      transientFailure: outcome.status == WriteOutcomeStatus.completed
+          ? null
+          : outcome.failure,
+    );
+    return outcome.status == WriteOutcomeStatus.completed;
   }
 
   Future<bool> recall(String messageId, {DateTime? now}) async {
@@ -765,7 +723,7 @@ class DirectConversationController
       state = state.copyWith(
         action: null,
         actionTargetId: null,
-        transientFailure: _asFailure(error, '消息撤回失败，请重试。'),
+        transientFailure: mapApplicationFailure(error, '消息撤回失败，请重试。'),
       );
       return false;
     }
@@ -780,9 +738,13 @@ class DirectConversationController
     }
     if (_markReadInFlight != null) return;
     final targetId = incoming.id;
-    final operation = _repository.markRead(
-      conversationId: _conversationId,
-      throughMessageId: targetId,
+    final finishUnread = _onOptimisticRead?.call(conversation);
+    state = state.copyWith(conversation: conversation.copyWith(unreadCount: 0));
+    final operation = Future<void>.sync(
+      () => _repository.markRead(
+        conversationId: _conversationId,
+        throughMessageId: targetId,
+      ),
     );
     _markReadInFlight = operation;
     var marked = false;
@@ -798,8 +760,18 @@ class DirectConversationController
       }
       await _notifyUnreadChanged();
     } on Object {
-      // 保留服务端未读事实；下次增量轮询或显式刷新会再次尝试。
+      if (mounted) {
+        final current = state.conversation;
+        if (current != null) {
+          state = state.copyWith(
+            conversation: current.copyWith(
+              unreadCount: current.unreadCount + conversation.unreadCount,
+            ),
+          );
+        }
+      }
     } finally {
+      finishUnread?.call(marked);
       _markReadInFlight = null;
       if (mounted &&
           marked &&
@@ -879,6 +851,9 @@ final directConversationControllerProvider = StateNotifierProvider.autoDispose
           conversationId,
           ref.watch(directMessageRepositoryProvider),
           mediaUploadGateway: ref.watch(mediaUploadGatewayPortProvider),
+          onOptimisticRead: ref
+              .read(directUnreadControllerProvider.notifier)
+              .beginRead,
           onUnreadChanged: () =>
               ref.read(directUnreadControllerProvider.notifier).refresh(),
         );
@@ -887,9 +862,6 @@ final directConversationControllerProvider = StateNotifierProvider.autoDispose
         viewerScopeProvider,
         directMessageRepositoryProvider,
         mediaUploadGatewayPortProvider,
+        directUnreadControllerProvider,
       ],
     );
-
-ApiFailure _asFailure(Object error, String fallback) {
-  return mapApplicationFailure(error, fallback);
-}
