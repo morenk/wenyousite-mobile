@@ -49,7 +49,7 @@ void main() {
   final editorRoundTripContract =
       jsonDecode(
             File(
-              'contracts/markdown-editor-roundtrip-v6-fixtures.json',
+              'contracts/markdown-editor-roundtrip-v7-fixtures.json',
             ).readAsStringSync(),
           )
           as Map<String, dynamic>;
@@ -57,8 +57,8 @@ void main() {
       (editorRoundTripContract['cases'] as List<dynamic>)
           .cast<Map<String, dynamic>>();
 
-  test('消费后端编辑器往返黄金语料 v6', () {
-    expect(editorRoundTripContract['version'], 6);
+  test('消费后端编辑器往返黄金语料 v7', () {
+    expect(editorRoundTripContract['version'], 7);
     expect(editorRoundTripContract['markdownContractVersion'], 4);
     expect(editorRoundTripCases, isNotEmpty);
   });
@@ -159,7 +159,15 @@ void main() {
 
     test('$id canonical Markdown 经 Delta 按 v4 能力白名单往返', () {
       final document = MarkdownDeltaCodec.decode(canonical);
-
+      if (id == 'four-level-list') {
+        // list-v1 revision 2 明确拒绝真实第四层，保留原文而不扁平化后保存。
+        expect(document.issues.single.rawToken, canonical);
+        expect(
+          () => MarkdownDeltaCodec.encode(document.delta),
+          throwsA(isA<MarkdownCodecException>()),
+        );
+        return;
+      }
       expect(MarkdownDeltaCodec.encode(document.delta), expected);
     });
 
@@ -169,6 +177,22 @@ void main() {
           ..insert(canonical)
           ..insert('\n', {MarkdownDeltaCodec.sourceBreakAttribute: false});
 
+        if (const {
+          'aligned-empty-heading',
+          'aligned-list',
+          'aligned-quote',
+          'aligned-regular-image',
+          'four-level-list',
+        }.contains(id)) {
+          // These raw, unmarked Deltas used to activate structure on save.
+          // Public encoding must now reject that semantic change; the fixture
+          // remains accepted through the proper Markdown decode path above.
+          expect(
+            () => MarkdownDeltaCodec.encode(delta),
+            throwsA(isA<MarkdownCodecException>()),
+          );
+          return;
+        }
         final encoded = MarkdownDeltaCodec.encode(delta);
 
         expect(encoded, expected);
@@ -485,6 +509,8 @@ void main() {
       ..insert('粗斜', {'bold': true, 'italic': true})
       ..insert('链接', {'link': 'https://wenyou.site/help'})
       ..insert('\n')
+      ..insert('父项')
+      ..insert('\n', {'list': 'bullet'})
       ..insert('条目')
       ..insert('\n', {'list': 'bullet', 'indent': 1})
       ..insert('引用')
@@ -495,16 +521,17 @@ void main() {
     expect(
       MarkdownDeltaCodec.encode(delta),
       '## 标题\n***粗斜***[链接](https://wenyou.site/help)\n'
-      '  - 条目\n> 引用\n``a`b``',
+      '- 父项\n  - 条目\n\n> 引用\n``a`b``',
     );
   });
 
   test('受支持的既有 Markdown 解码为 Quill 富文本属性而不是源码标记', () {
     const source =
         '## 标题\n'
-        '***粗斜***[链接](https://wenyou.site/help)\n'
+        '***粗斜***[链接](https://wenyou.site/help)\n\n'
+        '- 父项\n'
         '  - 条目\n'
-        '> 引用\n'
+        '\n> 引用\n'
         '``a`b``';
 
     final document = MarkdownDeltaCodec.decode(source);
@@ -607,10 +634,10 @@ void main() {
       ),
       isTrue,
     );
-    expect(MarkdownDeltaCodec.encode(document.delta), '---\n\n* * *\n___');
+    expect(MarkdownDeltaCodec.encode(document.delta), '---\n\n---\n\n---');
     expect(
       MarkdownDeltaCodec.encode(MarkdownDeltaCodec.decode(' ---\n--- ').delta),
-      ' ---\n--- ',
+      '---\n\n---',
     );
   });
 

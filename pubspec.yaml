@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 0.7.0+93
+version: 0.7.0+94
 
 environment:
   sdk: ^3.12.2
@@ -60,7 +60,7 @@ dependencies:
   wenyousite_foundation:
     git:
       url: https://github.com/morenk/wenyousite-foundation.git
-      ref: v6.8.0
+      ref: v7.0.0
       path: packages/flutter
   wenyou_api:
     path: packages/wenyou_api
@@ -69,8 +69,12 @@ dependencies:
     git:
       url: https://github.com/singerdmx/flutter-quill.git
       ref: c273155025d1255335a6dd3e6ecd3700d29f103e
+  sentry: 9.29.0
+  package_info_plus: ^10.2.1
+  http: ^1.6.0
 
 dev_dependencies:
+  flutter_cache_manager: 3.4.2
   flutter_test:
     sdk: flutter
   integration_test:
@@ -87,6 +91,7 @@ dev_dependencies:
   drift_dev: ^2.34.5
   mocktail: ^1.0.5
   built_collection: ^5.1.1
+  analyzer: 13.0.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -98,18 +103,6 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
-
-  fonts:
-    - family: Wenyou Noto Sans SC
-      fonts:
-        - asset: packages/wenyousite_foundation/fonts/NotoSansSC-Variable.ttf
-    - family: Wenyou LXGW WenKai
-      fonts:
-        - asset: packages/wenyousite_foundation/fonts/LXGWWenKaiLite-Medium.ttf
-          weight: 500
-    - family: Wenyou Nunito
-      fonts:
-        - asset: packages/wenyousite_foundation/fonts/Nunito-Variable.ttf
 
   # To add assets to your application, add an assets section, like this:
   # assets:

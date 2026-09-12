@@ -14,8 +14,8 @@ part 'bookmark_folder_response_dto.g.dart';
 /// * [id]
 /// * [name]
 /// * [isDefault]
-/// * [bookmarkCount]
-/// * [momentBookmarkCount] - 旧客户端兼容字段：同名动态收藏夹中的收藏数量
+/// * [bookmarkCount] - 当前用户在该收藏夹中可见的主题帖收藏总数，与列表使用相同可见性规则，不受分页影响
+/// * [momentBookmarkCount] - 旧客户端兼容字段：当前用户在同名动态收藏夹中可见的动态收藏总数，与动态列表使用相同可见性规则，不受分页影响
 /// * [createdAt]
 @BuiltValue()
 abstract class BookmarkFolderResponseDto implements Built<BookmarkFolderResponseDto, BookmarkFolderResponseDtoBuilder> {
@@ -28,10 +28,11 @@ abstract class BookmarkFolderResponseDto implements Built<BookmarkFolderResponse
   @BuiltValueField(wireName: r'isDefault')
   bool get isDefault;
 
+  /// 当前用户在该收藏夹中可见的主题帖收藏总数，与列表使用相同可见性规则，不受分页影响
   @BuiltValueField(wireName: r'bookmarkCount')
   num get bookmarkCount;
 
-  /// 旧客户端兼容字段：同名动态收藏夹中的收藏数量
+  /// 旧客户端兼容字段：当前用户在同名动态收藏夹中可见的动态收藏总数，与动态列表使用相同可见性规则，不受分页影响
   @Deprecated('momentBookmarkCount has been deprecated')
   @BuiltValueField(wireName: r'momentBookmarkCount')
   num get momentBookmarkCount;

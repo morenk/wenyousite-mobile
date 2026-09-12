@@ -161,7 +161,7 @@ class _MessageCenterPageState extends ConsumerState<MessageCenterPage> {
         .read(notificationListControllerProvider.notifier)
         .markAllRead();
     if (!mounted || !succeeded) return;
-    showWenyouSnackBar(context, '已全部标记为已读。');
+    showWenyouSnackBar(context, '已全部标记为已读。', tone: WenyouSnackBarTone.success);
   }
 }
 

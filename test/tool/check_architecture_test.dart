@@ -1,43 +1,38 @@
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../tool/check_architecture.dart';
+import 'architecture_test_workspace.dart';
 
 void main() {
   late Directory root;
 
   setUp(() async {
-    root = await Directory.systemTemp.createTemp('wenyou-architecture-');
-    _write(root, 'README.md', '当前版本：`1.0.0+1`。');
-    _write(
-      root,
-      'pubspec.yaml',
-      'name: fixture\nversion: 1.0.0+1\ndependencies:\n',
-    );
-    _writeAllowlist(root);
+    root = await createArchitectureTestWorkspace();
   });
 
-  tearDown(() async {
-    if (root.existsSync()) await root.delete(recursive: true);
-  });
+  tearDown(() => disposeArchitectureTestWorkspace(root));
 
   test('accepts a clean feature graph', () {
-    _write(root, 'lib/features/alpha/domain/item.dart', 'class Item {}\n');
+    writeArchitectureFixture(
+      root,
+      'lib/features/alpha/domain/item.dart',
+      'class Item {}\n',
+    );
 
     expect(collectArchitectureFailures(root), isEmpty);
   });
 
   test('freezes domain debt to the exact imported dependency', () {
     const path = 'lib/features/alpha/domain/item.dart';
-    _write(
+    writeArchitectureFixture(
       root,
       path,
       "import 'package:wenyousite_mobile/core/network/api_failure.dart';\n"
       "import 'package:flutter/material.dart';\n",
     );
-    _writeAllowlist(
+    writeArchitectureAllowlist(
       root,
       domainBoundaryDebt: [
         {'source': path, 'target': 'lib/core/network/api_failure.dart'},
@@ -54,7 +49,7 @@ void main() {
 
   test('domain cannot own loading or submission state', () {
     const path = 'lib/features/alpha/domain/item.dart';
-    _write(
+    writeArchitectureFixture(
       root,
       path,
       'enum ItemPhase { loading, ready }\n'
@@ -72,7 +67,11 @@ void main() {
 
   test('non-generated Dart files cannot exceed 900 lines', () {
     const path = 'lib/features/alpha/presentation/page.dart';
-    _write(root, path, '${List.filled(901, '// line').join('\n')}\n');
+    writeArchitectureFixture(
+      root,
+      path,
+      '${List.filled(901, '// line').join('\n')}\n',
+    );
 
     expect(
       collectArchitectureFailures(root),
@@ -82,22 +81,29 @@ void main() {
     );
   });
 
-  test('large-file debt is frozen to its exact line count', () {
+  test('cleared large-file debt cannot be reintroduced', () {
     const path = 'lib/features/alpha/presentation/page.dart';
-    _write(root, path, '${List.filled(901, '// line').join('\n')}\n');
-    _writeAllowlist(root, largeFileDebt: const {path: 902});
+    writeArchitectureFixture(
+      root,
+      path,
+      '${List.filled(901, '// line').join('\n')}\n',
+    );
+    writeArchitectureAllowlist(root, largeFileDebt: const {path: 902});
 
     expect(
       collectArchitectureFailures(root),
       contains('$path large-file debt can be tightened from 902 to 901 lines'),
     );
 
-    _writeAllowlist(root, largeFileDebt: const {path: 901});
-    expect(collectArchitectureFailures(root), isEmpty);
+    writeArchitectureAllowlist(root, largeFileDebt: const {path: 901});
+    expect(
+      collectArchitectureFailures(root),
+      contains('large-file debt cannot be reintroduced: $path'),
+    );
   });
 
   test('generated Dart files are exempt from the line limit', () {
-    _write(
+    writeArchitectureFixture(
       root,
       'lib/core/generated_client.g.dart',
       '${List.filled(901, '// generated').join('\n')}\n',
@@ -111,8 +117,12 @@ void main() {
     () {
       const source = 'lib/features/alpha/presentation/page.dart';
       const fragment = 'lib/features/alpha/presentation/page_fragment.dart';
-      _write(root, source, "part 'page_fragment.dart';\npart 'page.g.dart';\n");
-      _write(root, fragment, "part of 'page.dart';\n");
+      writeArchitectureFixture(
+        root,
+        source,
+        "part 'page_fragment.dart';\npart 'page.g.dart';\n",
+      );
+      writeArchitectureFixture(root, fragment, "part of 'page.dart';\n");
 
       expect(
         collectArchitectureFailures(root),
@@ -128,15 +138,15 @@ void main() {
     const page = 'lib/features/alpha/presentation/page.dart';
     const first = 'lib/features/alpha/data/first_repository.dart';
     const second = 'lib/features/alpha/data/second_repository.dart';
-    _write(root, first, 'class FirstRepository {}\n');
-    _write(root, second, 'class SecondRepository {}\n');
-    _write(
+    writeArchitectureFixture(root, first, 'class FirstRepository {}\n');
+    writeArchitectureFixture(root, second, 'class SecondRepository {}\n');
+    writeArchitectureFixture(
       root,
       page,
       "import 'package:wenyousite_mobile/features/alpha/data/first_repository.dart';\n"
       "import 'package:wenyousite_mobile/features/alpha/data/second_repository.dart';\n",
     );
-    _writeAllowlist(root, layerDependencyDebt: ['$page->$first']);
+    writeArchitectureAllowlist(root, layerDependencyDebt: ['$page->$first']);
 
     expect(
       collectArchitectureFailures(root),
@@ -145,12 +155,12 @@ void main() {
   });
 
   test('allows data implementations to depend on application ports', () {
-    _write(
+    writeArchitectureFixture(
       root,
       'lib/features/alpha/application/item_ports.dart',
       'abstract interface class ItemPort {}\n',
     );
-    _write(
+    writeArchitectureFixture(
       root,
       'lib/features/alpha/data/item_repository.dart',
       "import '../application/item_ports.dart';\n"
@@ -163,8 +173,12 @@ void main() {
   test('rejects data dependencies on application state', () {
     const data = 'lib/features/alpha/data/item_repository.dart';
     const controller = 'lib/features/alpha/application/item_controller.dart';
-    _write(root, controller, 'class ItemController {}\n');
-    _write(root, data, "import '../application/item_controller.dart';\n");
+    writeArchitectureFixture(root, controller, 'class ItemController {}\n');
+    writeArchitectureFixture(
+      root,
+      data,
+      "import '../application/item_controller.dart';\n",
+    );
 
     expect(
       collectArchitectureFailures(root),
@@ -173,17 +187,17 @@ void main() {
   });
 
   test('requires a separate debt entry for every cyclic edge', () {
-    _write(
+    writeArchitectureFixture(
       root,
       'lib/features/alpha/domain/item.dart',
       "import 'package:wenyousite_mobile/features/beta/domain/item.dart';\n",
     );
-    _write(
+    writeArchitectureFixture(
       root,
       'lib/features/beta/domain/item.dart',
       "import 'package:wenyousite_mobile/features/alpha/domain/item.dart';\n",
     );
-    _writeAllowlist(
+    writeArchitectureAllowlist(
       root,
       featureDependencies: const ['alpha->beta', 'beta->alpha'],
       featureCycleDebt: const ['alpha->beta'],
@@ -198,8 +212,15 @@ void main() {
   });
 
   test('reports stale dependency debt when the import is removed', () {
-    _write(root, 'lib/features/alpha/domain/item.dart', 'class Item {}\n');
-    _writeAllowlist(root, featureDependencies: const ['alpha->beta']);
+    writeArchitectureFixture(
+      root,
+      'lib/features/alpha/domain/item.dart',
+      'class Item {}\n',
+    );
+    writeArchitectureAllowlist(
+      root,
+      featureDependencies: const ['alpha->beta'],
+    );
 
     expect(
       collectArchitectureFailures(root),
@@ -209,8 +230,16 @@ void main() {
 
   test('normalizes relative imports before checking domain boundaries', () {
     const path = 'lib/features/alpha/domain/item.dart';
-    _write(root, 'lib/core/network/api_failure.dart', 'class ApiFailure {}\n');
-    _write(root, path, "import '../../../core/network/api_failure.dart';\n");
+    writeArchitectureFixture(
+      root,
+      'lib/core/network/api_failure.dart',
+      'class ApiFailure {}\n',
+    );
+    writeArchitectureFixture(
+      root,
+      path,
+      "import '../../../core/network/api_failure.dart';\n",
+    );
 
     expect(
       collectArchitectureFailures(root),
@@ -222,7 +251,7 @@ void main() {
   });
 
   test('ignores imports written only inside comments', () {
-    _write(
+    writeArchitectureFixture(
       root,
       'lib/features/alpha/domain/item.dart',
       "// import 'package:flutter/material.dart';\n"
@@ -237,13 +266,16 @@ void main() {
     const page = 'lib/features/posts/presentation/composer.dart';
     const internal =
         'lib/features/editor/presentation/rich_editor_session.dart';
-    _write(root, internal, 'class RichEditorSession {}\n');
-    _write(
+    writeArchitectureFixture(root, internal, 'class RichEditorSession {}\n');
+    writeArchitectureFixture(
       root,
       page,
       "import 'package:wenyousite_mobile/features/editor/presentation/rich_editor_session.dart';\n",
     );
-    _writeAllowlist(root, featureDependencies: const ['posts->editor']);
+    writeArchitectureAllowlist(
+      root,
+      featureDependencies: const ['posts->editor'],
+    );
 
     expect(
       collectArchitectureFailures(root),
@@ -256,7 +288,7 @@ void main() {
 
   test('production UI must use Foundation semantic icons', () {
     const path = 'lib/features/alpha/presentation/page.dart';
-    _write(
+    writeArchitectureFixture(
       root,
       path,
       'final iconData = IconData(0xe000);\n'
@@ -273,9 +305,43 @@ void main() {
     );
   });
 
+  test('production UI must use semantic typography and contract sizes', () {
+    const path = 'lib/features/alpha/presentation/page.dart';
+    writeArchitectureFixture(
+      root,
+      path,
+      'final caption = Theme.of(context).textTheme.bodySmall;\n'
+      'final style = const TextStyle(fontSize: 13);\n',
+    );
+
+    expect(
+      collectArchitectureFailures(root),
+      containsAll(<String>[
+        '$path reads a raw Material text slot; '
+            'use a Wenyou semantic text role',
+        '$path declares a literal font size; use Foundation typography or an '
+            'exported component contract',
+      ]),
+    );
+  });
+
+  test('semantic typography and exported component sizes are allowed', () {
+    const path = 'lib/features/alpha/presentation/page.dart';
+    writeArchitectureFixture(
+      root,
+      path,
+      'final caption = Theme.of(context).textTheme.wenyouCaption;\n'
+      'final style = caption.copyWith(\n'
+      '  fontSize: WenyouElementContract.levelFontSize,\n'
+      ');\n',
+    );
+
+    expect(collectArchitectureFailures(root), isEmpty);
+  });
+
   test('feature pages must use the shared content tabs', () {
     const path = 'lib/features/alpha/presentation/page.dart';
-    _write(
+    writeArchitectureFixture(
       root,
       path,
       'final controller = DefaultTabController(length: 2, child: body);\n'
@@ -295,7 +361,7 @@ void main() {
 
   test('production UI must use the shared transient-feedback policy', () {
     const path = 'lib/features/alpha/presentation/page.dart';
-    _write(
+    writeArchitectureFixture(
       root,
       path,
       "final action = SnackBarAction(label: '重试', onPressed: retry);\n"
@@ -314,7 +380,7 @@ void main() {
   });
 
   test('shared transient-feedback policy may wrap Material SnackBar', () {
-    _write(
+    writeArchitectureFixture(
       root,
       'lib/core/widgets/wenyou_snack_bar.dart',
       "final action = SnackBarAction(label: '重试', onPressed: retry);\n"
@@ -327,7 +393,7 @@ void main() {
 
   test('feature UI cannot format problem numbers or technical error codes', () {
     const path = 'lib/features/alpha/presentation/page.dart';
-    _write(
+    writeArchitectureFixture(
       root,
       path,
       "final detail = '问题编号：\$requestId';\n"
@@ -344,12 +410,12 @@ void main() {
   });
 
   test('shared failure policy may format user and diagnostic details', () {
-    _write(
+    writeArchitectureFixture(
       root,
       'lib/core/widgets/wenyou_feedback.dart',
       "final detail = '问题编号：\$requestId';\n",
     );
-    _write(
+    writeArchitectureFixture(
       root,
       'lib/core/diagnostics/network_diagnostics.dart',
       "final debug = 'code=\${failure.businessCode}';\n",
@@ -360,7 +426,7 @@ void main() {
 
   test('page transitions must use the shared navigation policy', () {
     const path = 'lib/features/alpha/presentation/page.dart';
-    _write(
+    writeArchitectureFixture(
       root,
       path,
       'final first = MaterialPageRoute<void>(builder: build);\n'
@@ -387,19 +453,19 @@ void main() {
   });
 
   test('shared policy and the composer nested route remain allowed', () {
-    _write(
+    writeArchitectureFixture(
       root,
       'lib/core/navigation/wenyou_page_transitions.dart',
       'final first = MaterialPageRoute<void>(builder: build);\n'
           'final second = NoTransitionPage<void>(child: child);\n'
           'final third = PageRouteBuilder<void>(pageBuilder: build);\n',
     );
-    _write(
+    writeArchitectureFixture(
       root,
       'lib/features/posts/presentation/post_composer_sheet.dart',
       'final route = PageRouteBuilder<void>(pageBuilder: build);\n',
     );
-    _write(
+    writeArchitectureFixture(
       root,
       'lib/app/app_theme.dart',
       'final theme = PageTransitionsTheme(builders: builders);\n',
@@ -408,20 +474,47 @@ void main() {
     expect(collectArchitectureFailures(root), isEmpty);
   });
 
-  test('golden tests must load Foundation fonts', () {
+  test('golden tests must load deterministic test fonts', () {
     const path = 'test/features/alpha/page_test.dart';
     const goldenMatcher = 'matchesGoldenFile';
-    _write(root, path, "final matcher = $goldenMatcher('goldens/page.png');\n");
+    writeArchitectureFixture(
+      root,
+      path,
+      "final matcher = $goldenMatcher('goldens/page.png');\n",
+    );
 
     expect(
       collectArchitectureFailures(root),
-      contains('$path uses golden files without loading Foundation test fonts'),
+      contains(
+        '$path uses golden files without loading deterministic test fonts',
+      ),
+    );
+  });
+
+  test('production typography must inherit the system font', () {
+    const path = 'lib/features/alpha/presentation/page.dart';
+    writeArchitectureFixture(
+      root,
+      path,
+      "const style = TextStyle(fontFamily: 'Custom UI');\n",
+    );
+
+    expect(
+      collectArchitectureFailures(root),
+      contains(
+        '$path sets a production fontFamily; inherit the platform system '
+        'font unless this is the approved monospace presentation',
+      ),
     );
   });
 
   test('router definitions use centralized path and name constants', () {
     const path = 'lib/app/app_router.dart';
-    _write(root, path, "final route = (path: '/home', name: 'home');\n");
+    writeArchitectureFixture(
+      root,
+      path,
+      "final route = (path: '/home', name: 'home');\n",
+    );
 
     expect(
       collectArchitectureFailures(root),
@@ -433,8 +526,12 @@ void main() {
   });
 
   test('README Foundation version must match pubspec ref', () {
-    _write(root, 'README.md', '当前版本：`1.0.0+1`。wenyousite-foundation v2.4.1。');
-    _write(
+    writeArchitectureFixture(
+      root,
+      'README.md',
+      '当前版本：`1.0.0+1`。wenyousite-foundation v2.4.1。',
+    );
+    writeArchitectureFixture(
       root,
       'pubspec.yaml',
       'name: fixture\n'
@@ -450,31 +547,4 @@ void main() {
       contains('README Foundation v2.4.1 does not match pubspec v2.4.2'),
     );
   });
-}
-
-void _writeAllowlist(
-  Directory root, {
-  List<Map<String, String>> domainBoundaryDebt = const [],
-  List<String> featureDependencies = const [],
-  List<String> featureCycleDebt = const [],
-  List<String> layerDependencyDebt = const [],
-  Map<String, int> largeFileDebt = const {},
-}) {
-  _write(
-    root,
-    'tool/architecture_allowlist.json',
-    const JsonEncoder.withIndent('  ').convert({
-      'domainBoundaryDebt': domainBoundaryDebt,
-      'featureDependencies': featureDependencies,
-      'featureCycleDebt': featureCycleDebt,
-      'layerDependencyDebt': layerDependencyDebt,
-      'largeFileDebt': largeFileDebt,
-    }),
-  );
-}
-
-void _write(Directory root, String relativePath, String contents) {
-  final file = File('${root.path}/$relativePath');
-  file.parent.createSync(recursive: true);
-  file.writeAsStringSync(contents);
 }

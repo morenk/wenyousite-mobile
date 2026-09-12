@@ -123,7 +123,7 @@ void main() {
     expect(find.text('已收藏到“稍后阅读”。'), findsOneWidget);
   });
 
-  testWidgets('首次收藏加载和写入失败时可在原面板重试', (tester) async {
+  testWidgets('首次收藏加载可原地重试，写入失败恢复按钮并可重新选择', (tester) async {
     final repository = _FakeRepository(bookmarkFailures: 1);
     final bookmarkRepository = _FakeBookmarkListRepository(folderFailures: 1);
     final container = await _authenticatedContainer(
@@ -161,8 +161,10 @@ void main() {
     await tester.tap(find.byKey(const Key('bookmark-folder-picker-confirm')));
     await tester.pumpAndSettle();
     expect(find.text('收藏失败，请稍后重试。'), findsOneWidget);
-    expect(customFolder, findsOneWidget);
-
+    expect(customFolder, findsNothing);
+    await tester.tap(find.byKey(const Key('thread-interaction-bookmark')));
+    await tester.pumpAndSettle();
+    await tester.tap(customFolder);
     await tester.tap(find.byKey(const Key('bookmark-folder-picker-confirm')));
     await tester.pumpAndSettle();
     expect(repository.createdFolderIds, ['folder-later', 'folder-later']);

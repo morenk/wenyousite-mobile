@@ -9,6 +9,7 @@ abstract final class AppRouteLocations {
   static const moments = AppRoutePaths.moments;
   static const notifications = AppRoutePaths.notifications;
   static const search = AppRoutePaths.search;
+  static const diagnostics = AppRoutePaths.diagnostics;
   static const appearance = AppRoutePaths.appearance;
   static const moderationAppeals = AppRoutePaths.moderationAppeals;
   static const composeThread = AppRoutePaths.composeThread;
@@ -104,6 +105,7 @@ abstract final class AppRoutePaths {
   static const notifications = '/notifications';
   static const me = '/me';
   static const search = '/search';
+  static const diagnostics = '/diagnostics';
   static const appearance = '/appearance';
   static const moderationAppeals = '/appeals';
   static const momentBookmarks = '/moments/bookmarks';
@@ -161,6 +163,7 @@ abstract final class AppRouteNames {
   static const notifications = 'notifications';
   static const me = 'me';
   static const search = 'search';
+  static const diagnostics = 'diagnostics';
   static const appearance = 'appearance';
   static const moderationAppeals = 'moderation-appeals';
   static const momentBookmarks = 'moment-bookmarks';

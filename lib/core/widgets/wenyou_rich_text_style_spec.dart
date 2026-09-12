@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_content_link_style.dart';
 
@@ -38,8 +39,7 @@ class WenyouRichTextStyleSpec {
     double bodyHeight = defaultBodyHeight,
   }) {
     final tokens = context.wenyouTokens;
-    final theme = Theme.of(context);
-    final body = (theme.textTheme.bodyLarge ?? const TextStyle()).copyWith(
+    final body = Theme.of(context).textTheme.wenyouReadingBody.copyWith(
       color: tokens.text,
       fontSize: bodyFontSize,
       height: bodyHeight,
@@ -132,8 +132,8 @@ class WenyouRichTextStyleSpec {
     );
   }
 
-  static const defaultBodyFontSize = 17.0;
-  static const defaultBodyHeight = 1.8;
+  static const defaultBodyFontSize = WenyouEditorContract.bodyFontSize;
+  static const defaultBodyHeight = WenyouEditorContract.bodyLineHeight;
 
   final TextStyle body;
   final TextStyle h1;

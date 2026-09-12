@@ -44,6 +44,7 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
       showWenyouSnackBar(
         context,
         '密码已修改，请重新登录。',
+        tone: WenyouSnackBarTone.success,
         pacing: WenyouSnackBarPacing.extended,
       );
     }
@@ -56,7 +57,7 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
     final state = ref.watch(passwordChangeControllerProvider);
-    return Scaffold(
+    final page = Scaffold(
       appBar: AppBar(title: const Text('修改密码')),
       body: WenyouPageBody(
         maxWidth: 520,
@@ -135,5 +136,6 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
         ),
       ),
     );
+    return WenyouSettingsTypography(child: page);
   }
 }

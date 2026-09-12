@@ -214,7 +214,9 @@ import 'package:wenyou_api/src/model/latest_thread_post_response_dto.dart';
 import 'package:wenyou_api/src/model/login_dto.dart';
 import 'package:wenyou_api/src/model/logout_dto.dart';
 import 'package:wenyou_api/src/model/mark_direct_conversation_read_dto.dart';
+import 'package:wenyou_api/src/model/markdown_media_display_response_dto.dart';
 import 'package:wenyou_api/src/model/media_confirm_upload200_response.dart';
+import 'package:wenyou_api/src/model/media_display_response_dto.dart';
 import 'package:wenyou_api/src/model/media_get_media200_response.dart';
 import 'package:wenyou_api/src/model/media_get_upload_url201_response.dart';
 import 'package:wenyou_api/src/model/media_reissue_upload_url200_response.dart';
@@ -399,6 +401,8 @@ import 'package:wenyou_api/src/model/thread_categories_list200_response.dart';
 import 'package:wenyou_api/src/model/thread_category_info_dto.dart';
 import 'package:wenyou_api/src/model/thread_category_response_dto.dart';
 import 'package:wenyou_api/src/model/thread_count_response_dto.dart';
+import 'package:wenyou_api/src/model/thread_cover_media_response_dto.dart';
+import 'package:wenyou_api/src/model/thread_cover_preview_variant_response_dto.dart';
 import 'package:wenyou_api/src/model/thread_detail_response_dto.dart';
 import 'package:wenyou_api/src/model/thread_export_dto.dart';
 import 'package:wenyou_api/src/model/thread_like_response_dto.dart';
@@ -691,7 +695,9 @@ part 'serializers.g.dart';
   LoginDto,
   LogoutDto,
   MarkDirectConversationReadDto,
+  MarkdownMediaDisplayResponseDto,
   MediaConfirmUpload200Response,
+  MediaDisplayResponseDto,
   MediaGetMedia200Response,
   MediaGetUploadUrl201Response,
   MediaReissueUploadUrl200Response,
@@ -876,6 +882,8 @@ part 'serializers.g.dart';
   ThreadCategoryInfoDto,
   ThreadCategoryResponseDto,
   ThreadCountResponseDto,
+  ThreadCoverMediaResponseDto,
+  ThreadCoverPreviewVariantResponseDto,
   ThreadDetailResponseDto,
   ThreadExportDto,
   ThreadLikeResponseDto,

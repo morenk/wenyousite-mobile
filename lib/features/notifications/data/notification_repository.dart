@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/network/media_display_mapper.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/notifications/application/notification_repository_ports.dart';
 import 'package:wenyousite_mobile/features/notifications/domain/notification_models.dart';
@@ -17,7 +18,7 @@ class ApiNotificationRepository implements NotificationRepository {
 
   @override
   Future<CursorPage<NotificationListItem>> fetchPage({
-    NotificationFilter filter = NotificationFilters.all,
+    NotificationFilter filter = NotificationFilter.all,
     String? cursor,
   }) async {
     try {
@@ -153,7 +154,7 @@ class ApiNotificationRepository implements NotificationRepository {
           : NotificationActor(
               id: actor.id,
               username: actor.username,
-              avatarUrl: actor.avatar,
+              avatarUrl: mapAvatarDisplayUrl(actor.avatar, actor.avatarDisplay),
               level: actor.level.toInt(),
               isDeleted: actor.deletedAt != null,
             ),

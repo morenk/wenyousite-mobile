@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/application/appearance_preference.dart';
 import 'package:wenyousite_mobile/core/application/session_logout_controller.dart';
@@ -20,8 +21,10 @@ import 'package:wenyousite_mobile/features/users/application/me_profile_controll
 import 'package:wenyousite_mobile/features/users/application/profile_cover_controller.dart';
 import 'package:wenyousite_mobile/features/users/application/public_user_controller.dart';
 import 'package:wenyousite_mobile/features/users/domain/me_profile_models.dart';
+import 'package:wenyousite_mobile/features/users/presentation/background_reminder_settings_panel.dart';
 import 'package:wenyousite_mobile/features/users/presentation/me_content_dashboard.dart';
 import 'package:wenyousite_mobile/features/users/presentation/me_profile_editor.dart';
+import 'package:wenyousite_mobile/features/users/presentation/me_profile_refresh_boundary.dart';
 import 'package:wenyousite_mobile/features/users/presentation/user_profile_header.dart';
 import 'package:wenyousite_mobile/features/wallet/application/wallet_controllers.dart';
 import 'package:wenyousite_mobile/features/wallet/domain/wallet_models.dart';
@@ -30,7 +33,12 @@ import 'package:wenyousite_mobile/features/wallet/presentation/wallet_widgets.da
 void _showRefreshFailure(BuildContext context, ApiFailure failure) {
   final message = wenyouFailureMessage(failure);
   if (message != null) {
-    showWenyouSnackBar(context, message, pacing: WenyouSnackBarPacing.extended);
+    showWenyouSnackBar(
+      context,
+      message,
+      pacing: WenyouSnackBarPacing.extended,
+      tone: WenyouSnackBarTone.error,
+    );
   }
 }
 
@@ -43,7 +51,9 @@ class MePage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final session = ref.watch(sessionControllerProvider);
     if (!session.isAuthenticated) return const _GuestMePage();
-    return _AuthenticatedMePage(userMoments: userMoments);
+    return MeProfileRefreshBoundary(
+      child: _AuthenticatedMePage(userMoments: userMoments),
+    );
   }
 }
 
@@ -77,6 +87,10 @@ class _GuestMePage extends StatelessWidget {
             ),
             SizedBox(height: context.wenyouTokens.space12),
             const _AppearanceSettingsPanel(),
+            ListTile(
+              title: const Text('故障诊断'),
+              onTap: () => context.pushNamed(AppRouteNames.diagnostics),
+            ),
           ],
         ),
       ),
@@ -154,49 +168,183 @@ class _AuthenticatedMePage extends ConsumerWidget {
   }
 }
 
-class MeEditPage extends ConsumerWidget {
+class MeEditPage extends ConsumerStatefulWidget {
   const MeEditPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MeEditPage> createState() => _MeEditPageState();
+}
+
+class _MeEditPageState extends ConsumerState<MeEditPage> {
+  final _formKey = GlobalKey<FormState>();
+  late final MeProfileEditDraft _draft;
+  var _allowPop = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _draft = MeProfileEditDraft()..addListener(_handleDraftChanged);
+  }
+
+  @override
+  void dispose() {
+    _draft
+      ..removeListener(_handleDraftChanged)
+      ..dispose();
+    super.dispose();
+  }
+
+  void _handleDraftChanged() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final state = ref.watch(meProfileControllerProvider);
     final avatarState = ref.watch(avatarControllerProvider);
     final profileCoverState = ref.watch(profileCoverControllerProvider);
     final notifier = ref.read(meProfileControllerProvider.notifier);
-    return Scaffold(
-      appBar: AppBar(title: const Text('编辑资料')),
-      body: switch (state.phase) {
-        MeProfilePhase.loading => const _MePageList(
-          children: [WenyouDetailSkeleton(label: '正在读取资料')],
-        ),
-        MeProfilePhase.failed => _MePageList(
-          children: [
-            WenyouPanel(
-              child: WenyouEmptyState(
-                icon: WenyouIconIds.statusOffline,
-                title: '资料加载失败',
-                message: state.failure?.userMessage ?? '请稍后重试。',
-                detail: wenyouFailureDetail(state.failure),
-                action: OutlinedButton.icon(
-                  key: const Key('me-edit-retry'),
-                  onPressed: notifier.load,
-                  icon: const WenyouIcon(WenyouIconIds.actionRefresh),
-                  label: const Text('重新加载'),
+    if (state.phase == MeProfilePhase.ready && state.profile != null) {
+      _draft.bind(state.profile!);
+    }
+    final mediaBusy = avatarState.isBusy || profileCoverState.isBusy;
+    final mutationBusy = state.isSubmitting || mediaBusy;
+    final canLeave =
+        state.phase != MeProfilePhase.ready ||
+        (!_draft.isDirty && !mutationBusy);
+    final page = PopScope<Object?>(
+      canPop: _allowPop || canLeave,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) unawaited(_handlePopAttempt(result, mutationBusy));
+      },
+      child: Scaffold(
+        appBar: AppBar(title: const Text('编辑资料')),
+        body: switch (state.phase) {
+          MeProfilePhase.loading => const _MePageList(
+            children: [WenyouDetailSkeleton(label: '正在读取资料')],
+          ),
+          MeProfilePhase.failed => _MePageList(
+            children: [
+              WenyouPanel(
+                child: WenyouEmptyState(
+                  icon: WenyouIconIds.statusOffline,
+                  title: '资料加载失败',
+                  message: state.failure?.userMessage ?? '请稍后重试。',
+                  detail: wenyouFailureDetail(state.failure),
+                  action: OutlinedButton.icon(
+                    key: const Key('me-edit-retry'),
+                    onPressed: notifier.load,
+                    icon: const WenyouIcon(WenyouIconIds.actionRefresh),
+                    label: const Text('重试'),
+                  ),
                 ),
               ),
+            ],
+          ),
+          MeProfilePhase.ready => _MePageList(
+            children: [
+              MeProfileEditor(state: state, draft: _draft, formKey: _formKey),
+            ],
+          ),
+        },
+        bottomNavigationBar: state.phase == MeProfilePhase.ready
+            ? _MeProfileSaveBar(
+                submitting: state.submitting == MeProfileAction.settings,
+                enabled: _draft.isDirty && !mutationBusy,
+                onPressed: _save,
+              )
+            : null,
+      ),
+    );
+    return WenyouSettingsTypography(child: page);
+  }
+
+  Future<void> _save() async {
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+    final succeeded = await ref
+        .read(meProfileControllerProvider.notifier)
+        .saveSettings(
+          bio: _draft.bioController.text,
+          showRecentReplies: _draft.showRecentReplies,
+          showPlayedThreads: _draft.showPlayedThreads,
+          showBookmarks: _draft.showBookmarks,
+        );
+    if (!mounted || !succeeded) return;
+    final notifier = ref.read(meProfileControllerProvider.notifier);
+    final next = ref.read(meProfileControllerProvider).profile;
+    if (next != null) _draft.commit(next);
+    showWenyouSnackBar(context, '资料已保存。', tone: WenyouSnackBarTone.success);
+    notifier.clearFeedback();
+  }
+
+  Future<void> _handlePopAttempt(Object? result, bool mutationBusy) async {
+    if (mutationBusy) {
+      showWenyouSnackBar(
+        context,
+        '资料正在更新，请稍候或取消当前操作。',
+        tone: WenyouSnackBarTone.neutral,
+      );
+      return;
+    }
+    if (!_draft.isDirty) return;
+    final discard = await showWenyouConfirmationDialog(
+      context: context,
+      title: '放弃未保存的修改？',
+      message: '简介或主页公开内容还没有保存。',
+      cancelLabel: '继续编辑',
+      confirmLabel: '放弃修改',
+      confirmKey: const Key('me-edit-discard-confirm'),
+      tone: WenyouConfirmationTone.destructive,
+    );
+    if (!discard || !mounted) return;
+    _allowPop = true;
+    setState(() {});
+    await WidgetsBinding.instance.endOfFrame;
+    if (mounted) Navigator.of(context).pop(result);
+  }
+}
+
+class _MeProfileSaveBar extends StatelessWidget {
+  const _MeProfileSaveBar({
+    required this.submitting,
+    required this.enabled,
+    required this.onPressed,
+  });
+
+  final bool submitting;
+  final bool enabled;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.wenyouTokens;
+    final horizontal = wenyouHorizontalPagePadding(context);
+    return Material(
+      color: tokens.background,
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(
+            horizontal,
+            tokens.space8,
+            horizontal,
+            tokens.space8,
+          ),
+          child: Center(
+            heightFactor: 1,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: tokens.pageContentMaxWidth),
+              child: WenyouAsyncPrimaryButton(
+                key: const Key('me-settings-save'),
+                label: '保存',
+                loadingLabel: '正在保存',
+                isLoading: submitting,
+                onPressed: enabled ? onPressed : null,
+              ),
             ),
-          ],
+          ),
         ),
-        MeProfilePhase.ready => RefreshIndicator(
-          onRefresh:
-              state.isSubmitting ||
-                  avatarState.isBusy ||
-                  profileCoverState.isBusy
-              ? () async {}
-              : notifier.load,
-          child: _MePageList(children: [MeProfileEditor(state: state)]),
-        ),
-      },
+      ),
     );
   }
 }
@@ -206,16 +354,22 @@ class MeSettingsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    final page = Scaffold(
       appBar: AppBar(title: const Text('账号设置')),
-      body: const _MePageList(
+      body: _MePageList(
         children: [
-          _AppearanceSettingsPanel(),
-          _AccountSecurityPanel(disabled: false),
-          _LogoutPanel(),
+          const _AppearanceSettingsPanel(),
+          const _AccountSecurityPanel(disabled: false),
+          const BackgroundReminderSettingsPanel(),
+          const _LogoutPanel(),
+          ListTile(
+            title: const Text('故障诊断'),
+            onTap: () => context.pushNamed(AppRouteNames.diagnostics),
+          ),
         ],
       ),
     );
+    return WenyouSettingsTypography(child: page);
   }
 }
 
@@ -504,7 +658,12 @@ class _AccountSecurityPanel extends StatelessWidget {
               WenyouIconIds.actionDelete,
               color: scheme.error,
             ),
-            title: Text('注销账号', style: TextStyle(color: scheme.error)),
+            title: Text(
+              '注销账号',
+              style: Theme.of(
+                context,
+              ).textTheme.wenyouRowTitle.copyWith(color: scheme.error),
+            ),
             subtitle: const Text('不可恢复；已发布内容会匿名保留'),
             trailing: WenyouIcon(
               WenyouIconIds.navigationNext,
@@ -669,7 +828,11 @@ class _LogoutAction extends ConsumerWidget {
         .submit();
     if (succeeded && context.mounted) {
       context.go(AppRouteLocations.me);
-      showWenyouSnackBar(context, '已安全退出当前账号。');
+      showWenyouSnackBar(
+        context,
+        '已安全退出当前账号。',
+        tone: WenyouSnackBarTone.success,
+      );
     }
   }
 
@@ -687,7 +850,11 @@ class _LogoutAction extends ConsumerWidget {
     await ref.read(logoutControllerProvider.notifier).forceLocalLogout();
     if (context.mounted) {
       context.go(AppRouteLocations.me);
-      showWenyouSnackBar(context, '这台设备的登录信息已清除。');
+      showWenyouSnackBar(
+        context,
+        '这台设备的登录信息已清除。',
+        tone: WenyouSnackBarTone.success,
+      );
     }
   }
 }

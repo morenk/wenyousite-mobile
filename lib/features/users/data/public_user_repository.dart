@@ -3,9 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
-import 'package:wenyousite_mobile/core/models/thread_feed_models.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/network/media_display_mapper.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/features/thread_feed/thread_feed_mapping.dart';
+import 'package:wenyousite_mobile/features/thread_feed/thread_feed_models.dart';
 import 'package:wenyousite_mobile/features/users/application/user_repository_ports.dart';
 import 'package:wenyousite_mobile/features/users/data/profile_cover_mapper.dart';
 import 'package:wenyousite_mobile/features/users/domain/public_user_models.dart';
@@ -30,7 +32,9 @@ class ApiPublicUserRepository implements PublicUserRepository {
       return PublicUserProfileModel(
         id: dto.id,
         username: dto.username,
-        avatarUrl: _safeHttpUrl(dto.avatar),
+        avatarUrl: _safeHttpUrl(
+          mapAvatarDisplayUrl(dto.avatar, dto.avatarDisplay),
+        ),
         bio: bio == null || bio.isEmpty ? null : bio,
         profileCover: mapProfileCover(dto.profileCover),
         level: dto.level?.toInt() ?? 0,
@@ -180,7 +184,9 @@ class ApiPublicUserRepository implements PublicUserRepository {
       isPublished: dto.published,
       ownerId: dto.owner.id,
       ownerName: dto.owner.username,
-      ownerAvatarUrl: _safeHttpUrl(dto.owner.avatar),
+      ownerAvatarUrl: _safeHttpUrl(
+        mapAvatarDisplayUrl(dto.owner.avatar, dto.owner.avatarDisplay),
+      ),
       ownerLevel: dto.owner.level.toInt(),
       createdAt: dto.createdAt,
       lastActivityAt: latestThreadActivityAt(
@@ -191,10 +197,11 @@ class ApiPublicUserRepository implements PublicUserRepository {
       tags: dto.topicTags
           .map(
             (relation) =>
-                HomeThreadTag(id: relation.tag.id, name: relation.tag.name),
+                ThreadFeedTag(id: relation.tag.id, name: relation.tag.name),
           )
           .toList(growable: false),
       coverImageUrls: _safeHttpUrls(dto.coverImages),
+      coverMedia: mapThreadFeedCoverMedia(dto.coverMedia, dto.coverImages),
       memberCount: dto.count.members.toInt(),
       playerCount: dto.count.players.toInt(),
       postCount: dto.count.posts.toInt(),
@@ -214,7 +221,9 @@ class ApiPublicUserRepository implements PublicUserRepository {
       isPublished: dto.published,
       ownerId: dto.owner.id,
       ownerName: dto.owner.username,
-      ownerAvatarUrl: _safeHttpUrl(dto.owner.avatar),
+      ownerAvatarUrl: _safeHttpUrl(
+        mapAvatarDisplayUrl(dto.owner.avatar, dto.owner.avatarDisplay),
+      ),
       ownerLevel: dto.owner.level.toInt(),
       createdAt: dto.createdAt,
       lastActivityAt: latestThreadActivityAt(
@@ -225,10 +234,11 @@ class ApiPublicUserRepository implements PublicUserRepository {
       tags: dto.topicTags
           .map(
             (relation) =>
-                HomeThreadTag(id: relation.tag.id, name: relation.tag.name),
+                ThreadFeedTag(id: relation.tag.id, name: relation.tag.name),
           )
           .toList(growable: false),
       coverImageUrls: _safeHttpUrls(dto.coverImages),
+      coverMedia: mapThreadFeedCoverMedia(dto.coverMedia, dto.coverImages),
       memberCount: dto.count.members.toInt(),
       playerCount: dto.count.players.toInt(),
       postCount: dto.count.posts.toInt(),
@@ -239,6 +249,7 @@ class ApiPublicUserRepository implements PublicUserRepository {
   PublicUserReplyModel _mapReply(RecentReplyResponseDto dto) {
     final source = dto.preview.trim().isEmpty ? dto.content : dto.preview;
     return PublicUserReplyModel(
+      mediaDisplays: mapMarkdownMediaDisplays(dto.mediaDisplays),
       id: dto.id,
       threadId: dto.threadId,
       threadTitle: dto.thread.title,

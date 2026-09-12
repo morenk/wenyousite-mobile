@@ -3,14 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
-import 'package:wenyousite_mobile/core/models/thread_category_presentation.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_pagination.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/home/application/home_feed_controller.dart';
 import 'package:wenyousite_mobile/features/home/domain/home_models.dart';
-import 'package:wenyousite_mobile/features/threads/presentation/thread_feed_card.dart';
+import 'package:wenyousite_mobile/features/thread_feed/thread_feed_widgets.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -303,7 +302,7 @@ class _HomeCategoryTabs extends StatelessWidget {
     required this.onSelected,
   });
 
-  final List<HomeCategory> categories;
+  final List<ThreadCategory> categories;
   final String? selected;
   final ValueChanged<String?> onSelected;
 

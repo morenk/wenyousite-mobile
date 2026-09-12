@@ -1,14 +1,120 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/moments/application/moment_repository_ports.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
+import 'package:wenyousite_mobile/features/moments/presentation/moment_detail_comment_body.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_detail_page.dart';
 
 void main() {
+  for (final isReply in [false, true]) {
+    testWidgets('动态${isReply ? '楼中楼' : '主评论'}长内容定位保留作者开头', (tester) async {
+      final content = List.filled(80, '较长的评论正文，开头不能滚出阅读区。').join('\n');
+      final reply = _comment(
+        id: 'long-reply',
+        parentId: 'long-root',
+        content: content,
+        createdAt: DateTime.utc(2026, 8, 1),
+      );
+      final root = _root(
+        id: 'long-root',
+        content: isReply ? '主评论上下文' : content,
+        createdAt: DateTime.utc(2026, 8, 1),
+        replyCount: isReply ? 1 : 0,
+        replies: isReply ? [reply] : [],
+      );
+      final targetId = isReply ? reply.id : root.id;
+      await tester.pumpWidget(
+        _app(
+          _TargetRepository(
+            context: MomentCommentContext(
+              root: root,
+              target: isReply ? reply : root,
+            ),
+          ),
+          targetCommentId: targetId,
+        ),
+      );
+      await tester.pumpAndSettle();
+      final target = tester.getRect(
+        find.byKey(ValueKey('target-frame-$targetId')),
+      );
+      final viewport = tester.getRect(find.byType(CustomScrollView));
+      expect(target.height, greaterThan(viewport.height));
+      expect(target.top, closeTo(viewport.top, 1));
+    });
+  }
+  for (final cancel in [true, false]) {
+    testWidgets('定位评论删除${cancel ? '取消保留原文' : '成功结束定位且不报错'}', (tester) async {
+      final root = _root(
+        id: 'root-target',
+        content: '待删评论',
+        createdAt: DateTime.utc(2026, 8, 25),
+        canDelete: true,
+      );
+      final repository = _TargetRepository(
+        context: MomentCommentContext(root: root, target: root),
+      );
+      final router = GoRouter(
+        initialLocation: '/moments/moment-1?comment=root-target',
+        routes: [
+          GoRoute(
+            path: '/moments/:id',
+            builder: (context, state) => MomentDetailPage(
+              momentId: state.pathParameters['id']!,
+              targetCommentId: state.uri.queryParameters['comment'],
+            ),
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [momentRepositoryProvider.overrideWithValue(repository)],
+          child: MaterialApp.router(
+            theme: AppTheme.light,
+            routerConfig: router,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final body = tester.widget<MomentCommentBody>(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is MomentCommentBody && widget.comment.id == 'root-target',
+        ),
+      );
+      body.onDelete!();
+      await tester.pumpAndSettle();
+      if (cancel) {
+        expect(
+          tester.widget<AlertDialog>(find.byType(AlertDialog)).content,
+          isNull,
+        );
+        await tester.tap(find.text('取消'));
+        await tester.pumpAndSettle();
+        expect(repository.removed, isFalse);
+        expect(find.text('待删评论'), findsOneWidget);
+      } else {
+        await tester.tap(
+          find.byKey(const Key('moment-comment-delete-confirm')),
+        );
+        await tester.pumpAndSettle();
+        expect(repository.removed, isTrue);
+        expect(
+          router.routeInformationProvider.value.uri.queryParameters['comment'],
+          isNull,
+        );
+        expect(find.text('目标评论已不可见'), findsNothing);
+        expect(find.text('待删评论'), findsNothing);
+        expect(find.text('普通评论 0'), findsOneWidget);
+      }
+    });
+  }
   testWidgets('普通动态详情不请求评论上下文', (tester) async {
     final repository = _TargetRepository();
 
@@ -184,6 +290,12 @@ class _TargetRepository extends Fake implements MomentRepository {
   final int rootCount;
   var contextCalls = 0;
   var replyCalls = 0;
+  bool removed = false;
+
+  @override
+  Future<void> removeComment(String momentId, String commentId) async {
+    removed = true;
+  }
 
   @override
   Future<MomentDetail> fetchDetail(String momentId) async => _detail();
@@ -224,6 +336,13 @@ class _TargetRepository extends Fake implements MomentRepository {
     required String commentId,
   }) async {
     contextCalls += 1;
+    if (removed) {
+      throw const ApiFailure(
+        userMessage: '评论不存在',
+        httpStatus: 404,
+        businessCode: 40415,
+      );
+    }
     final error = contextError;
     if (error != null) throw error;
     return context!;
@@ -296,6 +415,7 @@ MomentRootComment _root({
   required String content,
   required DateTime createdAt,
   int replyCount = 0,
+  bool canDelete = false,
   List<MomentComment> replies = const [],
 }) {
   return MomentRootComment(
@@ -304,7 +424,7 @@ MomentRootComment _root({
     author: _author,
     content: content,
     deleted: false,
-    canDelete: false,
+    canDelete: canDelete,
     createdAt: createdAt,
     replyCount: replyCount,
     replies: replies,

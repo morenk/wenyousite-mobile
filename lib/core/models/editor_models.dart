@@ -1,4 +1,4 @@
-enum EditorContextType { thread, subthread, floor, reply }
+enum EditorContextType { thread, subthread, floor, reply, moment }
 
 class LocalEditorSnapshot {
   const LocalEditorSnapshot({

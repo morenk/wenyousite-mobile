@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 
 const _maximumDiagnosticEntries = 40;
 const _maximumStackLines = 120;
@@ -165,15 +166,16 @@ class _WenyouDebugDiagnosticOverlayState
                     setState(() => _isOpen = true);
                   },
                   borderRadius: BorderRadius.circular(8),
-                  child: const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 8,
+                    ),
                     child: Text(
                       '诊断',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                      ),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.wenyouLabel.copyWith(color: Colors.white),
                     ),
                   ),
                 ),
@@ -243,13 +245,10 @@ class _DiagnosticPanel extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  const Expanded(
+                  Expanded(
                     child: Text(
                       '现场诊断（Debug）',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                      ),
+                      style: Theme.of(context).textTheme.wenyouOverlayTitle,
                     ),
                   ),
                   Semantics(
@@ -283,11 +282,11 @@ class _DiagnosticPanel extends StatelessWidget {
                       child: SelectableText(
                         DebugDiagnosticBuffer.instance.exportText(),
                         key: const Key('debug-diagnostic-text'),
-                        style: const TextStyle(
-                          fontFamily: 'monospace',
-                          fontSize: 12,
-                          color: Color(0xFF25252B),
-                        ),
+                        style: Theme.of(context).textTheme.wenyouCaption
+                            .copyWith(
+                              fontFamily: 'monospace',
+                              color: const Color(0xFF25252B),
+                            ),
                       ),
                     ),
                   ),

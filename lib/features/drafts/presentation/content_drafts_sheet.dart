@@ -5,6 +5,7 @@ import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
+import 'package:wenyousite_mobile/core/media/media_display.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/drafts/application/content_drafts_controller.dart';
@@ -15,6 +16,7 @@ Future<void> showContentDraftsSheet({
   required Object draftSessionKey,
   required String currentContent,
   required ValueChanged<String> onRestore,
+  ValueChanged<Map<String, MediaDisplay>>? onRestoreDisplays,
 }) {
   return showModalBottomSheet<void>(
     context: context,
@@ -27,6 +29,7 @@ Future<void> showContentDraftsSheet({
         draftSessionKey: draftSessionKey,
         currentContent: currentContent,
         onRestore: onRestore,
+        onRestoreDisplays: onRestoreDisplays,
       ),
     ),
   );
@@ -37,12 +40,14 @@ class ContentDraftsSheet extends ConsumerStatefulWidget {
     required this.draftSessionKey,
     required this.currentContent,
     required this.onRestore,
+    this.onRestoreDisplays,
     super.key,
   });
 
   final Object draftSessionKey;
   final String currentContent;
   final ValueChanged<String> onRestore;
+  final ValueChanged<Map<String, MediaDisplay>>? onRestoreDisplays;
 
   @override
   ConsumerState<ContentDraftsSheet> createState() => _ContentDraftsSheetState();
@@ -65,6 +70,14 @@ class _ContentDraftsSheetState extends ConsumerState<ContentDraftsSheet> {
   Widget build(BuildContext context) {
     final provider = contentDraftsControllerProvider(widget.draftSessionKey);
     final state = ref.watch(provider);
+    ref.listen(provider.select((value) => value.successMessage), (
+      previous,
+      next,
+    ) {
+      if (next != null && next != previous) {
+        showWenyouSnackBar(context, next, tone: WenyouSnackBarTone.success);
+      }
+    });
     final controller = ref.read(provider.notifier);
     final tokens = context.wenyouTokens;
     return Column(
@@ -93,9 +106,9 @@ class _ContentDraftsSheetState extends ConsumerState<ContentDraftsSheet> {
                     SizedBox(height: tokens.space4),
                     Text(
                       '只保存当前正文 · 已用 ${state.usage.usedSlots}/${state.usage.maxSlots}',
-                      style: Theme.of(
-                        context,
-                      ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
+                      style: Theme.of(context).textTheme.wenyouCaption.copyWith(
+                        color: tokens.mutedText,
+                      ),
                     ),
                   ],
                 ),
@@ -124,6 +137,7 @@ class _ContentDraftsSheetState extends ConsumerState<ContentDraftsSheet> {
               state: state,
               currentContent: widget.currentContent,
               onRestore: widget.onRestore,
+              onRestoreDisplays: widget.onRestoreDisplays,
             ),
           },
         ),
@@ -138,12 +152,14 @@ class _ReadyDrafts extends ConsumerWidget {
     required this.state,
     required this.currentContent,
     required this.onRestore,
+    this.onRestoreDisplays,
   });
 
   final Object draftSessionKey;
   final ContentDraftsState state;
   final String currentContent;
   final ValueChanged<String> onRestore;
+  final ValueChanged<Map<String, MediaDisplay>>? onRestoreDisplays;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -177,14 +193,14 @@ class _ReadyDrafts extends ConsumerWidget {
                   children: [
                     Text(
                       '自动保存到草稿位 1',
-                      style: Theme.of(context).textTheme.titleSmall,
+                      style: Theme.of(context).textTheme.wenyouCompactTitle,
                     ),
                     SizedBox(height: tokens.space4),
                     Text(
                       _autoSaveDescription(state),
-                      style: Theme.of(
-                        context,
-                      ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
+                      style: Theme.of(context).textTheme.wenyouCaption.copyWith(
+                        color: tokens.mutedText,
+                      ),
                     ),
                   ],
                 ),
@@ -224,14 +240,6 @@ class _ReadyDrafts extends ConsumerWidget {
           ),
           SizedBox(height: tokens.space12),
         ],
-        if (state.successMessage != null) ...[
-          WenyouStatusBanner(
-            key: const Key('content-drafts-success'),
-            message: state.successMessage!,
-            tone: WenyouStatusTone.accent,
-          ),
-          SizedBox(height: tokens.space12),
-        ],
         WenyouPanel(
           padding: EdgeInsets.all(tokens.space12),
           color: tokens.softPanel,
@@ -241,7 +249,7 @@ class _ReadyDrafts extends ConsumerWidget {
               if (state.usage.isFull) ...[
                 Text(
                   '五个草稿位都已有内容。你仍可选择任一位置保存并确认覆盖。',
-                  style: Theme.of(context).textTheme.bodySmall,
+                  style: Theme.of(context).textTheme.wenyouCaption,
                 ),
                 SizedBox(height: tokens.space8),
               ],
@@ -274,6 +282,7 @@ class _ReadyDrafts extends ConsumerWidget {
             canSave: canSave,
             state: state,
             onRestore: onRestore,
+            onRestoreDisplays: onRestoreDisplays,
           ),
           if (slot != state.usage.maxSlots) SizedBox(height: tokens.space8),
         ],
@@ -344,7 +353,7 @@ class _AutoSaveSwitch extends StatelessWidget {
         Text(
           value ? '已开启' : '已关闭',
           key: const Key('content-drafts-auto-save-state'),
-          style: Theme.of(context).textTheme.labelMedium?.copyWith(
+          style: Theme.of(context).textTheme.wenyouCaptionEmphasis.copyWith(
             color: enabled
                 ? (value ? tokens.brandForeground : tokens.text)
                 : tokens.mutedText,
@@ -394,6 +403,7 @@ class _DraftSlotCard extends ConsumerWidget {
     required this.canSave,
     required this.state,
     required this.onRestore,
+    this.onRestoreDisplays,
   });
 
   final Object draftSessionKey;
@@ -403,6 +413,7 @@ class _DraftSlotCard extends ConsumerWidget {
   final bool canSave;
   final ContentDraftsState state;
   final ValueChanged<String> onRestore;
+  final ValueChanged<Map<String, MediaDisplay>>? onRestoreDisplays;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -423,14 +434,13 @@ class _DraftSlotCard extends ConsumerWidget {
                     children: [
                       Text(
                         '草稿位 $slot',
-                        style: Theme.of(context).textTheme.titleSmall,
+                        style: Theme.of(context).textTheme.wenyouCompactTitle,
                       ),
                       SizedBox(height: tokens.space4),
                       Text(
                         slot == 1 ? '空闲 · 自动保存位置' : '空闲',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: tokens.mutedText,
-                        ),
+                        style: Theme.of(context).textTheme.wenyouCaption
+                            .copyWith(color: tokens.mutedText),
                       ),
                     ],
                   ),
@@ -469,7 +479,9 @@ class _DraftSlotCard extends ConsumerWidget {
                         children: [
                           Text(
                             '草稿位 $slot',
-                            style: Theme.of(context).textTheme.titleSmall,
+                            style: Theme.of(
+                              context,
+                            ).textTheme.wenyouCompactTitle,
                           ),
                           SizedBox(height: tokens.space4),
                           Text(
@@ -484,8 +496,8 @@ class _DraftSlotCard extends ConsumerWidget {
                           Text(
                             '更新于 ${DateFormat('yyyy-MM-dd HH:mm').format(item.updatedAt.toLocal())}'
                             '${slot == 1 ? ' · 自动保存位置' : ''}',
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(color: tokens.mutedText),
+                            style: Theme.of(context).textTheme.wenyouCaption
+                                .copyWith(color: tokens.mutedText),
                           ),
                         ],
                       ),
@@ -570,6 +582,7 @@ class _DraftSlotCard extends ConsumerWidget {
       );
       if (!confirmed || !context.mounted) return;
     }
+    onRestoreDisplays?.call(fresh.mediaDisplays);
     onRestore(fresh.content);
     Navigator.pop(context);
   }
@@ -636,7 +649,7 @@ class _SlotNumber extends StatelessWidget {
       ),
       child: Text(
         slot.toString(),
-        style: Theme.of(context).textTheme.titleMedium,
+        style: Theme.of(context).textTheme.wenyouRowTitle,
       ),
     );
   }

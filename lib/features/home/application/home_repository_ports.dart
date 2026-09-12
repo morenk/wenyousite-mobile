@@ -3,9 +3,9 @@ import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/features/home/domain/home_models.dart';
 
 abstract interface class HomeRepository {
-  Future<List<HomeCategory>> fetchCategories();
+  Future<List<ThreadCategory>> fetchCategories();
 
-  Future<CursorPage<HomeThreadCardModel>> fetchThreads({
+  Future<CursorPage<ThreadFeedCardModel>> fetchThreads({
     required HomeFeedQuery query,
     String? cursor,
     int limit = 20,
@@ -20,12 +20,12 @@ class _UnboundHomeRepository implements HomeRepository {
   const _UnboundHomeRepository();
 
   @override
-  Future<List<HomeCategory>> fetchCategories() {
+  Future<List<ThreadCategory>> fetchCategories() {
     return Future.error(_unboundError());
   }
 
   @override
-  Future<CursorPage<HomeThreadCardModel>> fetchThreads({
+  Future<CursorPage<ThreadFeedCardModel>> fetchThreads({
     required HomeFeedQuery query,
     String? cursor,
     int limit = 20,

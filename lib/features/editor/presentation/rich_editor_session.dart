@@ -8,13 +8,18 @@ import 'package:flutter/services.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_quill/quill_delta.dart';
 import 'package:uuid/uuid.dart';
+import 'package:wenyousite_mobile/core/diagnostics/failure_diagnostics.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_line_metadata.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_editing_compatibility.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_submission_guard.dart';
+import 'package:wenyousite_mobile/core/media/media_display.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_clipboard.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_clipboard_gateway.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_clipboard_paste.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_document_alignment.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_site_clipboard.dart';
+import 'package:wenyousite_mobile/features/editor/presentation/literal_text_quill_controller.dart';
 
 enum RichEditorSelectionPlacement { preserve, start, end }
 
@@ -42,10 +47,12 @@ class RichEditorOperationFailure {
 class RichEditorSession extends ChangeNotifier {
   RichEditorSession({
     required String initialMarkdown,
+    Map<String, MediaDisplay> initialMediaDisplays = const {},
     required this.onMarkdownChanged,
     this.codecDebounce = const Duration(milliseconds: 120),
     this.maximumSerializedLength = 10000,
     this.clipboardScope,
+    this.blockAlignment = true,
     this.imageAlignment = false,
     EditorClipboardGateway? clipboardGateway,
     Future<String?> Function()? readClipboardText,
@@ -58,6 +65,7 @@ class RichEditorSession extends ChangeNotifier {
            clipboardGateway ??
            _legacyClipboardGateway(readClipboardText, writeClipboardText),
        _clipboardStore = clipboardStore ?? wenyouEditorClipboardStore {
+    _mediaDisplays = Map.unmodifiable(initialMediaDisplays);
     _siteClipboardParser =
         siteClipboardParser ??
         WenyouSiteClipboardParser(imageAlignment: imageAlignment);
@@ -69,7 +77,7 @@ class RichEditorSession extends ChangeNotifier {
     _lastMarkdown = initialMarkdown;
     _serializedLength = initialMarkdown.length;
     final document = Document.fromDelta(decoded.delta);
-    controller = _LiteralTextQuillController(
+    controller = LiteralTextQuillController(
       document: document,
       selection: _selectionFor(document, initialSelection, null),
       config: QuillControllerConfig(
@@ -79,19 +87,29 @@ class RichEditorSession extends ChangeNotifier {
       ),
     );
     _listenToDocument(document);
+    _protectUnsupportedSource(initialMarkdown, decoded);
     focusNode.addListener(_onFocusChanged);
+  }
+
+  late Map<String, MediaDisplay> _mediaDisplays;
+  Map<String, MediaDisplay> get mediaDisplays => _mediaDisplays;
+
+  void replaceMediaDisplays(Map<String, MediaDisplay> values) {
+    _mediaDisplays = Map.unmodifiable(values);
+    notifyListeners();
   }
 
   final Duration codecDebounce;
   final int maximumSerializedLength;
   final Object? clipboardScope;
+  final bool blockAlignment;
   final bool imageAlignment;
   final ValueChanged<String> onMarkdownChanged;
   final EditorClipboardGateway _clipboardGateway;
   final WenyouEditorClipboardStore _clipboardStore;
   late final WenyouSiteClipboardParser _siteClipboardParser;
 
-  late final QuillController controller;
+  late final LiteralTextQuillController controller;
   final FocusNode focusNode = FocusNode();
   final ScrollController scrollController = ScrollController();
   Timer? _codecTimer;
@@ -100,10 +118,13 @@ class RichEditorSession extends ChangeNotifier {
   bool _applyingDocument = false;
   bool _disposed = false;
   bool _dirty = false;
+  bool _externallyReadOnly = false;
+  String? _protectedSourceSignature;
   int _documentGeneration = 0;
   int _scheduledExternalRevision = -1;
   String _lastMarkdown = '';
   String? _codecFailure;
+  String? diagnosticId;
   RichEditorOperationFailure? _operationFailure;
   int _serializedLength = 0;
   List<MarkdownCodecIssue> _issues = const [];
@@ -119,7 +140,28 @@ class RichEditorSession extends ChangeNotifier {
   int get characterCount =>
       controller.document.toPlainText().trimRight().length;
 
-  set readOnly(bool value) => controller.readOnly = value;
+  bool get isSourceProtected => _protectedSourceSignature != null;
+  bool get canCloseProtectedSource =>
+      isSourceProtected && _protectedSourceSignature == _documentSignature();
+
+  set readOnly(bool value) {
+    _externallyReadOnly = value;
+    controller.readOnly = value || isSourceProtected;
+  }
+
+  void _protectUnsupportedSource(String source, MarkdownDeltaDocument decoded) {
+    final compatibility = MarkdownEditingCompatibility.assess(
+      source,
+      blockAlignment: blockAlignment,
+      imageAlignment: imageAlignment,
+      decoded: decoded,
+    );
+    _protectedSourceSignature = compatibility.edit
+        ? null
+        : _documentSignature();
+    _codecFailure = compatibility.edit ? null : '这段内容暂不支持编辑，原文已保留。';
+    controller.readOnly = _externallyReadOnly || isSourceProtected;
+  }
 
   Map<ShortcutActivator, Intent> get clipboardShortcuts => {
     const SingleActivator(LogicalKeyboardKey.keyC, control: true):
@@ -281,6 +323,7 @@ class RichEditorSession extends ChangeNotifier {
   void scheduleExternalMarkdown({
     required String markdown,
     required int revision,
+    Map<String, MediaDisplay>? mediaDisplays,
     RichEditorSelectionPlacement selection =
         RichEditorSelectionPlacement.preserve,
   }) {
@@ -289,17 +332,23 @@ class RichEditorSession extends ChangeNotifier {
     final binding = WidgetsBinding.instance;
     binding.addPostFrameCallback((_) {
       if (_disposed || revision != _scheduledExternalRevision) return;
-      applyExternalMarkdown(markdown, selection: selection);
+      applyExternalMarkdown(
+        markdown,
+        selection: selection,
+        mediaDisplays: mediaDisplays,
+      );
     });
     binding.ensureVisualUpdate();
   }
 
   void applyExternalMarkdown(
     String markdown, {
+    Map<String, MediaDisplay>? mediaDisplays,
     RichEditorSelectionPlacement selection =
         RichEditorSelectionPlacement.preserve,
   }) {
     _codecTimer?.cancel();
+    if (mediaDisplays != null) _mediaDisplays = Map.unmodifiable(mediaDisplays);
     _applyingDocument = true;
     _documentGeneration += 1;
     try {
@@ -318,10 +367,12 @@ class RichEditorSession extends ChangeNotifier {
       );
       _issues = decoded.issues;
       _codecFailure = null;
+      diagnosticId = null;
       _operationFailure = null;
       _lastMarkdown = markdown;
       _serializedLength = markdown.length;
       _dirty = false;
+      _protectUnsupportedSource(markdown, decoded);
     } on Object catch (error) {
       _codecFailure = '恢复正文时发生错误：$error';
     } finally {
@@ -339,17 +390,19 @@ class RichEditorSession extends ChangeNotifier {
     await Future<void>.microtask(() {});
     final paste = _pasteInFlight;
     if (paste != null && !await paste) return false;
-    return _flushCurrentDelta();
+    return _flushCurrentDelta(reportFailure: true);
   }
 
-  bool _flushCurrentDelta() {
+  bool _flushCurrentDelta({bool reportFailure = false}) {
     _codecTimer?.cancel();
     _codecTimer = null;
+    if (isSourceProtected) return false;
     try {
       final markdown = MarkdownDeltaCodec.encode(
         controller.document.toDelta(),
         imageAlignment: imageAlignment,
       );
+      MarkdownSubmissionGuard.validate(markdown);
       _serializedLength = markdown.length;
       if (_serializedLength > maximumSerializedLength) {
         _setOperationFailure(
@@ -370,7 +423,17 @@ class RichEditorSession extends ChangeNotifier {
       }
       notifyListeners();
       return true;
-    } on MarkdownCodecException catch (error) {
+    } on MarkdownCodecException catch (error, stack) {
+      if (reportFailure || _codecFailure == null) {
+        diagnosticId = FailureDiagnostics.instance.capture(
+          error,
+          stackTrace: stack,
+          stage: DiagnosticStage.encode,
+          operation:
+              DiagnosticAttempt.current?.operation ??
+              DiagnosticOperation.editorEncode,
+        );
+      }
       _codecFailure = error.message;
       notifyListeners();
       return false;
@@ -408,25 +471,30 @@ class RichEditorSession extends ChangeNotifier {
       });
     }
 
-    controller.compose(change, controller.selection, ChangeSource.local);
     final cursor =
         start +
         (needsLeadingNewline ? 1 : 0) +
         1 +
         (needsTrailingNewline || end < plainText.length - 1 ? 1 : 0);
-    controller.updateSelection(
-      TextSelection.collapsed(offset: cursor),
-      ChangeSource.local,
-    );
+    controller.runEditCommand(() {
+      controller.compose(change, controller.selection, ChangeSource.local);
+      controller.updateSelection(
+        TextSelection.collapsed(offset: cursor),
+        ChangeSource.local,
+      );
+    });
     focusNode.requestFocus();
     _flushCurrentDelta();
   }
 
   void insertBlockImage({
     required String url,
+    MediaDisplay? display,
     String alt = '图片',
     String? title,
   }) {
+    if (controller.readOnly) return;
+    if (display != null) _mediaDisplays = {..._mediaDisplays, url: display};
     _replaceSelectionWithBlockEmbed(
       Embeddable(MarkdownDeltaCodec.imageEmbed, {
         'version': 1,
@@ -442,9 +510,11 @@ class RichEditorSession extends ChangeNotifier {
     required TextSelection selection,
     required String assetId,
     required String url,
+    MediaDisplay? display,
     String alt = '表情',
   }) {
     if (controller.readOnly) return;
+    if (display != null) _mediaDisplays = {..._mediaDisplays, url: display};
     _replaceSelectionWithInlineEmbed(
       Embeddable(MarkdownDeltaCodec.stickerEmbed, {
         'version': 1,
@@ -779,122 +849,10 @@ class RichEditorSession extends ChangeNotifier {
       Clipboard.setData(ClipboardData(text: text));
 }
 
-/// Marks literal source at the exact offset before async changes can race.
-class _LiteralTextQuillController extends QuillController {
-  _LiteralTextQuillController({
-    required super.document,
-    required super.selection,
-    required super.config,
-  });
-  @override
-  void replaceText(
-    int index,
-    int len,
-    Object? data,
-    TextSelection? textSelection, {
-    bool ignoreFocus = false,
-    bool shouldNotifyListeners = true,
-  }) {
-    final before = document.toDelta();
-    if (data == ' ' && len == 0 && index > 0) {
-      final left = document.collectStyle(index - 1, 1).attributes;
-      final right = document.collectStyle(index, 1).attributes;
-      for (final entry in left.entries) {
-        if (entry.value.isInline &&
-            entry.value.value != right[entry.key]?.value &&
-            !toggledStyle.attributes.containsKey(entry.key)) {
-          toggledStyle = toggledStyle.put(Attribute.clone(entry.value, null));
-        }
-      }
-    }
-    final internalReference = data is String
-        ? WenyouEditorClipboardPastePlanner.internalReferenceDelta(
-            data,
-            len == 0 ? '' : document.getPlainText(index, len),
-          )
-        : null;
-    final effectiveData = internalReference ?? data;
-    final effectiveSelection = internalReference == null
-        ? textSelection
-        : TextSelection.collapsed(offset: index + 1);
-    if (_containsEmbed(effectiveData)) {
-      // Quill applies pending inline toolbar styles to every replacement,
-      // including embeds. Protocol nodes must remain attribute-free so the
-      // Markdown codec can persist them without weakening its fail-closed
-      // validation.
-      toggledStyle = const Style();
-    }
-    super.replaceText(
-      index,
-      len,
-      effectiveData,
-      effectiveSelection,
-      ignoreFocus: ignoreFocus,
-      shouldNotifyListeners: shouldNotifyListeners,
-    );
-    final insertedLength = switch (effectiveData) {
-      String value => value.length,
-      Delta value => MarkdownDeltaLineMetadata.documentLength(value),
-      Embeddable() => 1,
-      _ => 0,
-    };
-    final sourceSeparatorPatch = MarkdownDeltaLineMetadata.sourceSeparatorPatch(
-      before: before,
-      after: document.toDelta(),
-      index: index,
-      replacedLength: len,
-      insertedLength: insertedLength,
-      insertedDelta: effectiveData is Delta ? effectiveData : null,
-    );
-    if (sourceSeparatorPatch.isNotEmpty) {
-      document.compose(sourceSeparatorPatch, ChangeSource.local);
-    }
-    repairEditorTrailingNewlineAlignment(
-      controller: this,
-      before: before,
-      insertedData: effectiveData,
-      replacedLength: len,
-      selection: effectiveSelection,
-    );
-    if (effectiveData is! String || effectiveData.isEmpty) return;
-
-    final formatting = Delta();
-    var formattingOffset = 0;
-    var sourceOffset = 0;
-    while (sourceOffset < effectiveData.length) {
-      final newline = effectiveData.indexOf('\n', sourceOffset);
-      final end = newline < 0 ? effectiveData.length : newline;
-      if (end > sourceOffset) {
-        final start = index + sourceOffset;
-        if (start > formattingOffset) {
-          formatting.retain(start - formattingOffset);
-        }
-        formatting.retain(end - sourceOffset, {
-          MarkdownDeltaCodec.literalTextAttribute: true,
-        });
-        formattingOffset = start + end - sourceOffset;
-      }
-      if (newline < 0) break;
-      sourceOffset = newline + 1;
-    }
-    if (formatting.isNotEmpty) {
-      document.compose(formatting, ChangeSource.local);
-    }
-  }
-
-  static bool _containsEmbed(Object? data) => switch (data) {
-    Embeddable() => true,
-    Delta value => value.operations.any(
-      (operation) => operation.isInsert && operation.data is Map,
-    ),
-    _ => false,
-  };
-}
-
-enum WenyouEditorClipboardAction { copy, cut, paste }
-
 class _EditorClipboardIntent extends Intent {
   const _EditorClipboardIntent(this.action);
 
   final WenyouEditorClipboardAction action;
 }
+
+enum WenyouEditorClipboardAction { copy, cut, paste }

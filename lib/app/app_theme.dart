@@ -60,53 +60,63 @@ abstract final class AppTheme {
     final baseTextTheme =
         (brightness == Brightness.dark ? ThemeData.dark() : ThemeData.light())
             .textTheme
-            .apply(
-              fontFamily: WenyouFoundationTypography.body,
-              fontFamilyFallback: WenyouFoundationTypography.chineseFallback,
-              bodyColor: tokens.text,
-              displayColor: tokens.text,
-            );
+            .apply(bodyColor: tokens.text, displayColor: tokens.text);
+    final pageTitle = wenyouFoundationTypeStyle(
+      baseTextTheme.displayLarge!,
+      'pageTitle',
+    );
+    final sectionTitle = wenyouFoundationTypeStyle(
+      baseTextTheme.headlineMedium!,
+      'sectionTitle',
+    );
+    final subsectionTitle = wenyouFoundationTypeStyle(
+      baseTextTheme.headlineSmall!,
+      'subsectionTitle',
+    );
+    final body = wenyouFoundationTypeStyle(baseTextTheme.bodyLarge!, 'body');
+    final compactBody = wenyouFoundationTypeStyle(
+      baseTextTheme.bodyMedium!,
+      'compactBody',
+    );
+    final label = wenyouFoundationTypeStyle(baseTextTheme.labelLarge!, 'label');
+    final caption = wenyouFoundationTypeStyle(
+      baseTextTheme.bodySmall!,
+      'caption',
+      color: tokens.mutedText,
+    );
     final textTheme = baseTextTheme.copyWith(
-      headlineSmall: baseTextTheme.headlineSmall?.copyWith(
-        fontSize: _typeSize('pageTitle'),
-        height: _typeHeight('pageTitle'),
-        fontWeight: _typeWeight('pageTitle'),
-      ),
-      titleLarge: baseTextTheme.titleLarge?.copyWith(
-        fontSize: _typeSize('sectionTitle'),
-        height: _typeHeight('sectionTitle'),
+      displayLarge: pageTitle,
+      displayMedium: pageTitle,
+      displaySmall: pageTitle,
+      headlineLarge: pageTitle,
+      headlineMedium: sectionTitle,
+      headlineSmall: subsectionTitle,
+      titleLarge: wenyouFoundationTypeStyle(
+        baseTextTheme.titleLarge!,
+        'sectionTitle',
         fontWeight: FontWeight.w600,
       ),
-      titleMedium: baseTextTheme.titleMedium?.copyWith(
-        fontSize: _typeSize('subsectionTitle'),
-        height: _typeHeight('subsectionTitle'),
+      titleMedium: wenyouFoundationTypeStyle(
+        baseTextTheme.titleMedium!,
+        'subsectionTitle',
         fontWeight: FontWeight.w600,
       ),
-      bodyLarge: baseTextTheme.bodyLarge?.copyWith(
-        fontSize: _typeSize('body'),
-        height: _typeHeight('body'),
-        fontWeight: _typeWeight('body'),
+      titleSmall: wenyouFoundationTypeStyle(
+        baseTextTheme.titleSmall!,
+        'compactBody',
+        fontWeight: FontWeight.w600,
       ),
-      bodyMedium: baseTextTheme.bodyMedium?.copyWith(
-        fontSize: _typeSize('compactBody'),
-        height: _typeHeight('compactBody'),
-        fontWeight: _typeWeight('compactBody'),
-      ),
-      bodySmall: baseTextTheme.bodySmall?.copyWith(
-        fontSize: _typeSize('caption'),
-        height: _typeHeight('caption'),
-        fontWeight: _typeWeight('caption'),
+      bodyLarge: body,
+      bodyMedium: compactBody,
+      bodySmall: caption,
+      labelLarge: label,
+      labelMedium: wenyouFoundationTypeStyle(
+        baseTextTheme.labelMedium!,
+        'caption',
+        fontWeight: FontWeight.w500,
         color: tokens.mutedText,
       ),
-      labelSmall: baseTextTheme.labelSmall?.copyWith(
-        fontFamily: WenyouFoundationTypography.utility,
-        fontFamilyFallback: WenyouFoundationTypography.chineseFallback,
-      ),
-      labelLarge: baseTextTheme.labelLarge?.copyWith(
-        fontSize: _typeSize('label'),
-        height: _typeHeight('label'),
-        fontWeight: _typeWeight('label'),
-      ),
+      labelSmall: caption,
     );
     final rounded16 = RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(tokens.radius16),
@@ -176,7 +186,7 @@ abstract final class AppTheme {
                 ? tokens.mutedText
                 : tokens.onActionSurface,
           ),
-          textStyle: WidgetStatePropertyAll(textTheme.labelLarge),
+          textStyle: WidgetStatePropertyAll(textTheme.wenyouLabel),
           animationDuration: tokens.feedbackDuration,
         ),
       ),
@@ -196,7 +206,7 @@ abstract final class AppTheme {
         style: ButtonStyle(
           minimumSize: WidgetStatePropertyAll(controlSize),
           foregroundColor: WidgetStatePropertyAll(tokens.text),
-          textStyle: WidgetStatePropertyAll(textTheme.labelLarge),
+          textStyle: WidgetStatePropertyAll(textTheme.wenyouLabel),
           animationDuration: tokens.feedbackDuration,
         ),
       ),
@@ -216,8 +226,10 @@ abstract final class AppTheme {
           horizontal: 16,
           vertical: 14,
         ),
-        labelStyle: TextStyle(color: tokens.mutedText),
-        helperStyle: TextStyle(color: tokens.mutedText),
+        labelStyle: textTheme.wenyouCompactBody.copyWith(
+          color: tokens.mutedText,
+        ),
+        helperStyle: textTheme.wenyouCaption,
         prefixIconColor: tokens.mutedText,
         suffixIconColor: tokens.mutedText,
         border: _inputBorder(tokens.border, tokens.radius16),
@@ -268,10 +280,9 @@ abstract final class AppTheme {
           borderRadius: BorderRadius.circular(tokens.radiusPill),
         ),
         padding: EdgeInsets.symmetric(horizontal: tokens.space8),
-        labelStyle: textTheme.labelMedium?.copyWith(color: tokens.text),
-        secondaryLabelStyle: textTheme.labelMedium?.copyWith(
+        labelStyle: textTheme.wenyouLabel.copyWith(color: tokens.text),
+        secondaryLabelStyle: textTheme.wenyouLabel.copyWith(
           color: tokens.brandForeground,
-          fontWeight: FontWeight.w700,
         ),
       ),
       listTileTheme: ListTileThemeData(
@@ -286,7 +297,9 @@ abstract final class AppTheme {
       badgeTheme: BadgeThemeData(
         backgroundColor: tokens.brandForeground,
         textColor: tokens.panel,
-        textStyle: textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w700),
+        textStyle: textTheme.wenyouUtilityCaption.copyWith(
+          fontWeight: FontWeight.w700,
+        ),
         padding: EdgeInsets.symmetric(horizontal: tokens.space4),
       ),
       navigationBarTheme: NavigationBarThemeData(
@@ -295,7 +308,7 @@ abstract final class AppTheme {
         height: 68,
         elevation: 0,
         labelTextStyle: WidgetStateProperty.resolveWith(
-          (states) => textTheme.labelSmall?.copyWith(
+          (states) => textTheme.wenyouCaption.copyWith(
             color: states.contains(WidgetState.selected)
                 ? tokens.text
                 : tokens.mutedText,
@@ -315,6 +328,8 @@ abstract final class AppTheme {
       dialogTheme: DialogThemeData(
         backgroundColor: tokens.panel,
         elevation: WenyouOverlayContract.elevation['popup'],
+        titleTextStyle: textTheme.wenyouOverlayTitle,
+        contentTextStyle: textTheme.wenyouBody,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(tokens.radius20),
         ),
@@ -339,10 +354,15 @@ abstract final class AppTheme {
       ),
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
-        backgroundColor: tokens.text,
-        contentTextStyle: TextStyle(color: tokens.panel),
+        backgroundColor: tokens.panel,
+        elevation: WenyouOverlayContract.elevation['floating'],
+        insetPadding: EdgeInsets.all(tokens.space16),
+        contentTextStyle: textTheme.wenyouCompactBody.copyWith(
+          color: tokens.text,
+        ),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(tokens.radius12),
+          borderRadius: BorderRadius.circular(tokens.radius16),
+          side: BorderSide(color: tokens.border),
         ),
       ),
     );
@@ -357,16 +377,5 @@ abstract final class AppTheme {
       borderRadius: BorderRadius.circular(radius),
       borderSide: BorderSide(color: color, width: width),
     );
-  }
-
-  static double _typeSize(String role) =>
-      WenyouFoundationTypography.mobileSizes[role]!;
-
-  static double _typeHeight(String role) =>
-      WenyouFoundationTypography.mobileLineHeights[role]!;
-
-  static FontWeight _typeWeight(String role) {
-    final weight = WenyouFoundationTypography.mobileWeights[role]!;
-    return FontWeight.values[(weight ~/ 100) - 1];
   }
 }

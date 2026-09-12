@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:wenyousite_mobile/core/diagnostics/diagnostic_widgets.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
 
@@ -29,14 +30,21 @@ class MediaUploadStatusBanner extends StatelessWidget {
       return WenyouStatusBanner(
         message: currentFailure.userMessage,
         detail: currentFailure.resolvedPresentation.problemDetail,
-        tone: WenyouStatusTone.error,
-        action: currentFailure.canRetry && onRetry != null
-            ? TextButton(
+        tone: state.phase == MediaUploadTaskPhase.processingPending
+            ? WenyouStatusTone.neutral
+            : WenyouStatusTone.error,
+        action: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            CopyDiagnosticButton(diagnosticId: currentFailure.diagnosticId),
+            if (currentFailure.canRetry && onRetry != null)
+              TextButton(
                 key: retryKey,
                 onPressed: onRetry,
-                child: Text(retryLabel),
-              )
-            : null,
+                child: Text(state.pendingUpload == null ? retryLabel : '继续查询'),
+              ),
+          ],
+        ),
       );
     }
     if (!state.isBusy) return const SizedBox.shrink();

@@ -3,6 +3,7 @@
 //
 
 // ignore_for_file: unused_element
+import 'package:wenyou_api/src/model/markdown_media_display_response_dto.dart';
 import 'package:wenyou_api/src/model/dice_roll_response_dto.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:wenyou_api/src/model/post_author_response_dto.dart';
@@ -14,6 +15,7 @@ part 'post_response_dto.g.dart';
 /// PostResponseDto
 ///
 /// Properties:
+/// * [mediaDisplays] - 仅此次已授权正文中的精确来源映射；编辑保存继续使用 sourceUrl
 /// * [id]
 /// * [threadId]
 /// * [subthreadId]
@@ -33,6 +35,10 @@ part 'post_response_dto.g.dart';
 /// * [author]
 @BuiltValue()
 abstract class PostResponseDto implements Built<PostResponseDto, PostResponseDtoBuilder> {
+  /// 仅此次已授权正文中的精确来源映射；编辑保存继续使用 sourceUrl
+  @BuiltValueField(wireName: r'mediaDisplays')
+  BuiltList<MarkdownMediaDisplayResponseDto>? get mediaDisplays;
+
   @BuiltValueField(wireName: r'id')
   String get id;
 
@@ -113,6 +119,13 @@ class _$PostResponseDtoSerializer implements PrimitiveSerializer<PostResponseDto
     PostResponseDto object, {
     FullType specifiedType = FullType.unspecified,
   }) sync* {
+    if (object.mediaDisplays != null) {
+      yield r'mediaDisplays';
+      yield serializers.serialize(
+        object.mediaDisplays,
+        specifiedType: const FullType(BuiltList, [FullType(MarkdownMediaDisplayResponseDto)]),
+      );
+    }
     yield r'id';
     yield serializers.serialize(
       object.id,
@@ -223,6 +236,13 @@ class _$PostResponseDtoSerializer implements PrimitiveSerializer<PostResponseDto
       final key = serializedList[i] as String;
       final value = serializedList[i + 1];
       switch (key) {
+        case r'mediaDisplays':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(BuiltList, [FullType(MarkdownMediaDisplayResponseDto)]),
+          ) as BuiltList<MarkdownMediaDisplayResponseDto>;
+          result.mediaDisplays.replace(valueDes);
+          break;
         case r'id':
           final valueDes = serializers.deserialize(
             value,

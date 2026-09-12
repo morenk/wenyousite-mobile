@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/social/data/user_relation_list_repository.dart';
 import 'package:wenyousite_mobile/features/social/data/user_relation_repository.dart';
 import 'package:wenyousite_mobile/features/social/domain/user_relation_list_models.dart';
@@ -58,10 +59,14 @@ void main() {
   });
 
   testWidgets('取消拉黑失败保留条目，重试成功后移除', (tester) async {
-    final relationRepository = _FakeRelationRepository(failUnblock: true);
+    final listRepository = _FakeListRepository();
+    final relationRepository = _FakeRelationRepository(
+      failUnblock: true,
+      onUnblock: () => listRepository.empty = true,
+    );
     await tester.pumpWidget(
       _relationApp(
-        repository: _FakeListRepository(),
+        repository: listRepository,
         relationRepository: relationRepository,
         target: const UserRelationListTarget.current(
           kind: UserRelationListKind.blocks,
@@ -69,6 +74,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    expect(find.byType(WenyouSettingsTypography), findsOneWidget);
 
     await tester.tap(find.byKey(const ValueKey('unblock-user-1')));
     await tester.pumpAndSettle();
@@ -81,6 +87,7 @@ void main() {
     expect(find.text('温柔旅人'), findsNothing);
     expect(find.text('黑名单为空'), findsOneWidget);
     expect(find.text('已取消拉黑。'), findsOneWidget);
+    expect(listRepository.calls, 2);
   });
 
   for (final width in [360.0, 400.0, 600.0]) {
@@ -139,7 +146,7 @@ class _FakeListRepository implements UserRelationListRepository {
   _FakeListRepository({this.failFirst = false, this.empty = false});
 
   final bool failFirst;
-  final bool empty;
+  bool empty;
   int calls = 0;
   int followerCalls = 0;
   String? lastFollowingUserId;
@@ -184,9 +191,10 @@ class _FakeListRepository implements UserRelationListRepository {
 }
 
 class _FakeRelationRepository implements UserRelationRepository {
-  _FakeRelationRepository({this.failUnblock = false});
+  _FakeRelationRepository({this.failUnblock = false, this.onUnblock});
 
   bool failUnblock;
+  final void Function()? onUnblock;
 
   @override
   Future<void> unblock(String userId) async {
@@ -196,6 +204,7 @@ class _FakeRelationRepository implements UserRelationRepository {
         requestId: 'unblock-request-id',
       );
     }
+    onUnblock?.call();
   }
 
   @override

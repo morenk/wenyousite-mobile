@@ -8,6 +8,8 @@ import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/network/session_controller.dart';
 import 'package:wenyousite_mobile/core/network/session_remote.dart';
 import 'package:wenyousite_mobile/core/storage/token_store.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
+import 'package:wenyousite_mobile/features/settings/application/account_deletion_controller.dart';
 import 'package:wenyousite_mobile/features/settings/data/account_deletion_repository.dart';
 import 'package:wenyousite_mobile/features/settings/presentation/delete_account_page.dart';
 
@@ -15,6 +17,7 @@ void main() {
   testWidgets('确认短语和最终确认通过后注销并回到游客首页', (tester) async {
     final repository = _FakeAccountDeletionRepository();
     final harness = await _pumpPage(tester, repository);
+    expect(find.byType(WenyouSettingsTypography), findsOneWidget);
 
     await tester.ensureVisible(find.byKey(const Key('delete-account-submit')));
     await tester.tap(find.byKey(const Key('delete-account-submit')));
@@ -134,7 +137,12 @@ Future<_Harness> _pumpPage(
       final authenticated = container
           .read(sessionControllerProvider)
           .isAuthenticated;
-      if (!authenticated && state.matchedLocation == '/delete-account') {
+      final cleanupPending = container
+          .read(accountDeletionControllerProvider)
+          .remoteDeletionConfirmed;
+      if (!authenticated &&
+          !cleanupPending &&
+          state.matchedLocation == '/delete-account') {
         return '/home';
       }
       return null;

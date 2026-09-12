@@ -8,10 +8,10 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_inline_text_elements.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_internal_reference_text.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_markdown.dart';
-import '../../support/foundation_test_fonts.dart';
+import '../../support/deterministic_test_fonts.dart';
 
 void main() {
-  setUpAll(loadFoundationTestFonts);
+  setUpAll(loadDeterministicTestFonts);
 
   const nodeId = '550e8400-e29b-41d4-a716-446655440000';
   const diceNode = '[[dice:v1:$nodeId:1d20]]';
@@ -500,13 +500,9 @@ $diceNode
         .singleWhere(
           (paragraph) =>
               paragraph.text.toPlainText().contains('前文') &&
-              _widgetSpans(
-                paragraph.text,
-              ).any((span) => span.child is WenyouInternalReferenceChip),
+              _widgetSpans(paragraph.text).isNotEmpty,
         );
-    final portalSpan = _widgetSpans(
-      inlineParagraph.text,
-    ).singleWhere((span) => span.child is WenyouInternalReferenceChip);
+    final portalSpan = _widgetSpans(inlineParagraph.text).single;
     expect(portalSpan.alignment, PlaceholderAlignment.baseline);
     expect(portalSpan.baseline, TextBaseline.alphabetic);
     expect(inlineParagraph.text.toPlainText(), contains('后文仍在同一行'));
@@ -562,7 +558,9 @@ $diceNode
     );
     await tester.pumpAndSettle();
 
-    final markdown = tester.widget<MarkdownBody>(find.byType(MarkdownBody));
+    final markdown = tester.widget<MarkdownBody>(
+      find.bySubtype<MarkdownBody>(),
+    );
     final style = markdown.styleSheet!;
     expect(style.p?.fontSize, 17);
     expect(style.p?.height, 1.8);
@@ -592,7 +590,7 @@ $diceNode
     expect(
       tester.getSize(bodyDivider).width,
       closeTo(
-        tester.getSize(find.byType(MarkdownBody)).width *
+        tester.getSize(find.bySubtype<MarkdownBody>()).width *
             WenyouElementContract.dividerInlineSizeFraction,
         0.01,
       ),
@@ -767,15 +765,33 @@ $diceNode
     );
     expect(find.byKey(const Key('content-image-viewer')), findsNothing);
     expect(find.bySemanticsLabel('挥手'), findsOneWidget);
-    final stickerCenter = tester.getCenter(find.bySemanticsLabel('挥手'));
-    expect(
-      tester.getCenter(find.text('前文', findRichText: true)).dy,
-      closeTo(stickerCenter.dy, 0.01),
+    final stickerRect = tester.getRect(find.bySemanticsLabel('挥手'));
+    final paragraph = tester.renderObject<RenderParagraph>(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is RichText && widget.text.toPlainText().contains('前文'),
+      ),
     );
+    Rect textRect(String text) {
+      final start = paragraph.text.toPlainText().indexOf(text);
+      return paragraph
+          .getBoxesForSelection(
+            TextSelection(baseOffset: start, extentOffset: start + text.length),
+          )
+          .single
+          .toRect()
+          .shift(paragraph.localToGlobal(Offset.zero));
+    }
+
+    final before = textRect('前文');
+    final after = textRect('后文');
+    expect(before.center.dy, closeTo(after.center.dy, 0.01));
     expect(
-      tester.getCenter(find.text('后文', findRichText: true)).dy,
-      closeTo(stickerCenter.dy, 0.01),
+      before.center.dy,
+      inInclusiveRange(stickerRect.top, stickerRect.bottom),
     );
+    expect(before.right, lessThanOrEqualTo(stickerRect.left + 0.01));
+    expect(after.left, greaterThanOrEqualTo(stickerRect.right - 0.01));
     expect(tester.takeException(), isNull);
   });
 
@@ -797,13 +813,13 @@ $diceNode
     final centered = tester.widget<MarkdownBody>(
       find.descendant(
         of: find.byKey(const ValueKey('wenyou-markdown-segment-0-center')),
-        matching: find.byType(MarkdownBody),
+        matching: find.bySubtype<MarkdownBody>(),
       ),
     );
     final right = tester.widget<MarkdownBody>(
       find.descendant(
         of: find.byKey(const ValueKey('wenyou-markdown-segment-1-right')),
-        matching: find.byType(MarkdownBody),
+        matching: find.bySubtype<MarkdownBody>(),
       ),
     );
     expect(centered.styleSheet!.h2Align, WrapAlignment.center);

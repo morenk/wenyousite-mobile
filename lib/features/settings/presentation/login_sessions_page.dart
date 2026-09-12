@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/settings/application/login_sessions_controller.dart';
@@ -14,7 +15,7 @@ class LoginSessionsPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(loginSessionsControllerProvider);
     final notifier = ref.read(loginSessionsControllerProvider.notifier);
-    return Scaffold(
+    final page = Scaffold(
       appBar: AppBar(title: const Text('登录终端')),
       body: switch (state.phase) {
         LoginSessionsPhase.loading => const WenyouPageBody(
@@ -46,6 +47,7 @@ class LoginSessionsPage extends ConsumerWidget {
         ),
       },
     );
+    return WenyouSettingsTypography(child: page);
   }
 
   Future<void> _confirmAndRevoke(
@@ -74,7 +76,7 @@ class LoginSessionsPage extends ConsumerWidget {
     if (confirmed != true) return;
     final succeeded = await notifier.revokeSession(session.id);
     if (!context.mounted || !succeeded) return;
-    showWenyouSnackBar(context, '该登录终端已退出。');
+    showWenyouSnackBar(context, '该登录终端已退出。', tone: WenyouSnackBarTone.success);
   }
 }
 
@@ -181,10 +183,10 @@ class _LoginSessionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
-    final titleStyle = Theme.of(context).textTheme.titleMedium;
+    final titleStyle = Theme.of(context).textTheme.wenyouRowTitle;
     final detailStyle = Theme.of(
       context,
-    ).textTheme.bodySmall?.copyWith(color: tokens.mutedText);
+    ).textTheme.wenyouCaption.copyWith(color: tokens.mutedText);
     return WenyouPanel(
       key: ValueKey('login-session-${session.id}'),
       child: Column(
@@ -291,7 +293,7 @@ class _CurrentSessionPill extends StatelessWidget {
         '当前终端',
         style: Theme.of(
           context,
-        ).textTheme.labelSmall?.copyWith(color: tokens.brandForeground),
+        ).textTheme.wenyouCaption.copyWith(color: tokens.brandForeground),
       ),
     );
   }

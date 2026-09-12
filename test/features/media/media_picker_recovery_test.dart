@@ -8,6 +8,22 @@ import 'package:wenyousite_mobile/features/media/data/media_picker_recovery.dart
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
 
 void main() {
+  test('恢复上下文读取失败不阻塞启动也不消费系统图片', () async {
+    var retrieved = false;
+    final result = await recoverLostEditorMediaSelection(
+      isAndroid: true,
+      contextStore: _UnreadableRecoveryContextStore(),
+      retrieve: () async {
+        retrieved = true;
+        return LostDataResponse.empty();
+      },
+    );
+    final recovered = RecoveredMediaSelectionStore.fromResult(result);
+    expect(retrieved, isFalse);
+    expect(recovered.take(MediaUploadPurpose.moment), isEmpty);
+    expect(recovered.failure?.userMessage, '上次选择的图片没有恢复，请重新选择。');
+  });
+
   test('文件型图片输入只在准备上传时读取字节', () async {
     final directory = await Directory.systemTemp.createTemp('wenyou-media-');
     addTearDown(() => directory.delete(recursive: true));
@@ -109,4 +125,14 @@ class _MemoryRecoveryContextStore implements MediaPickerRecoveryContextStore {
 
   @override
   Future<MediaUploadPurpose?> read() async => purpose;
+}
+
+class _UnreadableRecoveryContextStore extends Fake
+    implements MediaPickerRecoveryContextStore {
+  @override
+  Future<MediaUploadPurpose?> read() =>
+      Future.error(StateError('Local read failed.'));
+
+  @override
+  Future<void> clear() async {}
 }

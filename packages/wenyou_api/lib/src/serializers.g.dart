@@ -247,7 +247,10 @@ Serializers _$serializers =
           ..add(LoginDto.serializer)
           ..add(LogoutDto.serializer)
           ..add(MarkDirectConversationReadDto.serializer)
+          ..add(MarkdownMediaDisplayResponseDto.serializer)
           ..add(MediaConfirmUpload200Response.serializer)
+          ..add(MediaDisplayResponseDto.serializer)
+          ..add(MediaDisplayResponseDtoContentTypeEnum.serializer)
           ..add(MediaGetMedia200Response.serializer)
           ..add(MediaGetUploadUrl201Response.serializer)
           ..add(MediaReissueUploadUrl200Response.serializer)
@@ -426,10 +429,14 @@ Serializers _$serializers =
           ..add(SanctionUserDto.serializer)
           ..add(SanctionUserDtoTypeEnum.serializer)
           ..add(SaveThreadAggregateDto.serializer)
+          ..add(
+            SaveThreadAggregateDtoDefaultSubthreadPostingPolicyEnum.serializer,
+          )
           ..add(SaveThreadAggregateDtoStatusEnum.serializer)
           ..add(SaveThreadAggregateDtoVisibilityEnum.serializer)
           ..add(SearchAuthorResponseDto.serializer)
           ..add(SearchPostResponseDto.serializer)
+          ..add(SearchPostResponseDtoKindEnum.serializer)
           ..add(SearchResultResponseDto.serializer)
           ..add(SearchSearch200Response.serializer)
           ..add(SearchSearchMoments200Response.serializer)
@@ -492,6 +499,8 @@ Serializers _$serializers =
           ..add(ThreadCategoryInfoDto.serializer)
           ..add(ThreadCategoryResponseDto.serializer)
           ..add(ThreadCountResponseDto.serializer)
+          ..add(ThreadCoverMediaResponseDto.serializer)
+          ..add(ThreadCoverPreviewVariantResponseDto.serializer)
           ..add(ThreadDetailResponseDto.serializer)
           ..add(ThreadDetailResponseDtoStatusEnum.serializer)
           ..add(ThreadDetailResponseDtoVisibilityEnum.serializer)
@@ -724,40 +733,6 @@ Serializers _$serializers =
           )
           ..addBuilderFactory(
             const FullType(BuiltList, const [
-              const FullType(DiceRollResponseDto),
-            ]),
-            () => ListBuilder<DiceRollResponseDto>(),
-          )
-          ..addBuilderFactory(
-            const FullType(BuiltList, const [
-              const FullType(DiceRollResponseDto),
-            ]),
-            () => ListBuilder<DiceRollResponseDto>(),
-          )
-          ..addBuilderFactory(
-            const FullType(BuiltList, const [
-              const FullType(DiceRollResponseDto),
-            ]),
-            () => ListBuilder<DiceRollResponseDto>(),
-          )
-          ..addBuilderFactory(
-            const FullType(BuiltList, const [
-              const FullType(DiceRollResponseDto),
-            ]),
-            () => ListBuilder<DiceRollResponseDto>(),
-          )
-          ..addBuilderFactory(
-            const FullType(BuiltList, const [
-              const FullType(DiceRollResponseDto),
-            ]),
-            () => ListBuilder<DiceRollResponseDto>(),
-          )
-          ..addBuilderFactory(
-            const FullType(BuiltList, const [const FullType(ReplyResponseDto)]),
-            () => ListBuilder<ReplyResponseDto>(),
-          )
-          ..addBuilderFactory(
-            const FullType(BuiltList, const [
               const FullType(DirectConversationResponseDto),
             ]),
             () => ListBuilder<DirectConversationResponseDto>(),
@@ -799,6 +774,94 @@ Serializers _$serializers =
               const FullType(HomeThreadListItemResponseDto),
             ]),
             () => ListBuilder<HomeThreadListItemResponseDto>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [
+              const FullType(MarkdownMediaDisplayResponseDto),
+            ]),
+            () => ListBuilder<MarkdownMediaDisplayResponseDto>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [
+              const FullType(MarkdownMediaDisplayResponseDto),
+            ]),
+            () => ListBuilder<MarkdownMediaDisplayResponseDto>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [
+              const FullType(MarkdownMediaDisplayResponseDto),
+            ]),
+            () => ListBuilder<MarkdownMediaDisplayResponseDto>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [
+              const FullType(DiceRollResponseDto),
+            ]),
+            () => ListBuilder<DiceRollResponseDto>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [
+              const FullType(MarkdownMediaDisplayResponseDto),
+            ]),
+            () => ListBuilder<MarkdownMediaDisplayResponseDto>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [
+              const FullType(DiceRollResponseDto),
+            ]),
+            () => ListBuilder<DiceRollResponseDto>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [
+              const FullType(MarkdownMediaDisplayResponseDto),
+            ]),
+            () => ListBuilder<MarkdownMediaDisplayResponseDto>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [
+              const FullType(DiceRollResponseDto),
+            ]),
+            () => ListBuilder<DiceRollResponseDto>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [
+              const FullType(MarkdownMediaDisplayResponseDto),
+            ]),
+            () => ListBuilder<MarkdownMediaDisplayResponseDto>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [
+              const FullType(DiceRollResponseDto),
+            ]),
+            () => ListBuilder<DiceRollResponseDto>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [
+              const FullType(MarkdownMediaDisplayResponseDto),
+            ]),
+            () => ListBuilder<MarkdownMediaDisplayResponseDto>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [
+              const FullType(DiceRollResponseDto),
+            ]),
+            () => ListBuilder<DiceRollResponseDto>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(ReplyResponseDto)]),
+            () => ListBuilder<ReplyResponseDto>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [
+              const FullType(MarkdownMediaDisplayResponseDto),
+            ]),
+            () => ListBuilder<MarkdownMediaDisplayResponseDto>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [
+              const FullType(RecentReplyDiceResponseDto),
+            ]),
+            () => ListBuilder<RecentReplyDiceResponseDto>(),
           )
           ..addBuilderFactory(
             const FullType(BuiltList, const [
@@ -928,12 +991,6 @@ Serializers _$serializers =
           )
           ..addBuilderFactory(
             const FullType(BuiltList, const [
-              const FullType(RecentReplyDiceResponseDto),
-            ]),
-            () => ListBuilder<RecentReplyDiceResponseDto>(),
-          )
-          ..addBuilderFactory(
-            const FullType(BuiltList, const [
               const FullType(RecentReplyResponseDto),
             ]),
             () => ListBuilder<RecentReplyResponseDto>(),
@@ -1059,6 +1116,12 @@ Serializers _$serializers =
               const FullType(ThreadCategoryResponseDto),
             ]),
             () => ListBuilder<ThreadCategoryResponseDto>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [
+              const FullType(ThreadCoverPreviewVariantResponseDto),
+            ]),
+            () => ListBuilder<ThreadCoverPreviewVariantResponseDto>(),
           )
           ..addBuilderFactory(
             const FullType(BuiltList, const [

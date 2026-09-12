@@ -6,6 +6,7 @@ import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/application/image_gallery.dart';
 import 'package:wenyousite_mobile/core/application/user_facing_failure.dart';
+import 'package:wenyousite_mobile/core/media/media_display.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_image_viewer_page.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
@@ -16,6 +17,7 @@ class ContentImageViewerPage extends ConsumerStatefulWidget {
     this.initialIndex = 0,
     this.onAddToStickers,
     this.closeKey,
+    this.imageBuilder,
     super.key,
   }) : assert(items.length > 0),
        assert(initialIndex >= 0 && initialIndex < items.length);
@@ -25,6 +27,7 @@ class ContentImageViewerPage extends ConsumerStatefulWidget {
     required String alt,
     List<String> fallbackUrls = const [],
     Object? id,
+    MediaDisplay? display,
     Future<String> Function(WenyouImageViewerItem item)? onAddToStickers,
     Key? key,
   }) {
@@ -37,6 +40,7 @@ class ContentImageViewerPage extends ConsumerStatefulWidget {
           fallbackUrls: fallbackUrls,
           semanticLabel: normalizedAlt.isEmpty ? '正文插图原图' : normalizedAlt,
           id: id,
+          display: display,
         ),
       ],
       onAddToStickers: onAddToStickers,
@@ -47,6 +51,8 @@ class ContentImageViewerPage extends ConsumerStatefulWidget {
   final int initialIndex;
   final Future<String> Function(WenyouImageViewerItem item)? onAddToStickers;
   final Key? closeKey;
+  final Widget? Function(BuildContext context, int index, bool current)?
+  imageBuilder;
 
   @override
   ConsumerState<ContentImageViewerPage> createState() =>
@@ -84,6 +90,7 @@ class _ContentImageViewerPageState
       closeTooltip: '关闭原图',
       closeKey: widget.closeKey,
       items: widget.items,
+      imageBuilder: widget.imageBuilder,
       initialIndex: widget.initialIndex,
       onPageChanged: (index) => setState(() => _index = index),
       titleBuilder: (index, count) {
@@ -165,13 +172,20 @@ class _ContentImageViewerPageState
       _failure = null;
     });
     final operation = gallery.startSave(
-      ImageGallerySource(url: item.url, fallbackUrls: item.fallbackUrls),
+      ImageGallerySource(
+        url: item.displayUrls.first,
+        fallbackUrls: item.displayUrls.skip(1).toList(growable: false),
+      ),
     );
     _saveOperation = operation;
     try {
       await operation.result;
       if (!mounted) return;
-      showWenyouSnackBar(context, '图片已保存到系统相册。');
+      showWenyouSnackBar(
+        context,
+        '图片已保存到系统相册。',
+        tone: WenyouSnackBarTone.success,
+      );
     } on Object catch (error) {
       if (!mounted) return;
       final galleryFailure = error is ImageGalleryException ? error : null;
@@ -205,7 +219,7 @@ class _ContentImageViewerPageState
     try {
       final message = await addToStickers(widget.items[targetIndex]);
       if (!mounted) return;
-      showWenyouSnackBar(context, message);
+      showWenyouSnackBar(context, message, tone: WenyouSnackBarTone.success);
     } on Object catch (error) {
       if (!mounted) return;
       setState(() {

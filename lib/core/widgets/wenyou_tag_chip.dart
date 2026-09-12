@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_tag_link.dart';
 
@@ -28,7 +29,7 @@ class WenyouTagChip extends StatelessWidget {
     return InputChip(
       label: Text(
         '${WenyouElementContract.topicTagPrefix}$name',
-        style: TextStyle(
+        style: Theme.of(context).textTheme.wenyouLabel.copyWith(
           color: tokens.brandForeground,
           fontWeight: FontWeight.w600,
         ),

@@ -1,8 +1,9 @@
 [CmdletBinding()]
 param(
-  [string]$BackendPath = '..\wenyousite-backend',
+  [string]$BackendPath = '..\references\wenyousite-backend',
   [string]$Remote = 'origin',
   [string]$Branch = 'dev',
+  [string]$Revision,
   [switch]$SkipFetch
 )
 
@@ -31,13 +32,15 @@ function Invoke-BackendGit {
 function Export-BackendBlob {
   param(
     [string]$Source,
-    [string]$Destination
+    [string]$Destination,
+    [string]$SourceRevision = $revision,
+    [string]$ExpectedSha256
   )
 
   $gitCommand = (Get-Command git.exe -ErrorAction Stop).Source
   $startInfo = New-Object System.Diagnostics.ProcessStartInfo
   $startInfo.FileName = $gitCommand
-  $startInfo.Arguments = "-C `"$backend`" show `"$revision`:$Source`""
+  $startInfo.Arguments = "-C `"$backend`" show `"$SourceRevision`:$Source`""
   $startInfo.UseShellExecute = $false
   $startInfo.CreateNoWindow = $true
   $startInfo.RedirectStandardOutput = $true
@@ -54,7 +57,16 @@ function Export-BackendBlob {
     $errorOutput = $process.StandardError.ReadToEnd()
     $process.WaitForExit()
     if ($process.ExitCode -ne 0) {
-      throw "Cannot export $Source from backend commit $revision. $errorOutput"
+      throw "Cannot export $Source from backend commit $SourceRevision. $errorOutput"
+    }
+    if ($ExpectedSha256) {
+      $hasher = [System.Security.Cryptography.SHA256]::Create()
+      try {
+        $actualHash = [BitConverter]::ToString($hasher.ComputeHash($bytes.ToArray())).Replace('-', '').ToLowerInvariant()
+      } finally { $hasher.Dispose() }
+      if ($actualHash -ne $ExpectedSha256) {
+        throw "Pinned editor list contract SHA-256 mismatch at $SourceRevision."
+      }
     }
     [System.IO.File]::WriteAllBytes($Destination, $bytes.ToArray())
   } finally {
@@ -69,15 +81,37 @@ if (-not $SkipFetch) {
 }
 
 $contractRef = "$Remote/$Branch"
+$selectedRef = $contractRef
+if (-not [string]::IsNullOrWhiteSpace($Revision)) {
+  if ($Revision -notmatch '^[0-9a-fA-F]{40}$') {
+    throw 'Revision must be a full 40-character commit SHA.'
+  }
+  $selectedRef = $Revision
+}
 $revisionOutput = @(Invoke-BackendGit @(
   'rev-parse',
   '--verify',
-  "$contractRef^{commit}"
+  "$selectedRef^{commit}"
 ))
 $revision = $revisionOutput[-1].Trim()
 if ($revision -notmatch '^[0-9a-f]{40}$') {
   throw "Cannot resolve $contractRef to a full backend commit."
 }
+& git -C $backend merge-base --is-ancestor $revision $contractRef
+if ($LASTEXITCODE -ne 0) {
+  throw "Selected revision must be an ancestor of $contractRef."
+}
+
+# 只保留已经被 Mobile PR15 消费的这一份独立契约，不支持任意来源覆盖。
+$editorListSource = Get-Content -LiteralPath (Join-Path $contractDirectory 'markdown-editor-list-v1-source.json') -Raw -Encoding UTF8 | ConvertFrom-Json
+if ($editorListSource.schemaVersion -ne 1 -or
+    $editorListSource.file -ne 'markdown-editor-list-v1-fixtures.json' -or
+    $editorListSource.backendRevision -notmatch '^[0-9a-f]{40}$' -or
+    $editorListSource.sha256 -notmatch '^[0-9a-f]{64}$') {
+  throw 'Invalid pinned editor list contract source manifest.'
+}
+$editorListRevision = [string]$editorListSource.backendRevision
+Invoke-BackendGit @('cat-file', '-e', "$editorListRevision`:$('contracts/' + $editorListSource.file)") | Out-Null
 
 $backendContractPaths = @(Invoke-BackendGit @(
   'ls-tree',
@@ -133,14 +167,26 @@ $contractFiles = @(
   @{ Source = $markdownEditorSource; Destination = (Split-Path -Leaf $markdownEditorSource) },
   @{ Source = $editorClipboardSource; Destination = (Split-Path -Leaf $editorClipboardSource) },
   @{ Source = 'contracts/markdown-v5-image-alignment-fixtures.json'; Destination = 'markdown-v5-image-alignment-fixtures.json' },
+  @{ Source = 'contracts/markdown-editor-newline-v1-fixtures.json'; Destination = 'markdown-editor-newline-v1-fixtures.json' },
+  @{ Source = 'contracts/rich-text-behavior-v1-fixtures.json'; Destination = 'rich-text-behavior-v1-fixtures.json' },
+  @{ Source = 'contracts/rich-text-behavior-v1.schema.json'; Destination = 'rich-text-behavior-v1.schema.json' },
+  @{ Source = 'contracts/rich-text-behavior-results-v1.schema.json'; Destination = 'rich-text-behavior-results-v1.schema.json' },
+  @{ Source = 'contracts/markdown-editor-list-v1-fixtures.json'; Destination = 'markdown-editor-list-v1-fixtures.json' },
+  @{ Source = 'contracts/markdown-block-boundary-v1-fixtures.json'; Destination = 'markdown-block-boundary-v1-fixtures.json' },
   @{ Source = 'contracts/mobile-push-v1-fixtures.json'; Destination = 'mobile-push-v1-fixtures.json' },
   @{ Source = 'contracts/mobile-push-v1.schema.json'; Destination = 'mobile-push-v1.schema.json' },
   @{ Source = 'contracts/mobile-v1-golden-fixtures.json'; Destination = 'mobile-v1-golden-fixtures.json' },
   @{ Source = 'contracts/mobile-v1-operation-coverage.json'; Destination = 'mobile-v1-operation-coverage.json' },
   @{ Source = $threadCategorySource; Destination = (Split-Path -Leaf $threadCategorySource) },
+  @{ Source = 'contracts/thread-cover-media-v1-fixtures.json'; Destination = 'thread-cover-media-v1-fixtures.json' },
+  @{ Source = 'contracts/media-display-v1-fixtures.json'; Destination = 'media-display-v1-fixtures.json' },
+  @{ Source = 'contracts/fixtures/media-display/duplicate-frames.gif'; Destination = 'fixtures/media-display/duplicate-frames.gif' },
+  @{ Source = 'contracts/fixtures/media-display/duplicate-frames.webp'; Destination = 'fixtures/media-display/duplicate-frames.webp' },
+  @{ Source = 'contracts/fixtures/media-display/manifest.json'; Destination = 'fixtures/media-display/manifest.json' },
   @{ Source = 'contracts/internal-reference-v1-fixtures.json'; Destination = 'internal-reference-v1-fixtures.json' },
   @{ Source = 'contracts/CHANGELOG.md'; Destination = 'CHANGELOG.md' },
-  @{ Source = 'docs/mobile-client-guide.md'; Destination = 'mobile-client-guide.md' }
+  @{ Source = 'docs/mobile-client-guide.md'; Destination = 'mobile-client-guide.md' },
+  @{ Source = 'docs/media-display.md'; Destination = 'media-display.md' }
 )
 
 New-Item -ItemType Directory -Force -Path $contractDirectory | Out-Null
@@ -171,7 +217,12 @@ Get-ChildItem -LiteralPath $contractDirectory -File |
 foreach ($contractFile in $contractFiles) {
   $source = [string]$contractFile.Source
   $destination = Join-Path $contractDirectory ([string]$contractFile.Destination)
-  Export-BackendBlob $source $destination
+  New-Item -ItemType Directory -Force -Path (Split-Path -Parent $destination) | Out-Null
+  if ($source -eq 'contracts/markdown-editor-list-v1-fixtures.json') {
+    Export-BackendBlob $source $destination $editorListRevision ([string]$editorListSource.sha256)
+  } else {
+    Export-BackendBlob $source $destination
+  }
 }
 
 Push-Location $mobile
@@ -184,14 +235,13 @@ try {
   Pop-Location
 }
 
-$contractVersionLine = Select-String `
-  -LiteralPath (Join-Path $contractDirectory 'CHANGELOG.md') `
-  -Pattern '^##\s+(.+)$' |
-  Select-Object -First 1
-if ($null -eq $contractVersionLine) {
-  throw 'Cannot read the contract version from contracts/CHANGELOG.md.'
+$openApi = Get-Content `
+  -LiteralPath (Join-Path $contractDirectory 'openapi.json') `
+  -Encoding UTF8 -Raw | ConvertFrom-Json
+$contractVersion = [string]$openApi.info.version
+if ($contractVersion -notmatch '^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$') {
+  throw 'Cannot read the API contract version from contracts/openapi.json.'
 }
-$contractVersion = $contractVersionLine.Matches[0].Groups[1].Value
 $markdownFixture = Get-Content `
   -LiteralPath (Join-Path $contractDirectory (Split-Path -Leaf $markdownFixtureSource)) `
   -Encoding UTF8 `
@@ -226,3 +276,4 @@ $metadata = @(
 )
 
 Write-Host "Synced backend contract $contractVersion from committed $contractRef ($revision)"
+Write-Host "Retained editor list fixture from $editorListRevision; SHA-256 $($editorListSource.sha256)"

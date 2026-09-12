@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/features/media/application/image_crop_ports.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
@@ -282,7 +283,7 @@ class _EditorImageCropDialogState extends State<_EditorImageCropDialog> {
             alignment: Alignment.centerLeft,
             child: Text(
               '图片 ${_selectedIndex + 1}/${sources.length}',
-              style: Theme.of(context).textTheme.labelLarge,
+              style: Theme.of(context).textTheme.wenyouLabel,
             ),
           ),
           SizedBox(height: context.wenyouTokens.space8),

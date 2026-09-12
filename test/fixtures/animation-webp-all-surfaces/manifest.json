@@ -1,0 +1,56 @@
+{
+  "generator": "Pillow 12.3.0",
+  "assets": [
+    {
+      "file": "original.gif",
+      "width": 320,
+      "height": 180,
+      "frames": 2,
+      "durationsMs": [
+        120,
+        240
+      ],
+      "encodedLoopValue": 1,
+      "bytes": 1383,
+      "sha256": "0b508d740ff4d60df8470b194d6a6c6e2697a88350334c04fd251c636fa4ffe7"
+    },
+    {
+      "file": "full.webp",
+      "width": 320,
+      "height": 180,
+      "frames": 2,
+      "durationsMs": [
+        120,
+        240
+      ],
+      "encodedLoopValue": 2,
+      "bytes": 180,
+      "sha256": "1cd89c62ed65d517810d7e67a64e611d5b39c4314932d260d6bea93736eddc10"
+    },
+    {
+      "file": "preview.webp",
+      "width": 80,
+      "height": 45,
+      "frames": 2,
+      "durationsMs": [
+        120,
+        240
+      ],
+      "encodedLoopValue": 2,
+      "bytes": 184,
+      "sha256": "91ea11859ea476408dad8e78da6cb4e0d7caf8e0cc127b03a4f3fd239fe84510"
+    },
+    {
+      "file": "poster.png",
+      "width": 320,
+      "height": 180,
+      "frames": 1,
+      "durationsMs": [
+        0
+      ],
+      "encodedLoopValue": null,
+      "bytes": 640,
+      "sha256": "126437ce6e93858cd557eee1d391a8060b3f9ef43fbf7994cae8f50b3323f3c3"
+    }
+  ]
+}

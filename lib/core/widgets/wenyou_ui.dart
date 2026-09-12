@@ -18,6 +18,65 @@ double wenyouHorizontalPagePadding(
       : tokens.regularHorizontalPadding;
 }
 
+/// Applies Foundation's functional-title context to settings and management
+/// surfaces: body-role weight 600 for page, section, and subsection titles
+/// while preserving their semantic sizes, line heights, colors, and utility
+/// roles. All roles continue to inherit the platform's system font.
+class WenyouSettingsTypography extends StatelessWidget {
+  const WenyouSettingsTypography({required this.child, super.key});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final textTheme = _settingsTextTheme(theme.textTheme);
+    final primaryTextTheme = _settingsTextTheme(theme.primaryTextTheme);
+    return Theme(
+      data: theme.copyWith(
+        textTheme: textTheme,
+        primaryTextTheme: primaryTextTheme,
+        appBarTheme: theme.appBarTheme.copyWith(
+          titleTextStyle: _settingsTextStyle(
+            theme.appBarTheme.titleTextStyle ?? textTheme.wenyouSectionTitle,
+            fontWeight: FontWeight.w600,
+          ),
+          toolbarTextStyle: _settingsTextStyle(
+            theme.appBarTheme.toolbarTextStyle,
+          ),
+        ),
+        dialogTheme: theme.dialogTheme.copyWith(
+          titleTextStyle: _settingsTextStyle(theme.dialogTheme.titleTextStyle),
+          contentTextStyle: _settingsTextStyle(
+            theme.dialogTheme.contentTextStyle,
+          ),
+        ),
+      ),
+      child: child,
+    );
+  }
+}
+
+TextTheme _settingsTextTheme(TextTheme source) {
+  return source.copyWith(
+    displayLarge: _settingsTextStyle(
+      source.displayLarge,
+      fontWeight: FontWeight.w600,
+    ),
+    headlineMedium: _settingsTextStyle(
+      source.headlineMedium,
+      fontWeight: FontWeight.w600,
+    ),
+    headlineSmall: _settingsTextStyle(
+      source.headlineSmall,
+      fontWeight: FontWeight.w600,
+    ),
+  );
+}
+
+TextStyle? _settingsTextStyle(TextStyle? source, {FontWeight? fontWeight}) =>
+    source?.copyWith(fontWeight: fontWeight);
+
 class WenyouConstrainedWidth extends StatelessWidget {
   const WenyouConstrainedWidth({required this.child, this.maxWidth, super.key});
 
@@ -252,10 +311,8 @@ class WenyouIconLabelAction extends StatelessWidget {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: color,
-                      height: 1.15,
-                    ),
+                    style: Theme.of(context).textTheme.wenyouCaptionEmphasis
+                        .copyWith(color: color, height: 1.15),
                   ),
                 ],
               ),
@@ -465,9 +522,9 @@ class WenyouSectionHeader extends StatelessWidget {
                 SizedBox(height: tokens.space8),
                 Text(
                   subtitle!,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodyMedium?.copyWith(color: tokens.mutedText),
+                  style: Theme.of(context).textTheme.wenyouCompactBody.copyWith(
+                    color: tokens.mutedText,
+                  ),
                 ),
               ],
             ],

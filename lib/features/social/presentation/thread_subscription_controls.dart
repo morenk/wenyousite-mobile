@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/application/write_reconciler.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
@@ -9,7 +10,6 @@ import 'package:wenyousite_mobile/core/network/session_controller.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/social/application/thread_subscription_controller.dart';
-import 'package:wenyousite_mobile/features/social/domain/thread_subscription_models.dart';
 
 class ThreadSubscriptionControls extends ConsumerWidget {
   const ThreadSubscriptionControls({
@@ -59,13 +59,13 @@ class ThreadSubscriptionControls extends ConsumerWidget {
           onPressed: state.isPending
               ? null
               : () => _showPlayerSheet(context, ref, includeThreadToggle: true),
-          tooltip: state.threadSubscription == null ? '管理更新订阅' : '已订阅官方更新，管理订阅',
+          tooltip: !state.isThreadSubscribed ? '管理更新订阅' : '已订阅官方更新，管理订阅',
           icon: WenyouIcon(
-            state.threadSubscription == null
+            !state.isThreadSubscribed
                 ? WenyouIconIds.statusNotifications
                 : WenyouIconIds.statusNotificationsActive,
           ),
-          color: state.threadSubscription == null
+          color: !state.isThreadSubscribed
               ? tokens.mutedText
               : tokens.brandForeground,
         ),
@@ -105,19 +105,12 @@ class ThreadSubscriptionControls extends ConsumerWidget {
                   onPressed: state.isPending
                       ? null
                       : () => _toggleThread(context, notifier),
-                  icon: state.pendingType == ThreadSubscriptionType.thread
-                      ? const SizedBox.square(
-                          dimension: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : WenyouIcon(
-                          state.threadSubscription == null
-                              ? WenyouIconIds.statusNotifications
-                              : WenyouIconIds.statusNotificationsActive,
-                        ),
-                  label: Text(
-                    state.threadSubscription == null ? '订阅官方更新' : '已订阅官方更新',
+                  icon: WenyouIcon(
+                    !state.isThreadSubscribed
+                        ? WenyouIconIds.statusNotifications
+                        : WenyouIconIds.statusNotificationsActive,
                   ),
+                  label: Text(!state.isThreadSubscribed ? '订阅官方更新' : '已订阅官方更新'),
                 ),
                 if (state.isLoadingCandidates ||
                     state.candidates.isNotEmpty ||
@@ -236,7 +229,7 @@ class _PlayerSubscriptionSheet extends ConsumerWidget {
           children: [
             Text(
               includeThreadToggle ? '管理更新订阅' : '订阅玩家发言',
-              style: Theme.of(context).textTheme.titleLarge,
+              style: Theme.of(context).textTheme.wenyouOverlayTitle,
             ),
             SizedBox(height: tokens.space4),
             Text(
@@ -245,7 +238,7 @@ class _PlayerSubscriptionSheet extends ConsumerWidget {
                   : '只列出本帖中已标记的普通玩家；可同时订阅多人。',
               style: Theme.of(
                 context,
-              ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
+              ).textTheme.wenyouCaption.copyWith(color: tokens.mutedText),
             ),
             if (state.actionFailure != null) ...[
               SizedBox(height: tokens.space12),
@@ -274,32 +267,25 @@ class _PlayerSubscriptionSheet extends ConsumerWidget {
                 key: const Key('thread-subscription-official'),
                 contentPadding: EdgeInsets.zero,
                 leading: WenyouIcon(
-                  state.threadSubscription == null
+                  !state.isThreadSubscribed
                       ? WenyouIconIds.statusNotifications
                       : WenyouIconIds.statusNotificationsActive,
                 ),
                 title: const Text('官方更新'),
-                subtitle: Text(
-                  state.threadSubscription == null ? '尚未订阅' : '已订阅',
+                subtitle: Text(!state.isThreadSubscribed ? '尚未订阅' : '已订阅'),
+                trailing: Switch(
+                  value: state.isThreadSubscribed,
+                  onChanged: state.isPending
+                      ? null
+                      : (_) => _toggleThread(context, notifier),
                 ),
-                trailing: state.pendingType == ThreadSubscriptionType.thread
-                    ? const SizedBox.square(
-                        dimension: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : Switch(
-                        value: state.threadSubscription != null,
-                        onChanged: state.isPending
-                            ? null
-                            : (_) => _toggleThread(context, notifier),
-                      ),
                 onTap: state.isPending
                     ? null
                     : () => _toggleThread(context, notifier),
               ),
               Divider(height: 1, color: tokens.border),
               SizedBox(height: tokens.space12),
-              Text('玩家发言', style: Theme.of(context).textTheme.titleMedium),
+              Text('玩家发言', style: Theme.of(context).textTheme.wenyouRowTitle),
               SizedBox(height: tokens.space4),
             ],
             Expanded(
@@ -323,7 +309,7 @@ class _PlayerSubscriptionSheet extends ConsumerWidget {
                   Center(
                     child: Text(
                       '暂无可订阅的玩家',
-                      style: Theme.of(context).textTheme.bodySmall,
+                      style: Theme.of(context).textTheme.wenyouCaption,
                     ),
                   ),
                 ThreadSubscriptionPhase.ready => ListView.separated(
@@ -331,11 +317,7 @@ class _PlayerSubscriptionSheet extends ConsumerWidget {
                   separatorBuilder: (_, _) => Divider(color: tokens.border),
                   itemBuilder: (context, index) {
                     final candidate = state.candidates[index];
-                    final subscribed =
-                        state.userSubscriptionFor(candidate.userId) != null;
-                    final pending =
-                        state.pendingType == ThreadSubscriptionType.user &&
-                        state.pendingTargetUserId == candidate.userId;
+                    final subscribed = state.isUserSubscribed(candidate.userId);
                     return ListTile(
                       key: ValueKey(
                         'thread-subscription-candidate-${candidate.userId}',
@@ -343,6 +325,7 @@ class _PlayerSubscriptionSheet extends ConsumerWidget {
                       contentPadding: EdgeInsets.zero,
                       leading: WenyouAvatar(
                         username: candidate.username,
+                        avatarUrl: candidate.avatarUrl,
                         size: 40,
                       ),
                       title: Text(candidate.username),
@@ -358,14 +341,7 @@ class _PlayerSubscriptionSheet extends ConsumerWidget {
                                 notifier,
                                 candidate.userId,
                               ),
-                        child: pending
-                            ? const SizedBox.square(
-                                dimension: 18,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : Text(subscribed ? '取消订阅' : '订阅发言'),
+                        child: Text(subscribed ? '取消订阅' : '订阅发言'),
                       ),
                     );
                   },
@@ -484,5 +460,5 @@ class _ActionOutcome extends StatelessWidget {
 void _showSuccess(BuildContext context, ThreadSubscriptionController notifier) {
   final message = notifier.takeSuccessMessage();
   if (message == null) return;
-  showWenyouSnackBar(context, message);
+  showWenyouSnackBar(context, message, tone: WenyouSnackBarTone.success);
 }

@@ -1,11 +1,79 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:wenyousite_mobile/core/application/background_execution.dart';
 import 'package:wenyousite_mobile/core/application/background_online_reminders.dart';
 import 'package:wenyousite_mobile/features/app_shell/application/background_online_poller.dart';
 import 'package:wenyousite_mobile/features/app_shell/application/background_online_reminder_coordinator.dart';
 
 void main() {
+  for (final status in [
+    BackgroundExecutionStatus.stopped,
+    BackgroundExecutionStatus.starting,
+    BackgroundExecutionStatus.blocked,
+    BackgroundExecutionStatus.failed,
+  ]) {
+    test('服务尚未运行或已不可用 $status 不建立基线', () async {
+      final polling = _FakePollingSession();
+      final timers = _FakeTimerFactory();
+      final failures = <BackgroundExecutionStatus>[];
+      final coordinator = BackgroundOnlineReminderCoordinator(
+        pollingSession: polling,
+        notificationGateway: _FakeGateway(),
+        onPermissionDenied: () async {},
+        executionGateway: _RunningExecution()..status = status,
+        onExecutionUnavailable: (value) async => failures.add(value),
+        timerFactory: timers.create,
+      );
+      addTearDown(coordinator.dispose);
+      coordinator.start(includeDirectMessages: true);
+      await _settle();
+      timers.tick();
+      await _settle();
+      expect(polling.ensureCalls, 0);
+      expect(polling.pollCalls, 0);
+      expect(failures, [status]);
+      expect(timers.activeTimer, isNull);
+    });
+  }
+
+  for (final status in [
+    BackgroundExecutionStatus.failed,
+    BackgroundExecutionStatus.foreground,
+  ]) {
+    test('请求在途期间服务变为 $status，结果不展示或提交', () async {
+      final polling = _FakePollingSession();
+      final pending = Completer<BackgroundOnlinePollBatch?>();
+      polling.pollHandler = () => pending.future;
+      final execution = _RunningExecution();
+      final gateway = _FakeGateway();
+      final timers = _FakeTimerFactory();
+      final failures = <BackgroundExecutionStatus>[];
+      final coordinator = BackgroundOnlineReminderCoordinator(
+        pollingSession: polling,
+        notificationGateway: gateway,
+        executionGateway: execution,
+        onPermissionDenied: () async {},
+        onExecutionUnavailable: (value) async => failures.add(value),
+        timerFactory: timers.create,
+      );
+      addTearDown(coordinator.dispose);
+      coordinator.start(includeDirectMessages: true);
+      await _settle();
+      timers.tick();
+      await _settle();
+      execution.status = status;
+      pending.complete(polling.alertBatch());
+      await _settle();
+      expect(gateway.showCalls, 0);
+      expect(polling.commitCalls, 0);
+      expect(
+        failures,
+        status == BackgroundExecutionStatus.foreground ? isEmpty : [status],
+      );
+    });
+  }
+
   test('后台超过十分钟后仍保持每三十秒轮询且每轮提交一次', () async {
     final polling = _FakePollingSession();
     final gateway = _FakeGateway();
@@ -114,6 +182,8 @@ void main() {
       pollingSession: polling,
       notificationGateway: gateway,
       onPermissionDenied: () async => deniedCalls++,
+      executionGateway: _RunningExecution(),
+      onExecutionUnavailable: (_) async {},
       timerFactory: timers.create,
     );
     addTearDown(coordinator.dispose);
@@ -139,6 +209,8 @@ BackgroundOnlineReminderCoordinator _coordinator(
     pollingSession: polling,
     notificationGateway: gateway,
     onPermissionDenied: () async {},
+    executionGateway: _RunningExecution(),
+    onExecutionUnavailable: (_) async {},
     timerFactory: timers.create,
   );
 }
@@ -274,4 +346,10 @@ class _FakeTimer implements BackgroundOnlineReminderTimer {
     _active = false;
     _onCancel();
   }
+}
+
+class _RunningExecution extends UnsupportedBackgroundExecutionGateway {
+  BackgroundExecutionStatus status = BackgroundExecutionStatus.running;
+  @override
+  Future<BackgroundExecutionStatus> getStatus() async => status;
 }

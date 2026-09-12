@@ -185,6 +185,7 @@ class _MomentFeedListState extends ConsumerState<MomentFeedList> {
         showWenyouSnackBar(
           context,
           next.userMessage,
+          tone: WenyouSnackBarTone.error,
           pacing: WenyouSnackBarPacing.extended,
         );
       }

@@ -1,7 +1,9 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
 import 'package:wenyousite_mobile/core/application/user_facing_failure.dart';
+import 'package:wenyousite_mobile/core/diagnostics/failure_diagnostics.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_ports.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
@@ -13,37 +15,28 @@ enum MediaUploadTaskPhase {
   uploading,
   confirming,
   processing,
+  processingPending,
   failed,
 }
 
 class MediaUploadFailure {
   const MediaUploadFailure({
-    this.presentation,
-    String? userMessage,
+    required this.failure,
+    required this.presentation,
     required this.canRetry,
-    this.businessCode,
-    this.requestId,
-  }) : assert(presentation != null || userMessage != null),
-       _legacyUserMessage = userMessage;
+    this.diagnosticId,
+  });
 
-  final UserFacingFailure? presentation;
-  final String? _legacyUserMessage;
+  /// Keep the typed cause and its diagnostic association intact across features.
+  final ApiFailure failure;
+  final UserFacingFailure presentation;
   final bool canRetry;
-  final int? businessCode;
-  final String? requestId;
+  final String? diagnosticId;
 
-  UserFacingFailure get resolvedPresentation =>
-      presentation ??
-      UserFacingFailure(
-        title: '图片上传失败',
-        message: _legacyUserMessage!,
-        recoveryAction: FailureRecoveryAction.retry,
-        placement: FailurePresentationPlacement.inline,
-        retainContent: true,
-        actionLabel: '重试',
-      );
-
-  String get userMessage => resolvedPresentation.message;
+  UserFacingFailure get resolvedPresentation => presentation;
+  String get userMessage => presentation.message;
+  int? get businessCode => failure.businessCode;
+  String? get requestId => failure.requestId;
 }
 
 class MediaUploadTaskState {
@@ -51,8 +44,10 @@ class MediaUploadTaskState {
     this.phase = MediaUploadTaskPhase.idle,
     this.progress,
     this.failure,
+    this.pendingUpload,
   });
 
+  final PendingMediaUpload? pendingUpload;
   final MediaUploadTaskPhase phase;
   final MediaUploadProgress? progress;
   final MediaUploadFailure? failure;
@@ -63,7 +58,9 @@ class MediaUploadTaskState {
     MediaUploadTaskPhase.uploading ||
     MediaUploadTaskPhase.confirming ||
     MediaUploadTaskPhase.processing => true,
-    MediaUploadTaskPhase.idle || MediaUploadTaskPhase.failed => false,
+    MediaUploadTaskPhase.idle ||
+    MediaUploadTaskPhase.processingPending ||
+    MediaUploadTaskPhase.failed => false,
   };
 
   String get progressLabel => switch (phase) {
@@ -74,6 +71,7 @@ class MediaUploadTaskState {
     MediaUploadTaskPhase.uploading => '正在上传图片…',
     MediaUploadTaskPhase.confirming => '正在确认图片…',
     MediaUploadTaskPhase.processing => '图片正在安全处理中…',
+    MediaUploadTaskPhase.processingPending => '图片仍在处理中，可稍后继续查询。',
     MediaUploadTaskPhase.idle || MediaUploadTaskPhase.failed => '',
   };
 }
@@ -88,12 +86,16 @@ final mediaUploadGatewayPortProvider = Provider<MediaUploadGateway>((ref) {
   );
 });
 
+/// 组合根注入账号代次；访问令牌刷新不应取消上传。
+final mediaUploadSessionScopePortProvider = Provider<Object?>((ref) => null);
+
 final mediaUploadTaskControllerProvider = NotifierProvider.autoDispose
     .family<MediaUploadTaskController, MediaUploadTaskState, Object>(
       MediaUploadTaskController.new,
       dependencies: [
         editorImagePickerPortProvider,
         mediaUploadGatewayPortProvider,
+        mediaUploadSessionScopePortProvider,
       ],
     );
 
@@ -113,42 +115,54 @@ class MediaUploadTaskController
   MediaUploadOperation<UploadedEditorImage>? _operation;
   Completer<void>? _cancelSignal;
   MediaUploadInput? _retryInput;
+  PendingMediaUpload? _pendingUpload;
   Future<UploadedEditorImage?>? _activeFuture;
   var _runId = 0;
   var _disposed = false;
 
   @override
   MediaUploadTaskState build(Object arg) {
+    ref.watch(mediaUploadSessionScopePortProvider);
     _disposed = false;
     ref.onDispose(_dispose);
     return const MediaUploadTaskState();
   }
 
   Future<UploadedEditorImage?> pickAndUpload() {
-    if (_activeFuture == null) _retryInput = null;
+    if (_activeFuture == null) {
+      _retryInput = null;
+      _pendingUpload = null;
+    }
     return _start();
   }
 
   Future<UploadedEditorImage?> retryUpload() {
     final active = _activeFuture;
     if (active != null) return active;
+    if (_pendingUpload != null && state.failure?.canRetry == false) {
+      return Future.value();
+    }
     final input = _retryInput;
     if (input == null) return Future<UploadedEditorImage?>.value();
-    return _start(input: input);
+    return _start(input: input, pending: _pendingUpload);
   }
 
   @override
   Future<UploadedEditorImage?> uploadInput(MediaUploadInput input) {
-    if (_activeFuture == null) _retryInput = null;
+    if (_activeFuture == null) {
+      _retryInput = null;
+      _pendingUpload = null;
+    }
     return _start(input: input);
   }
 
   @override
   void cancel() {
-    if (!state.isBusy && _operation == null) return;
+    if (!state.isBusy && _operation == null && _pendingUpload == null) return;
     _runId += 1;
     _activeFuture = null;
     _retryInput = null;
+    _pendingUpload = null;
     final operation = _operation;
     _operation = null;
     final cancelSignal = _cancelSignal;
@@ -167,21 +181,28 @@ class MediaUploadTaskController
       return;
     }
     _retryInput = null;
+    _pendingUpload = null;
     state = const MediaUploadTaskState();
   }
 
-  Future<UploadedEditorImage?> _start({MediaUploadInput? input}) {
+  Future<UploadedEditorImage?> _start({
+    MediaUploadInput? input,
+    PendingMediaUpload? pending,
+  }) {
     final active = _activeFuture;
     if (active != null) return active;
     late final Future<UploadedEditorImage?> future;
-    future = _run(input: input).whenComplete(() {
+    future = _run(input: input, pending: pending).whenComplete(() {
       if (identical(_activeFuture, future)) _activeFuture = null;
     });
     _activeFuture = future;
     return future;
   }
 
-  Future<UploadedEditorImage?> _run({MediaUploadInput? input}) async {
+  Future<UploadedEditorImage?> _run({
+    MediaUploadInput? input,
+    PendingMediaUpload? pending,
+  }) async {
     final runId = ++_runId;
     final cancelSignal = Completer<void>();
     _cancelSignal = cancelSignal;
@@ -189,6 +210,7 @@ class MediaUploadTaskController
     var acceptProgress = true;
     try {
       if (selected == null) {
+        DiagnosticAttempt.current?.mark(DiagnosticStage.picking);
         state = const MediaUploadTaskState(phase: MediaUploadTaskPhase.picking);
         final selection = await _untilCancelled(
           ref.read(editorImagePickerPortProvider).pickFromGallery(),
@@ -204,6 +226,7 @@ class MediaUploadTaskController
       }
 
       _retryInput = selected;
+      DiagnosticAttempt.current?.mark(DiagnosticStage.preparing);
       const preparing = MediaUploadProgress(stage: MediaUploadStage.preparing);
       state = const MediaUploadTaskState(
         phase: MediaUploadTaskPhase.preparing,
@@ -219,18 +242,27 @@ class MediaUploadTaskController
         if (!_isCurrent(runId)) return null;
         _retryInput = selected;
       }
-      final operation = ref
-          .read(mediaUploadGatewayPortProvider)
-          .startImageUpload(
-            selected,
-            onProgress: (progress) {
-              if (!acceptProgress || !_isCurrent(runId)) return;
-              state = MediaUploadTaskState(
-                phase: _phaseFor(progress.stage),
-                progress: progress,
-              );
-            },
-          );
+      void onProgress(MediaUploadProgress progress) {
+        if (!acceptProgress || !_isCurrent(runId)) return;
+        state = MediaUploadTaskState(
+          phase: _phaseFor(progress.stage),
+          progress: progress,
+        );
+      }
+
+      final gateway = ref.read(mediaUploadGatewayPortProvider);
+      final operation = pending == null
+          ? gateway.startImageUpload(selected, onProgress: onProgress)
+          : gateway is ResumableMediaUploadGateway
+          ? (gateway as ResumableMediaUploadGateway).resumeImageProcessing(
+              pending,
+              onProgress: onProgress,
+            )
+          : throw const ApiFailure(
+              source: FailureSource.device,
+              reason: FailureReason.unknown,
+              recoveryAction: FailureRecoveryAction.reopen,
+            );
       if (!_isCurrent(runId)) {
         operation.cancel();
         return null;
@@ -243,15 +275,70 @@ class MediaUploadTaskController
       if (!_isCurrent(runId)) return null;
       if (identical(_operation, operation)) _operation = null;
       _retryInput = null;
+      _pendingUpload = null;
       state = const MediaUploadTaskState();
       return result;
-    } on Object catch (error) {
+    } on MediaProcessingLookupFailure catch (lookup) {
       acceptProgress = false;
       if (!_isCurrent(runId)) return null;
       _operation = null;
+      _pendingUpload = lookup.upload;
+      final cause = mapApplicationFailure(lookup.cause, '图片查询失败，请稍后继续查询。');
+      final canRetry =
+          !{
+            FailureReason.unauthenticated,
+            FailureReason.sessionInvalid,
+            FailureReason.permissionDenied,
+            FailureReason.notFound,
+          }.contains(cause.reason) &&
+          !{401, 403, 404}.contains(cause.httpStatus);
       state = MediaUploadTaskState(
         phase: MediaUploadTaskPhase.failed,
-        failure: _failureFor(error, canRetry: _retryInput != null),
+        pendingUpload: lookup.upload,
+        failure: MediaUploadFailure(
+          failure: cause,
+          canRetry: canRetry,
+          presentation: UserFacingFailure.fromApi(
+            cause,
+            title: '图片查询失败',
+            retainContent: true,
+          ),
+        ),
+      );
+      return null;
+    } on MediaProcessingPending catch (pending) {
+      acceptProgress = false;
+      if (!_isCurrent(runId)) return null;
+      _operation = null;
+      _pendingUpload = pending.upload;
+      state = MediaUploadTaskState(
+        phase: MediaUploadTaskPhase.processingPending,
+        pendingUpload: pending.upload,
+        failure: const MediaUploadFailure(
+          failure: ApiFailure(
+            source: FailureSource.expected,
+            reason: FailureReason.timeout,
+          ),
+          presentation: UserFacingFailure(
+            title: '图片仍在处理中',
+            message: '已保留上传结果，继续查询无需重新上传。',
+            recoveryAction: FailureRecoveryAction.retry,
+            placement: FailurePresentationPlacement.inline,
+            retainContent: true,
+            actionLabel: '继续查询',
+          ),
+          canRetry: true,
+        ),
+      );
+      return null;
+    } on Object catch (error, stack) {
+      acceptProgress = false;
+      if (!_isCurrent(runId)) return null;
+      _pendingUpload = null;
+      _operation = null;
+      state = MediaUploadTaskState(
+        phase: MediaUploadTaskPhase.failed,
+        failure: _failureFor(error, stack, canRetry: _retryInput != null),
       );
       return null;
     } finally {
@@ -272,9 +359,20 @@ class MediaUploadTaskController
 
   bool _isCurrent(int runId) => !_disposed && runId == _runId;
 
-  MediaUploadFailure _failureFor(Object error, {required bool canRetry}) {
+  MediaUploadFailure _failureFor(
+    Object error,
+    StackTrace stack, {
+    required bool canRetry,
+  }) {
+    final diagnosticId = FailureDiagnostics.instance.capture(
+      error,
+      stackTrace: stack,
+      operation: DiagnosticOperation.mediaUpload,
+    );
     if (error is ApiFailure) {
       return MediaUploadFailure(
+        failure: error,
+        diagnosticId: diagnosticId,
         presentation: UserFacingFailure.fromApi(
           error,
           title: '图片上传失败',
@@ -284,11 +382,11 @@ class MediaUploadTaskController
           treatAsWrite: true,
         ),
         canRetry: canRetry,
-        businessCode: error.businessCode,
-        requestId: error.requestId,
       );
     }
     return MediaUploadFailure(
+      failure: mapApplicationFailure(error, '图片没有上传成功，请重试。'),
+      diagnosticId: diagnosticId,
       presentation: const UserFacingFailure(
         title: '图片上传失败',
         message: '图片没有上传成功，请重试。',
@@ -313,6 +411,7 @@ class MediaUploadTaskController
     _runId += 1;
     _activeFuture = null;
     _retryInput = null;
+    _pendingUpload = null;
     final operation = _operation;
     _operation = null;
     final cancelSignal = _cancelSignal;

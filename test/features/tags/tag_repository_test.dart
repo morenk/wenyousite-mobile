@@ -4,6 +4,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/tags/data/tag_repository.dart';
+import 'package:wenyousite_mobile/features/thread_feed/data/thread_category_catalog_repository.dart';
 
 void main() {
   setUpAll(() {
@@ -28,7 +29,7 @@ void main() {
     final result = await ApiTagRepository(
       tagsApi,
       threadsApi,
-      categoriesApi,
+      ApiThreadCategoryCatalogRepository(categoriesApi),
     ).loadTagThreads('tag-1');
 
     expect(result.tag.name, '太空歌剧');
@@ -53,7 +54,7 @@ void main() {
     final result = await ApiTagRepository(
       tagsApi,
       threadsApi,
-      _MockCategoriesApi(),
+      ApiThreadCategoryCatalogRepository(_MockCategoriesApi()),
     ).loadManagement('thread-1');
 
     expect(result.threadTitle, '星海旅团');
@@ -88,7 +89,7 @@ void main() {
     final repository = ApiTagRepository(
       tagsApi,
       threadsApi,
-      _MockCategoriesApi(),
+      ApiThreadCategoryCatalogRepository(_MockCategoriesApi()),
     );
 
     expect((await repository.search('  太空  ')).length, 2);
@@ -136,7 +137,7 @@ void main() {
       ApiTagRepository(
         tagsApi,
         threadsApi,
-        _MockCategoriesApi(),
+        ApiThreadCategoryCatalogRepository(_MockCategoriesApi()),
       ).loadManagement('thread-1'),
       throwsA(isA<ApiFailure>()),
     );
@@ -156,7 +157,7 @@ void main() {
       ApiTagRepository(
         _MockTagsApi(),
         threadsApi,
-        _MockCategoriesApi(),
+        ApiThreadCategoryCatalogRepository(_MockCategoriesApi()),
       ).removeFromThread(threadId: 'thread-1', tagId: 'tag-1'),
       throwsA(isA<ApiFailure>()),
     );

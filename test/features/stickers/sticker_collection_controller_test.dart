@@ -8,6 +8,42 @@ import 'package:wenyousite_mobile/features/stickers/data/sticker_repository.dart
 import 'package:wenyousite_mobile/features/stickers/domain/sticker_models.dart';
 
 void main() {
+  test('移除表情立即同步收藏和最近使用，失败原位恢复', () async {
+    final repository = _MockStickerRepository();
+    final gate = Completer<StickerCollection>();
+    final items = [_sticker(), _sticker(id: 'favorite-2', position: 1)];
+    final before = StickerCollection(
+      version: 3,
+      limit: 100,
+      items: items,
+      recent: items,
+      pendingImports: const [],
+    );
+    when(repository.fetchCollection).thenAnswer((_) async => before);
+    when(() => repository.remove('favorite-1')).thenAnswer((_) => gate.future);
+    final controller = StickerCollectionController(
+      repository,
+      autoStart: false,
+      pollInterval: Duration.zero,
+    );
+    addTearDown(controller.dispose);
+    await controller.load();
+    final operation = controller.remove('favorite-1');
+    final during = controller.state.collection!;
+    gate.completeError(
+      const ApiFailure(userMessage: '移除失败', businessCode: 40300),
+    );
+    expect(await operation, isFalse);
+    expect(during.items.single.id, 'favorite-2');
+    expect(during.items.single.position, 0);
+    expect(during.recent.single.id, 'favorite-2');
+    expect(controller.state.collection!.items.map((item) => item.id), [
+      'favorite-1',
+      'favorite-2',
+    ]);
+    expect(controller.state.collection!.recent, items);
+  });
+
   setUpAll(() {
     registerFallbackValue(const StickerMediaSource('media-1'));
   });

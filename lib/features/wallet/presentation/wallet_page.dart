@@ -4,11 +4,14 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_sliver_panel.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/wallet/application/wallet_controllers.dart';
 import 'package:wenyousite_mobile/features/wallet/domain/wallet_models.dart';
+import 'package:wenyousite_mobile/features/wallet/presentation/daily_check_in_status.dart';
 import 'package:wenyousite_mobile/features/wallet/presentation/wallet_widgets.dart';
 
 class WalletPage extends ConsumerWidget {
@@ -23,20 +26,37 @@ class WalletPage extends ConsumerWidget {
       appBar: AppBar(title: const Text('我的温油')),
       body: RefreshIndicator(
         onRefresh: () => ref.read(provider.notifier).refresh(),
-        child: ListView(
+        child: CustomScrollView(
           key: const PageStorageKey('wallet-page-scroll'),
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: _pagePadding(context),
-          children: [
-            _WalletSummaryPanel(
-              state: state,
-              onRetry: () => ref.read(provider.notifier).retrySummary(),
-            ),
-            SizedBox(height: context.wenyouTokens.space12),
-            _WalletTransactionsPanel(
-              state: state,
-              onRetry: () => ref.read(provider.notifier).retryTransactions(),
-              onLoadMore: () => ref.read(provider.notifier).loadMore(),
+          slivers: [
+            SliverPadding(
+              padding: _pagePadding(context),
+              sliver: SliverMainAxisGroup(
+                slivers: [
+                  SliverToBoxAdapter(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _WalletSummaryPanel(
+                          state: state,
+                          onRetry: () =>
+                              ref.read(provider.notifier).retrySummary(),
+                        ),
+                        SizedBox(height: context.wenyouTokens.space12),
+                        const DailyCheckInStatus(),
+                        SizedBox(height: context.wenyouTokens.space12),
+                      ],
+                    ),
+                  ),
+                  _WalletTransactionsPanel(
+                    state: state,
+                    onRetry: () =>
+                        ref.read(provider.notifier).retryTransactions(),
+                    onLoadMore: () => ref.read(provider.notifier).loadMore(),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -94,31 +114,28 @@ class _WalletSummaryPanel extends StatelessWidget {
                         children: [
                           Text(
                             '温油余额',
-                            style: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(color: tokens.mutedText),
+                            style: Theme.of(context).textTheme.wenyouCompactBody
+                                .copyWith(color: tokens.mutedText),
                           ),
                           SizedBox(height: tokens.space4),
                           Semantics(
                             label: '温油余额 ${summary.balance} 升',
-                            child: FittedBox(
-                              fit: BoxFit.scaleDown,
-                              alignment: Alignment.centerLeft,
-                              child: Text.rich(
-                                TextSpan(
-                                  text: WenyouAmount.format(summary.balance),
-                                  children: const [
-                                    TextSpan(
-                                      text: ' 升',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                style: Theme.of(context).textTheme.displaySmall
-                                    ?.copyWith(fontWeight: FontWeight.w700),
+                            child: Text.rich(
+                              TextSpan(
+                                text: WenyouAmount.format(summary.balance),
+                                children: [
+                                  TextSpan(
+                                    text: ' 升',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .wenyouCompactBody
+                                        .copyWith(fontWeight: FontWeight.w500),
+                                  ),
+                                ],
                               ),
+                              style: Theme.of(
+                                context,
+                              ).textTheme.wenyouMetricValue,
                             ),
                           ),
                         ],
@@ -193,15 +210,18 @@ class _SummaryStat extends StatelessWidget {
     final tokens = context.wenyouTokens;
     return Column(
       children: [
-        Text(label, style: TextStyle(color: tokens.mutedText)),
+        Text(
+          label,
+          style: Theme.of(
+            context,
+          ).textTheme.wenyouCompactBody.copyWith(color: tokens.mutedText),
+        ),
         SizedBox(height: tokens.space4),
-        FittedBox(
-          fit: BoxFit.scaleDown,
-          child: Text(
-            value,
-            style: Theme.of(
-              context,
-            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+        Text(
+          value,
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.wenyouUtilityRowTitle.copyWith(
+            fontWeight: FontWeight.w700,
           ),
         ),
       ],
@@ -223,76 +243,93 @@ class _WalletTransactionsPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
-    return WenyouPanel(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const WenyouSectionHeader(title: '收支记录'),
-          SizedBox(height: tokens.space16),
-          if (state.transactions.isEmpty && state.isLoadingTransactions)
-            const _WalletLoading(label: '正在读取温油流水…')
-          else if (state.transactions.isEmpty &&
-              state.transactionsFailure != null)
-            WenyouEmptyState(
-              icon: WenyouIconIds.statusOffline,
-              title: '温油流水加载失败',
-              message: state.transactionsFailure!.userMessage,
-              detail: wenyouFailureDetail(state.transactionsFailure),
-              action: OutlinedButton.icon(
-                key: const Key('wallet-transactions-retry'),
-                onPressed: onRetry,
-                icon: const WenyouIcon(WenyouIconIds.actionRefresh),
-                label: const Text('重试'),
-              ),
-            )
-          else if (state.transactions.isEmpty)
-            const WenyouEmptyState(
-              icon: WenyouIconIds.economyTransaction,
-              title: '暂无收支记录',
-            )
-          else ...[
-            for (var index = 0; index < state.transactions.length; index++) ...[
-              if (index > 0) Divider(color: tokens.border),
-              _TransactionTile(transaction: state.transactions[index]),
-            ],
-            if (state.loadMoreFailure != null) ...[
-              SizedBox(height: tokens.space12),
-              WenyouStatusBanner(
-                tone: WenyouStatusTone.error,
-                message: state.loadMoreFailure!.userMessage,
-                detail: wenyouFailureDetail(state.loadMoreFailure),
-                action: TextButton(
-                  key: const Key('wallet-load-more-retry'),
-                  onPressed: onLoadMore,
-                  child: const Text('重试加载'),
+    return WenyouSliverPanel(
+      slivers: [
+        SliverToBoxAdapter(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const WenyouSectionHeader(title: '收支记录'),
+              SizedBox(height: tokens.space16),
+              if (state.transactions.isEmpty && state.isLoadingTransactions)
+                const _WalletLoading(label: '正在读取温油流水…')
+              else if (state.transactions.isEmpty &&
+                  state.transactionsFailure != null)
+                WenyouEmptyState(
+                  icon: WenyouIconIds.statusOffline,
+                  title: '温油流水加载失败',
+                  message: state.transactionsFailure!.userMessage,
+                  detail: wenyouFailureDetail(state.transactionsFailure),
+                  action: OutlinedButton.icon(
+                    key: const Key('wallet-transactions-retry'),
+                    onPressed: onRetry,
+                    icon: const WenyouIcon(WenyouIconIds.actionRefresh),
+                    label: const Text('重试'),
+                  ),
+                )
+              else if (state.transactions.isEmpty)
+                const WenyouEmptyState(
+                  icon: WenyouIconIds.economyTransaction,
+                  title: '暂无收支记录',
                 ),
-              ),
             ],
-            if (state.hasMore) ...[
-              SizedBox(height: tokens.space12),
-              Center(
-                child: OutlinedButton.icon(
-                  key: const Key('wallet-load-more'),
-                  onPressed: state.isLoadingMore ? null : onLoadMore,
-                  icon: state.isLoadingMore
-                      ? const SizedBox.square(
-                          dimension: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const WenyouIcon(WenyouIconIds.navigationExpand),
-                  label: const Text('加载更多'),
-                ),
+          ),
+        ),
+        if (state.transactions.isNotEmpty) ...[
+          SliverList.separated(
+            itemCount: state.transactions.length,
+            separatorBuilder: (_, _) => Divider(color: tokens.border),
+            itemBuilder: (context, index) => _TransactionTile(
+              key: ValueKey(
+                'wallet-transaction-${state.transactions[index].id}',
               ),
-            ],
-          ],
+              transaction: state.transactions[index],
+            ),
+          ),
+          SliverToBoxAdapter(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (state.loadMoreFailure != null) ...[
+                  SizedBox(height: tokens.space12),
+                  WenyouStatusBanner(
+                    tone: WenyouStatusTone.error,
+                    message: state.loadMoreFailure!.userMessage,
+                    detail: wenyouFailureDetail(state.loadMoreFailure),
+                    action: TextButton(
+                      key: const Key('wallet-load-more-retry'),
+                      onPressed: onLoadMore,
+                      child: const Text('重试加载'),
+                    ),
+                  ),
+                ],
+                if (state.hasMore) ...[
+                  SizedBox(height: tokens.space12),
+                  Center(
+                    child: OutlinedButton.icon(
+                      key: const Key('wallet-load-more'),
+                      onPressed: state.isLoadingMore ? null : onLoadMore,
+                      icon: state.isLoadingMore
+                          ? const SizedBox.square(
+                              dimension: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const WenyouIcon(WenyouIconIds.navigationExpand),
+                      label: const Text('加载更多'),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
         ],
-      ),
+      ],
     );
   }
 }
 
 class _TransactionTile extends StatelessWidget {
-  const _TransactionTile({required this.transaction});
+  const _TransactionTile({required this.transaction, super.key});
 
   final WalletTransaction transaction;
 
@@ -320,7 +357,7 @@ class _TransactionTile extends StatelessWidget {
                   title,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.titleSmall,
+                  style: Theme.of(context).textTheme.wenyouCompactTitle,
                 ),
                 SizedBox(height: tokens.space4),
                 Text(
@@ -329,7 +366,7 @@ class _TransactionTile extends StatelessWidget {
                   ).format(transaction.createdAt.toLocal()),
                   style: Theme.of(
                     context,
-                  ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
+                  ).textTheme.wenyouCaption.copyWith(color: tokens.mutedText),
                 ),
                 if (detail != null) ...[
                   SizedBox(height: tokens.space4),
@@ -337,7 +374,7 @@ class _TransactionTile extends StatelessWidget {
                     detail,
                     style: Theme.of(
                       context,
-                    ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
+                    ).textTheme.wenyouCaption.copyWith(color: tokens.mutedText),
                   ),
                 ],
               ],
@@ -349,19 +386,20 @@ class _TransactionTile extends StatelessWidget {
             children: [
               Text(
                 '${income ? '+' : '−'}${WenyouAmount.format(transaction.amount)} 升',
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  color: income
-                      ? Theme.of(context).colorScheme.tertiary
-                      : tokens.text,
-                  fontWeight: FontWeight.w700,
-                ),
+                style: Theme.of(context).textTheme.wenyouUtilityCompactTitle
+                    .copyWith(
+                      color: income
+                          ? Theme.of(context).colorScheme.tertiary
+                          : tokens.text,
+                      fontWeight: FontWeight.w700,
+                    ),
               ),
               SizedBox(height: tokens.space4),
               Text(
                 '余额 ${WenyouAmount.format(transaction.balanceAfter)} 升',
                 style: Theme.of(
                   context,
-                ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
+                ).textTheme.wenyouCaption.copyWith(color: tokens.mutedText),
               ),
             ],
           ),
@@ -371,10 +409,13 @@ class _TransactionTile extends StatelessWidget {
     final path = _targetPath(transaction.target);
     return path == null
         ? content
-        : InkWell(
-            onTap: () => context.push(path),
-            borderRadius: BorderRadius.circular(tokens.radius12),
-            child: content,
+        : Material(
+            type: MaterialType.transparency,
+            child: InkWell(
+              onTap: () => context.push(path),
+              borderRadius: BorderRadius.circular(tokens.radius12),
+              child: content,
+            ),
           );
   }
 

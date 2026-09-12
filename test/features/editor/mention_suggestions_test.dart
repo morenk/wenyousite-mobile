@@ -8,10 +8,10 @@ import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/editor/data/mention_candidate_repository.dart';
 import 'package:wenyousite_mobile/features/editor/domain/mention_models.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/mention_suggestions.dart';
-import '../../support/foundation_test_fonts.dart';
+import '../../support/deterministic_test_fonts.dart';
 
 void main() {
-  setUpAll(loadFoundationTestFonts);
+  setUpAll(loadDeterministicTestFonts);
 
   testWidgets('输入 @ 后查询主题候选并插入规范用户节点', (tester) async {
     final repository = _FakeRepository(

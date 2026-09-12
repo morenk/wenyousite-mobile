@@ -105,7 +105,7 @@ class ApiModerationAppealRepository implements ModerationAppealRepository {
       : <String, dynamic>{'Authorization': 'Bearer $appealToken'};
 
   Map<String, dynamic>? _extra(String? appealToken) =>
-      appealToken == null ? null : ApiRequestPolicy.public.extra;
+      appealToken == null ? null : ApiRequestPolicy.explicitCredentials.extra;
 
   ModerationDecision _mapDecision(ModerationDecisionPublicResponseDto dto) {
     return ModerationDecision(

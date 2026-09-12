@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/config/app_environment.dart';
+import 'package:wenyousite_mobile/core/diagnostics/network_diagnostics.dart';
 import 'package:wenyousite_mobile/core/network/api_interceptors.dart';
 import 'package:wenyousite_mobile/core/network/session_controller.dart';
 import 'package:wenyousite_mobile/core/network/session_remote.dart';
@@ -34,6 +35,7 @@ final refreshDioProvider = Provider<Dio>((ref) {
       headers: {'Accept': 'application/json'},
     ),
   );
+  dio.interceptors.add(NetworkDiagnosticInterceptor());
   ref.onDispose(() => dio.close(force: true));
   return dio;
 });
@@ -81,6 +83,7 @@ final dioProvider = Provider<Dio>((ref) {
       ref.read(sessionControllerProvider.notifier),
     ),
     SafeRetryInterceptor(dio),
+    NetworkDiagnosticInterceptor(),
   ]);
   ref.onDispose(() => dio.close(force: true));
   return dio;

@@ -2,34 +2,35 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
-import 'package:wenyousite_mobile/core/models/thread_category_presentation.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/features/thread_feed/thread_feed_catalog_ports.dart';
+import 'package:wenyousite_mobile/features/thread_feed/thread_feed_models.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_management_repository_ports.dart';
+import 'package:wenyousite_mobile/features/threads/domain/subthread_management_models.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_management_models.dart';
 
 export 'package:wenyousite_mobile/features/threads/application/thread_management_repository_ports.dart'
     show ThreadManagementRepository, threadManagementRepositoryProvider;
 
 class ApiThreadManagementRepository implements ThreadManagementRepository {
-  ApiThreadManagementRepository(this._threadsApi, this._categoriesApi);
+  ApiThreadManagementRepository(this._threadsApi, this._categories);
 
   final ThreadsApi _threadsApi;
-  final ThreadCategoriesApi _categoriesApi;
+  final ThreadCategoryCatalogRepository _categories;
 
   @override
   Future<ThreadManagementBootstrap> load(String threadId) async {
     try {
       final responses = await Future.wait<Object>([
         _threadsApi.threadsFindById(id: threadId),
-        _categoriesApi.threadCategoriesList(),
+        _categories.fetchThreadCategories(refresh: true),
       ]);
       final threadEnvelope =
           (responses[0] as Response<ThreadsFindById200Response>).data;
-      final categoryEnvelope =
-          (responses[1] as Response<ThreadCategoriesList200Response>).data;
-      if (threadEnvelope == null || categoryEnvelope == null) {
+      final catalog = responses[1] as List<ThreadCategory>;
+      if (threadEnvelope == null) {
         throw const ApiFailure(userMessage: '主题管理信息加载失败，请稍后重试。');
       }
       final thread = _mapThread(threadEnvelope.data);
@@ -41,17 +42,13 @@ class ApiThreadManagementRepository implements ThreadManagementRepository {
         );
       }
       final categories =
-          categoryEnvelope.data
-              .where((item) => item.isActive)
+          catalog
               .map(
                 (item) => ThreadManagementCategory(
                   slug: item.slug,
-                  name: ThreadCategoryPresentation.catalog(
-                    slug: item.slug,
-                    label: item.name,
-                  ).label,
+                  name: item.name,
                   description: item.description,
-                  sortOrder: item.sortOrder.toInt(),
+                  sortOrder: item.sortOrder,
                 ),
               )
               .toList()
@@ -106,6 +103,20 @@ class ApiThreadManagementRepository implements ThreadManagementRepository {
           }
           if (draft.status != current.status) {
             builder.status = _mapSaveStatus(draft.status);
+          }
+          final postingPolicy = draft.defaultSubthreadPostingPolicy;
+          if (postingPolicy != null &&
+              postingPolicy != current.defaultSubthreadPostingPolicy) {
+            builder.defaultSubthreadPostingPolicy = switch (postingPolicy) {
+              SubthreadPostingPolicy.participants =>
+                SaveThreadAggregateDtoDefaultSubthreadPostingPolicyEnum
+                    .PARTICIPANTS,
+              SubthreadPostingPolicy.collaborators =>
+                SaveThreadAggregateDtoDefaultSubthreadPostingPolicyEnum
+                    .COLLABORATORS,
+              SubthreadPostingPolicy.players =>
+                SaveThreadAggregateDtoDefaultSubthreadPostingPolicyEnum.PLAYERS,
+            };
           }
           if (draft.visibility != current.visibility) {
             if (!current.isOwner) {
@@ -251,6 +262,18 @@ class ApiThreadManagementRepository implements ThreadManagementRepository {
       isOwner: isOwner,
       defaultSubthreadId: defaultSubthread.id,
       defaultSubthreadVersion: defaultSubthread.version.toInt(),
+      defaultSubthreadPostingPolicy: switch (defaultSubthread.postingPolicy) {
+        ThreadSubthreadResponseDtoPostingPolicyEnum.PARTICIPANTS =>
+          SubthreadPostingPolicy.participants,
+        ThreadSubthreadResponseDtoPostingPolicyEnum.COLLABORATORS =>
+          SubthreadPostingPolicy.collaborators,
+        ThreadSubthreadResponseDtoPostingPolicyEnum.PLAYERS =>
+          SubthreadPostingPolicy.players,
+        _ => throw ApiFailure.contractViolation(
+          userMessage: '主贴发言权限加载失败，请稍后重试。',
+          diagnosticCode: 'threads.manage.unknown_posting_policy',
+        ),
+      },
       bodyPostId: body?.id,
       bodyVersion: body?.version.toInt(),
       body: MarkdownContent.normalize(body?.content ?? ''),
@@ -278,6 +301,6 @@ final apiThreadManagementRepositoryProvider =
       final api = ref.watch(wenyouApiProvider);
       return ApiThreadManagementRepository(
         api.getThreadsApi(),
-        api.getThreadCategoriesApi(),
+        ref.watch(threadCategoryCatalogRepositoryProvider),
       );
     });

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/application/bookmark_folder_catalog.dart';
 import 'package:wenyousite_mobile/core/application/bookmark_folder_catalog_controller.dart';
@@ -93,27 +94,42 @@ class _BookmarkFolderCatalogPageState
               padding: EdgeInsets.symmetric(
                 horizontal: wenyouHorizontalPagePadding(context),
               ),
-              child: Align(
-                alignment: Alignment.centerRight,
-                child: WenyouDropdownFilter<String>(
-                  key: const Key('bookmark-folder-menu'),
-                  optionKeyPrefix: 'bookmark-folder',
-                  tooltip: '切换收藏夹',
-                  icon: WenyouIconIds.contentFolderOpen,
-                  appearance: WenyouDropdownFilterAppearance.quiet,
-                  enabled: !state.isBusy,
-                  selected: selectedFolder.id,
-                  options: [
-                    for (final folder in state.folders)
-                      WenyouFilterOption(
-                        value: folder.id,
-                        keyValue: folder.id,
-                        label: folder.name,
-                        supportingLabel: '${folder.bookmarkCount} 条收藏',
+              child: WenyouConstrainedWidth(
+                child: Row(
+                  key: const Key('bookmark-folder-filter-row'),
+                  children: [
+                    Flexible(
+                      child: WenyouDropdownFilter<String>(
+                        key: const Key('bookmark-folder-menu'),
+                        optionKeyPrefix: 'bookmark-folder',
+                        tooltip: '切换收藏夹',
+                        icon: WenyouIconIds.contentFolderOpen,
+                        appearance: WenyouDropdownFilterAppearance.quiet,
+                        enabled: !state.isBusy,
+                        selected: selectedFolder.id,
+                        options: [
+                          for (final folder in state.folders)
+                            WenyouFilterOption(
+                              value: folder.id,
+                              keyValue: folder.id,
+                              label: folder.name,
+                              supportingLabel: '${folder.bookmarkCount} 条收藏',
+                            ),
+                        ],
+                        onSelected: (folderId) => setState(
+                          () => _selectedFolderIds[_kind] = folderId,
+                        ),
                       ),
+                    ),
+                    SizedBox(width: context.wenyouTokens.space8),
+                    Text(
+                      '${selectedFolder.bookmarkCount} 条收藏',
+                      key: const Key('bookmark-folder-count'),
+                      style: Theme.of(context).textTheme.wenyouCaption.copyWith(
+                        color: context.wenyouTokens.mutedText,
+                      ),
+                    ),
                   ],
-                  onSelected: (folderId) =>
-                      setState(() => _selectedFolderIds[_kind] = folderId),
                 ),
               ),
             ),
@@ -229,6 +245,10 @@ class _BookmarkFolderCatalogPageState
     );
     if (!mounted || folder == null) return;
     setState(() => _selectedFolderIds[_kind] = folder.id);
-    showWenyouSnackBar(context, '已新建“${folder.name}”。');
+    showWenyouSnackBar(
+      context,
+      '已新建“${folder.name}”。',
+      tone: WenyouSnackBarTone.success,
+    );
   }
 }

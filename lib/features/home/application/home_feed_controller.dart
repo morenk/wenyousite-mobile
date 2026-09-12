@@ -3,11 +3,10 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
 import 'package:wenyousite_mobile/core/application/request_epoch.dart';
+import 'package:wenyousite_mobile/core/application/visibility_cache_invalidation.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/models/paging.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
-import 'package:wenyousite_mobile/core/network/network_providers.dart';
-import 'package:wenyousite_mobile/core/network/session_controller.dart';
 import 'package:wenyousite_mobile/features/home/application/home_repository_ports.dart';
 import 'package:wenyousite_mobile/features/home/domain/home_models.dart';
 
@@ -33,8 +32,8 @@ class HomeFeedState {
   });
 
   final HomeFeedPhase phase;
-  final List<HomeCategory> categories;
-  final List<HomeThreadCardModel> items;
+  final List<ThreadCategory> categories;
+  final List<ThreadFeedCardModel> items;
   final HomeFeedQuery query;
   final String? cursor;
   final bool hasMore;
@@ -46,8 +45,8 @@ class HomeFeedState {
 
   HomeFeedState copyWith({
     HomeFeedPhase? phase,
-    List<HomeCategory>? categories,
-    List<HomeThreadCardModel>? items,
+    List<ThreadCategory>? categories,
+    List<ThreadFeedCardModel>? items,
     HomeFeedQuery? query,
     Object? cursor = _unset,
     bool? hasMore,
@@ -100,9 +99,9 @@ class HomeFeedController extends StateNotifier<HomeFeedState> {
         _repository.fetchCategories(),
         _repository.fetchThreads(query: state.query),
       ]);
-      final categories = results[0] as List<HomeCategory>;
-      final page = results[1] as CursorPage<HomeThreadCardModel>;
-      if (!_requestEpoch.isCurrent(epoch)) return;
+      final categories = results[0] as List<ThreadCategory>;
+      final page = results[1] as CursorPage<ThreadFeedCardModel>;
+      if (!mounted || !_requestEpoch.isCurrent(epoch)) return;
       state = state.copyWith(
         phase: HomeFeedPhase.ready,
         categories: categories,
@@ -114,7 +113,7 @@ class HomeFeedController extends StateNotifier<HomeFeedState> {
         transientFailure: null,
       );
     } on Object catch (error) {
-      if (!_requestEpoch.isCurrent(epoch)) return;
+      if (!mounted || !_requestEpoch.isCurrent(epoch)) return;
       final failure = _asFailure(error, '刷新主题列表失败，请稍后重试。');
       if (state.items.isEmpty) {
         state = state.copyWith(
@@ -198,7 +197,7 @@ class HomeFeedController extends StateNotifier<HomeFeedState> {
         query: query,
         cursor: state.cursor,
       );
-      if (!_requestEpoch.isCurrent(epoch)) return;
+      if (!mounted || !_requestEpoch.isCurrent(epoch)) return;
       final appended = mergeUniqueBy(
         state.items,
         page.items,
@@ -211,7 +210,7 @@ class HomeFeedController extends StateNotifier<HomeFeedState> {
         isLoadingMore: false,
       );
     } on ApiFailure catch (failure) {
-      if (!_requestEpoch.isCurrent(epoch)) return;
+      if (!mounted || !_requestEpoch.isCurrent(epoch)) return;
       if (failure.isInvalidCursor) {
         await _loadFirstPage(loadCategories: false);
         return;
@@ -222,7 +221,7 @@ class HomeFeedController extends StateNotifier<HomeFeedState> {
         transientRetryAction: HomeFeedRetryAction.loadMore,
       );
     } on Object catch (error) {
-      if (!_requestEpoch.isCurrent(epoch)) return;
+      if (!mounted || !_requestEpoch.isCurrent(epoch)) return;
       state = state.copyWith(
         isLoadingMore: false,
         transientFailure: _asFailure(error, '加载更多主题失败，请重试。'),
@@ -250,9 +249,9 @@ class HomeFeedController extends StateNotifier<HomeFeedState> {
             : Future.value(state.categories),
         _repository.fetchThreads(query: state.query),
       ]);
-      final categories = results[0] as List<HomeCategory>;
-      final page = results[1] as CursorPage<HomeThreadCardModel>;
-      if (!_requestEpoch.isCurrent(epoch)) return;
+      final categories = results[0] as List<ThreadCategory>;
+      final page = results[1] as CursorPage<ThreadFeedCardModel>;
+      if (!mounted || !_requestEpoch.isCurrent(epoch)) return;
       state = state.copyWith(
         phase: HomeFeedPhase.ready,
         categories: categories,
@@ -261,7 +260,7 @@ class HomeFeedController extends StateNotifier<HomeFeedState> {
         hasMore: page.hasMore,
       );
     } on Object catch (error) {
-      if (!_requestEpoch.isCurrent(epoch)) return;
+      if (!mounted || !_requestEpoch.isCurrent(epoch)) return;
       state = state.copyWith(
         phase: HomeFeedPhase.failed,
         failure: _asFailure(error, '主题列表加载失败，请稍后重试。'),
@@ -276,17 +275,7 @@ class HomeFeedController extends StateNotifier<HomeFeedState> {
 
 final homeFeedControllerProvider =
     StateNotifierProvider<HomeFeedController, HomeFeedState>((ref) {
+      ref.watch(viewerScopeProvider);
       final controller = HomeFeedController(ref.watch(homeRepositoryProvider));
-      ref.listen(
-        sessionControllerProvider.select((session) => session.status),
-        (previous, next) {
-          if (previous == null ||
-              previous == next ||
-              next == SessionStatus.restoring) {
-            return;
-          }
-          unawaited(controller.refresh());
-        },
-      );
       return controller;
-    }, dependencies: [homeRepositoryProvider]);
+    }, dependencies: [viewerScopeProvider, homeRepositoryProvider]);

@@ -35,10 +35,6 @@ void main() {
       ),
       findsOneWidget,
     );
-    expect(
-      find.byKey(const Key('home-thread-card-thread-created')),
-      findsOneWidget,
-    );
     expect(find.text('一起写下温柔的故事。'), findsOneWidget);
     expect(find.text('7'), findsOneWidget);
     expect(find.text('9'), findsOneWidget);
@@ -59,6 +55,14 @@ void main() {
     expect(tester.getSemantics(avatar).label, contains('温柔测试员 的头像'));
     final avatarRect = tester.getRect(avatar);
     expect(avatarRect.size, const Size.square(72));
+    await _scrollToContent(
+      tester,
+      find.byKey(const Key('home-thread-card-thread-created')),
+    );
+    expect(
+      find.byKey(const Key('home-thread-card-thread-created')),
+      findsOneWidget,
+    );
   });
 
   testWidgets('公开用户页失败后可重试恢复', (tester) async {
@@ -82,10 +86,17 @@ void main() {
   });
 
   testWidgets('登录身份确认目标非本人后显示关系操作并同步粉丝数', (tester) async {
-    final relationRepository = _FakeUserRelationRepository();
+    final publicRepository = _FakePublicUserRepository();
+    final relationRepository = _FakeUserRelationRepository(
+      onBlock: () => publicRepository.isBlocked = true,
+      onUnfollow: () {
+        publicRepository.isFollowing = false;
+        publicRepository.followerCount = 8;
+      },
+    );
     final container = await _authenticatedContainer(
       currentUserId: 'me-1',
-      publicRepository: _FakePublicUserRepository(),
+      publicRepository: publicRepository,
       relationRepository: relationRepository,
     );
     addTearDown(container.dispose);
@@ -133,6 +144,8 @@ void main() {
     await tester.pumpAndSettle();
     expect(relationRepository.blockCalls, 1);
     expect(find.byTooltip('取消拉黑'), findsOneWidget);
+    expect(publicRepository.calls, 2);
+    expect(find.text('8'), findsOneWidget);
   });
 
   testWidgets('公开页目标是本人时不显示关注和拉黑操作', (tester) async {
@@ -257,6 +270,10 @@ void main() {
     await tester.pumpWidget(_userApp(repository));
     await tester.pumpAndSettle();
 
+    await _scrollToContent(
+      tester,
+      find.byKey(const Key('home-thread-card-thread-created')),
+    );
     expect(
       find.byKey(const Key('home-thread-card-thread-created')),
       findsOneWidget,
@@ -369,6 +386,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('温柔测试员'), findsOneWidget);
+    await _scrollToContent(
+      tester,
+      find.byKey(const Key('public-user-created-retry')),
+    );
     expect(find.text('创建的主题加载失败'), findsOneWidget);
     await tester.ensureVisible(
       find.byKey(const Key('public-user-created-retry')),
@@ -420,7 +441,7 @@ void main() {
     final createdThread = find.byKey(
       const Key('home-thread-card-thread-created'),
     );
-    await tester.ensureVisible(createdThread);
+    await _scrollToContent(tester, createdThread);
     await tester.pumpAndSettle();
     await tester.tap(
       find.descendant(of: createdThread, matching: find.text('创建主题')),
@@ -595,6 +616,9 @@ class _FakePublicUserRepository implements PublicUserRepository {
   int playedCalls = 0;
   int replyCalls = 0;
   int bookmarkCalls = 0;
+  bool isFollowing = true;
+  bool isBlocked = false;
+  int followerCount = 9;
 
   @override
   Future<PublicUserActivitySummary> fetchActivitySummary(String userId) async {
@@ -624,15 +648,15 @@ class _FakePublicUserRepository implements PublicUserRepository {
       bio: '一起写下温柔的故事。',
       level: 4,
       followingCount: 7,
-      followerCount: 9,
+      followerCount: followerCount,
       receivedTipTotal: '18',
       receivedTipCount: 6,
       showRecentReplies: showPrivateContent,
       showPlayedThreads: showPrivateContent,
       showBookmarks: showPrivateContent,
-      isFollowing: true,
+      isFollowing: isFollowing,
       isFollowedBy: true,
-      isBlocked: false,
+      isBlocked: isBlocked,
       isBlockedBy: false,
       isDeactivated: deactivated,
       createdAt: DateTime.utc(2026, 8, 10),
@@ -751,6 +775,10 @@ class _FakeMeProfileRepository implements MeProfileRepository {
 }
 
 class _FakeUserRelationRepository implements UserRelationRepository {
+  _FakeUserRelationRepository({this.onBlock, this.onUnfollow});
+
+  final void Function()? onBlock;
+  final void Function()? onUnfollow;
   int followCalls = 0;
   int unfollowCalls = 0;
   int blockCalls = 0;
@@ -760,10 +788,16 @@ class _FakeUserRelationRepository implements UserRelationRepository {
   Future<void> follow(String userId) async => followCalls += 1;
 
   @override
-  Future<void> unfollow(String userId) async => unfollowCalls += 1;
+  Future<void> unfollow(String userId) async {
+    unfollowCalls += 1;
+    onUnfollow?.call();
+  }
 
   @override
-  Future<void> block(String userId) async => blockCalls += 1;
+  Future<void> block(String userId) async {
+    blockCalls += 1;
+    onBlock?.call();
+  }
 
   @override
   Future<void> unblock(String userId) async => unblockCalls += 1;
@@ -793,4 +827,13 @@ class _FakeSessionRemote implements SessionRemote {
 
   @override
   Future<SessionTokens> refresh(String refreshToken) async => _tokens;
+}
+
+Future<void> _scrollToContent(WidgetTester tester, Finder target) async {
+  await tester.scrollUntilVisible(
+    target,
+    300,
+    scrollable: find.byType(Scrollable).first,
+  );
+  await tester.pumpAndSettle();
 }

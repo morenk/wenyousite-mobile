@@ -32,7 +32,7 @@ class ThreadInviteLinkPanel extends ConsumerWidget {
           '每次生成都会让旧邀请立即失效。只把链接发送给你希望加入这个私密主题的人。',
           style: Theme.of(
             context,
-          ).textTheme.bodyMedium?.copyWith(color: tokens.mutedText),
+          ).textTheme.wenyouCompactBody.copyWith(color: tokens.mutedText),
         ),
         if (state.failure != null) ...[
           SizedBox(height: tokens.space12),
@@ -52,7 +52,7 @@ class ThreadInviteLinkPanel extends ConsumerWidget {
         ],
         if (state.link != null) ...[
           SizedBox(height: tokens.space16),
-          Text('当前新邀请', style: Theme.of(context).textTheme.labelLarge),
+          Text('当前新邀请', style: Theme.of(context).textTheme.wenyouLabel),
           SizedBox(height: tokens.space8),
           SelectableText(
             state.link!.url.toString(),
@@ -127,6 +127,7 @@ class ThreadInviteLinkPanel extends ConsumerWidget {
       showWenyouSnackBar(
         context,
         generated ? '新邀请已生成并复制，旧链接已失效。' : '邀请链接已复制。',
+        tone: WenyouSnackBarTone.success,
         pacing: generated
             ? WenyouSnackBarPacing.extended
             : WenyouSnackBarPacing.brief,
@@ -136,6 +137,7 @@ class ThreadInviteLinkPanel extends ConsumerWidget {
       showWenyouSnackBar(
         context,
         '邀请已生成，但自动复制失败，请长按上方链接复制。',
+        tone: WenyouSnackBarTone.error,
         pacing: WenyouSnackBarPacing.extended,
       );
     }

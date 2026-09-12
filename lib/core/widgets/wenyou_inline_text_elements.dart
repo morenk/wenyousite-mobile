@@ -42,6 +42,7 @@ class WenyouMentionLink extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
     return Semantics(
+      container: true,
       link: true,
       label: '查看 $label 的个人资料',
       onTap: onTap,

@@ -2,44 +2,38 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
-import 'package:wenyousite_mobile/core/models/thread_category_presentation.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
-import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/tags/application/tag_repository_ports.dart';
 import 'package:wenyousite_mobile/features/tags/domain/tag_models.dart';
-import 'package:wenyousite_mobile/features/threads/data/thread_feed_mapper.dart';
-import 'package:wenyousite_mobile/features/threads/domain/thread_feed_models.dart';
+import 'package:wenyousite_mobile/features/thread_feed/thread_feed_catalog_ports.dart';
+import 'package:wenyousite_mobile/features/thread_feed/thread_feed_mapping.dart';
+import 'package:wenyousite_mobile/features/thread_feed/thread_feed_models.dart';
 
 export 'package:wenyousite_mobile/features/tags/application/tag_repository_ports.dart'
     show TagRepository, tagRepositoryProvider;
 
 class ApiTagRepository implements TagRepository {
-  ApiTagRepository(this._tagsApi, this._threadsApi, this._categoriesApi);
+  ApiTagRepository(this._tagsApi, this._threadsApi, this._categories);
 
   final TagsApi _tagsApi;
   final ThreadsApi _threadsApi;
-  final ThreadCategoriesApi _categoriesApi;
+  final ThreadCategoryCatalogRepository _categories;
 
   @override
   Future<TagThreadsBootstrap> loadTagThreads(String tagId) async {
     try {
       final responses = await Future.wait<Object>([
         _tagsApi.tagsGetById(id: tagId),
-        _categoriesApi.threadCategoriesList(
-          extra: ApiRequestPolicy.public.extra,
-        ),
+        _categories.fetchThreadCategories(refresh: true),
         _threadsApi.threadsFindAll(tagId: tagId),
       ]);
       final tagEnvelope =
           (responses[0] as Response<TagsGetById200Response>).data;
-      final categoryEnvelope =
-          (responses[1] as Response<ThreadCategoriesList200Response>).data;
+      final categories = responses[1] as List<ThreadCategory>;
       final threadEnvelope =
           (responses[2] as Response<ThreadsFindAll200Response>).data;
-      if (tagEnvelope == null ||
-          categoryEnvelope == null ||
-          threadEnvelope == null) {
+      if (tagEnvelope == null || threadEnvelope == null) {
         throw const ApiFailure(userMessage: '标签主题加载失败，请稍后重试。');
       }
       final tag = _mapTag(tagEnvelope.data);
@@ -48,7 +42,7 @@ class ApiTagRepository implements TagRepository {
       }
       return TagThreadsBootstrap(
         tag: tag,
-        categories: _mapCategories(categoryEnvelope.data),
+        categories: categories,
         page: _mapThreadPage(threadEnvelope),
       );
     } on DioException catch (error) {
@@ -57,7 +51,7 @@ class ApiTagRepository implements TagRepository {
   }
 
   @override
-  Future<CursorPage<HomeThreadCardModel>> fetchTagThreads({
+  Future<CursorPage<ThreadFeedCardModel>> fetchTagThreads({
     required String tagId,
     String? cursor,
     int limit = 20,
@@ -227,12 +221,12 @@ class ApiTagRepository implements TagRepository {
     }
   }
 
-  CursorPage<HomeThreadCardModel> _mapThreadPage(
+  CursorPage<ThreadFeedCardModel> _mapThreadPage(
     ThreadsFindAll200Response envelope,
   ) {
     final ids = <String>{};
     final items = envelope.data
-        .map(mapHomeThreadCardResponse)
+        .map(mapThreadFeedCardResponse)
         .where((item) {
           if (item.id.trim().isEmpty) {
             throw const ApiFailure(userMessage: '主题列表包含无效条目，请稍后重试。');
@@ -245,30 +239,6 @@ class ApiTagRepository implements TagRepository {
       cursor: envelope.meta.cursor,
       hasMore: envelope.meta.hasMore,
     );
-  }
-
-  List<HomeCategory> _mapCategories(
-    Iterable<ThreadCategoryResponseDto> values,
-  ) {
-    final ids = <String>{};
-    final categories = values.where((item) => item.isActive).map((item) {
-      if (!ids.add(item.id)) {
-        throw const ApiFailure(userMessage: '主题分类暂时无法显示，请稍后重试。');
-      }
-      final slug = _requiredText(item.slug, '分类标识');
-      return HomeCategory(
-        id: _requiredText(item.id, '分类 ID'),
-        slug: slug,
-        name: ThreadCategoryPresentation.catalog(
-          slug: slug,
-          label: _requiredText(item.name, '分类名称'),
-        ).label,
-        description: _optionalText(item.description),
-        sortOrder: item.sortOrder.toInt(),
-      );
-    }).toList();
-    categories.sort((left, right) => left.sortOrder.compareTo(right.sortOrder));
-    return List.unmodifiable(categories);
   }
 
   List<TopicTagModel> _mapRelations(
@@ -378,6 +348,6 @@ final apiTagRepositoryProvider = Provider<TagRepository>((ref) {
   return ApiTagRepository(
     api.getTagsApi(),
     api.getThreadsApi(),
-    api.getThreadCategoriesApi(),
+    ref.watch(threadCategoryCatalogRepositoryProvider),
   );
 });

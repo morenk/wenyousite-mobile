@@ -19,8 +19,9 @@ Future<BookmarkFolderItem?> showBookmarkFolderPicker({
   required Future<void> Function(String folderId) onConfirm,
   BookmarkFolderPickerMode mode = BookmarkFolderPickerMode.initial,
   String? currentFolderId,
-}) {
-  return showModalBottomSheet<BookmarkFolderItem>(
+  bool closeBeforeWrite = false,
+}) async {
+  final folder = await showModalBottomSheet<BookmarkFolderItem>(
     context: context,
     isScrollControlled: true,
     showDragHandle: true,
@@ -29,8 +30,32 @@ Future<BookmarkFolderItem?> showBookmarkFolderPicker({
       onConfirm: onConfirm,
       mode: mode,
       currentFolderId: currentFolderId,
+      closeBeforeWrite: closeBeforeWrite,
     ),
   );
+  if (folder == null || !closeBeforeWrite) return folder;
+  if (!context.mounted) return null;
+  try {
+    await onConfirm(folder.id);
+    return folder;
+  } on Object catch (error) {
+    if (context.mounted) {
+      final failure = mapApplicationFailure(error, '收藏操作失败，请重试。');
+      showWenyouSnackBar(
+        context,
+        wenyouFailureMessage(
+              failure,
+              treatAsWrite: true,
+              objectName: '收藏',
+              operationName: '更新',
+            ) ??
+            '收藏操作失败，请重试。',
+        tone: WenyouSnackBarTone.error,
+        pacing: WenyouSnackBarPacing.extended,
+      );
+    }
+    return null;
+  }
 }
 
 class BookmarkFolderPickerSheet extends StatefulWidget {
@@ -39,6 +64,7 @@ class BookmarkFolderPickerSheet extends StatefulWidget {
     required this.onConfirm,
     this.mode = BookmarkFolderPickerMode.initial,
     this.currentFolderId,
+    this.closeBeforeWrite = false,
     super.key,
   });
 
@@ -46,6 +72,7 @@ class BookmarkFolderPickerSheet extends StatefulWidget {
   final Future<void> Function(String folderId) onConfirm;
   final BookmarkFolderPickerMode mode;
   final String? currentFolderId;
+  final bool closeBeforeWrite;
 
   @override
   State<BookmarkFolderPickerSheet> createState() =>
@@ -141,6 +168,11 @@ class _BookmarkFolderPickerSheetState extends State<BookmarkFolderPickerSheet> {
     if (_isBusy || folderId == null || folders == null) return;
     final folder = folders.where((item) => item.id == folderId).firstOrNull;
     if (folder == null) return;
+    if (widget.closeBeforeWrite) {
+      setState(() => _isConfirming = true);
+      Navigator.of(context).pop(folder);
+      return;
+    }
     setState(() {
       _isConfirming = true;
       _failure = null;
@@ -209,7 +241,7 @@ class _BookmarkFolderPickerSheetState extends State<BookmarkFolderPickerSheet> {
                 '选择收藏夹后确认，本次内容只会保存在一个收藏夹中。',
                 style: Theme.of(
                   context,
-                ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
+                ).textTheme.wenyouCaption.copyWith(color: tokens.mutedText),
               ),
               if (_failure != null) ...[
                 SizedBox(height: tokens.space12),

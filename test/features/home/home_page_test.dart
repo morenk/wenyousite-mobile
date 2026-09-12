@@ -6,18 +6,78 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/home/data/home_repository.dart';
 import 'package:wenyousite_mobile/features/home/domain/home_models.dart';
 import 'package:wenyousite_mobile/features/home/presentation/home_page.dart';
+import 'package:wenyousite_mobile/features/thread_feed/application/cover_animation_source_ports.dart';
+import 'package:wenyousite_mobile/features/thread_feed/presentation/cover_playback_scope.dart';
 
+import '../../support/cover_playback_test_support.dart';
+import '../../support/deterministic_test_fonts.dart';
 import '../../support/foundation_icon_finder.dart';
-import '../../support/foundation_test_fonts.dart';
 
 void main() {
-  setUpAll(loadFoundationTestFonts);
+  setUpAll(loadDeterministicTestFonts);
+  testWidgets('真实首页多个可见动画立即请求且轻滑不重启', (tester) async {
+    tester.view.physicalSize = const Size(400, 1100);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await cachePlaybackTestPoster(tester);
+    final source = RecordingCoverSource();
+    final repository = _FakeHomeRepository(
+      items: [
+        for (var i = 0; i < 5; i++)
+          ThreadFeedCardModel(
+            id: 'animation-$i',
+            createdAt: DateTime.utc(2026, 9, 11),
+            title: '动画 $i',
+            status: ThreadFeedStatus.recruiting,
+            ownerName: '作者',
+            ownerLevel: 1,
+            memberCount: 1,
+            postCount: 1,
+            coverMedia: ThreadFeedCoverMedia(
+              url: 'https://cdn.example/home-$i.gif',
+              animated: true,
+              posterUrl: playbackTestPoster,
+            ),
+          ),
+      ],
+    );
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          homeRepositoryProvider.overrideWithValue(repository),
+          coverAnimationSourceProvider.overrideWithValue(source),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          builder: (_, child) => CoverPlaybackScope(child: child!),
+          home: const HomePage(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(source.urls.length, greaterThanOrEqualTo(2));
+    final active = source.tokens.where((token) => !token.isCancelled).toList();
+    final firstCalls = source.urls
+        .where((url) => url.endsWith('home-0.gif'))
+        .length;
+    await tester.drag(find.byType(Scrollable).first, const Offset(0, -25));
+    await tester.pumpAndSettle();
+    expect(active.every((token) => !token.isCancelled), isTrue);
+    expect(
+      source.urls.where((url) => url.endsWith('home-0.gif')).length,
+      firstCalls,
+    );
+    await tester.pumpWidget(const SizedBox());
+    expect(source.tokens.every((token) => token.isCancelled), isTrue);
+  });
 
   testWidgets('首页展示独立主题卡片并可切换分类', (tester) async {
     final repository = _FakeHomeRepository();
@@ -32,7 +92,7 @@ void main() {
     expect(brandMark.semanticLabel, isNull);
     expect(find.text('角色扮演'), findsOneWidget);
     expect(find.text('星海旅团'), findsOneWidget);
-    expect(find.text('向星海出发'), findsOneWidget);
+    expect(find.textContaining('向星海出发'), findsOneWidget);
     expect(find.text('#太空歌剧'), findsOneWidget);
     expect(find.byType(ChoiceChip), findsNothing);
     final tag = find.byKey(const Key('home-thread-tag-thread-1-tag-1'));
@@ -64,6 +124,35 @@ void main() {
       findsOneWidget,
     );
     expect(find.byKey(const Key('home-thread-cover-thread-1')), findsNothing);
+    final avatar = find.byKey(const Key('home-thread-author-avatar-thread-1'));
+    final owner = find.text('温柔测试员');
+    final contextLine = find.byKey(const Key('home-thread-context-thread-1'));
+    final metadata = find.byKey(const Key('home-thread-metadata-thread-1'));
+    final identity = find.byKey(const Key('home-thread-identity-thread-1'));
+    final time = find.descendant(
+      of: find.byKey(const Key('home-thread-time-thread-1')),
+      matching: find.byType(Text),
+    );
+    final preview = tester.widget<Text>(
+      find.byKey(const Key('home-thread-preview-thread-1')),
+    );
+    expect(tester.getSize(avatar), const Size.square(32));
+    expect(tester.getSize(metadata).height, greaterThan(32));
+    expect(tester.getSize(metadata).height, lessThan(42));
+    expect(
+      tester.widget<Text>(owner).style,
+      same(Theme.of(tester.element(owner)).textTheme.wenyouCaptionEmphasis),
+    );
+    expect(tester.getCenter(owner).dy, tester.getCenter(time).dy);
+    expect(
+      tester.getTopLeft(contextLine).dy - tester.getBottomLeft(identity).dy,
+      4,
+    );
+    expect(tester.widget<Text>(time).data, matches(RegExp(r'^\d+ 小时前$')));
+    _expectTextFits(tester, time);
+    expect(tester.widget<Text>(contextLine).maxLines, 1);
+    expect(tester.widget<Text>(contextLine).data, '角色扮演·招募中·置顶');
+    expect(preview.maxLines, 4);
 
     await tester.tap(find.byKey(const Key('home-category-RPG')));
     await tester.pumpAndSettle();
@@ -100,7 +189,7 @@ void main() {
   });
 
   testWidgets('首页切换分类时页签保持稳定且只在内容区展示加载骨架', (tester) async {
-    final categoryPage = Completer<CursorPage<HomeThreadCardModel>>();
+    final categoryPage = Completer<CursorPage<ThreadFeedCardModel>>();
     final repository = _FakeHomeRepository(categoryPage: categoryPage);
     await tester.pumpWidget(_homeApp(repository));
     await tester.pumpAndSettle();
@@ -157,7 +246,7 @@ void main() {
       _homeApp(
         _FakeHomeRepository(
           categories: const [
-            HomeCategory(
+            ThreadCategory(
               id: 'category-deduction',
               slug: 'DEDUCTION',
               name: '演绎',
@@ -267,6 +356,47 @@ void main() {
       );
     });
   }
+
+  testWidgets('320dp 两倍字号下主题元信息保持两行且完整显示相对时间', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(320, 900);
+    tester.platformDispatcher.textScaleFactorTestValue = 2;
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+
+    await tester.pumpWidget(
+      _homeApp(_FakeHomeRepository(items: [_threadWithAvatar])),
+    );
+    await tester.pumpAndSettle();
+
+    final metadata = find.byKey(
+      const Key('home-thread-metadata-thread-avatar'),
+    );
+    final identity = find.byKey(
+      const Key('home-thread-identity-thread-avatar'),
+    );
+    final contextLine = find.byKey(
+      const Key('home-thread-context-thread-avatar'),
+    );
+    final time = find.descendant(
+      of: find.byKey(const Key('home-thread-time-thread-avatar')),
+      matching: find.byType(Text),
+    );
+    final preview = tester.widget<Text>(
+      find.byKey(const Key('home-thread-preview-thread-avatar')),
+    );
+    expect(tester.takeException(), isNull);
+    expect(tester.getSize(metadata).height, lessThan(80));
+    expect(
+      tester.getTopLeft(contextLine).dy - tester.getBottomLeft(identity).dy,
+      4,
+    );
+    expect(tester.widget<Text>(time).data, matches(RegExp(r'^\d+ 分钟前$')));
+    _expectTextFits(tester, time);
+    expect(tester.widget<Text>(contextLine).maxLines, 1);
+    expect(preview.maxLines, 4);
+  });
 
   testWidgets('360dp 有封面主题使用正文整宽 16:9 单封面', (tester) async {
     tester.view.devicePixelRatio = 1;
@@ -404,13 +534,27 @@ Future<void> _settleHomeBrandMark(WidgetTester tester) async {
   await tester.pump();
 }
 
+void _expectTextFits(WidgetTester tester, Finder finder) {
+  final text = tester.widget<Text>(finder);
+  final painter = TextPainter(
+    text: TextSpan(text: text.data, style: text.style),
+    textDirection: Directionality.of(tester.element(finder)),
+    textScaler: MediaQuery.textScalerOf(tester.element(finder)),
+    maxLines: 1,
+  )..layout();
+  expect(
+    tester.getSize(finder).width,
+    greaterThanOrEqualTo(painter.width - 0.01),
+  );
+}
+
 class _FakeHomeRepository implements HomeRepository {
   _FakeHomeRepository({
     this.failFirstRequest = false,
     this.items,
     this.categoryPage,
     this.categories = const [
-      HomeCategory(
+      ThreadCategory(
         id: 'category-rpg',
         slug: 'RPG',
         name: '角色扮演',
@@ -421,17 +565,17 @@ class _FakeHomeRepository implements HomeRepository {
   });
 
   final bool failFirstRequest;
-  final List<HomeThreadCardModel>? items;
-  final Completer<CursorPage<HomeThreadCardModel>>? categoryPage;
-  final List<HomeCategory> categories;
+  final List<ThreadFeedCardModel>? items;
+  final Completer<CursorPage<ThreadFeedCardModel>>? categoryPage;
+  final List<ThreadCategory> categories;
   int threadCalls = 0;
   HomeFeedQuery? lastQuery;
 
   @override
-  Future<List<HomeCategory>> fetchCategories() async => categories;
+  Future<List<ThreadCategory>> fetchCategories() async => categories;
 
   @override
-  Future<CursorPage<HomeThreadCardModel>> fetchThreads({
+  Future<CursorPage<ThreadFeedCardModel>> fetchThreads({
     required HomeFeedQuery query,
     String? cursor,
     int limit = 20,
@@ -451,17 +595,18 @@ class _FakeHomeRepository implements HomeRepository {
   }
 }
 
-final _thread = HomeThreadCardModel(
+final _thread = ThreadFeedCardModel(
   id: 'thread-1',
   title: '星海旅团',
   categorySlug: 'RPG',
-  status: HomeThreadStatus.recruiting,
+  status: ThreadFeedStatus.recruiting,
   isPinned: true,
   ownerId: 'user-1',
   ownerName: '温柔测试员',
   ownerLevel: 3,
-  preview: '向星海出发',
-  tags: const [HomeThreadTag(id: 'tag-1', name: '太空歌剧')],
+  preview:
+      '向星海出发，在旧航路熄灭前寻找失落的信标。旅团将在每一次选择里共同记录角色关系、沿途见闻与尚未揭晓的秘密，并为后来者留下可以继续书写的航行日志。',
+  tags: const [ThreadFeedTag(id: 'tag-1', name: '太空歌剧')],
   coverImageUrls: const [],
   memberCount: 5,
   playerCount: 2,
@@ -470,11 +615,11 @@ final _thread = HomeThreadCardModel(
   lastActivityAt: DateTime.now().subtract(const Duration(hours: 5)),
 );
 
-final _deductionThread = HomeThreadCardModel(
+final _deductionThread = ThreadFeedCardModel(
   id: 'thread-deduction',
   title: '演绎主题',
   categorySlug: 'DEDUCTION',
-  status: HomeThreadStatus.recruiting,
+  status: ThreadFeedStatus.recruiting,
   ownerName: '楼主',
   ownerLevel: 1,
   memberCount: 1,
@@ -482,11 +627,11 @@ final _deductionThread = HomeThreadCardModel(
   lastActivityAt: DateTime.utc(2026, 8, 10),
 );
 
-final _historicalThread = HomeThreadCardModel(
+final _historicalThread = ThreadFeedCardModel(
   id: 'thread-historical',
   title: '旧分类主题',
   categorySlug: 'ARCHIVED_WORLD',
-  status: HomeThreadStatus.closed,
+  status: ThreadFeedStatus.closed,
   ownerName: '楼主',
   ownerLevel: 1,
   memberCount: 1,
@@ -494,11 +639,11 @@ final _historicalThread = HomeThreadCardModel(
   lastActivityAt: DateTime.utc(2026, 8, 10),
 );
 
-final _threadWithCover = HomeThreadCardModel(
+final _threadWithCover = ThreadFeedCardModel(
   id: 'thread-cover',
   title: '带封面的长篇主题',
   categorySlug: 'RPG',
-  status: HomeThreadStatus.recruiting,
+  status: ThreadFeedStatus.recruiting,
   isPinned: false,
   ownerId: 'user-1',
   ownerName: '温柔测试员',
@@ -509,6 +654,11 @@ final _threadWithCover = HomeThreadCardModel(
     'https://example.com/cover.jpg',
     'https://example.com/ignored-second-cover.jpg',
   ],
+  coverMedia: const ThreadFeedCoverMedia(
+    url: 'https://example.com/cover.jpg',
+    animated: false,
+    posterUrl: 'https://example.com/cover.jpg',
+  ),
   memberCount: 5,
   playerCount: 2,
   postCount: 12,
@@ -516,11 +666,11 @@ final _threadWithCover = HomeThreadCardModel(
   lastActivityAt: DateTime.now().subtract(const Duration(hours: 10)),
 );
 
-final _threadWithAvatar = HomeThreadCardModel(
+final _threadWithAvatar = ThreadFeedCardModel(
   id: 'thread-avatar',
   title: '有头像的主题',
   categorySlug: 'RPG',
-  status: HomeThreadStatus.recruiting,
+  status: ThreadFeedStatus.recruiting,
   isPinned: false,
   ownerId: 'user-avatar',
   ownerName: '一位名字很长但仍需完整保持卡片节奏的头像作者',
@@ -533,24 +683,24 @@ final _threadWithAvatar = HomeThreadCardModel(
   playerCount: 1,
   postCount: 3,
   tipTotal: '0',
-  lastActivityAt: DateTime(2026, 8, 12),
+  lastActivityAt: DateTime.now().subtract(const Duration(minutes: 30)),
 );
 
-final _threadWithManyTags = HomeThreadCardModel(
+final _threadWithManyTags = ThreadFeedCardModel(
   id: 'thread-many-tags',
   title: '标签密度测试主题',
   categorySlug: 'RPG',
-  status: HomeThreadStatus.recruiting,
+  status: ThreadFeedStatus.recruiting,
   isPinned: true,
   ownerId: 'user-1',
   ownerName: '温柔测试员',
   ownerLevel: 3,
   preview: '标签只占固定底栏，不推动正文高度。',
   tags: const [
-    HomeThreadTag(id: 'tag-1', name: '太空歌剧'),
-    HomeThreadTag(id: 'tag-2', name: '长期演绎'),
-    HomeThreadTag(id: 'tag-3', name: '角色招募'),
-    HomeThreadTag(id: 'tag-4', name: '轻松日常'),
+    ThreadFeedTag(id: 'tag-1', name: '太空歌剧'),
+    ThreadFeedTag(id: 'tag-2', name: '长期演绎'),
+    ThreadFeedTag(id: 'tag-3', name: '角色招募'),
+    ThreadFeedTag(id: 'tag-4', name: '轻松日常'),
   ],
   coverImageUrls: const [],
   memberCount: 5,
@@ -560,11 +710,11 @@ final _threadWithManyTags = HomeThreadCardModel(
   lastActivityAt: DateTime(2026, 8, 15),
 );
 
-final _secondThread = HomeThreadCardModel(
+final _secondThread = ThreadFeedCardModel(
   id: 'thread-2',
   title: '第二段接力',
   categorySlug: 'RPG',
-  status: HomeThreadStatus.finished,
+  status: ThreadFeedStatus.finished,
   isPinned: false,
   ownerId: 'user-2',
   ownerName: '接力作者',

@@ -10,6 +10,7 @@ import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_management_controller.dart';
+import 'package:wenyousite_mobile/features/threads/domain/subthread_management_models.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_management_models.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/subthread_management_page.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_export_sheet.dart';
@@ -46,6 +47,7 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
   String? _categorySlug;
   ThreadManagementStatus _status = ThreadManagementStatus.recruiting;
   ThreadManagementVisibility _visibility = ThreadManagementVisibility.public;
+  SubthreadPostingPolicy? _postingPolicy;
   List<String> _tagNames = const [];
   String? _boundSignature;
   bool _changed = false;
@@ -87,7 +89,7 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
         });
       }
     }
-    return PopScope<Object?>(
+    final page = PopScope<Object?>(
       canPop: _allowPop || state.phase != ThreadManagementPhase.ready,
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) unawaited(_handlePopAttempt(state));
@@ -151,6 +153,7 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
         ),
       ),
     );
+    return WenyouSettingsTypography(child: page);
   }
 
   Widget _buildSettings(
@@ -165,7 +168,7 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
         thread.published &&
         thread.visibility == ThreadManagementVisibility.private;
     final showActions = thread.published || thread.isOwner;
-    final actionTitleStyle = Theme.of(context).textTheme.titleMedium;
+    final actionTitleStyle = Theme.of(context).textTheme.wenyouRowTitle;
     return WenyouPageBody(
       key: const Key('thread-management-settings-content'),
       child: Form(
@@ -193,6 +196,7 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
             ThreadManagementPublishingSection(
               status: _status,
               visibility: _visibility,
+              postingPolicy: thread.published ? _postingPolicy : null,
               enabled: !locked,
               canChangeVisibility: thread.isOwner,
               onStatusChanged: (value) {
@@ -201,6 +205,10 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
               },
               onVisibilityChanged: (value) {
                 setState(() => _visibility = value);
+                unawaited(_autosave.saveNow());
+              },
+              onPostingPolicyChanged: (value) {
+                setState(() => _postingPolicy = value);
                 unawaited(_autosave.saveNow());
               },
             ),
@@ -282,7 +290,7 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
                         : Theme.of(context).colorScheme.error,
                   ),
                   title: const Text('删除主题'),
-                  titleTextStyle: actionTitleStyle?.copyWith(
+                  titleTextStyle: actionTitleStyle.copyWith(
                     color: state.isBusy
                         ? tokens.mutedText
                         : Theme.of(context).colorScheme.error,
@@ -307,6 +315,7 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
     categorySlug: _categorySlug,
     status: _status,
     visibility: _visibility,
+    defaultSubthreadPostingPolicy: _postingPolicy,
     tagNames: _tagNames,
   );
 
@@ -336,7 +345,9 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
       context: context,
       threadId: widget.threadId,
     );
-    if (saved && mounted) showWenyouSnackBar(context, '主题档案已保存。');
+    if (saved && mounted) {
+      showWenyouSnackBar(context, '主题档案已保存。', tone: WenyouSnackBarTone.success);
+    }
   }
 
   bool _isDirty(ThreadManagementState state) {
@@ -364,6 +375,7 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
     _categorySlug = snapshot.categorySlug;
     _status = snapshot.status;
     _visibility = snapshot.visibility;
+    _postingPolicy = snapshot.defaultSubthreadPostingPolicy;
     _tagNames = List.unmodifiable(snapshot.tagNames);
   }
 
@@ -531,7 +543,7 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
         .read(threadManagementControllerProvider(widget.threadId).notifier)
         .remove();
     if (!succeeded || !mounted) return;
-    showWenyouSnackBar(context, '主题已删除。');
+    showWenyouSnackBar(context, '主题已删除。', tone: WenyouSnackBarTone.success);
     _allowPop = true;
     context.go(AppRouteLocations.home);
   }
@@ -599,7 +611,7 @@ class _ThreadManagementAutosaveIndicator extends StatelessWidget {
                           label,
                           style: Theme.of(
                             context,
-                          ).textTheme.bodySmall?.copyWith(color: color),
+                          ).textTheme.wenyouCaption.copyWith(color: color),
                         ),
                       ],
                     ),
@@ -680,7 +692,7 @@ class _ThreadTagSelectorSheetState extends State<_ThreadTagSelectorSheet> {
                 '已选 ${_tags.length}/5',
                 style: Theme.of(
                   context,
-                ).textTheme.bodyMedium?.copyWith(color: tokens.mutedText),
+                ).textTheme.wenyouCompactBody.copyWith(color: tokens.mutedText),
               ),
               if (_tags.isNotEmpty) ...[
                 SizedBox(height: tokens.space8),

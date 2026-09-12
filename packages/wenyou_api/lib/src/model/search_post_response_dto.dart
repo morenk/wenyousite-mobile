@@ -3,6 +3,8 @@
 //
 
 // ignore_for_file: unused_element
+import 'package:wenyou_api/src/model/markdown_media_display_response_dto.dart';
+import 'package:built_collection/built_collection.dart';
 import 'package:wenyou_api/src/model/search_author_response_dto.dart';
 import 'package:wenyou_api/src/model/search_subthread_reference_response_dto.dart';
 import 'package:wenyou_api/src/model/search_thread_reference_response_dto.dart';
@@ -14,8 +16,10 @@ part 'search_post_response_dto.g.dart';
 /// SearchPostResponseDto
 ///
 /// Properties:
+/// * [mediaDisplays] - 已授权正文的精确来源映射
+/// * [kind] - BODY 为正文，FLOOR 为主楼层或楼中楼
 /// * [id] - 帖子 ID
-/// * [floorNumber] - 楼层号；楼中楼为 null
+/// * [floorNumber] - 楼层号；正文与楼中楼为 null
 /// * [parentPostId] - 父楼层 ID；主楼层为 null
 /// * [content] - Markdown 正文
 /// * [createdAt] - 创建时间
@@ -24,11 +28,20 @@ part 'search_post_response_dto.g.dart';
 /// * [subthread] - 所属子贴
 @BuiltValue()
 abstract class SearchPostResponseDto implements Built<SearchPostResponseDto, SearchPostResponseDtoBuilder> {
+  /// 已授权正文的精确来源映射
+  @BuiltValueField(wireName: r'mediaDisplays')
+  BuiltList<MarkdownMediaDisplayResponseDto>? get mediaDisplays;
+
+  /// BODY 为正文，FLOOR 为主楼层或楼中楼
+  @BuiltValueField(wireName: r'kind')
+  SearchPostResponseDtoKindEnum get kind;
+  // enum kindEnum {  BODY,  FLOOR,  };
+
   /// 帖子 ID
   @BuiltValueField(wireName: r'id')
   String get id;
 
-  /// 楼层号；楼中楼为 null
+  /// 楼层号；正文与楼中楼为 null
   @BuiltValueField(wireName: r'floorNumber')
   num? get floorNumber;
 
@@ -79,6 +92,18 @@ class _$SearchPostResponseDtoSerializer implements PrimitiveSerializer<SearchPos
     SearchPostResponseDto object, {
     FullType specifiedType = FullType.unspecified,
   }) sync* {
+    if (object.mediaDisplays != null) {
+      yield r'mediaDisplays';
+      yield serializers.serialize(
+        object.mediaDisplays,
+        specifiedType: const FullType(BuiltList, [FullType(MarkdownMediaDisplayResponseDto)]),
+      );
+    }
+    yield r'kind';
+    yield serializers.serialize(
+      object.kind,
+      specifiedType: const FullType(SearchPostResponseDtoKindEnum),
+    );
     yield r'id';
     yield serializers.serialize(
       object.id,
@@ -142,6 +167,20 @@ class _$SearchPostResponseDtoSerializer implements PrimitiveSerializer<SearchPos
       final key = serializedList[i] as String;
       final value = serializedList[i + 1];
       switch (key) {
+        case r'mediaDisplays':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(BuiltList, [FullType(MarkdownMediaDisplayResponseDto)]),
+          ) as BuiltList<MarkdownMediaDisplayResponseDto>;
+          result.mediaDisplays.replace(valueDes);
+          break;
+        case r'kind':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(SearchPostResponseDtoKindEnum),
+          ) as SearchPostResponseDtoKindEnum;
+          result.kind = valueDes;
+          break;
         case r'id':
           final valueDes = serializers.deserialize(
             value,
@@ -227,4 +266,24 @@ class _$SearchPostResponseDtoSerializer implements PrimitiveSerializer<SearchPos
     );
     return result.build();
   }
+}
+
+class SearchPostResponseDtoKindEnum extends EnumClass {
+
+  /// BODY 为正文，FLOOR 为主楼层或楼中楼
+  @BuiltValueEnumConst(wireName: r'BODY')
+  static const SearchPostResponseDtoKindEnum BODY = _$searchPostResponseDtoKindEnum_BODY;
+  /// BODY 为正文，FLOOR 为主楼层或楼中楼
+  @BuiltValueEnumConst(wireName: r'FLOOR')
+  static const SearchPostResponseDtoKindEnum FLOOR = _$searchPostResponseDtoKindEnum_FLOOR;
+  /// BODY 为正文，FLOOR 为主楼层或楼中楼
+  @BuiltValueEnumConst(wireName: r'unknown_default_open_api', fallback: true)
+  static const SearchPostResponseDtoKindEnum unknownDefaultOpenApi = _$searchPostResponseDtoKindEnum_unknownDefaultOpenApi;
+
+  static Serializer<SearchPostResponseDtoKindEnum> get serializer => _$searchPostResponseDtoKindEnumSerializer;
+
+  const SearchPostResponseDtoKindEnum._(String name): super(name);
+
+  static BuiltSet<SearchPostResponseDtoKindEnum> get values => _$searchPostResponseDtoKindEnumValues;
+  static SearchPostResponseDtoKindEnum valueOf(String name) => _$searchPostResponseDtoKindEnumValueOf(name);
 }

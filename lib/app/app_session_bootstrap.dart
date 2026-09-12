@@ -4,10 +4,12 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/application/profile_cache_invalidation.dart';
+import 'package:wenyousite_mobile/core/diagnostics/failure_diagnostics.dart';
+import 'package:wenyousite_mobile/core/navigation/wenyou_feedback_visibility.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/network/session_controller.dart';
-import 'package:wenyousite_mobile/core/widgets/wenyou_snack_bar.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_reliable_snack_bar.dart';
 import 'package:wenyousite_mobile/features/wallet/application/wallet_controllers.dart';
 import 'package:wenyousite_mobile/features/wallet/domain/wallet_models.dart';
 
@@ -17,6 +19,7 @@ class AppSessionBootstrap extends ConsumerStatefulWidget {
     this.now,
     this.timerFactory,
     this.retryJitter,
+    this.feedbackVisibility,
     super.key,
   });
 
@@ -24,6 +27,7 @@ class AppSessionBootstrap extends ConsumerStatefulWidget {
   final DateTime Function()? now;
   final Timer Function(Duration delay, void Function() callback)? timerFactory;
   final Duration Function()? retryJitter;
+  final WenyouFeedbackVisibility? feedbackVisibility;
 
   @override
   ConsumerState<AppSessionBootstrap> createState() =>
@@ -44,6 +48,7 @@ class _AppSessionBootstrapState extends ConsumerState<AppSessionBootstrap>
   int _nextRetryIndex = 0;
   Timer? _rolloverTimer;
   Timer? _retryTimer;
+  DateTime? _retryNotBefore;
   _CheckInAttempt? _inFlight;
   _CheckInAttempt? _pending;
 
@@ -51,6 +56,9 @@ class _AppSessionBootstrapState extends ConsumerState<AppSessionBootstrap>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) FailureDiagnostics.instance.retryPending();
+    });
   }
 
   @override
@@ -63,6 +71,9 @@ class _AppSessionBootstrapState extends ConsumerState<AppSessionBootstrap>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     _lifecycleState = state;
+    if (state == AppLifecycleState.resumed) {
+      FailureDiagnostics.instance.retryPending();
+    }
     if (state != AppLifecycleState.resumed) {
       _rolloverTimer?.cancel();
       _rolloverTimer = null;
@@ -78,19 +89,68 @@ class _AppSessionBootstrapState extends ConsumerState<AppSessionBootstrap>
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<SessionState>(sessionControllerProvider, (previous, next) {
+      // Restoring persisted tokens at startup must preserve the outbox.
+      if (previous != null &&
+          previous.status != SessionStatus.restoring &&
+          previous.generation != next.generation) {
+        unawaited(FailureDiagnostics.instance.clear());
+      }
+    });
     final session = ref.watch(sessionControllerProvider);
     final scope = ref.watch(sessionScopeProvider);
+    final checkIn = ref.watch(dailyCheckInControllerProvider);
+    ref.listen(
+      dailyCheckInControllerProvider.select((value) => value.retryRevision),
+      (before, after) {
+        if (before == null || after <= before) return;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (_canRun(scope)) {
+            _evaluateCurrentDate(scope, resetRetryBudget: true);
+          }
+        });
+      },
+    );
     _synchronizeSession(session.isAuthenticated ? scope : null);
-    return widget.child;
+    final pendingReceipt = checkIn.pendingReceipt;
+    final receipt =
+        session.isAuthenticated &&
+            pendingReceipt != null &&
+            pendingReceipt.date.compareTo(_beijingDateKey(_now())) >= 0
+        ? pendingReceipt
+        : null;
+    return WenyouReliableSnackBar(
+      visibility: widget.feedbackVisibility,
+      receipt: receipt == null
+          ? null
+          : WenyouSnackBarReceipt(
+              id: (scope, receipt.date),
+              message: '今日签到获得 ${receipt.rewardAmount} 升温油。',
+            ),
+      onDelivered: (id) {
+        if (ref.read(sessionScopeProvider) != scope ||
+            receipt == null ||
+            id != (scope, receipt.date)) {
+          return;
+        }
+        ref
+            .read(dailyCheckInControllerProvider.notifier)
+            .acknowledgeReceipt(receipt.date);
+      },
+      child: widget.child,
+    );
   }
 
   void _synchronizeSession(SessionScope? scope) {
     if (_activeScope == scope) return;
     _cancelScheduledWork();
     _activeScope = scope;
-    _confirmedServerDate = null;
+    _confirmedServerDate = scope == null
+        ? null
+        : ref.read(dailyCheckInControllerProvider).result?.date;
     _retryDate = null;
     _nextRetryIndex = 0;
+    _retryNotBefore = null;
     if (scope == null) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || _activeScope != scope) return;
@@ -136,6 +196,16 @@ class _AppSessionBootstrapState extends ConsumerState<AppSessionBootstrap>
       _pending = attempt;
       return;
     }
+    final remaining = _retryNotBefore?.difference(_now());
+    if (remaining != null && remaining > Duration.zero) {
+      _retryTimer?.cancel();
+      _retryTimer = _createTimer(remaining, () {
+        _retryTimer = null;
+        _retryNotBefore = null;
+        _queueAttempt(attempt, resetRetryBudget: false);
+      });
+      return;
+    }
     _inFlight = attempt;
     unawaited(_performCheckIn(attempt));
   }
@@ -143,12 +213,14 @@ class _AppSessionBootstrapState extends ConsumerState<AppSessionBootstrap>
   Future<void> _performCheckIn(_CheckInAttempt attempt) async {
     DailyCheckInResult? result;
     ApiFailure? failure;
+    final controller = ref.read(dailyCheckInControllerProvider.notifier);
     try {
-      result = await ref
-          .read(dailyCheckInControllerProvider.notifier)
-          .checkIn();
+      result = await controller.checkIn(attempt.expectedDate);
+      if (!mounted) return;
       if (result == null) {
-        failure = ref.read(dailyCheckInControllerProvider).failure;
+        if (ref.read(sessionScopeProvider) == attempt.scope) {
+          failure = ref.read(dailyCheckInControllerProvider).failure;
+        }
       }
     } on Object catch (error) {
       failure = error is ApiFailure ? error : null;
@@ -156,9 +228,15 @@ class _AppSessionBootstrapState extends ConsumerState<AppSessionBootstrap>
     if (!mounted) return;
 
     _inFlight = null;
-    final isCurrentScope = _activeScope == attempt.scope;
+    final isCurrentScope =
+        _activeScope == attempt.scope &&
+        ref.read(sessionScopeProvider) == attempt.scope;
     if (isCurrentScope && result != null) {
       _applyResult(attempt.scope, result);
+    }
+    final retryAfter = failure?.retryAfter;
+    if (isCurrentScope && retryAfter != null) {
+      _retryNotBefore = _now().add(retryAfter);
     }
 
     final pending = _pending;
@@ -184,19 +262,11 @@ class _AppSessionBootstrapState extends ConsumerState<AppSessionBootstrap>
 
   void _applyResult(SessionScope scope, DailyCheckInResult result) {
     _confirmedServerDate = result.date;
+    _retryNotBefore = null;
     _retryTimer?.cancel();
     _retryTimer = null;
     ref.invalidate(walletControllerProvider(_walletSessionKey(scope)));
     ref.read(profileCacheInvalidatorProvider)(scope.accountId);
-    if (!result.claimedNow || _lifecycleState != AppLifecycleState.resumed) {
-      return;
-    }
-    showWenyouSnackBar(
-      context,
-      '今日签到获得 ${result.rewardAmount} 升温油和 '
-      '${result.experienceAwarded} 经验。',
-      pacing: WenyouSnackBarPacing.extended,
-    );
   }
 
   void _scheduleRetry(_CheckInAttempt attempt, {ApiFailure? failure}) {
@@ -220,20 +290,14 @@ class _AppSessionBootstrapState extends ConsumerState<AppSessionBootstrap>
     _retryTimer?.cancel();
     _retryTimer = _createTimer(delay, () {
       _retryTimer = null;
+      _retryNotBefore = null;
       if (!_canRun(attempt.scope)) return;
       _queueAttempt(attempt, resetRetryBudget: false);
     });
   }
 
   bool _isRetryable(ApiFailure? failure) {
-    if (failure == null) return false;
-    if (failure.isExpiredAccessToken) return true;
-    if (failure.reason == FailureReason.offline ||
-        failure.reason == FailureReason.timeout ||
-        failure.reason == FailureReason.rateLimited) {
-      return true;
-    }
-    return failure.effectiveSource == FailureSource.service;
+    return isCheckInRetryable(failure);
   }
 
   void _scheduleRollover(SessionScope scope) {

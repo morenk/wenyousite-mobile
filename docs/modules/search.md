@@ -26,7 +26,9 @@
 
 ## 6. 状态模型和数据流
 
-四个用户可见 Tab 独立保存 idle/loading/ready/failed 状态；动态和楼层内容额外保存不透明 cursor、hasMore、加载更多和局部错误。搜索仓储接口位于 `search/application`，`main.dart` 组合根绑定 API data 适配器，两个搜索控制器不直接导入 data。主题结果直接映射为 threads/core 的共享主题卡模型，只消费 `coverImages` 的唯一安全 HTTP(S) 首图，并保留搜索端点自己的相关度排序。控制器共享 query 与请求代次，只有最新代次可写回状态。`ThreadPostSearchController(threadId)` 隔离每个主题的关键词、分页和请求代次；所有列表按稳定 ID 去重。后端综合搜索读模型继续保留兼容映射，但移动端不把它暴露为结果类型或入口。
+完整展示（负责人已验收）：搜索用户头像优先 avatarDisplay；SearchPost 授权 mediaDisplays 映射保留在展示模型，既有文本摘要不新增加载图片。主题封面复用共享 display／preview 选择。见[全场景验收记录](../architecture/animation-webp-all-surfaces.md)。
+
+四个用户可见 Tab 独立保存 idle/loading/ready/failed 状态；动态和楼层内容额外保存不透明 cursor、hasMore、加载更多和局部错误。搜索仓储接口位于 `search/application`，`main.dart` 组合根绑定 API data 适配器，两个搜索控制器不直接导入 data。主题结果直接映射为 thread_feed 的共享主题卡模型，只消费 `coverImages` 的唯一安全 HTTP(S) 首图，并保留搜索端点自己的相关度排序。控制器共享 query 与请求代次，只有最新代次可写回状态。`ThreadPostSearchController(threadId)` 隔离每个主题的关键词、分页和请求代次；所有列表按稳定 ID 去重。后端综合搜索读模型继续保留兼容映射，但移动端不把它暴露为结果类型或入口。
 
 搜索结果不把 `categorySlug` 交给卡片。进程内共享的公开分类目录合并并发读取，卡片只接收强类型展示值；首次目录加载失败时显示“分类暂不可用”且不遮断搜索结果，下拉刷新或重试会同时刷新目录。
 
@@ -38,9 +40,13 @@
 
 ## 8. 本地存储、缓存及失效规则
 
+聚合搜索和主题内搜索依赖统一 `ViewerScope`；切号或拉黑关系变化清空当前查询和结果，同账号 Token 刷新保持搜索状态。
+
 只保留当前 Provider 生命周期内的 Tab/主题内搜索状态，不持久化搜索词与结果；下拉刷新当前范围，账号状态变化清空全部结果。
 
 ## 9. 加载、空数据、错误、重试和冲突状态
+
+全站搜索与主题内搜索均使用可选身份：登录时携带会话，匿名仍可搜索。拉黑或解除后清除旧搜索投影，避免继续显示不再可见的结果。保持省略 includeBody，并拒绝意外 BODY/未知 kind，正文定位另行实现。503 沿用可恢复失败与显式重试。
 
 全模块错误遵循[网络与会话](../architecture/networking.md)统一分级：可操作的预期失败只给恢复提示；本机、网络连接、温油站服务与内容处理异常才标注问题环节，只有可核对的服务/内容异常及结果待核对写入显示问题编号。普通页面不展示 HTTP、业务或内部诊断码，Debug 现场诊断可复制安全技术字段。
 
@@ -49,6 +55,11 @@
 未输入、关键词过短、无结果、首次加载、加载更多和单 Tab 错误分别展示；首次加载使用结果列表结构 Skeleton，动态与两类正文加载更多失败保留已有结果与重试入口；`40007 INVALID_CURSOR` 丢弃当前分类旧列表并从第一页恢复。主题内结果若返回其他主题 ID、动态封面枚举/数量/URL 不安全、分页缺少 cursor 或同页重复 ID，均 fail-closed 而不导航到错误目标。
 
 ## 10. 跨模块约束
+
+所有主题封面统一复用[只读主题信息流](thread-feed.md)的首帧、停稳中心单张播放、省流量与生命周期规则；本模块不另建动画调度器，点击继续进入详情。
+
+
+本模块页面排版统一遵循[移动端视觉基线](../architecture/visual-baseline.md)中的 Foundation v6.9.0 语义文字角色，不自定义字号或直接依赖 Material 字体槽位。
 
 用户搜索结果头像缺图或加载失败时显示用户名首个可读字符，不使用无法区分具名用户的统一人物占位。
 
@@ -73,8 +84,22 @@
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `5.16.0-dev.20260903.5`；Markdown v5；后端 `f09aee365ce50fe921c0c443d252959fb7dc5903`；Foundation `v6.3.0`（`73ed49e`）。
+本轮展示契约来源：API `5.22.0-dev.20260912.2`、Backend `6fdfa00eaf1f3056ba30f2ffbc529d12eed1c823`；新增 display／mediaDisplays；消费者已获负责人验收，检查与合并整合见本任务 PR 和全场景记录。仅既有 `markdown-editor-list-v1-fixtures.json` 保留 `062412601b3a8dbf4f64494115a2445d312dd53d` 来源与SHA-256，见 contracts/markdown-editor-list-v1-source.json；不将该独立语料误标为本轮主来源。
+
+2026-09-11 列表契约候选同步：Backend `062412601b3a8dbf4f64494115a2445d312dd53d`，OpenAPI `5.20.1-dev.20260911.1`；新增 editor-list v1 revision 2，夹具最初固定于 `aa1bcbd4d087f03a17817e9eca8bcd1f92bb53da`。同时同步收藏夹计数按当前用户可见性统计的契约说明；字段形状、块边界 v1 revision 2 与既有消费代码保持；列表消费者及真机验收仍待完成，见[列表统一排查](../architecture/editor-list-unification-investigation.md)。
+
+2026-09-11 契约审查：同步 Backend `b785336c5b31cb228f3021650b9de1c39ade02e5`、`5.20.1-dev.20260911.1`，收藏夹数量明确为当前用户可见总数。仅契约说明、生成字段文档与版本变化；本模块既有行为及单独验收状态保持。此时公网仍为 `8bf370f`／5.20.0，部署核验单独记录。
+
+2026-09-11 合并来源同步：Backend `8bf370f6ef5357535683aa6d3f8c03bd2d08d108`，包含发布权限修复；通过既有脚本重新导出后仅来源元数据变化，OpenAPI、块边界 v1 revision 2 及其他共享契约字节不变。模块行为与候选验收状态保持，前次部署回滚、公网核验及安装包溯源见[块边界验收](../architecture/markdown-block-boundaries-acceptance.md)。
+
+2026-09-11 契约来源登记：Backend `a91cbb8b605223c596af299be22c5547f69e25b9`，块边界 v1 revision 2。HTTP OpenAPI 未变化，本模块既有接口行为与验收状态保持；富文本消费者候选见[块边界验收](../architecture/markdown-block-boundaries-acceptance.md)。
+
+2026-09-11 契约增量审查：同步 `5.20.0-dev.20260909.1`，后端及公网 `0ee2c0de1d9c570e495e778be6661b074b7a4bef`。新增可空 `coverMedia` 与 `previewVariants` 的生成模型；现有页面读取行为不变，封面播放消费留在独立切片。表情接口、正文语料及 Foundation v6.9.0 不变。下列历史审查记录保留其当时范围。
+
+契约 `5.18.0-dev.20260905.1`；Markdown v5；后端 `3338028459561565c788d5236fb64db84a2ae538`；Foundation `v6.9.0`（`5888132`）。
+
+本轮从固定候选提交同步富文本行为 v1 测试契约；既有 newline/v7/clipboard 与 HTTP/OpenAPI 内容不变，不据此推断候选已部署。新增行为执行与历史保护仍在专项实施中；既有负责人验收保持原范围。
 
 ## 14. 相关代码与架构文档
 
-代码入口：`lib/features/search/application/search_repository_ports.dart`、`lib/features/search/data/`、`lib/main.dart`。参见[导航](../architecture/navigation.md)、[楼层与回复](posts.md)、[用户与资料](users.md)、[语义图标](../architecture/icons.md)、[Foundation v6.3.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.3.0/docs/platforms/mobile.md)。
+代码入口：`lib/features/search/application/search_repository_ports.dart`、`lib/features/search/data/`、`lib/main.dart`。参见[导航](../architecture/navigation.md)、[楼层与回复](posts.md)、[用户与资料](users.md)、[语义图标](../architecture/icons.md)、[Foundation v6.9.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.9.0/docs/platforms/mobile.md)。

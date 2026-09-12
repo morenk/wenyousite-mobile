@@ -218,6 +218,7 @@ class ThreadSubscriptionState {
     this.failure,
     this.candidateFailure,
     this.pendingType,
+    this.pendingSubscribed,
     this.pendingTargetUserId,
     this.actionFailure,
     this.actionOutcome,
@@ -236,6 +237,7 @@ class ThreadSubscriptionState {
   final ApiFailure? failure;
   final ApiFailure? candidateFailure;
   final ThreadSubscriptionType? pendingType;
+  final bool? pendingSubscribed;
   final String? pendingTargetUserId;
   final ApiFailure? actionFailure;
   final WriteOutcomeStatus? actionOutcome;
@@ -244,6 +246,16 @@ class ThreadSubscriptionState {
   final String? successMessage;
 
   bool get isPending => pendingType != null;
+
+  bool get isThreadSubscribed => pendingType == ThreadSubscriptionType.thread
+      ? pendingSubscribed ?? (threadSubscription != null)
+      : threadSubscription != null;
+
+  bool isUserSubscribed(String userId) =>
+      pendingType == ThreadSubscriptionType.user &&
+          pendingTargetUserId == userId
+      ? pendingSubscribed ?? (userSubscriptionFor(userId) != null)
+      : userSubscriptionFor(userId) != null;
 
   ThreadSubscriptionRecord? get threadSubscription {
     for (final subscription in subscriptions) {
@@ -264,9 +276,20 @@ class ThreadSubscriptionState {
     return null;
   }
 
-  int get userSubscriptionCount => subscriptions
-      .where((item) => item.type == ThreadSubscriptionType.user)
-      .length;
+  int get userSubscriptionCount {
+    final confirmed = subscriptions
+        .where((item) => item.type == ThreadSubscriptionType.user)
+        .length;
+    final userId = pendingTargetUserId;
+    if (pendingType != ThreadSubscriptionType.user ||
+        userId == null ||
+        pendingSubscribed == null) {
+      return confirmed;
+    }
+    return confirmed +
+        (pendingSubscribed! ? 1 : 0) -
+        (userSubscriptionFor(userId) != null ? 1 : 0);
+  }
 }
 
 enum BookmarkListPhase { loading, ready, failed }

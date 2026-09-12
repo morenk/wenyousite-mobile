@@ -75,6 +75,9 @@ class SessionController extends StateNotifier<SessionState> {
   final SessionRemote _remote;
   SessionTokens? _tokens;
   Future<SessionTokens>? _refreshInFlight;
+  int? _refreshGeneration;
+  Future<void> _storageQueue = Future.value();
+  int _mutationEpoch = 0;
   int _sessionGeneration = 0;
 
   SessionTokens? get tokens => _tokens;
@@ -128,50 +131,90 @@ class SessionController extends StateNotifier<SessionState> {
     }
   }
 
-  Future<void> restore() async {
+  Future<void> restore() {
+    final epoch = ++_mutationEpoch;
     final hadTokens = _tokens != null;
     final previousAccountId = currentUserId;
     state = SessionState.restoring(generation: _sessionGeneration);
-    try {
-      final restored = await _tokenStore.read();
-      _tokens = restored;
-      if (hadTokens != (restored != null) ||
-          previousAccountId != currentUserId) {
-        _sessionGeneration += 1;
+    return _withStorage(() async {
+      try {
+        _ensureMutationCurrent(epoch);
+        final restored = await _tokenStore.read();
+        _ensureMutationCurrent(epoch);
+        _tokens = restored;
+        if (hadTokens != (restored != null) ||
+            previousAccountId != currentUserId) {
+          _sessionGeneration += 1;
+        }
+        state = _tokens == null
+            ? SessionState.guest(generation: _sessionGeneration)
+            : SessionState.authenticated(generation: _sessionGeneration);
+      } on Object {
+        _ensureMutationCurrent(epoch);
+        _tokens = null;
+        if (hadTokens) _sessionGeneration += 1;
+        state = SessionState.guest(generation: _sessionGeneration);
+        await _tokenStore.clear();
       }
-      state = _tokens == null
-          ? SessionState.guest(generation: _sessionGeneration)
-          : SessionState.authenticated(generation: _sessionGeneration);
-    } on Object {
-      _tokens = null;
-      await _tokenStore.clear();
-      if (hadTokens) _sessionGeneration += 1;
-      state = SessionState.guest(generation: _sessionGeneration);
-    }
+    });
   }
 
-  Future<void> authenticate(SessionTokens tokens) async {
-    await _replaceTokens(tokens, advanceGeneration: true);
+  Future<void> authenticate(SessionTokens tokens) {
+    final epoch = _beginBoundary();
+    return _withStorage(() async {
+      _ensureMutationCurrent(epoch);
+      try {
+        await _tokenStore.write(tokens);
+      } on Object {
+        // A failed replacement must not leave the previous account durable.
+        await _tokenStore.clear();
+        rethrow;
+      }
+      _ensureMutationCurrent(epoch);
+      _tokens = tokens;
+      // Credential installation ends the temporary guest boundary too. This
+      // invalidates anonymous requests started while secure storage was busy.
+      _sessionGeneration += 1;
+      state = SessionState.authenticated(generation: _sessionGeneration);
+    });
   }
 
   Future<SessionTokens> refresh() {
     final existing = _refreshInFlight;
-    if (existing != null) return existing;
-    final operation = _performRefresh();
+    if (existing != null && _refreshGeneration == _sessionGeneration) {
+      return existing;
+    }
+    _refreshGeneration = _sessionGeneration;
+    late final Future<SessionTokens> operation;
+    operation = _performRefresh().whenComplete(() {
+      if (identical(_refreshInFlight, operation)) {
+        _refreshInFlight = null;
+        _refreshGeneration = null;
+      }
+    });
     _refreshInFlight = operation;
-    return operation.whenComplete(() => _refreshInFlight = null);
+    return operation;
   }
 
   Future<SessionTokens> _performRefresh() async {
     final current = _tokens;
     if (current == null) {
-      throw const ApiFailure(userMessage: '登录已失效，请重新登录。');
+      throw _sessionChanged;
     }
     final generation = _sessionGeneration;
+    final epoch = _mutationEpoch;
     try {
       final next = await _remote.refresh(current.refreshToken);
       _ensureRefreshStillCurrent(current, generation);
-      await _replaceTokens(next, advanceGeneration: false);
+      await _withStorage(() async {
+        _ensureMutationCurrent(epoch);
+        _ensureRefreshStillCurrent(current, generation);
+        await _tokenStore.write(next);
+        _ensureMutationCurrent(epoch);
+        _ensureRefreshStillCurrent(current, generation);
+        _tokens = next;
+        state = SessionState.authenticated(generation: _sessionGeneration);
+      });
       return next;
     } on ApiFailure catch (failure) {
       // A refresh can fail because the device is temporarily offline or the
@@ -191,15 +234,18 @@ class SessionController extends StateNotifier<SessionState> {
   }
 
   bool _isRefreshStillCurrent(SessionTokens tokens, int generation) {
-    return identical(_tokens, tokens) && _sessionGeneration == generation;
+    return mounted &&
+        identical(_tokens, tokens) &&
+        _sessionGeneration == generation;
   }
 
   void _ensureRefreshStillCurrent(SessionTokens tokens, int generation) {
     if (_isRefreshStillCurrent(tokens, generation)) return;
-    throw const ApiFailure(userMessage: '登录状态已变化，请重试。');
+    throw _sessionChanged;
   }
 
   Future<void> logout() async {
+    final expectedScope = scope;
     var current = _tokens;
     if (current == null) {
       await logoutLocally();
@@ -208,17 +254,21 @@ class SessionController extends StateNotifier<SessionState> {
     try {
       await _remote.logout(current);
     } on ApiFailure catch (failure) {
+      ensureScopeCurrent(expectedScope);
       if (failure.isExpiredAccessToken) {
         current = await refresh();
+        ensureScopeCurrent(expectedScope);
         try {
           await _remote.logout(current);
         } on ApiFailure catch (retryFailure) {
+          ensureScopeCurrent(expectedScope);
           if (retryFailure.invalidatesSession) {
             await logoutLocally();
             return;
           }
           rethrow;
         }
+        ensureScopeCurrent(expectedScope);
         await logoutLocally();
         return;
       }
@@ -228,31 +278,46 @@ class SessionController extends StateNotifier<SessionState> {
       }
       rethrow;
     }
+    ensureScopeCurrent(expectedScope);
     await logoutLocally();
   }
 
-  Future<void> invalidate(SessionInvalidationReason reason) async {
-    _tokens = null;
-    await _tokenStore.clear();
-    _sessionGeneration += 1;
+  Future<void> invalidate(SessionInvalidationReason reason) {
+    _beginBoundary();
     state = SessionState.invalidated(reason, generation: _sessionGeneration);
+    return _withStorage(_tokenStore.clear);
   }
 
-  Future<void> logoutLocally() async {
+  Future<void> logoutLocally() {
+    _beginBoundary();
+    return _withStorage(_tokenStore.clear);
+  }
+
+  int _beginBoundary() {
+    _mutationEpoch += 1;
     _tokens = null;
-    await _tokenStore.clear();
     _sessionGeneration += 1;
     state = SessionState.guest(generation: _sessionGeneration);
+    return _mutationEpoch;
   }
 
-  Future<void> _replaceTokens(
-    SessionTokens tokens, {
-    required bool advanceGeneration,
-  }) async {
-    await _tokenStore.write(tokens);
-    _tokens = tokens;
-    if (advanceGeneration) _sessionGeneration += 1;
-    state = SessionState.authenticated(generation: _sessionGeneration);
+  void ensureScopeCurrent(SessionScope expected) {
+    if (!mounted || scope != expected) throw _sessionChanged;
+  }
+
+  void _ensureMutationCurrent(int epoch) {
+    if (!mounted || epoch != _mutationEpoch) throw _sessionChanged;
+  }
+
+  Future<T> _withStorage<T>(Future<T> Function() action) {
+    final operation = _storageQueue.then((_) => action());
+    // The caller receives errors; only the queue tail recovers so a failed
+    // write cannot prevent a later logout from clearing durable credentials.
+    _storageQueue = operation.then<void>(
+      (_) {},
+      onError: (Object _, StackTrace _) {},
+    );
+    return operation;
   }
 
   SessionInvalidationReason _reasonFor(int? code) {
@@ -272,3 +337,10 @@ class SessionController extends StateNotifier<SessionState> {
     return failure.httpStatus == 401;
   }
 }
+
+const _sessionChanged = ApiFailure(
+  userMessage: '登录状态已变化，请重试。',
+  source: FailureSource.expected,
+  reason: FailureReason.cancelled,
+  recoveryAction: FailureRecoveryAction.none,
+);

@@ -3,24 +3,39 @@
 ## 0. 开发位置硬约束
 
 - 本仓库的日常开发只允许在 Windows 本地开发机上修改、生成、测试、构建、签名和发布；标准工作区为 `D:\code\wenyousite\wenyousite-mobile`。
+- Windows Codex 需要处理 VPS 上的 Web、后端或 Foundation 源码时，使用 SSH 别名 `wenyou-dev-vps` 打开 `/srv/wenyousite` 下的对应远程项目；不要在普通 SSH 终端里另起一个无关联任务，也不要在 Windows 只读镜像中代改。
+- 每个可独立验收的目标使用单独的 Codex 任务、Git 分支或 Worktree；两个 Codex 任务不得同时修改同一 checkout。跨端变更通过已提交的契约、commit 或明确的 Handoff 交接，不能靠复制目录同步源码。
+- 新增的开发说明、验收记录和运维文档默认使用中文；命令、路径、协议字段及无法准确翻译的技术名词保留英文，并在上下文中说明用途。
 - 在 Linux、VPS 或非 Windows CI 环境发现本仓库时，只允许阅读；必须停止源码修改、Flutter/Gradle 构建、签名和发布。
-- Windows 工作区中的 `wenyousite-frontend` 与 `wenyousite-backend` 只是只读参考镜像。移动端任务只允许对它们执行 `git fetch`、`git show`、`git diff` 和读取契约；禁止修改源码、安装依赖、启动服务、运行迁移或部署。
-- Web 与后端只能在 VPS 的 `/root/wenyousite` 工作区开发和切换服务。需要修改 Web 或后端时，必须转到 VPS 对应仓库，不能在 Windows 镜像代改。
+- Windows 工作区只保留 `references/wenyousite-backend` 后端只读镜像。移动端任务只允许对它执行 `git fetch`、`git show`、`git diff` 和读取契约；禁止修改源码、安装依赖、启动服务、运行迁移或部署。
+- Web、后端与 Foundation 只能在 VPS 的 `/srv/wenyousite` 工作区开发。需要修改它们时，必须转到 VPS 对应仓库，不能在 Windows 镜像代改；无 sudo 的 `wenyou-dev` 不得切换或重启服务。
 - `wenyousite-foundation` 对移动端而言是已发布依赖。开始任何 Foundation 相关实现前，必须在只读镜像执行 `git fetch origin --tags`，以远端最新正式发布 Tag 为准，并把 `pubspec.yaml` 锁定到该 Tag；若本仓库版本落后，必须先在当前切片同步依赖和迁移变更，禁止继续按旧版规范实现，也禁止直接跟随浮动分支。需要修改 Foundation 源码时必须另开独立任务并在其授权环境发布新 Tag。
 - GitHub Actions 若保留，只能使用 Windows runner 在临时 checkout 内复核质量或 Debug 构建；CI 对仓库和外部系统只读，不拥有部署、签名、制品上传或发布权限，也不能替代 Windows 本地验收。
+
+### 子任务默认审批方式
+
+- 在用户已授权的任务分派范围内，发送到 Windows 或 VPS 的协作任务、子任务默认使用“帮我批准”（Auto-review），由自动审查器处理需要审批的执行请求，避免负责人逐条手动确认普通开发操作。分派提示必须传递原始需求、已授权范围和交付边界；已授权的读取、修改、测试、构建、任务分支提交和推送不再反复征询是否继续。
+- 分派前使用宿主支持的设置入口配置自动审批；典型配置为 `approval_policy = "on-request"`、`approvals_reviewer = "auto_review"`。权限配置按任务所需目录和网络范围设置。“帮我批准”是审批方式，不等同于“完全访问”或 `approval_policy = "never"`。机制以 [Codex Auto-review 官方说明](https://learn.chatgpt.com/docs/sandboxing/auto-review)为准。
+- 创建、继续或 Handoff 后，必须从目标任务实际生效配置或启动日志核验审批方式；不能只凭输入框标签、父任务设置或提示词宣称已生效。使用日志核验时，应确认 `resolvedApprovalsReviewer=auto_review` 及支持自动审查的审批策略。
+- 若当前分派工具没有权限／审批参数，也没有受支持的配置入口，须明确报告“默认偏好已传递，实际审批配置尚未设置／核验”，并说明能力限制；不得虚构参数、静默退回人工逐条审批，或把写入 AGENTS.md 当成已经修改运行配置。
+- 自动审查拒绝时，说明具体动作和拒绝原因，优先采用实质上更安全的方案；无法继续时再请求负责人处理，不得通过换命令或间接执行绕过拒绝。工具仍强制要求人工确认时，应说明其来源，不承诺所有弹窗均可消除。
+- 本节只调整执行审批方式；合并、正式发布、破坏性操作和负责人真机验收仍遵循本次用户授权及仓库对应规则，不将自动审查通过视为负责人验收通过。
 
 ## 1. 项目定位
 
 温油站移动端使用 Flutter 构建。首发 Android，最低 Android 8（API 26），手机竖屏优先；共享 Dart 代码保持 iOS 可兼容，但当前不做 iOS 签名和真机验收。
 
+Android 正式 Release 仅支持 `arm64-v8a`，正文与品牌文字使用平台系统字体，不捆绑应用 UI 字体；KaTeX、系统等宽呈现和 Material Icons 等功能字体依赖按实际用途保留。Debug/Profile 保留开发所需 ARM32、ARM64 和 x86_64。正式分发保持单 APK 与原构建号，不使用 ABI 分包偏移版本号。
+
 - 应用名称：温油站
 - Android applicationId：`site.wenyou.app`
 - 开发 API：`https://wenyou.site/api/v1`
+- Tailnet 私有开发 API：`https://wenyou-vps.tail3993f3.ts.net/api/v1`；仅供已登录同一 Tailscale tailnet 的 Windows、模拟器或真机联调，不替代公网兼容性验收。
 - Android 模拟器经显式 SSH 隧道访问 VPS loopback 时：`http://10.0.2.2:3000/api/v1`
 - Flutter SDK：`D:\sdk\flutter`
 - Android SDK：`D:\sdk\android`
 - Flutter/Dart 基线：Flutter `3.44.8`、Dart `3.12.2`
-- 后端只读参考镜像：`..\wenyousite-backend`
+- 后端只读参考镜像：`..\references\wenyousite-backend`
 
 当前阶段是公网开发环境上的第一阶段快速迭代，不是正式生产发布。开发闭环以相关本地检查和真机冒烟为主，GitHub Actions 仅保留手动触发，不作为日常切片完成条件。所有公网联调必须使用专用测试账号；禁止对共享开发数据运行批量删除、账号注销或其他破坏性自动化。
 
@@ -30,13 +45,14 @@ V1 包含认证、公开浏览、搜索、动态、主题/子贴/楼层、创作
 
 V1 暂不实现：FCM 系统推送、举报审核/管理后台、离线阅读、离线自动发帖、阅读进度、子贴标签和 Android App Links。
 
-共享审美与跨端体验事实源只存在于 `wenyousite-foundation` 的远端最新正式发布版本；当前由 `pubspec.yaml` 锁定 Foundation v6.8.0。移动端仓库不维护平行审美规范，只记录模块行为与代码入口。页面必须复用 `WenyouThemeTokens`、Foundation 语义图标、全局 `ColorScheme` 与共享组件，禁止在页面内创建近似 Token 或直接使用 Material 图标。功能阶段不得顺手引入大范围插画、粒子或复杂换皮。
+共享审美与跨端体验事实源只存在于 `wenyousite-foundation` 的远端最新正式发布版本；当前由 `pubspec.yaml` 锁定 Foundation v7.0.0。移动端仓库不维护平行审美规范，只记录模块行为与代码入口。页面必须复用 `WenyouThemeTokens`、Foundation 语义图标、全局 `ColorScheme` 与共享组件，禁止在页面内创建近似 Token 或直接使用 Material 图标。功能阶段不得顺手引入大范围插画、粒子或复杂换皮。
 
 ## 3. 事实源与契约优先级
 
 1. 后端运行时代码与 DTO 定义真实行为。
 2. `contracts/openapi.json` 是 Flutter API/model 生成的固定机器契约。
-3. `contracts/markdown-v4-fixtures.json`、`contracts/markdown-v4-nodes-fixtures.json`、`contracts/markdown-editor-roundtrip-v6-fixtures.json`、`contracts/editor-clipboard-v2-fixtures.json` 与 `contracts/markdown-v5-image-alignment-fixtures.json` 分别固定 Markdown 规范化/可见性、扩展节点、编辑器往返、跨端剪贴板和 Markdown v5 图片块对齐迁移语义。
+3. `contracts/markdown-v4-fixtures.json`、`contracts/markdown-v4-nodes-fixtures.json`、`contracts/markdown-editor-roundtrip-v7-fixtures.json`、`contracts/editor-clipboard-v2-fixtures.json` 与 `contracts/markdown-v5-image-alignment-fixtures.json` 分别固定 Markdown 规范化/可见性、扩展节点、编辑器往返、跨端剪贴板和 Markdown v5 图片块对齐迁移语义。
+   `contracts/markdown-editor-newline-v1-fixtures.json` 固定普通正文和单层引用的回车、真正空白行及旧引用分隔语义；标题和列表保持常规行为。
 4. `contracts/mobile-push-v1.schema.json` 与 `contracts/mobile-push-v1-fixtures.json` 固定未来推送接入边界；V1 未接入 FCM 时也必须保持同步。
 5. `docs/modules/*.md` 说明移动端产品流程、状态、权限和验收，不复制完整 Schema。
 
@@ -50,9 +66,10 @@ V1 暂不实现：FCM 系统推送、举报审核/管理后台、离线阅读、
 - `contracts/CHANGELOG.md`
 - `contracts/markdown-v4-fixtures.json`
 - `contracts/markdown-v4-nodes-fixtures.json`
-- `contracts/markdown-editor-roundtrip-v6-fixtures.json`
+- `contracts/markdown-editor-roundtrip-v7-fixtures.json`
 - `contracts/editor-clipboard-v2-fixtures.json`
 - `contracts/markdown-v5-image-alignment-fixtures.json`
+- `contracts/markdown-editor-newline-v1-fixtures.json`
 - `contracts/mobile-push-v1.schema.json`
 - `contracts/mobile-push-v1-fixtures.json`
 - `docs/mobile-client-guide.md`
@@ -179,12 +196,21 @@ Docs-Impact: updated
 3. 明确目标、非目标、验收标准、风险和文档影响。
 4. 以完整行为实现，不按文件类型机械拆分。
 5. 同步测试和模块文档。
-6. 开发反馈批次收敛后运行与变更直接相关的本地检查；高风险切片、阶段验收或准备交付时运行统一质量门禁。
+6. 开发反馈批次收敛后运行与变更直接相关的本地检查；需要真机复验的普通切片先按“开发反馈 → 候选验证 → 集成验证”推进，高风险切片按第 8 节在候选前运行统一质量门禁。
 7. 自查 diff、生成文件、无关修改和敏感信息。
-8. 原子提交并默认推送 `dev`。
-9. 汇报行为、文档、本地验证、Debug APK 和真机手测清单；日常开发不等待 CI。
+8. 原子提交并推送 `codex/YYYYMMDD-<目标>` 任务分支；不得直接更新 `dev`。跨端、契约、权限、迁移或基础设施变化必须创建 PR，由负责人明确合并。
+9. 汇报行为、文档、本地验证、实际执行的测试路径、Debug APK 和真机手测清单；Bug 按下述流程交给负责人复验，日常开发不等待 CI。
 
-切片完成定义：主路径可操作；加载/空/错/重试/权限状态完整；相关测试和文档同步；变更范围内静态检查零问题；契约无漂移；无伪实现和调试残留；已推送 `dev`。涉及 Android、网络、认证或持久化时还要完成对应本地构建，并把真机关键路径整理为项目负责人可执行的手测清单；真机结果由项目负责人反馈。
+切片完成定义：主路径可操作；加载/空/错/重试/权限状态完整；相关测试和文档同步；变更范围内静态检查零问题；契约无漂移；无伪实现和调试残留；任务分支已推送并可评审。涉及 Android、网络、认证或持久化时还要完成对应本地构建，并把真机关键路径整理为项目负责人可执行的手测清单。Bug 切片还必须取得项目负责人对原问题的明确验收通过；缺少该结果时只能交付候选版本，不能标记修复完成。
+
+### Bug 候选与负责人验收
+
+- 状态依次为“排查中 → 候选修复／待负责人验收 → 负责人验收通过／修复完成”。负责人反馈问题仍在时，立即记录“验收失败／继续排查”，沿用原问题继续处理，不能将其记为完成或当作另一个已无关的问题。
+- 实现前记录原始复现步骤、输入与预期／实际结果；脱敏时保留触发问题所需的字符、空格、换行和操作顺序。区分已证实根因与待验证假设；无法取得原始输入或复现原场景时必须明确记录，不能用相似的构造样例断言原问题根因。
+- 普通低、中风险 Bug 在精确回归、直接受影响测试、全量静态分析和 Debug APK 构建通过后即可提供候选，不要求候选前先跑全量 Flutter 测试。候选记录必须列出实际测试文件或目录、提交号、未验证项和操作步骤，不能只写“相关测试通过”；APK 另记录版本与 SHA-256。项目负责人亲自复验原场景，涉及真机的问题须在对应候选安装包上验证。
+- ADB 安装前核对负责人实际使用的应用包名与候选 APK 的 `applicationId`；本项目 Debug、Profile、Release 分别为 `site.wenyou.app.debug`、`site.wenyou.app.profile`、`site.wenyou.app`，可以同时安装且数据独立，不能凭相同构建号判断已更新目标应用。安装后核对该包的更新时间及设备内 APK 的 SHA-256，再明确告知负责人应打开哪个应用复验。
+- 自动测试、Golden、构建、签名校验、ADB 安装成功及代理自查均不能替代负责人的验收结果。未回复也不算通过；验收前的提交、CHANGELOG、模块文档和交付汇报统一标注“候选／待验收”，不得声称原问题已解决。
+- 负责人明确通过后，记录对应候选、验收日期和结果，再更新完成状态；普通低、中风险切片在合并前对最终应用源码执行一次完整门禁。验收失败时保留既有测试与安装记录，同时更新当前失败现象及下一步排查依据，后续候选只重复精确回归、直接受影响测试、全量静态分析和 APK 构建，不在每轮机械重复全量门禁，也不能拿此前通过的自动检查覆盖人工失败结果。
 
 ### 开发中快速反馈循环
 
@@ -195,40 +221,56 @@ Flutter 本地开发中的“热重载”和“热重启”只用于 Debug 反�
 - `pubspec.yaml`、依赖、新增资源或字体、代码生成输出变化后，执行所需获取或生成步骤并重新启动调试会话；涉及插件、Manifest、Gradle 或其他 Android 原生配置时必须重新构建。
 - 热重载后出现疑似旧状态、缓存或初始化残留时，先热重启复核，再判断为实现缺陷。
 
-同一视觉目标的连续微调可以组成一个反馈批次，批次内不在每次保存后机械重复 analyze、测试或构建。批次收敛、准备提交或切片完成时，必须按下一节的风险分层执行相关检查；热重载或热重启不能替代静态检查、Widget/Golden 回归、Debug APK、完整门禁或项目负责人真机验收。没有可复用 Debug 会话时，开发代理不得把未查看的页面宣称为已完成视觉验收，应在交付说明中列出待执行的页面检查。
+同一视觉目标的连续微调可以组成一个反馈批次，批次内不在每次保存后机械重复 analyze、测试或构建。三阶段分别承担不同证据，不能互相冒充：开发反馈使用热重载／热重启和直接相关测试；候选验证使用全量静态分析、针对性测试和 Debug APK；集成验证在负责人验收通过后、合并前运行完整门禁。热重载或热重启不能替代本阶段要求的检查，候选验证也不等于每轮都要执行全量门禁。没有可复用 Debug 会话时，开发代理不得把未查看的页面宣称为已完成视觉验收，应在交付说明中列出待执行的页面检查。
 
 ## 8. 质量门禁
 
-第一阶段开发允许先使用热重载或热重启完成快速反馈；反馈批次收敛后优先运行相关测试和受影响范围的静态检查。以下完整本地门禁用于认证、契约、网络、上传、持久化等高风险切片，以及阶段验收、准备交付或用户明确要求时；普通展示和低风险切片不必机械重复全部命令。完整门禁的唯一入口是：
+第一阶段按以下三道边界验证，不能因为需要构建 ADB 候选包就默认先跑全量测试：
+
+1. **开发反馈**：使用热重载／热重启并执行与当前改动直接相关的测试。
+2. **候选验证**：普通低、中风险切片显式指定相关测试，通过全量静态分析后直接构建 Debug APK，交由负责人真机验收。
+3. **集成验证**：普通低、中风险候选验收通过后、合并 `dev` 前，对最终应用源码运行一次完整门禁。认证、契约、网络、上传、持久化、幂等、注销、依赖和 Android 原生配置等高风险切片仍须在提供候选前完成完整门禁和 APK 构建。
+
+普通候选使用以下唯一快速入口，必须传入至少一个位于 `test/` 子目录内的测试文件或目录；脚本执行全仓 Dart 格式检查、应用与生成客户端全量静态分析、传入的相关测试和 Debug APK 构建，并输出 APK 绝对路径、大小与 SHA-256：
+
+```powershell
+npm run candidate:apk -- test/features/example/example_test.dart -TestConcurrency 2
+```
+
+该入口不执行全量 Flutter 测试、契约校验／再生成、架构、模块文档、API 覆盖或 Windows 发布工具测试，也不安装 APK。参数为空、路径不存在、路径越出 `test/` 或任一步失败时不得把已有构建产物报告为新候选。ADB 安装仍须遵循第 7 节的授权、包名、更新时间和设备内 APK 哈希核验规则。
+
+相关测试按行为选择：Bug 包含能复现原问题的精确回归和直接受影响的 repository/controller/widget 测试；小功能包含新增行为及直接受影响组件测试；纯视觉包含对应 Widget/Golden；分页、表单和普通写入包含状态、仓储与错误路径，必要时另做 API 冒烟。共享核心代码的影响范围无法可靠收窄时，升级为高风险流程，禁止为规避完整门禁随意挑选少量测试。
+
+完整本地门禁的唯一入口是：
 
 ```powershell
 npm run check
 ```
 
-该入口必须覆盖格式、应用与生成客户端分析、全量测试、架构、文档、API 覆盖、契约校验/再生成一致性和 Windows 发布工具测试；不得在本文复制第二套易漂移的子命令清单。
+该入口必须覆盖格式、应用与生成客户端分析、全量测试、架构、文档、API 覆盖、契约校验/再生成一致性和 Windows 发布工具测试；不得在本文复制第二套易漂移的子命令清单。高风险候选使用 `npm run check:apk`，在同一次完整门禁成功后构建 Debug APK。
 
-生成契约变化时还要重新生成并确认 `git diff` 符合预期。涉及 Android 配置、依赖、原生插件、演示构建或准备晋级时执行：
-
-```powershell
-flutter build apk --debug
-```
+完整门禁与 APK 证据绑定到具体应用源码。同一源码已经通过时不得无意义重复；之后只补充验收记录等文档不会使原应用测试或 APK 失效，修改任何应用代码则必须按当前风险重新验证。生成契约变化时还要重新生成并确认 `git diff` 符合预期。
 
 风险分层：
 
-- 纯展示：开发中热重载、必要时热重启；反馈批次收敛后 analyze + Widget/Golden 测试 + 页面检查清单。
-- 分页/表单/普通写入：状态/仓储测试 + 错误状态 + API 冒烟。
-- 认证/契约/上传/持久化/幂等/注销：回归测试 + 集成测试 + APK + 项目负责人手动执行的真机关键路径清单。
+- 纯展示：开发中热重载、必要时热重启；反馈批次收敛后 Widget/Golden 和页面检查，需要真机候选时使用快速入口。
+- 分页/表单/普通写入：状态／仓储测试、错误状态和必要的 API 冒烟；需要真机候选时使用快速入口。
+- 认证/契约/网络/上传/持久化/幂等/注销/依赖/Android 原生配置：回归测试、集成测试、`npm run check:apk` 和项目负责人手动执行的真机关键路径清单。
 
-Bug 修复必须包含能复现旧问题的回归测试。不追求表面覆盖率数字，但认证、网络、契约、编辑器和状态转换必须有自动测试。
+Bug 修复必须包含能复现旧问题的回归测试，并确认旧实现失败、候选实现通过。只有相似构造样例通过时，必须说明它与原问题尚未建立的对应关系，原问题继续待复现；自动回归是负责人验收前的必要检查，不是修复完成依据。不追求表面覆盖率数字，但认证、网络、契约、编辑器和状态转换必须有自动测试。
+
+Markdown／编辑器转换类问题的预期必须来自实际输入及独立的阅读／Web 编辑语义，不能由待测 Codec 的输出反推。除往返检查外，必须分别核对可见文字、空段、段落边界、样式和实际可编辑行／块归属，并覆盖真实页面的打开、输入、保存和重开；“编解码自洽”不能代替这些断言。
 
 GitHub Actions 的 Quality 与 Android Debug APK 工作流在第一阶段仅支持 `workflow_dispatch` 手动触发，不因 `dev` push 自动运行，也不作为日常开发阻塞条件。进入发布准备或用户明确恢复 CI 后，再启用自动触发并恢复远端绿色要求。
 
 ## 9. Git、版本与交付
 
 - 长期开发分支为 `dev`。
-- 用户未明确决定时，禁止合并 `main`、禁止打正式 Tag。
+- 任务分支命名为 `codex/YYYYMMDD-<目标>`，从最新 `origin/dev` 创建。Codex 检查后可提交并推送该分支，但不得自行合并或发布。
+- 用户未明确决定时，禁止合并 `dev` 或 `main`、禁止打正式 Tag。
 - 每个提交必须是可独立理解、独立回滚的完整行为。
 - 禁止提交不能编译或只完成一半的切片。
+- 实现完整且相关检查通过的 Bug 候选允许提交并推送任务分支，用于追溯和安装复验；`fix` 标题必须含“候选”，正文注明“待负责人验收”及尚未验证的原场景。验收通过前不得在提交或关联记录中关闭原问题；通过后另行记录验收结果，不改写已推送历史。
 - 依赖升级、契约同步和生成工具变化使用独立 `chore`。
 - `pubspec.lock`、`package-lock.json` 和生成客户端必须提交。
 - 禁止提交密钥、签名文件、Token、测试账号和私人配置。
@@ -248,6 +290,18 @@ Docs-Impact: updated|none - 原因
 允许类型：`feat`、`fix`、`refactor`、`test`、`docs`、`chore`、`perf`。
 
 开发版本使用 `0.x.0-dev.N+buildNumber`。只有用户明确决定晋级时，才执行 `dev -> main`、完整门禁、项目负责人手动真机冒烟、移除 dev 后缀和 `v0.x.0` Tag。
+
+### 合并后的任务清理
+
+温油站 Mobile、Web、Backend、Foundation 统一遵循[治理仓库的合并后清理规则](https://github.com/morenk/wenyousite-workspace/blob/main/AGENTS.md#合并后的任务清理)。以下为移动端在 Windows、以 `dev` 为集成分支的执行约束。
+
+- 用户明确授权合并任务分支时，默认同时授权在合并成功并通过下述核验后清理该任务的本地与远端分支，以及仅供该任务使用的临时 Worktree，无需重复确认；用户要求保留时除外。此授权不包含自行合并其他任务、晋级或发布。
+- 清理前必须更新远端引用，确认任务变更已完整进入目标分支，本地与远端任务分支均没有合并后新增或遗漏的提交；相关工作目录没有未提交、未跟踪或被忽略但仍需保留的文件，且没有其他活跃任务、调试会话或进程使用该分支或 Worktree。
+- 使用 squash 或 rebase 合并时，不得仅凭 Git 的祖先关系判断是否已合并，必须结合 PR 合并记录及实际变更核验。无法证实变更已完整保留时，停止清理并说明原因，不得为通过删除检查而直接强制删除。
+- 在主工作目录开发的任务，确认目录空闲且干净后切回 `dev`，仅以 fast-forward 方式同步 `origin/dev`；无法快进时保留现场并说明原因，禁止使用 reset 或强制切换覆盖本地工作。
+- 使用独立临时 Worktree 的任务，确认验收结束且不再需要其中的文件后，从该 Worktree 外部通过 Git 移除，再删除本地及远端任务分支；操作前核对绝对路径，禁止删除主工作目录、永久 Worktree 或其他任务目录。远端删除必须以刚核验的分支提交为条件，分支发生变化时停止，避免误删并发推送。
+- 禁止清理 `dev`、`main`、仍待负责人验收或仍有独有变更的分支；合并成功不代替 Bug 的负责人验收。核验不通过时保留相关内容，汇报具体原因和待处理项。
+- 完成后汇报 PR 或合并提交、目标分支、本地与远端分支及 Worktree 的实际清理结果；清理分支不自动归档 Codex 任务。
 
 ## 10. 当前交付基线
 

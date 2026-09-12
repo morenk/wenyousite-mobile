@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/application/write_reconciler.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
@@ -52,7 +53,7 @@ class _SubthreadEditorPageState extends ConsumerState<SubthreadEditorPage> {
     final state = ref.watch(provider);
     _schedulePreparation(state);
     final locked = state.isBusy || _preparing;
-    return PopScope<Object?>(
+    final page = PopScope<Object?>(
       canPop: _allowPop,
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) unawaited(_requestClose(locked));
@@ -90,6 +91,7 @@ class _SubthreadEditorPageState extends ConsumerState<SubthreadEditorPage> {
               ),
       ),
     );
+    return WenyouSettingsTypography(child: page);
   }
 
   Widget _buildLoading(SubthreadManagementState state) {
@@ -161,7 +163,7 @@ class _SubthreadEditorPageState extends ConsumerState<SubthreadEditorPage> {
           _policy.description,
           style: Theme.of(
             context,
-          ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
+          ).textTheme.wenyouCaption.copyWith(color: tokens.mutedText),
         ),
       ],
     );

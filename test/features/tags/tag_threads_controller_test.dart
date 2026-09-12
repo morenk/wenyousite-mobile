@@ -55,7 +55,7 @@ class _FakeTagRepository implements TagRepository {
   int initialCalls = 0;
 
   @override
-  Future<CursorPage<HomeThreadCardModel>> fetchTagThreads({
+  Future<CursorPage<ThreadFeedCardModel>> fetchTagThreads({
     required String tagId,
     String? cursor,
     int limit = 20,
@@ -70,7 +70,12 @@ class _FakeTagRepository implements TagRepository {
     return TagThreadsBootstrap(
       tag: _tag,
       categories: const [
-        HomeCategory(id: 'category-1', slug: 'RPG', name: '角色扮演', sortOrder: 1),
+        ThreadCategory(
+          id: 'category-1',
+          slug: 'RPG',
+          name: '角色扮演',
+          sortOrder: 1,
+        ),
       ],
       page: CursorPage(items: [_thread1], cursor: 'next', hasMore: true),
     );
@@ -120,15 +125,15 @@ const _tag = TopicTagModel(
   isActive: true,
 );
 
-final _thread1 = HomeThreadCardModel(
+final _thread1 = ThreadFeedCardModel(
   id: 'thread-1',
   title: '星海旅团',
-  status: HomeThreadStatus.recruiting,
+  status: ThreadFeedStatus.recruiting,
   isPinned: false,
   ownerId: 'owner-1',
   ownerName: '楼主',
   ownerLevel: 1,
-  tags: const [HomeThreadTag(id: 'tag-1', name: '太空歌剧')],
+  tags: const [ThreadFeedTag(id: 'tag-1', name: '太空歌剧')],
   coverImageUrls: const [],
   memberCount: 2,
   playerCount: 1,
@@ -137,15 +142,15 @@ final _thread1 = HomeThreadCardModel(
   lastActivityAt: DateTime.utc(2026, 8, 10),
 );
 
-final _thread2 = HomeThreadCardModel(
+final _thread2 = ThreadFeedCardModel(
   id: 'thread-2',
   title: '第二主题',
-  status: HomeThreadStatus.closed,
+  status: ThreadFeedStatus.closed,
   isPinned: false,
   ownerId: 'owner-2',
   ownerName: '协作者',
   ownerLevel: 2,
-  tags: const [HomeThreadTag(id: 'tag-1', name: '太空歌剧')],
+  tags: const [ThreadFeedTag(id: 'tag-1', name: '太空歌剧')],
   coverImageUrls: const [],
   memberCount: 2,
   playerCount: 1,

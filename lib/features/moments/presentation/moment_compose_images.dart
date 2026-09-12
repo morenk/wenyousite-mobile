@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:flutter/semantics.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
@@ -63,14 +64,17 @@ class MomentComposeImageStrip extends StatelessWidget {
         Row(
           children: [
             Expanded(
-              child: Text('图片', style: Theme.of(context).textTheme.titleSmall),
+              child: Text(
+                '图片',
+                style: Theme.of(context).textTheme.wenyouCompactTitle,
+              ),
             ),
             Text(
               '${images.length + pendingImages.length}/9',
               key: const Key('moment-compose-image-count'),
               style: Theme.of(
                 context,
-              ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
+              ).textTheme.wenyouCaption.copyWith(color: tokens.mutedText),
             ),
           ],
         ),
@@ -145,7 +149,7 @@ class MomentComposeImageStrip extends StatelessWidget {
             '点按选择封面，长按调整顺序',
             style: Theme.of(
               context,
-            ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
+            ).textTheme.wenyouCaption.copyWith(color: tokens.mutedText),
           ),
         ],
         if (pendingImages.isNotEmpty && uploadState.isBusy) ...[
@@ -168,7 +172,9 @@ class MomentComposeImageStrip extends StatelessWidget {
             key: const Key('moment-compose-upload-failure'),
             message: failure.userMessage,
             detail: failure.resolvedPresentation.problemDetail,
-            tone: WenyouStatusTone.error,
+            tone: uploadState.phase == MediaUploadTaskPhase.processingPending
+                ? WenyouStatusTone.neutral
+                : WenyouStatusTone.error,
             action: Wrap(
               spacing: tokens.space8,
               children: [
@@ -181,7 +187,9 @@ class MomentComposeImageStrip extends StatelessWidget {
                   TextButton(
                     key: const Key('moment-compose-retry-upload'),
                     onPressed: onRetryUpload,
-                    child: const Text('重新上传'),
+                    child: Text(
+                      uploadState.pendingUpload == null ? '重新上传' : '继续查询',
+                    ),
                   ),
               ],
             ),
@@ -202,6 +210,7 @@ class MomentComposeImageStrip extends StatelessWidget {
       MediaUploadTaskPhase.uploading => '正在上传图片$position…',
       MediaUploadTaskPhase.confirming => '正在确认图片$position…',
       MediaUploadTaskPhase.processing => '正在处理图片$position…',
+      MediaUploadTaskPhase.processingPending => '图片仍在处理中，可继续查询。',
       MediaUploadTaskPhase.idle || MediaUploadTaskPhase.failed => '',
     };
   }
@@ -419,8 +428,8 @@ class _ComposeThumbnail extends StatelessWidget {
                         ),
                         child: Text(
                           '封面',
-                          style: Theme.of(context).textTheme.labelSmall
-                              ?.copyWith(color: tokens.onBrandSurface),
+                          style: Theme.of(context).textTheme.wenyouCaption
+                              .copyWith(color: tokens.onBrandSurface),
                         ),
                       ),
                     ),

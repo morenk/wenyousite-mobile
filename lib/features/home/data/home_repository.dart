@@ -2,58 +2,28 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
-import 'package:wenyousite_mobile/core/models/thread_category_presentation.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
-import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/home/application/home_repository_ports.dart';
 import 'package:wenyousite_mobile/features/home/domain/home_models.dart';
-import 'package:wenyousite_mobile/features/threads/data/thread_feed_mapper.dart';
+import 'package:wenyousite_mobile/features/thread_feed/thread_feed_catalog_ports.dart';
+import 'package:wenyousite_mobile/features/thread_feed/thread_feed_mapping.dart';
 
 export 'package:wenyousite_mobile/features/home/application/home_repository_ports.dart'
     show HomeRepository, homeRepositoryProvider;
 
 class ApiHomeRepository implements HomeRepository {
-  ApiHomeRepository(this._threadsApi, this._categoriesApi);
+  ApiHomeRepository(this._threadsApi, this._categories);
 
   final ThreadsApi _threadsApi;
-  final ThreadCategoriesApi _categoriesApi;
+  final ThreadCategoryCatalogRepository _categories;
 
   @override
-  Future<List<HomeCategory>> fetchCategories() async {
-    try {
-      final response = await _categoriesApi.threadCategoriesList(
-        extra: ApiRequestPolicy.public.extra,
-      );
-      final data = response.data?.data;
-      if (data == null) {
-        throw const ApiFailure(userMessage: '主题分类加载失败，请稍后重试。');
-      }
-      final categories =
-          data
-              .where((item) => item.isActive)
-              .map(
-                (item) => HomeCategory(
-                  id: item.id,
-                  slug: item.slug,
-                  name: ThreadCategoryPresentation.catalog(
-                    slug: item.slug,
-                    label: item.name,
-                  ).label,
-                  description: item.description,
-                  sortOrder: item.sortOrder.toInt(),
-                ),
-              )
-              .toList()
-            ..sort((left, right) => left.sortOrder.compareTo(right.sortOrder));
-      return List.unmodifiable(categories);
-    } on DioException catch (error) {
-      throw ApiFailure.fromDio(error);
-    }
-  }
+  Future<List<ThreadCategory>> fetchCategories() =>
+      _categories.fetchThreadCategories(refresh: true);
 
   @override
-  Future<CursorPage<HomeThreadCardModel>> fetchThreads({
+  Future<CursorPage<ThreadFeedCardModel>> fetchThreads({
     required HomeFeedQuery query,
     String? cursor,
     int limit = 20,
@@ -74,7 +44,7 @@ class ApiHomeRepository implements HomeRepository {
       }
       return CursorPage(
         items: envelope.data
-            .map(mapHomeThreadCardResponse)
+            .map(mapThreadFeedCardResponse)
             .toList(growable: false),
         cursor: envelope.meta.cursor,
         hasMore: envelope.meta.hasMore,
@@ -87,5 +57,8 @@ class ApiHomeRepository implements HomeRepository {
 
 final apiHomeRepositoryProvider = Provider<HomeRepository>((ref) {
   final api = ref.watch(wenyouApiProvider);
-  return ApiHomeRepository(api.getThreadsApi(), api.getThreadCategoriesApi());
+  return ApiHomeRepository(
+    api.getThreadsApi(),
+    ref.watch(threadCategoryCatalogRepositoryProvider),
+  );
 });

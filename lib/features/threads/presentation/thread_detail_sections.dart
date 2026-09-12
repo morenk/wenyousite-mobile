@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_link.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
@@ -69,12 +70,14 @@ class ThreadDetailFatalState extends StatelessWidget {
                 ? '它可能已经删除、设为私密，或当前账号没有访问权限。'
                 : (failure?.userMessage ?? '请检查网络后重试。'),
             detail: wenyouFailureDetail(failure),
-            action: OutlinedButton.icon(
-              key: const Key('thread-detail-retry'),
-              onPressed: onRetry,
-              icon: const WenyouIcon(WenyouIconIds.actionRefresh),
-              label: const Text('重新加载'),
-            ),
+            action: notFound
+                ? null
+                : OutlinedButton.icon(
+                    key: const Key('thread-detail-retry'),
+                    onPressed: onRetry,
+                    icon: const WenyouIcon(WenyouIconIds.actionRefresh),
+                    label: const Text('重新加载'),
+                  ),
           ),
         ),
       ),
@@ -140,9 +143,8 @@ class ThreadSubthreadBody extends ConsumerWidget {
                 Expanded(
                   child: Text(
                     '这个子贴还没有正文。',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodyMedium?.copyWith(color: tokens.mutedText),
+                    style: Theme.of(context).textTheme.wenyouCompactBody
+                        .copyWith(color: tokens.mutedText),
                   ),
                 ),
                 if (canManage)
@@ -161,6 +163,7 @@ class ThreadSubthreadBody extends ConsumerWidget {
             WenyouMarkdown(
               key: Key('thread-body-${subthread.id}'),
               data: body.markdown,
+              mediaDisplays: body.mediaDisplays,
               diceLabels: threadDiceLabels(body.diceRolls),
               diceSemantics: threadDiceSemantics(body.diceRolls),
               diceDetails: threadDiceDetails(body.diceRolls),
@@ -174,6 +177,7 @@ class ThreadSubthreadBody extends ConsumerWidget {
               key: Key('thread-body-${subthread.id}'),
               postId: body.postId!,
               data: body.markdown,
+              mediaDisplays: body.mediaDisplays,
               diceLabels: threadDiceLabels(body.diceRolls),
               diceSemantics: threadDiceSemantics(body.diceRolls),
               diceDetails: threadDiceDetails(body.diceRolls),
@@ -266,21 +270,24 @@ class ThreadTargetPostStatus extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return targetState.when(
-      loading: () => const WenyouStatusBanner(message: '正在定位搜索结果…'),
+      loading: () => const WenyouStatusBanner(message: '正在加载楼层…'),
       error: (error, _) {
         final failure = error is ApiFailure ? error : null;
+        final unavailable = failure?.httpStatus == 404;
         return WenyouStatusBanner(
-          tone: WenyouStatusTone.error,
-          message: failure?.httpStatus == 404
+          tone: unavailable ? WenyouStatusTone.neutral : WenyouStatusTone.error,
+          message: unavailable
               ? '目标内容已不可见'
               : (failure?.userMessage ?? '目标内容定位失败，请重试。'),
-          detail: wenyouFailureDetail(failure),
-          action: TextButton.icon(
-            key: const Key('thread-target-retry'),
-            onPressed: onRetry,
-            icon: const WenyouIcon(WenyouIconIds.actionRefresh, size: 18),
-            label: const Text('重试定位'),
-          ),
+          detail: unavailable ? null : wenyouFailureDetail(failure),
+          action: unavailable
+              ? null
+              : TextButton.icon(
+                  key: const Key('thread-target-retry'),
+                  onPressed: onRetry,
+                  icon: const WenyouIcon(WenyouIconIds.actionRefresh, size: 18),
+                  label: const Text('重试定位'),
+                ),
         );
       },
       data: (target) {
@@ -428,9 +435,8 @@ class ThreadFloorCard extends ConsumerWidget {
                       ),
                       SizedBox(width: tokens.space8),
                       DefaultTextStyle.merge(
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: tokens.mutedText,
-                        ),
+                        style: Theme.of(context).textTheme.wenyouCaption
+                            .copyWith(color: tokens.mutedText),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
@@ -461,14 +467,14 @@ class ThreadFloorCard extends ConsumerWidget {
                   if (floor.isDeleted)
                     Text(
                       '该楼层已删除。',
-                      style: Theme.of(
-                        context,
-                      ).textTheme.bodyMedium?.copyWith(color: tokens.mutedText),
+                      style: Theme.of(context).textTheme.wenyouCompactBody
+                          .copyWith(color: tokens.mutedText),
                     )
                   else
                     StickerPostMarkdown(
                       postId: floor.id,
                       data: floor.body.markdown,
+                      mediaDisplays: floor.body.mediaDisplays,
                       diceLabels: threadDiceLabels(floor.body.diceRolls),
                       diceSemantics: threadDiceSemantics(floor.body.diceRolls),
                       diceDetails: threadDiceDetails(floor.body.diceRolls),
@@ -633,7 +639,7 @@ class _FloorInlineReplyCard extends StatelessWidget {
               '回复 @$username',
               style: Theme.of(
                 context,
-              ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
+              ).textTheme.wenyouCaption.copyWith(color: tokens.mutedText),
             ),
           ],
           SizedBox(height: tokens.space8),
@@ -642,12 +648,13 @@ class _FloorInlineReplyCard extends StatelessWidget {
               '该回复已删除。',
               style: Theme.of(
                 context,
-              ).textTheme.bodyMedium?.copyWith(color: tokens.mutedText),
+              ).textTheme.wenyouCompactBody.copyWith(color: tokens.mutedText),
             )
           else
             StickerPostMarkdown(
               postId: reply.id,
               data: reply.body.markdown,
+              mediaDisplays: reply.body.mediaDisplays,
               diceLabels: threadDiceLabels(reply.body.diceRolls),
               diceSemantics: threadDiceSemantics(reply.body.diceRolls),
               diceDetails: threadDiceDetails(reply.body.diceRolls),
@@ -691,20 +698,25 @@ class ThreadFloorsFooter extends StatelessWidget {
         child: Text(
           '已经读完这个子贴的全部楼层',
           textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.bodySmall,
+          style: Theme.of(context).textTheme.wenyouCaption,
         ),
       );
     }
-    return OutlinedButton.icon(
-      key: const Key('thread-floors-load-more'),
-      onPressed: state.isLoadingMore ? null : onLoadMore,
-      icon: state.isLoadingMore
-          ? const SizedBox.square(
-              dimension: 18,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            )
-          : const WenyouIcon(WenyouIconIds.navigationExpand),
-      label: Text(state.isLoadingMore ? '正在加载' : '加载更多楼层'),
+    if (state.transientFailure != null) return const SizedBox.shrink();
+    return Padding(
+      key: const Key('thread-floors-loading-more'),
+      padding: EdgeInsets.symmetric(vertical: tokens.space12),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const SizedBox.square(
+            dimension: 18,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+          SizedBox(width: tokens.space8),
+          const Text('正在加载楼层'),
+        ],
+      ),
     );
   }
 }
@@ -745,7 +757,7 @@ class _AuthorLine extends StatelessWidget {
                   author.username,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.labelLarge,
+                  style: Theme.of(context).textTheme.wenyouLabel,
                 ),
               ),
               SizedBox(width: tokens.space4),
@@ -757,9 +769,8 @@ class _AuthorLine extends StatelessWidget {
                   semanticsPrefix: '发布时间：',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
+                  style: Theme.of(context).textTheme.wenyouUtilityCaption
+                      .copyWith(color: tokens.mutedText),
                 ),
               ),
             ],

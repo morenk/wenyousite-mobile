@@ -31,12 +31,14 @@ class LogoutController extends StateNotifier<LogoutState> {
     state = const LogoutState.submitting();
     try {
       await _sessionController.logout();
-      state = const LogoutState.idle();
+      if (mounted) state = const LogoutState.idle();
       return true;
     } on ApiFailure catch (failure) {
+      if (!mounted) return false;
       state = LogoutState.failed(failure);
       return false;
     } on Object catch (error) {
+      if (!mounted) return false;
       state = LogoutState.failed(
         ApiFailure(userMessage: '退出失败，请稍后重试。', cause: error),
       );
@@ -45,12 +47,14 @@ class LogoutController extends StateNotifier<LogoutState> {
   }
 
   Future<void> forceLocalLogout() async {
+    if (!mounted) return;
     await _sessionController.logoutLocally();
-    state = const LogoutState.idle();
+    if (mounted) state = const LogoutState.idle();
   }
 }
 
 final logoutControllerProvider =
     StateNotifierProvider.autoDispose<LogoutController, LogoutState>((ref) {
+      ref.watch(sessionScopeProvider);
       return LogoutController(ref.read(sessionControllerProvider.notifier));
     });

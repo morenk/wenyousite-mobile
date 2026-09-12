@@ -6,21 +6,23 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:markdown/markdown.dart' as md;
 import 'package:url_launcher/url_launcher.dart';
-import 'package:wenyousite_foundation/wenyousite_foundation.dart';
-import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_alignment.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_empty_paragraphs.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_inline_boundary.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_quote_line_syntax.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_reader_paragraph_syntax.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_source_protection.dart';
+import 'package:wenyousite_mobile/core/media/media_display.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_link.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_reference.dart';
-import 'package:wenyousite_mobile/core/navigation/wenyou_page_transitions.dart';
-import 'package:wenyousite_mobile/core/widgets/content_image_viewer_page.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_body_divider.dart';
-import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_dice_node.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_inline_text_elements.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_internal_reference_text.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_markdown_body.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_markdown_image.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_markdown_inline_builder.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_rich_text_style_spec.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_selectable_action_region.dart';
 
@@ -37,6 +39,7 @@ class WenyouMarkdown extends StatefulWidget {
   const WenyouMarkdown({
     required this.data,
     this.diceLabels = const {},
+    this.mediaDisplays = const {},
     this.diceSemantics = const {},
     this.diceDetails = const {},
     this.onInternalLink,
@@ -51,6 +54,7 @@ class WenyouMarkdown extends StatefulWidget {
   });
 
   final String data;
+  final Map<String, MediaDisplay> mediaDisplays;
   final Map<String, String> diceLabels;
   final Map<String, String> diceSemantics;
   final Map<String, WenyouDiceRollDetail> diceDetails;
@@ -108,6 +112,9 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
     if (!mapEquals(oldWidget.diceDetails, widget.diceDetails)) {
       _diceDetails.value = Map.unmodifiable(widget.diceDetails);
     }
+    if (!mapEquals(oldWidget.mediaDisplays, widget.mediaDisplays)) {
+      _renderedBody = null;
+    }
     if (oldWidget.data != widget.data ||
         oldWidget.enablePlainTextFastPath != widget.enablePlainTextFastPath) {
       _prepareData();
@@ -147,7 +154,6 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           for (var index = 0; index < paragraphs.length; index++) ...[
-            if (index > 0) SizedBox(height: _styleSheet?.blockSpacing ?? 0),
             GestureDetector(
               behavior: HitTestBehavior.translucent,
               onTap: widget.onTapText == null ? null : _handleTapText,
@@ -181,15 +187,19 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
 
   void _prepareData() {
     final normalized = MarkdownContent.literalizeUnsupported(
-      MarkdownEmptyParagraphs.recoverLegacy(widget.data),
+      MarkdownEmptyParagraphs.recoverLegacy(
+        MarkdownSourceProtection.prepareForReader(widget.data),
+      ),
       imageAlignment: true,
     );
     final prepared = _prepareInternalReferences(
       MarkdownInlineBoundary.canonicalizeDocument(normalized),
     );
-    _normalizedData = prepared.data;
-    _renderSegments = MarkdownAlignmentContract.renderSegments(
+    _normalizedData = MarkdownEmptyParagraphs.prepareForLineEditor(
       prepared.data,
+    );
+    _renderSegments = MarkdownAlignmentContract.renderSegments(
+      _normalizedData,
       imageAlignment: true,
     );
     _internalReferences = prepared.references;
@@ -209,7 +219,8 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         for (var index = 0; index < _renderSegments.length; index++) ...[
-          if (index > 0) SizedBox(height: _styleSheet?.blockSpacing ?? 0),
+          if (_separatesRenderSegments(index))
+            SizedBox(height: _styleSheet?.blockSpacing ?? 0),
           KeyedSubtree(
             key: ValueKey(
               'wenyou-markdown-segment-$index-'
@@ -242,12 +253,27 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
     );
   }
 
+  bool _separatesRenderSegments(int index) {
+    if (index == 0) return false;
+    final previous = _renderSegments[index - 1].markdown.trimRight();
+    final next = _renderSegments[index].markdown.trimLeft();
+    final previousBlocks = md.Document().parse(previous);
+    final nextBlocks = md.Document().parse(next);
+    if (previousBlocks.isNotEmpty &&
+        nextBlocks.isNotEmpty &&
+        WenyouMarkdownBody.isBodyParagraph(previousBlocks.last) &&
+        WenyouMarkdownBody.isBodyParagraph(nextBlocks.first)) {
+      return false;
+    }
+    return !previous.endsWith('<br />') && !next.startsWith('<br />');
+  }
+
   MarkdownBody _buildMarkdownBody(
     String data,
     MarkdownStyleSheet? styleSheet, {
     bool expandBlockWidth = false,
     WenyouTextAlignment alignment = WenyouTextAlignment.left,
-  }) => MarkdownBody(
+  }) => WenyouMarkdownBody(
     data: data,
     selectable: false,
     // MarkdownBody defaults to fitContent=true, which shrink-wraps its inner
@@ -257,7 +283,13 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
     fitContent: !expandBlockWidth,
     softLineBreak: true,
     styleSheet: styleSheet,
-    blockSyntaxes: [_EmptyParagraphBlockSyntax()],
+    blockSyntaxes: [
+      const md.SetextHeaderSyntax(),
+      const MarkdownQuoteLineSyntax(_emptyParagraphTag),
+      const MarkdownLiteralRowsSyntax(),
+      _EmptyParagraphBlockSyntax(),
+      const MarkdownReaderParagraphSyntax(),
+    ],
     inlineSyntaxes: [
       _InternalReferenceInlineSyntax(),
       _UserMentionInlineSyntax(),
@@ -290,18 +322,27 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
       'hr': _HorizontalRuleMarkdownBuilder(fontSize: widget.bodyFontSize),
     },
     onTapLink: (_, href, _) => _openLink(context, href),
-    imageBuilder: (uri, title, alt) => _MarkdownImage(
-      uri: uri,
-      title: title,
-      alt: alt,
-      onAddToStickers: widget.onAddImageToStickers == null
-          ? null
-          : _addImageToStickers,
-      onLongPress: widget.onLongPressNonText == null
-          ? null
-          : _handleNonTextLongPress,
-      blockAlignment: alignment,
-    ),
+    imageBuilder: (uri, title, alt) {
+      final image = WenyouMarkdownImage(
+        uri: uri,
+        display: widget.mediaDisplays[uri.toString()],
+        title: title,
+        alt: alt,
+        onAddToStickers: widget.onAddImageToStickers == null
+            ? null
+            : _addImageToStickers,
+        onLongPress: widget.onLongPressNonText == null
+            ? null
+            : _handleNonTextLongPress,
+        blockAlignment: alignment,
+      );
+      return title?.startsWith('wenyousite-sticker:') == true
+          ? WenyouMarkdownInlineBuilder.wrap(
+              image,
+              alignment: PlaceholderAlignment.middle,
+            )
+          : image;
+    },
   );
 
   void _handleTapText() {
@@ -480,13 +521,13 @@ class _AllPlayersMentionInlineSyntax extends md.InlineSyntax {
   }
 }
 
-class _MentionMarkdownBuilder extends MarkdownElementBuilder {
+class _MentionMarkdownBuilder extends WenyouMarkdownInlineBuilder {
   _MentionMarkdownBuilder(this.onTap);
 
   final ValueChanged<Uri> onTap;
 
   @override
-  Widget? visitElementAfterWithContext(
+  Widget? buildInlineContent(
     BuildContext context,
     md.Element element,
     TextStyle? preferredStyle,
@@ -506,9 +547,9 @@ class _MentionMarkdownBuilder extends MarkdownElementBuilder {
   }
 }
 
-class _InlineCodeMarkdownBuilder extends MarkdownElementBuilder {
+class _InlineCodeMarkdownBuilder extends WenyouMarkdownInlineBuilder {
   @override
-  Widget? visitElementAfterWithContext(
+  Widget? buildInlineContent(
     BuildContext context,
     md.Element element,
     TextStyle? preferredStyle,
@@ -605,7 +646,7 @@ class _InternalReferenceInlineSyntax extends md.InlineSyntax {
   }
 }
 
-class _InternalReferenceMarkdownBuilder extends MarkdownElementBuilder {
+class _InternalReferenceMarkdownBuilder extends WenyouMarkdownInlineBuilder {
   _InternalReferenceMarkdownBuilder(
     this.references,
     this.onTap, {
@@ -617,7 +658,7 @@ class _InternalReferenceMarkdownBuilder extends MarkdownElementBuilder {
   final VoidCallback? onLongPress;
 
   @override
-  Widget? visitElementAfterWithContext(
+  Widget? buildInlineContent(
     BuildContext context,
     md.Element element,
     TextStyle? preferredStyle,
@@ -626,25 +667,13 @@ class _InternalReferenceMarkdownBuilder extends MarkdownElementBuilder {
     final index = int.tryParse(element.attributes['index'] ?? '');
     if (index == null || index < 0 || index >= references.length) return null;
     final portal = references[index];
-    return Text.rich(
-      TextSpan(
-        children: [
-          WidgetSpan(
-            alignment: PlaceholderAlignment.baseline,
-            baseline: TextBaseline.alphabetic,
-            child: WenyouInternalReferenceChip(
-              key: ValueKey('markdown-internal-reference-$index'),
-              surfaceKey: ValueKey(
-                'markdown-internal-reference-surface-$index',
-              ),
-              label: portal.label,
-              style: parentStyle,
-              onTap: () => onTap(portal.reference),
-              onLongPress: onLongPress,
-            ),
-          ),
-        ],
-      ),
+    return WenyouInternalReferenceChip(
+      key: ValueKey('markdown-internal-reference-$index'),
+      surfaceKey: ValueKey('markdown-internal-reference-surface-$index'),
+      label: portal.label,
+      style: parentStyle,
+      onTap: () => onTap(portal.reference),
+      onLongPress: onLongPress,
     );
   }
 }
@@ -668,7 +697,7 @@ class _DiceInlineSyntax extends md.InlineSyntax {
   }
 }
 
-class _DiceMarkdownBuilder extends MarkdownElementBuilder {
+class _DiceMarkdownBuilder extends WenyouMarkdownInlineBuilder {
   _DiceMarkdownBuilder(
     this.labelsByNodeId,
     this.semanticsByNodeId,
@@ -682,7 +711,7 @@ class _DiceMarkdownBuilder extends MarkdownElementBuilder {
   final VoidCallback? onLongPress;
 
   @override
-  Widget? visitElementAfterWithContext(
+  Widget? buildInlineContent(
     BuildContext context,
     md.Element element,
     TextStyle? preferredStyle,
@@ -692,171 +721,31 @@ class _DiceMarkdownBuilder extends MarkdownElementBuilder {
     final notation = element.textContent;
     final style =
         preferredStyle ?? parentStyle ?? DefaultTextStyle.of(context).style;
-    return Text.rich(
-      TextSpan(
-        children: [
-          WidgetSpan(
-            alignment: PlaceholderAlignment.baseline,
-            baseline: TextBaseline.alphabetic,
-            child: ListenableBuilder(
-              listenable: Listenable.merge([
-                labelsByNodeId,
-                semanticsByNodeId,
-                detailsByNodeId,
-              ]),
-              builder: (context, _) {
-                final labels = labelsByNodeId.value;
-                final detail = detailsByNodeId.value[nodeId];
-                final label = detail == null
-                    ? labels[nodeId] ?? '$notation = ?'
-                    : '$notation = ${detail.total}';
-                final settled = detail != null || labels.containsKey(nodeId);
-                return WenyouDiceNode(
-                  key: ValueKey('wenyou-dice-$nodeId'),
-                  label: label,
-                  semanticLabel: settled
-                      ? '骰子 $notation，总计 ${label.split('=').last.trim()}'
-                      : semanticsByNodeId.value[nodeId] ?? '骰子 $notation，待掷',
-                  settled: settled,
-                  style: style,
-                  detail: detail,
-                  onLongPress: onLongPress,
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _MarkdownImage extends StatelessWidget {
-  const _MarkdownImage({
-    required this.uri,
-    this.title,
-    this.alt,
-    this.onAddToStickers,
-    this.onLongPress,
-    this.blockAlignment = WenyouTextAlignment.left,
-  });
-
-  final Uri uri;
-  final String? title;
-  final String? alt;
-  final Future<String> Function(Uri uri)? onAddToStickers;
-  final VoidCallback? onLongPress;
-  final WenyouTextAlignment blockAlignment;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = context.wenyouTokens;
-    final isSticker = title?.startsWith('wenyousite-sticker:') == true;
-
-    Widget preserveBlockImageRow(Widget child) {
-      if (isSticker) return child;
-      return SizedBox(
-        key: ValueKey('markdown-block-image-row-$uri'),
-        width: double.infinity,
-        child: Align(
-          alignment: switch (blockAlignment) {
-            WenyouTextAlignment.left => AlignmentDirectional.centerStart,
-            WenyouTextAlignment.center => Alignment.center,
-            WenyouTextAlignment.right => AlignmentDirectional.centerEnd,
-          },
-          child: child,
-        ),
-      );
-    }
-
-    if (!MarkdownContent.isSafeImage(uri)) {
-      return preserveBlockImageRow(
-        Semantics(
-          label: '已阻止不安全图片${alt == null ? '' : '：$alt'}',
+    return ListenableBuilder(
+      listenable: Listenable.merge([
+        labelsByNodeId,
+        semanticsByNodeId,
+        detailsByNodeId,
+      ]),
+      builder: (context, _) {
+        final labels = labelsByNodeId.value;
+        final detail = detailsByNodeId.value[nodeId];
+        final label = detail == null
+            ? labels[nodeId] ?? '$notation = ?'
+            : '$notation = ${detail.total}';
+        final settled = detail != null || labels.containsKey(nodeId);
+        return WenyouDiceNode(
+          key: ValueKey('wenyou-dice-$nodeId'),
+          label: label,
+          semanticLabel: settled
+              ? '骰子 $notation，总计 ${label.split('=').last.trim()}'
+              : semanticsByNodeId.value[nodeId] ?? '骰子 $notation，待掷',
+          settled: settled,
+          style: style,
+          detail: detail,
           onLongPress: onLongPress,
-          child: GestureDetector(
-            onLongPress: onLongPress,
-            child: WenyouIcon(
-              WenyouIconIds.statusImageUnavailable,
-              color: tokens.mutedText,
-            ),
-          ),
-        ),
-      );
-    }
-    final fallback = ColoredBox(
-      color: tokens.softPanel,
-      child: Center(
-        child: WenyouIcon(WenyouIconIds.actionImage, color: tokens.mutedText),
-      ),
-    );
-    final image = WenyouCachedImage(
-      imageUrl: uri.toString(),
-      fit: BoxFit.contain,
-      placeholder: (_, _) => fallback,
-      errorWidget: (_, _, _) => Semantics(
-        label: '图片加载失败${alt == null ? '' : '：$alt'}',
-        child: fallback,
-      ),
-    );
-    final imageContent = ClipRRect(
-      borderRadius: BorderRadius.circular(tokens.radius12),
-      child: isSticker
-          ? SizedBox.square(dimension: 96, child: image)
-          : ConstrainedBox(
-              constraints: const BoxConstraints(maxHeight: 420),
-              child: image,
-            ),
-    );
-    if (isSticker) {
-      return Semantics(
-        image: true,
-        label: alt?.trim().isNotEmpty == true ? alt!.trim() : '收藏表情',
-        excludeSemantics: true,
-        onLongPress: onLongPress,
-        child: GestureDetector(
-          onLongPress: onLongPress,
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              imageContent,
-              // Image render objects do not contribute text to SelectionArea.
-              // Keep the reading label selectable without painting a duplicate.
-              const IgnorePointer(
-                child: ExcludeSemantics(
-                  child: Opacity(opacity: 0, child: Text('[表情]')),
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-    final imageAlt = alt?.trim() ?? '';
-    final descriptiveAlt = imageAlt == '图片' ? '' : imageAlt;
-    return preserveBlockImageRow(
-      Semantics(
-        button: true,
-        image: true,
-        label: descriptiveAlt.isEmpty ? '查看正文图片原图' : '查看正文图片原图：$descriptiveAlt',
-        onLongPress: onLongPress,
-        child: InkWell(
-          key: ValueKey('markdown-image-$uri'),
-          borderRadius: BorderRadius.circular(tokens.radius12),
-          onLongPress: onLongPress,
-          onTap: () => pushWenyouFullscreenPage<void>(
-            context: context,
-            builder: (_) => ContentImageViewerPage.single(
-              url: uri.toString(),
-              alt: imageAlt,
-              onAddToStickers: onAddToStickers == null
-                  ? null
-                  : (_) => onAddToStickers!(uri),
-            ),
-          ),
-          child: imageContent,
-        ),
-      ),
+        );
+      },
     );
   }
 }

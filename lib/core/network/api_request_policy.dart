@@ -6,6 +6,7 @@
 enum ApiRequestPolicy {
   standard,
   public,
+  explicitCredentials,
   idempotentCreate,
   publicNonReplayable,
   authenticatedNonReplayable;
@@ -14,6 +15,10 @@ enum ApiRequestPolicy {
     ApiRequestPolicy.standard => const <String, dynamic>{},
     ApiRequestPolicy.public => const <String, dynamic>{
       ApiRequestExtraKeys.skipAuth: true,
+    },
+    ApiRequestPolicy.explicitCredentials => const <String, dynamic>{
+      ApiRequestExtraKeys.skipAuth: true,
+      ApiRequestExtraKeys.explicitCredentials: true,
     },
     ApiRequestPolicy.idempotentCreate => const <String, dynamic>{
       ApiRequestExtraKeys.idempotentCreate: true,
@@ -30,6 +35,7 @@ enum ApiRequestPolicy {
 
 abstract final class ApiRequestExtraKeys {
   static const skipAuth = 'skipAuth';
+  static const explicitCredentials = 'explicitCredentials';
   static const idempotentCreate = 'idempotentCreate';
   static const noAutomaticReplay = 'noAutomaticReplay';
 }

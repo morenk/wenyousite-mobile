@@ -9,10 +9,10 @@ import 'package:wenyousite_mobile/features/threads/data/thread_member_management
 import 'package:wenyousite_mobile/features/threads/domain/thread_member_management_models.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_member_management_page.dart';
 
-import '../../support/foundation_test_fonts.dart';
+import '../../support/deterministic_test_fonts.dart';
 
 void main() {
-  setUpAll(loadFoundationTestFonts);
+  setUpAll(loadDeterministicTestFonts);
 
   testWidgets('楼主管理玩家标记并二次确认任命协作者', (tester) async {
     final repository = _FakeRepository(bootstrap: _bootstrap());

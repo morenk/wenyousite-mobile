@@ -5,6 +5,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
+import 'package:wenyousite_mobile/features/thread_feed/data/thread_category_catalog_repository.dart';
 import 'package:wenyousite_mobile/features/threads/data/thread_compose_repository.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_compose_models.dart';
 
@@ -47,7 +48,7 @@ void main() {
     ).thenAnswer((_) async => _aggregateResponse(publishedDto));
     final repository = ApiThreadComposeRepository(
       threadsApi,
-      _MockCategoriesApi(),
+      ApiThreadCategoryCatalogRepository(_MockCategoriesApi()),
       _MockUsersApi(),
     );
 
@@ -182,7 +183,7 @@ void main() {
     );
     final repository = ApiThreadComposeRepository(
       threadsApi,
-      _MockCategoriesApi(),
+      ApiThreadCategoryCatalogRepository(_MockCategoriesApi()),
       _MockUsersApi(),
     );
 
@@ -212,18 +213,20 @@ void main() {
       () => usersApi.usersGetMe(),
     ).thenAnswer((_) async => throw _dioError('/api/v1/users/me'));
     when(
-      () => categoriesApi.threadCategoriesList(),
+      () => categoriesApi.threadCategoriesList(extra: any(named: 'extra')),
     ).thenAnswer((_) async => throw _dioError('/api/v1/thread-categories'));
 
     final future = ApiThreadComposeRepository(
       _MockThreadsApi(),
-      categoriesApi,
+      ApiThreadCategoryCatalogRepository(categoriesApi),
       usersApi,
     ).fetchBootstrap();
 
     await expectLater(future, throwsA(isA<ApiFailure>()));
     verify(() => usersApi.usersGetMe()).called(1);
-    verify(() => categoriesApi.threadCategoriesList()).called(1);
+    verify(
+      () => categoriesApi.threadCategoriesList(extra: any(named: 'extra')),
+    ).called(1);
   });
 }
 

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
+import 'package:wenyousite_mobile/core/network/media_display_mapper.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/stickers/application/sticker_repository_ports.dart';
 import 'package:wenyousite_mobile/features/stickers/data/sticker_failure_messages.dart';
@@ -208,6 +209,7 @@ class ApiStickerRepository implements StickerRepository {
       position: _nonNegativeInteger(dto.position, '表情位置'),
       lastUsedAt: dto.lastUsedAt,
       asset: StickerAsset(
+        display: mapMediaDisplay(asset.display),
         id: _requiredText(asset.id, '表情资产 ID'),
         url: _safeHttpUri(asset.url, '表情地址').toString(),
         thumbnailUrl: _safeHttpUri(asset.thumbnailUrl, '表情缩略图地址').toString(),

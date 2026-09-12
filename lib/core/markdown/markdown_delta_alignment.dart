@@ -1,5 +1,6 @@
 import 'package:flutter_quill/quill_delta.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_alignment.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_paragraph_boundaries.dart';
 
 abstract final class MarkdownDeltaAlignment {
   static const attribute = 'align';
@@ -200,6 +201,11 @@ abstract final class MarkdownDeltaAlignment {
     }
 
     for (final line in lines) {
+      if (line.isPlainEmptyLine) {
+        flushParagraph();
+        desired[line] = line.alignment;
+        continue;
+      }
       if (imageAlignment && line.isStandaloneRegularImage) {
         flushParagraph();
         desired[line] = line.alignment;
@@ -212,6 +218,9 @@ abstract final class MarkdownDeltaAlignment {
           line.alignment == paragraph.last.alignment;
       if (line.isParagraphShape || joinsTrailingEmptyLine) {
         paragraph.add(line);
+        if (line.attributes[MarkdownParagraphBoundaries.key] != null) {
+          flushParagraph();
+        }
         continue;
       }
       flushParagraph();
@@ -263,6 +272,11 @@ abstract final class MarkdownDeltaAlignment {
     }
 
     for (final line in lines) {
+      if (line.isPlainEmptyLine) {
+        flushParagraph();
+        blocks.add(_AlignmentBlock([line]));
+        continue;
+      }
       if (imageAlignment && line.isStandaloneRegularImage) {
         flushParagraph();
         blocks.add(_AlignmentBlock([line]));
@@ -275,6 +289,9 @@ abstract final class MarkdownDeltaAlignment {
           line.alignment == paragraph.last.alignment;
       if (line.isParagraphShape || joinsTrailingEmptyLine) {
         paragraph.add(line);
+        if (line.attributes[MarkdownParagraphBoundaries.key] != null) {
+          flushParagraph();
+        }
         continue;
       }
       flushParagraph();

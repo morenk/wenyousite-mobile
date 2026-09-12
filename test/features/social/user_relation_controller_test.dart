@@ -9,6 +9,22 @@ import 'package:wenyousite_mobile/features/social/data/user_relation_repository.
 import 'package:wenyousite_mobile/features/social/domain/user_relation_models.dart';
 
 void main() {
+  test('仅拉黑和解除拉黑通知可见性缓存失效', () async {
+    var invalidations = 0;
+    final controller = UserRelationController(
+      _FakeUserRelationRepository(),
+      _target,
+      onVisibilityChanged: () => invalidations++,
+    );
+    addTearDown(controller.dispose);
+    await controller.toggleFollow();
+    expect(invalidations, 0);
+    await controller.toggleBlock();
+    expect(invalidations, 1);
+    await controller.toggleBlock();
+    expect(invalidations, 2);
+  });
+
   test('关注与取消关注串行切换并同步粉丝数', () async {
     final repository = _FakeUserRelationRepository();
     final controller = UserRelationController(repository, _target);

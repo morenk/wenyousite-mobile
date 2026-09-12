@@ -8,7 +8,8 @@ import 'package:wenyousite_mobile/features/media/data/image_crop_processor.dart'
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
 
 void main() {
-  const processor = IsolateImageCropProcessor();
+  TestWidgetsFlutterBinding.ensureInitialized();
+  final processor = EngineImageCropProcessor();
 
   test('头像按用户取景生成严格 512 × 512 高质量图片', () async {
     final source = await processor.prepare(_sourceInput());
@@ -19,8 +20,8 @@ void main() {
     );
 
     expect(_sizeOf(output.bytes), (512, 512));
-    expect(output.filename, 'avatar.jpg');
-    expect(output.declaredContentType, 'image/jpeg');
+    expect(output.filename, 'avatar.png');
+    expect(output.declaredContentType, 'image/png');
   });
 
   test('同一来源按独立取景生成 Web 3:1 与移动端 2:1 双画幅', () async {
@@ -44,10 +45,10 @@ void main() {
 
     expect(_sizeOf(selection.web.bytes), (1920, 640));
     expect(_sizeOf(selection.mobile.bytes), (1600, 800));
-    expect(selection.web.declaredContentType, 'image/jpeg');
-    expect(selection.mobile.declaredContentType, 'image/jpeg');
-    expect(selection.web.filename, 'profile-cover-web.jpg');
-    expect(selection.mobile.filename, 'profile-cover-mobile.jpg');
+    expect(selection.web.declaredContentType, 'image/png');
+    expect(selection.mobile.declaredContentType, 'image/png');
+    expect(selection.web.filename, 'profile-cover-web.png');
+    expect(selection.mobile.filename, 'profile-cover-mobile.png');
   });
 
   test('通用图片按选定区域输出新的完整图片文件', () async {
@@ -59,11 +60,53 @@ void main() {
     );
 
     expect(_sizeOf(output.bytes), (90, 90));
-    expect(output.filename, 'cropped-image.jpg');
-    expect(output.declaredContentType, 'image/jpeg');
+    expect(output.filename, 'cropped-image.png');
+    expect(output.declaredContentType, 'image/png');
     expect(output.bytes.length, lessThanOrEqualTo(maxMediaImageBytes));
   });
 
+  test('QQ JPEG 尾随重启标记不会阻断完整图片取景', () async {
+    final input = _jpegInputWithTrailingRestartMarker();
+
+    final source = await processor.prepare(input);
+    final output = await processor.cropImage(
+      source,
+      const NormalizedCropRect(left: 0, top: 0, width: 1, height: 1),
+    );
+
+    expect(source.original.bytes, orderedEquals(input.bytes));
+    expect(source.original.bytes.sublist(source.original.bytes.length - 2), [
+      0xff,
+      0xd9,
+    ]);
+    expect((source.width, source.height), (180, 90));
+    expect(_sizeOf(output.bytes), (180, 90));
+  });
+
+  test('普通 JPEG 不经过尾随重启标记兼容改写', () async {
+    final input = _jpegInput();
+
+    final source = await processor.prepare(input);
+
+    expect(source.original.bytes, orderedEquals(input.bytes));
+  });
+
+  test('JPEG 主图后附加数据由引擎读取且不改写原文件', () async {
+    final jpeg = _jpegInput().bytes;
+    final malformed = Uint8List(jpeg.length + 3)
+      ..setRange(0, jpeg.length - 2, jpeg)
+      ..setRange(jpeg.length - 2, jpeg.length + 1, [0xff, 0xd6, 0x00])
+      ..setRange(jpeg.length + 1, jpeg.length + 3, jpeg, jpeg.length - 2);
+
+    final input = MediaUploadInput(
+      filename: 'appended.jpg',
+      declaredContentType: 'image/jpeg',
+      bytes: malformed,
+    );
+    final source = await processor.prepare(input);
+    expect((source.width, source.height), (180, 90));
+    expect(source.original.bytes, orderedEquals(input.bytes));
+  });
   test('通用图片处理会在解码前读取延迟加载的相册文件', () async {
     final directory = await Directory.systemTemp.createTemp(
       'wenyou-crop-source-',
@@ -126,6 +169,34 @@ MediaUploadInput _sourceInput() {
     filename: 'source.png',
     declaredContentType: 'image/png',
     bytes: image.encodePng(source),
+  );
+}
+
+MediaUploadInput _jpegInput() {
+  final source = image.Image(width: 180, height: 90);
+  for (var y = 0; y < source.height; y++) {
+    for (var x = 0; x < source.width; x++) {
+      source.setPixelRgb(x, y, x, y * 2, 80);
+    }
+  }
+  return MediaUploadInput(
+    filename: 'source.jpg',
+    declaredContentType: 'image/jpeg',
+    bytes: image.encodeJpg(source),
+  );
+}
+
+MediaUploadInput _jpegInputWithTrailingRestartMarker() {
+  final original = _jpegInput();
+  final bytes = original.bytes;
+  final compatible = Uint8List(bytes.length + 2)
+    ..setRange(0, bytes.length - 2, bytes)
+    ..setRange(bytes.length - 2, bytes.length, [0xff, 0xd6])
+    ..setRange(bytes.length, bytes.length + 2, bytes, bytes.length - 2);
+  return MediaUploadInput(
+    filename: original.filename,
+    declaredContentType: original.declaredContentType,
+    bytes: compatible,
   );
 }
 

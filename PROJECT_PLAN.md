@@ -4,23 +4,55 @@
 
 ## 当前基线
 
-- 客户端：`0.7.0+93` 正式发布，Android 8+，正式包名 `site.wenyou.app`，Debug 包名 `site.wenyou.app.debug`，真机性能包名 `site.wenyou.app.profile`。
-- 后端契约：`5.16.0-dev.20260903.5`，revision `f09aee365ce50fe921c0c443d252959fb7dc5903`；新增主题帖档案导出与子贴主楼层置顶，Markdown v5、编辑器往返黄金契约 v6、剪贴板契约 v2 与独立图片块对齐保持激活，公网 `/meta` 已与本地契约基线一致。
+- 2026-09-11 列表契约候选：当前任务整合移动端 `765f023` 的既有开发基线，并同步后端 `062412601b3a8dbf4f64494115a2445d312dd53d`。OpenAPI 升至 `5.20.1-dev.20260911.1`，补充收藏夹计数的可见性口径，字段形状不变；新增 editor-list v1 revision 2。规范样例可以独立读取，移动端原文读取、结构编码和负责人验收尚未完成，见[列表统一排查](docs/architecture/editor-list-unification-investigation.md)。
+
+- 2026-09-11 契约同步：本任务分支已同步后端 `0ee2c0de1d9c570e495e778be6661b074b7a4bef` 的 `5.20.0-dev.20260909.1`，生成客户端增加可空封面媒体与动画预览字段，暂不接入播放。同日 01:16 完整门禁已确认公网更新至该契约及精确 revision，主题响应兼容检查通过；下列旧契约条目保留此前交付背景。
+
+- 客户端：`0.7.0+94` 正式发布候选，线上正式版本仍为 `0.7.0+93`；新正式 APK 仅支持 Android 8+ ARM64，正文、标题和品牌文字继承平台系统字体，KaTeX、等宽呈现与 Material Icons 等功能依赖保留。正式包名 `site.wenyou.app`，Debug 包名 `site.wenyou.app.debug`，真机性能包名 `site.wenyou.app.profile`。负责人已对 build 94 正式签名候选完成 ADB 覆盖安装并明确验证通过，线上晋级待本次发布流程完成。
+- 后端契约：`5.22.0-dev.20260912.2`，来源 `6fdfa00eaf1f3056ba30f2ffbc529d12eed1c823`；完整门禁已核对公网 API、精确 revision、Markdown v5 激活状态与 `GET /threads` 兼容性。
 - 正文契约：公网当前激活 Markdown v5；客户端兼容 `{3, 4, 5}`，独占一行的普通图片可使用左、中、右块对齐；站内引用契约：`wenyousite-internal-reference` v1。
-- 视觉依赖：Foundation `v6.8.0`。
+- 视觉依赖：Foundation `v7.0.0`；系统字体迁移候选待 Android 8、较新 Android 与两种厂商字体真机验收。
+- 表情网格及共享排序动画：2026-09-11 负责人真机验收通过并授权合并；表情管理采用五列紧凑网格、长按排序与静默乐观保存，子贴排序复用抬起／落下反馈。未取得 Profile 帧时间采样，见[验收记录](docs/architecture/sticker-grid-acceptance.md)。
+- 空正文选择 H2/H3：2026-09-09 负责人在覆盖安装的 Debug 包 `1c7fb8a6` 上验收通过，原问题修复完成，见[空标题验收](docs/architecture/editor-empty-heading-acceptance.md)。
+- 引用长文本溢出：2026-09-09 负责人在 Debug 包 `562a7954` 上验收通过；按实际行内内容高度排版，保留既有分页和删除调整。源码与验收记录见 [引用溢出验收](docs/architecture/quote-text-overflow-acceptance.md)。
 - 性能基线：Android 真机 Profile 三轮 60 Hz 门禁覆盖外观切换、共享转场、动态流和 Markdown 时间线；机器可读结果见 `tool/performance/android_profile_baseline.json`。
 - 已交付范围覆盖应用壳、认证、公开阅读、搜索、动态、主题与讨论、编辑器、媒体、草稿、收藏表情、通知、私聊、社交关系、温油钱包、社区举报、账号设置、主题工作台和私密邀请。各模块仍可能有明确列出的验收缺口，因此不能仅凭“已接入”视为最终完成。
 
+- 故障诊断：已接入帖子、上传、网络与全局错误的脱敏记录和独立 Sentry 发送器；独立移动端 DSN 已在仓库外配置，Windows SDK 已收到同编号事件接收确认；手机收件、私密帖编辑及后端日志关联按 [诊断验收清单](docs/architecture/failure-diagnostics.md) 完成。
+
 ## 当前优先级
 
-1. 完成正式签名包的真实更新安装冒烟，覆盖线上 `/meta`、下载、SHA-256、签名、安装器返回和旧版本升级后的会话/本地数据保留。
+富文本跨端稳定性专项沿用[阶段计划](docs/architecture/rich-text-stability-plan.md)、[三端历史基线](docs/architecture/rich-text-stability-baseline.md)和[共享操作矩阵提案](docs/architecture/rich-text-stability-matrix.md)。这些记录描述 2026-09-10 的审查现场；当前依赖和后续整改以上方最新基线及下述整改计划为准。
+
+编辑器系统整改已于 2026-09-11 获负责人授权开始：按[正文语义整改计划](docs/architecture/editor-semantics-remediation-plan.md)依次登记入口、统一移动端结构消费、覆盖连续编辑状态、核对跨端独立结果并交付真机候选。当前 `1a66b68b` 列表候选仍待验收，不把局部检查通过记为整个编辑器整改完成。
+
+当前空块格式排查：负责人反馈空列表仍报错，已扩展为格式状态、纯空白输入与独立阅读语义的系统性候选，尚待完整检查和负责人验收。历史嵌套有序列表的缩进映射另需跨端补齐，当前必须阻止有损保存，详见[空块格式验收](docs/architecture/editor-empty-block-acceptance.md)。
+
+回车对齐反馈已于 2026-09-09 取得负责人验收通过：移动端手动 Enter 新段恢复默认左对齐、长句自动折行保留整段方向，相邻正文段落不增加空行。对应源码 `1fe9435`、Debug 包 `db2c8965`，负责人已授权合并 PR #12 并清理任务分支；完整检查及保留制品见[手动回车对齐验收](docs/architecture/editor-manual-alignment-acceptance.md)。三个远端 PR 已合并，本轮后端部署来源核对通过；Web 部署与全部线上跨端组合未在本任务独立核验。
+
+本轮新增图片输入兼容性加固：统一引擎解码与无损中间图，原始失败图片已完成本地旧实现失败／候选通过对照，负责人于 2026-09-09 在 Debug 构建 94 上确认原问题真机验收通过并授权合并。完整 Android 原生矩阵与大图性能仍待补充验证，范围和限制见[图片兼容性验收](docs/architecture/image-input-compatibility-acceptance.md)。
+
+当前中断项：普通正文与引用的一次回车双端统一，以及引用额外空行候选，**待负责人验收**。已查明此前安装 Release、负责人打开旧 Debug 的包名错配；覆盖更新正确 Debug 后，负责人于 2026-09-08 明确确认 `>` 拆分引用的问题解决。现用已取得的原楼层 Markdown 复现并处理多空行问题，保留保存后的段落边界，历史见 [引用空行验收](docs/architecture/editor-quote-acceptance.md)，本次普通回车候选与真机步骤见 [双端回车验收](docs/architecture/editor-newline-acceptance.md)。
+
+1. build 94 正式签名候选已完成 ADB 覆盖安装并由负责人明确验证通过；发布后继续从旧版本按线上 `/meta` 完成公网下载与安装链路复核。
 2. 接入协作者权限闭环：展示本人协作主题列表，消费子贴 `postingCapability`，识别协作者任免通知，并在权限撤销或管理写入被拒时退出管理页、刷新成员与协作列表。
 3. 在可信管理员角色投影、高风险确认和刷新策略具备后，接入普通 Bearer 内容隐藏能力；此前不展示入口。
 4. 使用公网专用账号补齐各模块文档中尚未勾选的手工联调与真机验收，禁止对共享开发数据执行破坏性批量操作。
 
+## 本轮架构加固
+
+- [x] 会话与网络：请求绑定发起会话，安全存储串行提交，刷新按会话隔离；完整门禁和本地 Debug APK 已通过。
+- [x] 草稿与幂等：动态草稿按账号持久化，待确认发布冻结原内容与请求标识；钱包校验不丢失待确认操作。主题首次创建与确认清理采用本地事务，动态编辑/删除支持仅重试草稿清理。
+- [x] 缓存与生命周期：统一会话/可见性失效信号，补齐异步回写保护与启动恢复容错；完整门禁和 Debug APK 已通过。
+- [x] 业务边界：建立共享主题流读模型与分类目录，收敛重复实现并保留上传失败诊断信息。
+- [x] 长列表与并发状态：通知、钱包、用户内容惰性构建，游标保持不透明，异步写入避免覆盖新状态。
+- [x] 规范与门禁：修正文档事实，按精确依赖边和导出链检查边界，将测试与工具纳入文件规模约束；全量门禁与最终 Debug APK 已通过，真机清单待负责人执行。
+
+本轮验收范围、剩余债务与项目负责人待执行步骤见 [架构加固验收](docs/architecture/architecture-hardening-acceptance.md)。
+
 ## 持续债务
 
-- 存量 `StateNotifier` 59 处、跨 feature 内部层导入 41 处、feature presentation 原始加载圆环 77 处已由架构门禁冻结；后续只在对应业务切片中逐步迁移为 `Notifier` / `AsyncNotifier`、feature facade 和共享状态组件，不做一次性大改。
+- 存量 `StateNotifier` 59 处、跨 feature 内部层引用 35 条精确文件边、feature presentation 原始加载圆环 77 处已由架构门禁冻结；内部引用不再以文本匹配总量放行，新边与删除旧边不能相互抵扣。后续只在对应业务切片中逐步迁移为 `Notifier` / `AsyncNotifier`、feature facade 和共享状态组件，不做一次性大改。
 - `flutter_image_compress_common` 的当前可解析版本仍使用插件 Kotlin Gradle Plugin，Flutter 已提示未来需迁移 Built-in Kotlin；待上游提供兼容版本后单独升级和重新构建验收。
 - 动态卡片与详情的可选 `canInteract` 已在收藏主链按“字段缺失视为允许”消费：`false` 禁止新增收藏与移动但允许取消；点赞、评论和加油仍需独立接入该权限投影。
 - 主题列表、草稿、详情、邀请预览与订阅响应已提供稳定的 `categoryInfo` 分类展示投影；移动端当前仍通过旧 `category` slug 与分类目录解析名称，需要独立迁移共享主题读模型并保留未知历史分类的安全降级。
@@ -36,5 +68,6 @@
 - 行为、测试、模块当前事实文档在同一切片同步；纯内部重构按仓库约定声明 `Docs-Impact: none - 原因`。
 - 普通切片运行相关测试和受影响范围检查；认证、契约、网络、上传、持久化、发布等高风险切片运行 `npm run check`，必要时构建 Debug APK。
 - 无敏感信息、调试残留或伪实现；提交保持原子且默认推送 `dev`。
+- Bug 必须由负责人亲自复验原场景并明确通过，才能标记修复完成；候选提交、自动检查或安装成功均不代表验收通过。未验收或验收失败时继续保持进行中，执行 [Bug 候选与负责人验收流程](AGENTS.md#bug-候选与负责人验收)。
 
 `dev → main`、正式版本号、Tag 和对外晋级只由维护者明确决定。

@@ -50,6 +50,10 @@
 
 ## 8. 本地存储、缓存及失效规则
 
+登录与注册完成的迟到结果必须同时通过页面存活和发起时会话代次校验，才可安装凭据；验证码请求释放后不回写状态或重建冷却计时器。退出确认不依赖页面存活，但完成后不再写已释放的表单状态。
+
+登录开始即结束旧会话归属，安全存储成功后再建立新账号边界；存储写入和清理串行，迟到操作必须通过代次校验才可发布状态。普通业务请求绑定发起时的会话代次，切号后不重试、不应用旧响应，也不能被旧错误退出新账号。安全存储清理失败不会恢复内存 Token；错误交给原操作处理，允许再次清理。刷新中的 Future 按会话隔离，不跨账号复用。
+
 双 Token 仅进安全存储；Access Token 可在内存缓存。登录和刷新成功先完成安全存储写入再发布 authenticated 状态；服务端确认退出、凭据修改成功、账号注销或明确返回会话失效后删除。瞬时退出失败保留会话供重试；用户明确二次确认“仅清除本机登录”时允许本地删除，并提示稍后检查服务端终端。注销远端一旦成功即不可回滚，本地清理失败只重试安全存储与会话归一化，不重放 API。注册、找回邮箱、验证码、新密码和本人账号安全表单仅存在于当前 autoDispose 页面状态，不写入 Token 存储或持久化缓存；应用终止后需重新进入流程。
 
 ## 9. 加载、空数据、错误、重试和冲突状态
@@ -60,7 +64,9 @@
 
 ## 10. 跨模块约束
 
-遵循[网络与会话](../architecture/networking.md)与[Foundation v6.8.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.8.0/docs/platforms/mobile.md)；所有受保护模块通过统一鉴权回跳，不自行读取 Token。登录、注册、找回与账号安全表单复用验证码字段、凭据校验策略、状态提示和异步主按钮，业务页不得复制输入约束、错误卡片或提交加载样式。
+本模块页面排版统一遵循[移动端视觉基线](../architecture/visual-baseline.md)中的 Foundation v6.9.0 语义文字角色，不自定义字号或直接依赖 Material 字体槽位。
+
+遵循[网络与会话](../architecture/networking.md)与[Foundation v6.9.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.9.0/docs/platforms/mobile.md)；所有受保护模块通过统一鉴权回跳，不自行读取 Token。登录、注册、找回与账号安全表单复用验证码字段、凭据校验策略、状态提示和异步主按钮，业务页不得复制输入约束、错误卡片或提交加载样式。
 
 ## 11. 测试场景与验收条件
 
@@ -85,8 +91,22 @@
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `5.16.0-dev.20260903.5`；Markdown v5；后端 `f09aee365ce50fe921c0c443d252959fb7dc5903`；Foundation `v6.8.0`（`196deaf`）。
+本轮展示契约来源：API `5.22.0-dev.20260912.2`、Backend `6fdfa00eaf1f3056ba30f2ffbc529d12eed1c823`；新增display／mediaDisplays，消费者接入与真机验收另行记录。仅既有 `markdown-editor-list-v1-fixtures.json` 保留 `062412601b3a8dbf4f64494115a2445d312dd53d` 来源与SHA-256，见 contracts/markdown-editor-list-v1-source.json；不将该独立语料误标为本轮主来源。
+
+2026-09-11 列表契约候选同步：Backend `062412601b3a8dbf4f64494115a2445d312dd53d`，OpenAPI `5.20.1-dev.20260911.1`；新增 editor-list v1 revision 2，夹具最初固定于 `aa1bcbd4d087f03a17817e9eca8bcd1f92bb53da`。同时同步收藏夹计数按当前用户可见性统计的契约说明；字段形状、块边界 v1 revision 2 与既有消费代码保持；列表消费者及真机验收仍待完成，见[列表统一排查](../architecture/editor-list-unification-investigation.md)。
+
+2026-09-11 契约审查：同步 Backend `b785336c5b31cb228f3021650b9de1c39ade02e5`、`5.20.1-dev.20260911.1`，收藏夹数量明确为当前用户可见总数。仅契约说明、生成字段文档与版本变化；本模块既有行为及单独验收状态保持。此时公网仍为 `8bf370f`／5.20.0，部署核验单独记录。
+
+2026-09-11 合并来源同步：Backend `8bf370f6ef5357535683aa6d3f8c03bd2d08d108`，包含发布权限修复；通过既有脚本重新导出后仅来源元数据变化，OpenAPI、块边界 v1 revision 2 及其他共享契约字节不变。模块行为与候选验收状态保持，前次部署回滚、公网核验及安装包溯源见[块边界验收](../architecture/markdown-block-boundaries-acceptance.md)。
+
+2026-09-11 契约来源登记：Backend `a91cbb8b605223c596af299be22c5547f69e25b9`，块边界 v1 revision 2。HTTP OpenAPI 未变化，本模块既有接口行为与验收状态保持；富文本消费者候选见[块边界验收](../architecture/markdown-block-boundaries-acceptance.md)。
+
+2026-09-11 增量登记：契约 `5.20.0-dev.20260909.1`，后端及公网 `0ee2c0de1d9c570e495e778be6661b074b7a4bef`。本次仅兼容新增列表封面媒体及预览变体生成模型，本模块行为与已列明的验收状态保持原样；下列记录保留历史审查范围。
+
+契约 `5.18.0-dev.20260905.1`；Markdown v5；后端 `3338028459561565c788d5236fb64db84a2ae538`；Foundation `v6.9.0`（`5888132`）。
+
+本轮从固定候选提交同步富文本行为 v1 测试契约；既有 newline/v7/clipboard 与 HTTP/OpenAPI 内容不变，不据此推断候选已部署。新增行为执行与历史保护仍在专项实施中；既有负责人验收保持原范围。
 
 ## 14. 相关代码与架构文档
 
-代码入口：`lib/features/auth/application/auth_ports.dart`、`lib/features/auth/data/`、`lib/features/auth/presentation/auth_brand_header.dart`、`lib/main.dart`、`lib/core/network/session_remote.dart`；找回/重置由 `password_recovery_*` 承载，终端管理与注销由 `lib/features/settings/` 下的 `account_deletion_*` 等切片承载。参见[Foundation v6.8.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.8.0/docs/platforms/mobile.md)、[语义图标](../architecture/icons.md)、[网络与会话](../architecture/networking.md)、[导航](../architecture/navigation.md)。
+代码入口：`lib/features/auth/application/auth_ports.dart`、`lib/features/auth/data/`、`lib/features/auth/presentation/auth_brand_header.dart`、`lib/main.dart`、`lib/core/network/session_remote.dart`；找回/重置由 `password_recovery_*` 承载，终端管理与注销由 `lib/features/settings/` 下的 `account_deletion_*` 等切片承载。参见[Foundation v6.9.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.9.0/docs/platforms/mobile.md)、[语义图标](../architecture/icons.md)、[网络与会话](../architecture/networking.md)、[导航](../architecture/navigation.md)。

@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_quill/quill_delta.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_reference.dart';
@@ -317,7 +318,7 @@ class WenyouAtomicTextEditor extends StatelessWidget {
     final tokens = context.wenyouTokens;
     const horizontalSpacing = HorizontalSpacing.zero;
     const verticalSpacing = VerticalSpacing.zero;
-    final body = Theme.of(context).textTheme.bodyLarge!;
+    final body = Theme.of(context).textTheme.wenyouBody;
     final styles = DefaultStyles(
       paragraph: DefaultTextBlockStyle(
         body,

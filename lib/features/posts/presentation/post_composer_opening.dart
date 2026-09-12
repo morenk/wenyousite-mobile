@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
@@ -136,6 +137,7 @@ class _PostComposerOpeningState extends ConsumerState<PostComposerOpening> {
           )
         : PostComposerBaseline(
             content: latest.content,
+            mediaDisplays: latest.mediaDisplays,
             postId: latest.id,
             version: latest.version,
           );
@@ -187,7 +189,15 @@ class _PostComposerOpeningState extends ConsumerState<PostComposerOpening> {
           version: baseline.version,
           postId: baseline.postId,
         ),
-        baseline: baseline,
+        baseline: PostComposerBaseline(
+          content: baseline.content,
+          postId: baseline.postId,
+          version: baseline.version,
+          mediaDisplays: {
+            ...?widget.initialDraft?.mediaDisplays,
+            ...baseline.mediaDisplays,
+          },
+        ),
       );
     });
   }
@@ -237,7 +247,7 @@ class _OpeningSurface extends StatelessWidget {
               children: [
                 Text(
                   hasDivergedDraft ? '正文已有更新' : '准备编辑正文',
-                  style: Theme.of(context).textTheme.titleMedium,
+                  style: Theme.of(context).textTheme.wenyouRowTitle,
                 ),
                 SizedBox(height: tokens.space12),
                 if (loading) ...[

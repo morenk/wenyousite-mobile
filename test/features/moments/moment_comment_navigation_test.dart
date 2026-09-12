@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_comment_navigation.dart';
 
@@ -87,6 +88,12 @@ void main() {
         expect(retries, 1, reason: journeyId);
       } else {
         expect(find.text('目标评论已不可见'), findsOneWidget);
+        expect(
+          tester
+              .widget<WenyouStatusBanner>(find.byType(WenyouStatusBanner))
+              .tone,
+          WenyouStatusTone.neutral,
+        );
         expect(retry, findsNothing, reason: journeyId);
       }
     }

@@ -19,6 +19,8 @@
 
 服务端未配置移动发布策略时，Android/iOS 的三个字段都显式返回 `null`，不会阻断客户端。部署环境必须让 `buildSha` 等于实际后端 Git 提交。
 
+移动端公网门禁还会精确比较 `backendRevision` 与 `/meta.buildSha`。同步来源应为已部署且可从 `origin/dev` 追溯的提交；分支头可能包含尚未部署的文档提交，不能直接视为运行版本。应从选定提交完整同步契约、fixtures 和元数据并重新生成 SDK，不能只改版本号或 SHA 来绕过检查。
+
 服务端配置映射如下；配置任一构建号时必须同时提供该平台的 HTTPS 更新地址，且推荐构建号不能低于最低支持构建号：
 
 | 平台    | 最低构建号                           | 推荐构建号                         | 更新地址                    |
@@ -27,6 +29,12 @@
 | iOS     | `MOBILE_IOS_MIN_SUPPORTED_BUILD`     | `MOBILE_IOS_RECOMMENDED_BUILD`     | `MOBILE_IOS_UPDATE_URL`     |
 
 当前私有测试发布不要求移动端仓库位于 VPS。Android release APK 由开发机通过发布脚本上传到 `wenyou.site`，iOS 由 TestFlight 托管；构建、签名、三版本保留和故障处理见 [`mobile-release-operations.md`](./mobile-release-operations.md)。
+
+### 故障诊断与 Sentry
+
+客户端为 API 请求发送 UUID `X-Request-ID`；服务端接受安全格式的编号，并在成功与业务错误响应中返回同一编号及 `X-API-Contract-Version`。HTTP 日志的 `req.id`、异常日志的 `requestId` 可用于关联移动端记录；编号不是身份凭证或业务幂等键。对象存储直传不经过 API，其请求编号不能保证在后端日志中找到。
+
+移动端使用独立 Sentry 项目，DSN 由 Windows 构建通过 `--dart-define-from-file` 注入。后端 `SENTRY_DSN` 仅配置后端项目，`/meta` 不下发移动端 DSN，已安装且未内置 DSN 的 APK 仍只保留本机记录。仅传入 DSN 也不能证明真实收件，需在设备上核对事件编号、白名单字段和 API 请求编号。当前审查及 Windows 接入步骤见 [移动端诊断接入审查](./mobile-diagnostics-20260906.md)。
 
 ## 认证与安全存储
 
@@ -115,9 +123,24 @@ OpenAPI 为兼容 Web 把该头标为 optional；省略或传未知值会创建 
 
 ## 媒体、Markdown、动态与温油
 
+### 编辑器 v7 Windows 迁移
+
+本次只读审查固定移动端 `9d6a7c4e29cc20c080ffa47ac18aa2736c3d518e`。后端空段校验修复已在 `8f646f0cc872e1f19a1dd3388fd98fcbd16f1696` 交付；本节和 v7 语料所在的后端提交是后续同步基线（用 `git log -1 -- contracts/markdown-editor-roundtrip-v7-fixtures.json` 解析完整 SHA）。API 仍为 `5.18.0-dev.20260905.1`，`/meta.markdownContractVersion` 仍为 5。旧客户端请求兼容，但该移动端 SHA 仍存在输入来源属性导致的行内序列化分片风险，不能视作端到端修复完成。
+
+Windows 待办：
+
+1. 从已提交后端同步 round-trip v7 与图片对齐 fixture revision 2，更新消费者和契约门禁；不改 HTTP SDK，不另创正文存储格式。v7 的字段和样式顺序以 [编辑操作契约](modules/markdown-content.md#编辑操作契约-v7) 为准。
+2. 在 `MarkdownDeltaCodec` 的公共行内编码路径修复逻辑区间合并。`LiteralTextQuillController.replaceText` 会为新输入加 `wenyou_literal_text`，旧文字没有该属性；不能按完整 Delta attributes 是否相等逐片包裹格式。仅在可见 marks 和链接目标相同的连续文字间合并，逐片完成必要字面转义后再包一次定界符；换行、embed、真实样式变化必须分界，未知属性继续拒绝，代码/首尾空白沿用各自规则。
+3. `_tryDecodeRichLine` 的重编码证明不能要求历史源码与规范序列化逐字相同。以文字、完整 marks、块属性、节点身份的语义等价证明安全，再规范写回；不能直接删除证明或把解析成功当作无损。
+4. 公共 encode 写出前增加无损检查：结果重新解码后，与原 Delta 在合并相邻等价片段、忽略已知输入来源元数据后语义一致。文字、空段、软换行、对齐、链接目标和原子节点身份不得忽略。解码内部已有编码证明，须保留不递归的内部路径，避免 encode → decode → encode 无限递归。失败走现有错误/诊断通道、保留草稿、不发提交，不记录正文、链接或隐藏身份。
+5. 逐条用真实 `LiteralTextQuillController` 输入消费 48 条 `editCases`：首/中/尾光标明确启用 fixture marks，检查文字、逐段样式、规范输出、重开幂等和删除恢复；另消费五类 `inlineInsertTexts`，覆盖引用内连续粗体、软换行、空段与对齐标题/图片相邻。验证不同来源但同样式能合并，不同链接/样式与原子节点不能误合并。
+6. 在 Windows 运行移动端仓库门禁、构建签名 APK，并以专用账号验证“Web 创建 → 移动插空段/改格式 → Web 重开”和反向旅程，清理可识别测试内容。通过后再推荐 build 94（不提高最低版本）；本次 VPS 不修改发布推荐、不执行 Flutter 门禁、不改写用户原帖。若 build 94 已被其他任务发布，使用下一个未发布构建号。
+
+### 媒体与正文接入要求
+
 - 上传遵循“预签名 PUT → `upload-done` → 查询状态”；仅在 `COMPLETED` 后使用衍生图，列表优先 `thumbnailUrl`，详情优先 `mediumUrl`，为空或失败时回退 `url`。不得猜测对象键。
 - 个人主页背景包含根级 Web 3:1 资产和可空 `mobile` 2:1 资产；移动端优先选择 `mobile`，历史数据为空时回退根级资产，整体为 null 时不预留背景舞台。双画幅设置与移除仍是 planned，客户端实现前也必须消费 `mobile-v1-golden-fixtures.json` 的 `profileCovers` 旅程。
-- 主题帖、楼层和回复使用 Markdown v5 工具栏能力白名单。客户端必须消费 [`markdown-v4-fixtures.json`](../contracts/markdown-v4-fixtures.json)、[`markdown-v4-nodes-fixtures.json`](../contracts/markdown-v4-nodes-fixtures.json)、[`markdown-editor-roundtrip-v6-fixtures.json`](../contracts/markdown-editor-roundtrip-v6-fixtures.json)、[`markdown-v5-image-alignment-fixtures.json`](../contracts/markdown-v5-image-alignment-fixtures.json) 与 [`editor-clipboard-v2-fixtures.json`](../contracts/editor-clipboard-v2-fixtures.json)，覆盖规范化、允许/拒绝、字面文本降级、扩展节点、普通软换行、块语义、块对齐、图片块对齐、行内边界语义和剪贴板 round-trip；第三方解析器支持的表格等语法不得自行扩大产品能力。v6 继续保留 Setext H2/分隔线和行内定界符边界规则；写回仍以字符引用保护相邻正文、不增加可见空格，并把下划线定界符规范为星号。
+- 主题帖、楼层和回复使用 Markdown v5 工具栏能力白名单。客户端必须消费 [`markdown-v4-fixtures.json`](../contracts/markdown-v4-fixtures.json)、[`markdown-v4-nodes-fixtures.json`](../contracts/markdown-v4-nodes-fixtures.json)、[`markdown-editor-roundtrip-v7-fixtures.json`](../contracts/markdown-editor-roundtrip-v7-fixtures.json)、[`markdown-v5-image-alignment-fixtures.json`](../contracts/markdown-v5-image-alignment-fixtures.json) 与 [`editor-clipboard-v2-fixtures.json`](../contracts/editor-clipboard-v2-fixtures.json)，覆盖规范化、允许/拒绝、字面文本降级、扩展节点、普通软换行、块语义、块对齐、图片块对齐、行内边界语义和剪贴板 round-trip；第三方解析器支持的表格等语法不得自行扩大产品能力。v6 继续保留 Setext H2/分隔线和行内定界符边界规则；写回仍以字符引用保护相邻正文、不增加可见空格，并把下划线定界符规范为星号。
 - Windows 移动端必须固定 Foundation `v6.7.0`，把 `align` 加入 Delta 行属性白名单，并让 Markdown→Delta Codec 为普通段落、H2/H3 和 v5 独立普通图片块解码、编码紧邻的 `center|right` 标记；左对齐删除标记。工具栏以单一“对齐”入口在更多面板切换左/中/右，阅读器按块应用一致排版；列表、引用、分隔线和协议空段不得继承属性，文字与普通图片混排不得独立对齐，提及、骰子和收藏表情随父段落。已审查提交 `6b6083bcdb9eecf799d2357d082ad10fc1a28e00` 同时接受服务端版本 3、4、5，`/meta.markdownContractVersion` 现已激活为 5。
 - Windows 同步 clipboard v2 后，阅读态系统任意选区继续只写可见纯文本；楼层/回复整篇菜单必须经现有 Markdown→Delta Codec、`WenyouEditorClipboardStore` 与原生 marker 通道写入结构，并同时写可见文本 fallback。Store 的匹配键可使用可见文本、随机 marker、登录会话和十分钟有效期，但不得用编码后的 Markdown 覆盖系统 fallback；普通格式定界符、对齐标记、传送门目标、用户 ID、骰子 ID 和媒体 URL 都不能进入由客户端生成的纯文本。站内 v2 片段保留合法块对齐，v1 片段按既有结构读取但没有对齐；外部 HTML/CSS/纯文本不推断对齐。传送门、用户提及、`@全体玩家` 和骰子表达式保留；骰子粘贴换新 ID 且不继承结果；阅读端图片/表情分别降级为 `[图片]` / `[表情]`。marker 过期、进程重启、跨应用、Web↔Android 和跨设备均静默退回纯文本。参数化测试必须逐条消费 clipboard v2 的 entry points、alignment rule、node rules、transport/fallback 规则和 golden cases；VPS 不修改 Flutter 源码或声称已运行移动端门禁。
 - 动态标题保持纯文本；动态正文、评论和私聊正文仍是字符串，不进入通用 Markdown 渲染链路，但应消费 [`internal-reference-v1-fixtures.json`](../contracts/internal-reference-v1-fixtures.json)，只识别 `[名称](合法站内坐标)` 与裸站内坐标。输入接受 `wenyou.site`、`www.wenyou.site` 和相对坐标并规范化为相对地址；`post + subthread` 以 `post` 为准，转义名称与裸地址边界以 fixture 为准。其他 Markdown/外链保持字面文本。传送门同页导航、目标不可见时交给既有详情错误态，不预取目标元数据。
@@ -163,3 +186,43 @@ Content-Type: application/json
 ## 接入验收
 
 后端门禁负责 OpenAPI、错误码、完整移动覆盖清单、V1 协议旅程、动态分类、Markdown、站内传送门 fixtures 和 push schema/fixtures。Flutter 必须共同消费这些产物，并为标为 `implemented` 的 operationId 提供运行时代码和自动测试证据。
+
+## 普通回车规则的 Windows 接入
+
+本次只读审查固定为 `e952a23251640bfe537837c6197d7c632ca54197`。从本节所在的已提交后端同步 [回车语料](../contracts/markdown-editor-newline-v1-fixtures.json)，在 Windows 实现：普通正文手动 Enter 建立新排版段并恢复默认左对齐；单层引用逐次回车增加一行且不自动退出。标题和列表保留常规操作。
+
+编解码和阅读须识别单层引用的独占 `> <br />` 为真正空白行，保留首尾及连续数量；引用内单独 `>` 只保留旧段落结构，不增加可编辑空行。禁止通过删除换行、插入不可见字符或放开其他 HTML 达成表面一致。旧编辑器会降级这种引用标记，候选必须先完成更新与双端保存重开验收；不能因 Markdown 版本仍为 v5 就假定旧实现已支持。
+
+### revision 2 同步与 Windows 验收
+
+从本说明所属候选 PR 的完整提交 SHA 同步 `contracts/markdown-editor-newline-v1-fixtures.json`，要求 `version == 1`、`revision == 2`；不得从运行中的 VPS 或未提交源码推断规则。精确 Markdown 与显示兼容策略见 [正文对齐边界](modules/markdown-content.md#普通正文手动-enter-的对齐边界newline-v1-revision-2)。
+
+- 真实输入控制器消费全部 27 条 `editCases`：`operation.offset` 是 anchor 内 UTF-16 偏移，依次发送 `enterCount` 次 Enter；断言 `serialized`、`lines`、`lineAlignments`，续写后再保存重开。新段对齐重置不清除行内粗体、斜体等 marks。
+- 普通手动 Enter 必须保存段落边界，不能编码成继承整段对齐的单 LF；已有单 LF 和 Shift+Enter 保持旧段内语义。自动折行只改变布局，不能修改 Delta/Markdown。
+- 真正空段仍为 `<br />`；末尾空段继续输入后变成普通段落。不能把 Markdown 源码的分隔空行显示成额外空白行。
+- 安全 encode/decode 无损校验必须保留，语义比较必须继续校验换行、段落、对齐、marks、链接和节点身份。不得通过关闭检查或忽略对齐解决失败。
+- 手动验证居中和居右正文的 Enter、连续 Enter、续写、自动折行、只对齐新行、实际保存／重开及 Web↔Flutter 交叉编辑；引用、H2/H3、列表应保持既有行为。VPS 不修改、安装或构建移动端，空正文 H2/H3 的编码异常由原 Windows 任务独立处理。
+
+候选只交付 PR，不代表用户已验收；先合并兼容后端契约，再由 Web/Windows 各自完成消费端候选与手动验收。部署仍需负责人另外明确批准。
+
+### 收藏夹计数刷新
+
+契约 `5.20.1-dev.20260911.1` 的 `bookmarkCount` / `momentBookmarkCount` 是该夹当前可见收藏总数，详见 [计数规则](api-contract.md#收藏夹可见数量)。使用服务端数量，不用分页条数推算总数；收藏、取消、移动及内容或权限变化后刷新目录与列表。回归应覆盖隐藏后 0 条与空列表、恢复后重新计入、跨页总数及主题/动态独立目录。同步固定 OpenAPI 后再运行本端生成与测试；原反馈仍须负责人用原账号复验。
+
+### 块边界 v1 Windows 迁移
+
+从本候选 PR 的已提交完整 SHA 同步 [块边界语料](../contracts/markdown-block-boundary-v1-fixtures.json)，固定 `version=1`、`revision=2`、`markdownContractVersion=5`。先规范 CRLF，再统一分析列 0 marker、目标类型/范围、对齐与原始位置，在 Codec 和阅读通用解析/无效降级前应用；列 0 marker 结束列表/引用 lazy continuation，显式嵌套、HTML、围栏/缩进代码及跨行行内代码中的同形源码不得消费。
+
+逐条执行真实 Markdown AST、Delta 编解码、编辑和 clipboard 测试，校验可见行/空白、逐块对齐、稳定保存重开；原文空格/WJ 等布局字符不得被全局清理。后端测试与源码位置仍为本仓证据，不能代替 Windows Flutter 门禁或 Web/Android 负责人验收。保持 v5/HTTP 字段，不迁移已有内容；旧客户端兼容继续保留。
+
+块边界 revision 2：代码保护范围来自真实行内解析器生成的 code_inline，URL/title 里的反引号不会开启保护区。三个 LF 的额外历史空白恢复为空段；空格布局 sourceLines 保留 WJ，visibleText/lines 不包含隐藏 WJ。clipboard 使用 plainTextByPlatform 分别固定 Web/Mobile 已有投影，不修改 v2。
+
+## 富文本多步测试与结果交接
+
+从已提交 Backend 候选 SHA 同步 [编辑行为 fixture/schema 与结果格式](modules/rich-text-behavior.md)，保留原 newline 27 条及 v7 48 条消费。新机器格式只用于合成测试和离线诊断，不进入 HTTP 或正文存储。未知内容需要完整读取与无损证明后才能开放编辑；Markdown 版本号不能代替引用空行和失败保护能力证据。结果比较及发布停止边界见 [交付记录](rich-text-stability-delivery.md)。
+
+## 主贴发言权限接入
+
+消费已提交的主贴发言权限 OpenAPI（版本以 [契约变更记录](../contracts/CHANGELOG.md) 为准）；聚合保存字段及并发语义见 [API 契约](api-contract.md#主贴发言权限的聚合保存)。从默认子贴回填真实权限，楼主与协作者在发布后现有设置页统一保存。沿用相邻招募状态、可见范围的布局与控件，不新增独立卡片、专用弹窗或保存按钮；说明为“仅影响主贴下的发言，子贴权限单独设置。”
+
+消费者须覆盖修改检测、取消/离开提醒、重复提交、失败保留输入、409 冲突和成功后的版本/能力刷新；旧客户端省略字段不会重置权限，其他子贴不受影响。后端兼容版本先于客户端上线，不以服务端检查替代各端完整页面 UI 验收。

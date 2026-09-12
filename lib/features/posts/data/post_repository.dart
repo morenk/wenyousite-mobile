@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
+import 'package:wenyousite_mobile/core/network/media_display_mapper.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_repository_ports.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
@@ -14,6 +15,12 @@ class ApiPostRepository implements PostRepository {
   ApiPostRepository(this._api);
 
   final PostsApi _api;
+  static const _writeMessages = {
+    40000: '内容未能保存，请检查后重试。',
+    40001: '内容未能保存，请检查后重试。',
+    40006: '图片或表情无法保存，请重新选择后再试。',
+    40009: '正文格式无法保存，请调整图片或文字排版后重试。',
+  };
 
   @override
   Future<PostItem> fetchPost(String postId) async {
@@ -94,7 +101,7 @@ class ApiPostRepository implements PostRepository {
       }
       return _mapPost(dto);
     } on DioException catch (error) {
-      throw ApiFailure.fromDio(error);
+      throw ApiFailure.fromDio(error, featureMessages: _writeMessages);
     }
   }
 
@@ -124,7 +131,7 @@ class ApiPostRepository implements PostRepository {
       }
       return _mapPost(dto);
     } on DioException catch (error) {
-      throw ApiFailure.fromDio(error);
+      throw ApiFailure.fromDio(error, featureMessages: _writeMessages);
     }
   }
 
@@ -154,7 +161,7 @@ class ApiPostRepository implements PostRepository {
       }
       return _mapPost(dto);
     } on DioException catch (error) {
-      throw ApiFailure.fromDio(error);
+      throw ApiFailure.fromDio(error, featureMessages: _writeMessages);
     }
   }
 
@@ -262,13 +269,12 @@ class ApiPostRepository implements PostRepository {
         message: message,
       );
       final target = reply.replyToPost;
+      // 目标不可见时后端保留 ID、隐藏详情；仅校验实际返回的目标关联。
       if (reply.parentPostId != rootPostId ||
           (threadId != null && reply.threadId != threadId) ||
           (subthreadId != null && reply.subthreadId != subthreadId) ||
-          (reply.replyToPostId == null && target != null) ||
-          (reply.replyToPostId != null &&
-              (target == null ||
-                  target.id != reply.replyToPostId ||
+          (target != null &&
+              (target.id != reply.replyToPostId ||
                   target.authorId != target.author.id))) {
         throw const ApiFailure(userMessage: message);
       }
@@ -325,6 +331,7 @@ class ApiPostRepository implements PostRepository {
 
   PostItem _mapPost(PostResponseDto dto) {
     return PostItem(
+      mediaDisplays: mapMarkdownMediaDisplays(dto.mediaDisplays),
       id: dto.id,
       threadId: dto.threadId,
       subthreadId: dto.subthreadId,
@@ -346,6 +353,7 @@ class ApiPostRepository implements PostRepository {
 
   PostItem _mapReply(ReplyResponseDto dto) {
     return PostItem(
+      mediaDisplays: mapMarkdownMediaDisplays(dto.mediaDisplays),
       id: dto.id,
       threadId: dto.threadId,
       subthreadId: dto.subthreadId,
@@ -370,6 +378,7 @@ class ApiPostRepository implements PostRepository {
 
   PostItem _mapDetail(PostDetailResponseDto dto) {
     return PostItem(
+      mediaDisplays: mapMarkdownMediaDisplays(dto.mediaDisplays),
       id: dto.id,
       threadId: dto.threadId,
       subthreadId: dto.subthreadId,
@@ -397,7 +406,9 @@ class ApiPostRepository implements PostRepository {
       id: dto.id,
       username: dto.username,
       level: dto.level.toInt(),
-      avatarUrl: _safeHttpUrl(dto.avatar),
+      avatarUrl: _safeHttpUrl(
+        mapAvatarDisplayUrl(dto.avatar, dto.avatarDisplay),
+      ),
     );
   }
 

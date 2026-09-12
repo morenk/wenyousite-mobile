@@ -195,7 +195,7 @@ MarkdownBody _body(WidgetTester tester, int index, String alignment) =>
     tester.widget<MarkdownBody>(
       find.descendant(
         of: find.byKey(ValueKey('wenyou-markdown-segment-$index-$alignment')),
-        matching: find.byType(MarkdownBody),
+        matching: find.bySubtype<MarkdownBody>(),
       ),
     );
 

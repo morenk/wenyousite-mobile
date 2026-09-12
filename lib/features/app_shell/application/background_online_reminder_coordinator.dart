@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:wenyousite_mobile/core/application/background_execution.dart';
 import 'package:wenyousite_mobile/core/application/background_online_reminders.dart';
 import 'package:wenyousite_mobile/features/app_shell/application/background_online_poller.dart';
 
@@ -21,6 +22,8 @@ class BackgroundOnlineReminderCoordinator {
     required this.pollingSession,
     required this.notificationGateway,
     required this.onPermissionDenied,
+    required this.executionGateway,
+    required this.onExecutionUnavailable,
     this.interval = const Duration(seconds: 30),
     this.timerFactory = _createTimer,
     this.diagnostics,
@@ -29,6 +32,8 @@ class BackgroundOnlineReminderCoordinator {
   final BackgroundOnlinePollingSession pollingSession;
   final BackgroundNotificationGateway notificationGateway;
   final Future<void> Function() onPermissionDenied;
+  final BackgroundExecutionGateway executionGateway;
+  final Future<void> Function(BackgroundExecutionStatus) onExecutionUnavailable;
   final Duration interval;
   final BackgroundOnlineReminderTimerFactory timerFactory;
   final BackgroundOnlineReminderDiagnosticSink? diagnostics;
@@ -92,6 +97,7 @@ class BackgroundOnlineReminderCoordinator {
   Future<void> _prepareBaseline(int epoch) async {
     var stage = 'capability';
     try {
+      if (!await _checkExecution(epoch)) return;
       final canNotify = await notificationGateway.canNotify();
       if (!_isPreparedEpochCurrent(epoch)) return;
       if (!canNotify) {
@@ -129,6 +135,7 @@ class BackgroundOnlineReminderCoordinator {
   Future<void> _runCycle(int epoch) async {
     var stage = 'capability';
     try {
+      if (!await _checkExecution(epoch)) return;
       final canNotify = await notificationGateway.canNotify();
       if (!_isActiveEpochCurrent(epoch)) return;
       if (!canNotify) {
@@ -163,8 +170,11 @@ class BackgroundOnlineReminderCoordinator {
       });
 
       stage = 'present';
-      if (batch.alerts.isNotEmpty) {
-        await notificationGateway.showAlerts(batch.alerts);
+      for (final alert in batch.alerts) {
+        if (!await _checkExecution(epoch) || !_isActiveEpochCurrent(epoch)) {
+          return;
+        }
+        await notificationGateway.showAlerts([alert]);
       }
       if (!_isActiveEpochCurrent(epoch)) return;
 
@@ -186,6 +196,23 @@ class BackgroundOnlineReminderCoordinator {
   Future<void> _denyPermissionAndStop(int epoch) async {
     await onPermissionDenied();
     if (_isPreparedEpochCurrent(epoch)) stop();
+  }
+
+  Future<bool> _checkExecution(int epoch) async {
+    BackgroundExecutionStatus status;
+    try {
+      status = await executionGateway.getStatus();
+    } on Object {
+      status = BackgroundExecutionStatus.failed;
+    }
+    if (!_isPreparedEpochCurrent(epoch)) return false;
+    if (status == BackgroundExecutionStatus.running) return true;
+    stop();
+    // 原生 onResume 可早于 Flutter 生命周期通知；正常回前台不提示失败。
+    if (status != BackgroundExecutionStatus.foreground) {
+      await onExecutionUnavailable(status);
+    }
+    return false;
   }
 
   bool _isPreparedEpochCurrent(int epoch) {

@@ -22,6 +22,8 @@ class WenyouCachedImage extends StatefulWidget {
     this.cacheWidth,
     this.cacheHeight,
     this.useOldImageOnUrlChange = false,
+    this.onImageReady,
+    this.enableRetry = false,
     super.key,
   });
 
@@ -36,6 +38,8 @@ class WenyouCachedImage extends StatefulWidget {
   final int? cacheWidth;
   final int? cacheHeight;
   final bool useOldImageOnUrlChange;
+  final VoidCallback? onImageReady;
+  final bool enableRetry;
 
   @override
   State<WenyouCachedImage> createState() => _WenyouCachedImageState();
@@ -49,6 +53,7 @@ class _WenyouCachedImageState extends State<WenyouCachedImage> {
   var _index = 0;
   var _advanceScheduled = false;
   var _generation = 0;
+  var _readyNotified = false;
 
   @override
   void didUpdateWidget(covariant WenyouCachedImage oldWidget) {
@@ -58,6 +63,7 @@ class _WenyouCachedImageState extends State<WenyouCachedImage> {
       _index = 0;
       _advanceScheduled = false;
       _generation += 1;
+      _readyNotified = false;
     }
   }
 
@@ -68,8 +74,25 @@ class _WenyouCachedImageState extends State<WenyouCachedImage> {
     final imageUrl = urls[safeIndex];
     final devicePixelRatio = MediaQuery.devicePixelRatioOf(context);
     return CachedNetworkImage(
-      key: ValueKey(imageUrl),
+      key: ValueKey((imageUrl, _generation)),
       imageUrl: imageUrl,
+      imageBuilder: widget.onImageReady == null
+          ? null
+          : (context, provider) {
+              _scheduleReady();
+              return Image(
+                image: ResizeImage.resizeIfNeeded(
+                  _physicalPixels(widget.cacheWidth, devicePixelRatio),
+                  _physicalPixels(widget.cacheHeight, devicePixelRatio),
+                  provider,
+                ),
+                width: widget.width,
+                height: widget.height,
+                fit: widget.fit,
+                alignment: widget.alignment,
+                filterQuality: FilterQuality.low,
+              );
+            },
       width: widget.width,
       height: widget.height,
       fit: widget.fit,
@@ -81,8 +104,20 @@ class _WenyouCachedImageState extends State<WenyouCachedImage> {
           return widget.placeholder?.call(context, failedUrl) ??
               const SizedBox.shrink();
         }
-        return widget.errorWidget?.call(context, failedUrl, error) ??
+        final failure =
+            widget.errorWidget?.call(context, failedUrl, error) ??
             const SizedBox.shrink();
+        if (!widget.enableRetry) return failure;
+        return Stack(
+          alignment: Alignment.center,
+          children: [
+            failure,
+            TextButton(
+              onPressed: () => unawaited(_retry(imageUrl)),
+              child: const Text('重新加载图片'),
+            ),
+          ],
+        );
       },
       fadeInDuration: Duration.zero,
       fadeOutDuration: Duration.zero,
@@ -103,6 +138,30 @@ class _WenyouCachedImageState extends State<WenyouCachedImage> {
       }
     }
     return result.isEmpty ? const ['about:blank'] : result;
+  }
+
+  Future<void> _retry(String url) async {
+    final generation = _generation;
+    try {
+      await WenyouCachedImage.evictFromCache(url);
+    } on Object {
+      // 本地缓存无法清理时保留失败状态，让用户再次重试。
+      return;
+    }
+    if (!mounted || generation != _generation) return;
+    setState(() {
+      _generation += 1;
+      _readyNotified = false;
+    });
+  }
+
+  void _scheduleReady() {
+    if (_readyNotified) return;
+    _readyNotified = true;
+    final generation = _generation;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && generation == _generation) widget.onImageReady?.call();
+    });
   }
 
   void _scheduleAdvance(int failedIndex) {

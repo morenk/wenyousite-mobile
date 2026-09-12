@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
+import 'package:wenyousite_mobile/core/application/visibility_cache_invalidation.dart';
 import 'package:wenyousite_mobile/core/models/paging.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/moments/application/moment_bookmark_repository_ports.dart';
@@ -98,6 +99,7 @@ class MomentBookmarkListController
   Future<void> refresh() => _loadFirst(refreshing: state.items.isNotEmpty);
 
   Future<void> _loadFirst({required bool refreshing}) async {
+    if (state.pendingMomentId != null) return;
     final epoch = ++_epoch;
     state = state.copyWith(
       phase: refreshing
@@ -200,14 +202,21 @@ class MomentBookmarkListController
     Future<Object?> Function() write, {
     required String fallback,
   }) async {
+    final before = state;
+    if (!before.items.any((item) => item.id == card.id)) return false;
+    final epoch = ++_epoch;
     state = state.copyWith(
+      items: [
+        for (final item in state.items)
+          if (item.id != card.id) item,
+      ],
       pendingMomentId: card.id,
       pendingAction: action,
       transientFailure: null,
     );
     try {
       await write();
-      if (!mounted) return false;
+      if (!mounted || epoch != _epoch) return false;
       state = state.copyWith(
         items: List.unmodifiable(
           state.items.where((item) => item.id != card.id),
@@ -219,11 +228,13 @@ class MomentBookmarkListController
       return mounted;
     } on Object catch (error) {
       if (!mounted) return false;
-      state = state.copyWith(
-        pendingMomentId: null,
-        pendingAction: null,
-        transientFailure: mapApplicationFailure(error, fallback),
-      );
+      if (epoch != _epoch) return false;
+      final failure = mapApplicationFailure(error, fallback);
+      state = before.copyWith(transientFailure: failure);
+      if (failure.hasUnknownWriteOutcome) {
+        await refresh();
+        if (mounted) state = state.copyWith(transientFailure: failure);
+      }
       return false;
     }
   }
@@ -234,8 +245,9 @@ final momentBookmarkListControllerProvider = StateNotifierProvider.autoDispose
       ref,
       folderId,
     ) {
+      ref.watch(viewerScopeProvider);
       return MomentBookmarkListController(
         ref.watch(momentBookmarkRepositoryProvider),
         folderId,
       );
-    }, dependencies: [momentBookmarkRepositoryProvider]);
+    }, dependencies: [viewerScopeProvider, momentBookmarkRepositoryProvider]);

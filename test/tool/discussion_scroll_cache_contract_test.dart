@@ -7,15 +7,20 @@ void main() {
     for (final entry in const [
       (
         path: 'lib/features/threads/presentation/thread_detail_page.dart',
+        content:
+            'lib/features/threads/presentation/thread_detail_reading_content.dart',
         prefetch: 'prefetchRemainingFloors()',
       ),
       (
         path: 'lib/features/posts/presentation/post_replies_page.dart',
+        content: 'lib/features/posts/presentation/post_replies_content.dart',
         prefetch: 'prefetchRemainingReplies()',
       ),
     ]) {
       final path = entry.path;
-      final source = File(path).readAsStringSync();
+      final source =
+          File(path).readAsStringSync() +
+          File(entry.content).readAsStringSync();
 
       expect(source, contains('CustomScrollView('), reason: path);
       expect(source, contains('SliverList'), reason: path);

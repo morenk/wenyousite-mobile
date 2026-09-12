@@ -31,6 +31,8 @@
 
 ## 7. 鉴权、权限和隐私规则
 
+请求策略区分匿名签发与 `explicitCredentials` 专用凭据。匿名签发移除现有 Authorization；专用凭据请求保留显式头，两类请求的鉴权失败均不触发普通会话刷新或清理。
+
 签发请求显式 `skipAuth`，避免现有普通 Access Token 覆盖账号密码恢复流程。专用凭据请求同时显式设置该 Bearer 和 `skipAuth`，因此普通会话拦截器不会替换它；凭据只能被后端 AppealAuth 接受，不能访问其他接口。账号、密码、专用 JWT 和申诉正文不写日志、不进查询参数、不持久化。`40120 APPEAL_TOKEN_INVALID` 只清专用凭据并回到验证表单，不清普通会话或触发刷新；目标归属、30 天期限和一次申诉约束均由服务端最终确认。
 
 ## 8. 本地存储、缓存及失效规则
@@ -45,7 +47,9 @@
 
 ## 10. 跨模块约束
 
-auth 只提供登录页入口和普通会话；settings 只提供已登录入口；moderation 独立拥有凭据、决定与申诉状态，不能把专用 JWT 写入 `SessionController`。core/network 提供 `skipAuth`、请求 ID 与稳定错误映射。页面复用 Foundation v6.3.0 Token、语义图标、共享面板/状态组件、48dp 操作目标和单列最大宽度，不复制 Web 管理端样式。
+本模块页面排版统一遵循[移动端视觉基线](../architecture/visual-baseline.md)中的 Foundation v6.9.0 语义文字角色，不自定义字号或直接依赖 Material 字体槽位。
+
+auth 只提供登录页入口和普通会话；settings 只提供已登录入口；moderation 独立拥有凭据、决定与申诉状态，不能把专用 JWT 写入 `SessionController`。core/network 提供 `skipAuth`、请求 ID 与稳定错误映射。页面复用 Foundation v6.9.0 Token、语义图标、共享面板/状态组件、48dp 操作目标和单列最大宽度，不复制 Web 管理端样式。
 
 ## 11. 测试场景与验收条件
 
@@ -63,7 +67,21 @@ auth 只提供登录页入口和普通会话；settings 只提供已登录入口
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `5.16.0-dev.20260903.5`；后端 `f09aee365ce50fe921c0c443d252959fb7dc5903`；Foundation `v6.3.0`（`73ed49e`）。
+本轮展示契约来源：API `5.22.0-dev.20260912.2`、Backend `6fdfa00eaf1f3056ba30f2ffbc529d12eed1c823`；新增display／mediaDisplays，消费者接入与真机验收另行记录。仅既有 `markdown-editor-list-v1-fixtures.json` 保留 `062412601b3a8dbf4f64494115a2445d312dd53d` 来源与SHA-256，见 contracts/markdown-editor-list-v1-source.json；不将该独立语料误标为本轮主来源。
+
+2026-09-11 列表契约候选同步：Backend `062412601b3a8dbf4f64494115a2445d312dd53d`，OpenAPI `5.20.1-dev.20260911.1`；新增 editor-list v1 revision 2，夹具最初固定于 `aa1bcbd4d087f03a17817e9eca8bcd1f92bb53da`。同时同步收藏夹计数按当前用户可见性统计的契约说明；字段形状、块边界 v1 revision 2 与既有消费代码保持；列表消费者及真机验收仍待完成，见[列表统一排查](../architecture/editor-list-unification-investigation.md)。
+
+2026-09-11 契约审查：同步 Backend `b785336c5b31cb228f3021650b9de1c39ade02e5`、`5.20.1-dev.20260911.1`，收藏夹数量明确为当前用户可见总数。仅契约说明、生成字段文档与版本变化；本模块既有行为及单独验收状态保持。此时公网仍为 `8bf370f`／5.20.0，部署核验单独记录。
+
+2026-09-11 合并来源同步：Backend `8bf370f6ef5357535683aa6d3f8c03bd2d08d108`，包含发布权限修复；通过既有脚本重新导出后仅来源元数据变化，OpenAPI、块边界 v1 revision 2 及其他共享契约字节不变。模块行为与候选验收状态保持，前次部署回滚、公网核验及安装包溯源见[块边界验收](../architecture/markdown-block-boundaries-acceptance.md)。
+
+2026-09-11 契约来源登记：Backend `a91cbb8b605223c596af299be22c5547f69e25b9`，块边界 v1 revision 2。HTTP OpenAPI 未变化，本模块既有接口行为与验收状态保持；富文本消费者候选见[块边界验收](../architecture/markdown-block-boundaries-acceptance.md)。
+
+2026-09-11 增量登记：契约 `5.20.0-dev.20260909.1`，后端及公网 `0ee2c0de1d9c570e495e778be6661b074b7a4bef`。本次仅兼容新增列表封面媒体及预览变体生成模型，本模块行为与已列明的验收状态保持原样；下列记录保留历史审查范围。
+
+契约 `5.18.0-dev.20260905.1`；后端 `3338028459561565c788d5236fb64db84a2ae538`；Foundation `v6.9.0`（`5888132`）。
+
+本轮从固定候选提交同步富文本行为 v1 测试契约；既有 newline/v7/clipboard 与 HTTP/OpenAPI 内容不变，不据此推断候选已部署。新增行为执行与历史保护仍在专项实施中；既有负责人验收保持原范围。
 
 ## 14. 相关代码与架构文档
 

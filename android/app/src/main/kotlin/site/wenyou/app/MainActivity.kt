@@ -30,8 +30,10 @@ class MainActivity : FlutterActivity() {
     }
 
     private var keyboardInsetsChannel: MethodChannel? = null
+    private var clipboardNavigationChannel: ClipboardNavigationChannel? = null
     private var imageGalleryChannel: ImageGalleryChannel? = null
     private var documentSaverChannel: DocumentSaverChannel? = null
+    private var backgroundExecutionChannel: BackgroundExecutionChannel? = null
     private var keyboardInsetsActive = false
     private var appliedKeyboardInsetBottom = 0
 
@@ -45,8 +47,11 @@ class MainActivity : FlutterActivity() {
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         EditorClipboardChannel(this).register(flutterEngine)
+        clipboardNavigationChannel =
+            ClipboardNavigationChannel(this).also { it.register(flutterEngine) }
         imageGalleryChannel = ImageGalleryChannel(this).also { it.register(flutterEngine) }
         documentSaverChannel = DocumentSaverChannel(this).also { it.register(flutterEngine) }
+        backgroundExecutionChannel = BackgroundExecutionChannel(this).also { it.register(flutterEngine) }
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, UPDATE_CHANNEL)
             .setMethodCallHandler { call, result ->
                 when (call.method) {
@@ -100,6 +105,7 @@ class MainActivity : FlutterActivity() {
     }
 
     override fun onResume() {
+        backgroundExecutionChannel?.onResume()
         super.onResume()
         keyboardInsetsActive = true
     }
@@ -125,6 +131,10 @@ class MainActivity : FlutterActivity() {
     }
 
     override fun cleanUpFlutterEngine(flutterEngine: FlutterEngine) {
+        backgroundExecutionChannel?.dispose()
+        backgroundExecutionChannel = null
+        clipboardNavigationChannel?.dispose()
+        clipboardNavigationChannel = null
         imageGalleryChannel?.dispose()
         imageGalleryChannel = null
         documentSaverChannel?.dispose()
@@ -135,6 +145,7 @@ class MainActivity : FlutterActivity() {
     }
 
     override fun onPause() {
+        backgroundExecutionChannel?.onPause()
         keyboardInsetsActive = false
         // Publish the neutral state before Flutter receives the inactive
         // lifecycle event, so it never falls back to a stale engine inset.

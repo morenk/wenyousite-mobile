@@ -2,32 +2,34 @@ import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:wenyou_api/wenyou_api.dart';
-import 'package:wenyousite_mobile/core/models/thread_feed_models.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/search/data/search_repository.dart';
+import 'package:wenyousite_mobile/features/thread_feed/thread_feed_models.dart';
+
+import '../../support/thread_cover_fixtures.dart';
 
 void main() {
   test('搜索仓库映射综合、动态、分类与主题内结果契约', () async {
     final api = _MockSearchApi();
     when(
-      () => api.searchSearch(q: '星海', extra: const {'skipAuth': true}),
+      () => api.searchSearch(q: '星海', extra: const {}),
     ).thenAnswer((_) async => _overviewResponse());
     when(
       () =>
           api.searchSearchMoments(q: '星海', cursor: 'moment-cursor-1', limit: 6),
     ).thenAnswer((_) async => _momentsResponse());
     when(
-      () => api.searchSearchThreads(q: '星海', extra: const {'skipAuth': true}),
+      () => api.searchSearchThreads(q: '星海', extra: const {}),
     ).thenAnswer((_) async => _threadsResponse());
     when(
-      () => api.searchSearchUsers(q: '星海', extra: const {'skipAuth': true}),
+      () => api.searchSearchUsers(q: '星海', extra: const {}),
     ).thenAnswer((_) async => _usersResponse());
     when(
       () => api.searchSearchPosts(
         q: '星海',
         cursor: 'cursor-1',
         limit: 7,
-        extra: const {'skipAuth': true},
+        extra: const {},
       ),
     ).thenAnswer((_) async => _postsResponse());
     when(
@@ -68,13 +70,26 @@ void main() {
     expect(moments.cursor, 'moment-cursor-2');
     expect(threads.single.title, '星海旅团');
     expect(threads.single.ownerName, '已注销用户');
-    expect(threads.single.status, HomeThreadStatus.recruiting);
+    expect(threads.single.status, ThreadFeedStatus.recruiting);
     expect(threads.single.preview, '向星海出发');
     expect(threads.single.tags.single.name, '太空歌剧');
     expect(threads.single.coverImageUrls, [
       'https://cdn.example.com/cover.jpg',
     ]);
     expect(threads.single.memberCount, 5);
+    expect(threads.single.coverMedia?.previewVariants.single.width, 480);
+    expect(
+      overview.threads.single.coverMedia?.previewVariants.single.width,
+      480,
+    );
+    expect(
+      threads.single.coverMedia?.animationUrl,
+      'https://cdn.example.com/cover.jpg',
+    );
+    expect(
+      overview.threads.single.coverMedia?.staticUrl,
+      'https://cdn.example.com/cover_poster.webp',
+    );
     expect(users.single.username, '温柔测试员');
     expect(users.single.avatarUrl, isNull);
     expect(users.single.bio, isNull);
@@ -307,6 +322,7 @@ SearchThreadResponseDto _threadDto() {
           ..players = 2
           ..posts = 12,
       )
+      ..coverMedia = animatedThreadCoverFixture().toBuilder()
       ..coverImages.addAll([
         'https://cdn.example.com/cover.jpg',
         'https://cdn.example.com/ignored-second-cover.jpg',
@@ -328,6 +344,7 @@ SearchPostResponseDto _postDto({String threadId = 'thread-1'}) {
   return SearchPostResponseDto(
     (post) => post
       ..id = 'post-7'
+      ..kind = SearchPostResponseDtoKindEnum.FLOOR
       ..floorNumber = 7
       ..content = '**星海正文** ![航图](https://cdn.example.com/map.jpg)'
       ..createdAt = DateTime.utc(2026, 8, 10)

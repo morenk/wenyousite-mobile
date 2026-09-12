@@ -2,9 +2,9 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
+import 'package:wenyousite_mobile/core/application/visibility_cache_invalidation.dart';
 import 'package:wenyousite_mobile/core/models/paging.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
-import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_detail_repository_ports.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.dart';
 
@@ -135,6 +135,14 @@ class ThreadDetailController extends StateNotifier<ThreadDetailState> {
         failure: _asFailure(error, '主题详情加载失败，请稍后重试。'),
       );
     }
+  }
+
+  /// 删除已确认后保留已加载窗口，统计重读会取消旧分页请求，避免迟到结果补回。
+  Future<void> removeDeletedFloor(String floorId) async {
+    state = state.copyWith(
+      floors: state.floors.where((floor) => floor.id != floorId).toList(),
+    );
+    await refreshMetadata();
   }
 
   Future<void> refresh() async {
@@ -512,14 +520,16 @@ final threadDetailControllerProvider = StateNotifierProvider.autoDispose
       ThreadDetailState,
       ThreadDetailControllerScope
     >((ref, scope) {
+      ref.watch(viewerScopeProvider);
       return ThreadDetailController(
         ref.watch(threadDetailRepositoryProvider),
         scope.threadId,
       );
-    }, dependencies: [threadDetailRepositoryProvider]);
+    }, dependencies: [viewerScopeProvider, threadDetailRepositoryProvider]);
 
 final threadPostTargetProvider = FutureProvider.autoDispose
     .family<ThreadPostTargetModel, String>((ref, postId) {
-      ref.watch(sessionScopeProvider);
+      ref.watch(viewerScopeProvider);
+
       return ref.watch(threadDetailRepositoryProvider).fetchPostTarget(postId);
-    }, dependencies: [threadDetailRepositoryProvider, sessionScopeProvider]);
+    }, dependencies: [threadDetailRepositoryProvider, viewerScopeProvider]);

@@ -62,16 +62,20 @@ android {
 
     buildTypes {
         getByName("debug") {
+            ndk.abiFilters.addAll(listOf("armeabi-v7a", "arm64-v8a", "x86_64"))
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-debug"
             manifestPlaceholders["appLabel"] = "温油站 Debug"
         }
         getByName("profile") {
+            ndk.abiFilters.addAll(listOf("armeabi-v7a", "arm64-v8a", "x86_64"))
             applicationIdSuffix = ".profile"
             versionNameSuffix = "-profile"
             manifestPlaceholders["appLabel"] = "温油站 Profile"
         }
         getByName("release") {
+            // One APK and the original versionCode; do not use ABI splits.
+            ndk.abiFilters.add("arm64-v8a")
             signingConfig = signingConfigs.findByName("release")
         }
     }

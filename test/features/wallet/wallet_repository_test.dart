@@ -12,6 +12,43 @@ const _requestId = '123e4567-e89b-42d3-a456-426614174000';
 void main() {
   setUpAll(() => registerFallbackValue(_FakeTipRequestDto()));
 
+  for (final awarded in [0, 2, -1, 3, 0.5]) {
+    test('签到实际经验 $awarded 按当前契约映射', () async {
+      final api = _MockWalletApi();
+      when(() => api.economyCheckIn()).thenAnswer(
+        (_) async => _response(
+          '/api/v1/wallet/check-in',
+          EconomyCheckIn200Response(
+            (b) => b
+              ..code = ApiSuccessEnvelopeCodeEnum.number0
+              ..message = 'ok'
+              ..data.update(
+                (d) => d
+                  ..claimedNow = true
+                  ..date = '2026-09-05'
+                  ..rewardAmount = DailyCheckInResponseDtoRewardAmountEnum.n1
+                  ..experienceAwarded = awarded
+                  ..balance = '12'
+                  ..progression.update(
+                    (p) => p
+                      ..level = 2
+                      ..experience = 15
+                      ..currentLevelExperience = 10
+                      ..nextLevelExperience = 30,
+                  ),
+              ),
+          ),
+        ),
+      );
+      final result = ApiWalletRepository(api).checkIn();
+      if (awarded == 0 || awarded == 2) {
+        expect((await result).experienceAwarded, awarded);
+      } else {
+        await expectLater(result, throwsA(isA<ApiFailure>()));
+      }
+    });
+  }
+
   test('钱包、签到与流水完整映射精确整数字符串和分页契约', () async {
     final api = _MockWalletApi();
     when(() => api.economyGetWallet()).thenAnswer(

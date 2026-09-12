@@ -132,17 +132,19 @@ void main() {
 
     serverItems = [_secondThread];
     await session.logoutLocally();
+    final guestController = container.read(homeFeedControllerProvider.notifier);
     await pumpEventQueue();
 
-    expect(controller.state.items.single.id, 'thread-2');
-    expect(controller.state.phase, HomeFeedPhase.ready);
+    expect(guestController, isNot(same(controller)));
+    expect(guestController.state.items.single.id, 'thread-2');
+    expect(guestController.state.phase, HomeFeedPhase.ready);
   });
 }
 
 class _FakeHomeRepository implements HomeRepository {
   _FakeHomeRepository({this.onThreads});
 
-  final Future<CursorPage<HomeThreadCardModel>> Function(
+  final Future<CursorPage<ThreadFeedCardModel>> Function(
     HomeFeedQuery query,
     String? cursor,
   )?
@@ -151,12 +153,12 @@ class _FakeHomeRepository implements HomeRepository {
   final cursors = <String?>[];
 
   @override
-  Future<List<HomeCategory>> fetchCategories() async => const [
-    HomeCategory(id: 'category-rpg', slug: 'RPG', name: '角色扮演', sortOrder: 1),
+  Future<List<ThreadCategory>> fetchCategories() async => const [
+    ThreadCategory(id: 'category-rpg', slug: 'RPG', name: '角色扮演', sortOrder: 1),
   ];
 
   @override
-  Future<CursorPage<HomeThreadCardModel>> fetchThreads({
+  Future<CursorPage<ThreadFeedCardModel>> fetchThreads({
     required HomeFeedQuery query,
     String? cursor,
     int limit = 20,
@@ -168,11 +170,11 @@ class _FakeHomeRepository implements HomeRepository {
   }
 }
 
-final _firstThread = HomeThreadCardModel(
+final _firstThread = ThreadFeedCardModel(
   id: 'thread-1',
   title: '第一个主题',
   categorySlug: 'RPG',
-  status: HomeThreadStatus.recruiting,
+  status: ThreadFeedStatus.recruiting,
   isPinned: false,
   ownerId: 'user-1',
   ownerName: '温柔一号',
@@ -186,10 +188,10 @@ final _firstThread = HomeThreadCardModel(
   lastActivityAt: _activityAt,
 );
 
-final _secondThread = HomeThreadCardModel(
+final _secondThread = ThreadFeedCardModel(
   id: 'thread-2',
   title: '第二个主题',
-  status: HomeThreadStatus.closed,
+  status: ThreadFeedStatus.closed,
   isPinned: false,
   ownerId: 'user-2',
   ownerName: '温柔二号',

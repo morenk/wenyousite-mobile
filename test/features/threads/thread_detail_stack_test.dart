@@ -16,11 +16,11 @@ import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.d
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_page.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_target_utils.dart';
 
-import '../../support/foundation_test_fonts.dart';
+import '../../support/deterministic_test_fonts.dart';
 import '../../support/scripted_http_client_adapter.dart';
 
 void main() {
-  setUpAll(loadFoundationTestFonts);
+  setUpAll(loadDeterministicTestFonts);
 
   testWidgets('路由经生产仓储、生成客户端和 Dio 展示主题正文与楼层', (tester) async {
     final adapter = ScriptedHttpClientAdapter((request) async {

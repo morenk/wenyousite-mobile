@@ -1,16 +1,25 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/app/app_capabilities.dart';
+import 'package:wenyousite_mobile/app/visibility_cache_invalidation.dart';
+import 'package:wenyousite_mobile/core/application/background_execution.dart';
 import 'package:wenyousite_mobile/core/application/background_online_reminders.dart';
 import 'package:wenyousite_mobile/core/application/bookmark_folder_catalog.dart';
 import 'package:wenyousite_mobile/core/application/document_saver.dart';
 import 'package:wenyousite_mobile/core/application/image_gallery.dart';
+import 'package:wenyousite_mobile/core/application/notification_guidance.dart';
 import 'package:wenyousite_mobile/core/application/profile_cache_invalidation.dart';
-import 'package:wenyousite_mobile/core/application/thread_category_catalog.dart';
+import 'package:wenyousite_mobile/core/application/visibility_cache_invalidation.dart';
+import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/core/platform/android_background_execution_gateway.dart';
 import 'package:wenyousite_mobile/core/platform/android_background_notification_gateway.dart';
 import 'package:wenyousite_mobile/core/platform/device_document_saver.dart';
 import 'package:wenyousite_mobile/core/platform/device_image_gallery.dart';
+import 'package:wenyousite_mobile/core/storage/shared_preferences_notification_guidance_store.dart';
+import 'package:wenyousite_mobile/features/app_shell/application/clipboard_navigation_ports.dart';
 import 'package:wenyousite_mobile/features/app_shell/application/mobile_update_controller.dart';
 import 'package:wenyousite_mobile/features/app_shell/application/startup_controller.dart';
+import 'package:wenyousite_mobile/features/app_shell/data/device_clipboard_navigation_gateway.dart';
+import 'package:wenyousite_mobile/features/app_shell/data/handled_clipboard_navigation_store.dart';
 import 'package:wenyousite_mobile/features/app_shell/data/meta_repository.dart';
 import 'package:wenyousite_mobile/features/app_shell/data/mobile_update_service.dart';
 import 'package:wenyousite_mobile/features/app_shell/data/recommended_update_dismiss_store.dart';
@@ -32,6 +41,7 @@ import 'package:wenyousite_mobile/features/media/data/image_crop_processor.dart'
 import 'package:wenyousite_mobile/features/media/data/media_upload_repository.dart';
 import 'package:wenyousite_mobile/features/media/data/profile_cover_image_picker.dart';
 import 'package:wenyousite_mobile/features/moderation/data/moderation_appeal_repository.dart';
+import 'package:wenyousite_mobile/features/moments/application/moment_draft_store_ports.dart';
 import 'package:wenyousite_mobile/features/moments/data/moment_bookmark_repository.dart';
 import 'package:wenyousite_mobile/features/moments/data/moment_draft_store.dart';
 import 'package:wenyousite_mobile/features/moments/data/moment_repository.dart';
@@ -52,8 +62,11 @@ import 'package:wenyousite_mobile/features/social/data/user_relation_list_reposi
 import 'package:wenyousite_mobile/features/social/data/user_relation_repository.dart';
 import 'package:wenyousite_mobile/features/stickers/data/sticker_repository.dart';
 import 'package:wenyousite_mobile/features/tags/data/tag_repository.dart';
+import 'package:wenyousite_mobile/features/thread_feed/application/cover_animation_source_ports.dart';
+import 'package:wenyousite_mobile/features/thread_feed/data/device_cover_animation_source.dart';
+import 'package:wenyousite_mobile/features/thread_feed/data/thread_category_catalog_repository.dart';
+import 'package:wenyousite_mobile/features/thread_feed/thread_feed_catalog.dart';
 import 'package:wenyousite_mobile/features/threads/data/subthread_management_repository.dart';
-import 'package:wenyousite_mobile/features/threads/data/thread_category_catalog_repository.dart';
 import 'package:wenyousite_mobile/features/threads/data/thread_compose_repository.dart';
 import 'package:wenyousite_mobile/features/threads/data/thread_detail_repository.dart';
 import 'package:wenyousite_mobile/features/threads/data/thread_invitation_repository.dart';
@@ -69,6 +82,22 @@ import 'package:wenyousite_mobile/features/users/data/public_user_repository.dar
 import 'package:wenyousite_mobile/features/wallet/data/wallet_repository.dart';
 
 List<Override> productionProviderOverrides() => [
+  notificationGuidanceStoreProvider.overrideWithValue(
+    const SharedPreferencesNotificationGuidanceStore(),
+  ),
+  backgroundExecutionGatewayProvider.overrideWith(
+    (ref) => ref.watch(androidBackgroundExecutionGatewayProvider),
+  ),
+  coverAnimationSourceProvider.overrideWith(
+    (ref) => ref.watch(deviceCoverAnimationSourceProvider),
+  ),
+  clipboardNavigationGatewayProvider.overrideWith(
+    (ref) => ref.watch(deviceClipboardNavigationGatewayProvider),
+  ),
+  handledClipboardNavigationStoreProvider.overrideWith(
+    (ref) =>
+        ref.watch(sharedPreferencesHandledClipboardNavigationStoreProvider),
+  ),
   backgroundNotificationGatewayProvider.overrideWith(
     (ref) => ref.watch(androidBackgroundNotificationGatewayProvider),
   ),
@@ -139,8 +168,12 @@ List<Override> productionProviderOverrides() => [
     (ref) => ref.watch(apiModerationAppealRepositoryProvider),
   ),
   momentDraftStoreProvider.overrideWith(
-    (ref) => ref.watch(sharedPreferencesMomentDraftStoreProvider),
+    (ref) => ref.watch(databaseMomentDraftStoreProvider),
   ),
+  momentComposerOwnerResolverProvider.overrideWith((ref) {
+    final repository = ref.watch(meProfileRepositoryProvider);
+    return () async => (await repository.fetchMe()).id;
+  }),
   momentRepositoryProvider.overrideWith(
     (ref) => ref.watch(apiMomentRepositoryProvider),
   ),
@@ -236,6 +269,9 @@ List<Override> productionProviderOverrides() => [
   mediaUploadGatewayPortProvider.overrideWith(
     (ref) => ref.watch(mediaUploadGatewayAdapterProvider),
   ),
+  mediaUploadSessionScopePortProvider.overrideWith(
+    (ref) => ref.watch(sessionScopeProvider),
+  ),
   appCapabilitiesProvider.overrideWith((ref) {
     final contract = ref.watch(
       startupControllerProvider.select((state) => state.contract),
@@ -249,6 +285,9 @@ List<Override> productionProviderOverrides() => [
         ref.invalidate(publicUserControllerProvider(userId));
       }
     };
+  }),
+  visibilityCacheInvalidatorProvider.overrideWith((ref) {
+    return () => invalidateVisibilityCaches(ref.container);
   }),
 ];
 

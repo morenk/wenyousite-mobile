@@ -47,6 +47,15 @@ class ApiFailure implements Exception {
     this.cause,
   }) : legacyUserMessage = userMessage;
 
+  /// 响应数据无法消费时只记录分类，展示文案由 UserFacingFailure 映射。
+  const ApiFailure.invalidResponse({required String diagnosticCode})
+    : this(
+        source: FailureSource.content,
+        reason: FailureReason.contractViolation,
+        recoveryAction: FailureRecoveryAction.refresh,
+        diagnosticCode: diagnosticCode,
+      );
+
   factory ApiFailure.contractViolation({
     required String userMessage,
     required String diagnosticCode,
@@ -194,6 +203,10 @@ class ApiFailure implements Exception {
 
   bool shouldExposeRequestId({bool treatAsWrite = false}) {
     if (requestId == null) return false;
+    if (treatAsWrite &&
+        const {40000, 40001, 40006, 40009}.contains(businessCode)) {
+      return true;
+    }
     if (treatAsWrite && hasUnknownWriteOutcome) return true;
     if (businessCode == 40912) return true;
     return effectiveSource == FailureSource.service ||
@@ -241,6 +254,9 @@ class ApiFailure implements Exception {
     int? businessCode,
     FailureSource source,
   ) {
+    if (exception.response?.statusCode == 413) {
+      return '内容过大，请缩小范围或减少图片后重试。';
+    }
     switch (businessCode) {
       case 40101:
         return '登录状态已续期，请手动重试这次操作。';

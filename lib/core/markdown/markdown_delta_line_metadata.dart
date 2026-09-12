@@ -1,4 +1,6 @@
 import 'package:flutter_quill/quill_delta.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_paragraph_boundaries.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_quote_paragraphs.dart';
 
 /// Keeps source-only Markdown separators distinct from editable blank lines.
 ///
@@ -10,6 +12,9 @@ class MarkdownDeltaLineMetadata {
   static const emptyKey = 'wenyou_empty_paragraph';
   static const sourceBreakKey = 'wenyou_source_break';
   static const literalLineKey = 'wenyou_literal_line';
+  static const guardedWhitespaceKey = 'wenyou_guarded_whitespace';
+  static const guardedLeadingWhitespaceKey =
+      'wenyou_guarded_leading_whitespace';
   static const sourceSeparatorAttribute = 'wenyou_source_separator';
 
   static const _blockAttributes = {
@@ -32,10 +37,14 @@ class MarkdownDeltaLineMetadata {
   /// final Quill newline is treated as the document terminator by position,
   /// so an inherited source-break attribute cannot swallow earlier newlines.
   static Delta prepareForEncoding(Delta source) {
+    source = MarkdownParagraphBoundaries.expand(
+      MarkdownQuoteParagraphs.expand(source),
+    );
     final output = Delta();
     final totalLength = documentLength(source);
     var documentOffset = 0;
     var lineHasContent = false;
+    var lineHasNonWhitespaceContent = false;
 
     for (final operation in source.operations) {
       final data = operation.data;
@@ -43,6 +52,7 @@ class MarkdownDeltaLineMetadata {
         output.insert(data, operation.attributes);
         documentOffset += operation.length!;
         lineHasContent = true;
+        lineHasNonWhitespaceContent = true;
         continue;
       }
 
@@ -54,6 +64,8 @@ class MarkdownDeltaLineMetadata {
           output.insert(segment, _textAttributes(operation.attributes));
           documentOffset += segment.length;
           lineHasContent = true;
+          lineHasNonWhitespaceContent =
+              lineHasNonWhitespaceContent || segment.trim().isNotEmpty;
         }
 
         final isFinalNewline = documentOffset == totalLength - 1;
@@ -62,12 +74,14 @@ class MarkdownDeltaLineMetadata {
           _newlineAttributes(
             operation.attributes,
             lineHasContent: lineHasContent,
+            lineHasNonWhitespaceContent: lineHasNonWhitespaceContent,
             isOnlyDocumentLine: totalLength == 1 && isFinalNewline,
             isFinalNewline: isFinalNewline,
           ),
         );
         documentOffset += 1;
         lineHasContent = false;
+        lineHasNonWhitespaceContent = false;
         segmentStart = index + 1;
       }
 
@@ -76,6 +90,8 @@ class MarkdownDeltaLineMetadata {
         output.insert(segment, _textAttributes(operation.attributes));
         documentOffset += segment.length;
         lineHasContent = true;
+        lineHasNonWhitespaceContent =
+            lineHasNonWhitespaceContent || segment.trim().isNotEmpty;
       }
     }
     return output;
@@ -92,6 +108,8 @@ class MarkdownDeltaLineMetadata {
     Delta? insertedDelta,
   }) {
     final allowedOffsets = <int>{};
+    final allowedQuoteSeparators = <int, int>{};
+    final allowedParagraphSeparators = <int, int>{};
     final replacedEnd = index + replacedLength;
     final shift = insertedLength - replacedLength;
     for (final offset in _sourceSeparatorOffsets(before)) {
@@ -104,6 +122,43 @@ class MarkdownDeltaLineMetadata {
     if (insertedDelta != null) {
       for (final offset in _sourceSeparatorOffsets(insertedDelta)) {
         allowedOffsets.add(index + offset);
+      }
+    }
+
+    for (final entry in _separatorOffsets(
+      before,
+      MarkdownQuoteParagraphs.separatorCountKey,
+    ).entries) {
+      if (entry.key < index) {
+        allowedQuoteSeparators[entry.key] = entry.value;
+      } else if (entry.key >= replacedEnd) {
+        allowedQuoteSeparators[entry.key + shift] = entry.value;
+      }
+    }
+    if (insertedDelta != null) {
+      for (final entry in _separatorOffsets(
+        insertedDelta,
+        MarkdownQuoteParagraphs.separatorCountKey,
+      ).entries) {
+        allowedQuoteSeparators[index + entry.key] = entry.value;
+      }
+    }
+    for (final entry in _separatorOffsets(
+      before,
+      MarkdownParagraphBoundaries.key,
+    ).entries) {
+      if (entry.key < index) {
+        allowedParagraphSeparators[entry.key] = entry.value;
+      } else if (entry.key >= replacedEnd) {
+        allowedParagraphSeparators[entry.key + shift] = entry.value;
+      }
+    }
+    if (insertedDelta != null) {
+      for (final entry in _separatorOffsets(
+        insertedDelta,
+        MarkdownParagraphBoundaries.key,
+      ).entries) {
+        allowedParagraphSeparators[index + entry.key] = entry.value;
       }
     }
 
@@ -128,12 +183,30 @@ class MarkdownDeltaLineMetadata {
             operation.attributes?[sourceSeparatorAttribute] == true;
         final shouldHaveSeparator =
             !lineHasContent && allowedOffsets.contains(documentOffset);
-        if (hasSeparator != shouldHaveSeparator) {
+        final quoteSeparators =
+            operation.attributes?[MarkdownQuoteParagraphs.separatorCountKey];
+        final expectedQuoteSeparators =
+            operation.attributes?['blockquote'] == true
+            ? allowedQuoteSeparators[documentOffset]
+            : null;
+        final paragraphSeparators =
+            operation.attributes?[MarkdownParagraphBoundaries.key];
+        final expectedParagraphSeparators =
+            allowedParagraphSeparators[documentOffset];
+        if (hasSeparator != shouldHaveSeparator ||
+            quoteSeparators != expectedQuoteSeparators ||
+            paragraphSeparators != expectedParagraphSeparators) {
           if (documentOffset > patchOffset) {
             patch.retain(documentOffset - patchOffset);
           }
           patch.retain(1, {
-            sourceSeparatorAttribute: shouldHaveSeparator ? true : null,
+            if (hasSeparator != shouldHaveSeparator)
+              sourceSeparatorAttribute: shouldHaveSeparator ? true : null,
+            if (quoteSeparators != expectedQuoteSeparators)
+              MarkdownQuoteParagraphs.separatorCountKey:
+                  expectedQuoteSeparators,
+            if (paragraphSeparators != expectedParagraphSeparators)
+              MarkdownParagraphBoundaries.key: expectedParagraphSeparators,
           });
           patchOffset = documentOffset + 1;
         }
@@ -156,6 +229,7 @@ class MarkdownDeltaLineMetadata {
   static Map<String, dynamic>? _newlineAttributes(
     Map<String, dynamic>? source, {
     required bool lineHasContent,
+    required bool lineHasNonWhitespaceContent,
     required bool isOnlyDocumentLine,
     required bool isFinalNewline,
   }) {
@@ -164,18 +238,21 @@ class MarkdownDeltaLineMetadata {
     final isSourceSeparator =
         source?[sourceSeparatorAttribute] == true && !lineHasContent;
     final onlyPendingAlignment =
-        !lineHasContent &&
-        isFinalNewline &&
+        !lineHasNonWhitespaceContent &&
         attributes.keys
             .where(_blockAttributes.contains)
             .every((key) => key == 'align');
     if (onlyPendingAlignment) attributes.remove('align');
     final hasBlockStyle =
-        attributes.keys.any(_blockAttributes.contains) ||
+        attributes.keys.any(
+          (key) => key != 'blockquote' && _blockAttributes.contains(key),
+        ) ||
         attributes[literalLineKey] == true;
 
     if (lineHasContent ||
-        isOnlyDocumentLine ||
+        (isOnlyDocumentLine &&
+            !(attributes['blockquote'] == true &&
+                attributes[emptyKey] == true)) ||
         isSourceSeparator ||
         hasBlockStyle) {
       attributes.remove(emptyKey);
@@ -202,6 +279,22 @@ class MarkdownDeltaLineMetadata {
         }
       }
       documentOffset += operation.length!;
+    }
+    return offsets;
+  }
+
+  static Map<int, int> _separatorOffsets(Delta delta, String key) {
+    final offsets = <int, int>{};
+    var offset = 0;
+    for (final operation in delta.operations) {
+      final data = operation.data;
+      final count = operation.attributes?[key];
+      if (data is String && count is int) {
+        for (var index = 0; index < data.length; index++) {
+          if (data[index] == '\n') offsets[offset + index] = count;
+        }
+      }
+      offset += operation.length!;
     }
     return offsets;
   }

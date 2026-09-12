@@ -1,5 +1,5 @@
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
-import 'package:wenyousite_mobile/features/threads/domain/thread_feed_models.dart';
+import 'package:wenyousite_mobile/features/thread_feed/thread_feed_models.dart';
 
 const maxThreadTagCount = 5;
 const maxTagNameLength = 20;
@@ -70,6 +70,6 @@ class TagThreadsBootstrap {
   });
 
   final TopicTagModel tag;
-  final List<HomeCategory> categories;
-  final CursorPage<HomeThreadCardModel> page;
+  final List<ThreadCategory> categories;
+  final CursorPage<ThreadFeedCardModel> page;
 }

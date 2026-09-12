@@ -1,15 +1,18 @@
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
+import 'package:wenyousite_mobile/core/media/media_display.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
 
 class PostComposerDraft {
   const PostComposerDraft({
     required this.content,
+    this.mediaDisplays = const {},
     required this.baseContent,
     required this.basePostId,
     required this.baseVersion,
   });
 
   final String content;
+  final Map<String, MediaDisplay> mediaDisplays;
   final String baseContent;
   final String? basePostId;
   final int? baseVersion;
@@ -18,18 +21,24 @@ class PostComposerDraft {
 class PostComposerBaseline {
   const PostComposerBaseline({
     required this.content,
+    this.mediaDisplays = const {},
     required this.postId,
     required this.version,
   });
 
   final String content;
+  final Map<String, MediaDisplay> mediaDisplays;
   final String? postId;
   final int? version;
 
-  PostComposerDraft? draftFor(String content) {
+  PostComposerDraft? draftFor(
+    String content, {
+    Map<String, MediaDisplay>? displays,
+  }) {
     if (_sameMarkdown(content, this.content)) return null;
     return PostComposerDraft(
       content: content,
+      mediaDisplays: displays ?? mediaDisplays,
       baseContent: this.content,
       basePostId: postId,
       baseVersion: version,

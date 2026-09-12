@@ -9,6 +9,7 @@ import 'package:wenyousite_mobile/features/settings/presentation/appearance_sett
 import 'package:wenyousite_mobile/features/settings/presentation/change_email_page.dart';
 import 'package:wenyousite_mobile/features/settings/presentation/change_password_page.dart';
 import 'package:wenyousite_mobile/features/settings/presentation/delete_account_page.dart';
+import 'package:wenyousite_mobile/features/settings/presentation/diagnostic_settings_page.dart';
 import 'package:wenyousite_mobile/features/settings/presentation/login_sessions_page.dart';
 import 'package:wenyousite_mobile/features/social/domain/user_relation_list_models.dart';
 import 'package:wenyousite_mobile/features/social/presentation/bookmark_list_page.dart';
@@ -19,6 +20,11 @@ import 'package:wenyousite_mobile/features/users/presentation/public_user_page.d
 import 'package:wenyousite_mobile/features/wallet/presentation/wallet_page.dart';
 
 List<RouteBase> buildAccountRoutes() => [
+  GoRoute(
+    path: AppRouteLocations.diagnostics,
+    name: AppRouteNames.diagnostics,
+    builder: (context, state) => const DiagnosticSettingsPage(),
+  ),
   GoRoute(
     path: AppRouteLocations.appearance,
     name: AppRouteNames.appearance,

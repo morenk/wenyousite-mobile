@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_clipboard_text.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
@@ -10,6 +10,7 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_content_action_menu.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_discussion_reply_card.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_internal_reference_text.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
+import 'package:wenyousite_mobile/features/moments/presentation/moment_playback_image.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_widgets.dart';
 import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
 import 'package:wenyousite_mobile/features/stickers/domain/sticker_models.dart';
@@ -59,7 +60,7 @@ class MomentCommentBody extends ConsumerWidget {
             '该评论已删除',
             style: Theme.of(
               context,
-            ).textTheme.bodyMedium?.copyWith(color: tokens.mutedText),
+            ).textTheme.wenyouCompactBody.copyWith(color: tokens.mutedText),
           )
         else ...[
           if (comment.replyToComment != null)
@@ -67,12 +68,12 @@ class MomentCommentBody extends ConsumerWidget {
               '回复 @${comment.replyToComment!.author.username}',
               style: Theme.of(
                 context,
-              ).textTheme.bodySmall?.copyWith(color: tokens.focus),
+              ).textTheme.wenyouCaption.copyWith(color: tokens.focus),
             ),
           if (comment.content != null)
             WenyouInternalReferenceText(
               content: comment.content!,
-              style: Theme.of(context).textTheme.bodyMedium,
+              style: Theme.of(context).textTheme.wenyouCompactBody,
               selectable: true,
               onTapText: canReply ? onReply : null,
               onLongPressNonText: openActions,
@@ -104,16 +105,30 @@ class MomentCommentBody extends ConsumerWidget {
                     maxWidth: compact ? 180 : 240,
                     maxHeight: compact ? 180 : 240,
                   ),
-                  child: WenyouCachedImage(
-                    imageUrl: comment.media!.bestContentUrl,
-                    fallbackImageUrls: comment.media!.contentUrls
-                        .skip(1)
-                        .toList(growable: false),
-                    fit: BoxFit.contain,
-                    placeholder: (_, _) => const CircularProgressIndicator(),
-                    errorWidget: (_, _, _) =>
-                        const WenyouIcon(WenyouIconIds.statusImageUnavailable),
-                  ),
+                  child: !comment.media!.isAnimated
+                      ? WenyouCachedImage(
+                          imageUrl: comment.media!.bestContentUrl,
+                          fallbackImageUrls: comment.media!.contentUrls
+                              .skip(1)
+                              .toList(),
+                          fit: BoxFit.contain,
+                        )
+                      : SizedBox.fromSize(
+                          size: _attachmentSize(
+                            comment.media!.width,
+                            comment.media!.height,
+                            compact ? 180 : 240,
+                          ),
+                          child: MomentPlaybackImage(
+                            previewUrls: comment.media!.playbackPreviewUrls,
+                            animationUrl: comment.media!.isAnimated
+                                ? comment.media!.playbackUrl
+                                : null,
+                            allowPlayback: true,
+                            width: double.infinity,
+                            height: double.infinity,
+                          ),
+                        ),
                 ),
               ),
             ),
@@ -124,15 +139,61 @@ class MomentCommentBody extends ConsumerWidget {
               alignment: Alignment.centerLeft,
               child: GestureDetector(
                 onLongPress: openActions,
+                onTap: () async {
+                  final sticker = comment.sticker!;
+                  await openMomentGallery(context, [
+                    MomentMedia(
+                      id: sticker.id,
+                      url: sticker.url,
+                      display: sticker.display,
+                      thumbnailUrl: sticker.thumbnailUrl,
+                      mediumUrl: sticker.mediumUrl,
+                      animated: sticker.animated,
+                      width: sticker.width,
+                      height: sticker.height,
+                    ),
+                  ], 0);
+                },
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(
                     maxWidth: 160,
                     maxHeight: 160,
                   ),
-                  child: WenyouCachedImage(
-                    imageUrl: comment.sticker!.mediumUrl,
-                    fit: BoxFit.contain,
-                  ),
+                  child: !comment.sticker!.animated
+                      ? WenyouCachedImage(
+                          imageUrl:
+                              comment.sticker!.display?.url ??
+                              comment.sticker!.mediumUrl,
+                          fit: BoxFit.contain,
+                        )
+                      : SizedBox.fromSize(
+                          size: _attachmentSize(
+                            comment.sticker!.width,
+                            comment.sticker!.height,
+                            160,
+                          ),
+                          child: MomentPlaybackImage(
+                            previewUrls:
+                                [
+                                      comment.sticker!.animated
+                                          ? comment.sticker!.thumbnailUrl
+                                          : comment.sticker!.mediumUrl,
+                                    ]
+                                    .where(
+                                      (url) =>
+                                          !comment.sticker!.animated ||
+                                          url != comment.sticker!.url,
+                                    )
+                                    .toList(),
+                            animationUrl: comment.sticker!.animated
+                                ? comment.sticker!.display?.url ??
+                                      comment.sticker!.url
+                                : null,
+                            allowPlayback: true,
+                            width: double.infinity,
+                            height: double.infinity,
+                          ),
+                        ),
                 ),
               ),
             ),
@@ -215,4 +276,15 @@ class MomentCommentBody extends ConsumerWidget {
         await onReport?.call();
     }
   }
+}
+
+Size _attachmentSize(int? width, int? height, double limit) {
+  if (width == null || height == null || width <= 0 || height <= 0) {
+    return Size.square(limit);
+  }
+  return applyBoxFit(
+    BoxFit.scaleDown,
+    Size(width.toDouble(), height.toDouble()),
+    Size.square(limit),
+  ).destination;
 }

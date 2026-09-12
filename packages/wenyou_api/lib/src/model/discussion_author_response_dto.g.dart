@@ -91,6 +91,8 @@ class _$DiscussionAuthorResponseDtoRoleEnumSerializer
 
 class _$DiscussionAuthorResponseDto extends DiscussionAuthorResponseDto {
   @override
+  final MediaDisplayResponseDto? avatarDisplay;
+  @override
   final String id;
   @override
   final String username;
@@ -108,6 +110,7 @@ class _$DiscussionAuthorResponseDto extends DiscussionAuthorResponseDto {
   ]) => (DiscussionAuthorResponseDtoBuilder()..update(updates))._build();
 
   _$DiscussionAuthorResponseDto._({
+    this.avatarDisplay,
     required this.id,
     required this.username,
     this.avatar,
@@ -128,6 +131,7 @@ class _$DiscussionAuthorResponseDto extends DiscussionAuthorResponseDto {
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
     return other is DiscussionAuthorResponseDto &&
+        avatarDisplay == other.avatarDisplay &&
         id == other.id &&
         username == other.username &&
         avatar == other.avatar &&
@@ -139,6 +143,7 @@ class _$DiscussionAuthorResponseDto extends DiscussionAuthorResponseDto {
   @override
   int get hashCode {
     var _$hash = 0;
+    _$hash = $jc(_$hash, avatarDisplay.hashCode);
     _$hash = $jc(_$hash, id.hashCode);
     _$hash = $jc(_$hash, username.hashCode);
     _$hash = $jc(_$hash, avatar.hashCode);
@@ -152,6 +157,7 @@ class _$DiscussionAuthorResponseDto extends DiscussionAuthorResponseDto {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'DiscussionAuthorResponseDto')
+          ..add('avatarDisplay', avatarDisplay)
           ..add('id', id)
           ..add('username', username)
           ..add('avatar', avatar)
@@ -169,6 +175,12 @@ class DiscussionAuthorResponseDtoBuilder
           DiscussionAuthorResponseDtoBuilder
         > {
   _$DiscussionAuthorResponseDto? _$v;
+
+  MediaDisplayResponseDtoBuilder? _avatarDisplay;
+  MediaDisplayResponseDtoBuilder get avatarDisplay =>
+      _$this._avatarDisplay ??= MediaDisplayResponseDtoBuilder();
+  set avatarDisplay(MediaDisplayResponseDtoBuilder? avatarDisplay) =>
+      _$this._avatarDisplay = avatarDisplay;
 
   String? _id;
   String? get id => _$this._id;
@@ -201,6 +213,7 @@ class DiscussionAuthorResponseDtoBuilder
   DiscussionAuthorResponseDtoBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
+      _avatarDisplay = $v.avatarDisplay?.toBuilder();
       _id = $v.id;
       _username = $v.username;
       _avatar = $v.avatar;
@@ -226,36 +239,53 @@ class DiscussionAuthorResponseDtoBuilder
   DiscussionAuthorResponseDto build() => _build();
 
   _$DiscussionAuthorResponseDto _build() {
-    final _$result =
-        _$v ??
-        _$DiscussionAuthorResponseDto._(
-          id: BuiltValueNullFieldError.checkNotNull(
-            id,
-            r'DiscussionAuthorResponseDto',
-            'id',
-          ),
-          username: BuiltValueNullFieldError.checkNotNull(
-            username,
-            r'DiscussionAuthorResponseDto',
-            'username',
-          ),
-          avatar: avatar,
-          level: BuiltValueNullFieldError.checkNotNull(
-            level,
-            r'DiscussionAuthorResponseDto',
-            'level',
-          ),
-          role: BuiltValueNullFieldError.checkNotNull(
-            role,
-            r'DiscussionAuthorResponseDto',
-            'role',
-          ),
-          playerMarked: BuiltValueNullFieldError.checkNotNull(
-            playerMarked,
-            r'DiscussionAuthorResponseDto',
-            'playerMarked',
-          ),
+    _$DiscussionAuthorResponseDto _$result;
+    try {
+      _$result =
+          _$v ??
+          _$DiscussionAuthorResponseDto._(
+            avatarDisplay: _avatarDisplay?.build(),
+            id: BuiltValueNullFieldError.checkNotNull(
+              id,
+              r'DiscussionAuthorResponseDto',
+              'id',
+            ),
+            username: BuiltValueNullFieldError.checkNotNull(
+              username,
+              r'DiscussionAuthorResponseDto',
+              'username',
+            ),
+            avatar: avatar,
+            level: BuiltValueNullFieldError.checkNotNull(
+              level,
+              r'DiscussionAuthorResponseDto',
+              'level',
+            ),
+            role: BuiltValueNullFieldError.checkNotNull(
+              role,
+              r'DiscussionAuthorResponseDto',
+              'role',
+            ),
+            playerMarked: BuiltValueNullFieldError.checkNotNull(
+              playerMarked,
+              r'DiscussionAuthorResponseDto',
+              'playerMarked',
+            ),
+          );
+    } catch (_) {
+      late String _$failedField;
+      try {
+        _$failedField = 'avatarDisplay';
+        _avatarDisplay?.build();
+      } catch (e) {
+        throw BuiltValueNestedFieldError(
+          r'DiscussionAuthorResponseDto',
+          _$failedField,
+          e.toString(),
         );
+      }
+      rethrow;
+    }
     replace(_$result);
     return _$result;
   }

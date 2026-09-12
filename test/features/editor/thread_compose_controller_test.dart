@@ -14,6 +14,53 @@ import 'package:wenyousite_mobile/features/threads/data/thread_compose_repositor
 import 'package:wenyousite_mobile/features/threads/domain/thread_compose_models.dart';
 
 void main() {
+  test('慢写盘期间重复发布只创建一次，发布后没有迟到快照复活', () async {
+    final store = _ControlledSnapshotStore();
+    final repository = _FakeRepository();
+    final controller = ThreadComposeController(
+      repository,
+      store,
+      knownOwnerId: 'user-one',
+      autoStart: false,
+    );
+    addTearDown(controller.dispose);
+    await controller.load();
+    await _waitUntil(() => !controller.state.bootstrapLoading);
+    _fillPublishable(controller);
+    final first = controller.publish();
+    await store.firstSaveStarted.future;
+    expect(await controller.publish(), isNull);
+    final lifecycleFlush = controller.flushLocalSnapshot();
+    store.releaseFirstSave.complete();
+    expect(await first, 'thread-one');
+    await lifecycleFlush;
+    expect(repository.createPayloads, hasLength(1));
+    expect(repository.aggregateCalls, hasLength(1));
+    expect(store.snapshot, isNull);
+  });
+
+  test('主题创建成功但本机确认失败时保留原请求，重试只补本机确认', () async {
+    final store = _FailingCompletionStore();
+    final repository = _FakeRepository();
+    final controller = ThreadComposeController(
+      repository,
+      store,
+      knownOwnerId: 'user-one',
+      autoStart: false,
+    );
+    addTearDown(controller.dispose);
+    await controller.load();
+    await _waitUntil(() => !controller.state.bootstrapLoading);
+    _fillPublishable(controller);
+    expect(await controller.publish(), isNull);
+    expect(store.pending, isNotNull);
+    expect(repository.aggregateCalls, isEmpty);
+    store.failCompletion = false;
+    expect(await controller.publish(), 'thread-one');
+    expect(repository.createPayloads, hasLength(1));
+    expect(store.pending, isNull);
+  });
+
   test('访问令牌刷新保留创作控制器，账号切换才重建并隔离内容', () async {
     final tokenStore = _MemoryTokenStore();
     final sessionRemote = _RotatingSessionRemote(_tokensFor('user-one', '2'));
@@ -438,6 +485,21 @@ class _FakeRepository implements ThreadComposeRepository {
 }
 
 class _MemorySnapshotStore implements EditorSnapshotStore {
+  @override
+  Future<void> beginThreadCreate(
+    LocalEditorSnapshot value,
+    PendingCreateOperation operation,
+  ) async {
+    await saveThreadSnapshot(value);
+    await savePendingCreate(operation);
+  }
+
+  @override
+  Future<void> completeThreadCreate(LocalEditorSnapshot value) async {
+    await saveThreadSnapshot(value);
+    await deletePendingCreate(value.clientRequestId);
+  }
+
   LocalEditorSnapshot? snapshot;
   PendingCreateOperation? pending;
   final List<PendingOperationState> savedPendingStates = [];
@@ -489,6 +551,16 @@ class _ControlledSnapshotStore extends _MemorySnapshotStore {
       await releaseFirstSave.future;
     }
     await super.saveThreadSnapshot(value);
+  }
+}
+
+class _FailingCompletionStore extends _MemorySnapshotStore {
+  bool failCompletion = true;
+
+  @override
+  Future<void> completeThreadCreate(LocalEditorSnapshot value) async {
+    if (failCompletion) throw StateError('Test completion failure.');
+    await super.completeThreadCreate(value);
   }
 }
 

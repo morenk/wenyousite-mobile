@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/network/media_display_mapper.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_detail_repository_ports.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.dart';
@@ -202,6 +203,7 @@ class ApiThreadDetailRepository implements ThreadDetailRepository {
     required String message,
   }) {
     final target = dto.replyToPost;
+    // 与独立讨论一致：不可见目标的详情允许为空，存在时才核对关联。
     if (dto.kind != ReplyResponseDtoKindEnum.FLOOR ||
         dto.floorNumber != null ||
         dto.pinnedAt != null ||
@@ -210,10 +212,8 @@ class ApiThreadDetailRepository implements ThreadDetailRepository {
         dto.subthreadId != parent.subthreadId ||
         dto.authorId != dto.author.id ||
         dto.diceRolls.any((roll) => roll.postId != dto.id) ||
-        (dto.replyToPostId == null && target != null) ||
-        (dto.replyToPostId != null &&
-            (target == null ||
-                target.id != dto.replyToPostId ||
+        (target != null &&
+            (target.id != dto.replyToPostId ||
                 target.authorId != target.author.id))) {
       throw ApiFailure(userMessage: message);
     }
@@ -292,6 +292,9 @@ class ApiThreadDetailRepository implements ThreadDetailRepository {
                     ? null
                     : ThreadBodyModel(
                         markdown: item.bodyPost!.content,
+                        mediaDisplays: mapMarkdownMediaDisplays(
+                          item.bodyPost!.mediaDisplays,
+                        ),
                         postId: item.bodyPost!.id,
                         version: item.bodyPost!.version.toInt(),
                         diceRolls: item.bodyPost!.diceRolls
@@ -347,6 +350,7 @@ class ApiThreadDetailRepository implements ThreadDetailRepository {
       author: _mapAuthor(dto.author),
       body: ThreadBodyModel(
         markdown: dto.content,
+        mediaDisplays: mapMarkdownMediaDisplays(dto.mediaDisplays),
         diceRolls: dto.diceRolls.map(_mapDiceRoll).toList(growable: false),
       ),
       createdAt: dto.createdAt,
@@ -361,6 +365,7 @@ class ApiThreadDetailRepository implements ThreadDetailRepository {
               author: _mapAuthor(reply.author),
               body: ThreadBodyModel(
                 markdown: reply.content,
+                mediaDisplays: mapMarkdownMediaDisplays(reply.mediaDisplays),
                 diceRolls: reply.diceRolls
                     .map(_mapDiceRoll)
                     .toList(growable: false),
@@ -385,6 +390,7 @@ class ApiThreadDetailRepository implements ThreadDetailRepository {
       author: _mapAuthor(dto.author),
       body: ThreadBodyModel(
         markdown: dto.content,
+        mediaDisplays: mapMarkdownMediaDisplays(dto.mediaDisplays),
         diceRolls: dto.diceRolls.map(_mapDiceRoll).toList(growable: false),
       ),
       createdAt: dto.createdAt,
@@ -402,6 +408,7 @@ class ApiThreadDetailRepository implements ThreadDetailRepository {
       author: _mapAuthor(dto.author),
       body: ThreadBodyModel(
         markdown: dto.content,
+        mediaDisplays: mapMarkdownMediaDisplays(dto.mediaDisplays),
         diceRolls: dto.diceRolls.map(_mapDiceRoll).toList(growable: false),
       ),
       createdAt: dto.createdAt,
@@ -415,7 +422,9 @@ class ApiThreadDetailRepository implements ThreadDetailRepository {
     return ThreadAuthorModel(
       id: dto.id,
       username: dto.username,
-      avatarUrl: _safeHttpUrl(dto.avatar),
+      avatarUrl: _safeHttpUrl(
+        mapAvatarDisplayUrl(dto.avatar, dto.avatarDisplay),
+      ),
       level: dto.level.toInt(),
     );
   }

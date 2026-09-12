@@ -1,5 +1,7 @@
 import 'package:wenyousite_mobile/core/markdown/markdown_alignment.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_dice_contract.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_editable_block_syntax.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_list_structure.dart';
 
 class MarkdownContent {
   MarkdownContent._();
@@ -18,6 +20,8 @@ class MarkdownContent {
     r'^ {0,3}<br\s*/?>[\t ]*$',
     caseSensitive: false,
   );
+  static final _emptyQuote = RegExp(r'^ {0,3}>[\t ]*$');
+  static final _quote = RegExp(r'^ {0,3}>[\t ]?(.*)$');
   static final _thematicBreak = RegExp(
     r'^ {0,3}(?:(?:\*\s*){3,}|(?:-\s*){3,}|(?:_\s*){3,})$',
   );
@@ -53,7 +57,7 @@ class MarkdownContent {
   static final _tableDelimiter = RegExp(
     r'^\s*\|?\s*:?-{3,}:?\s*(?:\|\s*:?-{3,}:?\s*)+\|?\s*$',
   );
-  static final _listItem = RegExp(r'^(\s*)(?:[-+*]|\d+[.)])[\t ]+');
+  static final _listItem = RegExp(r'^(\s*)(?:[-+*]|\d+[.)])(?:[\t ]+|$)');
   static final _unknownProtocol = RegExp(
     r'\[\[([a-z][a-z0-9_-]*):v(\d+):',
     caseSensitive: false,
@@ -63,6 +67,13 @@ class MarkdownContent {
     r'''[!"#$%&'()*+,\-./:;<=>?@[\\\]^_`{|}~]''',
   );
   static const _wordJoiner = '\u2060';
+  static bool hasLeadingWhitespaceGuard(String line) =>
+      line.startsWith('$_wordJoiner ') || line.startsWith('$_wordJoiner\t');
+  static bool hasWhitespaceGuards(String line) =>
+      (line.startsWith(_wordJoiner) &&
+          (line.substring(1).startsWith(' ') ||
+              line.substring(1).startsWith('\t'))) ||
+      RegExp(r' {2,}\u2060$').hasMatch(line);
 
   /// Escapes untrusted editor text without adding block separators.
   ///
@@ -117,7 +128,7 @@ class MarkdownContent {
     var source = line;
     var foundEncoding = false;
     if (source.startsWith(_wordJoiner) &&
-        (source.substring(1).startsWith('    ') ||
+        (source.substring(1).startsWith(' ') ||
             source.substring(1).startsWith('\t'))) {
       source = source.substring(1);
       foundEncoding = true;
@@ -182,9 +193,10 @@ class MarkdownContent {
   /// Prevents plain leading indentation and trailing spaces from becoming
   /// code blocks or hard breaks. The guards are removed again by
   /// [decodeLiteralLine].
-  static String protectUnsafeWhitespace(String line) {
+  static String protectUnsafeWhitespace(String line, {int minimumIndent = 4}) {
     var protected = line;
-    if (protected.startsWith('    ') || protected.startsWith('\t')) {
+    if (protected.startsWith(' ' * minimumIndent) ||
+        protected.startsWith('\t')) {
       protected = '$_wordJoiner$protected';
     }
     if (RegExp(r' {2,}$').hasMatch(protected)) {
@@ -210,6 +222,10 @@ class MarkdownContent {
       }
       if (fenceToken != null) {
         fence = fenceToken;
+        continue;
+      }
+      if (isQuotedEmptyParagraphLine(line)) {
+        lines[index] = '> <br />';
         continue;
       }
       if (RegExp(
@@ -264,32 +280,65 @@ class MarkdownContent {
 
   static String literalizeLine(String line) => _escapeLiteralLine(line);
 
+  static bool isEmptyQuoteLine(String line) => _emptyQuote.hasMatch(line);
+
+  static final _quotedEmptyParagraph = RegExp(
+    r'^ {0,3}>[\t ]?<br\s*/?>[\t ]*$',
+    caseSensitive: false,
+  );
+
+  static bool isQuotedEmptyParagraphLine(String line) =>
+      _quotedEmptyParagraph.hasMatch(line);
+
+  /// Strips only the CommonMark quote marker and its optional ASCII space.
+  /// Non-breaking spaces and invisible content remain part of the paragraph.
+  /// Callers must exclude literal/code lines before using this block prefix.
+  static String? quoteLineContent(String line) =>
+      isEmptyQuoteLine(line) ? '' : _quote.firstMatch(line)?.group(1);
+
   static Set<int> _unsupportedLines(
     List<String> lines, {
     required bool imageAlignment,
   }) {
     final affected = <int>{};
+    final listRanges = MarkdownListStructure.parse(lines.join('\n'));
+    final listLines = <int>{
+      for (final range in listRanges.values.where((range) => range.editable))
+        for (var i = range.start; i < range.end; i++) i,
+    };
     _markFencedCode(lines, affected);
     _markTables(lines, affected);
+    final analysis = MarkdownAlignmentContract.analyzeLines(
+      lines,
+      imageAlignment: imageAlignment,
+    );
+    affected.addAll(analysis.invalidMarkerLines);
     affected.addAll(
-      MarkdownAlignmentContract.analyzeLines(
-        lines,
-        imageAlignment: imageAlignment,
-      ).invalidMarkerLines,
+      analysis.protection.blockLines.where(
+        (index) =>
+            lines[index].isNotEmpty &&
+            !(analysis.protection.indentedCodeLines.contains(index) &&
+                listLines.contains(index)),
+      ),
     );
 
     for (var index = 0; index < lines.length; index++) {
       if (affected.contains(index)) continue;
-      final line = lines[index];
+      final line = analysis.protection.maskedLines[index];
       final heading = _atxHeading.firstMatch(line)?.group(1);
       if (heading != null && (heading.length == 1 || heading.length >= 4)) {
         affected.add(index);
       }
-      if (_taskList.hasMatch(line) || _isIndentedCode(line)) {
+      if (_taskList.hasMatch(line) ||
+          (_isIndentedCode(line) && !listLines.contains(index))) {
         affected.add(index);
       }
-      final listIndent = _listItem.firstMatch(line)?.group(1);
-      if (listIndent != null && _indentWidth(listIndent) >= 6) {
+      // 仅保留被契约拒绝的旧源码的字面展示规则；合法列表已由树解析排除，
+      // 不再把有序列表第三层的六个空格误判成第四层。
+      final legacyIndent = _listItem.firstMatch(line)?.group(1);
+      if (!listLines.contains(index) &&
+          legacyIndent != null &&
+          legacyIndent.replaceAll('\t', '    ').length >= 6) {
         affected.add(index);
       }
       if (_hasHardBreak(line) ||
@@ -362,23 +411,25 @@ class MarkdownContent {
     return line.startsWith('    ') || line.startsWith('\t');
   }
 
-  static int _indentWidth(String value) {
-    var width = 0;
-    for (final unit in value.codeUnits) {
-      width += unit == 0x09 ? 4 : 1;
-    }
-    return width;
-  }
-
   static bool _hasHardBreak(String line) {
+    // Whitespace after an empty quote marker separates quoted paragraphs;
+    // it is not a hard break in text.
+    if (isEmptyQuoteLine(line) ||
+        MarkdownEditableBlockSyntax.heading(line)?.content == '' ||
+        MarkdownEditableBlockSyntax.listItem(line)?.content == '') {
+      return false;
+    }
     final spaces = RegExp(r' +$').firstMatch(line)?.group(0)?.length ?? 0;
     final slashes = RegExp(r'\\+$').firstMatch(line)?.group(0)?.length ?? 0;
     return spaces >= 2 || slashes.isOdd;
   }
 
   static bool _hasRawHtml(String line) {
-    if (_emptyParagraph.hasMatch(line)) return false;
-    for (final match in _htmlToken.allMatches(line)) {
+    if (_emptyParagraph.hasMatch(line) || isQuotedEmptyParagraphLine(line)) {
+      return false;
+    }
+    // 已闭合行内代码中的尖括号是可见文字，不是待执行的 HTML。
+    for (final match in _htmlToken.allMatches(_maskInlineCode(line))) {
       if (_isEscaped(line, match.start)) continue;
       final token = match.group(0)!;
       if (RegExp(
@@ -419,8 +470,22 @@ class MarkdownContent {
       while (index + length < line.length && line[index + length] == '`') {
         length += 1;
       }
-      final delimiter = '`' * length;
-      final closing = line.indexOf(delimiter, index + length);
+      var closing = -1;
+      var search = index + length;
+      while (search < line.length) {
+        final next = line.indexOf('`', search);
+        if (next < 0) break;
+        var end = next + 1;
+        while (end < line.length && line[end] == '`') {
+          end++;
+        }
+        // CommonMark 只用长度完全相同的反引号串闭合代码区。
+        if (end - next == length) {
+          closing = next;
+          break;
+        }
+        search = end;
+      }
       if (closing < 0) {
         index += length;
         continue;
@@ -475,7 +540,20 @@ class MarkdownContent {
       if (MarkdownAlignmentContract.isMarkerLine(rawLine)) continue;
       if (_image.hasMatch(line) || _httpAutolink.hasMatch(line)) return true;
 
+      final whitespaceReference = RegExp(
+        r'&#(?:0*(?:9|32|160)|[xX]0*(?:9|20|[aA]0));',
+      );
+      final masked = whitespaceReference.hasMatch(line)
+          ? _maskInlineCode(line)
+          : line;
       final visible = line
+          .replaceAllMapped(whitespaceReference, (match) {
+            // 字符引用在代码或转义后是可见原文，不能误判成用户空格。
+            return masked.substring(match.start, match.end) == match.group(0) &&
+                    !_isEscaped(line, match.start)
+                ? ' '
+                : match.group(0)!;
+          })
           .replaceAll(_emptyImage, '')
           .replaceAll(_emptyLink, '')
           .replaceAllMapped(_link, (match) => match.group(1) ?? '')

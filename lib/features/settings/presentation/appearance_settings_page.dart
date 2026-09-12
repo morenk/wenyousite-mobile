@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/application/appearance_preference.dart';
+import 'package:wenyousite_mobile/core/application/data_saver_preference.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 
 class AppearanceSettingsPage extends ConsumerWidget {
@@ -17,7 +18,7 @@ class AppearanceSettingsPage extends ConsumerWidget {
       appearancePreferenceControllerProvider.notifier,
     );
     final tokens = context.wenyouTokens;
-    return Scaffold(
+    final page = Scaffold(
       appBar: AppBar(title: const Text('外观')),
       body: WenyouPageBody(
         child: Column(
@@ -62,8 +63,51 @@ class AppearanceSettingsPage extends ConsumerWidget {
                 ],
               ),
             ),
+            SizedBox(height: tokens.space16),
+            const _DataSaverSetting(),
           ],
         ),
+      ),
+    );
+    return WenyouSettingsTypography(child: page);
+  }
+}
+
+class _DataSaverSetting extends ConsumerWidget {
+  const _DataSaverSetting();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(dataSaverPreferenceControllerProvider);
+    final controller = ref.read(dataSaverPreferenceControllerProvider.notifier);
+    return WenyouPanel(
+      padding: EdgeInsets.zero,
+      child: Column(
+        children: [
+          SwitchListTile(
+            key: const Key('cover-data-saver'),
+            title: const Text('省流量'),
+            subtitle: const Text('开启后，帖子列表封面保持静态'),
+            value: state.enabled,
+            onChanged: state.isSaving
+                ? null
+                : (value) => unawaited(controller.select(value)),
+          ),
+          if (state.failureMessage != null)
+            ListTile(
+              title: Text(state.failureMessage!),
+              trailing: TextButton(
+                onPressed: state.isSaving
+                    ? null
+                    : () => unawaited(
+                        state.readFailed
+                            ? controller.retryRead()
+                            : controller.select(state.enabled),
+                      ),
+                child: const Text('重试'),
+              ),
+            ),
+        ],
       ),
     );
   }

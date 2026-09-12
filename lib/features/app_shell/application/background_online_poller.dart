@@ -114,15 +114,13 @@ class BackgroundOnlinePoller implements BackgroundOnlinePollingSession {
     }
     final epoch = _epoch;
     final notificationPageFuture = _notificationRepository.fetchPage();
-    final notificationCountFuture = _notificationRepository.fetchUnreadCount();
     final directCountsFuture = includeDirectMessages
         ? _directMessageRepository.fetchUnreadCounts()
         : Future.value(
             const DirectUnreadCounts(unreadMessages: 0, pendingRequests: 0),
           );
-    final (notificationPage, _, directCounts) = await (
+    final (notificationPage, directCounts) = await (
       notificationPageFuture,
-      notificationCountFuture,
       directCountsFuture,
     ).wait;
     if (epoch != _epoch || !_ready) return null;
@@ -195,7 +193,6 @@ class BackgroundOnlinePoller implements BackgroundOnlinePollingSession {
   Future<bool> _prepare(bool includeDirectMessages) async {
     final epoch = _epoch;
     final notificationPageFuture = _notificationRepository.fetchPage();
-    final notificationCountFuture = _notificationRepository.fetchUnreadCount();
     final directCountsFuture = includeDirectMessages
         ? _directMessageRepository.fetchUnreadCounts()
         : Future.value(
@@ -215,9 +212,8 @@ class BackgroundOnlinePoller implements BackgroundOnlinePollingSession {
               .then((page) => page)
         : Future.value(null);
 
-    final (notificationPage, _, directCounts, inbox, requests) = await (
+    final (notificationPage, directCounts, inbox, requests) = await (
       notificationPageFuture,
-      notificationCountFuture,
       directCountsFuture,
       inboxFuture,
       requestsFuture,
@@ -284,6 +280,8 @@ class BackgroundOnlinePoller implements BackgroundOnlinePollingSession {
     final summary = _truncate(formatNotificationCopy(item).plainText, 160);
     final payload = BackgroundNotificationPayload.notification(
       notificationTargetLocation(item.target),
+      notificationId: item.id,
+      recipientId: item.recipientUserId,
     );
     return BackgroundLocalAlert(
       id: _stableId('notification:${item.id}'),

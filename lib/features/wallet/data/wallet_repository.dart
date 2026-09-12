@@ -4,6 +4,7 @@ import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
+import 'package:wenyousite_mobile/core/network/media_display_mapper.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/wallet/application/wallet_repository_ports.dart';
 import 'package:wenyousite_mobile/features/wallet/data/wallet_failure_messages.dart';
@@ -51,11 +52,16 @@ class ApiWalletRepository implements WalletRepository {
       if (!RegExp(r'^\d{4}-\d{2}-\d{2}$').hasMatch(date)) {
         throw const ApiFailure(userMessage: '签到日期无效，请重新加载。');
       }
+      final experienceAwarded = _nonNegativeInteger(
+        dto.experienceAwarded,
+        '签到经验',
+        maximum: 2,
+      );
       return DailyCheckInResult(
         claimedNow: dto.claimedNow,
         date: date,
         rewardAmount: reward,
-        experienceAwarded: _nonNegativeInteger(dto.experienceAwarded, '签到经验'),
+        experienceAwarded: experienceAwarded,
         balance: _amount(dto.balance, '签到后余额'),
         progression: WalletProgression(
           level: _nonNegativeInteger(dto.progression.level, '等级'),
@@ -198,7 +204,12 @@ class ApiWalletRepository implements WalletRepository {
           : WalletCounterparty(
               id: _requiredText(dto.counterparty!.id, '对方用户 ID'),
               username: _requiredText(dto.counterparty!.username, '对方用户名'),
-              avatarUrl: _safeHttpUrl(dto.counterparty!.avatar),
+              avatarUrl: _safeHttpUrl(
+                mapAvatarDisplayUrl(
+                  dto.counterparty!.avatar,
+                  dto.counterparty!.avatarDisplay,
+                ),
+              ),
               level: _nonNegativeInteger(dto.counterparty!.level, '对方等级'),
             ),
       target: _target(dto.target),
@@ -243,8 +254,11 @@ class ApiWalletRepository implements WalletRepository {
     }
   }
 
-  int _nonNegativeInteger(num value, String field) {
-    if (!value.isFinite || value < 0 || value != value.truncateToDouble()) {
+  int _nonNegativeInteger(num value, String field, {int? maximum}) {
+    if (!value.isFinite ||
+        value < 0 ||
+        value != value.truncateToDouble() ||
+        (maximum != null && value > maximum)) {
       throw ApiFailure(userMessage: '$field无效，请重新加载。');
     }
     return value.toInt();

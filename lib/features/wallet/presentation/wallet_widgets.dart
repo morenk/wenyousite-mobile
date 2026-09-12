@@ -103,6 +103,7 @@ Future<void> showWenyouTipFlow({
   showWenyouSnackBar(
     context,
     '已加油 ${WenyouAmount.format(result.grossAmount)} 升',
+    tone: WenyouSnackBarTone.success,
   );
 }
 

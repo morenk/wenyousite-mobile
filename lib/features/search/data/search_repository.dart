@@ -2,15 +2,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
-import 'package:wenyousite_mobile/core/models/thread_feed_models.dart';
 import 'package:wenyousite_mobile/core/network/api_call.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
+import 'package:wenyousite_mobile/core/network/media_display_mapper.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/moments/data/moment_search_mapper.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
 import 'package:wenyousite_mobile/features/search/application/search_repository_ports.dart';
 import 'package:wenyousite_mobile/features/search/domain/search_models.dart';
+import 'package:wenyousite_mobile/features/thread_feed/thread_feed_mapping.dart';
+import 'package:wenyousite_mobile/features/thread_feed/thread_feed_models.dart';
 
 export 'package:wenyousite_mobile/features/search/application/search_repository_ports.dart'
     show SearchRepository, searchRepositoryProvider;
@@ -25,7 +27,7 @@ class ApiSearchRepository implements SearchRepository {
     return runApiCall(() async {
       final data = (await _api.searchSearch(
         q: _query(query),
-        extra: ApiRequestPolicy.public.extra,
+        extra: ApiRequestPolicy.standard.extra,
       )).data?.data;
       if (data == null) {
         throw const ApiFailure(userMessage: '搜索失败，请稍后重试。');
@@ -71,7 +73,7 @@ class ApiSearchRepository implements SearchRepository {
     return runApiCall(() async {
       final response = await _api.searchSearchThreads(
         q: _query(query),
-        extra: ApiRequestPolicy.public.extra,
+        extra: ApiRequestPolicy.standard.extra,
       );
       final data = response.data?.data;
       if (data == null) {
@@ -86,7 +88,7 @@ class ApiSearchRepository implements SearchRepository {
     return runApiCall(() async {
       final response = await _api.searchSearchUsers(
         q: _query(query),
-        extra: ApiRequestPolicy.public.extra,
+        extra: ApiRequestPolicy.standard.extra,
       );
       final data = response.data?.data;
       if (data == null) {
@@ -108,7 +110,7 @@ class ApiSearchRepository implements SearchRepository {
         q: _contentQuery(query),
         cursor: _optionalText(cursor),
         limit: limit,
-        extra: ApiRequestPolicy.public.extra,
+        extra: ApiRequestPolicy.standard.extra,
       );
       final envelope = response.data;
       if (envelope == null) {
@@ -169,7 +171,9 @@ class ApiSearchRepository implements SearchRepository {
       isPublished: dto.published,
       ownerId: dto.owner.id,
       ownerName: dto.owner.username,
-      ownerAvatarUrl: _safeHttpUrl(dto.owner.avatar),
+      ownerAvatarUrl: _safeHttpUrl(
+        mapAvatarDisplayUrl(dto.owner.avatar, dto.owner.avatarDisplay),
+      ),
       ownerLevel: dto.owner.level.toInt(),
       createdAt: dto.createdAt,
       lastActivityAt: latestThreadActivityAt(
@@ -180,7 +184,7 @@ class ApiSearchRepository implements SearchRepository {
       tags: dto.topicTags
           .map(
             (relation) =>
-                HomeThreadTag(id: relation.tag.id, name: relation.tag.name),
+                ThreadFeedTag(id: relation.tag.id, name: relation.tag.name),
           )
           .toList(growable: false),
       memberCount: dto.count.members.toInt(),
@@ -192,20 +196,21 @@ class ApiSearchRepository implements SearchRepository {
           .whereType<String>()
           .take(1)
           .toList(growable: false),
+      coverMedia: mapThreadFeedCoverMedia(dto.coverMedia, dto.coverImages),
     );
   }
 
-  HomeThreadStatus _mapThreadStatus(SearchThreadResponseDtoStatusEnum value) {
+  ThreadFeedStatus _mapThreadStatus(SearchThreadResponseDtoStatusEnum value) {
     if (value == SearchThreadResponseDtoStatusEnum.RECRUITING) {
-      return HomeThreadStatus.recruiting;
+      return ThreadFeedStatus.recruiting;
     }
     if (value == SearchThreadResponseDtoStatusEnum.CLOSED) {
-      return HomeThreadStatus.closed;
+      return ThreadFeedStatus.closed;
     }
     if (value == SearchThreadResponseDtoStatusEnum.FINISHED) {
-      return HomeThreadStatus.finished;
+      return ThreadFeedStatus.finished;
     }
-    return HomeThreadStatus.unknown;
+    return ThreadFeedStatus.unknown;
   }
 
   SearchUserResult _mapUser(SearchUserResponseDto dto) {
@@ -213,17 +218,26 @@ class ApiSearchRepository implements SearchRepository {
     return SearchUserResult(
       id: dto.id,
       username: dto.username,
-      avatarUrl: _safeHttpUrl(dto.avatar),
+      avatarUrl: _safeHttpUrl(
+        mapAvatarDisplayUrl(dto.avatar, dto.avatarDisplay),
+      ),
       bio: bio == null || bio.isEmpty ? null : bio,
     );
   }
 
   SearchPostResult _mapPost(SearchPostResponseDto dto) {
+    if (dto.kind != SearchPostResponseDtoKindEnum.FLOOR) {
+      throw ApiFailure.contractViolation(
+        userMessage: '搜索结果已变化，请重新搜索。',
+        diagnosticCode: 'search.unrequested_body',
+      );
+    }
     return SearchPostResult(
       id: dto.id,
       floorNumber: dto.floorNumber?.toInt(),
       parentPostId: dto.parentPostId,
       content: dto.content,
+      mediaDisplays: mapMarkdownMediaDisplays(dto.mediaDisplays),
       preview: MarkdownContent.toPlainTextPreview(dto.content),
       authorId: dto.author.id,
       authorName: dto.author.username,

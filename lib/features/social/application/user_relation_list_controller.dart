@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
+import 'package:wenyousite_mobile/core/application/visibility_cache_invalidation.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/social/application/social_states.dart';
 import 'package:wenyousite_mobile/features/social/application/user_relation_list_repository_ports.dart';
@@ -12,14 +13,16 @@ class UserRelationListController extends StateNotifier<UserRelationListState> {
   UserRelationListController(
     this._listRepository,
     this._relationRepository,
-    this.target,
-  ) : super(const UserRelationListState.loading()) {
+    this.target, {
+    this.onVisibilityChanged,
+  }) : super(const UserRelationListState.loading()) {
     load();
   }
 
   final UserRelationListRepository _listRepository;
   final UserRelationRepository _relationRepository;
   final UserRelationListTarget target;
+  final void Function()? onVisibilityChanged;
   var _loadEpoch = 0;
 
   Future<void> load() async {
@@ -66,6 +69,7 @@ class UserRelationListController extends StateNotifier<UserRelationListState> {
             .where((item) => item.userId != userId)
             .toList(growable: false),
       );
+      onVisibilityChanged?.call();
       return true;
     } on Object catch (error) {
       if (!mounted) return false;
@@ -94,14 +98,18 @@ final userRelationListControllerProvider = StateNotifierProvider.autoDispose
       UserRelationListTarget
     >(
       (ref, target) {
+        ref.watch(viewerScopeProvider);
         return UserRelationListController(
           ref.watch(userRelationListRepositoryProvider),
           ref.watch(userRelationRepositoryProvider),
           target,
+          onVisibilityChanged: ref.read(visibilityCacheInvalidatorProvider),
         );
       },
       dependencies: [
+        viewerScopeProvider,
         userRelationListRepositoryProvider,
         userRelationRepositoryProvider,
+        visibilityCacheInvalidatorProvider,
       ],
     );

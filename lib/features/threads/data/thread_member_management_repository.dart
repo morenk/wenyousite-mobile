@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/network/media_display_mapper.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_member_management_repository_ports.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_member_management_models.dart';
@@ -120,7 +121,7 @@ class ApiThreadMemberManagementRepository
       userId: dto.userId,
       username: dto.user.username,
       level: dto.user.level.toInt(),
-      avatarUrl: dto.user.avatar,
+      avatarUrl: mapAvatarDisplayUrl(dto.user.avatar, dto.user.avatarDisplay),
       role: switch (dto.role) {
         ThreadMemberResponseDtoRoleEnum.OWNER =>
           ThreadMemberManagementRole.owner,

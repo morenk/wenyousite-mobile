@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
+import 'package:wenyousite_mobile/core/media/media_display.dart';
 import 'package:wenyousite_mobile/core/models/editor_models.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
@@ -30,6 +31,7 @@ class ThreadComposeState {
     this.visibility = ThreadComposeVisibility.public,
     this.tags = const [],
     this.body = '',
+    this.mediaDisplays = const {},
     this.clientRequestId = '',
     this.remoteDraft,
     this.documentRevision = 0,
@@ -53,6 +55,7 @@ class ThreadComposeState {
   final ThreadComposeVisibility visibility;
   final List<String> tags;
   final String body;
+  final Map<String, MediaDisplay> mediaDisplays;
   final String clientRequestId;
   final ThreadRemoteDraft? remoteDraft;
   final int documentRevision;
@@ -83,6 +86,7 @@ class ThreadComposeState {
     ThreadComposeVisibility? visibility,
     List<String>? tags,
     String? body,
+    Map<String, MediaDisplay>? mediaDisplays,
     String? clientRequestId,
     Object? remoteDraft = _unset,
     int? documentRevision,
@@ -108,6 +112,7 @@ class ThreadComposeState {
       visibility: visibility ?? this.visibility,
       tags: tags ?? this.tags,
       body: body ?? this.body,
+      mediaDisplays: mediaDisplays ?? this.mediaDisplays,
       clientRequestId: clientRequestId ?? this.clientRequestId,
       remoteDraft: identical(remoteDraft, _unset)
           ? this.remoteDraft
@@ -169,6 +174,7 @@ class ThreadComposeController extends StateNotifier<ThreadComposeState> {
   Timer? _snapshotTimer;
   Future<void> _snapshotQueue = Future.value();
   PendingCreateOperation? _pendingCreate;
+  ThreadRemoteDraft? _confirmedRemoteDraft;
   int _loadEpoch = 0;
   int _snapshotRevision = 0;
 
@@ -252,13 +258,18 @@ class ThreadComposeController extends StateNotifier<ThreadComposeState> {
   void updateTags(Iterable<String> value) =>
       _update(state.copyWith(tags: normalizeTagNames(value)));
 
-  void updateBody(String value) => _update(state.copyWith(body: value));
+  void updateBody(String value, {Map<String, MediaDisplay>? mediaDisplays}) =>
+      _update(state.copyWith(body: value, mediaDisplays: mediaDisplays));
 
-  void restoreContentDraft(String content) {
+  void restoreContentDraft(
+    String content, {
+    Map<String, MediaDisplay> mediaDisplays = const {},
+  }) {
     if (state.phase != ThreadComposePhase.ready || state.isSubmitting) return;
     final normalized = MarkdownContent.normalize(content);
     state = state.copyWith(
       body: normalized,
+      mediaDisplays: mediaDisplays,
       documentRevision: state.documentRevision + 1,
       actionFailure: null,
       successMessage: '已恢复正文草稿；标题、分类和标签保持不变。',
@@ -277,6 +288,11 @@ class ThreadComposeController extends StateNotifier<ThreadComposeState> {
   }
 
   Future<void> flushLocalSnapshot() {
+    if (state.isSubmitting) return _snapshotQueue;
+    return _writeLocalSnapshot();
+  }
+
+  Future<void> _writeLocalSnapshot() {
     _snapshotTimer?.cancel();
     _snapshotTimer = null;
     if (state.phase != ThreadComposePhase.ready) return Future.value();
@@ -361,6 +377,7 @@ class ThreadComposeController extends StateNotifier<ThreadComposeState> {
         visibility: remote.visibility,
         tags: remote.tags,
         body: remote.body,
+        mediaDisplays: remote.mediaDisplays,
         clientRequestId: _createRequestId(),
         remoteDraft: remote,
         documentRevision: state.documentRevision + 1,
@@ -400,8 +417,6 @@ class ThreadComposeController extends StateNotifier<ThreadComposeState> {
       );
       return null;
     }
-    await flushLocalSnapshot();
-    if (!mounted || state.phase != ThreadComposePhase.ready) return null;
     state = state.copyWith(
       action: publish
           ? ThreadComposeAction.publish
@@ -410,6 +425,8 @@ class ThreadComposeController extends StateNotifier<ThreadComposeState> {
       successMessage: null,
     );
     try {
+      await _writeLocalSnapshot();
+      if (!mounted || state.phase != ThreadComposePhase.ready) return null;
       var remote = await _ensureRemoteDraft();
       if (!mounted || state.phase != ThreadComposePhase.ready) return null;
       remote = await _repository.saveAggregate(
@@ -442,6 +459,7 @@ class ThreadComposeController extends StateNotifier<ThreadComposeState> {
         visibility: remote.visibility,
         tags: remote.tags,
         body: remote.body,
+        mediaDisplays: remote.mediaDisplays,
         documentRevision: state.documentRevision + 1,
         successMessage: '主题草稿已保存到云端。',
       );
@@ -492,19 +510,28 @@ class ThreadComposeController extends StateNotifier<ThreadComposeState> {
       state: PendingOperationState.sending,
       updatedAt: _clock(),
     );
-    await _snapshotStore.savePendingCreate(sending);
+    await _snapshotQueue;
+    if (!mounted) throw StateError('Editor session ended.');
+    await _snapshotStore.beginThreadCreate(_buildSnapshot(state), sending);
+    if (!mounted) throw StateError('Editor session ended.');
     _pendingCreate = sending;
     try {
-      final remote = await _repository.createDraft(payload);
-      await _snapshotStore.deletePendingCreate(payload.clientRequestId);
+      final remote =
+          _confirmedRemoteDraft ?? await _repository.createDraft(payload);
+      if (!mounted) return remote;
+      _confirmedRemoteDraft = remote;
+      final confirmed = state.copyWith(remoteDraft: remote);
+      await _snapshotStore.completeThreadCreate(_buildSnapshot(confirmed));
+      if (!mounted) return remote;
       _pendingCreate = null;
-      state = state.copyWith(remoteDraft: remote);
+      _confirmedRemoteDraft = null;
+      state = confirmed;
       _snapshotRevision += 1;
-      await flushLocalSnapshot();
       return remote;
     } on Object catch (error) {
+      if (!mounted) rethrow;
       final failure = _asFailure(error, '主题草稿创建失败，请重试。');
-      if (_isAmbiguousCreateFailure(failure)) {
+      if (_confirmedRemoteDraft != null || _isAmbiguousCreateFailure(failure)) {
         final awaiting = PendingCreateOperation(
           clientRequestId: sending.clientRequestId,
           operationType: sending.operationType,
@@ -578,6 +605,7 @@ class ThreadComposeController extends StateNotifier<ThreadComposeState> {
       visibility: metadata.visibility,
       tags: metadata.tags,
       body: snapshot.body,
+      mediaDisplays: metadata.mediaDisplays,
       clientRequestId: snapshot.clientRequestId,
       remoteDraft: remote == null
           ? null
@@ -592,6 +620,7 @@ class ThreadComposeController extends StateNotifier<ThreadComposeState> {
               visibility: metadata.visibility,
               tags: metadata.tags,
               body: snapshot.body,
+              mediaDisplays: metadata.mediaDisplays,
             ),
       documentRevision: 1,
       restoredFromLocal: true,
@@ -610,6 +639,7 @@ class ThreadComposeController extends StateNotifier<ThreadComposeState> {
       metadataJson: ThreadSnapshotMetadata(
         ownerId: ownerId,
         title: source.title,
+        mediaDisplays: source.mediaDisplays,
         categorySlug: source.categorySlug,
         visibility: source.visibility,
         tags: source.tags,

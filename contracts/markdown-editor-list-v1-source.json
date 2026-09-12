@@ -1,0 +1,7 @@
+{
+  "schemaVersion": 1,
+  "file": "markdown-editor-list-v1-fixtures.json",
+  "backendRevision": "062412601b3a8dbf4f64494115a2445d312dd53d",
+  "sha256": "e0df96d0de25677ea43715469c76512d138726ba8406dbb1ff24d8d22f4672dd",
+  "reason": "Mobile PR15已消费的列表契约来源尚未进入Backend dev；本轮保留精确原始语料，不把它误标为主OpenAPI来源，也不合入其他目标。"
+}

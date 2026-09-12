@@ -55,7 +55,13 @@ class SearchApi {
         ...?headers,
       },
       extra: <String, dynamic>{
-        'secure': <Map<String, String>>[],
+        'secure': <Map<String, String>>[
+          {
+            'type': 'http',
+            'scheme': 'bearer',
+            'name': 'bearer',
+          },
+        ],
         ...?extra,
       },
       validateStatus: validateStatus,
@@ -197,13 +203,14 @@ class SearchApi {
     );
   }
 
-  /// 按正文搜索公开楼层与楼中楼
+  /// 搜索公开楼层与楼中楼；includeBody&#x3D;true 同时搜索主贴和子贴正文
   ///
   ///
   /// Parameters:
   /// * [q] - 搜索关键词，首尾空白会被移除
   /// * [cursor] - 上一页返回的不透明游标
   /// * [limit] - 每页条数，默认及最大均为 20
+  /// * [includeBody] - 同时搜索主贴与子贴正文；省略时兼容旧客户端，仅返回楼层
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -217,6 +224,7 @@ class SearchApi {
     required String q,
     String? cursor,
     num? limit = 20,
+    bool? includeBody = false,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -231,7 +239,13 @@ class SearchApi {
         ...?headers,
       },
       extra: <String, dynamic>{
-        'secure': <Map<String, String>>[],
+        'secure': <Map<String, String>>[
+          {
+            'type': 'http',
+            'scheme': 'bearer',
+            'name': 'bearer',
+          },
+        ],
         ...?extra,
       },
       validateStatus: validateStatus,
@@ -241,6 +255,7 @@ class SearchApi {
       r'q': encodeQueryParameter(_serializers, q, const FullType(String)),
       if (cursor != null) r'cursor': encodeQueryParameter(_serializers, cursor, const FullType(String)),
       if (limit != null) r'limit': encodeQueryParameter(_serializers, limit, const FullType(num)),
+      if (includeBody != null) r'includeBody': encodeQueryParameter(_serializers, includeBody, const FullType(bool)),
     };
 
     final _response = await _dio.request<Object>(
@@ -317,7 +332,13 @@ class SearchApi {
         ...?headers,
       },
       extra: <String, dynamic>{
-        'secure': <Map<String, String>>[],
+        'secure': <Map<String, String>>[
+          {
+            'type': 'http',
+            'scheme': 'bearer',
+            'name': 'bearer',
+          },
+        ],
         ...?extra,
       },
       validateStatus: validateStatus,
@@ -399,7 +420,13 @@ class SearchApi {
         ...?headers,
       },
       extra: <String, dynamic>{
-        'secure': <Map<String, String>>[],
+        'secure': <Map<String, String>>[
+          {
+            'type': 'http',
+            'scheme': 'bearer',
+            'name': 'bearer',
+          },
+        ],
         ...?extra,
       },
       validateStatus: validateStatus,
@@ -449,7 +476,7 @@ class SearchApi {
     );
   }
 
-  /// 按正文搜索单个主题帖内的楼层与楼中楼
+  /// 搜索帖内楼层与楼中楼；includeBody&#x3D;true 同时搜索主贴和子贴正文
   ///
   ///
   /// Parameters:
@@ -457,6 +484,7 @@ class SearchApi {
   /// * [q] - 搜索关键词，首尾空白会被移除
   /// * [cursor] - 上一页返回的不透明游标
   /// * [limit] - 每页条数，默认及最大均为 20
+  /// * [includeBody] - 同时搜索主贴与子贴正文；省略时兼容旧客户端，仅返回楼层
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -471,6 +499,7 @@ class SearchApi {
     required String q,
     String? cursor,
     num? limit = 20,
+    bool? includeBody = false,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -501,6 +530,7 @@ class SearchApi {
       r'q': encodeQueryParameter(_serializers, q, const FullType(String)),
       if (cursor != null) r'cursor': encodeQueryParameter(_serializers, cursor, const FullType(String)),
       if (limit != null) r'limit': encodeQueryParameter(_serializers, limit, const FullType(num)),
+      if (includeBody != null) r'includeBody': encodeQueryParameter(_serializers, includeBody, const FullType(bool)),
     };
 
     final _response = await _dio.request<Object>(

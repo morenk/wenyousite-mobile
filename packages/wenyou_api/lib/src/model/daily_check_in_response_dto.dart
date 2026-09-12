@@ -16,7 +16,7 @@ part 'daily_check_in_response_dto.g.dart';
 /// * [claimedNow] - true 仅表示本次请求实际完成领取
 /// * [date]
 /// * [rewardAmount]
-/// * [experienceAwarded]
+/// * [experienceAwarded] - 当天尚未领取日活经验时为 2，否则为 0
 /// * [balance]
 /// * [progression]
 @BuiltValue()
@@ -32,6 +32,7 @@ abstract class DailyCheckInResponseDto implements Built<DailyCheckInResponseDto,
   DailyCheckInResponseDtoRewardAmountEnum get rewardAmount;
   // enum rewardAmountEnum {  1,  2,  3,  };
 
+  /// 当天尚未领取日活经验时为 2，否则为 0
   @BuiltValueField(wireName: r'experienceAwarded')
   num get experienceAwarded;
 

@@ -13,6 +13,7 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_instant_keyboard_insets.da
 import 'package:wenyousite_mobile/features/app_shell/presentation/background_notification_navigation.dart';
 import 'package:wenyousite_mobile/features/app_shell/presentation/clipboard_navigation_prompt.dart';
 import 'package:wenyousite_mobile/features/app_shell/presentation/startup_gate.dart';
+import 'package:wenyousite_mobile/features/thread_feed/presentation/cover_playback_scope.dart';
 
 const wenyouLocalizationsDelegates = <LocalizationsDelegate<dynamic>>[
   GlobalMaterialLocalizations.delegate,
@@ -65,9 +66,13 @@ class _WenyouMaterialApp extends ConsumerWidget {
             : Brightness.dark;
         final app = StartupGate(
           child: AppSessionBootstrap(
+            feedbackVisibility: ref.watch(feedbackVisibilityProvider),
             child: ClipboardNavigationPrompt(
               child: BackgroundNotificationNavigation(
-                child: child ?? const SizedBox.shrink(),
+                child: CoverPlaybackScope(
+                  navigationChanges: ref.watch(feedbackVisibilityProvider),
+                  child: child ?? const SizedBox.shrink(),
+                ),
               ),
             ),
           ),

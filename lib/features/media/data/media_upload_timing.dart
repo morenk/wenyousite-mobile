@@ -2,6 +2,7 @@ import 'dart:developer' as developer;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wenyousite_mobile/core/diagnostics/failure_diagnostics.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
 
 enum MediaUploadTimingStage {
@@ -39,6 +40,15 @@ class MediaUploadTiming {
     int? inputBytes,
     int? Function(T value)? outputBytes,
   }) async {
+    DiagnosticAttempt.current?.mark(switch (stage) {
+      MediaUploadTimingStage.requestUploadUrl => DiagnosticStage.uploadUrl,
+      MediaUploadTimingStage.objectStoragePut => DiagnosticStage.objectStorage,
+      MediaUploadTimingStage.confirmUpload => DiagnosticStage.uploadConfirm,
+      MediaUploadTimingStage.remoteProcessing =>
+        DiagnosticStage.mediaProcessing,
+      MediaUploadTimingStage.pipelineTotal => DiagnosticStage.started,
+      _ => DiagnosticStage.preparing,
+    });
     if (!enabled) return operation();
     final stopwatch = Stopwatch()..start();
     var outcome = MediaUploadTimingOutcome.failed;

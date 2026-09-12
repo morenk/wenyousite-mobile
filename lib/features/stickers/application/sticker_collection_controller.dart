@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import 'package:wenyousite_mobile/app/app_capabilities.dart';
@@ -40,8 +41,10 @@ class StickerCollectionController
   Timer? _pollTimer;
   var _polling = false;
   var _epoch = 0;
+  Future<bool>? _reorderFuture;
 
   Future<void> load() async {
+    if (state.isBusy) return;
     final epoch = ++_epoch;
     final before = state;
     if (before.collection == null) {
@@ -104,6 +107,7 @@ class StickerCollectionController
 
   Future<StickerImport?> importSource(StickerImportSource source) async {
     if (state.isBusy) return null;
+    ++_epoch;
     final requestId = _requestIds.putIfAbsent(
       source.requestKey,
       _requestIdFactory,
@@ -166,9 +170,14 @@ class StickerCollectionController
     return importSource(source);
   }
 
-  Future<bool> reorder(List<UserSticker> items) async {
+  Future<bool> reorder(List<UserSticker> items) {
     final collection = state.collection;
-    if (collection == null || state.isBusy) return false;
+    if (collection == null ||
+        (state.action == StickerAction.reordering &&
+            state.transientFailure != null) ||
+        (state.isBusy && state.action != StickerAction.reordering)) {
+      return Future.value(false);
+    }
     final ids = items.map((item) => item.id).toList(growable: false);
     if (ids.length != collection.items.length ||
         ids.toSet().length != ids.length ||
@@ -176,43 +185,82 @@ class StickerCollectionController
       state = state.copyWith(
         transientFailure: const ApiFailure(userMessage: '表情排序与当前收藏夹不一致，请重新加载。'),
       );
-      return false;
+      return Future.value(false);
     }
+    if (listEquals(ids, _ids(collection))) {
+      return _reorderFuture ?? Future.value(true);
+    }
+    ++_epoch; // 已在途的读取不能覆盖刚落位的乐观顺序。
     state = state.copyWith(
+      collection: collection.withOrder(ids),
       action: StickerAction.reordering,
       actionTarget: null,
       transientFailure: null,
       successMessage: null,
     );
+    return _reorderFuture ??= _saveReorders(collection);
+  }
+
+  List<String> _ids(StickerCollection collection) =>
+      collection.items.map((item) => item.id).toList(growable: false);
+
+  Future<bool> _saveReorders(StickerCollection confirmed) async {
     try {
-      final updated = await _repository.reorder(
-        version: collection.version,
-        favoriteIds: ids,
-      );
+      while (mounted) {
+        final desiredIds = _ids(state.collection!);
+        if (listEquals(desiredIds, _ids(confirmed))) break;
+        final updated = await _repository.reorder(
+          version: confirmed.version,
+          favoriteIds: desiredIds,
+        );
+        if (!mounted) return false;
+        // 连续拖动只合并最新意图，后一请求必须使用前一请求的确认版本。
+        final latestIds = _ids(state.collection!);
+        confirmed = updated;
+        state = state.copyWith(collection: updated.withOrder(latestIds));
+      }
       if (!mounted) return false;
       state = StickerCollectionState(
         phase: StickerCollectionPhase.ready,
-        collection: updated,
-        successMessage: '表情顺序已更新。',
+        collection: confirmed,
       );
       _syncPolling();
       return true;
     } on Object catch (error) {
       if (!mounted) return false;
-      final failure = _asFailure(error, '表情排序失败，请重新加载后重试。');
+      final failure = _asFailure(error, '表情排序失败，已恢复原顺序，请重试。');
+      state = state.copyWith(collection: confirmed, transientFailure: failure);
+      if (failure.businessCode == 40911) {
+        // 冲突校准期间仍持有写锁，不能用旧版本发送后续拖动。
+        try {
+          final current = await _repository.fetchCollection();
+          if (!mounted) return false;
+          confirmed = current;
+        } on Object {
+          // 校准失败保留最近确认的顺序和原始失败，允许显式刷新。
+        }
+      }
+      if (!mounted) return false;
       state = state.copyWith(
+        collection: confirmed,
         action: null,
         actionTarget: null,
         transientFailure: failure,
       );
-      if (failure.businessCode == 40911) unawaited(load());
+      _syncPolling();
       return false;
+    } finally {
+      _reorderFuture = null;
     }
   }
 
   Future<bool> remove(String favoriteId) async {
     if (state.collection == null || state.isBusy) return false;
+    final before = state.collection!;
+    if (!before.items.any((item) => item.id == favoriteId)) return false;
+    ++_epoch;
     state = state.copyWith(
+      collection: before.withoutFavorite(favoriteId),
       action: StickerAction.removing,
       actionTarget: favoriteId,
       transientFailure: null,
@@ -230,10 +278,31 @@ class StickerCollectionController
       return true;
     } on Object catch (error) {
       if (!mounted) return false;
+      final failure = _asFailure(error, '表情没有移除成功，请重试。');
+      var confirmed = before;
+      if (failure.hasUnknownWriteOutcome) {
+        try {
+          confirmed = await _repository.fetchCollection();
+          if (!mounted) return false;
+          if (!confirmed.items.any((item) => item.id == favoriteId)) {
+            state = StickerCollectionState(
+              phase: StickerCollectionPhase.ready,
+              collection: confirmed,
+              successMessage: '已从收藏中移除。',
+            );
+            _syncPolling();
+            return true;
+          }
+        } on Object {
+          // 保留最近确认的收藏，失败反馈不能被二次读取错误覆盖。
+        }
+      }
+      if (!mounted) return false;
       state = state.copyWith(
+        collection: confirmed,
         action: null,
         actionTarget: null,
-        transientFailure: _asFailure(error, '表情没有移除成功，请重试。'),
+        transientFailure: failure,
       );
       return false;
     }
@@ -244,9 +313,10 @@ class StickerCollectionController
   }
 
   Future<void> _refreshAfterConfirmedMutation() async {
+    final epoch = _epoch;
     try {
       final collection = await _repository.fetchCollection();
-      if (!mounted) return;
+      if (!mounted || epoch != _epoch) return;
       state = state.copyWith(
         phase: StickerCollectionPhase.ready,
         collection: collection,
@@ -254,7 +324,7 @@ class StickerCollectionController
       );
       _syncPolling();
     } on Object catch (error) {
-      if (!mounted) return;
+      if (!mounted || epoch != _epoch) return;
       state = state.copyWith(
         transientFailure: _asFailure(error, '操作已完成，但刷新收藏夹失败，请手动刷新。'),
       );
@@ -282,11 +352,12 @@ class StickerCollectionController
       return;
     }
     _polling = true;
+    final epoch = _epoch;
     try {
       final results = await Future.wait(
         pending.map((item) => _repository.fetchImport(item.id)),
       );
-      if (!mounted) return;
+      if (!mounted || epoch != _epoch || state.isBusy) return;
       final finished = results.where(
         (item) => item.status != StickerImportStatus.processing,
       );
@@ -295,7 +366,7 @@ class StickerCollectionController
         (item) => item.status == StickerImportStatus.failed,
       );
       final collection = await _repository.fetchCollection();
-      if (!mounted) return;
+      if (!mounted || epoch != _epoch || state.isBusy) return;
       state = state.copyWith(
         collection: collection,
         transientFailure: failed.isEmpty
@@ -335,6 +406,7 @@ class StickerCollectionController
 final stickerCollectionControllerProvider =
     StateNotifierProvider<StickerCollectionController, StickerCollectionState>(
       (ref) {
+        ref.watch(sessionScopeProvider);
         final authenticated = ref.watch(
           sessionControllerProvider.select(
             (session) => session.isAuthenticated,

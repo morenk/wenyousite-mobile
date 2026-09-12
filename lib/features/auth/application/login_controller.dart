@@ -35,18 +35,23 @@ class LoginController extends StateNotifier<LoginState> {
   }) async {
     if (state.isSubmitting) return false;
     state = const LoginState.submitting();
+    final scope = _sessionController.scope;
     try {
       final tokens = await _repository.login(
         account: account.trim(),
         password: password,
       );
+      if (!mounted) return false;
+      _sessionController.ensureScopeCurrent(scope);
       await _sessionController.authenticate(tokens);
-      state = const LoginState.idle();
+      if (mounted) state = const LoginState.idle();
       return true;
     } on ApiFailure catch (failure) {
+      if (!mounted) return false;
       state = LoginState.failed(failure);
       return false;
     } on Object catch (error) {
+      if (!mounted) return false;
       state = LoginState.failed(
         ApiFailure(userMessage: '登录失败，请稍后重试。', cause: error),
       );

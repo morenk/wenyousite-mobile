@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 
 class EditorTaskTray extends StatelessWidget {
@@ -65,7 +66,7 @@ class EditorTaskTray extends StatelessWidget {
                         title,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.titleMedium,
+                        style: Theme.of(context).textTheme.wenyouRowTitle,
                       ),
                       ?headerSupport,
                     ],

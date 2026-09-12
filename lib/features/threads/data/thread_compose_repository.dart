@@ -2,10 +2,12 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
-import 'package:wenyousite_mobile/core/models/thread_category_presentation.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
+import 'package:wenyousite_mobile/core/network/media_display_mapper.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/features/thread_feed/thread_feed_catalog_ports.dart';
+import 'package:wenyousite_mobile/features/thread_feed/thread_feed_models.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_compose_repository_ports.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_compose_models.dart';
 
@@ -15,39 +17,34 @@ export 'package:wenyousite_mobile/features/threads/application/thread_compose_re
 class ApiThreadComposeRepository implements ThreadComposeRepository {
   ApiThreadComposeRepository(
     this._threadsApi,
-    this._categoriesApi,
+    this._categories,
     this._usersApi,
   );
 
   final ThreadsApi _threadsApi;
-  final ThreadCategoriesApi _categoriesApi;
+  final ThreadCategoryCatalogRepository _categories;
   final UsersApi _usersApi;
 
   @override
   Future<ThreadComposeBootstrap> fetchBootstrap() async {
     try {
       final meRequest = _usersApi.usersGetMe();
-      final categoryRequest = _categoriesApi.threadCategoriesList();
+      final categoryRequest = _categories.fetchThreadCategories(refresh: true);
       final responses = await Future.wait<Object>([meRequest, categoryRequest]);
       final meEnvelope = (responses[0] as Response<UsersGetMe200Response>).data;
-      final categoryEnvelope =
-          (responses[1] as Response<ThreadCategoriesList200Response>).data;
-      if (meEnvelope == null || categoryEnvelope == null) {
+      final catalog = responses[1] as List<ThreadCategory>;
+      if (meEnvelope == null) {
         throw const ApiFailure(userMessage: '创建主题所需信息加载失败，请稍后重试。');
       }
       final me = meEnvelope.data;
       final categories =
-          categoryEnvelope.data
-              .where((category) => category.isActive)
+          catalog
               .map(
                 (category) => ThreadComposeCategory(
                   slug: category.slug,
-                  name: ThreadCategoryPresentation.catalog(
-                    slug: category.slug,
-                    label: category.name,
-                  ).label,
+                  name: category.name,
                   description: category.description,
-                  sortOrder: category.sortOrder.toInt(),
+                  sortOrder: category.sortOrder,
                 ),
               )
               .toList()
@@ -266,6 +263,7 @@ class ApiThreadComposeRepository implements ThreadComposeRepository {
           .map((relation) => relation.tag.name)
           .toList(growable: false),
       body: bodyPost?.content ?? '',
+      mediaDisplays: mapMarkdownMediaDisplays(bodyPost?.mediaDisplays),
     );
   }
 
@@ -293,7 +291,7 @@ final apiThreadComposeRepositoryProvider = Provider<ThreadComposeRepository>((
   final api = ref.watch(wenyouApiProvider);
   return ApiThreadComposeRepository(
     api.getThreadsApi(),
-    api.getThreadCategoriesApi(),
+    ref.watch(threadCategoryCatalogRepositoryProvider),
     api.getUsersApi(),
   );
 });

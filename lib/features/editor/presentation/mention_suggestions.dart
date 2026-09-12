@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
@@ -375,7 +376,7 @@ class _MentionPanel extends StatelessWidget {
                           title,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.labelLarge,
+                          style: Theme.of(context).textTheme.wenyouLabel,
                         ),
                       ),
                       IconButton(
@@ -434,7 +435,9 @@ class _MentionFailure extends StatelessWidget {
       children: [
         Text(
           failure.userMessage,
-          style: TextStyle(color: Theme.of(context).colorScheme.error),
+          style: Theme.of(context).textTheme.wenyouCompactBody.copyWith(
+            color: Theme.of(context).colorScheme.error,
+          ),
         ),
         if (detail != null) Text(detail),
         Align(

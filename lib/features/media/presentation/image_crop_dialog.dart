@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/media/application/image_crop_ports.dart';
@@ -287,7 +288,7 @@ class _ProfileCoverCropDialogState extends State<_ProfileCoverCropDialog> {
                   _surface == _CoverSurface.web
                       ? '网页端会生成 1920 × 640 图片'
                       : '手机端会生成 1600 × 800 图片',
-                  style: Theme.of(context).textTheme.bodySmall,
+                  style: Theme.of(context).textTheme.wenyouCaption,
                 ),
               ],
             ),
@@ -343,7 +344,9 @@ class ImageCropDialogFrame extends StatelessWidget {
                             Expanded(
                               child: Text(
                                 title,
-                                style: Theme.of(context).textTheme.titleLarge,
+                                style: Theme.of(
+                                  context,
+                                ).textTheme.wenyouOverlayTitle,
                               ),
                             ),
                             IconButton(
@@ -356,7 +359,7 @@ class ImageCropDialogFrame extends StatelessWidget {
                         ),
                         Text(
                           description,
-                          style: Theme.of(context).textTheme.bodyMedium,
+                          style: Theme.of(context).textTheme.wenyouCompactBody,
                         ),
                         SizedBox(height: tokens.space16),
                         child,
@@ -365,9 +368,10 @@ class ImageCropDialogFrame extends StatelessWidget {
                           Text(
                             error!,
                             key: const Key('image-crop-error'),
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.error,
-                            ),
+                            style: Theme.of(context).textTheme.wenyouCompactBody
+                                .copyWith(
+                                  color: Theme.of(context).colorScheme.error,
+                                ),
                           ),
                         ],
                       ],

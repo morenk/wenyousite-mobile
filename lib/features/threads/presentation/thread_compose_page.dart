@@ -58,9 +58,12 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
     _editorSession = RichEditorSession(
       initialMarkdown: '',
       clipboardScope: ref.read(sessionScopeProvider),
+      blockAlignment: ref.read(appCapabilitiesProvider).markdownAlignment,
       imageAlignment: ref.read(appCapabilitiesProvider).markdownImageAlignment,
       onMarkdownChanged: (markdown) {
-        ref.read(threadComposeControllerProvider.notifier).updateBody(markdown);
+        ref
+            .read(threadComposeControllerProvider.notifier)
+            .updateBody(markdown, mediaDisplays: _editorSession.mediaDisplays);
         ref
             .read(
               contentDraftsControllerProvider(_contentDraftSessionKey).notifier,
@@ -239,9 +242,8 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
                     Text(
                       '主题标题',
                       key: const Key('compose-title-label'),
-                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                        color: tokens.mutedText,
-                      ),
+                      style: Theme.of(context).textTheme.wenyouCaptionEmphasis
+                          .copyWith(color: tokens.mutedText),
                     ),
                     TextField(
                       key: const Key('compose-title'),
@@ -309,7 +311,9 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
                           // ignore: experimental_member_use
                           customLeadingBlockBuilder:
                               wenyouEditorLeadingBlockBuilder(context),
-                          embedBuilders: wenyouEditorEmbedBuilders(),
+                          embedBuilders: wenyouEditorEmbedBuilders(
+                            mediaDisplays: _editorSession.mediaDisplays,
+                          ),
                           customShortcuts: _editorSession.clipboardShortcuts,
                           customActions: _editorSession.clipboardActions,
                           contextMenuBuilder: _editorSession.buildContextMenu,
@@ -461,7 +465,10 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
     try {
       _titleController.text = state.title;
       _tagsController.text = state.tags.join(' ');
-      _editorSession.applyExternalMarkdown(state.body);
+      _editorSession.applyExternalMarkdown(
+        state.body,
+        mediaDisplays: state.mediaDisplays,
+      );
       ref
           .read(
             contentDraftsControllerProvider(_contentDraftSessionKey).notifier,
@@ -513,7 +520,7 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
   }
 
   void _insertBlockImage(UploadedEditorImage image) {
-    _editorSession.insertBlockImage(url: image.url);
+    _editorSession.insertBlockImage(url: image.url, display: image.display);
   }
 
   Future<void> _insertSticker(TextSelection selection) async {
@@ -523,6 +530,7 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
       selection: selection,
       assetId: sticker.asset.id,
       url: sticker.asset.url,
+      display: sticker.asset.display,
     );
   }
 
@@ -541,7 +549,7 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
     if (saved == null) return;
     ref.invalidate(remoteThreadDraftsControllerProvider);
     if (!mounted) return;
-    showWenyouSnackBar(context, '已保存到云端草稿');
+    showWenyouSnackBar(context, '已保存到云端草稿', tone: WenyouSnackBarTone.success);
   }
 
   Future<void> _handleRemoteDraftAction(ThreadRemoteDraftAction action) async {
@@ -595,14 +603,22 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
     await _flushSnapshot();
     if (!mounted) return;
     final currentBody = ref.read(threadComposeControllerProvider).body;
+    final scope = ref.read(sessionScopeProvider);
+    var restoredDisplays = _editorSession.mediaDisplays;
     await showContentDraftsSheet(
       context: context,
       draftSessionKey: _contentDraftSessionKey,
       currentContent: currentBody,
+      onRestoreDisplays: (values) => restoredDisplays = values,
       onRestore: (content) {
+        if (!mounted || ref.read(sessionScopeProvider) != scope) return;
+        _editorSession.replaceMediaDisplays(restoredDisplays);
         ref
             .read(threadComposeControllerProvider.notifier)
-            .restoreContentDraft(content);
+            .restoreContentDraft(
+              content,
+              mediaDisplays: _editorSession.mediaDisplays,
+            );
         ref
             .read(
               contentDraftsControllerProvider(_contentDraftSessionKey).notifier,
@@ -626,6 +642,10 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
 
   Future<void> _flushSnapshot() async {
     if (!await _editorSession.flush()) return;
+    await _saveCurrentSnapshot();
+  }
+
+  Future<void> _saveCurrentSnapshot() async {
     if (!mounted) return;
     final state = ref.read(threadComposeControllerProvider);
     if (state.phase == ThreadComposePhase.ready) {
@@ -641,7 +661,13 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
     ref
         .read(mediaUploadTaskControllerProvider(_uploadTaskId).notifier)
         .cancel();
-    await _flushSnapshot();
+    // 编码失败保留当前编辑；旧快照的成功状态不能证明本次内容已保存。
+    if (!_editorSession.canCloseProtectedSource &&
+        !await _editorSession.flush()) {
+      _preparingPop = false;
+      return;
+    }
+    await _saveCurrentSnapshot();
     if (!mounted) return;
     final latest = ref.read(threadComposeControllerProvider);
     if (latest.phase == ThreadComposePhase.ready &&

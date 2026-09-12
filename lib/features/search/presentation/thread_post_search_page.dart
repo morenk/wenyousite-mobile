@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
@@ -244,20 +245,20 @@ class _ThreadSearchResultCard extends StatelessWidget {
               item.preview.isEmpty ? '该内容没有可显示的文字预览' : item.preview,
               maxLines: 5,
               overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.bodyMedium,
+              style: Theme.of(context).textTheme.wenyouCompactBody,
             ),
             SizedBox(height: tokens.space12),
             Text(
               '${item.authorName} · '
               '${item.floorNumber == null ? '楼中楼' : '#${item.floorNumber}'}',
-              style: Theme.of(context).textTheme.bodySmall,
+              style: Theme.of(context).textTheme.wenyouCaption,
             ),
             SizedBox(height: tokens.space4),
             Text(
               item.subthreadTitle,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.bodySmall,
+              style: Theme.of(context).textTheme.wenyouCaption,
             ),
           ],
         ),

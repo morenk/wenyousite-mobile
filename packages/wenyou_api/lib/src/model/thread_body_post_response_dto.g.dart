@@ -8,6 +8,8 @@ part of 'thread_body_post_response_dto.dart';
 
 class _$ThreadBodyPostResponseDto extends ThreadBodyPostResponseDto {
   @override
+  final BuiltList<MarkdownMediaDisplayResponseDto>? mediaDisplays;
+  @override
   final String id;
   @override
   final String content;
@@ -21,6 +23,7 @@ class _$ThreadBodyPostResponseDto extends ThreadBodyPostResponseDto {
   ]) => (ThreadBodyPostResponseDtoBuilder()..update(updates))._build();
 
   _$ThreadBodyPostResponseDto._({
+    this.mediaDisplays,
     required this.id,
     required this.content,
     required this.version,
@@ -39,6 +42,7 @@ class _$ThreadBodyPostResponseDto extends ThreadBodyPostResponseDto {
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
     return other is ThreadBodyPostResponseDto &&
+        mediaDisplays == other.mediaDisplays &&
         id == other.id &&
         content == other.content &&
         version == other.version &&
@@ -48,6 +52,7 @@ class _$ThreadBodyPostResponseDto extends ThreadBodyPostResponseDto {
   @override
   int get hashCode {
     var _$hash = 0;
+    _$hash = $jc(_$hash, mediaDisplays.hashCode);
     _$hash = $jc(_$hash, id.hashCode);
     _$hash = $jc(_$hash, content.hashCode);
     _$hash = $jc(_$hash, version.hashCode);
@@ -59,6 +64,7 @@ class _$ThreadBodyPostResponseDto extends ThreadBodyPostResponseDto {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'ThreadBodyPostResponseDto')
+          ..add('mediaDisplays', mediaDisplays)
           ..add('id', id)
           ..add('content', content)
           ..add('version', version)
@@ -71,6 +77,13 @@ class ThreadBodyPostResponseDtoBuilder
     implements
         Builder<ThreadBodyPostResponseDto, ThreadBodyPostResponseDtoBuilder> {
   _$ThreadBodyPostResponseDto? _$v;
+
+  ListBuilder<MarkdownMediaDisplayResponseDto>? _mediaDisplays;
+  ListBuilder<MarkdownMediaDisplayResponseDto> get mediaDisplays =>
+      _$this._mediaDisplays ??= ListBuilder<MarkdownMediaDisplayResponseDto>();
+  set mediaDisplays(
+    ListBuilder<MarkdownMediaDisplayResponseDto>? mediaDisplays,
+  ) => _$this._mediaDisplays = mediaDisplays;
 
   String? _id;
   String? get id => _$this._id;
@@ -97,6 +110,7 @@ class ThreadBodyPostResponseDtoBuilder
   ThreadBodyPostResponseDtoBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
+      _mediaDisplays = $v.mediaDisplays?.toBuilder();
       _id = $v.id;
       _content = $v.content;
       _version = $v.version;
@@ -125,6 +139,7 @@ class ThreadBodyPostResponseDtoBuilder
       _$result =
           _$v ??
           _$ThreadBodyPostResponseDto._(
+            mediaDisplays: _mediaDisplays?.build(),
             id: BuiltValueNullFieldError.checkNotNull(
               id,
               r'ThreadBodyPostResponseDto',
@@ -145,6 +160,9 @@ class ThreadBodyPostResponseDtoBuilder
     } catch (_) {
       late String _$failedField;
       try {
+        _$failedField = 'mediaDisplays';
+        _mediaDisplays?.build();
+
         _$failedField = 'diceRolls';
         diceRolls.build();
       } catch (e) {

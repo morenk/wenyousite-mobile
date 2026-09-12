@@ -4378,7 +4378,7 @@
             "name": "status",
             "required": false,
             "in": "query",
-            "description": "主题帖状态筛选：招募中、已停招、已结束",
+            "description": "主题帖状态筛选：招募中、已停招、已完结",
             "schema": {
               "type": "string",
               "enum": [
@@ -4996,6 +4996,45 @@
               }
             }
           },
+          "413": {
+            "description": "超过 10000 条内容、16 MiB 正文或 64 MiB 图片上限",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "X-API-Contract-Version": {
+                "$ref": "#/components/headers/XApiContractVersion"
+              }
+            }
+          },
+          "429": {
+            "description": "已有导出进行中或请求过于频繁",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "X-API-Contract-Version": {
+                "$ref": "#/components/headers/XApiContractVersion"
+              },
+              "Retry-After": {
+                "$ref": "#/components/headers/RetryAfter"
+              }
+            }
+          },
           "default": {
             "description": "未在此操作中单独列出的错误响应",
             "content": {
@@ -5165,7 +5204,7 @@
             "bearer": []
           }
         ],
-        "summary": "原子保存主题帖元数据、默认子贴标题/正文和标签，可同时发布草稿",
+        "summary": "原子保存主题帖元数据、默认子贴标题/发言权限/正文和标签，可同时发布草稿",
         "tags": [
           "Threads"
         ],
@@ -15967,6 +16006,24 @@
               }
             }
           },
+          "503": {
+            "description": "搜索超时，请缩小关键词范围后重试",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "X-API-Contract-Version": {
+                "$ref": "#/components/headers/XApiContractVersion"
+              }
+            }
+          },
           "default": {
             "description": "未在此操作中单独列出的错误响应",
             "content": {
@@ -15990,9 +16047,14 @@
         "tags": [
           "Search"
         ],
-        "x-auth-mode": "public",
+        "x-auth-mode": "optional",
         "x-pagination": "cursor",
-        "security": []
+        "security": [
+          {
+            "bearer": []
+          },
+          {}
+        ]
       }
     },
     "/api/v1/search/users": {
@@ -16052,8 +16114,13 @@
         "tags": [
           "Search"
         ],
-        "x-auth-mode": "public",
-        "security": []
+        "x-auth-mode": "optional",
+        "security": [
+          {
+            "bearer": []
+          },
+          {}
+        ]
       }
     },
     "/api/v1/search/posts": {
@@ -16089,6 +16156,16 @@
               "maximum": 20,
               "default": 20,
               "type": "number"
+            }
+          },
+          {
+            "name": "includeBody",
+            "required": false,
+            "in": "query",
+            "description": "同时搜索主贴与子贴正文；省略时兼容旧客户端，仅返回楼层",
+            "schema": {
+              "default": false,
+              "type": "boolean"
             }
           }
         ],
@@ -16129,6 +16206,24 @@
               }
             }
           },
+          "503": {
+            "description": "搜索超时，请缩小关键词范围后重试",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "X-API-Contract-Version": {
+                "$ref": "#/components/headers/XApiContractVersion"
+              }
+            }
+          },
           "default": {
             "description": "未在此操作中单独列出的错误响应",
             "content": {
@@ -16148,13 +16243,18 @@
             }
           }
         },
-        "summary": "按正文搜索公开楼层与楼中楼",
+        "summary": "搜索公开楼层与楼中楼；includeBody=true 同时搜索主贴和子贴正文",
         "tags": [
           "Search"
         ],
-        "x-auth-mode": "public",
+        "x-auth-mode": "optional",
         "x-pagination": "cursor",
-        "security": []
+        "security": [
+          {
+            "bearer": []
+          },
+          {}
+        ]
       }
     },
     "/api/v1/search": {
@@ -16191,6 +16291,24 @@
               }
             }
           },
+          "503": {
+            "description": "搜索超时，请缩小关键词范围后重试",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "X-API-Contract-Version": {
+                "$ref": "#/components/headers/XApiContractVersion"
+              }
+            }
+          },
           "default": {
             "description": "未在此操作中单独列出的错误响应",
             "content": {
@@ -16214,8 +16332,13 @@
         "tags": [
           "Search"
         ],
-        "x-auth-mode": "public",
-        "security": []
+        "x-auth-mode": "optional",
+        "security": [
+          {
+            "bearer": []
+          },
+          {}
+        ]
       }
     },
     "/api/v1/threads/{threadId}/search/posts": {
@@ -16259,6 +16382,16 @@
               "maximum": 20,
               "default": 20,
               "type": "number"
+            }
+          },
+          {
+            "name": "includeBody",
+            "required": false,
+            "in": "query",
+            "description": "同时搜索主贴与子贴正文；省略时兼容旧客户端，仅返回楼层",
+            "schema": {
+              "default": false,
+              "type": "boolean"
             }
           }
         ],
@@ -16317,6 +16450,24 @@
               }
             }
           },
+          "503": {
+            "description": "搜索超时，请缩小关键词范围后重试",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "X-API-Contract-Version": {
+                "$ref": "#/components/headers/XApiContractVersion"
+              }
+            }
+          },
           "default": {
             "description": "未在此操作中单独列出的错误响应",
             "content": {
@@ -16336,7 +16487,7 @@
             }
           }
         },
-        "summary": "按正文搜索单个主题帖内的楼层与楼中楼",
+        "summary": "搜索帖内楼层与楼中楼；includeBody=true 同时搜索主贴和子贴正文",
         "tags": [
           "Search"
         ],
@@ -17931,7 +18082,7 @@
             "bearer": []
           }
         ],
-        "summary": "按北京时间自动签到；每日幂等获得 1–3 升温油和 2 经验",
+        "summary": "按北京时间自动签到；每日幂等获得 1–3 升温油，日活经验由签到或首次有效行为领取",
         "tags": [
           "Wallet"
         ],
@@ -18454,7 +18605,7 @@
   "info": {
     "title": "温油站 API",
     "description": "温油站共同创作社区后端接口文档 | [前端接入指南](../docs/frontend-guide.md)",
-    "version": "5.16.0-dev.20260903.5",
+    "version": "5.22.0-dev.20260912.2",
     "contact": {}
   },
   "tags": [
@@ -18680,9 +18831,75 @@
           "password"
         ]
       },
+      "MediaDisplayResponseDto": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "可信完整展示资源；不得据来源 URL 猜测或改写扩展名"
+          },
+          "contentType": {
+            "type": "string",
+            "enum": [
+              "image/webp"
+            ]
+          },
+          "width": {
+            "type": "number",
+            "minimum": 1
+          },
+          "height": {
+            "type": "number",
+            "minimum": 1
+          },
+          "bytes": {
+            "type": "number",
+            "minimum": 1
+          },
+          "animated": {
+            "type": "boolean"
+          },
+          "frameCount": {
+            "type": "number",
+            "minimum": 1,
+            "description": "静态图为 1；动画必须保留全部帧"
+          },
+          "durationMs": {
+            "type": "number",
+            "minimum": 0,
+            "description": "完整单轮时长；静态图为 0"
+          },
+          "loopCount": {
+            "type": "number",
+            "minimum": 0,
+            "description": "0 无限循环，1 播放一次；静态图固定 1"
+          }
+        },
+        "required": [
+          "url",
+          "contentType",
+          "width",
+          "height",
+          "bytes",
+          "animated",
+          "frameCount",
+          "durationMs",
+          "loopCount"
+        ]
+      },
       "UserProfile": {
         "type": "object",
         "properties": {
+          "avatarDisplay": {
+            "nullable": true,
+            "description": "头像完整 WebP 展示资源；avatar 保留来源身份",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MediaDisplayResponseDto"
+              }
+            ]
+          },
           "id": {
             "type": "string",
             "example": "clxabc123def456",
@@ -18995,6 +19212,16 @@
       "PostAuthorResponseDto": {
         "type": "object",
         "properties": {
+          "avatarDisplay": {
+            "nullable": true,
+            "description": "头像完整 WebP 展示资源；avatar 保留来源身份",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MediaDisplayResponseDto"
+              }
+            ]
+          },
           "id": {
             "type": "string"
           },
@@ -19021,6 +19248,16 @@
       "MentionCandidateDto": {
         "type": "object",
         "properties": {
+          "avatarDisplay": {
+            "nullable": true,
+            "description": "头像完整 WebP 展示资源；avatar 保留来源身份",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MediaDisplayResponseDto"
+              }
+            ]
+          },
           "id": {
             "type": "string"
           },
@@ -19068,6 +19305,16 @@
       "ProfileCoverVariantResponseDto": {
         "type": "object",
         "properties": {
+          "display": {
+            "nullable": true,
+            "description": "完整 WebP 展示资源；缺少或为空时为兼容历史媒体",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MediaDisplayResponseDto"
+              }
+            ]
+          },
           "url": {
             "type": "string",
             "description": "背景图原图地址"
@@ -19096,6 +19343,16 @@
       "ProfileCoverResponseDto": {
         "type": "object",
         "properties": {
+          "display": {
+            "nullable": true,
+            "description": "完整 WebP 展示资源；缺少或为空时为兼容历史媒体",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MediaDisplayResponseDto"
+              }
+            ]
+          },
           "url": {
             "type": "string",
             "description": "背景图原图地址"
@@ -19152,6 +19409,16 @@
       "CurrentUserResponseDto": {
         "type": "object",
         "properties": {
+          "avatarDisplay": {
+            "nullable": true,
+            "description": "头像完整 WebP 展示资源；avatar 保留来源身份",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MediaDisplayResponseDto"
+              }
+            ]
+          },
           "id": {
             "type": "string"
           },
@@ -19388,6 +19655,81 @@
           "posts"
         ]
       },
+      "ThreadCoverPreviewVariantResponseDto": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "已发布的不可变列表动画 WebP 地址；不用于替换正文原图 URL"
+          },
+          "width": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 800,
+            "description": "单帧实际像素宽度"
+          },
+          "height": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 800,
+            "description": "单帧实际像素高度"
+          },
+          "bytes": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "完整动画预览文件字节数"
+          }
+        },
+        "required": [
+          "url",
+          "width",
+          "height",
+          "bytes"
+        ]
+      },
+      "ThreadCoverMediaResponseDto": {
+        "type": "object",
+        "properties": {
+          "display": {
+            "nullable": true,
+            "description": "完整 WebP 展示资源；缺少或为空时为兼容历史媒体",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MediaDisplayResponseDto"
+              }
+            ]
+          },
+          "url": {
+            "type": "string",
+            "description": "第一张普通正文图片的原始播放地址，与 coverImages[0] 一致；未知媒体不得自动请求"
+          },
+          "animated": {
+            "type": "boolean",
+            "nullable": true,
+            "description": "可信的动画属性；无法确认、未完成或历史 GIF 返回 null"
+          },
+          "posterUrl": {
+            "type": "string",
+            "nullable": true,
+            "description": "可用于列表静止状态的第一帧静态地址；未知时返回 null，客户端显示占位，禁止回退加载原图"
+          },
+          "previewVariants": {
+            "nullable": true,
+            "maxItems": 2,
+            "description": "可选列表动画变体，按单帧像素面积升序；缺失或 null 时，只有已确认 animated=true 且有独立静态 poster 的媒体可受控回退原 url",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ThreadCoverPreviewVariantResponseDto"
+            }
+          }
+        },
+        "required": [
+          "url",
+          "animated",
+          "posterUrl"
+        ]
+      },
       "ThreadListItemResponseDto": {
         "type": "object",
         "properties": {
@@ -19484,6 +19826,16 @@
             "items": {
               "type": "string"
             }
+          },
+          "coverMedia": {
+            "nullable": true,
+            "description": "第一张普通正文图片的封面读模型；无图时返回 null。旧服务可能省略，消费者须兼容缺字段",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ThreadCoverMediaResponseDto"
+              }
+            ]
           }
         },
         "required": [
@@ -19504,7 +19856,8 @@
           "topicTags",
           "_count",
           "preview",
-          "coverImages"
+          "coverImages",
+          "coverMedia"
         ]
       },
       "UpdateUserDto": {
@@ -19544,6 +19897,16 @@
       "PrivateUserResponseDto": {
         "type": "object",
         "properties": {
+          "avatarDisplay": {
+            "nullable": true,
+            "description": "头像完整 WebP 展示资源；avatar 保留来源身份",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MediaDisplayResponseDto"
+              }
+            ]
+          },
           "id": {
             "type": "string"
           },
@@ -19777,6 +20140,16 @@
             "items": {
               "type": "string"
             }
+          },
+          "coverMedia": {
+            "nullable": true,
+            "description": "第一张普通正文图片的封面读模型；无图时返回 null。旧服务可能省略，消费者须兼容缺字段",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ThreadCoverMediaResponseDto"
+              }
+            ]
           }
         },
         "required": [
@@ -19797,12 +20170,23 @@
           "topicTags",
           "_count",
           "preview",
-          "coverImages"
+          "coverImages",
+          "coverMedia"
         ]
       },
       "MomentMediaResponseDto": {
         "type": "object",
         "properties": {
+          "display": {
+            "nullable": true,
+            "description": "完整 WebP 展示资源；缺少或为空时为兼容历史媒体",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MediaDisplayResponseDto"
+              }
+            ]
+          },
           "id": {
             "type": "string"
           },
@@ -19987,6 +20371,29 @@
           "replyCount"
         ]
       },
+      "MarkdownMediaDisplayResponseDto": {
+        "type": "object",
+        "properties": {
+          "sourceUrl": {
+            "type": "string",
+            "description": "正文精确来源 URL；编辑、引用和收藏继续持久化此身份"
+          },
+          "display": {
+            "nullable": true,
+            "description": "历史未补处理或无法确认时为空",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MediaDisplayResponseDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "sourceUrl",
+          "display"
+        ]
+      },
       "RecentReplyThreadResponseDto": {
         "type": "object",
         "properties": {
@@ -20032,6 +20439,13 @@
       "RecentReplyResponseDto": {
         "type": "object",
         "properties": {
+          "mediaDisplays": {
+            "description": "仅此次已授权正文中的精确来源映射；编辑保存继续使用 sourceUrl",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MarkdownMediaDisplayResponseDto"
+            }
+          },
           "id": {
             "type": "string"
           },
@@ -20089,6 +20503,16 @@
       "PublicUserResponseDto": {
         "type": "object",
         "properties": {
+          "avatarDisplay": {
+            "nullable": true,
+            "description": "头像完整 WebP 展示资源；avatar 保留来源身份",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MediaDisplayResponseDto"
+              }
+            ]
+          },
           "id": {
             "type": "string"
           },
@@ -20514,6 +20938,16 @@
       "NotificationFromUserResponseDto": {
         "type": "object",
         "properties": {
+          "avatarDisplay": {
+            "nullable": true,
+            "description": "头像完整 WebP 展示资源；avatar 保留来源身份",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MediaDisplayResponseDto"
+              }
+            ]
+          },
           "id": {
             "type": "string"
           },
@@ -20872,6 +21306,16 @@
               "type": "string"
             }
           },
+          "coverMedia": {
+            "nullable": true,
+            "description": "第一张普通正文图片的封面读模型；无图时返回 null。旧服务可能省略，消费者须兼容缺字段",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ThreadCoverMediaResponseDto"
+              }
+            ]
+          },
           "bookmarkId": {
             "type": "string",
             "description": "收藏记录 ID"
@@ -20900,6 +21344,7 @@
           "_count",
           "preview",
           "coverImages",
+          "coverMedia",
           "bookmarkId",
           "bookmarkFolderId"
         ]
@@ -20918,13 +21363,14 @@
           },
           "bookmarkCount": {
             "type": "number",
-            "minimum": 0
+            "minimum": 0,
+            "description": "当前用户在该收藏夹中可见的主题帖收藏总数，与列表使用相同可见性规则，不受分页影响"
           },
           "momentBookmarkCount": {
             "type": "number",
             "minimum": 0,
             "deprecated": true,
-            "description": "旧客户端兼容字段：同名动态收藏夹中的收藏数量"
+            "description": "旧客户端兼容字段：当前用户在同名动态收藏夹中可见的动态收藏总数，与动态列表使用相同可见性规则，不受分页影响"
           },
           "createdAt": {
             "type": "string",
@@ -21235,6 +21681,16 @@
             "items": {
               "type": "string"
             }
+          },
+          "coverMedia": {
+            "nullable": true,
+            "description": "第一张普通正文图片的封面读模型；无图时返回 null。旧服务可能省略，消费者须兼容缺字段",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ThreadCoverMediaResponseDto"
+              }
+            ]
           }
         },
         "required": [
@@ -21255,7 +21711,8 @@
           "topicTags",
           "_count",
           "preview",
-          "coverImages"
+          "coverImages",
+          "coverMedia"
         ]
       },
       "CreateThreadDto": {
@@ -21411,6 +21868,13 @@
       "ThreadBodyPostResponseDto": {
         "type": "object",
         "properties": {
+          "mediaDisplays": {
+            "description": "仅此次已授权正文中的精确来源映射；编辑保存继续使用 sourceUrl",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MarkdownMediaDisplayResponseDto"
+            }
+          },
           "id": {
             "type": "string"
           },
@@ -21895,6 +22359,15 @@
             "minimum": 1,
             "description": "默认子贴乐观锁版本"
           },
+          "defaultSubthreadPostingPolicy": {
+            "type": "string",
+            "enum": [
+              "PARTICIPANTS",
+              "COLLABORATORS",
+              "PLAYERS"
+            ],
+            "description": "主贴发言权限；省略保留原值。仅影响默认子贴楼层与回复，不修改其他子贴"
+          },
           "bodyVersion": {
             "type": "number",
             "minimum": 1,
@@ -21967,6 +22440,16 @@
       "InviteOwnerResponseDto": {
         "type": "object",
         "properties": {
+          "avatarDisplay": {
+            "nullable": true,
+            "description": "头像完整 WebP 展示资源；avatar 保留来源身份",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MediaDisplayResponseDto"
+              }
+            ]
+          },
           "id": {
             "type": "string",
             "description": "楼主用户 ID"
@@ -22259,6 +22742,16 @@
       "StickerAssetResponseDto": {
         "type": "object",
         "properties": {
+          "display": {
+            "nullable": true,
+            "description": "完整 WebP 展示资源；缺少或为空时为兼容历史媒体",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MediaDisplayResponseDto"
+              }
+            ]
+          },
           "id": {
             "type": "string"
           },
@@ -22713,7 +23206,8 @@
           },
           "momentBookmarkCount": {
             "type": "number",
-            "minimum": 0
+            "minimum": 0,
+            "description": "当前用户在该收藏夹中可见的动态收藏总数，与列表使用相同可见性规则，不受分页影响"
           },
           "createdAt": {
             "type": "string",
@@ -23021,6 +23515,16 @@
       "MomentStickerResponseDto": {
         "type": "object",
         "properties": {
+          "display": {
+            "nullable": true,
+            "description": "完整 WebP 展示资源；缺少或为空时为兼容历史媒体",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MediaDisplayResponseDto"
+              }
+            ]
+          },
           "id": {
             "type": "string"
           },
@@ -23586,6 +24090,13 @@
       "ReplyResponseDto": {
         "type": "object",
         "properties": {
+          "mediaDisplays": {
+            "description": "仅此次已授权正文中的精确来源映射；编辑保存继续使用 sourceUrl",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MarkdownMediaDisplayResponseDto"
+            }
+          },
           "id": {
             "type": "string"
           },
@@ -23694,6 +24205,13 @@
       "FloorResponseDto": {
         "type": "object",
         "properties": {
+          "mediaDisplays": {
+            "description": "仅此次已授权正文中的精确来源映射；编辑保存继续使用 sourceUrl",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MarkdownMediaDisplayResponseDto"
+            }
+          },
           "id": {
             "type": "string"
           },
@@ -23803,6 +24321,16 @@
       "DiscussionAuthorResponseDto": {
         "type": "object",
         "properties": {
+          "avatarDisplay": {
+            "nullable": true,
+            "description": "头像完整 WebP 展示资源；avatar 保留来源身份",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MediaDisplayResponseDto"
+              }
+            ]
+          },
           "id": {
             "type": "string"
           },
@@ -23863,6 +24391,13 @@
       "PostResponseDto": {
         "type": "object",
         "properties": {
+          "mediaDisplays": {
+            "description": "仅此次已授权正文中的精确来源映射；编辑保存继续使用 sourceUrl",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MarkdownMediaDisplayResponseDto"
+            }
+          },
           "id": {
             "type": "string"
           },
@@ -24036,6 +24571,13 @@
       "PostDetailResponseDto": {
         "type": "object",
         "properties": {
+          "mediaDisplays": {
+            "description": "仅此次已授权正文中的精确来源映射；编辑保存继续使用 sourceUrl",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MarkdownMediaDisplayResponseDto"
+            }
+          },
           "id": {
             "type": "string"
           },
@@ -24177,6 +24719,13 @@
       "DraftResponseDto": {
         "type": "object",
         "properties": {
+          "mediaDisplays": {
+            "description": "仅此次已授权正文中的精确来源映射；编辑保存继续使用 sourceUrl",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MarkdownMediaDisplayResponseDto"
+            }
+          },
           "id": {
             "type": "string"
           },
@@ -26797,6 +27346,16 @@
               "type": "string"
             }
           },
+          "coverMedia": {
+            "nullable": true,
+            "description": "第一张普通正文图片的封面读模型；无图时返回 null。旧服务可能省略，消费者须兼容缺字段",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ThreadCoverMediaResponseDto"
+              }
+            ]
+          },
           "relevance": {
             "type": "number",
             "description": "仅说明本次查询的标题相关度；客户端不得作为稳定业务字段依赖"
@@ -26820,12 +27379,23 @@
           "topicTags",
           "_count",
           "preview",
-          "coverImages"
+          "coverImages",
+          "coverMedia"
         ]
       },
       "SearchUserResponseDto": {
         "type": "object",
         "properties": {
+          "avatarDisplay": {
+            "nullable": true,
+            "description": "头像完整 WebP 展示资源；avatar 保留来源身份",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MediaDisplayResponseDto"
+              }
+            ]
+          },
           "id": {
             "type": "string",
             "description": "用户 ID"
@@ -26906,6 +27476,21 @@
       "SearchPostResponseDto": {
         "type": "object",
         "properties": {
+          "mediaDisplays": {
+            "description": "已授权正文的精确来源映射",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MarkdownMediaDisplayResponseDto"
+            }
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "BODY",
+              "FLOOR"
+            ],
+            "description": "BODY 为正文，FLOOR 为主楼层或楼中楼"
+          },
           "id": {
             "type": "string",
             "description": "帖子 ID"
@@ -26913,7 +27498,7 @@
           "floorNumber": {
             "type": "number",
             "nullable": true,
-            "description": "楼层号；楼中楼为 null"
+            "description": "楼层号；正文与楼中楼为 null"
           },
           "parentPostId": {
             "type": "string",
@@ -26955,6 +27540,7 @@
           }
         },
         "required": [
+          "kind",
           "id",
           "floorNumber",
           "parentPostId",
@@ -27086,6 +27672,16 @@
       "MediaResponseDto": {
         "type": "object",
         "properties": {
+          "display": {
+            "nullable": true,
+            "description": "完整 WebP 展示资源；缺少或为空时为兼容历史媒体",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MediaDisplayResponseDto"
+              }
+            ]
+          },
           "id": {
             "type": "string"
           },
@@ -27201,6 +27797,16 @@
       "DirectMessageUserResponseDto": {
         "type": "object",
         "properties": {
+          "avatarDisplay": {
+            "nullable": true,
+            "description": "头像完整 WebP 展示资源；avatar 保留来源身份",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MediaDisplayResponseDto"
+              }
+            ]
+          },
           "id": {
             "type": "string"
           },
@@ -27431,6 +28037,16 @@
       "DirectMessageMediaResponseDto": {
         "type": "object",
         "properties": {
+          "display": {
+            "nullable": true,
+            "description": "完整 WebP 展示资源；缺少或为空时为兼容历史媒体",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MediaDisplayResponseDto"
+              }
+            ]
+          },
           "id": {
             "type": "string"
           },
@@ -27475,6 +28091,16 @@
       "DirectMessageStickerResponseDto": {
         "type": "object",
         "properties": {
+          "display": {
+            "nullable": true,
+            "description": "完整 WebP 展示资源；缺少或为空时为兼容历史媒体",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MediaDisplayResponseDto"
+              }
+            ]
+          },
           "id": {
             "type": "string"
           },
@@ -27841,7 +28467,10 @@
           },
           "experienceAwarded": {
             "type": "number",
-            "example": 2
+            "minimum": 0,
+            "maximum": 2,
+            "example": 2,
+            "description": "当天尚未领取日活经验时为 2，否则为 0"
           },
           "balance": {
             "type": "string",

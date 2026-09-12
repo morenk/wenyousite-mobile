@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wenyousite_mobile/core/application/visibility_cache_invalidation.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/editor/application/mention_candidate_repository_ports.dart';
 import 'package:wenyousite_mobile/features/editor/domain/mention_models.dart';
@@ -71,10 +72,13 @@ class MentionCandidatesController
 }
 
 final mentionCandidatesControllerProvider = StateNotifierProvider.autoDispose
-    .family<MentionCandidatesController, MentionCandidatesState, String>(
-      (ref, threadId) => MentionCandidatesController(
+    .family<MentionCandidatesController, MentionCandidatesState, String>((
+      ref,
+      threadId,
+    ) {
+      ref.watch(viewerScopeProvider);
+      return MentionCandidatesController(
         ref.watch(mentionCandidateRepositoryProvider),
         threadId,
-      ),
-      dependencies: [mentionCandidateRepositoryProvider],
-    );
+      );
+    }, dependencies: [viewerScopeProvider, mentionCandidateRepositoryProvider]);

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/application/document_saver.dart';
 import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
@@ -69,7 +70,7 @@ class _ThreadExportSheetState extends ConsumerState<ThreadExportSheet> {
                 Expanded(
                   child: Text(
                     '导出主题档案',
-                    style: Theme.of(context).textTheme.titleLarge,
+                    style: Theme.of(context).textTheme.wenyouOverlayTitle,
                   ),
                 ),
                 IconButton(
@@ -81,7 +82,7 @@ class _ThreadExportSheetState extends ConsumerState<ThreadExportSheet> {
               ],
             ),
             SizedBox(height: tokens.space8),
-            Text('正文格式', style: Theme.of(context).textTheme.titleSmall),
+            Text('正文格式', style: Theme.of(context).textTheme.wenyouCompactTitle),
             SizedBox(height: tokens.space8),
             Wrap(
               spacing: tokens.space8,
@@ -93,7 +94,7 @@ class _ThreadExportSheetState extends ConsumerState<ThreadExportSheet> {
               ],
             ),
             SizedBox(height: tokens.space16),
-            Text('包含内容', style: Theme.of(context).textTheme.titleSmall),
+            Text('包含内容', style: Theme.of(context).textTheme.wenyouCompactTitle),
             SizedBox(height: tokens.space8),
             Wrap(
               spacing: tokens.space8,
@@ -146,7 +147,7 @@ class _ThreadExportSheetState extends ConsumerState<ThreadExportSheet> {
                 ].join('\n'),
                 style: Theme.of(
                   context,
-                ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
+                ).textTheme.wenyouCaption.copyWith(color: tokens.mutedText),
               ),
             ],
             if (!supported) ...[

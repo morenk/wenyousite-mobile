@@ -10,11 +10,11 @@
 
 ## 2. 用户角色与使用场景
 
-游客可直接进入首页、搜索和外观设置；已登录用户额外使用通知、创作和个人功能。所有用户在启动时先恢复本机外观偏好，再确认当前构建仍受支持且服务端契约可兼容；推荐更新可以暂时跳过，强制更新不可绕过。
+游客可直接进入首页、搜索和外观设置；已登录用户额外使用通知、创作和个人功能。所有用户在启动时先恢复本机外观偏好，再确认当前构建仍受支持且服务端契约可兼容；推荐更新进入应用后以轻量横幅提示并可暂时跳过，强制更新不可绕过，安装包尚未准备好时停留在可自动重查的等待页。
 
 ## 3. 页面、入口和导航关系
 
-启动门禁包裹 `/home`、`/moments`、`/notifications`、`/me` 四个保状态分支，底栏固定为“首页 / 动态 / 发布 / 消息 / 我的”；中央粉色“发布”是动作而非分支，`/search` 由首页和动态顶栏进入，公开 `/appearance` 由游客“我的”和登录后的账号设置进入。系统启动层只承担 Flutter 第一帧之前不可避免的过渡，Android 与 iOS 均保持纯白底色，不显示标识或文案；从 Flutter 首帧开始使用已恢复或跟随系统解析后的主题，品牌加载页、系统状态栏和导航栏同步采用当前语义色。Android 冷启动的零尺寸预热帧只保留空白，拿到有效 viewport 后才构建品牌内容。四个分支与壳容器间瞬时切换并保留状态；Android 真实业务页入栈和返回由应用主题统一提供 180ms 水平位移，不缩放或淡化当前页。门禁先处理强制更新，再检查契约与 capability，最后处理推荐更新；Android 从 `/meta.mobileCompatibility` 的 HTTPS 地址在页内下载 RainS3 APK，验证后唤起系统安装器，iOS 外跳 TestFlight。任一主导航分支点击发布都会在按钮上方打开“发布主题帖 / 发布动态”两项锚点气泡，选择后进入受保护的 `/compose/thread` 或 `/compose/moment`；外部点击只关闭气泡，不触发底栏后方页面。入口统一朗读“发布内容”；游客登录或注册成功后恢复创建目标。登录用户的消息图标展示“通知未读 + 私聊未读/请求”的合计角标，进入分支与回前台时分别校准两类服务端事实；该角标使用 Foundation `destructive / onDestructive`，高 16dp、10sp 粗体等宽数字，超过 99 显示 `99+`，零值隐藏。消息中心的“通知 / 私聊”使用共享等宽内容页签，支持点按或在内容区左右滑动切换并通过规范 URL 保存栏目；横滑只作用于页面内部栏目，不切换底部主分支。
+启动门禁包裹 `/home`、`/moments`、`/notifications`、`/me` 四个保状态分支，底栏固定为“首页 / 动态 / 发布 / 消息 / 我的”；中央粉色“发布”是动作而非分支，`/search` 由首页和动态顶栏进入，公开 `/appearance` 由游客“我的”和登录后的账号设置进入。系统启动层只承担 Flutter 第一帧之前不可避免的过渡，Android 与 iOS 均保持纯白底色，不显示标识或文案；从 Flutter 首帧开始使用已恢复或跟随系统解析后的主题，品牌加载页、系统状态栏和导航栏同步采用当前语义色。Android 冷启动的零尺寸预热帧只保留空白，拿到有效 viewport 后才构建品牌内容。四个分支与壳容器间瞬时切换并保留状态；Android 真实业务页入栈和返回由应用主题统一提供 180ms 水平位移，不缩放或淡化当前页。门禁结合构建策略、契约兼容性与安装包实际可用性决定继续进入、推荐更新、强制更新或等待新版；Android 先用 `/meta.mobileCompatibility` 的 HTTPS 地址校验 RainS3 对象元数据，确认包名、构建、版本名、大小和 SHA-256 后才显示更新动作，下载验证后唤起系统安装器，iOS 外跳 TestFlight。任一主导航分支点击发布都会在按钮上方打开“发布主题帖 / 发布动态”两项锚点气泡，选择后进入受保护的 `/compose/thread` 或 `/compose/moment`；外部点击只关闭气泡，不触发底栏后方页面。入口统一朗读“发布内容”；游客登录或注册成功后恢复创建目标。登录用户的消息图标展示“通知未读 + 私聊未读/请求”的合计角标，进入分支与回前台时分别校准两类服务端事实；该角标使用 Foundation `destructive / onDestructive`，高 16dp、10sp 粗体等宽数字，超过 99 显示 `99+`，零值隐藏。消息中心的“通知 / 私聊”使用共享等宽内容页签，支持点按或在内容区左右滑动切换并通过规范 URL 保存栏目；横滑只作用于页面内部栏目，不切换底部主分支。
 
 首页、动态与消息的相邻栏目内容统一按 Foundation standard 180ms 沿切换方向轻量入场，减少动态效果时瞬时完成；页签保持稳定，动态与消息按需构建并保留已访问栏目，避免切换时整页闪烁或重复读取。
 
@@ -22,22 +22,28 @@
 
 ## 4. 用户操作流程
 
-冷启动在创建应用根之前读取本地外观偏好；成功则直接使用保存模式，失败则首帧跟随系统并保留可重试提示。随后调用元信息接口并用 `versionCode` / `CFBundleVersion` 比较当前平台策略。低于最低构建时进入阻断页；低于推荐构建时可更新或“稍后再说”，同一目标构建只提示一次。版本允许后检查主契约 5 与 Markdown v3/v4/v5、恢复会话并进入目标页。进入可用页面和每次回到前台后的首个渲染帧完成时读取系统剪贴板；内容整体为合法的温油站主题、子贴、楼层、讨论、回复或私密邀请传送门且与本次进程上次所见内容不同时，先询问是否前往，拒绝后保留当前页面且不对同一内容重复提示。混合文字、站外链接和非法坐标不触发提示。登录会话就绪后由 wallet 自动触发北京时间签到；应用保持前台时跨零点触发新日期检查，后台跨日则在首次恢复时补触发，只有本次真实领取才显示非阻断提示。回到前台时还会静默重查兼容信息，断网不打断正在使用的兼容客户端。Android 失去窗口焦点或进入后台时，Dart 与原生侧都把有效 IME 目标高度归零，不回退到可能仍残留键盘高度的引擎 inset；恢复或重新聚焦后先请求窗口重新应用 Insets，只以当前窗口焦点、Activity 生命周期和 IME 可见性共同确认的新高度避让页面。系统已经隐藏键盘时页面立即恢复完整高度，系统恢复键盘时仍保持输入区在键盘上方，不主动改变输入焦点、选区或未发送内容。
+通知引导（2026-09-13，负责人验收通过）：登录且设备后台提醒开启后，在已恢复前台的应用壳显示一次可跳过的非阻断提示；未授权时显示“开启消息通知，及时查看私聊和回复”，只有点“允许通知”才弹系统授权框。授权后仅提示开启“新消息提醒”的悬浮通知，不再解释系统提示音或常驻类别；点“去设置”才离开应用。拒绝后保留前往设置的选择，不自动重试，不阻断页面使用。游客、关闭功能、后台或不支持的平台不主动展示。退出/切号使旧引导及其迟到操作结果失效；系统授权框返回的生命周期刷新等待在途申请，不覆盖结果。账号设置长期提供手动申请与频道入口。
 
-Android 登录会话固定开启后台尽力提醒，并在前台主动申请系统通知权限，不提供应用内开关。应用离开前台时先记录通知与私聊基线，再由仍存活且仍获系统调度的 Flutter 进程全程每 30 秒尽力检查，不创建前台服务或常驻运行通知。前一轮未完成时跳过当前节拍，不并发或排队；返回前台立即取消后台定时器并丢弃迟到结果，退出登录、任务被划掉或进程被系统回收后自然停止。系统通知权限或消息频道被关闭时不拉取消息，并在回到前台后明确提示到系统设置开启。
+收藏页布局候选（2026-09-11，待负责人验收）：统一收藏页保留标题栏新建和主题/动态页签，选夹控件改为内容列内左对齐，与主题及动态列表共用 600dp 最大宽度和页面边距；旁边弱显示当前夹数量，长名称优先省略。目录加载、刷新失败、空目录及新建流程继续复用原控制器，详见[社交关系](social.md)。
+
+冷启动在创建应用根之前读取本地外观偏好；成功则直接使用保存模式，失败则首帧跟随系统并保留可重试提示。随后调用元信息接口并用 `versionCode` / `CFBundleVersion` 比较当前平台策略。低于最低构建或遇到不兼容内容格式时不可绕过：安装包已就绪则展示当前版本、目标版本与更新动作，尚未就绪则显示“新版正在准备中”，前台每 60 秒、恢复前台和用户点“重新检查”时重查。低于推荐构建且安装包已就绪时先恢复会话进入目标页，再显示不遮断使用的更新横幅；同一目标构建选择“稍后再说”后不再提示。进入可用页面和每次回到前台后的首个渲染帧完成时读取系统剪贴板；内容整体为合法的温油站主题、子贴、楼层、讨论、回复或私密邀请传送门且属于新的复制事件时，先询问是否前往。无论选择“暂不”还是“前往查看”，都会持久记录该次复制事件；退出应用再进入不会重复提示，只有用户在站外重新复制后才再次询问，即使文本与上次完全相同。应用内刚复制的合法坐标会在离开前台时标记为已处理，返回后不反向提示；混合文字、站外链接和非法坐标不触发提示。登录会话就绪后由 wallet 自动触发北京时间签到；应用保持前台时跨零点触发新日期检查，后台跨日则在首次恢复时补触发，只有本次真实领取才显示非阻断提示。回到前台时还会静默重查兼容信息，断网不打断正在使用的兼容客户端。Android 失去窗口焦点或进入后台时，Dart 与原生侧都把有效 IME 目标高度归零，不回退到可能仍残留键盘高度的引擎 inset；恢复或重新聚焦后先请求窗口重新应用 Insets，只以当前窗口焦点、Activity 生命周期和 IME 可见性共同确认的新高度避让页面。系统已经隐藏键盘时页面立即恢复完整高度，系统恢复键盘时仍保持输入区在键盘上方，不主动改变输入焦点、选区或未发送内容。
+
+Android 后台消息提醒默认开启，可在账号设置按设备关闭，选择跨重启、退出与切号保留。登录和恢复只读取通知权限，不自动弹系统授权框；Activity 在合法的离开前台启动窗口立即启动 specialUse 前台服务，确认运行后才建立首次基线并按 30 秒检查。常驻卡片静音、无横幅、不振动；新消息走系统“新消息提醒”频道，横幅收起后卡片保留，点击进入原有目标。前一轮未完成则跳过节拍；返回前台、退出、切号、关闭功能或服务失败立即使旧结果失效。划掉任务停止服务，重启手机后需再次打开应用；当前候选尚待负责人复验。
 
 ## 5. API operationId 与生成类型
 
 - `metaGetMeta` → `MetaGetMeta200Response`、`ApiMetaResponseDto`、`MobileCompatibilityDto`、`MobilePlatformCompatibilityDto`。
-- 后台在线提醒复用 `notificationsFindAll`、`notificationsUnreadCount`、`directConversationsUnread` 与按需 `directConversationsFindAll`，不新增服务端接口。
+- 后台在线提醒复用 `notificationsFindAll`、`directConversationsUnread` 与按需 `directConversationsFindAll`，不新增服务端接口。
 
 ## 6. 状态模型和数据流
 
-客户端兼容集合固定为 Markdown v3/v4/v5；未知版本继续进入不可绕过的升级页。`AppCapabilities.markdownAlignment` 从元信息声明 v4 起启用普通段落与 H2/H3 对齐，`markdownImageAlignment` 只在声明 v5 时启用独立普通图片块对齐；主题与帖子只消费纯 capability，不直接读取启动控制器，冷启动和回前台静默重查共用同一判定。剪贴板导航只复用 `internal-reference v1` 解析结果与应用根路由，不新增链接解析器、预取请求或持久状态；离开前台时只记录当前内容的进程内指纹，恢复后主动安排一个渲染帧并在帧结束时读取，只处理发生变化的完整目标。
+签到的已领取日期与待展示回执分别保存，按 `SessionScope` 隔离。应用级反馈宿主观察生命周期、根与分支路由、模态弹层和普通操作消息；后台或被遮挡时保留回执，页面就绪后显示“今日签到获得 N 升温油。”，完整显示 4 秒或主动关闭后确认消费。普通操作消息优先，打断的签到回执在其结束后补显。跨日丢弃旧回执，退出和切号不保留旧账号消息，补显不重新签到；组件重新挂载复用当前会话的签到状态，进程重启则以钱包状态和流水核对。
 
-外观偏好状态包含当前选择、写入中、失败目标、读取失败和用户提示；应用根只观察当前选择并映射为 Flutter `ThemeMode.system/light/dark`，复用已缓存的亮/黑夜 `ThemeData`，在下一帧直接换主题而不创建根 `AnimatedTheme`，主题变化不进入业务控制器。启动状态为 checking、ready、recommendedUpdate、updateRequired、incompatible、failed；更新动作另有 idle、checking、downloading、verifying、installing、openingExternalPage、permissionRequired、installerOpened、externalPageOpened、failed。元信息映射为纯 `ContractInfo`，应用根通过 `AppCapabilities` 把 stickers、directMessages、pushNotifications 能力注入业务入口；入口默认关闭并只在服务端明确启用后创建，feature 不反向依赖 app-shell 控制器。元信息读取、更新执行与推荐更新忽略记录均由 `app_shell/application` 端口表达，`main.dart` 组合根绑定 data 实现；application 控制器不直接依赖 Dio、MethodChannel 或 SharedPreferences。签到状态由 wallet 独立管理，不进入启动兼容状态机。生成客户端负责 `/api/v1`；APK 使用不带认证拦截器的独立 Dio，避免向下载地址泄露 Token。
+客户端兼容集合固定为 Markdown v3/v4/v5；未知版本继续进入不可绕过的更新流程。`AppCapabilities.markdownAlignment` 从元信息声明 v4 起启用普通段落与 H2/H3 对齐，`markdownImageAlignment` 只在声明 v5 时启用独立普通图片块对齐；主题与帖子只消费纯 capability，不直接读取启动控制器，冷启动和回前台静默重查共用同一判定。剪贴板导航只复用 `internal-reference v1` 解析结果与应用根路由，不新增链接解析器或预取请求；原生层以 Android `ClipDescription.timestamp` 或 iOS `UIPasteboard.changeCount` 标识复制事件，Dart 层持久化最后一次已处理事件和 SHA-256 指纹，恢复后的首帧只处理新的完整目标。
 
-签到调度独立观察登录作用域与应用生命周期：服务端日期确认同日成功后不因 Widget 重建或重复恢复再次调用，前台只保留一个零点计时器和一个有限补试计时器；进入后台、退出或切号立即取消计时，重叠事件合并，旧作用域的迟到结果不进入当前账号。前台未读角标与后台提醒分别使用应用壳唯一计时器和后台协调器；前台按 30 秒校准角标，后台以固定 30 秒周期 Timer 尽力触发且不允许请求重叠。后台 poller 只保存当前后台时段的通知 ID/内容指纹、会话最后消息指纹和未读基线；每轮先生成候选批次，只有系统卡片全部提交成功后才原子更新指纹和计数，接口或卡片展示失败均保留旧基线供下一节拍重试。生命周期 epoch 使回前台后的 HTTP 结果不能再显示或提交；通知点击载荷是本地严格 v1 JSON，只允许通知目标、私聊会话和消息中心三类内部坐标，冷/热启动都先刷新权威未读事实，再交给现有路由鉴权。
+外观偏好状态包含当前选择、写入中、失败目标、读取失败和用户提示；应用根只观察当前选择并映射为 Flutter `ThemeMode.system/light/dark`，复用已缓存的亮/黑夜 `ThemeData`，在下一帧直接换主题而不创建根 `AnimatedTheme`，主题变化不进入业务控制器。启动状态为 checking、ready、updateRequired、updateWaiting、failed；推荐更新作为 ready 的可选展示数据，不阻断应用壳。更新动作另有 idle、checking、downloading、verifying、installing、openingExternalPage、permissionRequired、installerOpened、externalPageOpened、failed。元信息映射为纯 `ContractInfo`，应用根通过 `AppCapabilities` 把 stickers、directMessages、pushNotifications 能力注入业务入口；入口默认关闭并只在服务端明确启用后创建，feature 不反向依赖 app-shell 控制器。元信息读取、安装包可用性预检、更新执行与推荐更新忽略记录均由 `app_shell/application` 端口表达，`main.dart` 组合根绑定 data 实现；application 控制器不直接依赖 Dio、MethodChannel 或 SharedPreferences。签到状态由 wallet 独立管理，不进入启动兼容状态机。生成客户端负责 `/api/v1`；APK 使用不带认证拦截器的独立 Dio，避免向下载地址泄露 Token。
+
+签到调度独立观察登录作用域与应用生命周期：服务端日期确认同日成功后不因 Widget 重建或重复恢复再次调用，前台只保留一个零点计时器和一个有限补试计时器；进入后台、退出或切号立即取消计时，重叠事件合并，旧作用域的迟到结果不进入当前账号。前台未读角标与后台提醒分别使用应用壳唯一计时器和后台协调器；前台按 30 秒校准角标，后台由 BackgroundReminderRuntime 结合设备开关、账号作用域与 BackgroundExecutionGateway 实际状态编排；仅服务确认 running 后准备基线并启动固定 30 秒 Timer，保持原 Flutter isolate 与会话刷新锁，不引入第二份 Token。后台 poller 只保存当前后台时段的通知 ID/内容指纹、会话最后消息指纹和未读基线；每轮先生成候选批次，只有系统卡片全部提交成功后才原子更新指纹和计数，接口或卡片展示失败均保留旧基线供下一节拍重试。生命周期 epoch 使回前台后的 HTTP 结果不能再显示或提交；通知点击载荷是本地严格 v1 JSON，只允许通知目标、私聊会话和消息中心三类内部坐标，新站内通知载荷额外携带成对的通知 ID 和接收账号。冷/热启动确认会话后立即交给路由鉴权，同时提交对应单条已读并校准列表/角标，不等待网络才导航；旧载荷和汇总仅保留导航，不猜测或批量标记。
 
 全局 `WenyouInstantKeyboardInsets` 观察应用生命周期：Android 非 resumed 状态把有效底部高度固定为零，恢复后继续等待新的前台原生回调，后台迟到结果不会覆盖；iOS 等其他平台继续使用引擎 `MediaQuery`。`MainActivity` 从根视图实际应用的 `WindowInsetsCompat` 读取 IME 可见性和高度，只有 Activity 已恢复且窗口聚焦时才发布正值；IME 动画仍只发布最终目标，不转发逐帧进度，恢复和聚焦则先发布零值并请求重新分发 Insets。
 
@@ -47,61 +53,92 @@ Android 登录会话固定开启后台尽力提醒，并在前台主动申请系
 
 Android Manifest 明确关闭全量备份，Android 11 及以下和 Android 12+ 备份/设备迁移规则均排除应用文件、数据库、SharedPreferences 和外部文件；会话、本地草稿与偏好不通过系统备份跨设备复制。
 
-壳层不假定游客有写权限。剪贴板邀请 token 只用于当前一次用户确认后的路由，去重仅保留非原文的进程内指纹；链接不写入日志、诊断或本地存储，也不用于预取私密主题信息，最终访问仍由路由鉴权和服务端权限复核。升级与错误页不得展示 Token、响应正文或完整下载 URL。更新地址及重定向终点只接受 HTTPS。下载前 HEAD 与下载响应都必须具有 Android APK 类型、合理且一致的长度、`.apk` 附件名、`site.wenyou.app` 应用 ID、目标 `versionCode`、非空 `versionName` 和 64 位 SHA-256；文件字节再按声明哈希校验。Android 原生通道只接受应用 cache 的 `wenyou_updates/` 内 `.apk`，并在授权或打开安装器前通过系统 PackageManager 再校验包名、目标构建高于当前构建且签名与已安装应用相容；通过不可导出的 `FileProvider` 临时授予系统安装器只读权限，安装未知应用权限由系统设置页确认。
+壳层不假定游客有写权限。剪贴板邀请 token 只用于用户确认后的路由；去重记录只保存系统复制事件标识与链接文本的 SHA-256 指纹，不保存链接原文、邀请 token、目标坐标或账号，并且不写入日志、诊断或预取请求，最终访问仍由路由鉴权和服务端权限复核。升级与错误页不得展示 Token、响应正文、契约版本或完整下载 URL。更新地址及重定向终点只接受 HTTPS。显示 Android 更新动作前的 HEAD 预检与随后下载响应都必须具有 Android APK 类型、合理且一致的长度、`.apk` 附件名、`site.wenyou.app` 应用 ID、目标 `versionCode`、非空 `versionName` 和 64 位 SHA-256；文件字节再按声明哈希校验。Android 原生通道只接受应用 cache 的 `wenyou_updates/` 内 `.apk`，并在授权或打开安装器前通过系统 PackageManager 再校验包名、目标构建高于当前构建且签名与已安装应用相容；通过不可导出的 `FileProvider` 临时授予系统安装器只读权限，安装未知应用权限由系统设置页确认。
 
-后台在线提醒只需要 Android 通知权限，不声明或启动前台服务，也不申请唤醒锁、开机启动、精确闹钟或忽略电池优化。应用初始化时显式创建 `wenyou_messages_v1` 高重要性消息频道，每轮同时校验全局通知权限与频道重要性；任一被关闭都不继续读取私有消息。系统权限关闭进入正常开启引导，只有插件初始化或平台读取真正异常时才提示状态读取失败。通知小图标按资源名动态读取，Release 构建必须显式阻止资源压缩删除它。站内通知系统卡片只使用现有安全摘要并截断；私聊卡片只显示对方用户名和“新私聊/新的私聊请求”，不读取或展示正文、图片地址、Token、请求 URL或 FCM token。未知或篡改的本地点击载荷回退消息中心，不自动标记已读。
+后台消息提醒声明 POST_NOTIFICATIONS、FOREGROUND_SERVICE 与 FOREGROUND_SERVICE_SPECIAL_USE；服务不导出，使用 START_NOT_STICKY 和 stopWithTask，不申请唤醒锁、开机启动、精确闹钟、悬浮窗或电池优化豁免。静音低重要性常驻频道为 wenyou_background_reminders_v1，既有高重要性消息频道 wenyou_messages_v1 原 ID 保留。全局通知、消息频道或常驻频道被关闭时停止拉取；降低消息重要性或关闭横幅/声音不视为完全关闭。用户频道设置始终由系统保存，不删除或换 ID 强制恢复。常驻服务每 30 秒检查权限，Dart 每轮及展示前核对实际服务状态。站内通知仅显示安全摘要；私聊仅显示用户名和通用提示，不显示正文。点击载荷保持严格 v1 内部坐标，重新校准未读且由原路由鉴权。
 
 ## 8. 本地存储、缓存及失效规则
 
-外观显式选择以 SharedPreferences 保存，跟随系统不保存覆盖值；偏好与账号无关且跨冷启动保留。契约结果只在本次进程缓存；每次冷启动和回前台重新检查。推荐更新仅把“已忽略的目标构建号”写入 SharedPreferences，新目标构建会再次提示。APK 以“目标构建 + 哈希前缀”暂存于应用 cache，先写 `.part`、通过长度与 SHA-256 后原子改名；新目标会清理旧 APK/partial，冷进程重新验证缓存，本次已验证文件只在内存记录并可供未知来源授权返回后直接继续。cache 可由系统清理；Token 仍由认证模块安全存储管理。
+通知引导使用设备级 SharedPreferences 布尔键 `notifications.guidance.handled.v1`，不保存账号、消息或权限结果；先保存再显示，切号/重启/拒绝/跳过不重复引导。读取或保存失败时保守跳过本次自动提示，手动设置入口不受影响。升级不会删除旧消息频道以重新取得横幅或声音权限。
 
-后台尽力提醒不保存应用内开关；消息指纹、提醒基线与上次所见剪贴板内容指纹只存在当前 Dart 进程，不持久化私有数据。
+外观显式选择以 SharedPreferences 保存，跟随系统不保存覆盖值；偏好与账号无关且跨冷启动保留。契约结果只在本次进程缓存；每次冷启动和回前台重新检查。推荐更新仅把“已忽略的目标构建号”写入 SharedPreferences，新目标构建会再次提示。剪贴板导航只额外保存最后一次已处理的复制事件标识和 64 位 SHA-256 指纹；取消与跳转都先完成记录，存储损坏时安全忽略并保留本进程去重。APK 以“目标构建 + 哈希前缀”暂存于应用 cache，先写 `.part`、通过长度与 SHA-256 后原子改名；新目标会清理旧 APK/partial，冷进程重新验证缓存，本次已验证文件只在内存记录并可供未知来源授权返回后直接继续。cache 可由系统清理；Token 仍由认证模块安全存储管理。
+
+设备开关由 BackgroundReminderPreferenceController 管理，SharedPreferences 键为 background.reminder.enabled.v1，缺省开启；读取失败先关闭并提供重试，写入中停止提醒且禁止重复操作，写入失败恢复原选择。后台消息指纹只存当前进程；退出/切号清除基线但不清除设备选择。
 
 ## 9. 加载、空数据、错误、重试和冲突状态
 
+启动在初始化其余插件与应用状态前安装脱敏 Flutter/Dart 错误入口，诊断初始化或发送失败不阻断启动；回到前台尝试补发已保存的脱敏记录。退出与切号清除诊断会话，旧请求结果不重新生成记录。详见[故障诊断](../architecture/failure-diagnostics.md)。
+
 全模块错误遵循[网络与会话](../architecture/networking.md)统一分级：可操作的预期失败只给恢复提示；本机、网络连接、温油站服务与内容处理异常才标注问题环节，只有可核对的服务/内容异常及结果待核对写入显示问题编号。普通页面不展示 HTTP、业务或内部诊断码，Debug 现场诊断可复制安全技术字段。
 
-检查期间显示明确进度；首次断网可手动重试，前台静默重查失败则 fail-open。Android 分别展示发布信息检查、下载进度、完整性校验和安装器打开状态；元数据缺失/错配、超限、哈希失败、包名/版本/签名失败均 fail-closed，partial 或不可信缓存会删除。拒绝未知来源权限、下载或安装器唤起失败均可重试；授权返回复用本次已验证 APK。强制更新和未知主版本不可绕过，推荐更新可跳过。
+检查期间显示明确进度；首次断网可手动重试，前台静默重查失败则保留当前可用页面。Android 分别展示发布信息检查、下载进度、完整性校验和安装器打开状态；强制更新或未知格式遇到地址缺失、对象 404、元数据缺失/错配时统一显示“新版正在准备中”，不暴露服务端、契约、对象存储或兼容版本，实现前台 60 秒自动重查、恢复前台重查与手动重查。文件超限、哈希失败、包名/版本/签名失败均 fail-closed，partial 或不可信缓存会删除。拒绝未知来源权限、下载或安装器唤起失败均可重试；授权返回复用本次已验证 APK。强制更新不可绕过；推荐更新只在安装包预检通过后以应用内横幅出现，可跳过且不会阻止浏览。
 
 ## 10. 跨模块约束
 
-遵循[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)、[依赖边界与架构门禁](../architecture/dependencies.md)和[Foundation v6.8.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.8.0/docs/platforms/mobile.md)。app 组合层只连接 capability、全局外观与跨 feature 缓存失效等接口，不持有业务页面状态。亮色与黑夜只使用中央 `WenyouThemeTokens`、Foundation 语义色/等级/图标及全局 `ColorScheme`；图片内容与布局结构保持一致。原生图标与启动图只同步 Foundation 平台资产，Flutter 页面只消费 `WenyouBrandContract` 和 `WenyouBrandMark`；更新页复用中央 Token、语义图标、共享面板、状态横幅和 Foundation 最小触控目标的主按钮，以“当前构建 → 可用构建”作为版本识别元素。Android 竖屏优先；iOS 不下载 IPA，只交给 TestFlight。
+全局临时消息统一通过 `showWenyouSnackBar`，以 Foundation 面板色、细边框、16dp 圆角和浮层层级 2 显示；信息、成功和失败由调用处明确选择语义图标及色彩。正文完整换行，可操作消息把按钮放到正文下方，避免大字号挤窄正文；原有替换队列、2.5/4 秒节奏及重试/撤销行为保留。Scaffold 处理键盘、安全区和底栏避让，私聊继续保留输入区额外净空；关键失败与待确认写入仍留在原操作区域，不仅靠临时消息表达。
+
+Android 正式 APK 仅支持 `arm64-v8a`，Debug/Profile 保留 ARM32、ARM64 和 x86_64。正式构建仍为单 APK，原包名、签名、构建号和站内更新比较规则不变；文楷、Noto Sans SC 和 Nunito 均保留。构建与上传入口在本地校验 ABI、引擎和字体条目，拒绝混入其他架构或缺失必要资源的制品。
+
+本模块页面排版统一遵循[移动端视觉基线](../architecture/visual-baseline.md)中的 Foundation v6.9.0 语义文字角色，不自定义字号或直接依赖 Material 字体槽位。
+
+遵循[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)、[依赖边界与架构门禁](../architecture/dependencies.md)和[Foundation v6.9.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.9.0/docs/platforms/mobile.md)。app 组合层只连接 capability、全局外观与跨 feature 缓存失效等接口，不持有业务页面状态。亮色与黑夜只使用中央 `WenyouThemeTokens`、Foundation 语义色/等级/图标及全局 `ColorScheme`；图片内容与布局结构保持一致。原生图标与启动图只同步 Foundation 平台资产，Flutter 页面只消费 `WenyouBrandContract` 和 `WenyouBrandMark`；更新页复用中央 Token、语义图标、共享面板、状态横幅和 Foundation 最小触控目标的主按钮，以“当前构建 → 可用构建”作为版本识别元素。Android 竖屏优先；iOS 不下载 IPA，只交给 TestFlight。
 
 ## 11. 测试场景与验收条件
+
+- [ ] 常驻与系统横幅候选的 30 分钟双消息、锁屏/勿扰、划掉停止与休眠恢复真机验收，见[验收记录](../architecture/background-reminders-acceptance.md)。
 
 - [x] 冷启动兼容检查接受 Markdown v3/v4/v5、拒绝更旧或未知版本；v4 映射文字块对齐能力，v5 再映射图片块对齐能力，v3 保持入口隐藏。
 - [x] 兼容元信息进入四分支应用壳，游客无需登录。
 - [x] 启动前恢复外观偏好，系统/亮色/黑夜可即时切换；游客公开可达，读写失败回退与重试完整。
 - [x] 亮暗 ThemeData、系统栏、语义 Token 对比度及黑夜外观页具有自动化回归；原生静态启动层保持白色。
-- [x] 主版本未知时只显示升级页；网络失败可重试且有请求 ID。
-- [x] 低于最低构建时显示不可跳过的强制更新；低于推荐构建时可忽略并记住目标构建。
+- [x] 主版本未知时进入不可绕过的更新流程；安装包未就绪时显示等待页且不暴露契约版本，网络失败可重试且有请求 ID。
+- [x] 低于最低构建时显示不可跳过的强制更新；低于推荐构建时先进入应用再显示轻量横幅，可忽略并记住目标构建。
+- [x] 强制更新会预检 APK 对象；地址缺失、404 或发布元数据不完整时每 60 秒、恢复前台和手动操作重查，从等待态可无重启切换到更新入口并展示目标版本名与构建号。
 - [x] Android 更新覆盖 RainS3 HEAD/GET 元数据、长度、SHA-256、损坏缓存重下、原子落盘、未知来源权限复用与原生包名/版本/签名校验；异步原生异常映射为可操作错误；iOS 使用外部 TestFlight URL。
 - [x] 会话失效进入带原因的登录页，并可回到游客首页。
 - [x] 登录用户底栏以 Foundation danger 计数角标展示通知与私聊合计，零值隐藏、超过 99 显示 `99+`；可进入包含“通知 / 私聊”共享等宽页签的消息中心，点按或内容区左右滑动均以 180ms 方向反馈切换栏目、保持已访问内容与规范 URL，减少动态效果时瞬时完成。
 - [x] 私聊 capability 映射到业务入口，登录用户回前台时同步私聊未读与请求角标。
-- [x] Android 后台尽力提醒登录后固定开启并主动申请系统通知权限，不提供应用内开关；进程仍获调度时全程每 30 秒检查且不重叠，不显示常驻运行通知。首次基线不补发历史消息，通知聚合更新可识别，接口或系统卡片失败不推进基线，私聊正文不进入系统卡片，超过三条合并，返回前台/退出/划掉任务停止；Release 资源压缩保留动态通知小图标，权限关闭只进入正常开启引导。
+- [x] 后台消息基线、30 秒节拍、不重叠、去重重试、私聊隐私和超过三条汇总有自动回归；常驻服务、设备开关及横幅候选新增状态桥接与生命周期回归。Release 资源压缩保留动态通知小图标，原问题仍待负责人按上述候选清单复验。
 - [x] 四分支使用 IndexedStack 保留页面状态；底栏中央发布动作在任一分支都先显示稳定类型选择，首页与动态顶栏可进入全站搜索。
 - [x] Android 普通页面进入与返回只使用 180ms 水平位移，不叠加缩放或淡化；主分支和无来源栈兜底瞬时切换，减少动态效果时全部零时长。
 - [x] 根主题切换不做全树插值；独立 Profile 包在 60 Hz 真机对外观、导航、动态流和 Markdown 时间线三轮采样并全部达到帧预算。
 - [x] 登录会话就绪、前台跨过北京时间零点及后台跨日恢复后自动签到；同日重复构建/恢复不重复触发，临时失败只在前台有限补试，切号迟到结果不会污染新账号且失败不阻断应用壳。
 - [x] Android 带键盘或不带键盘切到后台再返回时，即使 Flutter 引擎仍保留旧 `viewInsets`，后台与恢复等待期也保持零高度；后台迟到回调、仅失焦恢复和系统恢复键盘均不会留下空白或重复避让。
-- [x] 冷启动或回前台首帧稳定后发现新的完整主题、子贴、楼层、讨论、回复与私密邀请传送门时先询问再进入准确路由；恢复瞬间暂不可读仍能在帧后识别，拒绝、同一内容、混合文字和站外链接不重复或误触发。
+- [x] 冷启动或回前台首帧稳定后发现新的完整主题、子贴、楼层、讨论、回复与私密邀请传送门时先询问再进入准确路由；取消与跳转都跨重启记住同一次复制，站外重新复制相同链接会因复制事件变化再次提示，应用内复制、混合文字、非法链接和站外链接不误触发，持久记录不含链接或邀请 token。
 - [x] Xiaomi Android 16 真机通过公网契约检查、冷启动与进程存活冒烟。
 - [x] 应用壳、启动状态在 360、400、600dp 宽度无溢出，关键控件满足 48dp 触控区。
-- [x] Android adaptive/monochrome/legacy 图标与 iOS AppIcon 均与 Foundation v6.4.0 哈希一致；Android 12+、旧版 Android 和 iOS 系统启动层只显示纯白底色，Flutter 品牌首帧的整体居中、尺寸、文案、字体、实际可见最短停留时间、零尺寸预热帧和快速就绪切换均有回归。
+- [x] Android adaptive/monochrome/legacy 图标与 iOS AppIcon 均与 Foundation v6.9.0 哈希一致；Android 12+、旧版 Android 和 iOS 系统启动层只显示纯白底色，Flutter 品牌首帧的整体居中、尺寸、文案、字体、实际可见最短停留时间、零尺寸预热帧和快速就绪切换均有回归。
 - [x] Android 全量备份与设备迁移明确关闭；iOS 应用名、相册用途文案、iPhone 竖屏和应用本地化声明有静态回归。
 - [ ] Android 8+ 模拟器通过启动冒烟。
 
 ## 12. 已知限制和后续功能
 
-当前已完成构建策略门禁、全局亮色/黑夜外观、推荐更新忽略、Android RainS3 在线下载、双层完整性/身份校验与系统安装器、iOS TestFlight 外跳、本地一键发布入口和实验性后台在线提醒。Debug 构建使用独立 `site.wenyou.app.debug` 包名，Profile 性能构建使用 `site.wenyou.app.profile`，两者都避免占用正式更新链；完整门禁与发布入口均会核对线上契约、后端 revision 和 Markdown 版本。自动测试以伪 APK 固定下载与缓存状态机，Android 原生包解析、系统覆盖和后台尽力轮询仍需用 Android 8+ 真机完成最终验收；iOS 构建与上传必须在配置签名的 macOS 上执行。后台 30 秒节拍依赖当前 Flutter 进程与系统调度，留在最近任务不代表 Dart isolate 会持续运行；Doze、厂商省电、网络中断或进程终止都可能延迟/停止检查，不承诺实时送达。V1 不申请豁免、不做 App Links、FCM、WebSocket 或开机恢复。Profile 基线只覆盖固定离线关键交互，不能替代全部真实业务路径的人工手感验收。原生启动层在 Flutter 首帧前仍是静态白色。
+当前 `/meta.mobileCompatibility` 只提供最低/推荐构建与更新地址，没有独立的安装包发布阶段字段；移动端因此通过 HTTPS HEAD 和对象元数据把缺失、404 或尚未完整发布统一收敛为等待态。后续若后端正式契约增加明确发布阶段，应先同步 OpenAPI 与生成客户端，再用服务端声明替代这层兼容推断。
+
+当前已完成构建策略门禁、全局亮色/黑夜外观、推荐更新忽略、Android RainS3 在线下载、双层完整性/身份校验与系统安装器、iOS TestFlight 外跳、本地一键发布入口；后台常驻与横幅提醒为候选／待负责人验收。Debug 构建使用独立 `site.wenyou.app.debug` 包名，Profile 性能构建使用 `site.wenyou.app.profile`，两者都避免占用正式更新链；完整门禁与发布入口均会核对线上契约、后端 revision 和 Markdown 版本。自动测试以伪 APK 固定下载与缓存状态机，Android 原生包解析、系统覆盖和后台尽力轮询仍需用 Android 8+ 真机完成最终验收；iOS 构建与上传必须在配置签名的 macOS 上执行。后台 30 秒节拍依赖当前 Flutter 进程与系统调度，留在最近任务不代表 Dart isolate 会持续运行；Doze、厂商省电、网络中断或进程终止都可能延迟/停止检查，不承诺实时送达。V1 不申请豁免、不做 App Links、FCM、WebSocket 或开机恢复。Profile 基线只覆盖固定离线关键交互，不能替代全部真实业务路径的人工手感验收。原生启动层在 Flutter 首帧前仍是静态白色。
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `5.16.0-dev.20260903.5`；公网 Markdown v5、客户端兼容 `{3, 4, 5}`；后端 `f09aee365ce50fe921c0c443d252959fb7dc5903`；Foundation `v6.8.0`（`196deaf`）。
+本轮展示契约来源：API `5.22.0-dev.20260912.2`、Backend `6fdfa00eaf1f3056ba30f2ffbc529d12eed1c823`；新增display／mediaDisplays，消费者接入与真机验收另行记录。仅既有 `markdown-editor-list-v1-fixtures.json` 保留 `062412601b3a8dbf4f64494115a2445d312dd53d` 来源与SHA-256，见 contracts/markdown-editor-list-v1-source.json；不将该独立语料误标为本轮主来源。
+
+2026-09-11 列表契约候选同步：Backend `062412601b3a8dbf4f64494115a2445d312dd53d`，OpenAPI `5.20.1-dev.20260911.1`；新增 editor-list v1 revision 2，夹具最初固定于 `aa1bcbd4d087f03a17817e9eca8bcd1f92bb53da`。同时同步收藏夹计数按当前用户可见性统计的契约说明；字段形状、块边界 v1 revision 2 与既有消费代码保持；列表消费者及真机验收仍待完成，见[列表统一排查](../architecture/editor-list-unification-investigation.md)。
+
+2026-09-11 契约审查：同步 Backend `b785336c5b31cb228f3021650b9de1c39ade02e5`、`5.20.1-dev.20260911.1`，收藏夹数量明确为当前用户可见总数。仅契约说明、生成字段文档与版本变化；本模块既有行为及单独验收状态保持。此时公网仍为 `8bf370f`／5.20.0，部署核验单独记录。
+
+2026-09-11 合并来源同步：Backend `8bf370f6ef5357535683aa6d3f8c03bd2d08d108`，包含发布权限修复；通过既有脚本重新导出后仅来源元数据变化，OpenAPI、块边界 v1 revision 2 及其他共享契约字节不变。模块行为与候选验收状态保持，前次部署回滚、公网核验及安装包溯源见[块边界验收](../architecture/markdown-block-boundaries-acceptance.md)。
+
+2026-09-11 契约来源登记：Backend `a91cbb8b605223c596af299be22c5547f69e25b9`，块边界 v1 revision 2。HTTP OpenAPI 未变化，本模块既有接口行为与验收状态保持；富文本消费者候选见[块边界验收](../architecture/markdown-block-boundaries-acceptance.md)。
+
+2026-09-11 增量登记：契约 `5.20.0-dev.20260909.1`，后端及公网 `0ee2c0de1d9c570e495e778be6661b074b7a4bef`。本次仅兼容新增列表封面媒体及预览变体生成模型，本模块行为与已列明的验收状态保持原样；下列记录保留历史审查范围。
+
+契约 `5.18.0-dev.20260905.1`；公网 Markdown v5、客户端兼容 `{3, 4, 5}`；后端 `3338028459561565c788d5236fb64db84a2ae538`；Foundation `v6.9.0`（`5888132`）。签到经验遵循实际 `experienceAwarded`，日活奖励可能已由其他有效行为领取。
+
+本轮从固定候选提交同步富文本行为 v1 测试契约；既有 newline/v7/clipboard 与 HTTP/OpenAPI 内容不变，不据此推断候选已部署。新增行为执行与历史保护仍在专项实施中；既有负责人验收保持原范围。
 
 ## 14. 相关代码与架构文档
 
 根 router 与签到生命周期分别位于 `lib/app/app_router.dart`、`lib/app/app_session_bootstrap.dart`，主壳、认证、内容和账号路由组位于 `lib/app/routes/`。
 
-代码入口：`lib/app/app_theme.dart`、`lib/app/app_router.dart`、`lib/app/wenyou_app.dart`、`lib/core/application/background_online_reminders.dart`、`lib/features/app_shell/application/background_online_poller.dart`、`lib/features/app_shell/application/background_online_reminder_coordinator.dart`、`lib/features/app_shell/presentation/app_scaffold.dart`、`lib/features/app_shell/presentation/startup_gate.dart`、`lib/core/platform/android_background_notification_gateway.dart`、`lib/main.dart`、`android/app/src/main/`、`ios/Runner/Assets.xcassets/`、`test/features/app_shell/`、`integration_test/performance_test.dart`、`tool/windows/Measure-WenyouAndroidPerformance.ps1`、`tool/release-mobile-from-local.sh`。参见[设置](settings.md)、[私有发布运维](../../contracts/mobile-release-operations.md)、[Foundation v6.8.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.8.0/docs/platforms/mobile.md)、[移动端性能基线](../architecture/performance.md)、[语义图标](../architecture/icons.md)、[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)、[温油钱包](wallet.md)和[站内私聊](direct-messages.md)。
+后台执行入口：`lib/core/application/background_execution.dart`、`lib/core/platform/android_background_execution_gateway.dart`、`lib/features/app_shell/application/background_reminder_runtime.dart`，Android 原生实现为 `BackgroundExecutionChannel.kt` 与 `WenyouBackgroundReminderService.kt`；设备偏好为 `lib/core/application/background_reminder_preference.dart`，候选验收见[常驻与横幅记录](../architecture/background-reminders-acceptance.md)。
+
+代码入口：`lib/app/app_theme.dart`、`lib/app/app_router.dart`、`lib/app/wenyou_app.dart`、`lib/core/application/background_online_reminders.dart`、`lib/features/app_shell/application/background_online_poller.dart`、`lib/features/app_shell/application/background_online_reminder_coordinator.dart`、`lib/features/app_shell/presentation/app_scaffold.dart`、`lib/features/app_shell/presentation/startup_gate.dart`、`lib/core/platform/android_background_notification_gateway.dart`、`lib/main.dart`、`android/app/src/main/`、`ios/Runner/Assets.xcassets/`、`test/features/app_shell/`、`integration_test/performance_test.dart`、`tool/windows/Measure-WenyouAndroidPerformance.ps1`、`tool/release-mobile-from-local.sh`。参见[设置](settings.md)、[私有发布运维](../../contracts/mobile-release-operations.md)、[Foundation v6.9.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.9.0/docs/platforms/mobile.md)、[移动端性能基线](../architecture/performance.md)、[语义图标](../architecture/icons.md)、[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)、[温油钱包](wallet.md)和[站内私聊](direct-messages.md)。

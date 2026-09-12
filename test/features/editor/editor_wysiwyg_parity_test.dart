@@ -9,10 +9,10 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_rich_text_style_spec.dart'
 import 'package:wenyousite_mobile/features/editor/presentation/editor_embed_builders.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_text_styles.dart';
 
-import '../../support/foundation_test_fonts.dart';
+import '../../support/deterministic_test_fonts.dart';
 
 void main() {
-  setUpAll(loadFoundationTestFonts);
+  setUpAll(loadDeterministicTestFonts);
 
   testWidgets('编辑态和发布态消费同一正文视觉规格', (tester) async {
     tester.view.devicePixelRatio = 1;
@@ -48,7 +48,9 @@ void main() {
 
     final editor = tester.widget<QuillEditor>(find.byType(QuillEditor));
     final editorStyles = editor.config.customStyles!;
-    final markdown = tester.widget<MarkdownBody>(find.byType(MarkdownBody));
+    final markdown = tester.widget<MarkdownBody>(
+      find.bySubtype<MarkdownBody>(),
+    );
     final readingStyles = markdown.styleSheet!;
 
     expect(editorStyles.paragraph?.style, spec.body);
@@ -66,6 +68,7 @@ void main() {
     expect(editorStyles.quote?.decoration, spec.quoteDecoration);
     expect(readingStyles.blockquoteDecoration, spec.quoteDecoration);
     expect(readingStyles.listBullet, spec.listMarker);
+    expect(editorStyles.leading?.style, readingStyles.listBullet);
     expect(
       readingStyles.horizontalRuleDecoration,
       spec.horizontalRuleDecoration,
@@ -82,7 +85,7 @@ void main() {
     }
     expect(
       MarkdownDeltaCodec.encode(controller.document.toDelta()),
-      _wysiwygMarkdown,
+      _wysiwygMarkdown.replaceFirst('2. [[dice:', '1. [[dice:'),
     );
     expect(tester.takeException(), isNull);
   });

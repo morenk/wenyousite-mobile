@@ -3,6 +3,7 @@
 //
 
 // ignore_for_file: unused_element
+import 'package:wenyou_api/src/model/media_display_response_dto.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 
@@ -11,6 +12,7 @@ part 'sticker_asset_response_dto.g.dart';
 /// StickerAssetResponseDto
 ///
 /// Properties:
+/// * [display] - 完整 WebP 展示资源；缺少或为空时为兼容历史媒体
 /// * [id]
 /// * [url]
 /// * [thumbnailUrl]
@@ -21,6 +23,10 @@ part 'sticker_asset_response_dto.g.dart';
 /// * [durationMs]
 @BuiltValue()
 abstract class StickerAssetResponseDto implements Built<StickerAssetResponseDto, StickerAssetResponseDtoBuilder> {
+  /// 完整 WebP 展示资源；缺少或为空时为兼容历史媒体
+  @BuiltValueField(wireName: r'display')
+  MediaDisplayResponseDto? get display;
+
   @BuiltValueField(wireName: r'id')
   String get id;
 
@@ -68,6 +74,13 @@ class _$StickerAssetResponseDtoSerializer implements PrimitiveSerializer<Sticker
     StickerAssetResponseDto object, {
     FullType specifiedType = FullType.unspecified,
   }) sync* {
+    if (object.display != null) {
+      yield r'display';
+      yield serializers.serialize(
+        object.display,
+        specifiedType: const FullType.nullable(MediaDisplayResponseDto),
+      );
+    }
     yield r'id';
     yield serializers.serialize(
       object.id,
@@ -131,6 +144,14 @@ class _$StickerAssetResponseDtoSerializer implements PrimitiveSerializer<Sticker
       final key = serializedList[i] as String;
       final value = serializedList[i + 1];
       switch (key) {
+        case r'display':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(MediaDisplayResponseDto),
+          ) as MediaDisplayResponseDto?;
+          if (valueDes == null) continue;
+          result.display.replace(valueDes);
+          break;
         case r'id':
           final valueDes = serializers.deserialize(
             value,

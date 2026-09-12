@@ -1,8 +1,8 @@
 # 温油站移动端
 
-温油站的 Flutter 原生客户端。首发 Android 8+（API 26），手机竖屏优先；共享 Dart 代码保持 iOS 兼容，但当前不做 iOS 验收。
+温油站的 Flutter 原生客户端。正式 APK 仅支持 Android 8+（API 26）的 ARM64 设备，手机竖屏优先；Debug/Profile 保留 ARM32、ARM64、x86_64 以供开发。共享 Dart 代码保持 iOS 兼容，但当前不做 iOS 验收。
 
-当前版本：`0.7.0+93`。默认连接公网开发 API `https://wenyou.site/api/v1`，请只使用专用测试账号。
+当前版本：`0.7.0+94`（正式发布候选）；线上正式版本仍为 `0.7.0+93`。默认连接公网开发 API `https://wenyou.site/api/v1`，请只使用专用测试账号。
 
 ## 技术基线
 
@@ -13,10 +13,10 @@
 - Drift：完整 Markdown 编辑快照和待确认幂等创建操作
 - Flutter Quill：仅作为内存编辑模型；后端、云草稿和本地快照始终保存服务端声明版本的完整 Markdown；客户端兼容 v3/v4/v5
 - flutter_secure_storage：Access/Refresh Token 单记录原子替换
-- wenyousite-foundation v6.8.0：跨端品牌资源、语义 Token、元素系统、图标注册表、三角色自托管字体、移动 profile 与编辑器体验契约
+- wenyousite-foundation v7.0.0：跨端品牌资源、语义 Token、元素系统、图标注册表、三角色系统字体语义、移动 profile 与编辑器体验契约
 - WenyouThemeTokens：Foundation 常量到 Flutter ThemeExtension 的轻量适配层
 
-产品与模块事实从 [`docs/README.md`](docs/README.md) 开始阅读；共享审美以 Foundation 远端最新正式发布 Tag 为准，构建锁定当前 [`v6.8.0`](https://github.com/morenk/wenyousite-foundation/tree/v6.8.0)；每次 Foundation 相关实现前必须先检查远端发布并在落后时升级，完整协作约束见 [`AGENTS.md`](AGENTS.md)。
+产品与模块事实从 [`docs/README.md`](docs/README.md) 开始阅读；共享审美以 Foundation 远端最新正式发布 Tag 为准，构建锁定当前 [`v7.0.0`](https://github.com/morenk/wenyousite-foundation/tree/v7.0.0)；每次 Foundation 相关实现前必须先检查远端发布并在落后时升级，完整协作约束见 [`AGENTS.md`](AGENTS.md)。
 
 ## 本地环境
 
@@ -43,7 +43,7 @@ npm ci
 flutter run --dart-define=API_BASE_URL=http://10.0.2.2:3000/api/v1
 ```
 
-不传 `API_BASE_URL` 时连接公网开发 API。Windows 下的前端和后端目录均为只读参考镜像，不得在移动端任务中安装依赖、启动服务、迁移或部署。
+不传 `API_BASE_URL` 时连接公网开发 API。Windows 只保留 `..\references\wenyousite-backend` 后端只读镜像供契约同步；不得在移动端任务中修改它、安装依赖、启动服务、迁移或部署。Web 与 Foundation 不在 Windows 保留工作副本。
 
 ## 契约同步
 
@@ -59,15 +59,23 @@ npm run api:generate
 
 ## 质量门禁
 
-第一阶段以快速本地迭代为主：日常切片只运行相关测试和受影响范围检查；认证、契约、网络、持久化等高风险变更或阶段验收时运行唯一完整本地门禁：
+第一阶段以快速本地迭代为主：普通低、中风险切片需要真机候选时，显式传入相关测试，由快速入口完成全量静态分析、针对性测试和 Debug APK 构建：
+
+```bash
+npm run candidate:apk -- test/features/example/example_test.dart -TestConcurrency 2
+```
+
+该入口不会运行全量 Flutter 测试或安装 APK。候选经负责人验收后、合并前运行一次完整本地门禁；认证、契约、网络、上传、持久化、幂等、注销、依赖和 Android 原生配置等高风险候选直接运行 `npm run check:apk`。不需要构建 APK 的阶段验收使用：
 
 ```bash
 npm run check
 ```
 
-需要 Debug APK 时运行 `npm run check:apk`。完整门禁和 Android 发布入口都会强制执行公网 API、后端 revision 与 Markdown 契约核对，避免兼容版本先于服务端事实发布。
+完整门禁和 Android 发布入口都会强制执行公网 API、后端 revision 与 Markdown 契约核对，避免兼容版本先于服务端事实发布。
 
-GitHub Actions 当前仅支持手动触发，不随 `dev` push 自动运行，也不作为日常切片完成条件。日常切片完成后默认原子提交并推送 `dev`；`main` 的合并与正式 Tag 只在维护者明确决定时执行。
+调试已提交但尚未部署的契约候选时，可运行 `npm run check:apk -- -ContinueAfterFailure` 收集其余检查及候选 APK。所有原检查仍执行，任一失败最终仍返回非零并逐项汇总；这不是完整门禁通过或发布许可。默认命令仍遇错即停，发布流程不使用收集模式。
+
+GitHub Actions 当前仅支持手动触发，不随 `dev` push 自动运行，也不作为日常切片完成条件。日常切片完成后原子提交并推送 `codex/YYYYMMDD-<目标>` 任务分支；Codex 不得自行合并或发布，`dev`/`main` 的合并与正式 Tag 只在维护者明确决定时执行。
 
 ## Android 私有发布
 

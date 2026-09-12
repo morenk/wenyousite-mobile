@@ -1,7 +1,8 @@
 import { createHash } from 'node:crypto';
+import { execFileSync } from 'node:child_process';
 import { createReadStream, readFileSync, statSync } from 'node:fs';
 import { basename, resolve } from 'node:path';
-import { pathToFileURL } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import {
   HeadObjectCommand,
   PutObjectCommand,
@@ -196,6 +197,12 @@ async function main() {
   const args = parseArguments(process.argv.slice(2));
   const config = releaseConfig(process.env);
   const apkPath = resolve(args.apk);
+  // Validate existing artifacts too, before any network write.
+  execFileSync('pwsh', [
+    '-NoProfile', '-File',
+    fileURLToPath(new URL('./windows/Test-WenyouReleaseApk.ps1', import.meta.url)),
+    '-ApkPath', apkPath,
+  ], { stdio: ['ignore', 'ignore', 'pipe'] });
   const shaPath = resolve(args['sha256-file']);
   const manifestPath = resolve(args.manifest);
   const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));

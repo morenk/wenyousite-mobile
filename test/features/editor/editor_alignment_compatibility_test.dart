@@ -91,7 +91,7 @@ void main() {
     });
 
     for (final alignment in const ['center', 'right']) {
-      testWidgets('$alignment 段落中回车后两个物理行保持同方向', (tester) async {
+      testWidgets('$alignment 段落中回车后新段恢复左对齐', (tester) async {
         final session = RichEditorSession(
           initialMarkdown: '[wenyousite-align-v1-$alignment]: #\n正文',
           onMarkdownChanged: (_) {},
@@ -109,7 +109,7 @@ void main() {
         expect(await session.flush(), isTrue);
         expect(
           MarkdownDeltaCodec.encode(session.controller.document.toDelta()),
-          '[wenyousite-align-v1-$alignment]: #\n正\n文',
+          '[wenyousite-align-v1-$alignment]: #\n正\n\n文',
         );
       });
     }
@@ -142,7 +142,7 @@ void main() {
         WenyouEditorFormatPolicy.alignmentSelection(
           session.controller,
         ).alignment,
-        WenyouTextAlignment.center,
+        WenyouTextAlignment.left,
       );
       expect(
         MarkdownDeltaCodec.encode(session.controller.document.toDelta()),
@@ -159,11 +159,11 @@ void main() {
       expect(await session.flush(), isTrue);
       expect(
         MarkdownDeltaCodec.encode(session.controller.document.toDelta()),
-        '[wenyousite-align-v1-center]: #\n第一行\n第二行',
+        '[wenyousite-align-v1-center]: #\n第一行\n\n第二行',
       );
     });
 
-    testWidgets('居中段尾回车后立即输入也保持整个段落方向', (tester) async {
+    testWidgets('居中段尾回车后立即输入也独立左对齐', (tester) async {
       final session = RichEditorSession(
         initialMarkdown: '',
         onMarkdownChanged: (_) {},
@@ -197,11 +197,11 @@ void main() {
       expect(await session.flush(), isTrue);
       expect(
         MarkdownDeltaCodec.encode(session.controller.document.toDelta()),
-        '[wenyousite-align-v1-center]: #\n第一行\n第二行',
+        '[wenyousite-align-v1-center]: #\n第一行\n\n第二行',
       );
     });
 
-    testWidgets('居中空行再次回车时光标与后续输入保持同一方向', (tester) async {
+    testWidgets('居中段后连续回车的空行和续写均为左对齐', (tester) async {
       final session = RichEditorSession(
         initialMarkdown: '',
         onMarkdownChanged: (_) {},
@@ -237,7 +237,7 @@ void main() {
         WenyouEditorFormatPolicy.alignmentSelection(
           session.controller,
         ).alignment,
-        isNull,
+        WenyouTextAlignment.left,
       );
 
       final typingOffset = session.controller.selection.extentOffset;
@@ -429,6 +429,35 @@ void main() {
   });
 
   group('在对齐段落中粘贴结构块', () {
+    testWidgets('Web 两段正文粘贴到行中，段落独立且没有额外空行', (tester) async {
+      final gateway = _MemoryClipboardGateway(
+        const EditorClipboardSnapshot(
+          text: '甲\n乙',
+          html:
+              '<div data-wenyou-clipboard="2" data-wenyou-clipboard-source="editor">'
+              '<p data-wenyou-align="center">甲</p><p>乙</p></div>',
+        ),
+      );
+      final session = RichEditorSession(
+        initialMarkdown: '前后',
+        onMarkdownChanged: (_) {},
+        clipboardGateway: gateway,
+        clipboardStore: WenyouEditorClipboardStore(),
+      );
+      addTearDown(session.dispose);
+      session.controller.updateSelection(
+        const TextSelection.collapsed(offset: 1),
+        ChangeSource.local,
+      );
+      expect(await session.controller.clipboardPaste(), isTrue);
+      expect(session.controller.document.toPlainText(), '前\n甲\n乙\n后\n');
+      expect(session.controller.selection.extentOffset, 6);
+      expect(
+        MarkdownDeltaCodec.encode(session.controller.document.toDelta()),
+        '前\n\n[wenyousite-align-v1-center]: #\n甲\n\n乙\n\n后',
+      );
+      expect(await session.flush(), isTrue);
+    });
     for (final alignment in const ['center', 'right']) {
       for (final position in const [0, 1, 2]) {
         testWidgets('$alignment 段落位置 $position 粘贴 H2 后两侧残段不丢方向', (

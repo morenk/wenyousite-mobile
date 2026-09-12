@@ -1,0 +1,167 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_quill/flutter_quill.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:markdown/markdown.dart' as md;
+import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_editor_document.dart';
+import 'package:wenyousite_mobile/features/editor/presentation/rich_editor_session.dart';
+
+void main() {
+  for (final content in ['甲', '\u00a0', '\u200b', '\u2060', '\u3000']) {
+    for (final prefix in ['>', '>\t', '   >']) {
+      test('引用可选空格不影响块归属：$prefix ${content.codeUnits}', () {
+        final source = '> 上段\n$prefix$content\n> **下段** *~~样式~~*';
+        final document = Document.fromDelta(
+          MarkdownDeltaCodec.decode(source).delta,
+        );
+        addTearDown(document.close);
+        expect(document.toPlainText(), '上段\n$content\n下段 样式\n');
+        _expectSingleQuote(document, 3);
+        final encoded = MarkdownDeltaCodec.encode(document.toDelta());
+        expect(encoded, '> 上段\n> $content\n> **下段** *~~样式~~*');
+        expect(
+          md.markdownToHtml(
+            encoded,
+            extensionSet: md.ExtensionSet.gitHubFlavored,
+          ),
+          md.markdownToHtml(
+            source,
+            extensionSet: md.ExtensionSet.gitHubFlavored,
+          ),
+        );
+        final reopened = Document.fromDelta(
+          MarkdownDeltaCodec.decode(encoded).delta,
+        );
+        addTearDown(reopened.close);
+        _expectSingleQuote(reopened, 3);
+        expect(reopened.toPlainText(), document.toPlainText());
+        expect(MarkdownDeltaCodec.encode(reopened.toDelta()), encoded);
+      });
+    }
+  }
+
+  for (final separator in ['>', '> ', '>\t', '>  ', '   >\t ']) {
+    test('引用分隔 $separator 保持同一个 Quill 引用块且不创建空行', () {
+      final source = '> **甲**\n$separator\n> *乙*';
+      final document = Document.fromDelta(
+        MarkdownDeltaCodec.decode(source).delta,
+      );
+      addTearDown(document.close);
+      expect(document.toPlainText(), '甲\n乙\n');
+      _expectSingleQuote(document, 2);
+      expect(document.collectStyle(0, 1).attributes['bold']?.value, isTrue);
+      expect(document.collectStyle(2, 1).attributes['italic']?.value, isTrue);
+      final encoded = MarkdownDeltaCodec.encode(document.toDelta());
+      expect(encoded, '> **甲**\n>\n> *乙*');
+      final readerBlocks = md.Document().parseLines(encoded.split('\n'));
+      expect(readerBlocks, hasLength(1));
+      final quote = readerBlocks.single as md.Element;
+      expect(quote.tag, 'blockquote');
+      expect(quote.children!.whereType<md.Element>().map((node) => node.tag), [
+        'p',
+        'p',
+      ]);
+      final reopened = Document.fromDelta(
+        MarkdownDeltaCodec.decode(encoded).delta,
+      );
+      addTearDown(reopened.close);
+      _expectSingleQuote(reopened, 2);
+      expect(reopened.toPlainText(), document.toPlainText());
+      expect(MarkdownDeltaCodec.encode(reopened.toDelta()), encoded);
+      expect(
+        MarkdownEditorDocument.parse(source).blockKinds,
+        everyElement(MarkdownEditorBlockKind.quote),
+      );
+    });
+  }
+
+  testWidgets('真实编辑会话输入粗体、保存、删除后保持引用分段且不多空行', (tester) async {
+    const source = '> **甲**\n>\n> *乙*';
+    final emitted = <String>[];
+    final session = RichEditorSession(
+      initialMarkdown: source,
+      onMarkdownChanged: emitted.add,
+    );
+    addTearDown(session.dispose);
+    final controller = session.controller;
+    _expectSingleQuote(controller.document, 2);
+    controller.updateSelection(
+      const TextSelection.collapsed(offset: 1),
+      ChangeSource.local,
+    );
+    controller.replaceText(1, 0, '丙', const TextSelection.collapsed(offset: 2));
+    expect(await session.flush(), isTrue);
+    expect(emitted.last, '> **甲丙**\n>\n> *乙*');
+    _expectSingleQuote(controller.document, 2);
+    controller.replaceText(1, 1, '', const TextSelection.collapsed(offset: 1));
+    expect(await session.flush(), isTrue);
+    expect(emitted.last, source);
+    _expectSingleQuote(controller.document, 2);
+  });
+
+  for (final source in ['>', '>\n> 甲', '> 甲\n>', '> 甲\n>\n>\n> 乙']) {
+    test('首尾空引用可编辑，内部连续分隔保持源码个数：$source', () {
+      final document = Document.fromDelta(
+        MarkdownDeltaCodec.decode(source).delta,
+      );
+      addTearDown(document.close);
+      _expectSingleQuote(
+        document,
+        source == '> 甲\n>\n>\n> 乙' ? 2 : source.split('\n').length,
+      );
+      expect(document.toPlainText(), isNot(contains('>')));
+      expect(MarkdownDeltaCodec.encode(document.toDelta()), source);
+    });
+  }
+
+  test('独立引用之间的普通空行不被并入引用', () {
+    const source = '> 甲\n\n> 乙';
+    final document = Document.fromDelta(
+      MarkdownDeltaCodec.decode(source).delta,
+    );
+    addTearDown(document.close);
+    expect(document.root.children.whereType<Block>(), hasLength(2));
+    expect(MarkdownDeltaCodec.encode(document.toDelta()), source);
+  });
+
+  test('围栏代码内的空引用符号仍是源码文字', () {
+    final document = Document.fromDelta(
+      MarkdownDeltaCodec.decode('```\n>\n```').delta,
+    );
+    addTearDown(document.close);
+    expect(document.toPlainText(), '```\n>\n```\n');
+    expect(document.root.children.whereType<Block>(), isEmpty);
+    final reopened = Document.fromDelta(
+      MarkdownDeltaCodec.decode(
+        MarkdownDeltaCodec.encode(document.toDelta()),
+      ).delta,
+    );
+    addTearDown(reopened.close);
+    expect(reopened.toPlainText(), contains('>'));
+    expect(reopened.root.children.whereType<Block>(), isEmpty);
+  });
+
+  for (final source in [r'\>', '`>`', '    >', '> >']) {
+    test('转义、代码和嵌套引用中的符号不被吞掉：$source', () {
+      final document = Document.fromDelta(
+        MarkdownDeltaCodec.decode(source).delta,
+      );
+      addTearDown(document.close);
+      expect(document.toPlainText(), contains('>'));
+      final encoded = MarkdownDeltaCodec.encode(document.toDelta());
+      final reopened = Document.fromDelta(
+        MarkdownDeltaCodec.decode(encoded).delta,
+      );
+      addTearDown(reopened.close);
+      expect(reopened.toPlainText(), document.toPlainText());
+    });
+  }
+}
+
+void _expectSingleQuote(Document document, int lines) {
+  expect(document.root.children, hasLength(1));
+  final block = document.root.children.single;
+  expect(block, isA<Block>());
+  expect(block.style.attributes['blockquote']?.value, isTrue);
+  expect((block as Block).childCount, lines);
+}

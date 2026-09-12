@@ -27,6 +27,7 @@ class AccountDeletionController extends StateNotifier<AccountDeletionState> {
 
   final AccountDeletionRepository _repository;
   final SessionController _sessionController;
+  SessionScope? _cleanupScope;
 
   Future<bool> submit() async {
     if (state.isSubmitting || state.remoteDeletionConfirmed) return false;
@@ -34,10 +35,20 @@ class AccountDeletionController extends StateNotifier<AccountDeletionState> {
       status: AccountDeletionStatus.submitting,
     );
     var remoteDeletionConfirmed = false;
+    final scope = _sessionController.scope;
     try {
       await _repository.deleteAccount();
+      _sessionController.ensureScopeCurrent(scope);
       remoteDeletionConfirmed = true;
-      await _sessionController.logoutLocally();
+      if (!mounted) return false;
+      // Publish the irreversible boundary before local logout changes routing.
+      state = const AccountDeletionState(
+        status: AccountDeletionStatus.submitting,
+        remoteDeletionConfirmed: true,
+      );
+      final cleanup = _sessionController.logoutLocally();
+      _cleanupScope = _sessionController.scope;
+      await cleanup;
       if (mounted) state = const AccountDeletionState();
       return true;
     } on Object catch (error) {
@@ -63,7 +74,11 @@ class AccountDeletionController extends StateNotifier<AccountDeletionState> {
       remoteDeletionConfirmed: true,
     );
     try {
-      await _sessionController.logoutLocally();
+      final scope = _cleanupScope;
+      if (scope != null) _sessionController.ensureScopeCurrent(scope);
+      final cleanup = _sessionController.logoutLocally();
+      _cleanupScope = _sessionController.scope;
+      await cleanup;
       if (mounted) state = const AccountDeletionState();
       return true;
     } on Object catch (error) {

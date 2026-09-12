@@ -1,5 +1,10 @@
-import 'dart:convert';
 import 'dart:io';
+import 'architecture/allowlist.dart';
+import 'architecture/dependency_checks.dart';
+import 'architecture/dependency_graph.dart';
+import 'architecture/editor_semantics_checks.dart';
+import 'architecture/presentation_checks.dart';
+import 'architecture/source_files.dart';
 
 const _idempotentOperations = <String>{
   'directConversationsCreate',
@@ -18,10 +23,10 @@ const _idempotentOperations = <String>{
 };
 
 const _maximumDartFileLines = 900;
+
 const _reviewDartFileLines = 700;
+
 const _legacyStateNotifierBaseline = 59;
-const _crossFeatureInternalImportBaseline = 41;
-const _featurePresentationSpinnerBaseline = 77;
 
 void main() {
   final failures = collectArchitectureFailures(Directory.current);
@@ -50,125 +55,79 @@ void main() {
 
 List<String> collectArchitectureFailures(Directory root) {
   final failures = <String>[];
-  final allowlist = _readAllowlist(root);
-  final dartFiles = _dartFiles(Directory('${root.path}/lib'));
-  final testDartFiles = _dartFiles(Directory('${root.path}/test'));
+  final allowlist = readAllowlist(root);
+  final graph = DependencyGraph(root);
+  final allDartFiles = repositoryDartFiles(root);
+  final applicationFiles = dartFiles(Directory('${root.path}/lib'));
+  final testDartFiles = dartFiles(Directory('${root.path}/test'));
 
-  _checkIdempotentPolicies(dartFiles, failures, root);
-  _checkDomainBoundaries(
-    dartFiles,
+  _checkIdempotentPolicies(applicationFiles, failures, root);
+  checkDomainBoundaries(
+    applicationFiles,
     allowlist.domainBoundaryDebt,
     failures,
     root,
+    graph,
   );
-  _checkDomainStateOwnership(dartFiles, failures, root);
-  _checkDartFileSizes(dartFiles, allowlist.largeFileDebt, failures, root);
-  _checkHandwrittenParts(dartFiles, failures, root);
-  _checkLayerDependencies(
-    dartFiles,
+  checkDomainStateOwnership(applicationFiles, failures, root);
+  _checkDartFileSizes(allDartFiles, allowlist.largeFileDebt, failures, root);
+  _checkHandwrittenParts(allDartFiles, failures, root);
+  checkLayerDependencies(
+    applicationFiles,
     allowlist.layerDependencyDebt,
     failures,
     root,
+    graph,
   );
-  _checkFeatureDependencies(
-    dartFiles,
+  checkFeatureDependencies(
+    applicationFiles,
     allowlist.featureDependencies,
     allowlist.featureCycleDebt,
     failures,
     root,
+    graph,
   );
-  _checkCrossFeatureInternalImports(dartFiles, failures, root);
-  _checkLegacyStateNotifierBudget(dartFiles, failures, root);
-  _checkFeatureSpinnerBudget(dartFiles, failures, root);
-  _checkEditorPublicSurface(dartFiles, failures, root);
-  _checkFoundationIconBoundary(dartFiles, failures, root);
-  _checkSharedTabBoundary(dartFiles, failures, root);
-  _checkSnackBarBoundary(dartFiles, failures, root);
-  _checkFailurePresentationBoundary(dartFiles, failures, root);
-  _checkRouteTransitionBoundary(dartFiles, failures, root);
+  checkCrossFeatureInternalImports(
+    applicationFiles,
+    allowlist.crossFeatureInternalImportDebt,
+    failures,
+    root,
+    graph,
+  );
+  checkCoreBoundary(applicationFiles, failures, root, graph);
+  _checkLegacyStateNotifierBudget(applicationFiles, failures, root);
+  checkFeatureSpinnerBudget(applicationFiles, failures, root);
+  checkEditorPublicSurface(applicationFiles, failures, root, graph);
+  checkEditorSemanticsBoundary(applicationFiles, failures, root, graph);
+  checkFoundationIconBoundary(applicationFiles, failures, root);
+  checkTypographyBoundary(applicationFiles, failures, root);
+  _checkSystemFontBoundary(applicationFiles, failures, root);
+  checkSharedTabBoundary(applicationFiles, failures, root);
+  checkSnackBarBoundary(applicationFiles, failures, root);
+  checkFailurePresentationBoundary(applicationFiles, failures, root);
+  checkRouteTransitionBoundary(applicationFiles, failures, root);
   _checkVersionConsistency(failures, root);
-  _checkDirectDependencies(dartFiles, failures, root);
-  _checkRawRequestFlags(dartFiles, failures, root);
-  _checkRawRouteNavigation(dartFiles, failures, root);
-  _checkRawRouteDefinitions(dartFiles, failures, root);
+  _checkDirectDependencies(applicationFiles, failures, root);
+  _checkRawRequestFlags(applicationFiles, failures, root);
+  _checkRawRouteNavigation(applicationFiles, failures, root);
+  _checkRawRouteDefinitions(applicationFiles, failures, root);
   _checkGoldenTestSetup(testDartFiles, failures, root);
 
   failures.sort();
   return failures;
 }
 
-void _checkFailurePresentationBoundary(
-  List<File> files,
-  List<String> failures,
-  Directory root,
-) {
-  const allowedFiles = <String>{
-    'lib/core/application/user_facing_failure.dart',
-    'lib/core/network/api_failure.dart',
-    'lib/core/network/api_interceptors.dart',
-    'lib/core/widgets/wenyou_feedback.dart',
-  };
-  final rawProblemNumber = RegExp(r'''['"]问题编号：''');
-  final interpolatedTechnicalCode = RegExp(
-    r'''['"][^'"\n]*\$\{?[^'"\n]*(?:businessCode|httpStatus|diagnosticCode)''',
-  );
-
-  for (final file in files) {
-    final path = _relative(file.path, root);
-    if (allowedFiles.contains(path) ||
-        path.startsWith('lib/core/diagnostics/') ||
-        path.endsWith('_diagnostics.dart')) {
-      continue;
-    }
-    final source = file.readAsStringSync();
-    if (rawProblemNumber.hasMatch(source)) {
-      failures.add(
-        '$path formats a problem number outside the shared failure policy',
-      );
-    }
-    if (interpolatedTechnicalCode.hasMatch(source)) {
-      failures.add(
-        '$path interpolates a technical error code outside diagnostics',
-      );
-    }
-  }
-}
-
-void _checkFeatureSpinnerBudget(
-  List<File> files,
-  List<String> failures,
-  Directory root,
-) {
-  final pattern = RegExp(r'\bCircularProgressIndicator\s*\(');
-  var count = 0;
-  for (final file in files) {
-    final path = _relative(file.path, root);
-    if (!path.startsWith('lib/features/') || !path.contains('/presentation/')) {
-      continue;
-    }
-    count += pattern.allMatches(file.readAsStringSync()).length;
-  }
-  if (count > _featurePresentationSpinnerBaseline) {
-    failures.add(
-      'feature presentation spinners grew from '
-      '$_featurePresentationSpinnerBaseline to $count; use a shared loading '
-      'primitive',
-    );
-  }
-}
-
 List<String> collectArchitectureReviewNotices(Directory root) {
   final notices = <String>[];
-  for (final file in _dartFiles(
-    Directory('${root.path}/lib'),
+  for (final file in repositoryDartFiles(
+    root,
   ).where((file) => !file.path.replaceAll('\\', '/').endsWith('.g.dart'))) {
-    final lineCount = _lineCount(file.readAsStringSync());
-    if (lineCount <= _reviewDartFileLines ||
-        lineCount > _maximumDartFileLines) {
+    final count = lineCount(file.readAsStringSync());
+    if (count <= _reviewDartFileLines || count > _maximumDartFileLines) {
       continue;
     }
     notices.add(
-      '${_relative(file.path, root)} has $lineCount lines; review a focused '
+      '${relativePath(file.path, root)} has $count lines; review a focused '
       'split when this file is next changed',
     );
   }
@@ -186,7 +145,7 @@ void _checkLegacyStateNotifierBudget(
   for (final file in files) {
     final count = pattern.allMatches(file.readAsStringSync()).length;
     declarations.addAll(
-      List.filled(count, _relative(file.path, root), growable: false),
+      List.filled(count, relativePath(file.path, root), growable: false),
     );
   }
   if (declarations.length > _legacyStateNotifierBaseline) {
@@ -195,132 +154,6 @@ void _checkLegacyStateNotifierBudget(
       '$_legacyStateNotifierBaseline to ${declarations.length}; use '
       'Notifier or AsyncNotifier for new state',
     );
-  }
-}
-
-void _checkCrossFeatureInternalImports(
-  List<File> files,
-  List<String> failures,
-  Directory root,
-) {
-  final dependencies = <String>[];
-  for (final file in files) {
-    final path = _relative(file.path, root);
-    if (!path.startsWith('lib/features/')) continue;
-    final from = path.split('/')[2];
-    for (final target in _dependencyTargets(file, root)) {
-      final parts = target.split('/');
-      if (parts.length < 5 || !target.startsWith('lib/features/')) continue;
-      final to = parts[2];
-      final layer = parts[3];
-      if (from != to && (layer == 'data' || layer == 'presentation')) {
-        dependencies.add('$path->$target');
-      }
-    }
-  }
-  if (dependencies.length > _crossFeatureInternalImportBaseline) {
-    failures.add(
-      'cross-feature data/presentation imports grew from '
-      '$_crossFeatureInternalImportBaseline to ${dependencies.length}; '
-      'publish and use a feature facade instead',
-    );
-  }
-}
-
-void _checkSnackBarBoundary(
-  List<File> files,
-  List<String> failures,
-  Directory root,
-) {
-  const sharedPolicy = 'lib/core/widgets/wenyou_snack_bar.dart';
-  const forbiddenPatterns = <String, String>{
-    r'\bSnackBar\s*\(': 'constructs SnackBar',
-    r'\bSnackBarAction\s*\(': 'constructs SnackBarAction',
-    r'\.showSnackBar\s*\(': 'calls showSnackBar',
-  };
-
-  for (final file in files) {
-    final path = _relative(file.path, root);
-    if (path == sharedPolicy) continue;
-    final source = file.readAsStringSync();
-    for (final entry in forbiddenPatterns.entries) {
-      if (RegExp(entry.key).hasMatch(source)) {
-        failures.add(
-          '$path ${entry.value} outside the shared transient-feedback policy',
-        );
-      }
-    }
-  }
-}
-
-void _checkRouteTransitionBoundary(
-  List<File> files,
-  List<String> failures,
-  Directory root,
-) {
-  const sharedPolicy = 'lib/core/navigation/wenyou_page_transitions.dart';
-  const appTheme = 'lib/app/app_theme.dart';
-  const nestedNavigatorException =
-      'lib/features/posts/presentation/post_composer_sheet.dart';
-  const centralizedConstructors = <String>[
-    'NoTransitionPage',
-    'CustomTransitionPage',
-    'MaterialPageRoute',
-    'CupertinoPageRoute',
-  ];
-
-  for (final file in files) {
-    final path = _relative(file.path, root);
-    if (path == sharedPolicy) continue;
-    final source = file.readAsStringSync();
-    for (final constructor in centralizedConstructors) {
-      if (RegExp('\\b$constructor(?:<[^>]+>)?\\s*\\(').hasMatch(source)) {
-        failures.add(
-          '$path uses $constructor outside the shared navigation policy',
-        );
-      }
-    }
-    if (RegExp(r'\bextends\s+PageTransitionsBuilder\b').hasMatch(source)) {
-      failures.add(
-        '$path defines PageTransitionsBuilder outside the shared navigation policy',
-      );
-    }
-    if (path != appTheme &&
-        RegExp(r'\bPageTransitionsTheme\s*\(').hasMatch(source)) {
-      failures.add(
-        '$path configures PageTransitionsTheme outside the app theme',
-      );
-    }
-    if (path != nestedNavigatorException &&
-        RegExp(r'\bPageRouteBuilder(?:<[^>]+>)?\s*\(').hasMatch(source)) {
-      failures.add(
-        '$path uses PageRouteBuilder outside the shared navigation policy',
-      );
-    }
-  }
-}
-
-void _checkSharedTabBoundary(
-  List<File> files,
-  List<String> failures,
-  Directory root,
-) {
-  const forbiddenPatterns = <String, String>{
-    r'\bTabBar\s*\(': 'Material TabBar',
-    r'\bTabBarView\s*\(': 'Material TabBarView',
-    r'\bDefaultTabController\s*\(': 'Material DefaultTabController',
-  };
-  for (final file in files) {
-    final path = _relative(file.path, root);
-    if (!path.startsWith('lib/features/') || !path.contains('/presentation/')) {
-      continue;
-    }
-    final source = file.readAsStringSync();
-    for (final entry in forbiddenPatterns.entries) {
-      if (RegExp(entry.key).hasMatch(source)) {
-        failures.add('$path uses ${entry.value}; use WenyouContentTabs');
-      }
-    }
   }
 }
 
@@ -336,7 +169,7 @@ void _checkHandwrittenParts(
   );
   for (final file in files.where((file) => !file.path.endsWith('.g.dart'))) {
     final source = file.readAsStringSync();
-    final path = _relative(file.path, root);
+    final path = relativePath(file.path, root);
     if (partOf.hasMatch(source)) {
       failures.add('$path uses handwritten part-of; use an explicit library');
     }
@@ -354,29 +187,32 @@ void _checkDartFileSizes(
   List<String> failures,
   Directory root,
 ) {
+  for (final path in allowlist.keys) {
+    failures.add('large-file debt cannot be reintroduced: $path');
+  }
   final actualDebt = <String, int>{};
   for (final file in files.where(
     (file) => !file.path.replaceAll('\\', '/').endsWith('.g.dart'),
   )) {
-    final path = _relative(file.path, root);
-    final lineCount = _lineCount(file.readAsStringSync());
-    if (lineCount <= _maximumDartFileLines) continue;
+    final path = relativePath(file.path, root);
+    final count = lineCount(file.readAsStringSync());
+    if (count <= _maximumDartFileLines) continue;
 
-    actualDebt[path] = lineCount;
+    actualDebt[path] = count;
     final baseline = allowlist[path];
     if (baseline == null) {
       failures.add(
-        '$path has $lineCount lines; split non-generated Dart files above '
+        '$path has $count lines; split non-generated Dart files above '
         '$_maximumDartFileLines lines',
       );
-    } else if (lineCount > baseline) {
+    } else if (count > baseline) {
       failures.add(
-        '$path grew from the allowed $baseline lines to $lineCount lines',
+        '$path grew from the allowed $baseline lines to $count lines',
       );
-    } else if (lineCount < baseline) {
+    } else if (count < baseline) {
       failures.add(
         '$path large-file debt can be tightened from $baseline to '
-        '$lineCount lines',
+        '$count lines',
       );
     }
   }
@@ -385,61 +221,6 @@ void _checkDartFileSizes(
     (path) => !actualDebt.containsKey(path),
   )) {
     failures.add('stale large-file debt: $path');
-  }
-}
-
-int _lineCount(String source) {
-  if (source.isEmpty) return 0;
-  final newlineCount = '\n'.allMatches(source).length;
-  return source.endsWith('\n') ? newlineCount : newlineCount + 1;
-}
-
-void _checkFoundationIconBoundary(
-  List<File> files,
-  List<String> failures,
-  Directory root,
-) {
-  const forbiddenPatterns = <String, String>{
-    r'\bIcons\.': 'Material Icons.*',
-    r'\bIconData\b': 'Material IconData',
-    r'\bIcon\s*\(': 'Material Icon(...)',
-  };
-  for (final file in files) {
-    final source = file.readAsStringSync();
-    final path = _relative(file.path, root);
-    for (final entry in forbiddenPatterns.entries) {
-      if (RegExp(entry.key).hasMatch(source)) {
-        failures.add(
-          '$path uses ${entry.value}; use Foundation semantic icons',
-        );
-      }
-    }
-  }
-}
-
-void _checkEditorPublicSurface(
-  List<File> files,
-  List<String> failures,
-  Directory root,
-) {
-  const publicEditorSurfaces = <String>{
-    'lib/features/editor/editor.dart',
-    'lib/features/editor/editor_persistence.dart',
-  };
-  for (final file in files) {
-    final path = _relative(file.path, root);
-    if (!path.startsWith('lib/features/') ||
-        path.startsWith('lib/features/editor/')) {
-      continue;
-    }
-    for (final target in _dependencyTargets(file, root)) {
-      if (target.startsWith('lib/features/editor/') &&
-          !publicEditorSurfaces.contains(target)) {
-        failures.add(
-          '$path imports editor internals $target; use an editor root facade',
-        );
-      }
-    }
   }
 }
 
@@ -457,232 +238,13 @@ void _checkIdempotentPolicies(
         final call = _balancedCall(source, openingParenthesis);
         if (!call.contains('extra: ApiRequestPolicy.idempotentCreate.extra')) {
           failures.add(
-            '${_relative(file.path, root)} calls $operation without the '
+            '${relativePath(file.path, root)} calls $operation without the '
             'idempotent-create request policy',
           );
         }
       }
     }
   }
-}
-
-void _checkDomainBoundaries(
-  List<File> files,
-  Set<_DomainBoundaryDebt> allowlist,
-  List<String> failures,
-  Directory root,
-) {
-  const forbiddenImports = <String>[
-    'package:flutter/',
-    'package:flutter_riverpod/',
-    'package:riverpod/',
-    'package:dio/',
-    'package:wenyou_api/',
-    'lib/core/network/',
-  ];
-  final actualDebt = <_DomainBoundaryDebt>{};
-  for (final file in files.where(
-    (file) => _relative(file.path, root).contains('/domain/'),
-  )) {
-    final path = _relative(file.path, root);
-    final dependencies = _dependencyTargets(file, root);
-    for (final dependency in dependencies.where(
-      (target) => forbiddenImports.any(target.startsWith),
-    )) {
-      final debt = _DomainBoundaryDebt(source: path, target: dependency);
-      actualDebt.add(debt);
-      if (!allowlist.contains(debt)) {
-        failures.add('$path imports forbidden domain dependency $dependency');
-      }
-    }
-  }
-  for (final debt
-      in allowlist.difference(actualDebt).toList()
-        ..sort((left, right) => left.key.compareTo(right.key))) {
-    failures.add('stale domain boundary debt: ${debt.key}');
-  }
-}
-
-void _checkDomainStateOwnership(
-  List<File> files,
-  List<String> failures,
-  Directory root,
-) {
-  final stateDeclaration = RegExp(
-    r'^(?:sealed\s+|abstract\s+|final\s+)?class\s+\w*State\b',
-    multiLine: true,
-  );
-  final phaseDeclaration = RegExp(r'^enum\s+\w*Phase\b', multiLine: true);
-  for (final file in files.where(
-    (file) => _relative(file.path, root).contains('/domain/'),
-  )) {
-    final source = file.readAsStringSync();
-    final path = _relative(file.path, root);
-    if (stateDeclaration.hasMatch(source)) {
-      failures.add(
-        '$path declares application state in domain; move it to application',
-      );
-    }
-    if (phaseDeclaration.hasMatch(source)) {
-      failures.add(
-        '$path declares an application phase in domain; move it to application',
-      );
-    }
-  }
-}
-
-Set<String> _dependencyTargets(File file, Directory root) {
-  final source = file
-      .readAsStringSync()
-      .replaceAll(RegExp(r'/\*[\s\S]*?\*/'), '')
-      .replaceAll(RegExp(r'^\s*//.*$', multiLine: true), '');
-  final directivePattern = RegExp(
-    r'^\s*(?:import|export)\s+([\s\S]*?);',
-    multiLine: true,
-  );
-  final uriPattern = RegExp(r'''['"]([^'"]+)['"]''');
-  final sourcePath = _relative(file.path, root);
-  return {
-    for (final directive in directivePattern.allMatches(source))
-      for (final uri in uriPattern.allMatches(directive.group(1)!))
-        _normalizeDependency(uri.group(1)!, sourcePath),
-  };
-}
-
-String _normalizeDependency(String uri, String sourcePath) {
-  const packagePrefix = 'package:wenyousite_mobile/';
-  if (uri.startsWith(packagePrefix)) {
-    return 'lib/${uri.substring(packagePrefix.length)}';
-  }
-  if (uri.contains(':')) return uri;
-  final segments = <String>[
-    ...sourcePath.split('/')..removeLast(),
-    ...uri.replaceAll('\\', '/').split('/'),
-  ];
-  final normalized = <String>[];
-  for (final segment in segments) {
-    if (segment.isEmpty || segment == '.') continue;
-    if (segment == '..') {
-      if (normalized.isNotEmpty) normalized.removeLast();
-      continue;
-    }
-    normalized.add(segment);
-  }
-  return normalized.join('/');
-}
-
-void _checkLayerDependencies(
-  List<File> files,
-  Set<String> allowlist,
-  List<String> failures,
-  Directory root,
-) {
-  final actualDebt = <String>{};
-  for (final file in files) {
-    final path = _relative(file.path, root);
-    final parts = path.split('/');
-    if (parts.length < 5 || !path.startsWith('lib/features/')) continue;
-    final fromLayer = parts[3];
-    for (final target in _dependencyTargets(file, root)) {
-      final targetParts = target.split('/');
-      if (targetParts.length < 5 || !target.startsWith('lib/features/')) {
-        continue;
-      }
-      final toLayer = targetParts[3];
-      if (fromLayer == 'data' &&
-          toLayer == 'application' &&
-          !target.endsWith('_ports.dart')) {
-        final dependency = '$path->$target';
-        actualDebt.add(dependency);
-        if (!allowlist.contains(dependency)) {
-          failures.add('new forbidden layer dependency: $dependency');
-        }
-        continue;
-      }
-      if (!_isForbiddenLayerDependency(fromLayer, toLayer)) continue;
-      final dependency = '$path->$target';
-      actualDebt.add(dependency);
-      if (!allowlist.contains(dependency)) {
-        failures.add('new forbidden layer dependency: $dependency');
-      }
-    }
-  }
-  for (final dependency in allowlist.difference(actualDebt).toList()..sort()) {
-    failures.add('stale forbidden layer dependency debt: $dependency');
-  }
-}
-
-bool _isForbiddenLayerDependency(String from, String to) {
-  return switch (from) {
-    'presentation' => to == 'data',
-    'application' => to == 'data' || to == 'presentation',
-    'domain' => to == 'data' || to == 'application' || to == 'presentation',
-    'data' => to == 'presentation',
-    _ => false,
-  };
-}
-
-void _checkFeatureDependencies(
-  List<File> files,
-  Set<String> allowlist,
-  Set<String> cycleDebt,
-  List<String> failures,
-  Directory root,
-) {
-  final edges = <String>{};
-  for (final file in files) {
-    final path = _relative(file.path, root);
-    if (!path.startsWith('lib/features/')) continue;
-    final from = path.split('/')[2];
-    for (final target in _dependencyTargets(file, root)) {
-      final parts = target.split('/');
-      if (parts.length < 4 || !target.startsWith('lib/features/')) continue;
-      final to = parts[2];
-      if (to != from) edges.add('$from->$to');
-    }
-  }
-  for (final edge in edges.difference(allowlist).toList()..sort()) {
-    failures.add('new cross-feature dependency is not allowed: $edge');
-  }
-  for (final edge in allowlist.difference(edges).toList()..sort()) {
-    failures.add('stale cross-feature dependency debt: $edge');
-  }
-  final cyclicEdges = _cyclicFeatureEdges(edges);
-  for (final edge in cyclicEdges.difference(cycleDebt).toList()..sort()) {
-    failures.add('new cyclic cross-feature dependency is not allowed: $edge');
-  }
-  for (final edge in cycleDebt.difference(cyclicEdges).toList()..sort()) {
-    failures.add('stale cyclic cross-feature dependency debt: $edge');
-  }
-}
-
-Set<String> _cyclicFeatureEdges(Set<String> edges) {
-  final graph = <String, Set<String>>{};
-  for (final edge in edges) {
-    final parts = edge.split('->');
-    graph.putIfAbsent(parts[0], () => <String>{}).add(parts[1]);
-    graph.putIfAbsent(parts[1], () => <String>{});
-  }
-  final result = <String>{};
-  for (final edge in edges) {
-    final parts = edge.split('->');
-    if (_reachableFeatures(parts[1], graph).contains(parts[0])) {
-      result.add(edge);
-    }
-  }
-  return result;
-}
-
-Set<String> _reachableFeatures(String start, Map<String, Set<String>> graph) {
-  final visited = <String>{};
-  final pending = <String>[start];
-  while (pending.isNotEmpty) {
-    final current = pending.removeLast();
-    for (final next in graph[current] ?? const <String>{}) {
-      if (visited.add(next)) pending.add(next);
-    }
-  }
-  return visited;
 }
 
 void _checkVersionConsistency(List<String> failures, Directory root) {
@@ -735,12 +297,61 @@ void _checkGoldenTestSetup(
   for (final file in files) {
     final source = file.readAsStringSync();
     if (!source.contains('matchesGoldenFile(')) continue;
-    if (!source.contains('setUpAll(loadFoundationTestFonts)')) {
+    if (!source.contains('setUpAll(loadDeterministicTestFonts)')) {
       failures.add(
-        '${_relative(file.path, root)} uses golden files without loading '
-        'Foundation test fonts',
+        '${relativePath(file.path, root)} uses golden files without loading '
+        'deterministic test fonts',
       );
     }
+  }
+}
+
+void _checkSystemFontBoundary(
+  List<File> files,
+  List<String> failures,
+  Directory root,
+) {
+  const removedFoundationFontSymbols = <String>[
+    'WenyouFoundationTypography.body',
+    'WenyouFoundationTypography.display',
+    'WenyouFoundationTypography.utility',
+    'WenyouFoundationTypography.chineseFallback',
+    'Wenyou Noto Sans SC',
+    'Wenyou LXGW WenKai',
+    'Wenyou Nunito',
+  ];
+  for (final file in files) {
+    final source = file.readAsStringSync();
+    final path = relativePath(file.path, root);
+    for (final symbol in removedFoundationFontSymbols) {
+      if (source.contains(symbol)) {
+        failures.add(
+          '$path references removed bundled font $symbol; inherit the '
+          'platform system font',
+        );
+      }
+    }
+    for (final line in source.split('\n')) {
+      if (!line.contains('fontFamily:')) continue;
+      if (line.contains("'monospace'") || line.contains('strut.fontFamily')) {
+        continue;
+      }
+      failures.add(
+        '$path sets a production fontFamily; inherit the platform system '
+        'font unless this is the approved monospace presentation',
+      );
+      break;
+    }
+  }
+
+  final pubspec = File('${root.path}/pubspec.yaml');
+  if (!pubspec.existsSync()) return;
+  final source = pubspec.readAsStringSync();
+  if (RegExp(r'^  fonts:', multiLine: true).hasMatch(source)) {
+    failures.add(
+      'pubspec.yaml declares production fonts; UI typography must inherit '
+      'the platform system font',
+    );
   }
 }
 
@@ -776,7 +387,7 @@ void _checkRawRequestFlags(
   Directory root,
 ) {
   for (final file in files) {
-    final path = _relative(file.path, root);
+    final path = relativePath(file.path, root);
     if (path.endsWith('/api_request_policy.dart')) continue;
     final source = file.readAsStringSync();
     if (RegExp(r'''["'](?:skipAuth|idempotentCreate)["']''').hasMatch(source)) {
@@ -794,7 +405,7 @@ void _checkRawRouteNavigation(
     r'''\b(?:context|router)\.(?:go|push|replace)\(\s*["']/''',
   );
   for (final file in files) {
-    final path = _relative(file.path, root);
+    final path = relativePath(file.path, root);
     if (rawNavigation.hasMatch(file.readAsStringSync())) {
       failures.add(
         '$path navigates with a raw path; use a named route or '
@@ -810,7 +421,7 @@ void _checkRawRouteDefinitions(
   Directory root,
 ) {
   for (final file in files) {
-    final path = _relative(file.path, root);
+    final path = relativePath(file.path, root);
     if (path != 'lib/app/app_router.dart' &&
         !path.startsWith('lib/app/routes/')) {
       continue;
@@ -856,89 +467,4 @@ String _balancedCall(String source, int openingParenthesis) {
     }
   }
   return source.substring(openingParenthesis);
-}
-
-List<File> _dartFiles(Directory directory) {
-  if (!directory.existsSync()) return const <File>[];
-  return directory
-      .listSync(recursive: true)
-      .whereType<File>()
-      .where((file) => file.path.endsWith('.dart'))
-      .toList(growable: false);
-}
-
-String _relative(String path, Directory rootDirectory) {
-  final root = rootDirectory.absolute.path.replaceAll('\\', '/');
-  return path
-      .replaceAll('\\', '/')
-      .replaceFirst(RegExp('^${RegExp.escape(root)}/?'), '');
-}
-
-_ArchitectureAllowlist _readAllowlist(Directory root) {
-  final json =
-      jsonDecode(
-            File(
-              '${root.path}/tool/architecture_allowlist.json',
-            ).readAsStringSync(),
-          )
-          as Map<String, dynamic>;
-  return _ArchitectureAllowlist(
-    domainBoundaryDebt: (json['domainBoundaryDebt'] as List<dynamic>)
-        .cast<Map<String, dynamic>>()
-        .map(_DomainBoundaryDebt.fromJson)
-        .toSet(),
-    featureDependencies: (json['featureDependencies'] as List<dynamic>)
-        .cast<String>()
-        .toSet(),
-    featureCycleDebt: (json['featureCycleDebt'] as List<dynamic>)
-        .cast<String>()
-        .toSet(),
-    layerDependencyDebt: (json['layerDependencyDebt'] as List<dynamic>)
-        .cast<String>()
-        .toSet(),
-    largeFileDebt: (json['largeFileDebt'] as Map<String, dynamic>? ?? const {})
-        .map((path, lines) => MapEntry(path, (lines as num).toInt())),
-  );
-}
-
-class _ArchitectureAllowlist {
-  const _ArchitectureAllowlist({
-    required this.domainBoundaryDebt,
-    required this.featureDependencies,
-    required this.featureCycleDebt,
-    required this.layerDependencyDebt,
-    required this.largeFileDebt,
-  });
-
-  final Set<_DomainBoundaryDebt> domainBoundaryDebt;
-  final Set<String> featureDependencies;
-  final Set<String> featureCycleDebt;
-  final Set<String> layerDependencyDebt;
-  final Map<String, int> largeFileDebt;
-}
-
-class _DomainBoundaryDebt {
-  const _DomainBoundaryDebt({required this.source, required this.target});
-
-  factory _DomainBoundaryDebt.fromJson(Map<String, dynamic> json) {
-    return _DomainBoundaryDebt(
-      source: json['source'] as String,
-      target: json['target'] as String,
-    );
-  }
-
-  final String source;
-  final String target;
-
-  String get key => '$source->$target';
-
-  @override
-  bool operator ==(Object other) {
-    return other is _DomainBoundaryDebt &&
-        other.source == source &&
-        other.target == target;
-  }
-
-  @override
-  int get hashCode => Object.hash(source, target);
 }

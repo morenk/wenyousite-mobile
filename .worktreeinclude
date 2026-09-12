@@ -1,0 +1,3 @@
+# Codex 托管 Worktree 需要本机 Android SDK 路径才能运行 Gradle。
+# 不复制签名文件、令牌、.env 或其他凭证。
+android/local.properties

@@ -8,6 +8,7 @@ import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/network/session_controller.dart';
 import 'package:wenyousite_mobile/core/network/session_remote.dart';
 import 'package:wenyousite_mobile/core/storage/token_store.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/settings/data/credential_security_repository.dart';
 import 'package:wenyousite_mobile/features/settings/presentation/change_email_page.dart';
 
@@ -15,6 +16,7 @@ void main() {
   testWidgets('校验新邮箱后确认换绑、清除会话并进入登录页', (tester) async {
     final repository = _FakeRepository();
     final harness = await _pumpPage(tester, repository);
+    expect(find.byType(WenyouSettingsTypography), findsOneWidget);
 
     await tester.enterText(
       find.byKey(const Key('change-email-password')),

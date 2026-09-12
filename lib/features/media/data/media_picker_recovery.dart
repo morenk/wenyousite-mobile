@@ -18,8 +18,8 @@ Future<RecoveredMediaSelectionResult> recoverLostEditorMediaSelection({
   if (!(isAndroid ?? Platform.isAndroid)) {
     return const RecoveredMediaSelectionResult();
   }
-  final purpose = await contextStore.read();
   try {
+    final purpose = await contextStore.read();
     final response = await (retrieve ?? ImagePicker().retrieveLostData)();
     await contextStore.clear();
     if (response.isEmpty || purpose == null) {

@@ -38,7 +38,6 @@ class UserRelationActions extends ConsumerWidget {
               label: state.isFollowing ? '已关注' : '关注',
               semanticsLabel: state.isFollowing ? '已关注，点按取消关注' : '关注',
               selected: state.isFollowing,
-              loading: state.pendingAction == UserRelationAction.follow,
               onPressed: state.isPending
                   ? null
                   : () => _toggleFollow(context, notifier),
@@ -166,5 +165,5 @@ void _showUserRelationSuccess(
 ) {
   final message = notifier.takeSuccessMessage();
   if (message == null) return;
-  showWenyouSnackBar(context, message);
+  showWenyouSnackBar(context, message, tone: WenyouSnackBarTone.success);
 }

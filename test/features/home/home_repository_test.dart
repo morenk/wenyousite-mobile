@@ -4,6 +4,9 @@ import 'package:mocktail/mocktail.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/features/home/data/home_repository.dart';
 import 'package:wenyousite_mobile/features/home/domain/home_models.dart';
+import 'package:wenyousite_mobile/features/thread_feed/data/thread_category_catalog_repository.dart';
+
+import '../../support/thread_cover_fixtures.dart';
 
 void main() {
   test('分类按服务端顺序映射且过滤停用项', () async {
@@ -15,7 +18,7 @@ void main() {
 
     final categories = await ApiHomeRepository(
       threadsApi,
-      categoriesApi,
+      ApiThreadCategoryCatalogRepository(categoriesApi),
     ).fetchCategories();
 
     expect(categories.map((item) => item.slug), ['RPG', 'DEDUCTION']);
@@ -38,8 +41,11 @@ void main() {
       ),
     ).thenAnswer((_) async => _threadsResponse());
 
-    final page = await ApiHomeRepository(threadsApi, categoriesApi)
-        .fetchThreads(
+    final page =
+        await ApiHomeRepository(
+          threadsApi,
+          ApiThreadCategoryCatalogRepository(categoriesApi),
+        ).fetchThreads(
           query: const HomeFeedQuery(
             categorySlug: 'RPG',
             tagId: 'tag-1',
@@ -53,13 +59,19 @@ void main() {
     expect(page.hasMore, isTrue);
     final item = page.items.single;
     expect(item.title, '星海旅团');
-    expect(item.status, HomeThreadStatus.finished);
+    expect(item.status, ThreadFeedStatus.finished);
     expect(item.ownerName, '温柔测试员');
     expect(item.ownerAvatarUrl, 'https://cdn.example.com/avatar.webp');
     expect(item.ownerLevel, 3);
     expect(item.preview, '向星海出发');
     expect(item.tags.single.name, '太空歌剧');
     expect(item.coverImageUrls, ['https://cdn.example.com/cover.jpg']);
+    expect(item.coverMedia?.animationUrl, 'https://cdn.example.com/cover.jpg');
+    expect(item.coverMedia?.previewVariants.single.width, 480);
+    expect(
+      item.coverMedia?.staticUrl,
+      'https://cdn.example.com/cover_poster.webp',
+    );
     expect(item.memberCount, 5);
     expect(item.postCount, 12);
     expect(item.tipTotal, '8');
@@ -84,7 +96,7 @@ void main() {
 
     final page = await ApiHomeRepository(
       threadsApi,
-      categoriesApi,
+      ApiThreadCategoryCatalogRepository(categoriesApi),
     ).fetchThreads(query: const HomeFeedQuery());
 
     expect(page.items.single.ownerAvatarUrl, isNull);
@@ -108,7 +120,7 @@ void main() {
 
     final page = await ApiHomeRepository(
       threadsApi,
-      categoriesApi,
+      ApiThreadCategoryCatalogRepository(categoriesApi),
     ).fetchThreads(query: const HomeFeedQuery());
 
     expect(page.items.single.lastActivityAt, latestActivityAt);
@@ -228,6 +240,7 @@ Response<ThreadsFindAll200Response> _threadsResponse({
                   ..posts = 12,
               )
               ..preview = '  向星海出发  '
+              ..coverMedia = animatedThreadCoverFixture().toBuilder()
               ..coverImages.addAll([
                 'https://cdn.example.com/cover.jpg',
                 'https://cdn.example.com/ignored-second-cover.jpg',

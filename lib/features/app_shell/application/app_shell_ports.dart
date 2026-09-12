@@ -41,6 +41,12 @@ abstract interface class MobileUpdateService {
   });
 }
 
+/// Optional capability for checking that the advertised release artifact is
+/// actually available before presenting an update action.
+abstract interface class MobileUpdateAvailabilityChecker {
+  Future<MobileUpdateAvailability> checkAvailability(MobileUpdateInfo update);
+}
+
 abstract interface class RecommendedUpdateDismissStore {
   Future<bool> isDismissed(MobileClientPlatform platform, int build);
 

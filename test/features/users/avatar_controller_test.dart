@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:wenyousite_mobile/core/application/user_facing_failure.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/media/application/avatar_image_ports.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_ports.dart';
@@ -14,6 +15,55 @@ import 'package:wenyousite_mobile/features/users/data/avatar_repository.dart';
 import 'package:wenyousite_mobile/features/users/domain/me_profile_models.dart';
 
 void main() {
+  test('不可重试的上传失败不会被头像入口重新发送', () async {
+    const failure = ApiFailure(userMessage: '请重新选择图片。');
+    final upload = _FakeMediaUploadTask(
+      onUpload: (_) async => null,
+      failure: MediaUploadTaskState(
+        phase: MediaUploadTaskPhase.failed,
+        failure: MediaUploadFailure(
+          failure: failure,
+          presentation: UserFacingFailure.fromApi(failure),
+          canRetry: false,
+        ),
+      ),
+    );
+    final controller = AvatarController(
+      _FakeAvatarPicker(input: _jpegInput),
+      upload,
+      _FakeAvatarRepository(),
+    );
+    addTearDown(controller.dispose);
+    await _pickAndSet(controller);
+    await controller.retry();
+    expect(upload.uploadCalls, 1);
+    expect(controller.state.failure, same(failure));
+  });
+
+  test('会话销毁后的上传结果与旧页面入口不能绑定头像', () async {
+    final result = Completer<UploadedEditorImage?>();
+    final upload = _FakeMediaUploadTask(onUpload: (_) => result.future);
+    final repository = _FakeAvatarRepository();
+    final controller = AvatarController(
+      _FakeAvatarPicker(),
+      upload,
+      repository,
+    );
+    final pending = controller.setImage(_jpegInput);
+    controller.dispose();
+    result.complete(
+      const UploadedEditorImage(mediaId: 'old', url: _newAvatarUrl),
+    );
+    expect(await pending, isNull);
+    expect(await controller.retry(), isNull);
+    expect(await controller.remove(), isNull);
+    expect(await controller.setImage(_jpegInput), isNull);
+    expect(upload.cancelCalls, 1);
+    expect(upload.uploadCalls, 1);
+    expect(repository.setCalls, 0);
+    expect(repository.removeCalls, 0);
+  });
+
   test('取消系统选择后回到空闲且不上传', () async {
     final upload = _FakeMediaUploadTask();
     final avatar = _FakeAvatarRepository();
@@ -75,10 +125,19 @@ void main() {
       failure: const MediaUploadTaskState(
         phase: MediaUploadTaskPhase.failed,
         failure: MediaUploadFailure(
-          userMessage: '上传过于频繁，请稍后重试。',
+          failure: ApiFailure(
+            userMessage: '上传过于频繁，请稍后重试。',
+            businessCode: 42900,
+            requestId: 'upload-request-id',
+          ),
+          presentation: UserFacingFailure(
+            title: '图片上传失败',
+            message: '上传过于频繁，请稍后重试。',
+            recoveryAction: FailureRecoveryAction.retry,
+            placement: FailurePresentationPlacement.inline,
+            retainContent: true,
+          ),
           canRetry: true,
-          businessCode: 42900,
-          requestId: 'upload-request-id',
         ),
       ),
     );
@@ -96,6 +155,8 @@ void main() {
     expect(controller.state.hasPendingInput, isTrue);
     expect(controller.state.failure?.businessCode, 42900);
     expect(controller.state.failure?.requestId, 'upload-request-id');
+    expect(controller.state.uploadFailure, same(upload.failure!.failure));
+    expect(controller.state.failure, same(upload.failure!.failure!.failure));
     await controller.retry();
     expect(picker.calls, 1);
     expect(upload.uploadCalls, 2);
@@ -191,7 +252,7 @@ void main() {
     );
 
     expect(await _pickAndSet(controller), isNull);
-    expect(controller.state.failure?.userMessage, contains('JPG、PNG 和 WebP'));
+    expect(controller.state.failure?.userMessage, contains('图片格式不符'));
     expect(upload.uploadCalls, 0);
   });
 

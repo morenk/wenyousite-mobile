@@ -1,12 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/features/tags/domain/tag_models.dart';
-import 'package:wenyousite_mobile/features/threads/domain/thread_feed_models.dart';
+import 'package:wenyousite_mobile/features/thread_feed/thread_feed_models.dart';
 
 abstract interface class TagRepository {
   Future<TagThreadsBootstrap> loadTagThreads(String tagId);
 
-  Future<CursorPage<HomeThreadCardModel>> fetchTagThreads({
+  Future<CursorPage<ThreadFeedCardModel>> fetchTagThreads({
     required String tagId,
     String? cursor,
     int limit = 20,
@@ -44,7 +44,7 @@ class _UnboundTagRepository implements TagRepository {
   }
 
   @override
-  Future<CursorPage<HomeThreadCardModel>> fetchTagThreads({
+  Future<CursorPage<ThreadFeedCardModel>> fetchTagThreads({
     required String tagId,
     String? cursor,
     int limit = 20,

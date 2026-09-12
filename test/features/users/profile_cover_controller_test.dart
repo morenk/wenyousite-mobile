@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:wenyousite_mobile/core/application/user_facing_failure.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
 import 'package:wenyousite_mobile/features/media/application/profile_cover_image_ports.dart';
@@ -64,7 +65,17 @@ void main() {
   test('移动画幅上传失败保留已上传 Web mediaId，重试不重复 Web 上传', () async {
     final webTask = _FakeUploadTask([_uploaded('web-media')]);
     final mobileTask = _FakeUploadTask([
-      const MediaUploadFailure(userMessage: '移动背景上传失败', canRetry: true),
+      const MediaUploadFailure(
+        failure: ApiFailure(userMessage: '移动背景上传失败'),
+        presentation: UserFacingFailure(
+          title: '图片上传失败',
+          message: '移动背景上传失败',
+          recoveryAction: FailureRecoveryAction.retry,
+          placement: FailurePresentationPlacement.inline,
+          retainContent: true,
+        ),
+        canRetry: true,
+      ),
       _uploaded('mobile-media'),
     ]);
     final repository = _FakeProfileCoverRepository();
@@ -78,6 +89,11 @@ void main() {
     expect(await controller.setSelection(_selection), isNull);
     expect(controller.state.pendingWebMediaId, 'web-media');
     expect(controller.state.failure?.userMessage, '移动背景上传失败');
+    expect(controller.state.uploadFailure, same(mobileTask.outcomes.first));
+    expect(
+      controller.state.failure,
+      same(controller.state.uploadFailure!.failure),
+    );
 
     expect(await controller.retry(), isNotNull);
     expect(webTask.inputs, hasLength(1));

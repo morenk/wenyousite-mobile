@@ -4,11 +4,12 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
-import 'package:wenyousite_mobile/core/widgets/wenyou_thread_feed_card.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
+import 'package:wenyousite_mobile/features/thread_feed/thread_feed_widgets.dart';
 import 'package:wenyousite_mobile/features/users/application/public_user_controller.dart';
 import 'package:wenyousite_mobile/features/users/domain/public_user_models.dart';
 
@@ -56,19 +57,13 @@ class PublicUserContentArea extends ConsumerWidget {
           ),
         ),
         SizedBox(height: tokens.space12),
-        PublicUserContentSectionView(
-          tab: state.activeTab,
-          state: state,
-          onRetry: notifier.retryActive,
-          onLoadMore: notifier.loadMoreActive,
-        ),
       ],
     );
   }
 }
 
-class PublicUserContentSectionView extends StatelessWidget {
-  const PublicUserContentSectionView({
+class PublicUserContentSectionSliver extends StatelessWidget {
+  const PublicUserContentSectionSliver({
     required this.tab,
     required this.state,
     required this.onRetry,
@@ -135,60 +130,78 @@ class _ThreadSection extends StatelessWidget {
   Widget build(BuildContext context) {
     if (section.phase == PublicUserContentPhase.idle ||
         section.phase == PublicUserContentPhase.loading) {
-      return const _ContentLoadingState();
+      return _contentBox(const _ContentLoadingState());
     }
     if (section.phase == PublicUserContentPhase.failed) {
-      return _ContentFailureState(
-        tab: tab,
-        failure: section.failure,
-        onRetry: onRetry,
-        isSelf: isSelf,
+      return _contentBox(
+        _ContentFailureState(
+          tab: tab,
+          failure: section.failure,
+          onRetry: onRetry,
+          isSelf: isSelf,
+        ),
       );
     }
     if (section.items.isEmpty) {
-      return _ContentEmptyState(tab: tab);
+      return _contentBox(_ContentEmptyState(tab: tab));
     }
     final tokens = context.wenyouTokens;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        for (var index = 0; index < section.items.length; index++) ...[
-          if (index > 0) SizedBox(height: tokens.space12),
-          ThreadFeedCard(
-            key: Key('user-thread-${section.items[index].id}'),
-            thread: section.items[index],
-            category: null,
-            onTap: () => context.pushNamed(
-              'thread-detail',
-              pathParameters: {'threadId': section.items[index].id},
-            ),
-            onTagTap: (tag) => context.pushNamed(
-              'tag-threads',
-              pathParameters: {'tagId': tag.id},
-            ),
+    return SliverMainAxisGroup(
+      slivers: [
+        SliverList.separated(
+          itemCount: section.items.length,
+          separatorBuilder: (_, _) => SizedBox(height: tokens.space12),
+          itemBuilder: (context, index) {
+            final item = section.items[index];
+            return WenyouConstrainedWidth(
+              key: ValueKey(item.id),
+              child: ThreadFeedCard(
+                key: Key('user-thread-${item.id}'),
+                thread: item,
+                category: null,
+                onTap: () => context.pushNamed(
+                  'thread-detail',
+                  pathParameters: {'threadId': item.id},
+                ),
+                onTagTap: (tag) => context.pushNamed(
+                  'tag-threads',
+                  pathParameters: {'tagId': tag.id},
+                ),
+              ),
+            );
+          },
+        ),
+        _contentBox(
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (section.failure != null) ...[
+                SizedBox(height: tokens.space12),
+                _ContentInlineFailure(
+                  failure: section.failure!,
+                  onRetry: onLoadMore,
+                ),
+              ],
+              if (section.hasMore && section.failure == null) ...[
+                SizedBox(height: tokens.space12),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    key: Key('public-user-${tab.name}-load-more'),
+                    onPressed: section.isLoadingMore ? null : onLoadMore,
+                    icon: section.isLoadingMore
+                        ? const SizedBox.square(
+                            dimension: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const WenyouIcon(WenyouIconIds.navigationExpand),
+                    label: Text(section.isLoadingMore ? '正在加载' : '加载更多'),
+                  ),
+                ),
+              ],
+            ],
           ),
-        ],
-        if (section.failure != null) ...[
-          SizedBox(height: tokens.space12),
-          _ContentInlineFailure(failure: section.failure!, onRetry: onLoadMore),
-        ],
-        if (section.hasMore && section.failure == null) ...[
-          SizedBox(height: tokens.space12),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              key: Key('public-user-${tab.name}-load-more'),
-              onPressed: section.isLoadingMore ? null : onLoadMore,
-              icon: section.isLoadingMore
-                  ? const SizedBox.square(
-                      dimension: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const WenyouIcon(WenyouIconIds.navigationExpand),
-              label: Text(section.isLoadingMore ? '正在加载' : '加载更多'),
-            ),
-          ),
-        ],
+        ),
       ],
     );
   }
@@ -209,31 +222,37 @@ class _ReplySection extends StatelessWidget {
   Widget build(BuildContext context) {
     if (section.phase == PublicUserContentPhase.idle ||
         section.phase == PublicUserContentPhase.loading) {
-      return const _ContentLoadingState();
+      return _contentBox(const _ContentLoadingState());
     }
     if (section.phase == PublicUserContentPhase.failed) {
-      return _ContentFailureState(
-        tab: PublicUserContentTab.replies,
-        failure: section.failure,
-        onRetry: onRetry,
-        isSelf: isSelf,
+      return _contentBox(
+        _ContentFailureState(
+          tab: PublicUserContentTab.replies,
+          failure: section.failure,
+          onRetry: onRetry,
+          isSelf: isSelf,
+        ),
       );
     }
     if (section.items.isEmpty) {
-      return const _ContentEmptyState(tab: PublicUserContentTab.replies);
+      return _contentBox(
+        const _ContentEmptyState(tab: PublicUserContentTab.replies),
+      );
     }
     final tokens = context.wenyouTokens;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        for (var index = 0; index < section.items.length; index++) ...[
-          if (index > 0) SizedBox(height: tokens.space12),
-          _UserReplyCard(item: section.items[index]),
-        ],
-      ],
+    return SliverList.separated(
+      itemCount: section.items.length,
+      separatorBuilder: (_, _) => SizedBox(height: tokens.space12),
+      itemBuilder: (context, index) => WenyouConstrainedWidth(
+        key: ValueKey(section.items[index].id),
+        child: _UserReplyCard(item: section.items[index]),
+      ),
     );
   }
 }
+
+Widget _contentBox(Widget child) =>
+    SliverToBoxAdapter(child: WenyouConstrainedWidth(child: child));
 
 class _UserReplyCard extends StatelessWidget {
   const _UserReplyCard({required this.item});
@@ -260,7 +279,7 @@ class _UserReplyCard extends StatelessWidget {
                     item.threadTitle,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.titleSmall,
+                    style: Theme.of(context).textTheme.wenyouCompactTitle,
                   ),
                 ),
                 SizedBox(width: tokens.space8),
@@ -277,7 +296,7 @@ class _UserReplyCard extends StatelessWidget {
             Text(
               '${item.subthreadTitle} · '
               '${DateFormat('yyyy-MM-dd HH:mm').format(item.createdAt)}',
-              style: Theme.of(context).textTheme.bodySmall,
+              style: Theme.of(context).textTheme.wenyouCaption,
             ),
           ],
         ),
@@ -309,7 +328,7 @@ class _ContentPill extends StatelessWidget {
           label,
           style: Theme.of(
             context,
-          ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
+          ).textTheme.wenyouCaption.copyWith(color: tokens.mutedText),
         ),
       ),
     );

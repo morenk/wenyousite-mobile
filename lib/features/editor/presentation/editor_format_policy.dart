@@ -128,8 +128,8 @@ abstract final class WenyouEditorFormatPolicy {
     controller.formatSelection(attribute);
     if (attribute.key == Attribute.list.key &&
         currentIndent is int &&
-        currentIndent > 3) {
-      controller.formatSelection(Attribute.indentL3);
+        currentIndent > 2) {
+      controller.formatSelection(Attribute.indentL2);
     }
   }
 

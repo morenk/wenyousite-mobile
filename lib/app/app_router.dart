@@ -7,21 +7,34 @@ import 'package:wenyousite_mobile/app/routes/account_routes.dart';
 import 'package:wenyousite_mobile/app/routes/app_shell_routes.dart';
 import 'package:wenyousite_mobile/app/routes/auth_routes.dart';
 import 'package:wenyousite_mobile/app/routes/content_routes.dart';
+import 'package:wenyousite_mobile/core/navigation/wenyou_feedback_visibility.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/network/session_controller.dart';
+import 'package:wenyousite_mobile/features/settings/application/account_deletion_controller.dart';
+
+final feedbackVisibilityProvider = Provider<WenyouFeedbackVisibility>((ref) {
+  final visibility = WenyouFeedbackVisibility();
+  ref.onDispose(visibility.dispose);
+  return visibility;
+});
 
 final appRouterProvider = Provider<GoRouter>((ref) {
+  final feedbackVisibility = ref.watch(feedbackVisibilityProvider);
   final router = GoRouter(
+    observers: [feedbackVisibility.createObserver()],
     initialLocation: AppRouteLocations.home,
     redirect: (context, state) {
       return resolveSessionRedirect(
         session: ref.read(sessionControllerProvider),
         matchedLocation: state.matchedLocation,
         uri: state.uri,
+        accountCleanupPending:
+            state.matchedLocation == AppRoutePaths.deleteAccount &&
+            ref.read(accountDeletionControllerProvider).remoteDeletionConfirmed,
       );
     },
     routes: [
-      buildAppShellRoute(ref),
+      buildAppShellRoute(ref, feedbackVisibility: feedbackVisibility),
       ...buildContentRoutes(),
       ...buildAccountRoutes(),
       ...buildAuthRoutes(),
@@ -36,7 +49,13 @@ String? resolveSessionRedirect({
   required SessionState session,
   required String matchedLocation,
   required Uri uri,
+  bool accountCleanupPending = false,
 }) {
+  // This route exposes only local cleanup after irreversible deletion. It
+  // must remain reachable without credentials when secure storage fails.
+  if (accountCleanupPending && matchedLocation == AppRoutePaths.deleteAccount) {
+    return null;
+  }
   final access = AppRouteAccessPolicy.forLocation(matchedLocation);
   final isGuestOnlyAuth = access == AppRouteAccess.guestOnly;
   if (session.status == SessionStatus.invalidated && !isGuestOnlyAuth) {

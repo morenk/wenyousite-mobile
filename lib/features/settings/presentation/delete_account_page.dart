@@ -65,7 +65,7 @@ class _DeleteAccountPageState extends ConsumerState<DeleteAccountPage> {
         .read(accountDeletionControllerProvider.notifier)
         .submit();
     if (!succeeded) return;
-    messenger.showWenyouSnackBar('账号已注销。');
+    messenger.showWenyouSnackBar('账号已注销。', tone: WenyouSnackBarTone.success);
     router.go(AppRouteLocations.home);
   }
 
@@ -76,7 +76,10 @@ class _DeleteAccountPageState extends ConsumerState<DeleteAccountPage> {
         .read(accountDeletionControllerProvider.notifier)
         .retryLocalCleanup();
     if (!succeeded) return;
-    messenger.showWenyouSnackBar('这台设备的登录信息已清除。');
+    messenger.showWenyouSnackBar(
+      '这台设备的登录信息已清除。',
+      tone: WenyouSnackBarTone.success,
+    );
     router.go(AppRouteLocations.home);
   }
 
@@ -86,7 +89,7 @@ class _DeleteAccountPageState extends ConsumerState<DeleteAccountPage> {
     final scheme = Theme.of(context).colorScheme;
     final state = ref.watch(accountDeletionControllerProvider);
     final locked = state.isSubmitting || state.remoteDeletionConfirmed;
-    return Scaffold(
+    final page = Scaffold(
       appBar: AppBar(title: const Text('注销账号')),
       body: WenyouPageBody(
         maxWidth: 520,
@@ -193,6 +196,7 @@ class _DeleteAccountPageState extends ConsumerState<DeleteAccountPage> {
         ),
       ),
     );
+    return WenyouSettingsTypography(child: page);
   }
 }
 

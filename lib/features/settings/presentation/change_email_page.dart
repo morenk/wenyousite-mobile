@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/application/credential_input_policy.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_password_field.dart';
@@ -58,6 +59,7 @@ class _ChangeEmailPageState extends ConsumerState<ChangeEmailPage> {
       showWenyouSnackBar(
         context,
         '邮箱已更换，请重新登录。',
+        tone: WenyouSnackBarTone.success,
         pacing: WenyouSnackBarPacing.extended,
       );
     }
@@ -69,7 +71,7 @@ class _ChangeEmailPageState extends ConsumerState<ChangeEmailPage> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(emailChangeControllerProvider);
-    return Scaffold(
+    final page = Scaffold(
       appBar: AppBar(title: const Text('更换邮箱')),
       body: WenyouPageBody(
         maxWidth: 520,
@@ -80,6 +82,7 @@ class _ChangeEmailPageState extends ConsumerState<ChangeEmailPage> {
         ),
       ),
     );
+    return WenyouSettingsTypography(child: page);
   }
 
   Widget _buildRequestStep(BuildContext context, EmailChangeState state) {
@@ -203,7 +206,7 @@ class _ChangeEmailPageState extends ConsumerState<ChangeEmailPage> {
                   state.resendSecondsRemaining > 0
                       ? '${state.resendSecondsRemaining} 秒后可重发'
                       : '没有收到验证码？',
-                  style: Theme.of(context).textTheme.bodySmall,
+                  style: Theme.of(context).textTheme.wenyouCaption,
                 ),
               ),
               TextButton(

@@ -4,12 +4,30 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/application/appearance_preference.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/settings/presentation/appearance_settings_page.dart';
 
-import '../../support/foundation_test_fonts.dart';
+import '../../support/deterministic_test_fonts.dart';
 
 void main() {
-  setUpAll(loadFoundationTestFonts);
+  setUpAll(loadDeterministicTestFonts);
+
+  testWidgets('外观页可直接开启与关闭省流量', (tester) async {
+    await tester.pumpWidget(
+      _testApp(
+        store: _FakeAppearanceStore(),
+        preference: AppearancePreference.system,
+      ),
+    );
+    final toggle = find.byKey(const Key('cover-data-saver'));
+    expect(tester.widget<SwitchListTile>(toggle).value, isFalse);
+    await tester.tap(toggle);
+    await tester.pumpAndSettle();
+    expect(tester.widget<SwitchListTile>(toggle).value, isTrue);
+    await tester.tap(toggle);
+    await tester.pumpAndSettle();
+    expect(tester.widget<SwitchListTile>(toggle).value, isFalse);
+  });
 
   testWidgets('展示 Foundation 三种偏好并持久化黑夜选择', (tester) async {
     final store = _FakeAppearanceStore();
@@ -21,6 +39,7 @@ void main() {
     expect(find.text('亮色'), findsOneWidget);
     expect(find.text('黑夜'), findsOneWidget);
     expect(find.text('随设备外观自动切换'), findsOneWidget);
+    expect(find.byType(WenyouSettingsTypography), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('appearance-option-dark')));
     await tester.pump();

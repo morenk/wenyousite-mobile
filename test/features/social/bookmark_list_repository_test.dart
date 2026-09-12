@@ -6,6 +6,8 @@ import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/social/data/bookmark_list_repository.dart';
 import 'package:wenyousite_mobile/features/social/domain/bookmark_list_models.dart';
 
+import '../../support/thread_cover_fixtures.dart';
+
 void main() {
   setUpAll(() {
     registerFallbackValue(
@@ -45,6 +47,20 @@ void main() {
     expect(item.preview, '雾港中的第一封信');
     expect(item.tags.single.name, '都市奇谈');
     expect(item.coverImageUrls, ['https://cdn.example.com/cover.jpg']);
+    expect(item.coverMedia?.animationUrl, 'https://cdn.example.com/cover.jpg');
+    expect(
+      item
+          .copyWithFolderId('another-folder')
+          .coverMedia
+          ?.previewVariants
+          .single
+          .width,
+      480,
+    );
+    expect(
+      item.copyWithFolderId('another-folder').coverMedia?.staticUrl,
+      'https://cdn.example.com/cover_poster.webp',
+    );
     expect(item.memberCount, 4);
     expect(item.playerCount, 2);
     expect(item.postCount, 18);
@@ -261,9 +277,10 @@ Response<BookmarksFindAll200Response> _listResponse({
                 ),
               )
               ..preview = '  雾港中的第一封信  '
+              ..coverMedia = animatedThreadCoverFixture().toBuilder()
               ..coverImages.addAll([
-                'javascript:alert(1)',
                 'https://cdn.example.com/cover.jpg',
+                'javascript:alert(1)',
                 'https://cdn.example.com/ignored.jpg',
               ])
               ..owner.update(

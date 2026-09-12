@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/direct_messages/application/direct_message_controllers.dart';
@@ -140,13 +141,13 @@ class _DirectConversationPageState extends ConsumerState<DirectConversationPage>
                           conversation.otherUser.username,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.titleSmall,
+                          style: Theme.of(context).textTheme.wenyouCompactTitle,
                         ),
                         if (_conversationSubtitle(conversation)
                             case final subtitle?)
                           Text(
                             subtitle,
-                            style: Theme.of(context).textTheme.bodySmall,
+                            style: Theme.of(context).textTheme.wenyouCaption,
                           ),
                       ],
                     ),
@@ -389,7 +390,7 @@ class _IncomingRequestPanel extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('消息请求', style: Theme.of(context).textTheme.titleSmall),
+            Text('消息请求', style: Theme.of(context).textTheme.wenyouCompactTitle),
             SizedBox(height: tokens.space8),
             Row(
               children: [
@@ -444,7 +445,7 @@ class _SendingUnavailable extends StatelessWidget {
           child: Text(
             _sendingDisabledReason(conversation),
             textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodySmall,
+            style: Theme.of(context).textTheme.wenyouCaption,
           ),
         ),
       ),
@@ -515,7 +516,7 @@ String? _conversationSubtitle(DirectConversation conversation) {
 String _sendingDisabledReason(DirectConversation conversation) {
   if (conversation.isIncomingRequest) return '请先接受或拒绝这条消息请求。';
   if (conversation.isOutgoingRequest) return '对方接受消息请求后才能继续发送。';
-  if (conversation.isBlocked) return '你们之间存在拉黑关系，历史消息仅供查看。';
+  if (conversation.isBlocked) return '你们之间存在拉黑关系，暂时无法查看或发送消息。';
   if (conversation.otherUser.isDeactivated) return '该用户已注销，历史消息仅供查看。';
   return switch (conversation.status) {
     DirectConversationStatus.declined => '该消息请求已被拒绝。',

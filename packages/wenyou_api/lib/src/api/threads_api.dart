@@ -953,7 +953,7 @@ class ThreadsApi {
   /// * [filter] - all=全部公开帖, playing=我参与的帖（playerMarked=true，需登录）
   /// * [category] - 按动态分类 slug 筛选；服务端会去除首尾空白并转为大写
   /// * [sort] - recommended=智能排序, newest=最新创建, active=最新回复
-  /// * [status] - 主题帖状态筛选：招募中、已停招、已结束
+  /// * [status] - 主题帖状态筛选：招募中、已停招、已完结
   /// * [tag] - 按标签名模糊筛选主题帖
   /// * [tagId] - 按主题帖标签 ID 精确筛选；与 tag 同时传入时优先使用 tagId
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
@@ -1535,7 +1535,7 @@ class ThreadsApi {
     );
   }
 
-  /// 原子保存主题帖元数据、默认子贴标题/正文和标签，可同时发布草稿
+  /// 原子保存主题帖元数据、默认子贴标题/发言权限/正文和标签，可同时发布草稿
   ///
   ///
   /// Parameters:

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 
 enum WenyouInteractionKind { like, bookmark }
@@ -70,7 +71,7 @@ class WenyouInteractionToggle extends StatelessWidget {
         if (supporting != null) ...[
           SizedBox(width: tokens.space4),
           DefaultTextStyle.merge(
-            style: TextStyle(
+            style: Theme.of(context).textTheme.wenyouCaption.copyWith(
               color: visualSelected ? tokens.text : tokens.mutedText,
             ),
             child: supporting!,

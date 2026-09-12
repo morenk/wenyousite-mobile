@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/users/application/public_user_controller.dart';
@@ -172,11 +173,11 @@ class _ActivitySummaryItem extends StatelessWidget {
                 Text(
                   displayValue,
                   style: value == null
-                      ? Theme.of(context).textTheme.labelLarge
-                      : Theme.of(context).textTheme.titleLarge,
+                      ? Theme.of(context).textTheme.wenyouLabel
+                      : Theme.of(context).textTheme.wenyouUtilityListTitle,
                 ),
                 SizedBox(height: tokens.space4),
-                Text(label, style: Theme.of(context).textTheme.bodySmall),
+                Text(label, style: Theme.of(context).textTheme.wenyouCaption),
               ],
             ),
           ],
