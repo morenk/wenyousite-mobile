@@ -1,6 +1,6 @@
 # 编辑器 GIF 上传丢失排查与候选验收
 
-状态：负责人验收通过／修复完成，正在发布 `0.7.1+95`。
+状态：负责人验收通过／修复完成，`0.7.1+95` 已正式发布。
 
 ## 原始反馈与复现边界
 
@@ -50,4 +50,11 @@
 
 2026-09-13 负责人对上述候选明确反馈“验证通过了，可以发布了，尽快上线”。原问题取得真机验收通过并获正式发布授权；没有单独提供所有扩展取消／静态图场景结果，不扩大验收范围。
 
-发布版本递增为 `0.7.1+95`，以便已有 build 94 用户收到更新；功能代码继续使用已验收的 `c776acdf`。沿用负责人已明确要求跳过剩余测试的本次快速交付例外，不重新执行全量测试，不宣称完整门禁已通过。新版本只重新构建、核对同一签名与包名、检查 APK、上传 RainS3 并核验公网下载，再晋级推荐版本；发布结果随后登记。
+发布版本递增为 `0.7.1+95`，以便已有 build 94 用户收到更新；功能代码继续使用已验收的 `c776acdf`。沿用负责人已明确要求跳过剩余测试的本次快速交付例外，不重新执行全量测试，不宣称完整门禁已通过。新版本只重新构建、核对同一签名与包名、检查 APK、上传 RainS3 并核验公网下载，再晋级推荐版本。
+
+- 修复经 [PR #37](https://github.com/morenk/wenyousite-mobile/pull/37) 合入 `dev`（`5fde10beb3afed7d3aae316efcfec5895ccdd2f3`），经 [PR #38](https://github.com/morenk/wenyousite-mobile/pull/38) 晋级 `main`（`8dc80c06ccb6c98f978636ce11d37cbee0dde46a`）；正式 Tag `v0.7.1` 指向该源码提交。
+- 正式 APK：`build/releases/wenyou-0.7.1-95.apk`，`site.wenyou.app` / `0.7.1 (95)`，33,021,003 字节，SHA-256 `8f2cc78a4496f2350b7eef3a2c3f5c40a85c5e1fa6f16d40fc2c86eeb9b704a1`。
+- 应用 AOT 代码 `lib/arm64-v8a/libapp.so` 与负责人验收包逐字节摘要一致：`d728ce2c394cb76c25ec0a89b7671f9d3e084dc9c4e03645ad83d78bd4dcbe2d`。版本递增未改变已验收的 Dart 应用代码；签名证书保持原值，仅 ARM64，ZIP 与全部原生库 LOAD 段通过 16KB 对齐核验，不包含应用 UI 字体。
+- Windows 直接上传 `wenyou-apk` RainS3 桶，公开 APK、SHA sidecar、构建摘要及缓存响应头核验成功；再完整下载 APK，所得 SHA-256 与本地正式包一致。[正式下载](https://wenyou-apk.cn-nb1.rains3.com/mobile/android/wenyou-0.7.1-95.apk)。
+- 已通过受限发布账号执行 `/usr/local/sbin/wenyousite-promote-android`，公网 `/api/v1/meta` 返回 `recommendedBuild: 95` 和上方新地址，`minimumSupportedBuild: null`；Backend 仍为 `6fdfa00e` / `5.22.0-dev.20260912.2`。
+- 证据：`build/editor-gif-release-0.7.1-95.log`、`build/editor-gif-publish-0.7.1-95.log`、`build/releases/wenyou-0.7.1-95.json`、同名 `.apk.sha256` 与 `build/releases/wenyou-0.7.1-95-public-proof.apk`；本机候选与记录保留，不包含发布凭据。
