@@ -60,7 +60,7 @@ dependencies:
   wenyousite_foundation:
     git:
       url: https://github.com/morenk/wenyousite-foundation.git
-      ref: v6.11.0
+      ref: v7.0.0
       path: packages/flutter
   wenyou_api:
     path: packages/wenyou_api
@@ -103,18 +103,6 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
-
-  fonts:
-    - family: Wenyou Noto Sans SC
-      fonts:
-        - asset: packages/wenyousite_foundation/fonts/NotoSansSC-Variable.ttf
-    - family: Wenyou LXGW WenKai
-      fonts:
-        - asset: packages/wenyousite_foundation/fonts/LXGWWenKaiLite-Medium.ttf
-          weight: 500
-    - family: Wenyou Nunito
-      fonts:
-        - asset: packages/wenyousite_foundation/fonts/Nunito-Variable.ttf
 
   # To add assets to your application, add an assets section, like this:
   # assets:

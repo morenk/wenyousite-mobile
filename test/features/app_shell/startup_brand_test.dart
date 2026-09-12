@@ -4,10 +4,10 @@ import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/features/app_shell/presentation/startup_gate.dart';
 
-import '../../support/foundation_test_fonts.dart';
+import '../../support/deterministic_test_fonts.dart';
 
 void main() {
-  setUpAll(loadFoundationTestFonts);
+  setUpAll(loadDeterministicTestFonts);
 
   testWidgets('启动首帧按品牌契约展示标识、名称和文案', (tester) async {
     tester.view.devicePixelRatio = 1;
@@ -47,8 +47,14 @@ void main() {
     final tagline = tester.widget<Text>(find.text(WenyouBrandContract.tagline));
     expect(name.style?.fontSize, 22);
     expect(tagline.style?.fontSize, 16);
-    expect(name.style?.fontFamily, WenyouFoundationTypography.display);
-    expect(tagline.style?.fontFamily, WenyouFoundationTypography.display);
+    expect(
+      name.style?.fontFamily,
+      ThemeData.light().textTheme.bodyLarge!.fontFamily,
+    );
+    expect(
+      tagline.style?.fontFamily,
+      ThemeData.light().textTheme.bodyLarge!.fontFamily,
+    );
     await expectLater(
       find.byType(StartupCheckingPage),
       matchesGoldenFile('goldens/startup_brand_360.png'),

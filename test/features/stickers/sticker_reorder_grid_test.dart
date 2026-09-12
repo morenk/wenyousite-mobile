@@ -8,11 +8,11 @@ import 'package:wenyousite_mobile/features/stickers/application/sticker_collecti
 import 'package:wenyousite_mobile/features/stickers/presentation/sticker_collection_page.dart';
 import 'package:wenyousite_mobile/features/stickers/presentation/sticker_reorder_grid.dart';
 
-import '../../support/foundation_test_fonts.dart';
+import '../../support/deterministic_test_fonts.dart';
 import 'sticker_reorder_test_support.dart';
 
 void main() {
-  setUpAll(loadFoundationTestFonts);
+  setUpAll(loadDeterministicTestFonts);
 
   testWidgets('真实页面长按跨行让位动画，落位乐观保持且成功静默', (tester) async {
     final repository = await _pumpPage(tester);

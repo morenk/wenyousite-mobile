@@ -9,11 +9,11 @@ import 'package:wenyousite_mobile/features/editor/presentation/editor_embed_buil
 import 'package:wenyousite_mobile/features/editor/presentation/editor_format_policy.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_text_styles.dart';
 
+import '../../support/deterministic_test_fonts.dart';
 import '../../support/foundation_icon_finder.dart';
-import '../../support/foundation_test_fonts.dart';
 
 void main() {
-  setUpAll(loadFoundationTestFonts);
+  setUpAll(loadDeterministicTestFonts);
 
   testWidgets('编辑态传送门复用 Foundation 表面且保持不可导航原子节点', (tester) async {
     const source =

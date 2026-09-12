@@ -5,10 +5,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_text_styles.dart';
 
-import '../../support/foundation_test_fonts.dart';
+import '../../support/deterministic_test_fonts.dart';
 
 void main() {
-  setUpAll(loadFoundationTestFonts);
+  setUpAll(loadDeterministicTestFonts);
   for (final ordered in [true, false]) {
     for (final dark in [false, true]) {
       for (final scale in [1.0, 1.5, 2.0]) {

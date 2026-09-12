@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_management_models.dart';
 
-import '../../support/foundation_test_fonts.dart';
+import '../../support/deterministic_test_fonts.dart';
 import 'thread_management_posting_policy_cases.dart';
 import 'thread_management_test_support.dart';
 
 void main() {
-  setUpAll(loadFoundationTestFonts);
+  setUpAll(loadDeterministicTestFonts);
   registerThreadManagementPostingPolicyCases();
 
   testWidgets('主题管理页通过统一页签进入子贴管理', (tester) async {
@@ -288,12 +287,13 @@ void main() {
       ),
       findsNothing,
     );
-    expect(pageTitle.fontFamily, WenyouFoundationTypography.body);
-    expect(fieldLabel.style?.fontFamily, WenyouFoundationTypography.body);
+    final platformFamily = ThemeData.light().textTheme.bodyLarge!.fontFamily;
+    expect(pageTitle.fontFamily, platformFamily);
+    expect(fieldLabel.style?.fontFamily, platformFamily);
     expect(fieldLabel.style?.fontSize, 16);
-    expect(rowTitle.fontFamily, WenyouFoundationTypography.body);
+    expect(rowTitle.fontFamily, platformFamily);
     expect(rowTitle.fontSize, 16);
-    expect(currentValue.style?.fontFamily, WenyouFoundationTypography.body);
+    expect(currentValue.style?.fontFamily, platformFamily);
     expect(currentValue.style?.fontSize, 14);
 
     for (final key in [
@@ -310,7 +310,7 @@ void main() {
     await tester.tap(find.byKey(const Key('thread-management-status')));
     await tester.pumpAndSettle();
     final sheetTitle = tester.widget<Text>(find.text('选择招募状态'));
-    expect(sheetTitle.style?.fontFamily, WenyouFoundationTypography.body);
+    expect(sheetTitle.style?.fontFamily, platformFamily);
   });
 
   testWidgets('关闭单选面板不会修改或保存设置', (tester) async {

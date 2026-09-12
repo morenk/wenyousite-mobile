@@ -474,7 +474,7 @@ void main() {
     expect(collectArchitectureFailures(root), isEmpty);
   });
 
-  test('golden tests must load Foundation fonts', () {
+  test('golden tests must load deterministic test fonts', () {
     const path = 'test/features/alpha/page_test.dart';
     const goldenMatcher = 'matchesGoldenFile';
     writeArchitectureFixture(
@@ -485,7 +485,26 @@ void main() {
 
     expect(
       collectArchitectureFailures(root),
-      contains('$path uses golden files without loading Foundation test fonts'),
+      contains(
+        '$path uses golden files without loading deterministic test fonts',
+      ),
+    );
+  });
+
+  test('production typography must inherit the system font', () {
+    const path = 'lib/features/alpha/presentation/page.dart';
+    writeArchitectureFixture(
+      root,
+      path,
+      "const style = TextStyle(fontFamily: 'Custom UI');\n",
+    );
+
+    expect(
+      collectArchitectureFailures(root),
+      contains(
+        '$path sets a production fontFamily; inherit the platform system '
+        'font unless this is the approved monospace presentation',
+      ),
     );
   });
 

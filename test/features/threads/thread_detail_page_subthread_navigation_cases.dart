@@ -7,11 +7,11 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_overview.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_subthread_navigator.dart';
-import '../../support/foundation_test_fonts.dart';
+import '../../support/deterministic_test_fonts.dart';
 import 'thread_detail_page_test_support.dart';
 
 void registerThreadDetailPageSubthreadNavigationCases() {
-  setUpAll(loadFoundationTestFonts);
+  setUpAll(loadDeterministicTestFonts);
   testWidgets('切换子贴同步替换正文与楼层', (tester) async {
     final repository = ThreadDetailPageTestFakeThreadDetailRepository();
     await tester.pumpWidget(threadDetailPageTestDetailApp(repository));

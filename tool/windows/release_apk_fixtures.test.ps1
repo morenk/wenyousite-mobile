@@ -6,10 +6,7 @@ $workspace = Join-Path ([IO.Path]::GetTempPath()) ('wenyou-apk-test-' + [guid]::
 [IO.Directory]::CreateDirectory($workspace) | Out-Null
 $required = @(
   'lib/arm64-v8a/libapp.so',
-  'lib/arm64-v8a/libflutter.so',
-  'assets/flutter_assets/packages/wenyousite_foundation/fonts/LXGWWenKaiLite-Medium.ttf',
-  'assets/flutter_assets/packages/wenyousite_foundation/fonts/NotoSansSC-Variable.ttf',
-  'assets/flutter_assets/packages/wenyousite_foundation/fonts/Nunito-Variable.ttf'
+  'lib/arm64-v8a/libflutter.so'
 )
 function Assert-Artifact {
   param([string[]]$Names, [bool]$Valid)
@@ -36,5 +33,14 @@ try {
     Assert-Artifact -Names @($required | Where-Object { $_ -ne $missing }) -Valid $false
   }
   Assert-Artifact -Names ($required + $required[0]) -Valid $false
-  Write-Output 'Validated ARM64-only, required libraries, all fonts and duplicate entries.'
+  foreach ($removedFont in @(
+    'assets/flutter_assets/NotoSansSC-Variable.ttf',
+    'assets/flutter_assets/LXGWWenKaiLite-Medium.ttf',
+    'assets/flutter_assets/Nunito-Variable.ttf',
+    'assets/flutter_assets/WenyouGoldenText-Variable.ttf'
+  )) {
+    Assert-Artifact -Names ($required + $removedFont) -Valid $false
+  }
+  Assert-Artifact -Names ($required + 'assets/flutter_assets/fonts/MaterialIcons-Regular.otf') -Valid $true
+  Write-Output 'Validated ARM64-only, required libraries, removed UI/test fonts and functional fonts.'
 } finally { Remove-Item -LiteralPath $workspace }

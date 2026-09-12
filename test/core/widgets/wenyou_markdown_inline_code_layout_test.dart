@@ -5,14 +5,14 @@ import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_inline_text_elements.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_markdown.dart';
 
-import '../../support/foundation_test_fonts.dart';
+import '../../support/deterministic_test_fonts.dart';
 
 // 负责人反馈的 #6 楼原文，仅保留触发排版问题的正文。
 const reportedInlineCodeMarkdown =
     '> 123\n123\n<br />\n`123`\n123\n<br />\n~~123~~\n`123`';
 
 void main() {
-  setUpAll(loadFoundationTestFonts);
+  setUpAll(loadDeterministicTestFonts);
 
   for (final dark in [false, true]) {
     for (final scale in [1.0, 2.0]) {

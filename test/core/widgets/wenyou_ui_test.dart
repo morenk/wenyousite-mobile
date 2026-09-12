@@ -6,11 +6,11 @@ import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 
+import '../../support/deterministic_test_fonts.dart';
 import '../../support/foundation_icon_finder.dart';
-import '../../support/foundation_test_fonts.dart';
 
 void main() {
-  setUpAll(loadFoundationTestFonts);
+  setUpAll(loadDeterministicTestFonts);
 
   testWidgets('纵向内容宽度只由可用空间和最大宽度决定', (tester) async {
     tester.view.devicePixelRatio = 1;

@@ -4,11 +4,11 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_markdown.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_overview.dart';
-import '../../support/foundation_test_fonts.dart';
+import '../../support/deterministic_test_fonts.dart';
 import 'thread_detail_page_test_support.dart';
 
 void registerThreadDetailPageReadingLayoutCases() {
-  setUpAll(loadFoundationTestFonts);
+  setUpAll(loadDeterministicTestFonts);
   testWidgets('楼中楼回复深链直接定位独立讨论，返回后不重复打开', (tester) async {
     final repository = ThreadDetailPageTestFakeThreadDetailRepository(
       postTarget: ThreadPostTargetModel(

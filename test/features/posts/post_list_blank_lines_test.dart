@@ -3,11 +3,11 @@ import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_format_policy.dart';
 
-import '../../support/foundation_test_fonts.dart';
+import '../../support/deterministic_test_fonts.dart';
 import 'post_replies_page_test_support.dart';
 
 void main() {
-  setUpAll(loadFoundationTestFonts);
+  setUpAll(loadDeterministicTestFonts);
   for (final suffix in ['', '（二）\nccc', '（二）\nccc\nddd']) {
     testWidgets(
       '视频操作：有序列表后留空行${suffix.isEmpty

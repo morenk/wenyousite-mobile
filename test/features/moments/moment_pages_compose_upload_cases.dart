@@ -13,12 +13,12 @@ import 'package:wenyousite_mobile/features/moments/application/moment_draft_stor
 import 'package:wenyousite_mobile/features/moments/data/moment_repository.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_compose_page.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_detail_page.dart';
-import '../../support/foundation_test_fonts.dart';
+import '../../support/deterministic_test_fonts.dart';
 import '../../support/moment_test_draft_store.dart';
 import 'moment_pages_test_support.dart';
 
 void registerMomentPagesComposeUploadCases() {
-  setUpAll(loadFoundationTestFonts);
+  setUpAll(loadDeterministicTestFonts);
   testWidgets('动态详情按来源返回且直接进入时回到动态列表', (tester) async {
     final router = GoRouter(
       initialLocation: '/moments/moment-1',

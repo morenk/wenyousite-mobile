@@ -7,11 +7,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/features/posts/presentation/post_replies_page.dart';
 
-import '../../support/foundation_test_fonts.dart';
+import '../../support/deterministic_test_fonts.dart';
 import 'post_replies_page_test_support.dart';
 
 void main() {
-  setUpAll(loadFoundationTestFonts);
+  setUpAll(loadDeterministicTestFonts);
   for (final width in [360.0, 400.0]) {
     testWidgets('长短回复混排后定位第九条短回复，宽度 $width', (tester) async {
       tester.view.devicePixelRatio = 1;

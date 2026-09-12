@@ -13,13 +13,13 @@ import 'package:wenyousite_mobile/features/stickers/application/sticker_collecti
 import 'package:wenyousite_mobile/features/threads/application/thread_compose_controller.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_compose_page.dart';
 
-import '../../support/foundation_test_fonts.dart';
+import '../../support/deterministic_test_fonts.dart';
 import '../../support/rich_text_behavior_projection.dart';
 import '../../support/rich_text_behavior_report.dart';
 import 'thread_compose_page_test_support.dart';
 
 void main() {
-  setUpAll(loadFoundationTestFonts);
+  setUpAll(loadDeterministicTestFonts);
   final report = RichTextBehaviorReport('close');
 
   testWidgets('共享关闭序列经过真实主题路由与本地快照', (tester) async {

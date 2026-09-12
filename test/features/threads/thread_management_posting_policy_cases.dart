@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/threads/domain/subthread_management_models.dart';
-import '../../support/foundation_test_fonts.dart';
+import '../../support/deterministic_test_fonts.dart';
 import 'thread_management_test_support.dart';
 
 void registerThreadManagementPostingPolicyCases() {
-  setUpAll(loadFoundationTestFonts);
+  setUpAll(loadDeterministicTestFonts);
   const rowKey = Key('thread-management-posting-policy');
   Future<void> choose(WidgetTester tester, String value) async {
     await tester.ensureVisible(find.byKey(rowKey));
