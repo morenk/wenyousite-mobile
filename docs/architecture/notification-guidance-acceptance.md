@@ -1,6 +1,6 @@
 # 通知授权引导与默认提示音候选验收
 
-状态：候选／待负责人验收。沿用 Android 常驻提醒任务分支与 PR，不合并或正式发布。
+状态：候选／待负责人验收。沿用 Android 常驻提醒任务分支与 [PR #32](https://github.com/morenk/wenyousite-mobile/pull/32)，不合并或正式发布。
 
 ## 原始反馈与边界
 
@@ -35,8 +35,6 @@
 曾按持久化与权限编排启动完整 `npm run check:apk -- -TestConcurrency 2`。负责人随后明确要求此类细节候选先真机验证、不要每轮等待全量测试，已按新要求停止本任务剩余全量检查，保留日志，不影响其他任务的进程。停止时 1524 项通过、1 项既有 Sentry 联网测试跳过，不将未完成的全量测试记为通过。
 
 本轮已完成：公网/固定契约验证、生成一致性、全仓格式、应用与生成客户端静态分析、架构、21 个模块文档和 API 覆盖；候选以针对性回归及独立 `flutter build apk --debug --no-pub` 交付。完整门禁留在负责人验收通过后的合并前执行，不引用上一 APK 的全量结果代替本轮。构建日志为 `build/notification-guidance-build.log`；部分完整检查日志为 `build/notification-guidance-check.log`。
-
-## 负责人复验清单
 
 ## 候选安装身份与已执行检查
 
