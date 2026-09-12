@@ -43,6 +43,8 @@
 
 ## 本轮候选交付记录
 
+- 构建源码提交：`5394c8d9495b185e1c307308299fed74f2014eb6`。后续提交仅补充追溯记录，不改变本轮 APK 对应源码。
+
 - 上述六个测试文件共 48 项通过；最终保留筛选与回调格式调整后，导航专项 7 项再次通过。日志分别为 `build/notification-read-targeted-final.log`、`build/notification-read-navigation-final.log`。
 - 全量应用静态分析发现一处回调 if 缺花括号的 lint，已修正；针对最终导航与已读服务文件的局部静态复查通过，No issues found，日志 `build/notification-read-analyze-final.log`。未重新运行全量测试。
 - 最终 `flutter build apk --debug --no-pub` 成功，日志 `build/notification-read-build-final.log`。APK 位于 `D:\code\wenyousite\.worktrees\mobile-background-reminders\build\app\outputs\flutter-apk\app-debug.apk`；版本声明仍为 `0.7.0-dev.1+94`。
