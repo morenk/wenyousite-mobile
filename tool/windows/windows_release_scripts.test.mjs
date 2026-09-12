@@ -20,6 +20,7 @@ test('仓库自动化入口统一使用 PowerShell 7', async () => {
   assert.match(packageJson, /"contract:sync": "pwsh /);
   assert.match(packageJson, /"check": "pwsh /);
   assert.match(packageJson, /"check:apk": "pwsh /);
+  assert.match(packageJson, /"candidate:apk": "pwsh /);
   assert.doesNotMatch(packageJson, /powershell\.exe/i);
   assert.match(packageJson, /dart run build_runner build/);
   assert.doesNotMatch(packageJson, /build_runner clean/);

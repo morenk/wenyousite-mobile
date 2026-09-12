@@ -12,7 +12,8 @@
     "docs:check": "dart run tool/check_docs.dart",
     "architecture:check": "dart run tool/check_architecture.dart",
     "perf:android": "pwsh -NoProfile -File tool/windows/Measure-WenyouAndroidPerformance.ps1",
-    "test:release-tool": "node --test tool/upload_android_release.test.mjs tool/windows/windows_release_scripts.test.mjs tool/windows/contract_revision.test.mjs tool/windows/quality_gate.test.mjs",
+    "test:release-tool": "node --test tool/upload_android_release.test.mjs tool/windows/windows_release_scripts.test.mjs tool/windows/contract_revision.test.mjs tool/windows/quality_gate.test.mjs tool/windows/debug_candidate.test.mjs",
+    "candidate:apk": "pwsh -NoProfile -File tool/Build-WenyouDebugCandidate.ps1",
     "check": "pwsh -NoProfile -File tool/Check-WenyouMobile.ps1",
     "check:apk": "pwsh -NoProfile -File tool/Check-WenyouMobile.ps1 -BuildDebugApk"
   },

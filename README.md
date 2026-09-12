@@ -59,13 +59,19 @@ npm run api:generate
 
 ## 质量门禁
 
-第一阶段以快速本地迭代为主：日常切片只运行相关测试和受影响范围检查；认证、契约、网络、持久化等高风险变更或阶段验收时运行唯一完整本地门禁：
+第一阶段以快速本地迭代为主：普通低、中风险切片需要真机候选时，显式传入相关测试，由快速入口完成全量静态分析、针对性测试和 Debug APK 构建：
+
+```bash
+npm run candidate:apk -- test/features/example/example_test.dart -TestConcurrency 2
+```
+
+该入口不会运行全量 Flutter 测试或安装 APK。候选经负责人验收后、合并前运行一次完整本地门禁；认证、契约、网络、上传、持久化、幂等、注销、依赖和 Android 原生配置等高风险候选直接运行 `npm run check:apk`。不需要构建 APK 的阶段验收使用：
 
 ```bash
 npm run check
 ```
 
-需要 Debug APK 时运行 `npm run check:apk`。完整门禁和 Android 发布入口都会强制执行公网 API、后端 revision 与 Markdown 契约核对，避免兼容版本先于服务端事实发布。
+完整门禁和 Android 发布入口都会强制执行公网 API、后端 revision 与 Markdown 契约核对，避免兼容版本先于服务端事实发布。
 
 调试已提交但尚未部署的契约候选时，可运行 `npm run check:apk -- -ContinueAfterFailure` 收集其余检查及候选 APK。所有原检查仍执行，任一失败最终仍返回非零并逐项汇总；这不是完整门禁通过或发布许可。默认命令仍遇错即停，发布流程不使用收集模式。
 
