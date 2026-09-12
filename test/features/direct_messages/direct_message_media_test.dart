@@ -7,10 +7,10 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/features/direct_messages/domain/direct_message_models.dart';
 import 'package:wenyousite_mobile/features/direct_messages/presentation/direct_message_media.dart';
 
-import '../../support/foundation_test_fonts.dart';
+import '../../support/deterministic_test_fonts.dart';
 
 void main() {
-  setUpAll(loadFoundationTestFonts);
+  setUpAll(loadDeterministicTestFonts);
 
   testWidgets('竖图按服务端宽高预留比例且只限制缓存高度', (tester) async {
     await tester.pumpWidget(

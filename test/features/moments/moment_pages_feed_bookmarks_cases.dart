@@ -15,11 +15,11 @@ import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_compose_page.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_detail_page.dart';
 import 'package:wenyousite_mobile/features/wallet/data/wallet_repository.dart';
-import '../../support/foundation_test_fonts.dart';
+import '../../support/deterministic_test_fonts.dart';
 import 'moment_pages_test_support.dart';
 
 void registerMomentPagesFeedBookmarksCases() {
-  setUpAll(loadFoundationTestFonts);
+  setUpAll(loadDeterministicTestFonts);
   for (final deleting in [false, true]) {
     testWidgets('动态${deleting ? '删除' : '保存'}成功后本机清理失败只重试清理', (tester) async {
       final repository = MomentPagesTestCleanupPageRepository();

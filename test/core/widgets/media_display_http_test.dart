@@ -12,7 +12,7 @@ import 'package:wenyousite_mobile/features/editor/presentation/editor_embed_buil
 import 'package:wenyousite_mobile/features/editor/presentation/rich_editor_session.dart';
 
 import '../../features/moments/moment_animation_fixture.dart';
-import '../../support/foundation_test_fonts.dart';
+import '../../support/deterministic_test_fonts.dart';
 
 const sourceUrl = 'https://cdn.example/original.gif';
 const displayUrl = 'https://cdn.example/full.webp';
@@ -28,7 +28,7 @@ const display = MediaDisplay(
 );
 
 void main() {
-  setUpAll(loadFoundationTestFonts);
+  setUpAll(loadDeterministicTestFonts);
   final resources = {
     sourceUrl: File(
       'test/fixtures/animation-webp-all-surfaces/original.gif',

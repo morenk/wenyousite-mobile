@@ -1,8 +1,5 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_inline_text_elements.dart';
@@ -10,7 +7,7 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_markdown.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.dart';
 
 import '../../features/threads/thread_detail_page_test_support.dart';
-import '../../support/foundation_test_fonts.dart';
+import '../../support/deterministic_test_fonts.dart';
 
 // 2026-09-09 匿名读取“浮陆之国”首个子贴 BODY v3 的原始引用；
 // 保留反引号、斜体与空 > 分隔，不能用省略号短句替代换行场景。
@@ -21,23 +18,7 @@ const quoteSource = '''> *`璃氏已勘破长生之妙，浮陆国主璃司寿�
 > *`有意者，请持此帖渡海登台。`*''';
 
 void main() {
-  setUpAll(loadFoundationTestFonts);
-  setUpAll(() async {
-    final loader = FontLoader('Noto Sans SC')
-      ..addFont(
-        rootBundle.load(
-          'packages/wenyousite_foundation/fonts/NotoSansSC-Variable.ttf',
-        ),
-      );
-    await loader.load();
-    final monospace = FontLoader('monospace')
-      ..addFont(
-        File(
-          'C:/Windows/Fonts/consola.ttf',
-        ).readAsBytes().then((bytes) => ByteData.sublistView(bytes)),
-      );
-    await monospace.load();
-  });
+  setUpAll(loadDeterministicTestFonts);
 
   testWidgets('原始引用在真实主题子贴正文首次打开及重开均不覆盖', (tester) async {
     tester.view.devicePixelRatio = 1;

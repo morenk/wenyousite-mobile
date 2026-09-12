@@ -7,13 +7,13 @@ import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_markdown.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_markdown_body.dart';
 
-import '../../support/foundation_test_fonts.dart';
+import '../../support/deterministic_test_fonts.dart';
 import '../../support/rich_text_behavior_projection.dart';
 import '../../support/rich_text_behavior_report.dart';
 import '../../support/rich_text_reader_projection.dart';
 
 void main() {
-  setUpAll(loadFoundationTestFonts);
+  setUpAll(loadDeterministicTestFonts);
   final report = RichTextBehaviorReport('reader');
   final fixture =
       jsonDecode(

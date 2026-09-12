@@ -4,11 +4,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/users/presentation/me_page.dart';
-import '../../support/foundation_test_fonts.dart';
+import '../../support/deterministic_test_fonts.dart';
 import 'me_page_test_support.dart';
 
 void registerMePageSettingsLayoutCases() {
-  setUpAll(loadFoundationTestFonts);
+  setUpAll(loadDeterministicTestFonts);
   testWidgets('离开未保存的资料时可继续编辑或明确放弃', (tester) async {
     final repository = MePageTestFakeMeProfileRepository();
     final container = await mePageTestAuthenticatedContainer(repository);

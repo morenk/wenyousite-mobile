@@ -9,10 +9,10 @@ import 'package:wenyousite_mobile/features/editor/presentation/editor_format_pol
 import 'package:wenyousite_mobile/features/editor/presentation/editor_toolbar.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/rich_editor_session.dart';
 
-import '../../support/foundation_test_fonts.dart';
+import '../../support/deterministic_test_fonts.dart';
 
 void main() {
-  setUpAll(loadFoundationTestFonts);
+  setUpAll(loadDeterministicTestFonts);
 
   for (final level in [2, 3]) {
     testWidgets('空 H$level 回车保留原 Quill 退出标题行为', (tester) async {

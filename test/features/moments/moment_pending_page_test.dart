@@ -9,11 +9,11 @@ import 'package:wenyousite_mobile/features/moments/application/moment_repository
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_compose_page.dart';
 
-import '../../support/foundation_test_fonts.dart';
+import '../../support/deterministic_test_fonts.dart';
 import '../../support/moment_test_draft_store.dart';
 
 void main() {
-  setUpAll(loadFoundationTestFonts);
+  setUpAll(loadDeterministicTestFonts);
 
   testWidgets('发布超时锁定表单，离开后仅恢复原操作且不自动重试', (tester) async {
     tester.view.physicalSize = const Size(360, 780);

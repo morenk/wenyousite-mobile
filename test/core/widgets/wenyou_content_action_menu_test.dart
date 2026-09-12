@@ -11,10 +11,10 @@ import 'package:wenyousite_mobile/features/editor/presentation/editor_clipboard.
 import 'package:wenyousite_mobile/features/editor/presentation/editor_clipboard_gateway.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_reader_clipboard.dart';
 
-import '../../support/foundation_test_fonts.dart';
+import '../../support/deterministic_test_fonts.dart';
 
 void main() {
-  setUpAll(loadFoundationTestFonts);
+  setUpAll(loadDeterministicTestFonts);
 
   testWidgets('复制失败保留当前任务并可显式重试', (tester) async {
     var shouldFail = true;

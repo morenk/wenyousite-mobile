@@ -17,11 +17,11 @@ import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.d
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_page.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_target_utils.dart';
 
-import '../../support/foundation_test_fonts.dart';
+import '../../support/deterministic_test_fonts.dart';
 import 'thread_detail_page_test_support.dart';
 
 void main() {
-  setUpAll(loadFoundationTestFonts);
+  setUpAll(loadDeterministicTestFonts);
 
   for (final (deletedNumber, targeted, failDelete) in [
     (25, false, false),

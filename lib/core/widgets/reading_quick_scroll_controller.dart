@@ -68,7 +68,7 @@ class ReadingQuickScrollController extends ChangeNotifier {
 
   void toggle() {
     if (!_enabled) return;
-    // 工具栏改变视口高度前解除坐标自动对齐，保留当前顶部位置。
+    // 显式导航后解除旧目标的自动对齐，悬浮控件不改变阅读视口。
     onUserNavigation();
     _cancelMovement();
     _open = !_open;
@@ -179,6 +179,23 @@ class ReadingQuickScrollController extends ChangeNotifier {
   void step(double value) {
     beginDrag(value);
     endDrag(value);
+  }
+
+  /// 触摸取消不应用尚未绘制的输入，也不能遗留末端跟随。
+  void cancelDrag() {
+    if (_disposed || !_dragging) return;
+    _cancelMovement();
+    scheduleSnapshot();
+  }
+
+  void stepByViewport(int direction) {
+    if (!canScroll || !_enabled || !_open) return;
+    final position = scrollController.position;
+    final range = _readingMax(position) - position.minScrollExtent;
+    if (range <= 0) return;
+    step(
+      (_fraction + direction * position.viewportDimension / range).clamp(0, 1),
+    );
   }
 
   void seekEdge(bool end) {

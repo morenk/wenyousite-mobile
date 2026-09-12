@@ -12,11 +12,11 @@ import 'package:wenyousite_mobile/features/threads/data/thread_detail_repository
 import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_page.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_target_utils.dart';
-import '../../support/foundation_test_fonts.dart';
+import '../../support/deterministic_test_fonts.dart';
 import 'thread_detail_page_test_support.dart';
 
 void registerThreadDetailPageManagementClipboardCases() {
-  setUpAll(loadFoundationTestFonts);
+  setUpAll(loadDeterministicTestFonts);
   testWidgets('点击短楼中楼预览直接精确回复且楼层长按菜单保持独立', (tester) async {
     final reply = ThreadReplyModel(
       id: 'reply-direct',

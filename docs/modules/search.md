@@ -26,7 +26,7 @@
 
 ## 6. 状态模型和数据流
 
-完整展示候选：搜索用户头像优先 avatarDisplay；SearchPost 授权 mediaDisplays 映射保留在展示模型，既有文本摘要不新增加载图片。主题封面复用共享 display／preview 选择。见[全场景候选记录](../architecture/animation-webp-all-surfaces.md)，待负责人验收。
+完整展示（负责人已验收）：搜索用户头像优先 avatarDisplay；SearchPost 授权 mediaDisplays 映射保留在展示模型，既有文本摘要不新增加载图片。主题封面复用共享 display／preview 选择。见[全场景验收记录](../architecture/animation-webp-all-surfaces.md)。
 
 四个用户可见 Tab 独立保存 idle/loading/ready/failed 状态；动态和楼层内容额外保存不透明 cursor、hasMore、加载更多和局部错误。搜索仓储接口位于 `search/application`，`main.dart` 组合根绑定 API data 适配器，两个搜索控制器不直接导入 data。主题结果直接映射为 thread_feed 的共享主题卡模型，只消费 `coverImages` 的唯一安全 HTTP(S) 首图，并保留搜索端点自己的相关度排序。控制器共享 query 与请求代次，只有最新代次可写回状态。`ThreadPostSearchController(threadId)` 隔离每个主题的关键词、分页和请求代次；所有列表按稳定 ID 去重。后端综合搜索读模型继续保留兼容映射，但移动端不把它暴露为结果类型或入口。
 
@@ -84,7 +84,7 @@
 
 ## 13. 最近审查的契约版本和后端提交
 
-本轮展示契约来源：API `5.22.0-dev.20260912.2`、Backend `6fdfa00eaf1f3056ba30f2ffbc529d12eed1c823`；新增 display／mediaDisplays；消费者已形成候选，检查与负责人验收见本任务 PR 和全场景记录。仅既有 `markdown-editor-list-v1-fixtures.json` 保留 `062412601b3a8dbf4f64494115a2445d312dd53d` 来源与SHA-256，见 contracts/markdown-editor-list-v1-source.json；不将该独立语料误标为本轮主来源。
+本轮展示契约来源：API `5.22.0-dev.20260912.2`、Backend `6fdfa00eaf1f3056ba30f2ffbc529d12eed1c823`；新增 display／mediaDisplays；消费者已获负责人验收，检查与合并整合见本任务 PR 和全场景记录。仅既有 `markdown-editor-list-v1-fixtures.json` 保留 `062412601b3a8dbf4f64494115a2445d312dd53d` 来源与SHA-256，见 contracts/markdown-editor-list-v1-source.json；不将该独立语料误标为本轮主来源。
 
 2026-09-11 列表契约候选同步：Backend `062412601b3a8dbf4f64494115a2445d312dd53d`，OpenAPI `5.20.1-dev.20260911.1`；新增 editor-list v1 revision 2，夹具最初固定于 `aa1bcbd4d087f03a17817e9eca8bcd1f92bb53da`。同时同步收藏夹计数按当前用户可见性统计的契约说明；字段形状、块边界 v1 revision 2 与既有消费代码保持；列表消费者及真机验收仍待完成，见[列表统一排查](../architecture/editor-list-unification-investigation.md)。
 

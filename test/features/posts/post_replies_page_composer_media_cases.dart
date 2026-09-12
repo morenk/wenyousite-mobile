@@ -18,13 +18,13 @@ import 'package:wenyousite_mobile/features/posts/data/post_repository.dart';
 import 'package:wenyousite_mobile/features/posts/presentation/post_replies_page.dart';
 import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
 
+import '../../support/deterministic_test_fonts.dart';
 import '../../support/fake_image_crop_processor.dart';
-import '../../support/foundation_test_fonts.dart';
 import '../moments/moment_animation_fixture.dart';
 import 'post_replies_page_test_support.dart';
 
 void registerPostRepliesPageComposerMediaCases() {
-  setUpAll(loadFoundationTestFonts);
+  setUpAll(loadDeterministicTestFonts);
   testWidgets('新回复从百分之四十起步，工具托盘按需扩展且手动拖动优先', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(360, 800);

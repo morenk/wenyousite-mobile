@@ -18,8 +18,8 @@ import 'package:wenyousite_mobile/features/thread_feed/thread_feed_catalog.dart'
 import 'package:wenyousite_mobile/features/thread_feed/thread_feed_models.dart';
 
 import '../../support/cover_playback_test_support.dart';
+import '../../support/deterministic_test_fonts.dart';
 import '../../support/fake_thread_category_catalog.dart';
-import '../../support/foundation_test_fonts.dart';
 
 void main() {
   testWidgets('真实收藏列表多封面同时可见即播，轻滑和卸载保持生命周期', (tester) async {
@@ -48,7 +48,7 @@ void main() {
     await tester.pumpWidget(const SizedBox());
     expect(source.tokens.every((token) => token.isCancelled), isTrue);
   });
-  setUpAll(loadFoundationTestFonts);
+  setUpAll(loadDeterministicTestFonts);
   testWidgets('收藏管理入口位于卡片内且不再外置两种按钮', (tester) async {
     final repository = _FakeRepository(items: [_item('bookmark-1')]);
     final router = _router();

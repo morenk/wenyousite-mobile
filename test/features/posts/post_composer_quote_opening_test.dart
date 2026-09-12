@@ -3,11 +3,11 @@ import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 
-import '../../support/foundation_test_fonts.dart';
+import '../../support/deterministic_test_fonts.dart';
 import 'post_replies_page_test_support.dart';
 
 void main() {
-  setUpAll(loadFoundationTestFonts);
+  setUpAll(loadDeterministicTestFonts);
 
   testWidgets('反馈楼层原文经最新版读取及真实编辑入口保持单个引用块', (tester) async {
     // The reported post's exact Markdown, obtained by a targeted read-only

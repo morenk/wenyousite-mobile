@@ -17,11 +17,11 @@ import 'package:wenyousite_mobile/features/thread_feed/application/cover_animati
 import 'package:wenyousite_mobile/features/thread_feed/presentation/cover_playback_scope.dart';
 
 import '../../support/cover_playback_test_support.dart';
+import '../../support/deterministic_test_fonts.dart';
 import '../../support/foundation_icon_finder.dart';
-import '../../support/foundation_test_fonts.dart';
 
 void main() {
-  setUpAll(loadFoundationTestFonts);
+  setUpAll(loadDeterministicTestFonts);
   testWidgets('真实首页多个可见动画立即请求且轻滑不重启', (tester) async {
     tester.view.physicalSize = const Size(400, 1100);
     tester.view.devicePixelRatio = 1;

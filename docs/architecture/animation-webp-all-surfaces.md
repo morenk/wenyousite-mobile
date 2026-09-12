@@ -1,6 +1,6 @@
 # 动画 WebP 全展示场景补齐
 
-状态：候选实现／待负责人全场景验收。负责人明确指出先前仅覆盖主题列表预览不是完整交付；本任务沿用原问题，补齐正文、编辑器、详情、大图、私聊和表情的展示资源选择。旧个人主页多播验收只证明原候选对应场景，不作为本轮全场景验收。
+状态：负责人已确认此前候选验收通过；2026-09-13 授权 Mobile PR #27 合并与分支清理。负责人明确指出先前仅覆盖主题列表预览不是完整交付；本任务沿用原问题，补齐正文、编辑器、详情、大图、私聊和表情的展示资源选择。旧个人主页多播验收只证明原候选对应场景，不作为本轮全场景验收。
 
 ## 已确认事实与交付边界
 
@@ -30,7 +30,7 @@ Markdown 正文和编辑器只持久化图片 URL；公开正文不能调用仅�
 
 ## 公共选择器设计
 
-消费的固定描述为 `display: {url, contentType: 'image/webp', width, height, bytes, animated, frameCount, durationMs, loopCount} | null`，动画 `loopCount=0` 表示无限、`1` 表示一次；静态描述固定 `frameCount=1`、`durationMs=0`、`loopCount=1`。各媒体 DTO 使用同形描述；正文／草稿／引用按授权返回精确源 URL 的 `mediaDisplays`。新 GIF 处理成功必须具有 display；历史 null 只表示兼容，不能宣称已完成 WebP 转换。Foundation 对应业务接入说明为 PR10／`22a1c4d8880944b4ecebe55475674fc2c776a080`，不改机器数值或正式依赖 Tag，运行时继续锁定 `v6.10.0`。应用层通过 `MediaDisplay`、严格 DTO mapper 和 `selectFullMediaUrls` 承接生成类型，职责如下：
+消费的固定描述为 `display: {url, contentType: 'image/webp', width, height, bytes, animated, frameCount, durationMs, loopCount} | null`，动画 `loopCount=0` 表示无限、`1` 表示一次；静态描述固定 `frameCount=1`、`durationMs=0`、`loopCount=1`。各媒体 DTO 使用同形描述；正文／草稿／引用按授权返回精确源 URL 的 `mediaDisplays`。新 GIF 处理成功必须具有 display；历史 null 只表示兼容，不能宣称已完成 WebP 转换。Foundation 对应业务接入说明为 PR10／`22a1c4d8880944b4ecebe55475674fc2c776a080`，不改机器数值或正式依赖 Tag，初始候选锁定 `v6.10.0`；本次合并整合保留 dev 已发布依赖 `v7.0.0`。应用层通过 `MediaDisplay`、严格 DTO mapper 和 `selectFullMediaUrls` 承接生成类型，职责如下：
 
 1. 在公共媒体领域层承接可信资源描述，区分稳定身份、静态 poster、完整动画资源和列表小预览，记录契约 MIME、尺寸、字节及帧时序。各 feature 的 DTO 映射转为同一个内部类型，不在页面各自拼接 URL。
 2. 完整资源纯选择器只接受原身份、display 和历史回退链，已知 display 的结果只包含其 URL；列表继续由独立的既有尺寸／DPR 选择器挑选小预览。正文／大图不能选择列表小预览；是否允许播放由既有播放控制器决定，选择函数不请求网络、不订阅滚动或改变播放数量。
@@ -74,3 +74,9 @@ HTTP fixture 分别记录各资产 URL 的请求次数和实际返回字节；We
 新增回归入口为 `media_display_selection_test.dart`、`media_display_http_test.dart`、`media_display_surfaces_test.dart`、`media_display_draft_test.dart`、`media_processing_resume_test.dart`，云草稿实际面板另由 `content_drafts_sheet_test.dart` 验证恢复先映射后原正文的顺序；另有共享黄金用例与实际编码器 codec 测试。资源缺少 display 的旧实现会在完整 WebP HTTP URL／字节、禁止 GIF 回退和编辑重开断言失败；新等待状态的续查测试会在旧轮询超时／重复上传路径失败。尚未取得负责人原资源和本候选全场景真机结果，不能把构造素材通过称为负责人问题已解决。
 
 负责人复验顺序：上传 GIF 插入主题正文并查看大图／保存；编辑保存重开与云／本地草稿恢复；动态详情和回复、私聊图片及表情；个人主页／首页／收藏主题封面多播；验证后台、省流量、完全离屏重入与 WebP 错误显式重试。历史 null 原 GIF 与已知 display 的路径必须分开观察。新候选安装待本轮明确授权。
+
+## 2026-09-13 合并整合与既有验收
+
+负责人已明确此前未部署候选验收通过，并确认 Debug 大图保存得到 WebP；最初候选 `982cd6c6` 与安装 SHA-256 `85ad42e464ffccaefffe47a3d593f5e607068d31f02573fe18a12d9a7a3cc750` 保留在治理制品目录。上文候选限制和初次门禁结果作为历史记录保留，不覆盖为新的测试结论。
+
+本次将 dev `993934f0` 正常合并进入原任务分支，保留系统字体、Foundation v7、纵向快翻、主贴权限和富文本验收更新。显式冲突仅涉及文档与测试字体导入，新增 WebP HTTP 测试同步使用确定性测试字体；未更改已验收的业务播放、展示选择与上传策略。完整门禁及 Debug 整合构建结果以 PR 最新交付记录为准；原候选真机验收不冒充新整合 APK 的真机测量。

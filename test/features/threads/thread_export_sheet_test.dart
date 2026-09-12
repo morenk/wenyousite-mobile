@@ -9,10 +9,10 @@ import 'package:wenyousite_mobile/features/threads/application/thread_management
 import 'package:wenyousite_mobile/features/threads/domain/thread_management_models.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_export_sheet.dart';
 
-import '../../support/foundation_test_fonts.dart';
+import '../../support/deterministic_test_fonts.dart';
 
 void main() {
-  setUpAll(loadFoundationTestFonts);
+  setUpAll(loadDeterministicTestFonts);
 
   testWidgets('完整导出设置生成 ZIP 并交给系统保存器', (tester) async {
     tester.view.devicePixelRatio = 1;

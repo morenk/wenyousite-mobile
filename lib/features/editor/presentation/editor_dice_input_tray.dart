@@ -289,10 +289,6 @@ class _EditorDiceInputTrayState extends State<EditorDiceInputTray> {
         overflow: TextOverflow.ellipsis,
         style: Theme.of(context).textTheme.wenyouCaption.copyWith(
           color: color,
-          fontFamily: firstError == null && widget.insertEnabled
-              ? WenyouFoundationTypography.utility
-              : null,
-          fontFamilyFallback: WenyouFoundationTypography.chineseFallback,
           fontFeatures: const [FontFeature.tabularFigures()],
         ),
       ),

@@ -8,10 +8,10 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_inline_text_elements.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_internal_reference_text.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_markdown.dart';
-import '../../support/foundation_test_fonts.dart';
+import '../../support/deterministic_test_fonts.dart';
 
 void main() {
-  setUpAll(loadFoundationTestFonts);
+  setUpAll(loadDeterministicTestFonts);
 
   const nodeId = '550e8400-e29b-41d4-a716-446655440000';
   const diceNode = '[[dice:v1:$nodeId:1d20]]';

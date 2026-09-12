@@ -25,7 +25,7 @@
 
 温油站移动端使用 Flutter 构建。首发 Android，最低 Android 8（API 26），手机竖屏优先；共享 Dart 代码保持 iOS 可兼容，但当前不做 iOS 签名和真机验收。
 
-Android 正式 Release 仅支持 `arm64-v8a`，保留全部现有字体；Debug/Profile 保留开发所需 ARM32、ARM64 和 x86_64。正式分发保持单 APK 与原构建号，不使用 ABI 分包偏移版本号。
+Android 正式 Release 仅支持 `arm64-v8a`，正文与品牌文字使用平台系统字体，不捆绑应用 UI 字体；KaTeX、系统等宽呈现和 Material Icons 等功能字体依赖按实际用途保留。Debug/Profile 保留开发所需 ARM32、ARM64 和 x86_64。正式分发保持单 APK 与原构建号，不使用 ABI 分包偏移版本号。
 
 - 应用名称：温油站
 - Android applicationId：`site.wenyou.app`
@@ -45,7 +45,7 @@ V1 包含认证、公开浏览、搜索、动态、主题/子贴/楼层、创作
 
 V1 暂不实现：FCM 系统推送、举报审核/管理后台、离线阅读、离线自动发帖、阅读进度、子贴标签和 Android App Links。
 
-共享审美与跨端体验事实源只存在于 `wenyousite-foundation` 的远端最新正式发布版本；当前由 `pubspec.yaml` 锁定 Foundation v6.10.0。移动端仓库不维护平行审美规范，只记录模块行为与代码入口。页面必须复用 `WenyouThemeTokens`、Foundation 语义图标、全局 `ColorScheme` 与共享组件，禁止在页面内创建近似 Token 或直接使用 Material 图标。功能阶段不得顺手引入大范围插画、粒子或复杂换皮。
+共享审美与跨端体验事实源只存在于 `wenyousite-foundation` 的远端最新正式发布版本；当前由 `pubspec.yaml` 锁定 Foundation v7.0.0。移动端仓库不维护平行审美规范，只记录模块行为与代码入口。页面必须复用 `WenyouThemeTokens`、Foundation 语义图标、全局 `ColorScheme` 与共享组件，禁止在页面内创建近似 Token 或直接使用 Material 图标。功能阶段不得顺手引入大范围插画、粒子或复杂换皮。
 
 ## 3. 事实源与契约优先级
 

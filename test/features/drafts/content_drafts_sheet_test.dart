@@ -9,10 +9,10 @@ import 'package:wenyousite_mobile/features/drafts/data/content_draft_repository.
 import 'package:wenyousite_mobile/features/drafts/domain/content_draft_models.dart';
 import 'package:wenyousite_mobile/features/drafts/presentation/content_drafts_sheet.dart';
 
-import '../../support/foundation_test_fonts.dart';
+import '../../support/deterministic_test_fonts.dart';
 
 void main() {
-  setUpAll(loadFoundationTestFonts);
+  setUpAll(loadDeterministicTestFonts);
 
   testWidgets('云草稿恢复先传授权展示映射，正文仍保留原 URL', (tester) async {
     const source = 'https://cdn.example/original.gif';

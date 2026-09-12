@@ -11,12 +11,12 @@ import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart
 import 'package:wenyousite_mobile/features/media/presentation/editor_image_crop_dialog.dart';
 import 'package:wenyousite_mobile/features/media/presentation/image_crop_dialog.dart';
 
+import '../../support/deterministic_test_fonts.dart';
 import '../../support/fake_image_crop_processor.dart';
-import '../../support/foundation_test_fonts.dart';
 import '../../support/media_compatibility_fixtures.dart';
 
 void main() {
-  setUpAll(loadFoundationTestFonts);
+  setUpAll(loadDeterministicTestFonts);
 
   testWidgets('附加 JPEG 使用真实引擎打开裁剪页、确认并重开成品', (tester) async {
     final processor = _ObservedEngineProcessor();

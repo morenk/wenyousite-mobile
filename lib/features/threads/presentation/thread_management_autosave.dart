@@ -39,9 +39,11 @@ class ThreadManagementAutosaveCoordinator extends ChangeNotifier {
     _requested = true;
     final active = _drainFuture;
     if (active != null) return active;
-    final drain = _drain();
-    _drainFuture = drain;
-    return drain;
+    // 空保存可能在首次 await 前结束；先登记再启动，避免完成的 Future 卡住后续修改。
+    final completion = Completer<bool>();
+    _drainFuture = completion.future;
+    completion.complete(_drain());
+    return completion.future;
   }
 
   void markSaved() {

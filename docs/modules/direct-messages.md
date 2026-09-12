@@ -43,7 +43,7 @@
 
 ## 6. 状态模型和数据流
 
-完整展示候选：私聊图片与表情气泡和大图选择完整 display，默认保存亦使用展示源，原媒体 ID 保持。待发送上传队列保留 PROCESSING 与查询失败的媒体身份，用户继续查询只执行同 ID GET，完成后才发送消息；明确查询错误保留原类型，不伪装仍在处理。账号／会话范围切换取消并清空队列。见[全场景候选记录](../architecture/animation-webp-all-surfaces.md)，待负责人验收。
+完整展示（负责人已验收）：私聊图片与表情气泡和大图选择完整 display，默认保存亦使用展示源，原媒体 ID 保持。待发送上传队列保留 PROCESSING 与查询失败的媒体身份，用户继续查询只执行同 ID GET，完成后才发送消息；明确查询错误保留原类型，不伪装仍在处理。账号／会话范围切换取消并清空队列。见[全场景验收记录](../architecture/animation-webp-all-surfaces.md)。
 
 未读控制器只负责单次读取；应用壳在认证且前台时用唯一的 30 秒定时器统一触发通知、未读消息与待处理请求刷新。Android 后台尽力提醒登录后固定开启；离开前台后，后台协调器在 Flutter 进程仍获系统调度时全程每 30 秒尽力检查，前一轮未完成时跳过节拍。每轮先读未读/请求总数，只有计数增长才按需读取 INBOX/REQUESTS 首屏并比较会话 `lastMessage.id + unreadCount + status` 指纹；详情读取或系统卡片展示失败时不推进未读与会话指纹，下一节拍继续重试。恢复前台、退出登录、任务被划掉或进程被系统回收即停止。
 
@@ -106,7 +106,7 @@ capability 由 app 组合层从启动契约注入，前台生命周期由应用�
 
 ## 13. 最近审查的契约版本和后端提交
 
-本轮展示契约来源：API `5.22.0-dev.20260912.2`、Backend `6fdfa00eaf1f3056ba30f2ffbc529d12eed1c823`；新增 display／mediaDisplays；消费者已形成候选，检查与负责人验收见本任务 PR 和全场景记录。仅既有 `markdown-editor-list-v1-fixtures.json` 保留 `062412601b3a8dbf4f64494115a2445d312dd53d` 来源与SHA-256，见 contracts/markdown-editor-list-v1-source.json；不将该独立语料误标为本轮主来源。
+本轮展示契约来源：API `5.22.0-dev.20260912.2`、Backend `6fdfa00eaf1f3056ba30f2ffbc529d12eed1c823`；新增 display／mediaDisplays；消费者已获负责人验收，检查与合并整合见本任务 PR 和全场景记录。仅既有 `markdown-editor-list-v1-fixtures.json` 保留 `062412601b3a8dbf4f64494115a2445d312dd53d` 来源与SHA-256，见 contracts/markdown-editor-list-v1-source.json；不将该独立语料误标为本轮主来源。
 
 2026-09-11 列表契约候选同步：Backend `062412601b3a8dbf4f64494115a2445d312dd53d`，OpenAPI `5.20.1-dev.20260911.1`；新增 editor-list v1 revision 2，夹具最初固定于 `aa1bcbd4d087f03a17817e9eca8bcd1f92bb53da`。同时同步收藏夹计数按当前用户可见性统计的契约说明；字段形状、块边界 v1 revision 2 与既有消费代码保持；列表消费者及真机验收仍待完成，见[列表统一排查](../architecture/editor-list-unification-investigation.md)。
 

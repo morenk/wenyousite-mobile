@@ -6,10 +6,10 @@ import 'package:wenyousite_mobile/features/users/application/public_user_control
 import 'package:wenyousite_mobile/features/users/domain/public_user_models.dart';
 import 'package:wenyousite_mobile/features/users/presentation/user_activity_summary_panel.dart';
 
-import '../../support/foundation_test_fonts.dart';
+import '../../support/deterministic_test_fonts.dart';
 
 void main() {
-  setUpAll(loadFoundationTestFonts);
+  setUpAll(loadDeterministicTestFonts);
 
   testWidgets('创作概览保留单层卡片并使用紧凑二乘二统计', (tester) async {
     tester.view.devicePixelRatio = 1;

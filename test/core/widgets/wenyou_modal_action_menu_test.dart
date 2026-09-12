@@ -5,10 +5,10 @@ import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_anchored_popover.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_modal_action_menu.dart';
 
-import '../../support/foundation_test_fonts.dart';
+import '../../support/deterministic_test_fonts.dart';
 
 void main() {
-  setUpAll(loadFoundationTestFonts);
+  setUpAll(loadDeterministicTestFonts);
 
   testWidgets('操作窗口固定居中，暗区和显式关闭按钮均可退出', (tester) async {
     tester.view.devicePixelRatio = 1;

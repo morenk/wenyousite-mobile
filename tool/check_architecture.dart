@@ -101,6 +101,7 @@ List<String> collectArchitectureFailures(Directory root) {
   checkEditorSemanticsBoundary(applicationFiles, failures, root, graph);
   checkFoundationIconBoundary(applicationFiles, failures, root);
   checkTypographyBoundary(applicationFiles, failures, root);
+  _checkSystemFontBoundary(applicationFiles, failures, root);
   checkSharedTabBoundary(applicationFiles, failures, root);
   checkSnackBarBoundary(applicationFiles, failures, root);
   checkFailurePresentationBoundary(applicationFiles, failures, root);
@@ -296,12 +297,61 @@ void _checkGoldenTestSetup(
   for (final file in files) {
     final source = file.readAsStringSync();
     if (!source.contains('matchesGoldenFile(')) continue;
-    if (!source.contains('setUpAll(loadFoundationTestFonts)')) {
+    if (!source.contains('setUpAll(loadDeterministicTestFonts)')) {
       failures.add(
         '${relativePath(file.path, root)} uses golden files without loading '
-        'Foundation test fonts',
+        'deterministic test fonts',
       );
     }
+  }
+}
+
+void _checkSystemFontBoundary(
+  List<File> files,
+  List<String> failures,
+  Directory root,
+) {
+  const removedFoundationFontSymbols = <String>[
+    'WenyouFoundationTypography.body',
+    'WenyouFoundationTypography.display',
+    'WenyouFoundationTypography.utility',
+    'WenyouFoundationTypography.chineseFallback',
+    'Wenyou Noto Sans SC',
+    'Wenyou LXGW WenKai',
+    'Wenyou Nunito',
+  ];
+  for (final file in files) {
+    final source = file.readAsStringSync();
+    final path = relativePath(file.path, root);
+    for (final symbol in removedFoundationFontSymbols) {
+      if (source.contains(symbol)) {
+        failures.add(
+          '$path references removed bundled font $symbol; inherit the '
+          'platform system font',
+        );
+      }
+    }
+    for (final line in source.split('\n')) {
+      if (!line.contains('fontFamily:')) continue;
+      if (line.contains("'monospace'") || line.contains('strut.fontFamily')) {
+        continue;
+      }
+      failures.add(
+        '$path sets a production fontFamily; inherit the platform system '
+        'font unless this is the approved monospace presentation',
+      );
+      break;
+    }
+  }
+
+  final pubspec = File('${root.path}/pubspec.yaml');
+  if (!pubspec.existsSync()) return;
+  final source = pubspec.readAsStringSync();
+  if (RegExp(r'^  fonts:', multiLine: true).hasMatch(source)) {
+    failures.add(
+      'pubspec.yaml declares production fonts; UI typography must inherit '
+      'the platform system font',
+    );
   }
 }
 

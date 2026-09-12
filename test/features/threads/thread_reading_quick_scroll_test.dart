@@ -5,11 +5,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/core/widgets/reading_quick_scroll.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.dart';
 
-import '../../support/foundation_test_fonts.dart';
+import '../../support/deterministic_test_fonts.dart';
 import 'thread_detail_page_test_support.dart';
 
 void main() {
-  setUpAll(loadFoundationTestFonts);
+  setUpAll(loadDeterministicTestFonts);
   final floors = [
     for (var i = 0; i < 60; i++)
       ThreadFloorModel(
@@ -57,7 +57,7 @@ void main() {
       await tester.tap(find.byKey(const Key('reading-quick-scroll-toggle')));
       await tester.pumpAndSettle();
       final bar = tester.getRect(
-        find.byKey(const Key('reading-quick-scroll-bar')),
+        find.byKey(const Key('reading-quick-scroll-rail')),
       );
       final actions = tester.getRect(
         find.byKey(const Key('thread-detail-bottom-bar')),
@@ -73,16 +73,28 @@ void main() {
             find.byType(ReadingQuickScrollAction),
           )
           .controller;
+      final thumb = find.byKey(const Key('reading-quick-scroll-slider'));
+      final grabbed = tester.getRect(thumb);
+      final drag = await tester.startGesture(grabbed.center);
+      await drag.moveBy(const Offset(0, 60));
+      await tester.pumpAndSettle();
+      expect(tester.getRect(thumb).top, closeTo(grabbed.top + 60, 1));
+      await drag.up();
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('reading-quick-scroll-slider')));
+      await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('reading-quick-scroll-end')));
       await tester.pumpAndSettle();
       expect(quick.scrollController.position.extentAfter, lessThanOrEqualTo(1));
       expect(quick.edgeFailed, isFalse);
+      await tester.tap(find.byKey(const Key('reading-quick-scroll-slider')));
+      await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('reading-quick-scroll-start')));
       await tester.pumpAndSettle();
       expect(quick.scrollController.offset, 0);
       await tester.tap(find.byKey(const Key('thread-subthread-next')));
       await tester.pumpAndSettle();
-      expect(find.byKey(const Key('reading-quick-scroll-bar')), findsNothing);
+      expect(find.byKey(const Key('reading-quick-scroll-rail')), findsNothing);
       expect(find.text('支线正文'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });

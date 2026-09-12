@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -14,12 +15,13 @@ import 'package:wenyousite_mobile/features/posts/data/post_repository.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
 import 'package:wenyousite_mobile/features/posts/presentation/post_replies_page.dart';
 import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
+
+import '../../support/deterministic_test_fonts.dart';
 import '../../support/fake_image_crop_processor.dart';
-import '../../support/foundation_test_fonts.dart';
 import 'post_replies_page_test_support.dart';
 
 void registerPostRepliesPageScrollingLifecycleCases() {
-  setUpAll(loadFoundationTestFonts);
+  setUpAll(loadDeterministicTestFonts);
   testWidgets('楼中楼末尾长回复从作者信息开头定位', (tester) async {
     await tester.pumpWidget(
       ProviderScope(

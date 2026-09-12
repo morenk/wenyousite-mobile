@@ -3,11 +3,11 @@ import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 
-import '../../support/foundation_test_fonts.dart';
+import '../../support/deterministic_test_fonts.dart';
 import 'post_replies_page_test_support.dart';
 
 void main() {
-  setUpAll(loadFoundationTestFonts);
+  setUpAll(loadDeterministicTestFonts);
   for (final marker in ['1.', '-']) {
     testWidgets('#37 反馈 $marker 第二组末项空白、填字、删空、保存重开', (tester) async {
       final repository = PostRepliesPageTestFakePostRepository(

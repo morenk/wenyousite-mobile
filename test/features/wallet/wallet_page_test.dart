@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/wallet/data/wallet_repository.dart';
@@ -66,7 +67,14 @@ void main() {
       balance.style!.fontSize,
       WenyouFoundationTypography.mobileSizes['pageTitle'],
     );
-    expect(balance.style!.fontFamily, WenyouFoundationTypography.utility);
+    expect(
+      balance.style!.fontFamily,
+      AppTheme.light.textTheme.wenyouMetricValue.fontFamily,
+    );
+    expect(
+      balance.style!.fontFeatures,
+      contains(const FontFeature.tabularFigures()),
+    );
     final unit = (balance.textSpan! as TextSpan).children!.single as TextSpan;
     expect(
       unit.style!.fontSize,

@@ -66,8 +66,6 @@ class _WenyouDiceNodeState extends State<WenyouDiceNode> {
     final tokens = context.wenyouTokens;
     final effectiveStyle = widget.style.copyWith(
       color: widget.settled ? tokens.onAccentedBackground : tokens.warning,
-      fontFamily: WenyouFoundationTypography.utility,
-      fontFamilyFallback: WenyouFoundationTypography.chineseFallback,
       fontFeatures: const [FontFeature.tabularFigures()],
       height: WenyouElementContract.diceLineHeight,
     );

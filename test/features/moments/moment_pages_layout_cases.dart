@@ -6,12 +6,12 @@ import 'package:wenyousite_mobile/features/moments/application/moment_draft_stor
 import 'package:wenyousite_mobile/features/moments/data/moment_repository.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_compose_page.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_detail_page.dart';
-import '../../support/foundation_test_fonts.dart';
+import '../../support/deterministic_test_fonts.dart';
 import '../../support/moment_test_draft_store.dart';
 import 'moment_pages_test_support.dart';
 
 void registerMomentPagesLayoutCases() {
-  setUpAll(loadFoundationTestFonts);
+  setUpAll(loadDeterministicTestFonts);
   testWidgets('360dp 键盘态动态发布页保持主操作可见且语义明确', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(360, 760);

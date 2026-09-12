@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
-import '../../support/foundation_test_fonts.dart';
+import '../../support/deterministic_test_fonts.dart';
 import 'direct_conversation_page_test_support.dart';
 
 void registerDirectConversationPageGoldenCases() {
-  setUpAll(loadFoundationTestFonts);
+  setUpAll(loadDeterministicTestFonts);
   testWidgets('600dp 私信气泡分组视觉基线', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(600, 760);
