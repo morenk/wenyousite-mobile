@@ -21,6 +21,7 @@ import 'package:wenyousite_mobile/features/users/application/me_profile_controll
 import 'package:wenyousite_mobile/features/users/application/profile_cover_controller.dart';
 import 'package:wenyousite_mobile/features/users/application/public_user_controller.dart';
 import 'package:wenyousite_mobile/features/users/domain/me_profile_models.dart';
+import 'package:wenyousite_mobile/features/users/presentation/background_reminder_settings_panel.dart';
 import 'package:wenyousite_mobile/features/users/presentation/me_content_dashboard.dart';
 import 'package:wenyousite_mobile/features/users/presentation/me_profile_editor.dart';
 import 'package:wenyousite_mobile/features/users/presentation/me_profile_refresh_boundary.dart';
@@ -359,6 +360,7 @@ class MeSettingsPage extends StatelessWidget {
         children: [
           const _AppearanceSettingsPanel(),
           const _AccountSecurityPanel(disabled: false),
+          const BackgroundReminderSettingsPanel(),
           const _LogoutPanel(),
           ListTile(
             title: const Text('故障诊断'),

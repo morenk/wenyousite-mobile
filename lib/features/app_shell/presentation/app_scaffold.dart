@@ -6,7 +6,9 @@ import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/application/background_execution.dart';
 import 'package:wenyousite_mobile/core/application/background_online_reminders.dart';
+import 'package:wenyousite_mobile/core/application/background_reminder_preference.dart';
 import 'package:wenyousite_mobile/core/diagnostics/debug_diagnostic_console.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/network/session_controller.dart';
@@ -15,6 +17,7 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_snack_bar.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_unread_indicator.dart';
 import 'package:wenyousite_mobile/features/app_shell/application/background_online_poller.dart';
 import 'package:wenyousite_mobile/features/app_shell/application/background_online_reminder_coordinator.dart';
+import 'package:wenyousite_mobile/features/app_shell/application/background_reminder_runtime.dart';
 import 'package:wenyousite_mobile/features/direct_messages/application/direct_message_controllers.dart';
 import 'package:wenyousite_mobile/features/notifications/application/notification_controllers.dart';
 
@@ -37,13 +40,11 @@ class _AppScaffoldState extends ConsumerState<AppScaffold>
   bool _pollingActive = false;
   bool _pollDirectMessages = false;
   bool _pollingSyncScheduled = false;
-  SessionStatus _requestedSessionStatus = SessionStatus.restoring;
-  bool _requestedDirectMessages = false;
-  bool _requestedBackgroundOnline = false;
   bool _activatedAuthenticatedReminder = false;
   bool _backgroundOnlineNoticeScheduled = false;
   String? _pendingBackgroundOnlineNotice;
   late final BackgroundOnlineReminderCoordinator _backgroundCoordinator;
+  late final BackgroundReminderRuntime _backgroundRuntime;
 
   @override
   void initState() {
@@ -51,6 +52,9 @@ class _AppScaffoldState extends ConsumerState<AppScaffold>
     _backgroundCoordinator = BackgroundOnlineReminderCoordinator(
       pollingSession: ref.read(backgroundOnlinePollerProvider),
       notificationGateway: ref.read(backgroundNotificationGatewayProvider),
+      executionGateway: ref.read(backgroundExecutionGatewayProvider),
+      onExecutionUnavailable: (status) async =>
+          _handleExecutionUnavailable(status),
       onPermissionDenied: () async {
         if (!mounted) return;
         await ref
@@ -66,13 +70,38 @@ class _AppScaffoldState extends ConsumerState<AppScaffold>
             }
           : null,
     );
+    _backgroundRuntime = BackgroundReminderRuntime(
+      execution: ref.read(backgroundExecutionGatewayProvider),
+      coordinator: _backgroundCoordinator,
+      onUnavailable: _handleExecutionUnavailable,
+    );
+    // 后台可能没有新帧；退出、切号和开关变化必须立即取消旧工作。
+    // 直接监听认证源，不能等待派生 Provider 在下一帧重算。
+    ref.listenManual(sessionControllerProvider, (previous, next) {
+      if (previous?.generation == next.generation &&
+          previous?.status == next.status) {
+        return;
+      }
+      _stopAllPolling();
+      _activatedAuthenticatedReminder = false;
+      _syncCurrentPolling();
+    });
+    ref.listenManual(backgroundReminderPreferenceProvider, (previous, next) {
+      if (previous?.enabled != next.enabled) {
+        _activatedAuthenticatedReminder = false;
+      }
+      _syncCurrentPolling();
+    });
+    ref.listenManual(backgroundOnlineControllerProvider, (previous, next) {
+      _syncCurrentPolling();
+    });
     WidgetsBinding.instance.addObserver(this);
   }
 
   @override
   void dispose() {
     _unreadTimer?.cancel();
-    _backgroundCoordinator.dispose();
+    _backgroundRuntime.dispose();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -109,16 +138,11 @@ class _AppScaffoldState extends ConsumerState<AppScaffold>
         ? ref.watch(notificationUnreadControllerProvider).count
         : 0;
     final messagesEnabled = ref.watch(directMessagesEnabledProvider);
-    final backgroundOnlineState = ref.watch(backgroundOnlineControllerProvider);
     ref.listen<BackgroundOnlineState>(
       backgroundOnlineControllerProvider,
       _handleBackgroundOnlineState,
     );
-    _scheduleUnreadPollingSync(
-      session.status,
-      messagesEnabled,
-      backgroundOnlineState.canRun,
-    );
+    _scheduleUnreadPollingSync();
     final directUnread = session.isAuthenticated && messagesEnabled
         ? ref.watch(directUnreadControllerProvider).counts.total
         : 0;
@@ -210,24 +234,13 @@ class _AppScaffoldState extends ConsumerState<AppScaffold>
     );
   }
 
-  void _scheduleUnreadPollingSync(
-    SessionStatus sessionStatus,
-    bool messagesEnabled,
-    bool backgroundOnline,
-  ) {
-    _requestedSessionStatus = sessionStatus;
-    _requestedDirectMessages = messagesEnabled;
-    _requestedBackgroundOnline = backgroundOnline;
+  void _scheduleUnreadPollingSync() {
     if (_pollingSyncScheduled) return;
     _pollingSyncScheduled = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _pollingSyncScheduled = false;
       if (!mounted) return;
-      _syncUnreadPolling(
-        _requestedSessionStatus,
-        _requestedDirectMessages,
-        _requestedBackgroundOnline,
-      );
+      _syncCurrentPolling();
     });
   }
 
@@ -236,13 +249,29 @@ class _AppScaffoldState extends ConsumerState<AppScaffold>
     bool messagesEnabled,
     bool backgroundOnline,
   ) {
-    if (sessionStatus != SessionStatus.authenticated) {
+    if (sessionStatus != SessionStatus.authenticated ||
+        _lifecycleState == AppLifecycleState.detached) {
       _stopAllPolling();
       _activatedAuthenticatedReminder = false;
       return;
     }
+    final preference = ref.read(backgroundReminderPreferenceProvider);
+    final enabled =
+        backgroundOnline && preference.enabled && !preference.isSaving;
+    _backgroundRuntime.synchronize(
+      scope: ref.read(sessionControllerProvider.notifier).scope,
+      enabled: enabled,
+      includeDirectMessages: messagesEnabled,
+      visibility: switch (_lifecycleState) {
+        AppLifecycleState.resumed => ReminderVisibility.foreground,
+        AppLifecycleState.inactive => ReminderVisibility.inactive,
+        _ => ReminderVisibility.background,
+      },
+    );
     if (_lifecycleState == AppLifecycleState.resumed) {
-      if (!_activatedAuthenticatedReminder) {
+      if (!_activatedAuthenticatedReminder &&
+          preference.enabled &&
+          !preference.isSaving) {
         _activatedAuthenticatedReminder = true;
         unawaited(
           ref
@@ -254,23 +283,12 @@ class _AppScaffoldState extends ConsumerState<AppScaffold>
       return;
     }
     if (_lifecycleState == AppLifecycleState.inactive) {
-      _prepareBackgroundTransition(
-        messagesEnabled: messagesEnabled,
-        enabled: backgroundOnline,
-      );
+      _pauseForegroundPolling(messagesEnabled);
       return;
     }
     if (_lifecycleState == AppLifecycleState.hidden ||
         _lifecycleState == AppLifecycleState.paused) {
-      _prepareBackgroundTransition(
-        messagesEnabled: messagesEnabled,
-        enabled: backgroundOnline,
-      );
-      if (backgroundOnline) {
-        _startBackgroundPolling(messagesEnabled);
-      } else {
-        _backgroundCoordinator.stop();
-      }
+      _pauseForegroundPolling(messagesEnabled);
       return;
     }
     _stopAllPolling();
@@ -279,7 +297,6 @@ class _AppScaffoldState extends ConsumerState<AppScaffold>
   void _enterForegroundPolling(bool messagesEnabled) {
     if (_pollingActive && _pollDirectMessages == messagesEnabled) return;
     _unreadTimer?.cancel();
-    _backgroundCoordinator.stop();
     _pollingActive = true;
     _pollDirectMessages = messagesEnabled;
     _refreshUnreadCounts();
@@ -289,23 +306,11 @@ class _AppScaffoldState extends ConsumerState<AppScaffold>
     );
   }
 
-  void _prepareBackgroundTransition({
-    required bool messagesEnabled,
-    required bool enabled,
-  }) {
+  void _pauseForegroundPolling(bool messagesEnabled) {
     _unreadTimer?.cancel();
     _unreadTimer = null;
     _pollingActive = false;
     _pollDirectMessages = messagesEnabled;
-    if (!enabled) {
-      _backgroundCoordinator.stop();
-      return;
-    }
-    _backgroundCoordinator.prepare(includeDirectMessages: messagesEnabled);
-  }
-
-  void _startBackgroundPolling(bool messagesEnabled) {
-    _backgroundCoordinator.start(includeDirectMessages: messagesEnabled);
   }
 
   void _stopAllPolling() {
@@ -313,7 +318,30 @@ class _AppScaffoldState extends ConsumerState<AppScaffold>
     _unreadTimer = null;
     _pollingActive = false;
     _pollDirectMessages = false;
-    _backgroundCoordinator.stop();
+    _backgroundRuntime.synchronize(
+      scope: null,
+      enabled: false,
+      includeDirectMessages: false,
+      visibility: ReminderVisibility.foreground,
+    );
+  }
+
+  void _syncCurrentPolling() {
+    if (!mounted) return;
+    _syncUnreadPolling(
+      ref.read(sessionControllerProvider).status,
+      ref.read(directMessagesEnabledProvider),
+      ref.read(backgroundOnlineControllerProvider).canRun,
+    );
+  }
+
+  void _handleExecutionUnavailable(BackgroundExecutionStatus status) {
+    if (!mounted) return;
+    ref
+        .read(backgroundOnlineControllerProvider.notifier)
+        .markExecutionUnavailable(
+          blocked: status == BackgroundExecutionStatus.blocked,
+        );
   }
 
   void _refreshUnreadCounts() {
@@ -330,6 +358,7 @@ class _AppScaffoldState extends ConsumerState<AppScaffold>
     BackgroundOnlineState next,
   ) {
     if (!ref.read(sessionControllerProvider).isAuthenticated ||
+        !ref.read(backgroundReminderPreferenceProvider).enabled ||
         next.isLoading) {
       return;
     }

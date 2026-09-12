@@ -76,7 +76,8 @@ class BackgroundOnlineState {
   final bool permissionDenied;
   final String? failureMessage;
 
-  bool get canRun => supported && !isLoading && !permissionDenied;
+  bool get canRun =>
+      supported && !isLoading && !permissionDenied && failureMessage == null;
 }
 
 class BackgroundOnlineController extends StateNotifier<BackgroundOnlineState> {
@@ -89,7 +90,7 @@ class BackgroundOnlineController extends StateNotifier<BackgroundOnlineState> {
   int _operationEpoch = 0;
 
   /// Requests notification access when an authenticated foreground session is
-  /// ready. The best-effort polling policy itself is always enabled.
+  /// ready and the device preference permits background reminders.
   Future<void> activateForAuthenticatedSession() async {
     if (!state.supported) return;
     final epoch = ++_operationEpoch;
@@ -139,10 +140,23 @@ class BackgroundOnlineController extends StateNotifier<BackgroundOnlineState> {
 
   Future<void> markPermissionDenied() async {
     if (!mounted || !state.supported) return;
+    _operationEpoch++;
     state = BackgroundOnlineState(
       supported: state.supported,
       isLoading: false,
       permissionDenied: true,
+    );
+  }
+
+  void markExecutionUnavailable({required bool blocked}) {
+    if (!mounted || !state.supported) return;
+    _operationEpoch++;
+    state = BackgroundOnlineState(
+      supported: true,
+      isLoading: false,
+      failureMessage: blocked
+          ? '后台消息提醒不可用，请在系统设置中开启温油站通知及后台消息提醒。'
+          : '后台消息提醒启动或运行失败，请回到温油站后重试。',
     );
   }
 

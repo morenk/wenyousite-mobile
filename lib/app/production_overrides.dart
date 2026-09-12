@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/app/app_capabilities.dart';
 import 'package:wenyousite_mobile/app/visibility_cache_invalidation.dart';
+import 'package:wenyousite_mobile/core/application/background_execution.dart';
 import 'package:wenyousite_mobile/core/application/background_online_reminders.dart';
 import 'package:wenyousite_mobile/core/application/bookmark_folder_catalog.dart';
 import 'package:wenyousite_mobile/core/application/document_saver.dart';
@@ -8,6 +9,7 @@ import 'package:wenyousite_mobile/core/application/image_gallery.dart';
 import 'package:wenyousite_mobile/core/application/profile_cache_invalidation.dart';
 import 'package:wenyousite_mobile/core/application/visibility_cache_invalidation.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/core/platform/android_background_execution_gateway.dart';
 import 'package:wenyousite_mobile/core/platform/android_background_notification_gateway.dart';
 import 'package:wenyousite_mobile/core/platform/device_document_saver.dart';
 import 'package:wenyousite_mobile/core/platform/device_image_gallery.dart';
@@ -78,6 +80,9 @@ import 'package:wenyousite_mobile/features/users/data/public_user_repository.dar
 import 'package:wenyousite_mobile/features/wallet/data/wallet_repository.dart';
 
 List<Override> productionProviderOverrides() => [
+  backgroundExecutionGatewayProvider.overrideWith(
+    (ref) => ref.watch(androidBackgroundExecutionGatewayProvider),
+  ),
   coverAnimationSourceProvider.overrideWith(
     (ref) => ref.watch(deviceCoverAnimationSourceProvider),
   ),
