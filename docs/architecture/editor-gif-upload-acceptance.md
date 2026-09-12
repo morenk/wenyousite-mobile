@@ -26,7 +26,9 @@
 - 原件夹具：`test/fixtures/animation-webp-all-surfaces/original.gif`（320×180，2 帧，1,383 字节，SHA-256 `0b508d740ff4d60df8470b194d6a6c6e2697a88350334c04fd251c636fa4ffe7`）；展示使用同目录 `full.webp`，选图确认使用真实 PNG 预览并模拟 GIF 不裁剪。
 - 旧应用源码执行上述测试：5 条全部在缺少图片 Markdown 的断言失败，实际仅剩“上传前正文”；日志 `build/editor-gif-old-regression.log`。旧回归命令外层最后打印日志返回 0，但 Flutter 报告明确为 5 个失败，不作为通过证据。
 - 候选执行同一文件：5 条全部通过；命令 `flutter test test/features/editor/editor_image_upload_completion_test.dart --reporter expanded --no-pub`，日志 `build/editor-gif-candidate-regression.log`。
-- 完整门禁与 Debug 构建：`npm run check:apk -- -TestConcurrency 2`，结果待完成后登记，日志 `build/editor-gif-full-check.log`。
+- 完整门禁原命令：`npm run check:apk -- -TestConcurrency 2`。负责人随后明确要求“直接跳过测试，我先验证功能先”，已停止本任务检查进程及其子进程；停止前 2,047 项通过、1 项既有跳过、无已报告失败，不宣称完整门禁通过；余下 Flutter 测试、Windows 工具测试和 Debug APK 未完成。日志 `build/editor-gif-full-check.log`。
+- 应用源码候选提交：`c776acdf39ca75f51e38b7d84656f988eb39d615`。应用与生成客户端静态分析、契约及生成一致性、架构、文档与 API 覆盖均通过。停止测试后仅补充交付记录，不修改应用源码。
+- 第一次 Release 构建失败：与全量测试并行时，Flutter 自动注册文件包含 `integration_test`，但 Release 不编译该测试插件，`:app:compileReleaseJavaWithJavac` 因此失败。日志 `build/editor-gif-release-build.log`；不把磁盘上旧 APK 当成新候选，也不手改自动注册文件。按负责人指令停止测试后，以标准 `flutter build apk --release --target-platform android-arm64` 串行重建，并沿用仓库外诊断配置；日志 `build/editor-gif-release-build-final.log`，无需修改应用源码。
 
 ## 真机手测与未验证项
 
@@ -38,4 +40,8 @@
 
 ## 候选制品与负责人结果
 
-提交、APK 版本与哈希待构建完成后登记。负责人尚未验收，不能标记原问题修复完成。
+安装前实际读取的手机版本：`site.wenyou.app` / `0.7.0 (94)`，更新时间 `2026-09-13 06:16:41`；APK SHA-256 `7d7579c5ba5f5511552e0832c0a53c3b3a89a5107b57b4cf76c293af75fa5092`。当前包签名证书 SHA-256 为 `4b19f9ba1890480d1e1ac72450f00027a635be57958b702ba3a8e80f2db24839`。
+
+串行 Release 重建成功（26 秒），候选归档在 `D:\code\wenyousite\wenyousite-mobile\build\candidates\editor-gif-c776acdf\wenyou-editor-gif-candidate.apk`。应用“温油站”，包名 `site.wenyou.app`，版本 `0.7.0 (94)`，大小 33,021,007 字节，SHA-256 `0c04f58ee418eca24cbfe6921e93c93b417def34753c2bbf7be95a16984723bd`；与原包同证书，仅 ARM64，16KB ZIP 对齐与发布包内容核验通过。
+
+2026-09-13 已按负责人授权执行 `adb install -r`，返回 `Success`；设备内 `base.apk` SHA-256 与上方候选完全一致，安装后更新时间为 `2026-09-13 06:54:03`。未卸载或清除数据，负责人直接打开原来的“温油站”复验原 GIF。未向 RainS3 上传、未晋级 `/meta`，未合并任务分支。负责人尚未验收，不能标记原问题修复完成。
