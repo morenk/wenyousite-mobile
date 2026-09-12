@@ -55,6 +55,7 @@ Future<void> threadComposePageTestPumpPage(
   EditorImagePicker? picker,
   MediaUploadRepository? mediaRepository,
   MediaUploadGateway? mediaGateway,
+  ImageCropProcessor? cropProcessor,
   ContentDraftsController? contentDraftsController,
   ThreadComposePageTestComposeStickerRepository? stickerRepository,
   bool markdownAlignment = false,
@@ -112,7 +113,7 @@ Future<void> threadComposePageTestPumpPage(
           }),
         ],
         imageCropProcessorPortProvider.overrideWithValue(
-          const FakePassThroughImageCropProcessor(),
+          cropProcessor ?? const FakePassThroughImageCropProcessor(),
         ),
         threadComposeControllerProvider.overrideWith((ref) => controller),
         if (contentDraftsController != null)
