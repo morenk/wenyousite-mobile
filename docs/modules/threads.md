@@ -241,6 +241,8 @@ GIF 上传插入修复（2026-09-13，负责人验收通过）：新主题正文
 
 ## 13. 最近审查的契约版本和后端提交
 
+2026-09-13 契约版本登记：当前移动端固定 OpenAPI `5.23.0-dev.20260913.1` 与 Backend revision `df4682548e3fc0291fc2cd19c7111b5f0fa53746`；本模块未因本次收藏夹端点扩展变更行为。
+
 2026-09-12 纵向快翻消费正式 Foundation `v6.11.0`（ba9a237）；本轮新增抓取无跳位、取消清除排队更新、外部点击透传、键盘、可调语义及明暗主题窄屏回归，负责人已在 b10c42fe Debug 包上确认首次长子贴拖动、末端继续加载、松手停止与发表入口避让，新的拖动手感验收通过；其他专项实测边界见纵向快翻验收记录。
 
 本轮展示契约来源：API `5.22.0-dev.20260912.2`、Backend `6fdfa00eaf1f3056ba30f2ffbc529d12eed1c823`；新增 display／mediaDisplays；消费者已获负责人验收，检查与合并整合见本任务 PR 和全场景记录。仅既有 `markdown-editor-list-v1-fixtures.json` 保留 `062412601b3a8dbf4f64494115a2445d312dd53d` 来源与SHA-256，见 contracts/markdown-editor-list-v1-source.json；不将该独立语料误标为本轮主来源。

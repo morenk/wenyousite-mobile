@@ -130,7 +130,7 @@ class _BookmarkFolderPickerSheetState extends State<BookmarkFolderPickerSheet> {
   Future<void> _createFolder() async {
     if (_isBusy) return;
     final name = _nameController.text.trim();
-    if (name.isEmpty || name.length > 24) {
+    if (name.isEmpty || name.runes.length > 24) {
       setState(() {
         _failure = const ApiFailure(userMessage: '收藏夹名称需为 1–24 个字符。');
       });

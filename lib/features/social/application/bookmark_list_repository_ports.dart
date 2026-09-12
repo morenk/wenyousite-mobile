@@ -17,6 +17,12 @@ abstract interface class BookmarkListRepository
   @override
   Future<BookmarkFolderItem> createFolder(String name);
 
+  @override
+  Future<BookmarkFolderItem> renameFolder(String folderId, String name);
+
+  @override
+  Future<BookmarkFolderDeleteResult> deleteFolder(String folderId);
+
   Future<void> move(String bookmarkId, String folderId);
 
   Future<void> remove(String bookmarkId);
@@ -41,6 +47,16 @@ class _UnboundBookmarkListRepository implements BookmarkListRepository {
 
   @override
   Future<BookmarkFolderItem> createFolder(String name) {
+    return Future.error(_error());
+  }
+
+  @override
+  Future<BookmarkFolderDeleteResult> deleteFolder(String folderId) {
+    return Future.error(_error());
+  }
+
+  @override
+  Future<BookmarkFolderItem> renameFolder(String folderId, String name) {
     return Future.error(_error());
   }
 
