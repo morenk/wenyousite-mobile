@@ -37,6 +37,11 @@ void main() {
     expect(alerts.single.title, '温油站');
     expect(alerts.single.body, contains('赞了你的内容'));
     expect(alerts.single.body, isNot(contains('![')));
+    final payload = BackgroundNotificationPayload.tryParse(
+      alerts.single.payload,
+    )!;
+    expect(payload.notificationId, 'notification-1');
+    expect(payload.recipientId, 'me');
     expect(batch.commit(), isTrue);
     verifyNever(() => notifications.fetchUnreadCount());
   });

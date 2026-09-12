@@ -67,7 +67,8 @@ void main() {
     await tester.pumpAndSettle();
     expect(gateway.requests, 1);
     expect(execution.opens, 0);
-    expect(find.textContaining('系统默认'), findsOneWidget);
+    expect(find.textContaining('悬浮通知'), findsOneWidget);
+    expect(find.textContaining('系统默认'), findsNothing);
     await tester.tap(find.text('原页面可继续使用'));
     await tester.pumpAndSettle();
     expect(find.text('页面操作 1'), findsOneWidget);

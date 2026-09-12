@@ -4,6 +4,30 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/core/application/background_online_reminders.dart';
 
 void main() {
+  test('系统通知已读载荷携带成对通知与接收人 ID，兼容旧载荷', () {
+    final payload = BackgroundNotificationPayload.notification(
+      '/threads/t1',
+      notificationId: 'n1',
+      recipientId: 'u1',
+    );
+    final parsed = BackgroundNotificationPayload.tryParse(payload.encode())!;
+    expect(parsed.notificationId, 'n1');
+    expect(parsed.recipientId, 'u1');
+    expect(
+      BackgroundNotificationPayload.tryParse(
+        '{"v":1,"type":"notification","value":"/threads/t1"}',
+      )!.notificationId,
+      isNull,
+    );
+    for (final raw in [
+      '{"v":1,"type":"notification","notificationId":"n1"}',
+      '{"v":1,"type":"notification","notificationId":7,"recipientId":"u1"}',
+      '{"v":1,"type":"notification","notificationId":"../n1","recipientId":"u1"}',
+      '{"v":1,"type":"messageCenter","notificationId":"n1","recipientId":"u1"}',
+    ]) {
+      expect(BackgroundNotificationPayload.tryParse(raw), isNull);
+    }
+  });
   test('本地通知载荷只接受 v1 安全目标并对未知载荷回退失败', () {
     final direct = const BackgroundNotificationPayload.directMessage(
       'conversation / 1',

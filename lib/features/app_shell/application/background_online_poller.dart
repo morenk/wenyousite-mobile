@@ -280,6 +280,8 @@ class BackgroundOnlinePoller implements BackgroundOnlinePollingSession {
     final summary = _truncate(formatNotificationCopy(item).plainText, 160);
     final payload = BackgroundNotificationPayload.notification(
       notificationTargetLocation(item.target),
+      notificationId: item.id,
+      recipientId: item.recipientUserId,
     );
     return BackgroundLocalAlert(
       id: _stableId('notification:${item.id}'),

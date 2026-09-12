@@ -96,10 +96,10 @@ class _NotificationPermissionGuidanceState
         _visible && _eligible && session.generation == _promptGeneration;
     final requestPermission = online.permissionDenied && !_permissionAttempted;
     final description = requestPermission
-        ? '允许通知后，离开温油站也能收到私聊和回复提醒。你可以随时在账号设置中关闭。'
+        ? '开启消息通知，及时查看私聊和回复。'
         : online.permissionDenied
-        ? '通知尚未开启。如需接收提醒，请在系统设置中允许温油站及“新消息提醒”的通知。'
-        : '如需顶部横幅，请开启“新消息提醒”的悬浮通知；声音可选“系统默认”。“后台消息提醒”保持静音即可。';
+        ? '消息通知未开启，可前往系统设置开启。'
+        : '想在屏幕顶部看到新消息？请开启“新消息提醒”的悬浮通知。';
     return LayoutBuilder(
       builder: (context, constraints) => Column(
         children: [

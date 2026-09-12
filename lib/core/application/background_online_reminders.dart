@@ -213,13 +213,24 @@ enum BackgroundNotificationDestination {
 }
 
 class BackgroundNotificationPayload {
-  const BackgroundNotificationPayload._(this.destination, {this.value});
+  const BackgroundNotificationPayload._(
+    this.destination, {
+    this.value,
+    this.notificationId,
+    this.recipientId,
+  });
 
-  factory BackgroundNotificationPayload.notification(String? location) {
+  factory BackgroundNotificationPayload.notification(
+    String? location, {
+    String? notificationId,
+    String? recipientId,
+  }) {
     final safeLocation = _safeNotificationLocation(location);
     return BackgroundNotificationPayload._(
       BackgroundNotificationDestination.notification,
       value: safeLocation,
+      notificationId: recipientId == null ? null : notificationId,
+      recipientId: notificationId == null ? null : recipientId,
     );
   }
 
@@ -234,11 +245,15 @@ class BackgroundNotificationPayload {
 
   final BackgroundNotificationDestination destination;
   final String? value;
+  final String? notificationId;
+  final String? recipientId;
 
   String encode() => jsonEncode({
     'v': 1,
     'type': destination.name,
     if (value != null) 'value': value,
+    if (notificationId != null) 'notificationId': notificationId,
+    if (recipientId != null) 'recipientId': recipientId,
   });
 
   String get location => switch (destination) {
@@ -255,9 +270,22 @@ class BackgroundNotificationPayload {
       if (decoded is! Map<String, dynamic> || decoded['v'] != 1) return null;
       final type = decoded['type'];
       final value = decoded['value'];
+      final notificationId = decoded['notificationId'];
+      final recipientId = decoded['recipientId'];
+      if (notificationId != null || recipientId != null) {
+        if (type != BackgroundNotificationDestination.notification.name ||
+            !_validReceiptId(notificationId) ||
+            !_validReceiptId(recipientId)) {
+          return null;
+        }
+      }
       if (type == BackgroundNotificationDestination.notification.name) {
         if (value != null && value is! String) return null;
-        return BackgroundNotificationPayload.notification(value as String?);
+        return BackgroundNotificationPayload.notification(
+          value as String?,
+          notificationId: notificationId as String?,
+          recipientId: recipientId as String?,
+        );
       }
       if (type == BackgroundNotificationDestination.directMessage.name &&
           value is String &&
@@ -274,6 +302,11 @@ class BackgroundNotificationPayload {
     return null;
   }
 }
+
+bool _validReceiptId(Object? value) =>
+    value is String &&
+    value.length <= 200 &&
+    RegExp(r'^[a-zA-Z0-9_-]+$').hasMatch(value);
 
 String? _safeNotificationLocation(String? location) {
   final value = location?.trim();
