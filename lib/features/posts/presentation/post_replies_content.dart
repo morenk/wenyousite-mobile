@@ -336,6 +336,7 @@ class _PostCard extends ConsumerWidget {
               StickerPostMarkdown(
                 postId: post.id,
                 data: post.content,
+                mediaDisplays: post.mediaDisplays,
                 diceLabels: _postDiceLabels(post.diceRolls),
                 diceSemantics: {
                   for (final roll in post.diceRolls)

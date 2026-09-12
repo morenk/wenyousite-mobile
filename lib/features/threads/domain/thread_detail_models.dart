@@ -1,3 +1,5 @@
+import 'package:wenyousite_mobile/core/media/media_display.dart';
+
 class ThreadAuthorModel {
   const ThreadAuthorModel({
     required this.id,
@@ -40,12 +42,14 @@ class ThreadDiceRollModel {
 class ThreadBodyModel {
   const ThreadBodyModel({
     required this.markdown,
+    this.mediaDisplays = const {},
     this.postId,
     this.version,
     this.diceRolls = const [],
   });
 
   final String markdown;
+  final Map<String, MediaDisplay> mediaDisplays;
   final String? postId;
   final int? version;
   final List<ThreadDiceRollModel> diceRolls;

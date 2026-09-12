@@ -7,6 +7,7 @@ import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/diagnostics/failure_diagnostics.dart';
 import 'package:wenyousite_mobile/core/diagnostics/network_diagnostics.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/network/media_display_mapper.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_ports.dart';
 import 'package:wenyousite_mobile/features/media/data/media_upload_normalizer.dart';
@@ -25,7 +26,15 @@ abstract interface class MediaUploadRepository {
   });
 }
 
-class ApiMediaUploadRepository implements MediaUploadRepository {
+abstract interface class ResumableMediaUploadRepository {
+  Future<UploadedEditorImage> resumeImageProcessing(
+    PendingMediaUpload upload, {
+    CancelToken? cancelToken,
+  });
+}
+
+class ApiMediaUploadRepository
+    implements MediaUploadRepository, ResumableMediaUploadRepository {
   ApiMediaUploadRepository(
     this._api,
     this._uploadDio, {
@@ -203,15 +212,31 @@ class ApiMediaUploadRepository implements MediaUploadRepository {
     required MediaUploadPurpose purpose,
     CancelToken? cancelToken,
   }) async {
+    final pending = PendingMediaUpload(mediaId: mediaId, purpose: purpose);
     await _wait(const Duration(milliseconds: 500), cancelToken);
     for (var attempt = 0; attempt < _maxPollAttempts; attempt++) {
-      final statusEnvelope = await _api.mediaGetMedia(
-        id: mediaId,
-        cancelToken: cancelToken,
-      );
+      final statusEnvelope = await _api
+          .mediaGetMedia(id: mediaId, cancelToken: cancelToken)
+          .catchError((Object error) {
+            if (cancelToken?.isCancelled == true) throw error;
+            throw MediaProcessingLookupFailure(
+              pending,
+              error is DioException ? ApiFailure.fromDio(error) : error,
+            );
+          });
       final media = statusEnvelope.data?.data;
       if (media == null) {
-        throw const ApiFailure(userMessage: '图片处理失败，请重试。');
+        throw MediaProcessingLookupFailure(
+          pending,
+          const ApiFailure.invalidResponse(
+            diagnosticCode: 'media_query_missing_data',
+          ),
+        );
+      }
+      if (media.id != mediaId) {
+        throw const ApiFailure.invalidResponse(
+          diagnosticCode: 'media_query_identity_mismatch',
+        );
       }
       if (media.status == MediaResponseDtoStatusEnum.COMPLETED) {
         return _completedImage(media, purpose);
@@ -223,8 +248,18 @@ class ApiMediaUploadRepository implements MediaUploadRepository {
         await _wait(const Duration(seconds: 1), cancelToken);
       }
     }
-    throw const ApiFailure(userMessage: '图片仍在处理中，请稍后重新尝试插入。');
+    throw MediaProcessingPending(pending);
   }
+
+  @override
+  Future<UploadedEditorImage> resumeImageProcessing(
+    PendingMediaUpload upload, {
+    CancelToken? cancelToken,
+  }) => _waitForCompletedUpload(
+    mediaId: upload.mediaId,
+    purpose: upload.purpose,
+    cancelToken: cancelToken,
+  );
 
   String? _contentTypeFor(MediaUploadInput input) {
     final declared = input.declaredContentType?.toLowerCase().trim();
@@ -273,7 +308,9 @@ class ApiMediaUploadRepository implements MediaUploadRepository {
     if (!_matchesPurpose(media.purpose, expectedPurpose)) {
       throw const ApiFailure(userMessage: '图片用途与当前操作不一致，请重新选择。');
     }
+    if (media.display case final display?) _safeUrl(display.url);
     return UploadedEditorImage(
+      display: mapMediaDisplay(media.display),
       mediaId: media.id,
       url: _safeUrl(media.url),
       thumbnailUrl: _optionalSafeUrl(media.thumbnailUrl),
@@ -309,7 +346,9 @@ class ApiMediaUploadRepository implements MediaUploadRepository {
   String _safeUrl(String value) {
     final uri = Uri.tryParse(value.trim());
     if (uri == null || !_isSafeMediaUri(uri)) {
-      throw const ApiFailure(userMessage: '图片处理完成，但公开地址不安全。');
+      throw const ApiFailure.invalidResponse(
+        diagnosticCode: 'media_url_unsafe',
+      );
     }
     return uri.toString();
   }
@@ -368,7 +407,8 @@ final mediaUploadRepositoryProvider = Provider<MediaUploadRepository>((ref) {
   );
 });
 
-class RepositoryMediaUploadGateway implements MediaUploadGateway {
+class RepositoryMediaUploadGateway
+    implements MediaUploadGateway, ResumableMediaUploadGateway {
   RepositoryMediaUploadGateway(
     this._repository, {
     this.normalizer = const PassThroughMediaUploadNormalizer(),
@@ -380,6 +420,31 @@ class RepositoryMediaUploadGateway implements MediaUploadGateway {
   final MediaUploadNormalizer normalizer;
   final MediaUploadTiming timing;
   final MediaUploadWorkCoordinator workCoordinator;
+
+  @override
+  MediaUploadOperation<UploadedEditorImage> resumeImageProcessing(
+    PendingMediaUpload upload, {
+    void Function(MediaUploadProgress progress)? onProgress,
+  }) {
+    final cancelToken = CancelToken();
+    onProgress?.call(
+      const MediaUploadProgress(stage: MediaUploadStage.processing),
+    );
+    final repository = _repository;
+    return _DioMediaUploadOperation(
+      result: repository is ResumableMediaUploadRepository
+          ? (repository as ResumableMediaUploadRepository)
+                .resumeImageProcessing(upload, cancelToken: cancelToken)
+          : Future.error(
+              const ApiFailure(
+                source: FailureSource.device,
+                reason: FailureReason.unknown,
+                recoveryAction: FailureRecoveryAction.reopen,
+              ),
+            ),
+      cancelToken: cancelToken,
+    );
+  }
 
   @override
   MediaUploadOperation<UploadedEditorImage> startImageUpload(
@@ -413,6 +478,15 @@ class RepositoryMediaUploadGateway implements MediaUploadGateway {
           cancelToken: cancelToken,
           onProgress: onProgress,
         );
+      } on MediaProcessingLookupFailure catch (lookup, stack) {
+        diagnostics.capture(
+          lookup.cause,
+          stackTrace: stack,
+          operation: DiagnosticOperation.mediaUpload,
+        );
+        rethrow;
+      } on MediaProcessingPending {
+        rethrow;
       } on Object catch (error, stack) {
         diagnostics.capture(
           error,

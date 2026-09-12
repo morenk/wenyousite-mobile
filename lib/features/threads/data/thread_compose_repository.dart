@@ -4,6 +4,7 @@ import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
+import 'package:wenyousite_mobile/core/network/media_display_mapper.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/thread_feed/thread_feed_catalog_ports.dart';
 import 'package:wenyousite_mobile/features/thread_feed/thread_feed_models.dart';
@@ -262,6 +263,7 @@ class ApiThreadComposeRepository implements ThreadComposeRepository {
           .map((relation) => relation.tag.name)
           .toList(growable: false),
       body: bodyPost?.content ?? '',
+      mediaDisplays: mapMarkdownMediaDisplays(bodyPost?.mediaDisplays),
     );
   }
 

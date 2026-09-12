@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/media/media_display.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
@@ -306,6 +307,7 @@ class StickerPostMarkdown extends ConsumerWidget {
   const StickerPostMarkdown({
     required this.postId,
     required this.data,
+    this.mediaDisplays = const {},
     this.diceLabels = const {},
     this.diceSemantics = const {},
     this.diceDetails = const {},
@@ -321,6 +323,7 @@ class StickerPostMarkdown extends ConsumerWidget {
 
   final String postId;
   final String data;
+  final Map<String, MediaDisplay> mediaDisplays;
   final Map<String, String> diceLabels;
   final Map<String, String> diceSemantics;
   final Map<String, WenyouDiceRollDetail> diceDetails;
@@ -340,6 +343,7 @@ class StickerPostMarkdown extends ConsumerWidget {
     );
     return WenyouMarkdown(
       data: data,
+      mediaDisplays: mediaDisplays,
       diceLabels: diceLabels,
       diceSemantics: diceSemantics,
       diceDetails: diceDetails,

@@ -565,8 +565,11 @@ class _DirectMessageBubbleState extends ConsumerState<DirectMessageBubble> {
             widget.message.localDraft != null);
     final sending =
         widget.message.deliveryState == DirectMessageDeliveryState.sending;
-    final failed =
-        widget.message.deliveryState == DirectMessageDeliveryState.failed;
+    final failed = widget.message.canRetryDelivery;
+    final failureTip = widget.failure?.userMessage ?? '发送失败，点按处理';
+    final processing =
+        widget.message.deliveryState ==
+        DirectMessageDeliveryState.processingPending;
     final canSaveSticker =
         stickersEnabled && authenticated && media != null && _imageRevealed;
     final canReport =
@@ -583,7 +586,8 @@ class _DirectMessageBubbleState extends ConsumerState<DirectMessageBubble> {
         const CustomSemanticsAction(label: '撤回消息'): widget.onRecall,
       if (canReport) const CustomSemanticsAction(label: '举报消息'): _reportMessage,
       if (failed && widget.onRetry != null)
-        const CustomSemanticsAction(label: '重试发送'): widget.onRetry!,
+        CustomSemanticsAction(label: processing ? '继续查询图片' : '重试发送'):
+            widget.onRetry!,
       if (failed && widget.onAbandon != null)
         const CustomSemanticsAction(label: '删除失败消息'): widget.onAbandon!,
     };
@@ -629,8 +633,8 @@ class _DirectMessageBubbleState extends ConsumerState<DirectMessageBubble> {
         WenyouPopoverAction(
           value: _DirectMessageAction.retry,
           icon: WenyouIconIds.actionRefresh,
-          label: '重试',
-          semanticsLabel: '重新发送消息',
+          label: processing ? '继续查询' : '重试',
+          semanticsLabel: processing ? '继续查询图片' : '重新发送消息',
           key: ValueKey('direct-message-retry-${widget.message.id}'),
         ),
       if (failed && widget.onAbandon != null)
@@ -679,11 +683,15 @@ class _DirectMessageBubbleState extends ConsumerState<DirectMessageBubble> {
                       'direct-message-delivery-failed-${widget.message.id}',
                     ),
                     onPressed: openActions,
-                    tooltip: widget.failure?.userMessage ?? '发送失败，点按处理',
+                    tooltip: processing ? '图片处理中，点按继续查询' : failureTip,
                     visualDensity: VisualDensity.compact,
                     icon: WenyouIcon(
-                      WenyouIconIds.statusError,
-                      color: Theme.of(context).colorScheme.error,
+                      processing
+                          ? WenyouIconIds.actionRefresh
+                          : WenyouIconIds.statusError,
+                      color: processing
+                          ? tokens.mutedText
+                          : Theme.of(context).colorScheme.error,
                       size: 20,
                     ),
                   ),

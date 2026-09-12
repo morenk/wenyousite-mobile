@@ -2,12 +2,42 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
+import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/direct_messages/application/direct_message_states.dart';
 import 'package:wenyousite_mobile/features/direct_messages/domain/direct_message_models.dart';
 import 'package:wenyousite_mobile/features/direct_messages/presentation/direct_conversation_timeline.dart';
+import 'package:wenyousite_mobile/features/direct_messages/presentation/direct_message_widgets.dart';
 import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
 
 void main() {
+  testWidgets('私聊处理中按消息状态展示继续查询，不显示普通超时失败', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [stickersEnabledProvider.overrideWithValue(false)],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: Scaffold(
+            body: DirectMessageBubble(
+              message: _message('pending', 'user-1', DateTime(2026)).copyWith(
+                deliveryState: DirectMessageDeliveryState.processingPending,
+              ),
+              mine: true,
+              canRecall: false,
+              onRecall: () {},
+              onRetry: () {},
+              failure: const ApiFailure(
+                source: FailureSource.expected,
+                reason: FailureReason.timeout,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byTooltip('图片处理中，点按继续查询'), findsOneWidget);
+    expect(find.byTooltip('等待时间过长，请检查网络后重试。'), findsNothing);
+  });
   testWidgets('私聊时间线使用同组 8dp 与换人或跨时间组 16dp 间距', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(360, 760);

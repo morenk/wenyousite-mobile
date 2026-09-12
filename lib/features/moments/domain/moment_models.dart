@@ -1,4 +1,5 @@
 import 'package:wenyousite_mobile/core/domain/domain_validation_exception.dart';
+import 'package:wenyousite_mobile/core/media/media_display.dart';
 
 const _unsetMomentValue = Object();
 
@@ -56,6 +57,7 @@ class MomentMedia {
   const MomentMedia({
     required this.id,
     required this.url,
+    this.display,
     this.thumbnailUrl,
     this.feedUrl,
     this.mediumUrl,
@@ -67,6 +69,7 @@ class MomentMedia {
 
   final String id;
   final String url;
+  final MediaDisplay? display;
   final String? thumbnailUrl;
   final String? feedUrl;
   final String? mediumUrl;
@@ -91,8 +94,13 @@ class MomentMedia {
   List<String> get feedUrls =>
       _orderedMediaUrls([feedUrl, thumbnailUrl, mediumUrl, url]);
 
-  List<String> get contentUrls =>
-      _orderedMediaUrls([mediumUrl, thumbnailUrl, url]);
+  String get playbackUrl => display?.url ?? url;
+
+  List<String> get contentUrls => selectFullMediaUrls(
+    sourceUrl: url,
+    display: display,
+    legacyUrls: _orderedMediaUrls([mediumUrl, thumbnailUrl, url]),
+  );
 
   String get bestFeedUrl => feedUrls.first;
 
@@ -228,6 +236,7 @@ class MomentSticker {
   const MomentSticker({
     required this.id,
     required this.url,
+    this.display,
     required this.thumbnailUrl,
     required this.mediumUrl,
     required this.animated,
@@ -239,6 +248,7 @@ class MomentSticker {
 
   final String id;
   final String url;
+  final MediaDisplay? display;
   final String thumbnailUrl;
   final String mediumUrl;
   final int? width;

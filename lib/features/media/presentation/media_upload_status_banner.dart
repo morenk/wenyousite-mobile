@@ -30,7 +30,9 @@ class MediaUploadStatusBanner extends StatelessWidget {
       return WenyouStatusBanner(
         message: currentFailure.userMessage,
         detail: currentFailure.resolvedPresentation.problemDetail,
-        tone: WenyouStatusTone.error,
+        tone: state.phase == MediaUploadTaskPhase.processingPending
+            ? WenyouStatusTone.neutral
+            : WenyouStatusTone.error,
         action: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -39,7 +41,7 @@ class MediaUploadStatusBanner extends StatelessWidget {
               TextButton(
                 key: retryKey,
                 onPressed: onRetry,
-                child: Text(retryLabel),
+                child: Text(state.pendingUpload == null ? retryLabel : '继续查询'),
               ),
           ],
         ),

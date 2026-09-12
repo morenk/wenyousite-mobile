@@ -471,7 +471,7 @@ class DirectConversationController
         .where((item) => item.id == optimisticMessageId)
         .firstOrNull;
     if (state.phase != DirectConversationPhase.ready ||
-        message?.deliveryState != DirectMessageDeliveryState.failed ||
+        message?.canRetryDelivery != true ||
         (message?.localDraft == null &&
             !(_pendingMediaJobs?.contains(optimisticMessageId) ?? false))) {
       return false;
@@ -552,7 +552,16 @@ class DirectConversationController
       return true;
     } on Object catch (error) {
       if (!mounted) return false;
-      final failure = _asFailure(error, '消息发送失败，请重试。');
+      final processing = error is MediaProcessingPending;
+      final failure = processing
+          ? const ApiFailure(
+              source: FailureSource.expected,
+              reason: FailureReason.timeout,
+            )
+          : _asFailure(
+              error is MediaProcessingLookupFailure ? error.cause : error,
+              '消息发送失败，请重试。',
+            );
       final failures = Map<String, ApiFailure>.of(state.sendFailures)
         ..[optimisticMessageId] = failure;
       state = state.copyWith(
@@ -560,7 +569,9 @@ class DirectConversationController
             .map(
               (item) => item.id == optimisticMessageId
                   ? item.copyWith(
-                      deliveryState: DirectMessageDeliveryState.failed,
+                      deliveryState: processing
+                          ? DirectMessageDeliveryState.processingPending
+                          : DirectMessageDeliveryState.failed,
                     )
                   : item,
             )
@@ -575,18 +586,14 @@ class DirectConversationController
 
   Future<bool> retrySend() async {
     final message = state.messages
-        .where(
-          (item) => item.deliveryState == DirectMessageDeliveryState.failed,
-        )
+        .where((item) => item.canRetryDelivery)
         .lastOrNull;
     return message == null ? false : retryMessage(message.id);
   }
 
   void abandonFailedDraft() {
     final message = state.messages
-        .where(
-          (item) => item.deliveryState == DirectMessageDeliveryState.failed,
-        )
+        .where((item) => item.canRetryDelivery)
         .lastOrNull;
     if (message != null) abandonFailedMessage(message.id);
   }
@@ -595,7 +602,7 @@ class DirectConversationController
     final message = state.messages
         .where((item) => item.id == optimisticMessageId)
         .firstOrNull;
-    if (message?.deliveryState != DirectMessageDeliveryState.failed) return;
+    if (message?.canRetryDelivery != true) return;
     final failures = Map<String, ApiFailure>.of(state.sendFailures)
       ..remove(optimisticMessageId);
     final pending = Map<String, PendingDirectMessageMedia>.of(

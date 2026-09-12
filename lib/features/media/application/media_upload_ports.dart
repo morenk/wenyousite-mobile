@@ -34,3 +34,10 @@ abstract interface class MediaUploadOperation<T> {
 
   void cancel();
 }
+
+abstract interface class ResumableMediaUploadGateway {
+  MediaUploadOperation<UploadedEditorImage> resumeImageProcessing(
+    PendingMediaUpload upload, {
+    void Function(MediaUploadProgress progress)? onProgress,
+  });
+}

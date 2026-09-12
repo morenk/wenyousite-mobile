@@ -6,6 +6,7 @@ import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/application/image_gallery.dart';
 import 'package:wenyousite_mobile/core/application/user_facing_failure.dart';
+import 'package:wenyousite_mobile/core/media/media_display.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_image_viewer_page.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
@@ -26,6 +27,7 @@ class ContentImageViewerPage extends ConsumerStatefulWidget {
     required String alt,
     List<String> fallbackUrls = const [],
     Object? id,
+    MediaDisplay? display,
     Future<String> Function(WenyouImageViewerItem item)? onAddToStickers,
     Key? key,
   }) {
@@ -38,6 +40,7 @@ class ContentImageViewerPage extends ConsumerStatefulWidget {
           fallbackUrls: fallbackUrls,
           semanticLabel: normalizedAlt.isEmpty ? '正文插图原图' : normalizedAlt,
           id: id,
+          display: display,
         ),
       ],
       onAddToStickers: onAddToStickers,
@@ -169,7 +172,10 @@ class _ContentImageViewerPageState
       _failure = null;
     });
     final operation = gallery.startSave(
-      ImageGallerySource(url: item.url, fallbackUrls: item.fallbackUrls),
+      ImageGallerySource(
+        url: item.displayUrls.first,
+        fallbackUrls: item.displayUrls.skip(1).toList(growable: false),
+      ),
     );
     _saveOperation = operation;
     try {

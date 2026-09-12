@@ -292,14 +292,10 @@ class _DirectMessageTimelineState extends State<DirectMessageTimeline> {
                     isGroupEnd: groupEnds,
                     failure: state.sendFailures[message.id],
                     pendingMedia: state.pendingMedia[message.id],
-                    onRetry:
-                        message.deliveryState ==
-                            DirectMessageDeliveryState.failed
+                    onRetry: message.canRetryDelivery
                         ? () => widget.onRetryMessage(message.id)
                         : null,
-                    onAbandon:
-                        message.deliveryState ==
-                            DirectMessageDeliveryState.failed
+                    onAbandon: message.canRetryDelivery
                         ? () => widget.onAbandonFailedMessage(message.id)
                         : null,
                     onRecall: () => widget.onRecall(message),

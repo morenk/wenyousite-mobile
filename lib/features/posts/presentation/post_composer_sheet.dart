@@ -364,6 +364,7 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
     _openedSessionScope = ref.read(sessionScopeProvider);
     _editorSession = RichEditorSession(
       initialMarkdown: widget.target.initialContent,
+      initialMediaDisplays: widget.baseline.mediaDisplays,
       clipboardScope: _openedSessionScope,
       blockAlignment: ref.read(appCapabilitiesProvider).markdownAlignment,
       imageAlignment: ref.read(appCapabilitiesProvider).markdownImageAlignment,
@@ -771,7 +772,9 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
   }
 
   void _notifyDraft(String content) {
-    widget.onDraftChanged?.call(widget.baseline.draftFor(content));
+    widget.onDraftChanged?.call(
+      widget.baseline.draftFor(content, displays: _editorSession.mediaDisplays),
+    );
   }
 
   Future<void> _openContentDrafts() async {
@@ -781,16 +784,19 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
     if (!await _editorSession.flush()) return;
     if (!mounted) return;
     final state = ref.read(postComposerControllerProvider(widget.target));
+    var restoredDisplays = _editorSession.mediaDisplays;
     await showContentDraftsSheet(
       context: context,
       draftSessionKey: _contentDraftSessionKey,
       currentContent: state.content,
+      onRestoreDisplays: (values) => restoredDisplays = values,
       onRestore: (content) {
         if (!mounted ||
             _closing ||
             ref.read(sessionScopeProvider) != _openedSessionScope) {
           return;
         }
+        _editorSession.replaceMediaDisplays(restoredDisplays);
         ref
             .read(postComposerControllerProvider(widget.target).notifier)
             .restoreContent(content);
@@ -838,7 +844,7 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
   }
 
   void _insertBlockImage(UploadedEditorImage image) {
-    _editorSession.insertBlockImage(url: image.url);
+    _editorSession.insertBlockImage(url: image.url, display: image.display);
   }
 
   Future<void> _insertSticker(TextSelection selection) async {
@@ -856,6 +862,7 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
       selection: selection,
       assetId: sticker.asset.id,
       url: sticker.asset.url,
+      display: sticker.asset.display,
     );
   }
 

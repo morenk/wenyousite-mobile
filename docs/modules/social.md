@@ -33,6 +33,8 @@
 
 ## 6. 状态模型和数据流
 
+关系、订阅与收藏响应中的头像消费 avatarDisplay 展示地址，主题封面复用共享 display／preview 选择；收藏媒体身份与既有权限／分页保持。对应完整展示候选仍待负责人验收。
+
 `ThreadInteractionTarget` 管理详情点赞与快捷收藏，并通过可选投影读取端口采用最新主题详情；`BookmarkFolderCatalogController` 以内容类型为 family key，分别保存主题与动态目录、数量和创建状态。`BookmarkListController` 以必填主题 folderId 为 key；动态侧 `MomentBookmarkListController` 保存当前目录分页、失效 cursor 恢复和移动/取消的唯一在途动作。主题收藏 DTO 在 data 层映射为包含完整主题卡字段与收藏管理 ID 的展示模型，动态本人收藏 DTO 额外保留 `bookmarkFolderId` 与缺失按 true 兼容的 `canInteract`。主题订阅控制器以 `threadId` 为 family key，内部观察稳定 `SessionScope` 并只用当前 `accountId` 过滤本人候选；状态保存当前主题订阅、玩家候选、独立的 `candidateFailure` 与唯一在途目标。`UserRelationTarget` 管理关系写入并可采用公开用户关系投影，`UserRelationListTarget` 管理公开/本人列表。端口由应用组合根按类型绑定，控制器不导入具体 data 仓储。校准中的动作保存中性结果状态和问题编号；所有状态均为 autoDispose，当前不建立跨页面事件总线。
 
 收藏主题卡只接收共享分类展示值，不接收 slug 字符串。分类目录与收藏页分别加载；目录加载中可暂时省略该段，首次失败显示“分类暂不可用”，不会回退显示 `DEDUCTION` 等底层值。
@@ -96,7 +98,7 @@ threads 页面消费主题互动和订阅控制器，moments 提供独立动态�
 
 ## 13. 最近审查的契约版本和后端提交
 
-本轮展示契约来源：API `5.22.0-dev.20260912.2`、Backend `6fdfa00eaf1f3056ba30f2ffbc529d12eed1c823`；新增display／mediaDisplays，消费者接入与真机验收另行记录。仅既有 `markdown-editor-list-v1-fixtures.json` 保留 `062412601b3a8dbf4f64494115a2445d312dd53d` 来源与SHA-256，见 contracts/markdown-editor-list-v1-source.json；不将该独立语料误标为本轮主来源。
+本轮展示契约来源：API `5.22.0-dev.20260912.2`、Backend `6fdfa00eaf1f3056ba30f2ffbc529d12eed1c823`；新增 display／mediaDisplays；消费者已获负责人验收，检查与合并整合见本任务 PR 和全场景记录。仅既有 `markdown-editor-list-v1-fixtures.json` 保留 `062412601b3a8dbf4f64494115a2445d312dd53d` 来源与SHA-256，见 contracts/markdown-editor-list-v1-source.json；不将该独立语料误标为本轮主来源。
 
 2026-09-11 列表契约候选同步：Backend `062412601b3a8dbf4f64494115a2445d312dd53d`，OpenAPI `5.20.1-dev.20260911.1`；新增 editor-list v1 revision 2，夹具最初固定于 `aa1bcbd4d087f03a17817e9eca8bcd1f92bb53da`。同时同步收藏夹计数按当前用户可见性统计的契约说明；字段形状、块边界 v1 revision 2 与既有消费代码保持；列表消费者及真机验收仍待完成，见[列表统一排查](../architecture/editor-list-unification-investigation.md)。
 

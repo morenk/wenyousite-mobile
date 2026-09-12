@@ -4,6 +4,7 @@ import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
+import 'package:wenyousite_mobile/core/network/media_display_mapper.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/wallet/application/wallet_repository_ports.dart';
 import 'package:wenyousite_mobile/features/wallet/data/wallet_failure_messages.dart';
@@ -203,7 +204,12 @@ class ApiWalletRepository implements WalletRepository {
           : WalletCounterparty(
               id: _requiredText(dto.counterparty!.id, '对方用户 ID'),
               username: _requiredText(dto.counterparty!.username, '对方用户名'),
-              avatarUrl: _safeHttpUrl(dto.counterparty!.avatar),
+              avatarUrl: _safeHttpUrl(
+                mapAvatarDisplayUrl(
+                  dto.counterparty!.avatar,
+                  dto.counterparty!.avatarDisplay,
+                ),
+              ),
               level: _nonNegativeInteger(dto.counterparty!.level, '对方等级'),
             ),
       target: _target(dto.target),

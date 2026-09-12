@@ -1,4 +1,5 @@
 import 'package:wenyou_api/wenyou_api.dart';
+import 'package:wenyousite_mobile/core/network/media_display_mapper.dart';
 import 'package:wenyousite_mobile/features/thread_feed/thread_feed_models.dart';
 
 ThreadFeedCardModel mapThreadFeedCardResponse(
@@ -16,7 +17,9 @@ ThreadFeedCardModel mapThreadFeedCardResponse(
     isPublished: item.published,
     ownerId: item.owner.id,
     ownerName: item.owner.username,
-    ownerAvatarUrl: _safeHttpUrl(item.owner.avatar),
+    ownerAvatarUrl: _safeHttpUrl(
+      mapAvatarDisplayUrl(item.owner.avatar, item.owner.avatarDisplay),
+    ),
     ownerLevel: item.owner.level.toInt(),
     preview: preview.isEmpty ? null : preview,
     tags: item.topicTags
@@ -66,8 +69,10 @@ ThreadFeedCoverMedia? mapThreadFeedCoverMedia(
   final url = safeUrl(media.url);
   if (url == null || url != safeUrl(coverImages.first)) return null;
   final poster = safeUrl(media.posterUrl);
+  final display = mapMediaDisplay(media.display);
   final variants = <ThreadFeedCoverPreviewVariant>[];
-  if (media.animated == true && poster != null && poster != url) {
+  if (media.animated == true &&
+      (display != null || (poster != null && poster != url))) {
     for (final variant
         in media.previewVariants?.take(2) ??
             <ThreadCoverPreviewVariantResponseDto>[]) {
@@ -102,6 +107,7 @@ ThreadFeedCoverMedia? mapThreadFeedCoverMedia(
   }
   return ThreadFeedCoverMedia(
     url: url,
+    display: display,
     animated: media.animated,
     posterUrl: media.animated != false && poster == url ? null : poster,
     previewVariants: variants.take(2).toList(growable: false),

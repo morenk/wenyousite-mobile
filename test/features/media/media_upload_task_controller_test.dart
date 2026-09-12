@@ -7,11 +7,71 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/core/diagnostics/failure_diagnostics.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/features/direct_messages/application/direct_message_pending_media.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_ports.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
 
 void main() {
+  test('私聊旧网关续查不可用使用重新打开动作，不再次上传', () async {
+    final gateway = _FakeGateway();
+    final jobs = DirectMessagePendingMediaJobs(gateway);
+    addTearDown(jobs.dispose);
+    jobs.register('one', _input);
+    final upload = jobs.resolveMediaId('one', onProgress: (_) {});
+    gateway.fail(
+      const MediaProcessingPending(
+        PendingMediaUpload(
+          mediaId: 'pending',
+          purpose: MediaUploadPurpose.directMessage,
+        ),
+      ),
+    );
+    await expectLater(upload, throwsA(isA<MediaProcessingPending>()));
+    await expectLater(
+      () => jobs.resolveMediaId('one', onProgress: (_) {}),
+      throwsA(
+        isA<ApiFailure>()
+            .having((e) => e.legacyUserMessage, 'legacy copy', isNull)
+            .having(
+              (e) => e.recoveryAction,
+              'recovery',
+              FailureRecoveryAction.reopen,
+            ),
+      ),
+    );
+    expect(gateway.starts, 1);
+  });
+  test('处理超时展示继续查询，不支持续查时提示重新打开且不重新上传', () async {
+    final gateway = _FakeGateway();
+    final container = _container(picker: _FakePicker(_input), gateway: gateway);
+    addTearDown(container.dispose);
+    final provider = mediaUploadTaskControllerProvider(Object());
+    final subscription = container.listen(provider, (_, _) {});
+    addTearDown(subscription.close);
+    final controller = container.read(provider.notifier);
+    final upload = controller.uploadInput(_input);
+    await Future<void>.delayed(Duration.zero);
+    gateway.fail(
+      const MediaProcessingPending(
+        PendingMediaUpload(
+          mediaId: 'pending',
+          purpose: MediaUploadPurpose.richContent,
+        ),
+      ),
+    );
+    expect(await upload, isNull);
+    final pending = container.read(provider);
+    expect(pending.failure?.failure.legacyUserMessage, isNull);
+    expect(pending.failure?.presentation.actionLabel, '继续查询');
+    expect(await controller.retryUpload(), isNull);
+    expect(
+      container.read(provider).failure?.failure.recoveryAction,
+      FailureRecoveryAction.reopen,
+    );
+    expect(container.read(provider).failure?.presentation.actionLabel, '重新打开');
+    expect(gateway.starts, 1);
+  });
   testWidgets('reads app-bound ports from a nested ProviderScope', (
     tester,
   ) async {

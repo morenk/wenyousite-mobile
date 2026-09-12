@@ -322,6 +322,7 @@ class _MomentComposePageState extends ConsumerState<_MomentComposeEditor>
           (image) => UploadedEditorImage(
             mediaId: image.id,
             url: image.url,
+            display: image.display,
             thumbnailUrl: image.thumbnailUrl,
             feedUrl: image.feedUrl,
             mediumUrl: image.mediumUrl,
@@ -414,7 +415,13 @@ class _MomentComposePageState extends ConsumerState<_MomentComposeEditor>
     final controller = ref.read(
       mediaUploadTaskControllerProvider(upload.taskId).notifier,
     );
-    final image = await controller.uploadInput(upload.input);
+    final image =
+        ref
+                .read(mediaUploadTaskControllerProvider(upload.taskId))
+                .pendingUpload ==
+            null
+        ? await controller.uploadInput(upload.input)
+        : await controller.retryUpload();
     if (!mounted || !_pendingImageUploads.contains(upload)) return;
     upload.active = false;
     if (image == null) {

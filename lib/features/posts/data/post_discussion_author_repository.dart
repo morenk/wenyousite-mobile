@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/network/media_display_mapper.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_discussion_author_directory_ports.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_discussion_author.dart';
@@ -70,7 +71,7 @@ class ApiPostDiscussionAuthorDirectory
     return PostDiscussionAuthor(
       userId: author.id,
       username: author.username,
-      avatarUrl: author.avatar,
+      avatarUrl: mapAvatarDisplayUrl(author.avatar, author.avatarDisplay),
       role: role,
     );
   }

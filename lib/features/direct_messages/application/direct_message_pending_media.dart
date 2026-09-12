@@ -58,22 +58,46 @@ class DirectMessagePendingMediaJobs {
         return Future.error(StateError('待发送图片已经取消。'));
       }
       job.input = input;
-      final operation = _gateway.startImageUpload(
-        input,
-        onProgress: (progress) {
-          if (!identical(_jobs[messageId], job)) return;
-          job.progress = progress;
-          onProgress(job.snapshot);
-        },
-      );
+      void progressChanged(MediaUploadProgress progress) {
+        if (!identical(_jobs[messageId], job)) return;
+        job.progress = progress;
+        onProgress(job.snapshot);
+      }
+
+      final gateway = _gateway;
+      final pending = job.pending;
+      final operation = pending == null
+          ? gateway.startImageUpload(input, onProgress: progressChanged)
+          : gateway is ResumableMediaUploadGateway
+          ? (gateway as ResumableMediaUploadGateway).resumeImageProcessing(
+              pending,
+              onProgress: progressChanged,
+            )
+          : throw const ApiFailure(
+              source: FailureSource.device,
+              reason: FailureReason.unknown,
+              recoveryAction: FailureRecoveryAction.reopen,
+            );
       job.operation = operation;
-      return operation.result.then((image) {
-        if (!identical(_jobs[messageId], job)) {
-          throw StateError('待发送图片已经取消。');
-        }
-        job.uploadedMediaId = image.mediaId;
-        return image.mediaId;
-      });
+      return operation.result
+          .then((image) {
+            if (!identical(_jobs[messageId], job)) {
+              throw StateError('待发送图片已经取消。');
+            }
+            job.uploadedMediaId = image.mediaId;
+            job.pending = null;
+            return image.mediaId;
+          })
+          .catchError((Object error) {
+            if (identical(_jobs[messageId], job)) {
+              job.pending = switch (error) {
+                MediaProcessingPending() => error.upload,
+                MediaProcessingLookupFailure() => error.upload,
+                _ => null,
+              };
+            }
+            throw error;
+          });
     }
 
     late final Future<String> future;
@@ -108,6 +132,7 @@ class _PendingMediaJob {
   MediaUploadInput input;
   MediaUploadProgress? progress;
   String? uploadedMediaId;
+  PendingMediaUpload? pending;
   MediaUploadOperation<UploadedEditorImage>? operation;
   Future<String>? active;
 

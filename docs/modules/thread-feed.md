@@ -32,6 +32,8 @@
 
 ## 6. 状态模型和数据流
 
+完整展示（负责人已验收）：动画来源为已验证完整 display，有适合渲染尺寸的小预览时优先小预览；不存在小预览则使用完整 WebP。有效 display 不等待海报，缺失／加载／失败海报显示占位且不阻断达到 50% 可见后的加载。既有不限数量多播、仍部分可见保持、完全离屏释放及后台／省流规则不变；WebP 错误显式重试，不自动回原 GIF。原个人主页验收不扩展到本候选，见[全场景候选记录](../architecture/animation-webp-all-surfaces.md)。
+
 `ThreadFeedCardModel`、`ThreadFeedStatus`、`ThreadFeedTag` 与 `ThreadCategory` 是只读展示模型。目录端口由应用根绑定到唯一 API 仓储与缓存装饰器；目录控制器只维护加载状态与最近成功快照。各消费者不再自行调用分类接口或映射分类 DTO。
 
 ## 7. 鉴权、权限和隐私规则
@@ -85,7 +87,7 @@
 
 ## 13. 最近审查的契约版本和后端提交
 
-本轮展示契约来源：API `5.22.0-dev.20260912.2`、Backend `6fdfa00eaf1f3056ba30f2ffbc529d12eed1c823`；新增display／mediaDisplays，消费者接入与真机验收另行记录。仅既有 `markdown-editor-list-v1-fixtures.json` 保留 `062412601b3a8dbf4f64494115a2445d312dd53d` 来源与SHA-256，见 contracts/markdown-editor-list-v1-source.json；不将该独立语料误标为本轮主来源。
+本轮展示契约来源：API `5.22.0-dev.20260912.2`、Backend `6fdfa00eaf1f3056ba30f2ffbc529d12eed1c823`；新增 display／mediaDisplays；消费者已获负责人验收，检查与合并整合见本任务 PR 和全场景记录。仅既有 `markdown-editor-list-v1-fixtures.json` 保留 `062412601b3a8dbf4f64494115a2445d312dd53d` 来源与SHA-256，见 contracts/markdown-editor-list-v1-source.json；不将该独立语料误标为本轮主来源。
 
 2026-09-11 列表契约候选同步：Backend `062412601b3a8dbf4f64494115a2445d312dd53d`，OpenAPI `5.20.1-dev.20260911.1`；新增 editor-list v1 revision 2，夹具最初固定于 `aa1bcbd4d087f03a17817e9eca8bcd1f92bb53da`。同时同步收藏夹计数按当前用户可见性统计的契约说明；字段形状、块边界 v1 revision 2 与既有消费代码保持；列表消费者及真机验收仍待完成，见[列表统一排查](../architecture/editor-list-unification-investigation.md)。
 

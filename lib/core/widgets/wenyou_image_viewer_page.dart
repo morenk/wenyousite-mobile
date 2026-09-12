@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/media/media_display.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 
 @immutable
@@ -11,12 +12,20 @@ class WenyouImageViewerItem {
     required this.semanticLabel,
     this.fallbackUrls = const [],
     this.id,
+    this.display,
   });
 
   final String url;
   final List<String> fallbackUrls;
   final String semanticLabel;
   final Object? id;
+  final MediaDisplay? display;
+
+  List<String> get displayUrls => selectFullMediaUrls(
+    sourceUrl: url,
+    display: display,
+    legacyUrls: [url, ...fallbackUrls],
+  );
 }
 
 class WenyouImageViewerPage extends StatefulWidget {
@@ -212,8 +221,11 @@ class _ZoomableViewerImageState extends State<_ZoomableViewerImage> {
             child:
                 widget.image ??
                 WenyouCachedImage(
-                  imageUrl: widget.item.url,
-                  fallbackImageUrls: widget.item.fallbackUrls,
+                  enableRetry: widget.item.display != null,
+                  imageUrl: widget.item.displayUrls.first,
+                  fallbackImageUrls: widget.item.displayUrls
+                      .skip(1)
+                      .toList(growable: false),
                   fit: BoxFit.contain,
                   placeholder: (_, _) => Center(
                     child: WenyouIcon(

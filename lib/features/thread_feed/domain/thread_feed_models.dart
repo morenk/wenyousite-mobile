@@ -1,3 +1,5 @@
+import 'package:wenyousite_mobile/core/media/media_display.dart';
+
 export 'package:wenyousite_mobile/features/thread_feed/domain/thread_category_presentation.dart'
     show ThreadCategory;
 
@@ -25,16 +27,20 @@ class ThreadFeedCoverMedia {
     this.animated,
     this.posterUrl,
     this.previewVariants = const [],
+    this.display,
   });
 
   final String url;
   final bool? animated;
   final String? posterUrl;
   final List<ThreadFeedCoverPreviewVariant> previewVariants;
+  final MediaDisplay? display;
 
   String? get staticUrl => posterUrl;
   String? get animationUrl =>
-      animated == true && staticUrl != null ? url : null;
+      animated == true && (display != null || staticUrl != null)
+      ? display?.url ?? url
+      : null;
 }
 
 class ThreadFeedCoverPreviewVariant {

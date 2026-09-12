@@ -5,11 +5,33 @@ import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:wenyou_api/wenyou_api.dart';
+import 'package:wenyousite_mobile/core/application/user_facing_failure.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/media/data/media_upload_repository.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
 
 void main() {
+  test('旧上传仓库不支持续查时保留重新打开动作，不重新上传', () async {
+    final gateway = RepositoryMediaUploadGateway(_UnsupportedRepository());
+    final task = gateway.resumeImageProcessing(
+      const PendingMediaUpload(
+        mediaId: 'pending',
+        purpose: MediaUploadPurpose.richContent,
+      ),
+    );
+    await expectLater(
+      task.result,
+      throwsA(
+        isA<ApiFailure>()
+            .having((e) => e.legacyUserMessage, 'legacy copy', isNull)
+            .having(
+              (e) => e.recoveryAction,
+              'recovery',
+              FailureRecoveryAction.reopen,
+            ),
+      ),
+    );
+  });
   setUpAll(() {
     registerFallbackValue(
       CreateUploadUrlDto(
@@ -527,11 +549,19 @@ void main() {
           ),
         ),
         throwsA(
-          isA<ApiFailure>().having(
-            (failure) => failure.userMessage,
-            'message',
-            contains('公开地址不安全'),
-          ),
+          isA<ApiFailure>()
+              .having(
+                (e) => e.reason,
+                'reason',
+                FailureReason.contractViolation,
+              )
+              .having((e) => e.diagnosticCode, 'diagnostic', 'media_url_unsafe')
+              .having((e) => e.legacyUserMessage, 'legacy copy', isNull)
+              .having(
+                (e) => UserFacingFailure.fromApi(e).message,
+                'presentation',
+                '当前内容暂时无法显示，请重新加载。',
+              ),
         ),
         reason: unsafeCase.name,
       );
@@ -755,3 +785,5 @@ Uint8List _pngBytes() =>
     Uint8List.fromList(const [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 
 Uint8List _jpegBytes() => Uint8List.fromList(const [0xff, 0xd8, 0xff]);
+
+class _UnsupportedRepository extends Fake implements MediaUploadRepository {}
