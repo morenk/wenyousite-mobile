@@ -22,7 +22,7 @@ class BackgroundReminderSettingsPanel extends ConsumerWidget {
         preference.failureMessage ??
         (preference.enabled
             ? online.failureMessage ??
-                  (online.permissionDenied ? '系统消息通知未开启，后台提醒暂不可用。' : null)
+                  (online.permissionDenied ? '消息通知未开启。' : null)
             : null);
     return WenyouPanel(
       padding: EdgeInsets.zero,
@@ -31,7 +31,7 @@ class BackgroundReminderSettingsPanel extends ConsumerWidget {
           SwitchListTile(
             key: const Key('background-reminder-toggle'),
             title: const Text('后台消息提醒'),
-            subtitle: const Text('离开温油站后显示常驻通知，每 30 秒检查新消息，可能增加耗电。划掉应用后停止提醒。'),
+            subtitle: const Text('后台常驻提醒，可能增加耗电；划掉应用后停止。'),
             value: preference.enabled,
             onChanged: preference.isSaving
                 ? null
@@ -52,7 +52,7 @@ class BackgroundReminderSettingsPanel extends ConsumerWidget {
           if (online.permissionDenied)
             ListTile(
               title: const Text('允许消息通知'),
-              subtitle: const Text('若系统不再询问，可在下方系统设置中开启。'),
+              subtitle: const Text('也可在系统设置中开启。'),
               trailing: TextButton(
                 onPressed: online.isLoading
                     ? null
@@ -68,7 +68,7 @@ class BackgroundReminderSettingsPanel extends ConsumerWidget {
           ListTile(
             key: const Key('background-reminder-system-settings'),
             title: const Text('系统消息通知设置'),
-            subtitle: const Text('新消息可开启悬浮通知、选择系统默认提示音；常驻通知保持静音。'),
+            subtitle: const Text('管理消息弹窗'),
             trailing: const WenyouIcon(WenyouIconIds.navigationNext),
             onTap: () => unawaited(_openSettings(context, execution)),
           ),
@@ -87,7 +87,7 @@ class BackgroundReminderSettingsPanel extends ConsumerWidget {
       if (context.mounted) {
         showWenyouSnackBar(
           context,
-          '系统通知设置打开失败，请在手机设置中找到温油站后重试。',
+          '打开失败，请在手机设置中开启通知。',
           tone: WenyouSnackBarTone.error,
         );
       }

@@ -50,3 +50,10 @@
 - 最终 `flutter build apk --debug --no-pub` 成功，日志 `build/notification-read-build-final.log`。APK 位于 `D:\code\wenyousite\.worktrees\mobile-background-reminders\build\app\outputs\flutter-apk\app-debug.apk`；版本声明仍为 `0.7.0-dev.1+94`。
 - 按负责人本轮明确要求，仅执行 `adb -s 4b9c39b5 install -r` 覆盖，返回 Success；未执行安装前后的包名、更新时间、设备 APK 哈希或签名检查，也未卸载、清除数据或修改系统权限。负责人应打开此前使用的“温油站 Debug”复验新收到的消息。
 - 当前状态仍为候选／待负责人验收，完整门禁留在合并前。
+
+## 设置文案跟进候选（2026-09-13）
+
+- 按负责人补充要求精简账号设置中的通知说明：保留后台常驻、耗电与划掉停止提示，系统设置副标题缩短为“管理消息弹窗”，不再说明提示音或轮询周期。通知行为不变。
+- 设置组件 4 项测试通过，覆盖权限重试、360dp 普通/大字号及非 Android 隐藏；两个受影响 Dart 文件静态分析无问题。Debug 构建成功，未运行全量测试。日志为 `build/notification-settings-copy-test.log`、`build/notification-settings-copy-analyze.log`、`build/notification-settings-copy-build.log`。
+- 同一路径 Debug APK 已直接执行 `adb -s 4b9c39b5 install -r` 覆盖，返回 Success；按要求不做额外安装检查，版本声明不变。
+- 待负责人在“温油站 Debug”账号设置页确认文案与布局，并继续复验上方新消息点击已读场景；本次覆盖不代表前述候选已验收通过。
