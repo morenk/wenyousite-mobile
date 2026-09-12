@@ -12,13 +12,16 @@ import 'package:wenyou_api/src/api_util.dart';
 import 'package:wenyou_api/src/model/api_error_envelope.dart';
 import 'package:wenyou_api/src/model/bookmarks_create201_response.dart';
 import 'package:wenyou_api/src/model/bookmarks_create_folder201_response.dart';
+import 'package:wenyou_api/src/model/bookmarks_delete_folder200_response.dart';
 import 'package:wenyou_api/src/model/bookmarks_find_all200_response.dart';
 import 'package:wenyou_api/src/model/bookmarks_find_folders200_response.dart';
 import 'package:wenyou_api/src/model/bookmarks_move200_response.dart';
 import 'package:wenyou_api/src/model/bookmarks_remove200_response.dart';
+import 'package:wenyou_api/src/model/bookmarks_rename_folder200_response.dart';
 import 'package:wenyou_api/src/model/create_bookmark_dto.dart';
 import 'package:wenyou_api/src/model/create_bookmark_folder_dto.dart';
 import 'package:wenyou_api/src/model/move_bookmark_dto.dart';
+import 'package:wenyou_api/src/model/rename_bookmark_folder_dto.dart';
 
 class BookmarksApi {
 
@@ -219,6 +222,87 @@ class BookmarksApi {
     }
 
     return Response<BookmarksCreateFolder201Response>(
+      data: _responseData,
+      headers: _response.headers,
+      isRedirect: _response.isRedirect,
+      requestOptions: _response.requestOptions,
+      redirects: _response.redirects,
+      statusCode: _response.statusCode,
+      statusMessage: _response.statusMessage,
+      extra: _response.extra,
+    );
+  }
+
+  /// 删除自定义主题帖收藏夹并将全部收藏移入默认夹
+  ///
+  ///
+  /// Parameters:
+  /// * [id]
+  /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
+  /// * [headers] - Can be used to add additional headers to the request
+  /// * [extras] - Can be used to add flags to the request
+  /// * [validateStatus] - A [ValidateStatus] callback that can be used to determine request success based on the HTTP status of the response
+  /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
+  /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
+  ///
+  /// Returns a [Future] containing a [Response] with a [BookmarksDeleteFolder200Response] as data
+  /// Throws [DioException] if API call or serialization fails
+  Future<Response<BookmarksDeleteFolder200Response>> bookmarksDeleteFolder({
+    required String id,
+    CancelToken? cancelToken,
+    Map<String, dynamic>? headers,
+    Map<String, dynamic>? extra,
+    ValidateStatus? validateStatus,
+    ProgressCallback? onSendProgress,
+    ProgressCallback? onReceiveProgress,
+  }) async {
+    final _path = r'/api/v1/bookmarks/folders/{id}'.replaceAll('{' r'id' '}', encodeQueryParameter(_serializers, id, const FullType(String)).toString());
+    final _options = Options(
+      method: r'DELETE',
+      headers: <String, dynamic>{
+        ...?headers,
+      },
+      extra: <String, dynamic>{
+        'secure': <Map<String, String>>[
+          {
+            'type': 'http',
+            'scheme': 'bearer',
+            'name': 'bearer',
+          },
+        ],
+        ...?extra,
+      },
+      validateStatus: validateStatus,
+    );
+
+    final _response = await _dio.request<Object>(
+      _path,
+      options: _options,
+      cancelToken: cancelToken,
+      onSendProgress: onSendProgress,
+      onReceiveProgress: onReceiveProgress,
+    );
+
+    BookmarksDeleteFolder200Response? _responseData;
+
+    try {
+      final rawResponse = _response.data;
+      _responseData = rawResponse == null ? null : _serializers.deserialize(
+        rawResponse,
+        specifiedType: const FullType(BookmarksDeleteFolder200Response),
+      ) as BookmarksDeleteFolder200Response;
+
+    } catch (error, stackTrace) {
+      throw DioException(
+        requestOptions: _response.requestOptions,
+        response: _response,
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    return Response<BookmarksDeleteFolder200Response>(
       data: _responseData,
       headers: _response.headers,
       isRedirect: _response.isRedirect,
@@ -574,6 +658,109 @@ class BookmarksApi {
     }
 
     return Response<BookmarksRemove200Response>(
+      data: _responseData,
+      headers: _response.headers,
+      isRedirect: _response.isRedirect,
+      requestOptions: _response.requestOptions,
+      redirects: _response.redirects,
+      statusCode: _response.statusCode,
+      statusMessage: _response.statusMessage,
+      extra: _response.extra,
+    );
+  }
+
+  /// 重命名自定义主题帖收藏夹
+  ///
+  ///
+  /// Parameters:
+  /// * [id]
+  /// * [renameBookmarkFolderDto]
+  /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
+  /// * [headers] - Can be used to add additional headers to the request
+  /// * [extras] - Can be used to add flags to the request
+  /// * [validateStatus] - A [ValidateStatus] callback that can be used to determine request success based on the HTTP status of the response
+  /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
+  /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
+  ///
+  /// Returns a [Future] containing a [Response] with a [BookmarksRenameFolder200Response] as data
+  /// Throws [DioException] if API call or serialization fails
+  Future<Response<BookmarksRenameFolder200Response>> bookmarksRenameFolder({
+    required String id,
+    required RenameBookmarkFolderDto renameBookmarkFolderDto,
+    CancelToken? cancelToken,
+    Map<String, dynamic>? headers,
+    Map<String, dynamic>? extra,
+    ValidateStatus? validateStatus,
+    ProgressCallback? onSendProgress,
+    ProgressCallback? onReceiveProgress,
+  }) async {
+    final _path = r'/api/v1/bookmarks/folders/{id}'.replaceAll('{' r'id' '}', encodeQueryParameter(_serializers, id, const FullType(String)).toString());
+    final _options = Options(
+      method: r'PATCH',
+      headers: <String, dynamic>{
+        ...?headers,
+      },
+      extra: <String, dynamic>{
+        'secure': <Map<String, String>>[
+          {
+            'type': 'http',
+            'scheme': 'bearer',
+            'name': 'bearer',
+          },
+        ],
+        ...?extra,
+      },
+      contentType: 'application/json',
+      validateStatus: validateStatus,
+    );
+
+    dynamic _bodyData;
+
+    try {
+      const _type = FullType(RenameBookmarkFolderDto);
+      _bodyData = _serializers.serialize(renameBookmarkFolderDto, specifiedType: _type);
+
+    } catch(error, stackTrace) {
+      throw DioException(
+         requestOptions: _options.compose(
+          _dio.options,
+          _path,
+        ),
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    final _response = await _dio.request<Object>(
+      _path,
+      data: _bodyData,
+      options: _options,
+      cancelToken: cancelToken,
+      onSendProgress: onSendProgress,
+      onReceiveProgress: onReceiveProgress,
+    );
+
+    BookmarksRenameFolder200Response? _responseData;
+
+    try {
+      final rawResponse = _response.data;
+      _responseData = rawResponse == null ? null : _serializers.deserialize(
+        rawResponse,
+        specifiedType: const FullType(BookmarksRenameFolder200Response),
+      ) as BookmarksRenameFolder200Response;
+
+    } catch (error, stackTrace) {
+      throw DioException(
+        requestOptions: _response.requestOptions,
+        response: _response,
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    return Response<BookmarksRenameFolder200Response>(
       data: _responseData,
       headers: _response.headers,
       isRedirect: _response.isRedirect,

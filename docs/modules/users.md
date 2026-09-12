@@ -131,6 +131,8 @@ Android 账号设置新增“后台消息提醒”设备开关，默认开启；
 
 ## 13. 最近审查的契约版本和后端提交
 
+2026-09-13 契约版本登记：当前移动端固定 OpenAPI `5.23.0-dev.20260913.1` 与 Backend revision `df4682548e3fc0291fc2cd19c7111b5f0fa53746`；本模块未因本次收藏夹端点扩展变更行为。
+
 2026-09-13 后台常驻与横幅候选：Backend origin/dev 与公网 /meta 均为 6fdfa00eaf1f3056ba30f2ffbc529d12eed1c823，API 5.22.0-dev.20260912.2；Foundation fetch tags 后正式版 v7.0.0 与锁定版本一致，本次不修改接口或依赖。
 
 本轮展示契约来源：API `5.22.0-dev.20260912.2`、Backend `6fdfa00eaf1f3056ba30f2ffbc529d12eed1c823`；新增 display／mediaDisplays；消费者已获负责人验收，检查与合并整合见本任务 PR 和全场景记录。仅既有 `markdown-editor-list-v1-fixtures.json` 保留 `062412601b3a8dbf4f64494115a2445d312dd53d` 来源与SHA-256，见 contracts/markdown-editor-list-v1-source.json；不将该独立语料误标为本轮主来源。

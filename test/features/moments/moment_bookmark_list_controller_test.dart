@@ -163,6 +163,14 @@ class _FakeRepository implements MomentBookmarkRepository {
       throw UnimplementedError();
 
   @override
+  Future<BookmarkFolderItem> renameFolder(String folderId, String name) =>
+      throw UnimplementedError();
+
+  @override
+  Future<BookmarkFolderDeleteResult> deleteFolder(String folderId) =>
+      throw UnimplementedError();
+
+  @override
   Future<List<BookmarkFolderItem>> fetchFolders() => throw UnimplementedError();
 }
 

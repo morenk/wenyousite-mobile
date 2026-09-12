@@ -203,6 +203,14 @@ class _PageRepository implements MomentBookmarkRepository {
       createdAt: DateTime.utc(2026, 8, 27),
     );
   }
+
+  @override
+  Future<BookmarkFolderItem> renameFolder(String folderId, String name) =>
+      throw UnimplementedError();
+
+  @override
+  Future<BookmarkFolderDeleteResult> deleteFolder(String folderId) =>
+      throw UnimplementedError();
 }
 
 MomentCard _card(String id, {bool canInteract = true}) {

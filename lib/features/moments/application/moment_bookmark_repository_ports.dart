@@ -35,6 +35,14 @@ class _UnboundMomentBookmarkRepository implements MomentBookmarkRepository {
       Future.error(_error());
 
   @override
+  Future<BookmarkFolderItem> renameFolder(String folderId, String name) =>
+      Future.error(_error());
+
+  @override
+  Future<BookmarkFolderDeleteResult> deleteFolder(String folderId) =>
+      Future.error(_error());
+
+  @override
   Future<List<BookmarkFolderItem>> fetchFolders() => Future.error(_error());
 
   @override

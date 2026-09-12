@@ -143,10 +143,12 @@ lib/src/model/bookmark_response_dto.dart
 lib/src/model/bookmark_thread_response_dto.dart
 lib/src/model/bookmarks_create201_response.dart
 lib/src/model/bookmarks_create_folder201_response.dart
+lib/src/model/bookmarks_delete_folder200_response.dart
 lib/src/model/bookmarks_find_all200_response.dart
 lib/src/model/bookmarks_find_folders200_response.dart
 lib/src/model/bookmarks_move200_response.dart
 lib/src/model/bookmarks_remove200_response.dart
+lib/src/model/bookmarks_rename_folder200_response.dart
 lib/src/model/business_error_code.dart
 lib/src/model/change_email_request_dto.dart
 lib/src/model/change_email_verify_dto.dart
@@ -179,6 +181,7 @@ lib/src/model/current_thread_membership_response_dto.dart
 lib/src/model/current_user_response_dto.dart
 lib/src/model/daily_check_in_response_dto.dart
 lib/src/model/date.dart
+lib/src/model/delete_bookmark_folder_response_dto.dart
 lib/src/model/delete_draft_response_dto.dart
 lib/src/model/dice_roll_response_dto.dart
 lib/src/model/direct_conversation_lookup_response_dto.dart
@@ -291,12 +294,14 @@ lib/src/model/moments_comments_list200_response.dart
 lib/src/model/moments_create201_response.dart
 lib/src/model/moments_create_bookmark_folder201_response.dart
 lib/src/model/moments_create_comment201_response.dart
+lib/src/model/moments_delete_bookmark_folder200_response.dart
 lib/src/model/moments_detail200_response.dart
 lib/src/model/moments_like201_response.dart
 lib/src/model/moments_list200_response.dart
 lib/src/model/moments_move_bookmark200_response.dart
 lib/src/model/moments_remove200_response.dart
 lib/src/model/moments_remove_comment200_response.dart
+lib/src/model/moments_rename_bookmark_folder200_response.dart
 lib/src/model/moments_replies200_response.dart
 lib/src/model/moments_unbookmark200_response.dart
 lib/src/model/moments_unlike200_response.dart
@@ -357,6 +362,8 @@ lib/src/model/recent_reply_thread_response_dto.dart
 lib/src/model/refresh_dto.dart
 lib/src/model/register_code_response_dto.dart
 lib/src/model/register_mobile_device_dto.dart
+lib/src/model/rename_bookmark_folder_dto.dart
+lib/src/model/rename_moment_bookmark_folder_dto.dart
 lib/src/model/reorder_stickers_dto.dart
 lib/src/model/reorder_subthreads_dto.dart
 lib/src/model/reordered_subthread_response_dto.dart

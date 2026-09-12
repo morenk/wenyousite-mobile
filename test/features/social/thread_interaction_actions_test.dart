@@ -350,6 +350,14 @@ class _FakeBookmarkListRepository implements BookmarkListRepository {
   }
 
   @override
+  Future<BookmarkFolderItem> renameFolder(String folderId, String name) =>
+      throw UnimplementedError();
+
+  @override
+  Future<BookmarkFolderDeleteResult> deleteFolder(String folderId) =>
+      throw UnimplementedError();
+
+  @override
   Future<void> move(String bookmarkId, String folderId) async {
     moves.add((bookmarkId, folderId));
     if (_remainingMoveFailures > 0) {
