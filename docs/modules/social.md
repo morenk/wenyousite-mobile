@@ -33,7 +33,7 @@
 
 ## 6. 状态模型和数据流
 
-点赞、收藏、关注与官方/玩家订阅采用乐观展示：请求发起即改变选中态及可推算的数量，成功再采用权威计数/记录；新增订阅用独立的待提交选择投影，不伪造记录 ID。单目标写入串行，期间保留图标或开关。收藏夹选定后先关闭弹层并显示本次修改，成功提示只在写入确认后显示；失败在原页面反馈并允许重新选择。主题收藏移动/取消立即调整当前列表及目录数量，明确失败恢复原位置与不透明游标。结果不明沿用权威回读，不自动重发。候选待负责人真机验收，见 [乐观更新验收](../architecture/optimistic-interactions-acceptance.md)。
+点赞、收藏、关注与官方/玩家订阅采用乐观展示：请求发起即改变选中态及可推算的数量，成功再采用权威计数/记录；新增订阅用独立的待提交选择投影，不伪造记录 ID。单目标写入串行，期间保留图标或开关。收藏夹选定后先关闭弹层并显示本次修改，成功提示只在写入确认后显示；失败在原页面反馈并允许重新选择。主题收藏移动/取消立即调整当前列表及目录数量，明确失败恢复原位置与不透明游标。结果不明沿用权威回读，不自动重发。已于 2026-09-13 获负责人确认通过并授权合并，见 [乐观更新验收](../architecture/optimistic-interactions-acceptance.md)。
 
 `ThreadInteractionTarget` 管理详情点赞与快捷收藏，并通过可选投影读取端口采用最新主题详情；`BookmarkFolderCatalogController` 以内容类型为 family key，分别保存主题与动态目录、数量和创建状态。`BookmarkListController` 以必填主题 folderId 为 key；动态侧 `MomentBookmarkListController` 保存当前目录分页、失效 cursor 恢复和移动/取消的唯一在途动作。主题收藏 DTO 在 data 层映射为包含完整主题卡字段与收藏管理 ID 的展示模型，动态本人收藏 DTO 额外保留 `bookmarkFolderId` 与缺失按 true 兼容的 `canInteract`。主题订阅控制器以 `threadId` 为 family key，内部观察稳定 `SessionScope` 并只用当前 `accountId` 过滤本人候选；状态保存当前主题订阅、玩家候选、独立的 `candidateFailure` 与唯一在途目标。`UserRelationTarget` 管理关系写入并可采用公开用户关系投影，`UserRelationListTarget` 管理公开/本人列表。端口由应用组合根按类型绑定，控制器不导入具体 data 仓储。校准中的动作保存中性结果状态和问题编号；所有状态均为 autoDispose，当前不建立跨页面事件总线。
 
