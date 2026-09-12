@@ -249,6 +249,7 @@ void main() {
       isFalse,
     );
     expect(requests, 4);
+    await source.disk.flush();
     final index =
         jsonDecode(await File('${directory.path}/index.json').readAsString())
             as Map<String, dynamic>;
