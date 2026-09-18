@@ -146,10 +146,10 @@ class _SubthreadEditorPageState extends ConsumerState<SubthreadEditorPage> {
           key: const Key('subthread-form-policy'),
           initialValue: _policy,
           decoration: const InputDecoration(labelText: '发帖权限'),
-          items: SubthreadPostingPolicy.values
+          options: SubthreadPostingPolicy.values
               .map(
                 (policy) =>
-                    DropdownMenuItem(value: policy, child: Text(policy.label)),
+                    WenyouFilterOption(value: policy, label: policy.label),
               )
               .toList(growable: false),
           onChanged: locked

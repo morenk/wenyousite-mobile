@@ -1,12 +1,15 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_selection_menu.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_overview.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_subthread_navigator.dart';
+
 import '../../support/deterministic_test_fonts.dart';
 import 'thread_detail_page_test_support.dart';
 
@@ -26,39 +29,15 @@ void registerThreadDetailPageSubthreadNavigationCases() {
     expect(find.text('共 2 个子贴'), findsOneWidget);
     expect(find.text('8 楼'), findsWidgets);
     expect(find.text('4 楼'), findsOneWidget);
+    expect(find.byType(BottomSheet), findsNothing);
+    final selectedRow = find.descendant(
+      of: find.byKey(const Key('thread-subthread-subthread-1')),
+      matching: find.byType(WenyouSelectionRow),
+    );
+    expect(tester.widget<WenyouSelectionRow>(selectedRow).selected, isTrue);
     expect(
-      tester
-          .widget<ListView>(find.byKey(const Key('thread-subthread-directory')))
-          .scrollDirection,
-      Axis.vertical,
-    );
-    expect(
-      find.byKey(const Key('thread-subthread-subthread-1')),
-      findsOneWidget,
-    );
-    final directoryDivider = find.byKey(
-      const Key('thread-subthread-directory-divider-0'),
-    );
-    expect(directoryDivider, findsOneWidget);
-    expect(tester.widget<Divider>(directoryDivider).height, 1);
-    final selectedDirectoryRow = find.byKey(
-      const Key('thread-subthread-subthread-1'),
-    );
-    final selectedTile = tester.widget<ListTile>(selectedDirectoryRow);
-    expect(selectedTile.selected, isTrue);
-    expect(
-      (selectedTile.shape! as RoundedRectangleBorder).borderRadius,
-      BorderRadius.zero,
-    );
-    expect(selectedTile.selectedTileColor, isNotNull);
-    expect(
-      tester.getSize(selectedDirectoryRow).width,
-      closeTo(
-        tester
-            .getSize(find.byKey(const Key('thread-subthread-directory')))
-            .width,
-        0.1,
-      ),
+      tester.getTopLeft(selectedRow).dy,
+      greaterThan(tester.getBottomLeft(menu).dy),
     );
     final subthread = find.byKey(const Key('thread-subthread-subthread-2'));
     expect(subthread, findsOneWidget);
@@ -93,7 +72,7 @@ void registerThreadDetailPageSubthreadNavigationCases() {
     expect(repository.requestedSubthreads.last, 'subthread-2');
   });
 
-  testWidgets('360dp 子贴目录使用分隔列表与整行选中高亮', (tester) async {
+  testWidgets('360dp 子贴目录使用锚点菜单与轻量选中高亮', (tester) async {
     tester.view.physicalSize = const Size(360, 800);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
