@@ -33,6 +33,10 @@ void main() {
     expect(find.byType(WenyouDropdownFormField<ReportReason>), findsNothing);
     await tester.tap(reasonFilter);
     await tester.pumpAndSettle();
+    await tester.ensureVisible(
+      find.byKey(const Key('report-reason-option-other')),
+    );
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('report-reason-option-other')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('report-submit')));

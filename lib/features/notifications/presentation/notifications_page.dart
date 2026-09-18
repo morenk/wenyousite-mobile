@@ -39,7 +39,6 @@ class NotificationSection extends ConsumerWidget {
               key: const Key('notification-filter-menu'),
               optionKeyPrefix: 'notification-filter',
               tooltip: '筛选通知',
-              icon: WenyouIconIds.actionFilter,
               appearance: WenyouDropdownFilterAppearance.quiet,
               options: [
                 for (final filter in NotificationFilters.values)
