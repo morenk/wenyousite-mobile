@@ -383,15 +383,21 @@ void registerEditorToolbarCommandsSelectionCases() {
     expect((inlineCodeButton.selectedIcon! as WenyouIcon).color, tokens.like);
     await tester.tap(find.byKey(const Key('editor-bold')));
     await tester.pump();
-    expect(inlineAttributes(), isNot(contains('code')));
+    expect(inlineAttributes()['code'], true);
     expect(inlineAttributes()['bold'], true);
     await tester.tap(find.byKey(const Key('editor-bold')));
     await tester.pump();
+    expect(inlineAttributes(), isNot(contains('bold')));
+    expect(inlineAttributes()['code'], true);
 
     await tapMore('删除线');
     expect(inlineAttributes()['strike'], true);
+    expect(inlineAttributes()['code'], true);
     await tapMore('删除线');
     expect(inlineAttributes(), isNot(contains('strike')));
+    expect(inlineAttributes()['code'], true);
+    await tapMore('行内代码');
+    expect(inlineAttributes(), isNot(contains('code')));
 
     expect(MarkdownDeltaCodec.encode(controller.document.toDelta()), '正文');
     expect(tester.takeException(), isNull);
