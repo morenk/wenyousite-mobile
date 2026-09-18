@@ -36,6 +36,7 @@ class WenyouSelectionMenu<T> extends StatefulWidget {
     this.menuTitle,
     this.menuSummary,
     this.matchAnchorWidth = false,
+    this.showScrollIndicator = false,
     super.key,
   });
 
@@ -49,6 +50,7 @@ class WenyouSelectionMenu<T> extends StatefulWidget {
   final String? menuTitle;
   final String? menuSummary;
   final bool matchAnchorWidth;
+  final bool showScrollIndicator;
 
   @override
   State<WenyouSelectionMenu<T>> createState() => _WenyouSelectionMenuState<T>();
@@ -139,47 +141,62 @@ class _WenyouSelectionMenuState<T> extends State<WenyouSelectionMenu<T>> {
               // 重选只收起菜单，不重新加载列表或重复提交字段。
               if (value != widget.selected) widget.onSelected(value);
             },
-            itemBuilder: (context) => [
-              if (widget.menuTitle case final title?)
-                PopupMenuItem<T>(
-                  enabled: false,
-                  padding: EdgeInsets.symmetric(horizontal: tokens.space12),
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(vertical: tokens.space8),
-                    child: Wrap(
-                      spacing: tokens.space12,
-                      runSpacing: tokens.space4,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      children: [
-                        Text(
-                          title,
-                          style: Theme.of(context).textTheme.wenyouCompactTitle,
-                        ),
-                        if (widget.menuSummary case final summary?)
+            itemBuilder: (context) {
+              final items = <PopupMenuEntry<T>>[
+                if (widget.menuTitle case final title?)
+                  PopupMenuItem<T>(
+                    enabled: false,
+                    padding: EdgeInsets.symmetric(horizontal: tokens.space12),
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(vertical: tokens.space8),
+                      child: Wrap(
+                        spacing: tokens.space12,
+                        runSpacing: tokens.space4,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
                           Text(
-                            summary,
-                            style: Theme.of(context).textTheme.wenyouCaption,
+                            title,
+                            style: Theme.of(
+                              context,
+                            ).textTheme.wenyouCompactTitle,
                           ),
-                      ],
+                          if (widget.menuSummary case final summary?)
+                            Text(
+                              summary,
+                              style: Theme.of(context).textTheme.wenyouCaption,
+                            ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-              for (final option in widget.options)
-                PopupMenuItem<T>(
-                  key: widget.optionKeyPrefix == null || option.keyValue == null
-                      ? null
-                      : Key('${widget.optionKeyPrefix}-${option.keyValue}'),
-                  value: option.value,
-                  height: tokens.minimumTouchTarget,
-                  padding: EdgeInsets.zero,
-                  child: WenyouSelectionRow(
-                    label: option.label,
-                    supportingLabel: option.supportingLabel,
-                    trailingLabel: option.trailingLabel,
-                    selected: option.value == widget.selected,
+                for (final option in widget.options)
+                  PopupMenuItem<T>(
+                    key:
+                        widget.optionKeyPrefix == null ||
+                            option.keyValue == null
+                        ? null
+                        : Key('${widget.optionKeyPrefix}-${option.keyValue}'),
+                    value: option.value,
+                    height: tokens.minimumTouchTarget,
+                    padding: EdgeInsets.zero,
+                    child: WenyouSelectionRow(
+                      label: option.label,
+                      supportingLabel: option.supportingLabel,
+                      trailingLabel: option.trailingLabel,
+                      selected: option.value == widget.selected,
+                    ),
                   ),
+              ];
+              if (!widget.showScrollIndicator) return items;
+              return [
+                _ScrollableSelectionEntries<T>(
+                  width: menuWidth,
+                  maxHeight:
+                      MediaQuery.sizeOf(context).height * 0.5 - tokens.space8,
+                  children: items,
                 ),
-            ],
+              ];
+            },
             child: Semantics(
               expanded: _open,
               child: widget.anchorBuilder(context, _open),
@@ -189,6 +206,62 @@ class _WenyouSelectionMenuState<T> extends State<WenyouSelectionMenu<T>> {
       },
     );
   }
+}
+
+/// 菜单自己持有滚动控制器，让移动端也能常显滚动提示。
+class _ScrollableSelectionEntries<T> extends PopupMenuEntry<T> {
+  const _ScrollableSelectionEntries({
+    required this.width,
+    required this.maxHeight,
+    required this.children,
+  });
+
+  final double width;
+  final double maxHeight;
+  final List<PopupMenuEntry<T>> children;
+
+  @override
+  double get height => 0;
+
+  @override
+  bool represents(T? value) => false;
+
+  @override
+  State<_ScrollableSelectionEntries<T>> createState() =>
+      _ScrollableSelectionEntriesState<T>();
+}
+
+class _ScrollableSelectionEntriesState<T>
+    extends State<_ScrollableSelectionEntries<T>> {
+  final _controller = ScrollController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    width: widget.width,
+    child: ConstrainedBox(
+      constraints: BoxConstraints(maxHeight: widget.maxHeight),
+      child: Scrollbar(
+        controller: _controller,
+        thumbVisibility: true,
+        scrollbarOrientation: ScrollbarOrientation.right,
+        child: SingleChildScrollView(
+          controller: _controller,
+          primary: false,
+          padding: EdgeInsets.only(right: context.wenyouTokens.space8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: widget.children,
+          ),
+        ),
+      ),
+    ),
+  );
 }
 
 /// 菜单和抽屉共用文字层级、行内留白与右侧选中标记。

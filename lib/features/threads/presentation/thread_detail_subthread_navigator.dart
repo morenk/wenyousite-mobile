@@ -50,8 +50,8 @@ class ThreadSubthreadNavigator extends StatelessWidget {
             selected: selected.id,
             onSelected: onSelected,
             matchAnchorWidth: true,
-            menuTitle: '主题目录',
-            menuSummary: '共 ${subthreads.length} 个子贴',
+            showScrollIndicator: true,
+            menuTitle: '共 ${subthreads.length} 个子贴',
             optionKeyPrefix: 'thread-subthread',
             options: [
               for (final subthread in subthreads)
@@ -73,15 +73,17 @@ class ThreadSubthreadNavigator extends StatelessWidget {
                     vertical: tokens.space4,
                   ),
                   decoration: BoxDecoration(
-                    color: isOpen ? tokens.accentedBackground : tokens.panel,
+                    color: tokens.panel,
                     border: Border.all(color: tokens.border),
                     borderRadius: BorderRadius.circular(tokens.radius16),
                   ),
                   child: Row(
                     children: [
+                      SizedBox(width: tokens.space8 + 16),
                       Expanded(
                         child: Text(
                           selected.title,
+                          textAlign: TextAlign.center,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: Theme.of(context).textTheme.wenyouCaption

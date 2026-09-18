@@ -25,7 +25,7 @@ void registerThreadDetailPageSubthreadNavigationCases() {
     await tester.pumpAndSettle();
     await tester.tap(menu);
     await tester.pumpAndSettle();
-    expect(find.text('主题目录'), findsOneWidget);
+    expect(find.text('主题目录'), findsNothing);
     expect(find.text('共 2 个子贴'), findsOneWidget);
     expect(find.text('8 楼'), findsWidgets);
     expect(find.text('4 楼'), findsOneWidget);
@@ -72,6 +72,81 @@ void registerThreadDetailPageSubthreadNavigationCases() {
     expect(repository.requestedSubthreads.last, 'subthread-2');
   });
 
+  for (final dark in [false, true]) {
+    testWidgets('子贴长目录右侧常显滚动条并可滚动选择末项 $dark', (tester) async {
+      tester.view.physicalSize = const Size(360, 800);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      String? selected;
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: dark ? AppTheme.dark : AppTheme.light,
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(
+              context,
+            ).copyWith(textScaler: TextScaler.linear(dark ? 2 : 1)),
+            child: child!,
+          ),
+          home: Scaffold(
+            body: SafeArea(
+              child: ThreadSubthreadNavigator(
+                subthreads: [
+                  for (var i = 0; i < 24; i++)
+                    ThreadSubthreadModel(
+                      id: 'chapter-$i',
+                      title: '第 ${i + 1} 幕：星海旅途',
+                      sortOrder: i,
+                      postCount: i + 1,
+                      postingPolicyLabel: '所有玩家',
+                    ),
+                ],
+                selectedSubthreadId: 'chapter-0',
+                onSelected: (value) => selected = value,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.byKey(const Key('thread-subthread-menu')));
+      await tester.pumpAndSettle();
+      final scrollbarFinder = find.byType(Scrollbar);
+      expect(scrollbarFinder, findsOneWidget);
+      final scrollbar = tester.widget<Scrollbar>(scrollbarFinder);
+      expect(scrollbar.thumbVisibility, isTrue);
+      expect(scrollbar.scrollbarOrientation, ScrollbarOrientation.right);
+      expect(scrollbar.controller!.position.maxScrollExtent, greaterThan(0));
+      await tester.pump(const Duration(seconds: 3));
+      await expectLater(
+        find.byType(Overlay).first,
+        matchesGoldenFile(
+          'goldens/thread_subthread_scrollbar_${dark ? 'dark_2x' : 'light'}.png',
+        ),
+      );
+      await tester.drag(
+        find.descendant(
+          of: scrollbarFinder,
+          matching: find.byType(SingleChildScrollView),
+        ),
+        const Offset(0, -280),
+      );
+      await tester.pumpAndSettle();
+      expect(scrollbar.controller!.offset, greaterThan(0));
+      final last = find.byKey(const Key('thread-subthread-chapter-23'));
+      await tester.ensureVisible(last);
+      await tester.pumpAndSettle();
+      await tester.tap(last);
+      await tester.pumpAndSettle();
+      expect(selected, 'chapter-23');
+      expect(find.byType(Scrollbar), findsNothing);
+      await tester.tap(find.byKey(const Key('thread-subthread-menu')));
+      await tester.pumpAndSettle();
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+    });
+  }
+
   testWidgets('360dp 子贴目录使用锚点菜单与轻量选中高亮', (tester) async {
     tester.view.physicalSize = const Size(360, 800);
     tester.view.devicePixelRatio = 1;
@@ -84,8 +159,16 @@ void registerThreadDetailPageSubthreadNavigationCases() {
       ),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('thread-subthread-menu')));
+    final menu = find.byKey(const Key('thread-subthread-menu'));
+    final capsule = find.byKey(const Key('thread-subthread-menu-capsule'));
+    final title = find.descendant(of: capsule, matching: find.byType(Text));
+    expect(tester.widget<Text>(title).textAlign, TextAlign.center);
+    expect(tester.getCenter(title).dx, closeTo(tester.getCenter(menu).dx, 0.1));
+    final closedDecoration = tester.widget<Container>(capsule).decoration;
+    await tester.tap(menu);
     await tester.pumpAndSettle();
+    expect(tester.widget<Container>(capsule).decoration, closedDecoration);
+    expect(find.text('主题目录'), findsNothing);
 
     await expectLater(
       find.byType(Overlay).first,
