@@ -59,7 +59,9 @@ Web 最终候选 `e3e23f02093240ea8ee1f63d657cd56998d91e58` 使用原始 importe
 - 同次 Debug APK 构建成功，`aapt dump badging` 确认应用为“温油站 Debug”、包名 `site.wenyou.app.debug`、`versionName=0.7.1-debug`、`versionCode=95`，最低 API 26，包含开发用 ARM32/ARM64/x86_64。
 - APK：`C:\Users\quhui\.codex\worktrees\65a5\wenyousite-mobile\build\app\outputs\flutter-apk\app-debug.apk`，183,257,418 字节；SHA-256：`fa1b0c2ab472dce3b73aaf0a37ede99a0ba69e45353997b401beb01dc3089066`。
 
-[Mobile PR #42](https://github.com/morenk/wenyousite-mobile/pull/42) 保持候选草稿。未安装设备，未执行负责人真机验收，未合并、部署或发布；原移动端输入与原始选区仍未取得，因此不得标记原问题修复完成。
+[Mobile PR #42](https://github.com/morenk/wenyousite-mobile/pull/42) 保持候选草稿。未执行负责人真机验收，未合并、部署或发布；原移动端输入与原始选区仍未取得，因此不得标记原问题修复完成。
+
+负责人随后明确授权“直接 adb 安装即可”。2026-09-19 已在唯一连接的 `2509FPN0BC` 真机执行 `adb install -r`，返回 `Success`。设备同时存在正式包与 Debug 包，本次安装目标已核对为 `site.wenyou.app.debug`；安装后 `versionName=0.7.1-debug`、`versionCode=95`、设备记录 `lastUpdateTime=2026-09-19 06:08:49`，设备内 `base.apk` 的 SHA-256 与上述候选完全一致。负责人应打开“温油站 Debug”复验。
 
 ## 负责人真机复验
 
@@ -69,4 +71,4 @@ Web 最终候选 `e3e23f02093240ea8ee1f63d657cd56998d91e58` 使用原始 importe
 4. 输入中文、英文、emoji、字面 `*`、反斜杠、反引号和实体文字，在代码首尾保留空格；保存草稿、关闭、重开、继续输入及发布后核对文字与样式。
 5. 使用专用测试内容完成 Web → Android → Web 及反向打开/编辑/保存，确认复制粘贴和阅读一致。无需批量删除共享数据。
 
-未授权安装设备，本任务不把 ADB 安装或代理截图记为负责人验收；候选源码、版本、包名和 SHA-256 交付后，由负责人明确确认结果。
+本任务不把 ADB 安装或代理截图记为负责人验收；候选已安装并核对包名、更新时间和设备内摘要，仍需负责人明确确认原场景结果。
