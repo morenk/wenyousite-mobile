@@ -179,104 +179,118 @@ void main() {
   });
   const path = String.fromEnvironment('INLINE_COMBINATION_WEB_IMPORT');
   if (path.isEmpty) return;
-  test('Web 实际候选全部语料可阅读、编辑并再次保存', () {
-    final payload = jsonDecode(File(path).readAsStringSync()) as Map;
-    expect(payload['contract'], 'wenyousite-inline-cross-client-result');
-    expect(payload['version'], 1);
-    expect(payload['producer'], 'web');
-    expect(payload['producerCommit'], matches(r'^[0-9a-f]{40}$'));
-    expect(
-      payload['fixtureCommit'],
-      'f3cad6799d7fdd6b484d7341b3b918970767a190',
-    );
-    expect(
-      payload['fixtureSha256'],
-      sha256
-          .convert(
-            File(
-              'contracts/markdown-inline-combinations-v1-fixtures.json',
-            ).readAsBytesSync(),
+  const textOnly = bool.fromEnvironment('INLINE_COMBINATION_WEB_TEXT_ONLY');
+  test(
+    'Web 实际候选${textOnly ? '文本子集' : '全部语料'}可阅读、编辑并再次保存',
+    () {
+      final payload = jsonDecode(File(path).readAsStringSync()) as Map;
+      expect(payload['contract'], 'wenyousite-inline-cross-client-result');
+      expect(payload['version'], 1);
+      expect(payload['producer'], 'web');
+      expect(payload['producerCommit'], matches(r'^[0-9a-f]{40}$'));
+      expect(
+        payload['fixtureCommit'],
+        'f3cad6799d7fdd6b484d7341b3b918970767a190',
+      );
+      expect(
+        payload['fixtureSha256'],
+        sha256
+            .convert(
+              File(
+                'contracts/markdown-inline-combinations-v1-fixtures.json',
+              ).readAsBytesSync(),
+            )
+            .toString(),
+      );
+      final samples = payload['samples'] as List;
+      expect(samples.length, 11904);
+      final cases = samples
+          .cast<Map>()
+          .where(
+          (item) => !textOnly || (item['id'] as String).startsWith('text:'),
           )
-          .toString(),
-    );
-    final cases = payload['samples'] as List;
-    expect(cases.length, 11904);
-    final failures = <String>[];
-    for (final item in cases.cast<Map>()) {
-      final source = item['markdown'] as String;
-      final segments = (item['expectedSegments'] as List).cast<Map>();
-      final expected = <Object>[
-        for (final segment in segments)
-          for (final rune in (segment['text'] as String).runes)
-            {'text': String.fromCharCode(rune), 'marks': segment['marks']},
-      ];
-      try {
-        final nodes = md.Document(
-          inlineSyntaxes: MarkdownInlineCompatibilitySyntax.create(),
-          extensionSet: md.ExtensionSet.gitHubFlavored,
-          encodeHtml: false,
-        ).parseInline(MarkdownInlineBoundary.canonicalize(source));
-        expect(inlineReadingUnits(nodes), expected, reason: '阅读: $source');
-        final delta = MarkdownDeltaCodec.decode(source).delta;
-        final actual = <Object>[];
-        for (final operation in delta.operations) {
-          expect(operation.data, isA<String>());
-          final marks = <String, Object>{
-            for (final key in ['bold', 'italic', 'strike', 'code', 'link'])
-              if (operation.attributes?[key] != null)
-                key: operation.attributes![key] as Object,
-          };
-          for (final rune
-              in (operation.data as String).replaceAll('\n', '').runes) {
-            actual.add({'text': String.fromCharCode(rune), 'marks': marks});
-          }
-        }
-        expect(actual, expected, reason: '编辑: $source');
-        final saved = MarkdownDeltaCodec.encode(delta);
-        expect(
-          inlineReadingUnits(
-            md.Document(
-              inlineSyntaxes: MarkdownInlineCompatibilitySyntax.create(),
-              extensionSet: md.ExtensionSet.gitHubFlavored,
-              encodeHtml: false,
-            ).parseInline(MarkdownInlineBoundary.canonicalize(saved)),
-          ),
-          expected,
-          reason: '再次保存阅读: $saved',
-        );
-        final reopened = MarkdownDeltaCodec.decode(saved).delta;
-        final reopenedUnits = <Object>[
-          for (final operation in reopened.operations)
-            for (final rune
-                in (operation.data as String).replaceAll('\n', '').runes)
-              {
-                'text': String.fromCharCode(rune),
-                'marks': {
-                  for (final key in [
-                    'bold',
-                    'italic',
-                    'strike',
-                    'code',
-                    'link',
-                  ])
-                    if (operation.attributes?[key] != null)
-                      key: operation.attributes![key],
-                },
-              },
+          .toList();
+      expect(cases.length, textOnly ? 384 : 11904);
+      final failures = <String>[];
+      for (final item in cases.cast<Map>()) {
+        final source = item['markdown'] as String;
+        final segments = (item['expectedSegments'] as List).cast<Map>();
+        final expected = <Object>[
+          for (final segment in segments)
+            for (final rune in (segment['text'] as String).runes)
+              {'text': String.fromCharCode(rune), 'marks': segment['marks']},
         ];
-        expect(reopenedUnits, expected, reason: '再次保存重开: $saved');
-        expect(MarkdownDeltaCodec.encode(reopened), saved);
-      } on Object catch (error) {
-        failures.add('${item['id']}: $error');
+        try {
+          final nodes = md.Document(
+            inlineSyntaxes: MarkdownInlineCompatibilitySyntax.create(),
+            extensionSet: md.ExtensionSet.gitHubFlavored,
+            encodeHtml: false,
+          ).parseLines(MarkdownInlineBoundary.canonicalize(source).split('\n'));
+          expect(inlineReadingUnits(nodes), expected, reason: '阅读: $source');
+          final delta = MarkdownDeltaCodec.decode(source).delta;
+          final actual = <Object>[];
+          for (final operation in delta.operations) {
+            expect(operation.data, isA<String>());
+            final marks = <String, Object>{
+              for (final key in ['bold', 'italic', 'strike', 'code', 'link'])
+                if (operation.attributes?[key] != null)
+                  key: operation.attributes![key] as Object,
+            };
+            for (final rune
+                in (operation.data as String).replaceAll('\n', '').runes) {
+              actual.add({'text': String.fromCharCode(rune), 'marks': marks});
+            }
+          }
+          expect(actual, expected, reason: '编辑: $source');
+          final saved = MarkdownDeltaCodec.encode(delta);
+          expect(
+            inlineReadingUnits(
+              md.Document(
+                inlineSyntaxes: MarkdownInlineCompatibilitySyntax.create(),
+                extensionSet: md.ExtensionSet.gitHubFlavored,
+                encodeHtml: false,
+              ).parseLines(
+                MarkdownInlineBoundary.canonicalize(saved).split('\n'),
+              ),
+            ),
+            expected,
+            reason: '再次保存阅读: $saved',
+          );
+          final reopened = MarkdownDeltaCodec.decode(saved).delta;
+          final reopenedUnits = <Object>[
+            for (final operation in reopened.operations)
+              for (final rune
+                  in (operation.data as String).replaceAll('\n', '').runes)
+                {
+                  'text': String.fromCharCode(rune),
+                  'marks': {
+                    for (final key in [
+                      'bold',
+                      'italic',
+                      'strike',
+                      'code',
+                      'link',
+                    ])
+                      if (operation.attributes?[key] != null)
+                        key: operation.attributes![key],
+                  },
+                },
+          ];
+          expect(reopenedUnits, expected, reason: '再次保存重开: $saved');
+          expect(MarkdownDeltaCodec.encode(reopened), saved);
+        } on Object catch (error) {
+          failures.add('${item['id']}: $error');
+        }
       }
-    }
-    File(
-      'build/inline-combinations-web-import-failures.log',
-    ).writeAsStringSync(failures.join('\n'));
-    expect(
-      failures.take(10),
-      isEmpty,
-      reason: '${failures.length}/${cases.length} 跨端失败',
-    );
-  }, timeout: const Timeout(Duration(minutes: 8)));
+      File(
+        'build/inline-combinations-web-import-failures.log',
+      ).writeAsStringSync(failures.join('\n'));
+      expect(
+        failures.take(10),
+        isEmpty,
+        reason: '${failures.length}/${cases.length} 跨端失败',
+      );
+    },
+    timeout: const Timeout(Duration(minutes: 8)),
+  );
 }

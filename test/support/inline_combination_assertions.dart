@@ -21,11 +21,11 @@ String verifyInlineCombination(List<(String, Map<String, Object>)> segments) {
   }
   delta.insert('\n');
   final encoded = MarkdownDeltaCodec.encode(delta);
-  // 独立 CommonMark 阅读 AST 作为预期依据，不使用待测 Codec 反推样式。
+  // 独立整段 CommonMark 阅读 AST 同时检查块级缩进与行内样式。
   final nodes = md.Document(
     extensionSet: md.ExtensionSet.gitHubFlavored,
     encodeHtml: false,
-  ).parseInline(encoded);
+  ).parseLines(encoded.split('\n'));
   expect(inlineReadingUnits(nodes), expected, reason: encoded);
   final reopened = MarkdownDeltaCodec.decode(encoded).delta;
   final actual = <Object>[];

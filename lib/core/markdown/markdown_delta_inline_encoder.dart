@@ -84,7 +84,7 @@ final class MarkdownDeltaInlineEncoder {
   // 原始无属性兼容源码仍由既有块级保护处理。
   static String _protectWhitespace(String source) {
     final leading = source.replaceFirstMapped(
-      RegExp(r'^ {4,}'),
+      RegExp(r'^ +'),
       (match) => '&#32;' * match[0]!.length,
     );
     return leading.replaceFirstMapped(

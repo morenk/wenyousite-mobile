@@ -31,6 +31,12 @@ Dart Markdown 7.3.1 对闭合代码后第一个字符实体有额外 backquote �
 
 Web 输入固定 [Frontend PR #26](https://github.com/morenk/wenyousite-frontend/pull/26) 的 daa5e59c9c40cdd30b7d9cb6389c3616901a015a，实际 11,904 条 JSON 的 SHA-256 为 b1b4ba04321e54399245ee7f57d08996445eed10110f694262caf2beba7467e1。首轮 38 个失败分为 21 个粗体闭合、2 个大写十六进制实体和 15 个边界空格保存问题；收紧代码原子的闭合优先级后，另记录 30 个同源的后续纯文字删除线失败。失败轮不作为通过证据；最终互读必须分别核对 incoming、saved 阅读 AST、再次解码逐字 marks 和保存幂等。
 
+2026-09-19，Mobile 应用源码 `01b363d4739efb5a01d8c2f938c29182b4f66306` 同次运行上述 contract 与 cross 两个测试文件，真实退出码 0、23 项测试全部通过；其中自产 11,904 条及 15 个命名场景通过，Web → Mobile 全部 11,904 条通过 incoming/saved 阅读 AST、两次解码的逐字 marks 和保存幂等检查。日志为工作区忽略文件 `inline-matrix-final.log`。
+
+上述 Mobile 导出为 `build/inline-combinations-mobile.json`，`producerCommit` 为上述源码提交，11,904 条且 ID 全部唯一，SHA-256 为 `ae99ae056d478fd7955ea80427aebb1d085f069627f1767a8ed1835fc513f378`。随后 Web 真实块解析发现段落前置两个空格被当作缩进消费，该轮不能作为跨端验收通过。早先 `9478cf2f` 失败轮生成的部分导出也不是有效候选。
+
+后续最小修正将新规范输入的全部段落前置空格编码为实体，既有 guarded/literal 源码继续走原兼容路径。独立阅读断言升级为整段 `parseLines`，并覆盖全部 32 种 marks 的两/三个边界空格、纯空格及代码内部空格。Dart 原生块解析本身不会复现 Web 的缩进消费，因此另断言规范输出不能以原始缩进起始；该断言在 `01b363d4` 上真实失败（退出码 1），最终语义仍需 Web 实际互读核验，不以 Dart 自洽代替。
+
 ## 负责人真机复验
 
 1. 在“温油站 Debug”对应候选中复现原始正文与原始长按操作；请保留实际字符、空格和选区，明确反馈是否仍异常。

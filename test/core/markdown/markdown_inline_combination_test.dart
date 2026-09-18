@@ -4,6 +4,22 @@ import '../../support/inline_combination_assertions.dart';
 const _keys = ['bold', 'italic', 'strike', 'code', 'link'];
 
 void main() {
+  test('整段阅读保留非代码边界空格与代码内部空格', () {
+    for (var mask = 0; mask < 32; mask++) {
+      final marks = _marks(mask);
+      for (final spaces in ['  ', '   ']) {
+        final encoded = verifyInlineCombination(
+          marks['code'] == true
+              ? [('$spaces甲$spaces', marks)]
+              : [(spaces, {}), ('甲', marks), (spaces, {})],
+        );
+        // Web 块解析会把段落前置空格当缩进；Dart parseLines 本身保留它，
+        // 因而另要求跨端输出不再以原始缩进开头，实际 Web 互读继续核验。
+        expect(encoded, isNot(startsWith(' ')));
+        verifyInlineCombination([(spaces, marks['code'] == true ? marks : {})]);
+      }
+    }
+  });
   test('代码后正文尾空格不添加保护字符并稳定重开', () {
     verifyInlineCombination([
       ('甲', {'code': true}),
