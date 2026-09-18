@@ -9,6 +9,8 @@ import 'package:wenyousite_mobile/features/moments/presentation/moment_feed_page
 import 'package:wenyousite_mobile/features/users/application/user_repository_ports.dart';
 import 'package:wenyousite_mobile/features/users/presentation/me_content_dashboard.dart';
 import 'package:wenyousite_mobile/features/users/presentation/me_page.dart';
+
+import '../../support/button_finder.dart';
 import 'me_page_test_support.dart';
 
 void registerMePageDashboardProfileCases() {
@@ -373,10 +375,16 @@ void registerMePageDashboardProfileCases() {
       of: find.byKey(const Key('me-settings-save')),
       matching: find.byType(FilledButton),
     );
-    expect(tester.widget<FilledButton>(saveButton).onPressed, isNull);
+    expect(
+      tester.widget<FilledButton>(findButtonControl(saveButton)).onPressed,
+      isNull,
+    );
     await tester.enterText(find.byKey(const Key('me-bio-field')), '尚未保存的新简介');
     await tester.pump();
-    expect(tester.widget<FilledButton>(saveButton).onPressed, isNotNull);
+    expect(
+      tester.widget<FilledButton>(findButtonControl(saveButton)).onPressed,
+      isNotNull,
+    );
   });
 
   testWidgets('用户名独立校验并只提交显式修改', (tester) async {

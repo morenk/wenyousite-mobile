@@ -9,6 +9,7 @@ import 'package:wenyousite_mobile/core/diagnostics/diagnostic_widgets.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_composer_sheet.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/drafts/application/content_drafts_controller.dart';
 import 'package:wenyousite_mobile/features/drafts/presentation/content_drafts_sheet.dart';
@@ -692,23 +693,14 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
     }
     if (!await _editorSession.flush()) return;
     if (!mounted) return;
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showWenyouConfirmationDialog(
       context: context,
+      title: '覆盖最新版正文？',
+      message: '正文已有更新。继续会用当前编辑器全文替换刚读取的最新版。',
+      confirmLabel: '仍然覆盖',
+      cancelLabel: '取消',
       useRootNavigator: false,
-      builder: (context) => AlertDialog(
-        title: const Text('覆盖最新版正文？'),
-        content: const Text('正文已有更新。继续会用当前编辑器全文替换刚读取的最新版。'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('取消'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('仍然覆盖'),
-          ),
-        ],
-      ),
+      tone: WenyouConfirmationTone.destructive,
     );
     if (!mounted) return;
     if (_closing ||

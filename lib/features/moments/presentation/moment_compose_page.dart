@@ -10,6 +10,7 @@ import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_atomic_text_editor.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
@@ -573,23 +574,14 @@ class _MomentComposePageState extends ConsumerState<_MomentComposeEditor>
   }
 
   Future<void> _confirmDelete() async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showWenyouConfirmationDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('删除这条动态？'),
-        content: const Text('删除后无法恢复，相关评论也不会再显示。'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('取消'),
-          ),
-          FilledButton(
-            key: const Key('moment-compose-delete-confirm'),
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('确认删除'),
-          ),
-        ],
-      ),
+      title: '删除这条动态？',
+      message: '删除后无法恢复，相关评论也不会再显示。',
+      confirmLabel: '确认删除',
+      cancelLabel: '取消',
+      confirmKey: const Key('moment-compose-delete-confirm'),
+      tone: WenyouConfirmationTone.destructive,
     );
     if (confirmed != true || !mounted) return;
     final removed = await ref

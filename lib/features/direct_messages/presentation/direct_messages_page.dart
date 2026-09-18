@@ -117,7 +117,6 @@ class _DirectMessageViewBar extends StatelessWidget {
           key: const Key('direct-message-view-menu'),
           optionKeyPrefix: 'direct-message-view',
           tooltip: '切换私聊列表',
-          icon: WenyouIconIds.actionFilter,
           appearance: WenyouDropdownFilterAppearance.quiet,
           enabled: enabled,
           selectedLabel: unread.pendingRequests > 0

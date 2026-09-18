@@ -346,9 +346,20 @@ abstract final class AppTheme {
       ),
       popupMenuTheme: PopupMenuThemeData(
         color: tokens.panel,
+        surfaceTintColor: Colors.transparent,
+        shadowColor: colorScheme.shadow.withValues(alpha: 0.16),
+        menuPadding: EdgeInsets.all(tokens.space4),
+        textStyle: textTheme.wenyouCompactBody,
+        labelTextStyle: WidgetStateProperty.resolveWith(
+          (states) => textTheme.wenyouCompactBody.copyWith(
+            color: states.contains(WidgetState.disabled)
+                ? tokens.mutedText
+                : tokens.text,
+          ),
+        ),
         elevation: WenyouOverlayContract.elevation['popup'],
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(tokens.radius12),
+          borderRadius: BorderRadius.circular(tokens.radius16),
           side: BorderSide(color: tokens.border),
         ),
       ),

@@ -7,6 +7,7 @@ import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_member_management_controller.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_member_management_models.dart';
@@ -276,27 +277,15 @@ class _MemberRow extends ConsumerWidget {
     ThreadMemberManagementController notifier,
   ) async {
     final promoting = member.role != ThreadMemberManagementRole.collaborator;
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showWenyouConfirmationDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(promoting ? '设为协作者？' : '移除协作者身份？'),
-        content: Text(
-          promoting
-              ? '${member.username} 将可以编辑主题内容并管理玩家标记。'
-              : '${member.username} 将降为普通参与人，不再拥有主题管理权限。',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('取消'),
-          ),
-          FilledButton(
-            key: ValueKey('thread-member-role-confirm-${member.userId}'),
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: Text(promoting ? '确认任命' : '确认移除'),
-          ),
-        ],
-      ),
+      title: promoting ? '设为协作者？' : '移除协作者身份？',
+      message: promoting
+          ? '${member.username} 将可以编辑主题内容并管理玩家标记。'
+          : '${member.username} 将降为普通参与人，不再拥有主题管理权限。',
+      confirmLabel: promoting ? '确认任命' : '确认移除',
+      cancelLabel: '取消',
+      confirmKey: ValueKey('thread-member-role-confirm-${member.userId}'),
     );
     if (confirmed != true || !context.mounted) return;
     final succeeded = await notifier.toggleCollaborator(member);

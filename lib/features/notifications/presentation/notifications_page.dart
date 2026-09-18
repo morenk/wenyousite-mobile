@@ -39,7 +39,6 @@ class NotificationSection extends ConsumerWidget {
               key: const Key('notification-filter-menu'),
               optionKeyPrefix: 'notification-filter',
               tooltip: '筛选通知',
-              icon: WenyouIconIds.actionFilter,
               appearance: WenyouDropdownFilterAppearance.quiet,
               options: [
                 for (final filter in NotificationFilters.values)
@@ -299,16 +298,12 @@ class _NotificationCard extends StatelessWidget {
                       key: ValueKey('notification-unread-${item.id}'),
                     ),
                   ),
-                IconButton(
+                WenyouAsyncIconButton(
                   key: ValueKey('notification-remove-${item.id}'),
-                  tooltip: '删除通知',
+                  label: '删除通知',
+                  isLoading: isPending,
                   onPressed: isPending || actionsDisabled ? null : onRemove,
-                  icon: isPending
-                      ? const SizedBox.square(
-                          dimension: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const WenyouIcon(WenyouIconIds.actionDelete, size: 20),
+                  icon: WenyouIconIds.actionDelete,
                 ),
               ],
             ),

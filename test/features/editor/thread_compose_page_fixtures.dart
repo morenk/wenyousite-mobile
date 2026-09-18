@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:typed_data';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -25,6 +26,8 @@ import 'package:wenyousite_mobile/features/threads/application/thread_compose_co
 import 'package:wenyousite_mobile/features/threads/data/thread_compose_repository.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_compose_models.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_compose_page.dart';
+
+import '../../support/button_finder.dart';
 import '../../support/fake_image_crop_processor.dart';
 
 Future<ThreadComposeController> threadComposePageTestReadyController(
@@ -140,7 +143,9 @@ Future<void> threadComposePageTestConfirmImageCrop(WidgetTester tester) async {
   await tester.pumpAndSettle();
   expect(find.byKey(const Key('editor-image-crop-dialog')), findsOneWidget);
   tester
-      .widget<FilledButton>(find.byKey(const Key('image-crop-confirm')))
+      .widget<FilledButton>(
+        findButtonControl(find.byKey(const Key('image-crop-confirm'))),
+      )
       .onPressed!();
   await tester.pump();
   await tester.pump(const Duration(milliseconds: 400));

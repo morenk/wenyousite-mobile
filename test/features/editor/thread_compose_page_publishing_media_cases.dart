@@ -13,6 +13,8 @@ import 'package:wenyousite_mobile/features/editor/presentation/mention_suggestio
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_compose_controller.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_compose_models.dart';
+
+import '../../support/button_finder.dart';
 import 'thread_compose_page_test_support.dart';
 
 void registerThreadComposePagePublishingMediaCases() {
@@ -98,13 +100,20 @@ void registerThreadComposePagePublishingMediaCases() {
     await threadComposePageTestPumpPage(tester, controller);
     final publish = find.byKey(const Key('compose-publish'));
     await tester.ensureVisible(publish);
-    final publishButton = tester.widget<FilledButton>(publish);
+    final publishButton = tester.widget<FilledButton>(
+      findButtonControl(publish),
+    );
+    final publishTheme = Theme.of(
+      tester.element(publish),
+    ).filledButtonTheme.style;
     expect(
-      publishButton.style?.backgroundColor?.resolve({}),
+      publishButton.style?.backgroundColor?.resolve({}) ??
+          publishTheme?.backgroundColor?.resolve({}),
       WenyouThemeTokens.light.brandSurface,
     );
     expect(
-      publishButton.style?.foregroundColor?.resolve({}),
+      publishButton.style?.foregroundColor?.resolve({}) ??
+          publishTheme?.foregroundColor?.resolve({}),
       WenyouThemeTokens.light.onBrandSurface,
     );
 
@@ -319,7 +328,10 @@ void registerThreadComposePagePublishingMediaCases() {
       mediaRepository: mediaRepository,
     );
     final publish = find.byKey(const Key('compose-publish'));
-    expect(tester.widget<FilledButton>(publish).onPressed, isNotNull);
+    expect(
+      tester.widget<FilledButton>(findButtonControl(publish)).onPressed,
+      isNotNull,
+    );
 
     final imageButton = find.byKey(const Key('editor-image'));
     await tester.ensureVisible(imageButton);
@@ -336,7 +348,10 @@ void registerThreadComposePagePublishingMediaCases() {
           .any((indicator) => indicator.value == .5),
       isTrue,
     );
-    expect(tester.widget<FilledButton>(publish).onPressed, isNull);
+    expect(
+      tester.widget<FilledButton>(findButtonControl(publish)).onPressed,
+      isNull,
+    );
 
     await tester.tap(find.text('取消上传'));
     await tester.pump();
@@ -346,7 +361,10 @@ void registerThreadComposePagePublishingMediaCases() {
     expect(find.textContaining('正在上传图片'), findsNothing);
     expect(controller.state.body, '保留的主题正文');
     expect(controller.state.body, isNot(contains('wenyou_image')));
-    expect(tester.widget<FilledButton>(publish).onPressed, isNotNull);
+    expect(
+      tester.widget<FilledButton>(findButtonControl(publish)).onPressed,
+      isNotNull,
+    );
   });
 
   testWidgets('上传中系统返回先取消任务且迟到成功不会写入草稿', (tester) async {

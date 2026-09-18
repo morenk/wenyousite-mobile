@@ -208,25 +208,19 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
                   SizedBox(height: tokens.space12),
                   Align(
                     alignment: Alignment.centerLeft,
-                    child: OutlinedButton.icon(
+                    child: WenyouAsyncButton(
                       key: const Key('reset-password-request-code'),
+                      label: state.resendSecondsRemaining > 0
+                          ? '${state.resendSecondsRemaining} 秒后可重发'
+                          : '发送或重新发送验证码',
+                      isLoading: state.isRequestingCode,
                       onPressed:
                           state.isBusy || state.resendSecondsRemaining > 0
                           ? null
                           : _requestCode,
-                      icon: state.isRequestingCode
-                          ? const SizedBox.square(
-                              dimension: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const WenyouIcon(WenyouIconIds.actionSend),
-                      label: Text(
-                        state.isRequestingCode
-                            ? '正在发送验证码'
-                            : state.resendSecondsRemaining > 0
-                            ? '${state.resendSecondsRemaining} 秒后可重发'
-                            : '发送或重新发送验证码',
-                      ),
+                      loadingLabel: '正在发送验证码',
+                      icon: WenyouIconIds.actionSend,
+                      variant: WenyouAsyncButtonVariant.outlined,
                     ),
                   ),
                   SizedBox(height: tokens.space20),

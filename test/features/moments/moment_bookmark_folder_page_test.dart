@@ -13,6 +13,35 @@ import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_bookmark_folder_page.dart';
 
 void main() {
+  testWidgets('分页失败保留卡片，滚动不重发且显式重试沿用游标', (tester) async {
+    final repository = _PageRepository(card: _card('moment-1'))
+      ..hasNextPage = true
+      ..failNextPage = true;
+    await tester.pumpWidget(_app(repository));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('moment-bookmark-load-more')));
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const Key('moment-bookmark-card-moment-1')),
+      findsOneWidget,
+    );
+    expect(find.text('分页加载失败'), findsOneWidget);
+    expect(repository.cursors, [null, 'opaque-next']);
+    await tester.drag(find.byType(CustomScrollView), const Offset(0, -40));
+    await tester.pumpAndSettle();
+    expect(repository.cursors, [null, 'opaque-next']);
+    repository.failNextPage = false;
+    await tester.tap(find.byKey(const Key('moment-bookmark-load-more-retry')));
+    await tester.pumpAndSettle();
+    expect(repository.cursors, [null, 'opaque-next', 'opaque-next']);
+    expect(
+      find.byKey(const Key('moment-bookmark-card-moment-2')),
+      findsOneWidget,
+    );
+    expect(find.text('分页加载失败'), findsNothing);
+    expect(find.text('已经到底了'), findsOneWidget);
+  });
+
   testWidgets('关闭管理面板不写入，取消在途不能重复操作', (tester) async {
     final gate = Completer<void>();
     final repository = _PageRepository(card: _card('moment-1'))
@@ -144,6 +173,9 @@ class _PageRepository implements MomentBookmarkRepository {
   final List<(String, String)> moves = [];
   final List<String> removes = [];
   bool failWrites = false;
+  bool hasNextPage = false;
+  bool failNextPage = false;
+  final List<String?> cursors = [];
   Completer<void>? writeGate;
 
   @override
@@ -169,7 +201,20 @@ class _PageRepository implements MomentBookmarkRepository {
     required String folderId,
     String? cursor,
     int limit = 20,
-  }) async => CursorPage(items: [card], hasMore: false);
+  }) async {
+    cursors.add(cursor);
+    if (cursor != null && failNextPage) {
+      throw const ApiFailure(userMessage: '分页加载失败', httpStatus: 503);
+    }
+    if (cursor != null) {
+      return CursorPage(items: [_card('moment-2')], hasMore: false);
+    }
+    return CursorPage(
+      items: [card],
+      cursor: hasNextPage ? 'opaque-next' : null,
+      hasMore: hasNextPage,
+    );
+  }
 
   @override
   Future<void> moveBookmark(String momentId, String folderId) async {

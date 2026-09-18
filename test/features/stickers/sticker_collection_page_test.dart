@@ -16,6 +16,7 @@ import 'package:wenyousite_mobile/features/stickers/data/sticker_repository.dart
 import 'package:wenyousite_mobile/features/stickers/domain/sticker_models.dart';
 import 'package:wenyousite_mobile/features/stickers/presentation/sticker_collection_page.dart';
 
+import '../../support/button_finder.dart';
 import '../../support/fake_image_crop_processor.dart';
 
 void main() {
@@ -150,7 +151,9 @@ void main() {
     expect(find.text('正在上传图片 50%'), findsOneWidget);
     expect(
       tester
-          .widget<OutlinedButton>(find.byKey(const Key('stickers-add-gallery')))
+          .widget<OutlinedButton>(
+            findButtonControl(find.byKey(const Key('stickers-add-gallery'))),
+          )
           .onPressed,
       isNull,
     );
@@ -165,7 +168,9 @@ void main() {
     expect(repository.importedSources, isEmpty);
     expect(
       tester
-          .widget<OutlinedButton>(find.byKey(const Key('stickers-add-gallery')))
+          .widget<OutlinedButton>(
+            findButtonControl(find.byKey(const Key('stickers-add-gallery'))),
+          )
           .onPressed,
       isNotNull,
     );
@@ -236,7 +241,9 @@ Future<void> _confirmImageCrop(WidgetTester tester) async {
   await tester.pumpAndSettle();
   expect(find.byKey(const Key('editor-image-crop-dialog')), findsOneWidget);
   tester
-      .widget<FilledButton>(find.byKey(const Key('image-crop-confirm')))
+      .widget<FilledButton>(
+        findButtonControl(find.byKey(const Key('image-crop-confirm'))),
+      )
       .onPressed!();
   await tester.pump();
   await tester.pump(const Duration(milliseconds: 400));

@@ -40,4 +40,60 @@ void main() {
     await pump(hasMore: false, loading: false);
     expect(find.text('已经到底了'), findsOneWidget);
   });
+
+  testWidgets('隐藏结束提示不占空间，失败期间只允许显式重试', (tester) async {
+    var retries = 0;
+    Future<void> pump({bool loading = false, ApiFailure? failure}) =>
+        tester.pumpWidget(
+          MaterialApp(
+            theme: AppTheme.dark,
+            home: Scaffold(
+              body: Center(
+                child: WenyouPaginationFooter(
+                  hasMore: false,
+                  isLoading: loading,
+                  failure: failure,
+                  showEndLabel: false,
+                  onLoadMore: () => retries++,
+                ),
+              ),
+            ),
+          ),
+        );
+    await pump();
+    expect(tester.getSize(find.byType(WenyouPaginationFooter)).height, 0);
+    expect(find.text('已经到底了'), findsNothing);
+    const failure = ApiFailure(userMessage: '加载失败');
+    await pump(failure: failure);
+    expect(retries, 0);
+    await tester.tap(find.text('重试'));
+    expect(retries, 1);
+    await pump(failure: failure, loading: true);
+    await tester.tap(find.text('重试'));
+    expect(retries, 1);
+  });
+
+  testWidgets('窄屏放大字号仍完整呈现分页加载提示', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Scaffold(
+          body: MediaQuery(
+            data: const MediaQueryData(textScaler: TextScaler.linear(2)),
+            child: const SizedBox(
+              width: 150,
+              child: WenyouLoadMoreControl(
+                hasMore: true,
+                isLoading: true,
+                onLoadMore: null,
+                loadingLabel: '正在加载更多讨论内容',
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    expect(tester.takeException(), isNull);
+    expect(find.text('正在加载更多讨论内容'), findsOneWidget);
+  });
 }

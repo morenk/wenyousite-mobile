@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_actions.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_interaction_toggle.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_widgets.dart';
@@ -130,42 +131,16 @@ class MomentWaterfallCard extends StatelessWidget {
                   ),
                 ),
                 if (onManage != null)
-                  Semantics(
-                    container: true,
-                    button: true,
-                    label: '管理收藏：${moment.title}',
-                    enabled:
-                        manageEnabled &&
-                        pendingAction == null &&
-                        !managePending,
-                    excludeSemantics: true,
-                    onTap:
+                  WenyouAsyncIconButton(
+                    key: Key('moment-bookmark-manage-${moment.id}'),
+                    label: '管理收藏',
+                    semanticLabel: '管理收藏：${moment.title}',
+                    isLoading: managePending,
+                    onPressed:
                         manageEnabled && pendingAction == null && !managePending
                         ? onManage
                         : null,
-                    child: IconButton(
-                      key: Key('moment-bookmark-manage-${moment.id}'),
-                      tooltip: '管理收藏',
-                      constraints: BoxConstraints.tightFor(
-                        width: tokens.minimumTouchTarget,
-                        height: tokens.minimumTouchTarget,
-                      ),
-                      onPressed:
-                          manageEnabled &&
-                              pendingAction == null &&
-                              !managePending
-                          ? onManage
-                          : null,
-                      icon: managePending
-                          ? const SizedBox.square(
-                              dimension: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const WenyouIcon(
-                              WenyouIconIds.actionMore,
-                              size: 18,
-                            ),
-                    ),
+                    icon: WenyouIconIds.actionMore,
                   ),
                 _MomentWaterfallLikeButton(
                   key: Key('moment-like-${moment.id}'),

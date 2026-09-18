@@ -2,7 +2,7 @@ import 'dart:io';
 import 'dependency_graph.dart';
 import 'source_files.dart';
 
-const _featurePresentationSpinnerBaseline = 77;
+const _featurePresentationSpinnerBaseline = 31;
 
 void checkFailurePresentationBoundary(
   List<File> files,

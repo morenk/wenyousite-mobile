@@ -49,19 +49,15 @@ class _BookmarkFolderCatalogPageState
       appBar: AppBar(
         title: const Text('我的收藏'),
         actions: [
-          IconButton(
+          WenyouAsyncIconButton(
             key: Key('bookmark-folder-create-${_kind.name}'),
-            tooltip: '新建收藏夹',
+            label: '新建收藏夹',
+            icon: WenyouIconIds.actionAddFolder,
+            isLoading: state.isCreating,
             onPressed:
                 state.phase == BookmarkFolderCatalogPhase.ready && !state.isBusy
                 ? () => _createFolder(provider, notifier)
                 : null,
-            icon: state.isCreating
-                ? const SizedBox.square(
-                    dimension: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const WenyouIcon(WenyouIconIds.actionAddFolder),
           ),
         ],
       ),
@@ -103,7 +99,6 @@ class _BookmarkFolderCatalogPageState
                         key: const Key('bookmark-folder-menu'),
                         optionKeyPrefix: 'bookmark-folder',
                         tooltip: '切换收藏夹',
-                        icon: WenyouIconIds.contentFolderOpen,
                         appearance: WenyouDropdownFilterAppearance.quiet,
                         enabled: !state.isBusy,
                         selected: selectedFolder.id,

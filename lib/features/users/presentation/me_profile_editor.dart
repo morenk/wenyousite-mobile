@@ -453,17 +453,11 @@ class _UsernameEditorSheetState extends ConsumerState<_UsernameEditorSheet> {
                         child: const Text('取消'),
                       ),
                       SizedBox(width: tokens.space8),
-                      FilledButton(
+                      WenyouAsyncButton(
                         key: const Key('me-username-save'),
+                        label: '保存',
+                        isLoading: submitting,
                         onPressed: submitting ? null : _save,
-                        child: submitting
-                            ? const SizedBox.square(
-                                dimension: 18,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : const Text('保存'),
                       ),
                     ],
                   ),

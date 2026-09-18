@@ -1,6 +1,6 @@
 # 行内格式组合候选验收
 
-状态：候选验证通过／待负责人验收。不得以自动测试或构建代替原问题的真机复验。
+状态：负责人验收通过／修复完成。2026-09-19 负责人在治理任务明确回复“验收通过，请继续合并”，并在移动端任务授权“可以合并清理分支了”。验收对象为已安装并核验设备内摘要的 `9b90b0f3` 应用候选；保留下方原始输入未取得及自动检查的历史边界，不推断额外场景逐项验收结果。
 
 ## 原始反馈与范围
 
@@ -57,13 +57,21 @@ Web 最终候选 `e3e23f02093240ea8ee1f63d657cd56998d91e58` 使用原始 importe
 - 完整 `test/` 共 4,530 项通过，1 项既有跳过：`test/core/diagnostics/diagnostic_live_receipt_test.dart` 默认关闭的线上 Sentry 回执；18 项 Windows 工具测试通过。
 - 直接受影响路径包括 `test/core/markdown/`、`test/core/widgets/wenyou_markdown_test.dart`、`test/features/editor/`；完整入口包含新增组合、真实长按/工具栏、剪贴板、主题页面保存/重开/发布、撤销重做和字形测试。外部导入专项及红绿回归的实际文件、样本与日志见前文。
 - 同次 Debug APK 构建成功，`aapt dump badging` 确认应用为“温油站 Debug”、包名 `site.wenyou.app.debug`、`versionName=0.7.1-debug`、`versionCode=95`，最低 API 26，包含开发用 ARM32/ARM64/x86_64。
-- APK：`C:\Users\quhui\.codex\worktrees\65a5\wenyousite-mobile\build\app\outputs\flutter-apk\app-debug.apk`，183,257,418 字节；SHA-256：`fa1b0c2ab472dce3b73aaf0a37ede99a0ba69e45353997b401beb01dc3089066`。
+- 已验收 APK 稳定归档：`D:\code\wenyousite\artifacts\mobile-inline-combinations-20260919\wenyou-inline-9b90b0f3-debug.apk`，183,257,418 字节；SHA-256：`fa1b0c2ab472dce3b73aaf0a37ede99a0ba69e45353997b401beb01dc3089066`。原工作区 APK、全部诊断/验收日志及双向互读 JSON 已复制到同一目录并逐文件记录 `SHA256SUMS.txt`；此目录独立于临时 Worktree。
 
-[Mobile PR #42](https://github.com/morenk/wenyousite-mobile/pull/42) 保持候选草稿。未执行负责人真机验收，未合并、部署或发布；原移动端输入与原始选区仍未取得，因此不得标记原问题修复完成。
+[Mobile PR #42](https://github.com/morenk/wenyousite-mobile/pull/42) 已获负责人验收与合并清理授权；按 Backend → Web → Mobile 顺序完成合并，不包含部署或发布。
 
 负责人随后明确授权“直接 adb 安装即可”。2026-09-19 已在唯一连接的 `2509FPN0BC` 真机执行 `adb install -r`，返回 `Success`。设备同时存在正式包与 Debug 包，本次安装目标已核对为 `site.wenyou.app.debug`；安装后 `versionName=0.7.1-debug`、`versionCode=95`、设备记录 `lastUpdateTime=2026-09-19 06:08:49`，设备内 `base.apk` 的 SHA-256 与上述候选完全一致。负责人应打开“温油站 Debug”复验。
 
-## 负责人真机复验
+## 合并前集成复核
+
+2026-09-19 将最新 `origin/dev` 的 `afc11c8749bce79f6b15195df41f214909296951` 以 merge 方式整合到任务分支。双方共同修改仅为 README、相同的后端来源元数据和文档；所有实际冲突均位于 CHANGELOG 与 21 个模块来源记录，已保留双方内容。应用源码、测试、工具和依赖没有交叉修改，本次未手工修改任何应用实现。
+
+按治理任务明确的“仅 docs 冲突按 docs 门禁”要求，模块文档检查与 diff 空白检查通过；另外运行 `test/features/editor/editor_inline_combination_entry_test.dart`、`test/features/editor/editor_toolbar_test.dart`、`test/features/editor/rich_editor_session_test.dart`，77 项通过、真实退出码 0，覆盖新共享页面下的实际编辑入口、工具栏、保存重开及发布。日志 `merge-editor-integration.log` 随验收材料保存。不重复已通过的两侧全量验证，也不将原候选完整门禁宣称为本次集成后重新运行的结果。
+
+稳定归档 APK 始终绑定已验收的 `9b90b0f3`，不包含后续 dev 的组件整合，不重新安装或发布。PR 按治理任务确认的跨仓顺序合并。
+
+## 原负责人真机复验清单
 
 1. 在“温油站 Debug”对应候选中复现原始正文与原始长按操作；请保留实际字符、空格和选区，明确反馈是否仍异常。
 2. 输入 `code xyz`，仅为 `code` 应用行内代码。长按选中原词，点击底部斜体，确认同时显示等宽与斜体；再次点击只取消斜体，代码保留。
@@ -71,4 +79,4 @@ Web 最终候选 `e3e23f02093240ea8ee1f63d657cd56998d91e58` 使用原始 importe
 4. 输入中文、英文、emoji、字面 `*`、反斜杠、反引号和实体文字，在代码首尾保留空格；保存草稿、关闭、重开、继续输入及发布后核对文字与样式。
 5. 使用专用测试内容完成 Web → Android → Web 及反向打开/编辑/保存，确认复制粘贴和阅读一致。无需批量删除共享数据。
 
-本任务不把 ADB 安装或代理截图记为负责人验收；候选已安装并核对包名、更新时间和设备内摘要，仍需负责人明确确认原场景结果。
+验收通过依据是负责人明确反馈，而非 ADB 安装或代理截图。原候选安装包与验证日志已保存，后续合并记录不改写既有失败轮和验证边界。

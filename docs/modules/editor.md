@@ -181,7 +181,7 @@ S5 于 2026-09-10 启动，已按要求安装 Debug 候选并核验设备内 APK
 - [x] 任务列表、表格、围栏代码、H1/H4+、显式硬换行、原始 HTML、未知协议和超过三层列表按 Markdown v4 契约显示为可读字面文本，不声称结构化 WYSIWYG 支持。
 - [x] 普通外部粘贴不再回退 Quill 默认路径；除带唯一合法 clipboard v1/v2 envelope 的本站 Web 片段外，受支持 Markdown、表格、HTML、任务列表等都作为可见普通文本，手输/IME 同样不能生成隐式语义；粘贴超限、读取竞态和在途立即保存原子收敛，历史安全转义重新打开不显示实现字符。H2/H3、加粗和分隔线只由工具栏或本站结构片段创建，主题创作、子贴、楼层/回复和云草稿共用同一回归边界。
 
-行内组合候选新增 32 种 marks 的完整 11,520 条有序邻接、384 条特殊文字和 15 条命名语料回归；真实长按原选区与部分/反向混合选区通过底部工具栏应用格式，检查逐字 marks、选区、取消和撤销/重做，并覆盖主题页面输入、快照、重开与发布载荷。候选尚待原问题真机验收，见[行内组合候选验收](../architecture/editor-inline-combination-acceptance.md)。
+行内组合候选新增 32 种 marks 的完整 11,520 条有序邻接、384 条特殊文字和 15 条命名语料回归；真实长按原选区与部分/反向混合选区通过底部工具栏应用格式，检查逐字 marks、选区、取消和撤销/重做，并覆盖主题页面输入、快照、重开与发布载荷。负责人于 2026-09-19 对已安装并核验摘要的 `9b90b0f3` 候选明确验收通过，见[行内组合验收](../architecture/editor-inline-combination-acceptance.md)。
 
 ## 12. 已知限制和后续功能
 
@@ -195,7 +195,9 @@ S5 于 2026-09-10 启动，已按要求安装 Debug 候选并核验设备内 APK
 
 ## 13. 最近审查的契约版本和后端提交
 
-2026-09-19 行内组合候选契约：独立语料 `markdown-inline-combinations-v1` revision 2 固定 Backend `f3cad6799d7fdd6b484d7341b3b918970767a190`，文件摘要见 `contracts/markdown-inline-combinations-v1-source.json`；依赖 Backend PR #22，未合并、未部署。32 种 marks、11,520 条邻接展开、384 条文本和 15 条命名场景供消费者回归；原 v7 的 48 条操作保持不变。主 HTTP 契约与公网 revision 更新到 `602f57324256f358aea27d204937f9e15644f9c7`，相对原 `6fdfa00` 的 `contracts/` 与移动端指南无差异，OpenAPI 验证及客户端再生成无差异；不将候选测试语料来源写成已部署版本。组合实现处于候选验证阶段，原问题真机验收仍待完成。
+2026-09-19 行内组合候选契约：独立语料 `markdown-inline-combinations-v1` revision 2 固定 Backend `f3cad6799d7fdd6b484d7341b3b918970767a190`，文件摘要见 `contracts/markdown-inline-combinations-v1-source.json`；依赖 Backend PR #22，未合并、未部署。32 种 marks、11,520 条邻接展开、384 条文本和 15 条命名场景供消费者回归；原 v7 的 48 条操作保持不变。主 HTTP 契约与公网 revision 更新到 `602f57324256f358aea27d204937f9e15644f9c7`，相对原 `6fdfa00` 的 `contracts/` 与移动端指南无差异，OpenAPI 验证及客户端再生成无差异；不将候选测试语料来源写成已部署版本。组合实现已于 2026-09-19 获负责人明确验收通过。
+
+2026-09-19 来源复核：API `5.22.0-dev.20260912.2`，后端 `602f57324256f358aea27d204937f9e15644f9c7`，与公网 `/meta` 一致。相对此前 `6fdfa00e`，契约文件与客户端指南无差异；重新生成客户端无差异，固定 editor-list 语料来源保持不变。
 
 本轮展示契约来源：API `5.22.0-dev.20260912.2`、Backend `6fdfa00eaf1f3056ba30f2ffbc529d12eed1c823`；新增 display／mediaDisplays；消费者已获负责人验收，检查与合并整合见本任务 PR 和全场景记录。仅既有 `markdown-editor-list-v1-fixtures.json` 保留 `062412601b3a8dbf4f64494115a2445d312dd53d` 来源与SHA-256，见 contracts/markdown-editor-list-v1-source.json；不将该独立语料误标为本轮主来源。
 

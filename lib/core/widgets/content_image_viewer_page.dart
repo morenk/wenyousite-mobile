@@ -9,6 +9,7 @@ import 'package:wenyousite_mobile/core/application/user_facing_failure.dart';
 import 'package:wenyousite_mobile/core/media/media_display.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_image_viewer_page.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_selection_menu.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 
 class ContentImageViewerPage extends ConsumerStatefulWidget {
@@ -101,6 +102,7 @@ class _ContentImageViewerPageState
       actions: [
         if (canSave || canAddSticker)
           PopupMenuButton<_ContentImageAction>(
+            icon: const WenyouIcon(WenyouIconIds.actionMore),
             key: const Key('content-image-actions'),
             tooltip: '图片操作',
             enabled: _busyAction == null,
@@ -116,19 +118,17 @@ class _ContentImageViewerPageState
               if (canSave)
                 const PopupMenuItem(
                   value: _ContentImageAction.saveImage,
-                  child: ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: WenyouIcon(WenyouIconIds.actionDownload),
-                    title: Text('保存图片'),
+                  child: WenyouMenuActionLabel(
+                    icon: WenyouIconIds.actionDownload,
+                    label: '保存图片',
                   ),
                 ),
               if (canAddSticker)
                 const PopupMenuItem(
                   value: _ContentImageAction.addSticker,
-                  child: ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: WenyouIcon(WenyouIconIds.actionAddReaction),
-                    title: Text('添加到表情收藏'),
+                  child: WenyouMenuActionLabel(
+                    icon: WenyouIconIds.actionAddReaction,
+                    label: '添加到表情收藏',
                   ),
                 ),
             ],

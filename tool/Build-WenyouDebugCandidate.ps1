@@ -101,11 +101,11 @@ Invoke-WenyouCandidateStep 'Analyze generated API package' $dartCommand @(
   '--fatal-infos',
   '--fatal-warnings'
 ) (Join-Path $repository 'packages\wenyou_api')
-Invoke-WenyouCandidateStep 'Run relevant Flutter tests' $flutterCommand @(
+$flutterTestArguments = @(
   'test',
-  "--concurrency=$TestConcurrency",
-  [string[]]$resolvedTestPaths
-)
+  "--concurrency=$TestConcurrency"
+) + $resolvedTestPaths.ToArray()
+Invoke-WenyouCandidateStep 'Run relevant Flutter tests' $flutterCommand $flutterTestArguments
 Invoke-WenyouCandidateStep 'Build Android Debug APK' $flutterCommand @(
   'build',
   'apk',

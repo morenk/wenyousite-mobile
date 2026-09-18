@@ -204,15 +204,12 @@ class _RelationUserCard extends StatelessWidget {
           ),
           if (showUnblock) ...[
             SizedBox(width: tokens.space8),
-            OutlinedButton(
+            WenyouAsyncButton(
               key: ValueKey('unblock-${item.userId}'),
+              label: '取消拉黑',
+              isLoading: isPending,
               onPressed: isPending || disableUnblock ? null : onUnblock,
-              child: isPending
-                  ? const SizedBox.square(
-                      dimension: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Text('取消拉黑'),
+              variant: WenyouAsyncButtonVariant.outlined,
             ),
           ],
         ],
