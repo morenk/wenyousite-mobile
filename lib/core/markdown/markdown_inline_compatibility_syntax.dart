@@ -97,7 +97,7 @@ class _PlainFormatting extends md.InlineSyntax {
   _PlainFormatting(this.marker, this.tag, this.syntax)
     : super(
         '${RegExp.escape(marker)}'
-        r'([^*_~`\\\[\]<\r\n]+)'
+        r'((?:\\[^\r\n]|[^*~`\\\[\]<\r\n])+)'
         '${RegExp.escape(marker)}',
         startCharacter: marker.codeUnitAt(0),
       );
@@ -133,6 +133,8 @@ class _PlainFormatting extends md.InlineSyntax {
         delimiter(match.end - 2)?.canClose != true) {
       return false;
     }
+    // 转义双字符与普通字符分支不重叠；词内下划线是否属于纯文字
+    // 仍由原解析结果证明，不把可能产生嵌套格式的内容提前消费。
     final nodes = md.Document(
       extensionSet: md.ExtensionSet.gitHubFlavored,
       encodeHtml: parser.encodeHtml,

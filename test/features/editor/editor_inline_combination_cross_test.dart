@@ -177,6 +177,49 @@ void main() {
       );
     }
   });
+  test('相邻纯文字格式保留词内下划线与转义标点', () {
+    for (final (marker, mark) in [('**', 'bold'), ('~~', 'strike')]) {
+      for (final (literal, visible) in [
+        (r'a\_b', 'a_b'),
+        (r'a\*b', 'a*b'),
+        ('a_b', 'a_b'),
+      ]) {
+        final source = '&#x61;_**~~甲~~**_$marker$literal${marker}b';
+        final expected = <Object>[
+          {'text': 'a', 'marks': <String, Object>{}},
+          {
+            'text': '甲',
+            'marks': {'italic': true, 'bold': true, 'strike': true},
+          },
+          for (final rune in visible.runes)
+            {
+              'text': String.fromCharCode(rune),
+              'marks': {mark: true},
+            },
+          {'text': 'b', 'marks': <String, Object>{}},
+        ];
+        final nodes = md.Document(
+          inlineSyntaxes: MarkdownInlineCompatibilitySyntax.create(),
+          extensionSet: md.ExtensionSet.gitHubFlavored,
+          encodeHtml: false,
+        ).parseLines(source.split('\n'));
+        expect(inlineReadingUnits(nodes), expected, reason: source);
+        final saved = MarkdownDeltaCodec.encode(
+          MarkdownDeltaCodec.decode(source).delta,
+        );
+        expect(
+          inlineReadingUnits(
+            md.Document(
+              extensionSet: md.ExtensionSet.gitHubFlavored,
+              encodeHtml: false,
+            ).parseLines(saved.split('\n')),
+          ),
+          expected,
+          reason: saved,
+        );
+      }
+    }
+  });
   const path = String.fromEnvironment('INLINE_COMBINATION_WEB_IMPORT');
   if (path.isEmpty) return;
   const textOnly = bool.fromEnvironment('INLINE_COMBINATION_WEB_TEXT_ONLY');
