@@ -7,6 +7,7 @@ import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_tag_chip.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/tags/application/thread_tag_management_controller.dart';
@@ -172,18 +173,15 @@ class _ThreadTagManagementPageState
                 ),
                 if (canCreate) ...[
                   SizedBox(height: tokens.space8),
-                  OutlinedButton.icon(
+                  WenyouAsyncButton(
                     key: const Key('thread-tag-create'),
+                    label: '添加 #$normalizedQuery',
+                    isLoading: state.mutatingTagId == 'add:$normalizedQuery',
                     onPressed: state.isBusy
                         ? null
                         : () => _addByName(normalizedQuery),
-                    icon: state.mutatingTagId == 'add:$normalizedQuery'
-                        ? const SizedBox.square(
-                            dimension: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const WenyouIcon(WenyouIconIds.actionAddTag),
-                    label: Text('添加 #$normalizedQuery'),
+                    icon: WenyouIconIds.actionAddTag,
+                    variant: WenyouAsyncButtonVariant.outlined,
                   ),
                 ],
                 SizedBox(height: tokens.space12),
@@ -291,23 +289,13 @@ class _ThreadTagManagementPageState
   }
 
   Future<void> _confirmRemove(TopicTagModel tag) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showWenyouConfirmationDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text('移除 #${tag.name}？'),
-        content: const Text('只会解除这个主题与标签的关联，不会删除全局标签，也不会影响其他主题。'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('取消'),
-          ),
-          FilledButton(
-            key: const Key('thread-tag-remove-confirm'),
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('确认移除'),
-          ),
-        ],
-      ),
+      title: '移除 #${tag.name}？',
+      message: '只会解除这个主题与标签的关联，不会删除全局标签，也不会影响其他主题。',
+      confirmLabel: '确认移除',
+      cancelLabel: '取消',
+      confirmKey: const Key('thread-tag-remove-confirm'),
     );
     if (confirmed != true || !mounted) return;
     final succeeded = await ref

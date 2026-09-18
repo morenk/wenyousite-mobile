@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_ports.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
 import 'package:wenyousite_mobile/features/media/application/recovered_media_selection.dart';
@@ -29,26 +30,16 @@ Future<List<MediaUploadInput>?> pickEditorImages(
   final picker = ref.read(editorImagePickerPortProvider);
   final recoveredStore = ref.read(recoveredMediaSelectionStoreProvider);
   if (recoveredStore.hasSelection(purpose)) {
-    final useRecovered = await showDialog<bool>(
+    final useRecovered = await showWenyouConfirmationDialog(
       context: context,
+      title: '恢复上次选择的图片？',
+      message: '应用在相册打开时被系统关闭了。你可以继续使用上次选中的图片。',
+      confirmLabel: '继续使用',
+      cancelLabel: '放弃',
+      confirmKey: const Key('recovered-image-selection-use'),
+      cancelKey: const Key('recovered-image-selection-discard'),
       useRootNavigator: false,
       barrierDismissible: false,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('恢复上次选择的图片？'),
-        content: const Text('应用在相册打开时被系统关闭了。你可以继续使用上次选中的图片。'),
-        actions: [
-          TextButton(
-            key: const Key('recovered-image-selection-discard'),
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('放弃'),
-          ),
-          FilledButton(
-            key: const Key('recovered-image-selection-use'),
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('继续使用'),
-          ),
-        ],
-      ),
     );
     if (!context.mounted) return null;
     if (useRecovered == true) {
@@ -85,26 +76,16 @@ Future<List<MediaUploadInput>?> pickEditorImages(
           .toList(growable: false);
     } on Object catch (error) {
       if (!context.mounted) return null;
-      final retry = await showDialog<bool>(
+      final retry = await showWenyouConfirmationDialog(
         context: context,
+        title: '选择图片失败',
+        message: _imageSelectionFailureMessage(error),
+        confirmLabel: '重新选择',
+        cancelLabel: '关闭',
+        confirmKey: const Key('image-picker-failure-retry'),
+        cancelKey: const Key('image-picker-failure-close'),
         useRootNavigator: false,
         barrierDismissible: false,
-        builder: (dialogContext) => AlertDialog(
-          title: const Text('选择图片失败'),
-          content: Text(_imageSelectionFailureMessage(error)),
-          actions: [
-            TextButton(
-              key: const Key('image-picker-failure-close'),
-              onPressed: () => Navigator.pop(dialogContext, false),
-              child: const Text('关闭'),
-            ),
-            FilledButton(
-              key: const Key('image-picker-failure-retry'),
-              onPressed: () => Navigator.pop(dialogContext, true),
-              child: const Text('重新选择'),
-            ),
-          ],
-        ),
       );
       if (retry != true) return null;
     }

@@ -11,6 +11,7 @@ import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart
 import 'package:wenyousite_mobile/features/media/presentation/editor_image_crop_dialog.dart';
 import 'package:wenyousite_mobile/features/media/presentation/image_crop_dialog.dart';
 
+import '../../support/button_finder.dart';
 import '../../support/deterministic_test_fonts.dart';
 import '../../support/fake_image_crop_processor.dart';
 import '../../support/media_compatibility_fixtures.dart';
@@ -53,7 +54,9 @@ void main() {
       expect(find.byKey(const Key('image-crop-viewport')), findsOneWidget);
       await tester.runAsync(() async {
         tester
-            .widget<FilledButton>(find.byKey(const Key('image-crop-confirm')))
+            .widget<FilledButton>(
+              findButtonControl(find.byKey(const Key('image-crop-confirm'))),
+            )
             .onPressed!();
         await processor.cropping;
       });
@@ -192,7 +195,7 @@ void main() {
     await tester.pump();
 
     final confirm = tester.widget<FilledButton>(
-      find.byKey(const Key('image-crop-confirm')),
+      findButtonControl(find.byKey(const Key('image-crop-confirm'))),
     );
     expect(confirm.onPressed, isNotNull);
     confirm.onPressed!();
@@ -243,7 +246,9 @@ void main() {
     expect(find.byKey(const Key('image-crop-error')), findsNothing);
     expect(find.byKey(const Key('image-crop-confirm')), findsOneWidget);
     tester
-        .widget<IconButton>(find.byKey(const Key('image-crop-close')))
+        .widget<IconButton>(
+          findButtonControl(find.byKey(const Key('image-crop-close'))),
+        )
         .onPressed!();
     await tester.pumpAndSettle();
   });
@@ -278,7 +283,9 @@ void main() {
     expect(processor.maximumInFlight, 1);
     expect(processor.prepared, 3);
     tester
-        .widget<IconButton>(find.byKey(const Key('image-crop-close')))
+        .widget<IconButton>(
+          findButtonControl(find.byKey(const Key('image-crop-close'))),
+        )
         .onPressed!();
     await tester.pumpAndSettle();
   });

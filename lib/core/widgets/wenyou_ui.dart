@@ -4,6 +4,7 @@ import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 
 export 'package:wenyousite_mobile/core/widgets/wenyou_actions.dart';
+export 'package:wenyousite_mobile/core/widgets/wenyou_async_button.dart';
 export 'package:wenyousite_mobile/core/widgets/wenyou_feedback.dart';
 export 'package:wenyousite_mobile/core/widgets/wenyou_snack_bar.dart';
 
@@ -532,87 +533,6 @@ class WenyouSectionHeader extends StatelessWidget {
         ),
         if (trailing != null) ...[SizedBox(width: tokens.space12), trailing!],
       ],
-    );
-  }
-}
-
-class WenyouAsyncPrimaryButton extends StatelessWidget {
-  const WenyouAsyncPrimaryButton({
-    required this.label,
-    required this.onPressed,
-    this.isLoading = false,
-    this.loadingLabel,
-    this.icon,
-    super.key,
-  });
-
-  final String label;
-  final VoidCallback? onPressed;
-  final bool isLoading;
-  final String? loadingLabel;
-  final String? icon;
-
-  @override
-  Widget build(BuildContext context) {
-    return WenyouAsyncButton(
-      label: label,
-      onPressed: onPressed,
-      isLoading: isLoading,
-      loadingLabel: loadingLabel,
-      icon: icon,
-      expand: true,
-    );
-  }
-}
-
-class WenyouAsyncButton extends StatelessWidget {
-  const WenyouAsyncButton({
-    required this.label,
-    required this.onPressed,
-    this.isLoading = false,
-    this.loadingLabel,
-    this.icon,
-    this.expand = false,
-    super.key,
-  });
-
-  final String label;
-  final VoidCallback? onPressed;
-  final bool isLoading;
-  final String? loadingLabel;
-  final String? icon;
-  final bool expand;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = context.wenyouTokens;
-    return SizedBox(
-      width: expand ? double.infinity : null,
-      height: tokens.minimumTouchTarget,
-      child: FilledButton(
-        onPressed: isLoading ? null : onPressed,
-        child: Semantics(
-          label: isLoading ? (loadingLabel ?? '$label，处理中') : label,
-          excludeSemantics: true,
-          child: isLoading
-              ? const SizedBox.square(
-                  key: ValueKey('loading'),
-                  dimension: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : Row(
-                  key: const ValueKey('label'),
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (icon != null) ...[
-                      WenyouIcon(icon!, size: 20),
-                      SizedBox(width: tokens.space8),
-                    ],
-                    Text(label),
-                  ],
-                ),
-        ),
-      ),
     );
   }
 }

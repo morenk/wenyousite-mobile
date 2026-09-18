@@ -22,6 +22,8 @@
 
 ## 当前优先级
 
+组件统一修缮（2026-09-19）：第一批确认弹窗、异步按钮和分页反馈已通过完整本地门禁与 Debug APK 构建，负责人已明确真机验收通过并授权合并清理；第二至四批分别处理底部弹层、表单字段与校验、身份与时间展示，前批验收并获授权合并后继续。第四批内容时间保留“分钟前／小时前／天前”，满三天后的日期取消时分，同年仅月日、跨年带年份；精确业务时间单独保留。调用点与交付记录见[组件统一验收](docs/architecture/component-consistency-acceptance.md)。候选后端来源为 `602f57324256f358aea27d204937f9e15644f9c7`。集成期间公网升级为 `5.23.0`，既有接口保持兼容；负责人已明确允许本批线上契约版本检查例外，独立收藏夹契约同步仍由 PR #41 承担。
+
 富文本跨端稳定性专项沿用[阶段计划](docs/architecture/rich-text-stability-plan.md)、[三端历史基线](docs/architecture/rich-text-stability-baseline.md)和[共享操作矩阵提案](docs/architecture/rich-text-stability-matrix.md)。这些记录描述 2026-09-10 的审查现场；当前依赖和后续整改以上方最新基线及下述整改计划为准。
 
 编辑器系统整改已于 2026-09-11 获负责人授权开始：按[正文语义整改计划](docs/architecture/editor-semantics-remediation-plan.md)依次登记入口、统一移动端结构消费、覆盖连续编辑状态、核对跨端独立结果并交付真机候选。当前 `1a66b68b` 列表候选仍待验收，不把局部检查通过记为整个编辑器整改完成。
@@ -52,7 +54,7 @@
 
 ## 持续债务
 
-- 存量 `StateNotifier` 59 处、跨 feature 内部层引用 35 条精确文件边、feature presentation 原始加载圆环 77 处已由架构门禁冻结；内部引用不再以文本匹配总量放行，新边与删除旧边不能相互抵扣。后续只在对应业务切片中逐步迁移为 `Notifier` / `AsyncNotifier`、feature facade 和共享状态组件，不做一次性大改。
+- 存量 `StateNotifier` 59 处、跨 feature 内部层引用 35 条精确文件边、feature presentation 原始加载圆环 31 处已由架构门禁冻结（组件统一第一批候选从原 77 上限收紧）；内部引用不再以文本匹配总量放行，新边与删除旧边不能相互抵扣。后续只在对应业务切片中逐步迁移为 `Notifier` / `AsyncNotifier`、feature facade 和共享状态组件，不做一次性大改。
 - `flutter_image_compress_common` 的当前可解析版本仍使用插件 Kotlin Gradle Plugin，Flutter 已提示未来需迁移 Built-in Kotlin；待上游提供兼容版本后单独升级和重新构建验收。
 - 动态卡片与详情的可选 `canInteract` 已在收藏主链按“字段缺失视为允许”消费：`false` 禁止新增收藏与移动但允许取消；点赞、评论和加油仍需独立接入该权限投影。
 - 主题列表、草稿、详情、邀请预览与订阅响应已提供稳定的 `categoryInfo` 分类展示投影；移动端当前仍通过旧 `category` slug 与分类目录解析名称，需要独立迁移共享主题读模型并保留未知历史分类的安全降级。

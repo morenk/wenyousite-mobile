@@ -8,6 +8,7 @@ import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_pagination.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/thread_feed/thread_feed_widgets.dart';
 import 'package:wenyousite_mobile/features/users/application/public_user_controller.dart';
@@ -172,34 +173,14 @@ class _ThreadSection extends StatelessWidget {
           },
         ),
         _contentBox(
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              if (section.failure != null) ...[
-                SizedBox(height: tokens.space12),
-                _ContentInlineFailure(
-                  failure: section.failure!,
-                  onRetry: onLoadMore,
-                ),
-              ],
-              if (section.hasMore && section.failure == null) ...[
-                SizedBox(height: tokens.space12),
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    key: Key('public-user-${tab.name}-load-more'),
-                    onPressed: section.isLoadingMore ? null : onLoadMore,
-                    icon: section.isLoadingMore
-                        ? const SizedBox.square(
-                            dimension: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const WenyouIcon(WenyouIconIds.navigationExpand),
-                    label: Text(section.isLoadingMore ? '正在加载' : '加载更多'),
-                  ),
-                ),
-              ],
-            ],
+          WenyouPaginationFooter(
+            hasMore: section.hasMore,
+            isLoading: section.isLoadingMore,
+            failure: section.failure,
+            onLoadMore: onLoadMore,
+            showEndLabel: false,
+            retryLabel: '重试加载更多',
+            loadMoreKey: Key('public-user-${tab.name}-load-more'),
           ),
         ),
       ],
@@ -389,27 +370,6 @@ class _ContentFailureState extends StatelessWidget {
           icon: const WenyouIcon(WenyouIconIds.actionRefresh),
           label: const Text('重新加载'),
         ),
-      ),
-    );
-  }
-}
-
-class _ContentInlineFailure extends StatelessWidget {
-  const _ContentInlineFailure({required this.failure, required this.onRetry});
-
-  final ApiFailure failure;
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    return WenyouStatusBanner(
-      tone: WenyouStatusTone.error,
-      message: failure.userMessage,
-      detail: wenyouFailureDetail(failure),
-      action: TextButton.icon(
-        onPressed: onRetry,
-        icon: const WenyouIcon(WenyouIconIds.actionRefresh, size: 18),
-        label: const Text('重试加载更多'),
       ),
     );
   }

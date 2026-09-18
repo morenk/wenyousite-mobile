@@ -27,6 +27,7 @@ class MomentBookmarkListState {
     this.pendingAction,
     this.failure,
     this.transientFailure,
+    this.loadMoreFailure,
   });
 
   final String folderId;
@@ -40,6 +41,8 @@ class MomentBookmarkListState {
   final MomentBookmarkPendingAction? pendingAction;
   final ApiFailure? failure;
   final ApiFailure? transientFailure;
+  // 分页重试不能接管移动、取消收藏或刷新失败的恢复动作。
+  final ApiFailure? loadMoreFailure;
 
   bool get isBusy => isRefreshing || isLoadingMore || pendingMomentId != null;
 
@@ -54,6 +57,7 @@ class MomentBookmarkListState {
     Object? pendingAction = _unsetBookmarkValue,
     Object? failure = _unsetBookmarkValue,
     Object? transientFailure = _unsetBookmarkValue,
+    Object? loadMoreFailure = _unsetBookmarkValue,
   }) {
     return MomentBookmarkListState(
       folderId: folderId,
@@ -77,6 +81,9 @@ class MomentBookmarkListState {
       transientFailure: identical(transientFailure, _unsetBookmarkValue)
           ? this.transientFailure
           : transientFailure as ApiFailure?,
+      loadMoreFailure: identical(loadMoreFailure, _unsetBookmarkValue)
+          ? this.loadMoreFailure
+          : loadMoreFailure as ApiFailure?,
     );
   }
 }
@@ -109,6 +116,7 @@ class MomentBookmarkListController
       isLoadingMore: false,
       failure: null,
       transientFailure: null,
+      loadMoreFailure: null,
     );
     try {
       final page = await _repository.fetchPage(folderId: state.folderId);
@@ -141,7 +149,11 @@ class MomentBookmarkListController
       return;
     }
     final epoch = _epoch;
-    state = state.copyWith(isLoadingMore: true, transientFailure: null);
+    state = state.copyWith(
+      isLoadingMore: true,
+      transientFailure: null,
+      loadMoreFailure: null,
+    );
     try {
       final page = await _repository.fetchPage(
         folderId: state.folderId,
@@ -160,12 +172,18 @@ class MomentBookmarkListController
         await _loadFirst(refreshing: state.items.isNotEmpty);
         return;
       }
-      state = state.copyWith(isLoadingMore: false, transientFailure: failure);
-    } on Object catch (error) {
-      if (!mounted || epoch != _epoch) return;
       state = state.copyWith(
         isLoadingMore: false,
-        transientFailure: mapApplicationFailure(error, '加载更多动态收藏失败，请重试。'),
+        transientFailure: failure,
+        loadMoreFailure: failure,
+      );
+    } on Object catch (error) {
+      if (!mounted || epoch != _epoch) return;
+      final failure = mapApplicationFailure(error, '加载更多动态收藏失败，请重试。');
+      state = state.copyWith(
+        isLoadingMore: false,
+        transientFailure: failure,
+        loadMoreFailure: failure,
       );
     }
   }

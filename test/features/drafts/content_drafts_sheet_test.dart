@@ -14,6 +14,29 @@ import '../../support/deterministic_test_fonts.dart';
 void main() {
   setUpAll(loadDeterministicTestFonts);
 
+  testWidgets('320dp 两倍字号快捷保存完整容纳文案', (tester) async {
+    tester.view.physicalSize = const Size(320, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final controller = await _readyController([]);
+    await _pumpSheet(tester, controller, currentContent: '当前正文', textScale: 2);
+    final label = find.text('保存到空闲位');
+    final element = tester.element(label);
+    final text = tester.widget<Text>(label);
+    final painter = TextPainter(
+      text: TextSpan(
+        text: text.data,
+        style: DefaultTextStyle.of(element).style.merge(text.style),
+      ),
+      textDirection: TextDirection.ltr,
+      textScaler: MediaQuery.textScalerOf(element),
+    )..layout(maxWidth: tester.getSize(label).width);
+    expect(tester.getSize(label).height, greaterThanOrEqualTo(painter.height));
+    painter.dispose();
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('云草稿恢复先传授权展示映射，正文仍保留原 URL', (tester) async {
     const source = 'https://cdn.example/original.gif';
     const display = MediaDisplay(
@@ -225,6 +248,7 @@ Future<void> _pumpSheet(
   required String currentContent,
   ValueChanged<String>? onRestore,
   ValueChanged<Map<String, MediaDisplay>>? onRestoreDisplays,
+  double textScale = 1,
 }) async {
   await tester.pumpWidget(
     ProviderScope(
@@ -235,6 +259,12 @@ Future<void> _pumpSheet(
       ],
       child: MaterialApp(
         theme: AppTheme.light,
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(
+            context,
+          ).copyWith(textScaler: TextScaler.linear(textScale)),
+          child: child!,
+        ),
         home: Scaffold(
           body: ContentDraftsSheet(
             draftSessionKey: _testDraftSessionKey,

@@ -9,6 +9,7 @@ import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_reorder_feedback.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/threads/application/subthread_management_controller.dart';
@@ -239,26 +240,14 @@ class _SubthreadRow extends ConsumerWidget {
                     ],
                   ),
                 ),
-                if (pending)
-                  const Padding(
-                    padding: EdgeInsets.all(12),
-                    child: SizedBox.square(
-                      dimension: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    ),
-                  )
-                else
-                  IconButton(
-                    key: ValueKey('subthread-delete-${item.id}'),
-                    tooltip: '删除 ${item.title}',
-                    onPressed: state.isBusy
-                        ? null
-                        : () => _delete(context, ref),
-                    icon: WenyouIcon(
-                      WenyouIconIds.actionDelete,
-                      color: Theme.of(context).colorScheme.error,
-                    ),
-                  ),
+                WenyouAsyncIconButton(
+                  key: ValueKey('subthread-delete-${item.id}'),
+                  label: '删除 ${item.title}',
+                  isLoading: pending,
+                  tone: WenyouAsyncButtonTone.destructive,
+                  onPressed: state.isBusy ? null : () => _delete(context, ref),
+                  icon: WenyouIconIds.actionDelete,
+                ),
               ],
             ),
           ),
@@ -279,29 +268,15 @@ class _SubthreadRow extends ConsumerWidget {
   }
 
   Future<void> _delete(BuildContext context, WidgetRef ref) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showWenyouConfirmationDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('确认删除这个子贴？'),
-        content: Text(
+      title: '确认删除这个子贴？',
+      message:
           '“${item.title}”${item.hasBody ? '的正文、' : '的'}${item.postCount} 个楼层及其回复会一起删除，且无法恢复。',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('取消'),
-          ),
-          FilledButton(
-            key: ValueKey('subthread-delete-confirm-${item.id}'),
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(dialogContext).colorScheme.error,
-              foregroundColor: Theme.of(dialogContext).colorScheme.onError,
-            ),
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('确认删除'),
-          ),
-        ],
-      ),
+      confirmLabel: '确认删除',
+      cancelLabel: '取消',
+      confirmKey: ValueKey('subthread-delete-confirm-${item.id}'),
+      tone: WenyouConfirmationTone.destructive,
     );
     if (confirmed != true || !context.mounted) return;
     final succeeded = await ref

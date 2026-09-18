@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/settings/application/login_sessions_controller.dart';
 import 'package:wenyousite_mobile/features/settings/domain/login_session_models.dart';
@@ -55,23 +56,13 @@ class LoginSessionsPage extends ConsumerWidget {
     LoginSessionsController notifier,
     LoginSessionModel session,
   ) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showWenyouConfirmationDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('退出这个登录终端？'),
-        content: Text('${_platformLabel(session.platform)}将立即失效，需要重新登录才能继续使用。'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('取消'),
-          ),
-          FilledButton(
-            key: const Key('login-session-revoke-confirm'),
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('退出终端'),
-          ),
-        ],
-      ),
+      title: '退出这个登录终端？',
+      message: '${_platformLabel(session.platform)}将立即失效，需要重新登录才能继续使用。',
+      confirmLabel: '退出终端',
+      cancelLabel: '取消',
+      confirmKey: const Key('login-session-revoke-confirm'),
     );
     if (confirmed != true) return;
     final succeeded = await notifier.revokeSession(session.id);
@@ -238,16 +229,14 @@ class _LoginSessionCard extends StatelessWidget {
             SizedBox(height: tokens.space16),
             SizedBox(
               width: double.infinity,
-              child: OutlinedButton.icon(
+              child: WenyouAsyncButton(
                 key: ValueKey('login-session-revoke-${session.id}'),
+                label: '退出此终端',
+                isLoading: isPending,
                 onPressed: isPending || disableAction ? null : onRevoke,
-                icon: isPending
-                    ? const SizedBox.square(
-                        dimension: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const WenyouIcon(WenyouIconIds.actionLogout),
-                label: Text(isPending ? '正在退出' : '退出此终端'),
+                loadingLabel: '正在退出',
+                icon: WenyouIconIds.actionLogout,
+                variant: WenyouAsyncButtonVariant.outlined,
               ),
             ),
           ],

@@ -343,18 +343,16 @@ class _DecisionCard extends StatelessWidget {
             SizedBox(height: tokens.space16),
             Align(
               alignment: Alignment.centerRight,
-              child: OutlinedButton.icon(
+              child: WenyouAsyncButton(
                 key: Key('appeal-open-${decision.id}'),
+                label: '提交申诉',
+                isLoading: submitting,
                 onPressed: submitting
                     ? null
                     : () => _openAppealSheet(context, decision),
-                icon: submitting
-                    ? const SizedBox.square(
-                        dimension: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const WenyouIcon(WenyouIconIds.contentReview),
-                label: Text(submitting ? '正在提交' : '提交申诉'),
+                loadingLabel: '正在提交',
+                icon: WenyouIconIds.contentReview,
+                variant: WenyouAsyncButtonVariant.outlined,
               ),
             ),
           ],
@@ -484,15 +482,11 @@ class _AppealSheetState extends ConsumerState<_AppealSheet> {
                   child: const Text('取消'),
                 ),
                 SizedBox(width: tokens.space8),
-                FilledButton(
+                WenyouAsyncButton(
                   key: const Key('appeal-submit'),
+                  label: '提交申诉',
+                  isLoading: submitting,
                   onPressed: submitting ? null : _submit,
-                  child: submitting
-                      ? const SizedBox.square(
-                          dimension: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Text('提交申诉'),
                 ),
               ],
             ),
