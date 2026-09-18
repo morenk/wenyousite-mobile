@@ -2,11 +2,11 @@
 
 ## 当前状态与批次边界
 
-2026-09-19：第一批实现与完整本地门禁、Debug APK 构建通过，候选／待负责人验收。工作区为 Windows 独立 Worktree `C:\Users\quhui\.codex\worktrees\component-consistency-1\wenyousite-mobile`，分支 `codex/20260919-component-consistency-1`，从 `origin/dev` 的 `cbd46995` 开始，不包含其他任务尚未提交的下拉框修改。
+2026-09-19：第一批候选已获负责人明确真机验收通过，已整合 dev 的选择控件变更并完成合并前集成验证；线上契约版本检查按下述负责人授权例外处理。工作区为 Windows 独立 Worktree `C:\Users\quhui\.codex\worktrees\component-consistency-1\wenyousite-mobile`，分支 `codex/20260919-component-consistency-1`，从 `origin/dev` 的 `cbd46995` 开始，不包含其他任务尚未提交的下拉框修改。
 
 | 批次 | 内容 | 状态 |
 | --- | --- | --- |
-| 1 | 确认弹窗、异步按钮、分页反馈 | 完整门禁与 APK 通过，待负责人验收 |
+| 1 | 确认弹窗、异步按钮、分页反馈 | 负责人验收通过，集成验证完成；线上契约版本检查获明确例外授权 |
 | 2 | 底部弹层的标题、关闭、安全区、键盘和滚动框架 | 未开始；第一批验收并获授权合并后推进 |
 | 3 | 用户名校验、邮箱字段及错误反馈 | 未开始；第二批验收并获授权合并后推进 |
 | 4 | 身份行、等级和时间展示 | 未开始；第三批验收并获授权合并后推进 |
@@ -132,9 +132,9 @@ Foundation 已 fetch origin 与 tags，最新正式 Tag 为 `v7.0.0`，与 pubsp
 - 截图复核：组件两倍字号、消息中心、收藏列表及管理面板（320／390／800dp、亮暗主题、1／2 倍字号）、主题详情的正文／概览／管理者入口。更新项仅为共享按钮尺寸、图标、结束文案与分页留白；创作页使用 compact 变体后继续通过原基线，没有更新正文或发布页截图。
 - 第一轮全量回归的 23 个失败分别为截图基线差异、云草稿按钮查找器重复匹配、发布按钮有效主题色断言；已逐项核对及调整。补充回归还发现收藏管理语义节点被并入卡片，已由共享图标按钮建立独立节点，完整收藏页 31 项复核通过。最终门禁结果以以下交付摘要为准。
 
-### 本地验证结果
+### 已验收候选的本地验证结果
 
-- 最终源码全量 Flutter 测试：4,506 项通过，1 项跳过。跳过项为 `test/core/diagnostics/diagnostic_live_receipt_test.dart`，仅在显式启用 `WENYOU_VALIDATE_SENTRY` 时验证 Sentry 线上回执，本轮未启用。
+- 已验收候选源码全量 Flutter 测试：4,506 项通过，1 项跳过。跳过项为 `test/core/diagnostics/diagnostic_live_receipt_test.dart`，仅在显式启用 `WENYOU_VALIDATE_SENTRY` 时验证 Sentry 线上回执，本轮未启用。
 - Windows 发布工具测试：18 项全部通过。
 - 全仓格式、应用与生成客户端 analyze（零问题）、架构、21 个模块文档、API 覆盖、OpenAPI 校验／再生成一致性及公网兼容性检查均通过。
 - 为确认草稿快捷保存的大字号裁切，中间一轮在尚无失败时主动停止；应用修正后已重新完整执行上述门禁，不将中断轮次冒充完成结果。
@@ -151,7 +151,7 @@ Foundation 已 fetch origin 与 tags，最新正式 Tag 为 `v7.0.0`，与 pubsp
 - 原构建产物：`C:/Users/quhui/.codex/worktrees/component-consistency-1/wenyousite-mobile/build/app/outputs/flutter-apk/app-debug.apk`。
 - 完整日志及旧失败证据：`D:/code/wenyousite/artifacts/component-consistency-1-20260919/`，最终通过日志为 `final-quality-gate.log`。
 - 2026-09-19 经负责人明确授权，已通过 `adb install -r` 安装至连接的 Android 真机（型号 `2509FPN0BC`）。安装前核对现有正式／Debug 两个包及候选 applicationId；安装后 `lastUpdateTime=2026-09-19 05:56:56`，设备内 `base.apk` SHA-256 与上述候选完全相同。应打开“温油站 Debug”（`site.wenyou.app.debug`）复验；完整安装证据为同交付目录的 `adb-install-verification.json`。
-- 安装核验通过，负责人真机验收仍待完成；安装成功不代表原问题已获验收通过。
+- 2026-09-19 负责人明确回复“真机验收通过，合并并清理”，对应源码 `e245e07d` 与上述已安装 APK；第一批负责人验收通过。
 
 ## 负责人真机验收清单
 
@@ -162,4 +162,19 @@ Foundation 已 fetch origin 与 tags，最新正式 Tag 为 `v7.0.0`，与 pubsp
 5. 亮色／黑夜、320–360dp、系统大字号检查确认框和按钮，无截断、溢出、点击区缩小或不可读加载状态。开启 TalkBack 检查处理中播报。
 6. 注销、邀请失效、成员权限和私信拒绝涉及真实副作用，仅使用专用测试账号；自动检查使用假仓储，不对共享开发数据批量操作。
 
-已按负责人授权安装 Debug 候选，尚未取得负责人对页面视觉或原问题的真机验收结果；未合并或发布。负责人确认候选验收通过后才更新完成状态并等待明确合并授权。
+第一批已取得负责人明确真机验收通过和合并清理授权；已整合已验收的选择控件变更，重新执行最终源码完整门禁，按下面记录的唯一例外授权合并 PR #44 并清理任务分支。未发布。
+
+## 合并前线上契约变化与负责人例外授权
+
+- 集成期间公网 Backend 从 `602f57324256f358aea27d204937f9e15644f9c7` / `5.22.0-dev.20260912.2` 升级到 `e214fd18637cb10d79576c5ab5a4cf42340fef71` / `5.23.0-dev.20260913.1`，Markdown 仍为 v5。
+- 以 JSON 键排序归一化逐项比较 OpenAPI：现有 paths 和 schemas 没有删除或内容变化；只新增两个收藏夹路径、四个重命名／删除 operation 和七个 schema。公网 `GET /threads?limit=1` 返回成功，必需字段与单封面结构保持兼容。完整差异证据保存在交付目录 `backend-additive-contract-review.json`。
+- 2026-09-19 负责人明确回复“允许本次契约版本检查例外”，授权范围仅为 PR #44 此次线上契约版本／来源检查；其余完整门禁仍必须通过。使用既有 `-ContinueAfterFailure` 收集全部检查，保留契约检查的失败及非零退出码，不修改或跳过门禁实现。
+- 新收藏夹契约与功能继续归属独立 PR #41，本批不引入该任务未验收的功能、不新增 API 覆盖豁免。
+
+### 最终集成验证
+
+- 集成基础为 `origin/dev` 的 `46a31cf558e8c012ac34a296c93d988b83b4bc1f`；保留两批共享行为并解决组合截图差异。
+- 精确整合检查：`flutter test --no-pub --update-goldens --concurrency=2 test/features/notifications/notifications_page_test.dart test/features/social/bookmark_list_page_test.dart test/features/threads/thread_detail_page_test.dart`，126 项通过；人工查看通知、收藏大字号暗色和主题概览截图。
+- `npm run check -- -TestConcurrency 2 -ContinueAfterFailure` 完整执行：4,519 项 Flutter 测试通过、1 项既有 Sentry 线上回执测试跳过；18 项 Windows 工具测试全部通过。格式、应用与生成客户端静态分析、架构、模块文档、API 覆盖、OpenAPI 校验与客户端再生成一致性均通过。
+- 唯一失败为公网契约版本／来源与本地固定来源不一致，命令如实退出 1；按负责人本次明确授权放行，不能标为完整门禁全绿。日志：交付目录 `integration-full-quality-gate.log`。
+- 本轮未重新构建或安装 APK；已验收 APK 仍绑定 `e245e07d`，最终集成验证绑定本次合并提交的应用源码。

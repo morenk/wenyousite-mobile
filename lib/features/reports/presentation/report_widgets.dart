@@ -134,7 +134,6 @@ class _ReportDialogState extends ConsumerState<_ReportDialog> {
                     key: const Key('report-reason'),
                     optionKeyPrefix: 'report-reason-option',
                     tooltip: '选择举报原因',
-                    icon: WenyouIconIds.actionReport,
                     selected: _reason,
                     enabled: !state.isSubmitting,
                     options: [

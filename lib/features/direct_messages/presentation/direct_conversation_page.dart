@@ -7,6 +7,7 @@ import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_selection_menu.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/direct_messages/application/direct_message_controllers.dart';
 import 'package:wenyousite_mobile/features/direct_messages/domain/direct_message_models.dart';
@@ -159,6 +160,7 @@ class _DirectConversationPageState extends ConsumerState<DirectConversationPage>
       actions: [
         if (canArchive)
           PopupMenuButton<_ConversationMenuAction>(
+            icon: const WenyouIcon(WenyouIconIds.actionMore),
             key: const Key('direct-conversation-archive'),
             enabled: !state.isMutating && !state.isRefreshing,
             tooltip: '更多会话操作',
@@ -166,16 +168,11 @@ class _DirectConversationPageState extends ConsumerState<DirectConversationPage>
             itemBuilder: (_) => [
               PopupMenuItem(
                 value: _ConversationMenuAction.toggleArchive,
-                child: ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: WenyouIcon(
-                    conversation.archivedAt == null
-                        ? WenyouIconIds.actionArchive
-                        : WenyouIconIds.actionUnarchive,
-                  ),
-                  title: Text(
-                    conversation.archivedAt == null ? '归档会话' : '移回会话列表',
-                  ),
+                child: WenyouMenuActionLabel(
+                  icon: conversation.archivedAt == null
+                      ? WenyouIconIds.actionArchive
+                      : WenyouIconIds.actionUnarchive,
+                  label: conversation.archivedAt == null ? '归档会话' : '移回会话列表',
                 ),
               ),
             ],

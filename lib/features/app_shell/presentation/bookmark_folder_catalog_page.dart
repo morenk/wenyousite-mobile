@@ -99,7 +99,6 @@ class _BookmarkFolderCatalogPageState
                         key: const Key('bookmark-folder-menu'),
                         optionKeyPrefix: 'bookmark-folder',
                         tooltip: '切换收藏夹',
-                        icon: WenyouIconIds.contentFolderOpen,
                         appearance: WenyouDropdownFilterAppearance.quiet,
                         enabled: !state.isBusy,
                         selected: selectedFolder.id,

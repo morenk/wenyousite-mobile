@@ -175,9 +175,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 350));
     await tester.tap(find.byKey(const Key('content-image-actions')));
     await tester.pumpAndSettle();
-    await tester.tap(
-      find.ancestor(of: find.text('添加到表情收藏'), matching: find.byType(ListTile)),
-    );
+    await tester.tap(find.text('添加到表情收藏'));
     await tester.pumpAndSettle();
 
     expect(repository.sources.single, isA<StickerDirectMessageSource>());
