@@ -1,6 +1,6 @@
 # 选择控件修缮候选验收
 
-状态：候选已构建，待负责人真机验收。任务分支：`codex/20260919-selection-polish`。
+状态：负责人已于 2026-09-19 验收通过，授权合并与清理任务分支。任务分支：`codex/20260919-selection-polish`。
 
 ## 目标与基线
 
@@ -58,7 +58,7 @@
 5. 检查草稿、私聊和图片更多操作；本轮不要求在共享公网数据上执行删除等破坏性操作。
 6. 切换浅色／深色和两倍字号，检查窄屏、底部安全区、系统返回、菜单外点击及连续打开关闭。
 
-未取得可复用的 Debug 会话，开发反馈以 Widget/Golden 为依据。首轮候选交付后，负责人明确要求直接 ADB 安装、不执行额外检测；已在当前连接真机覆盖安装，ADB 返回 Success。负责人随后要求继续调整子贴导航，当前仍待验收；负责人验收通过后，合并前对最终应用源码执行一次完整门禁，当前不合并、不发布。
+未取得可复用的 Debug 会话，开发反馈以 Widget/Golden 为依据。首轮候选交付后，负责人明确要求直接 ADB 安装、不执行额外检测；已在当前连接真机覆盖安装，ADB 返回 Success。负责人随后要求继续调整子贴导航；该轮交付时仍待验收，后续通过结果见下方验收记录。
 
 ## 子贴导航反馈调整（2026-09-19，候选／待负责人验收）
 
@@ -70,3 +70,9 @@
 - 最终验证入口：`npm run candidate:apk -- test/features/threads/thread_detail_page_test.dart test/core/widgets/wenyou_selection_surfaces_test.dart test/core/widgets/wenyou_filter_controls_test.dart -TestConcurrency 2`；全仓格式、应用与生成客户端静态分析及 105 项相关测试通过。另行通过文档、架构检查；最终流程日志为 `%TEMP%/wenyou-subthread-final-candidate.log`。
 - Debug APK 构建通过，大小 `183233778` 字节，SHA-256：`ce9c4ae867f7747bd9ef012ea9b438afcc06da6326cb4ee77e2e14abb9442785`。保留副本：`build/candidates/subthread-navigation-ce9c4ae8/wenyou-subthread-navigation-debug.apk`，同目录保留日志。版本沿用 `0.7.1-debug` / `95`，包名 `site.wenyou.app.debug`。
 - 已按负责人既有授权直接 ADB 覆盖安装，返回 `Success`；按要求未额外核验设备包信息或设备内哈希。请打开“温油站 Debug”复验标题居中、展开底色不变、目录标题移除及长目录滚动条，仍待负责人验收。
+
+## 负责人验收通过（2026-09-19）
+
+- 负责人在最新候选 ADB 安装后明确反馈“可以了合并清理分支”，本轮视觉修缮验收通过，并授权合并到 `dev`、清理本任务分支。
+- 对应应用源码：`a7caeb58794f2aa71ba563f79f5bcfb9402ac6e6`；安装包 SHA-256：`ce9c4ae867f7747bd9ef012ea9b438afcc06da6326cb4ee77e2e14abb9442785`。
+- 验收后只更新记录，不改变已验收应用源码；合并前执行完整门禁，保留历史候选与自动验证证据。本次不涉及正式发布。
