@@ -38,6 +38,9 @@ test('固定部署祖先导出同一 SHA，拒绝远端 dev 以外提交且不�
     listSource.backendRevision = deployed;
     const sourceManifestPath = path.join(mobile, 'contracts/markdown-editor-list-v1-source.json');
     fs.writeFileSync(sourceManifestPath, JSON.stringify(listSource));
+    const inlineSource = JSON.parse(fs.readFileSync(path.join(repository, 'contracts/markdown-inline-combinations-v1-source.json'), 'utf8'));
+    inlineSource.backendRevision = deployed;
+    fs.writeFileSync(path.join(mobile, 'contracts/markdown-inline-combinations-v1-source.json'), JSON.stringify(inlineSource));
     for (const name of ['sync_backend_contract.ps1', 'normalize_synced_contract.dart']) {
       fs.copyFileSync(path.join(repository, 'tool', name), path.join(mobile, 'tool', name));
     }
@@ -53,6 +56,8 @@ test('固定部署祖先导出同一 SHA，拒绝远端 dev 以外提交且不�
     assert.equal(fs.readFileSync(path.join(mobile, 'contracts/CHANGELOG.md'), 'utf8'), git('show', `${deployed}:contracts/CHANGELOG.md`) + '\n');
     for (const name of [
       'rich-text-behavior-v1-fixtures.json',
+      'markdown-inline-combinations-v1-fixtures.json',
+      'markdown-inline-combinations-v1.schema.json',
       'rich-text-behavior-v1.schema.json',
       'rich-text-behavior-results-v1.schema.json',
       'media-display-v1-fixtures.json',

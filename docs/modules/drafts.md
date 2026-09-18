@@ -102,6 +102,8 @@ Markdown 规范化和可见性由编辑器与核心 Markdown 能力保持，数�
 
 ## 13. 最近审查的契约版本和后端提交
 
+2026-09-19 来源复核：主契约固定已部署 Backend `602f57324256f358aea27d204937f9e15644f9c7`，相对 `6fdfa00eaf1f3056ba30f2ffbc529d12eed1c823` 的契约及移动端指南逐字相同，API `5.22.0-dev.20260912.2`；本模块行为无变化。新增行内组合测试语料另以独立 manifest 固定候选来源，不代表后端已部署该候选。
+
 2026-09-19 来源复核：API `5.22.0-dev.20260912.2`，后端 `602f57324256f358aea27d204937f9e15644f9c7`，与公网 `/meta` 一致。相对此前 `6fdfa00e`，契约文件与客户端指南无差异；重新生成客户端无差异，固定 editor-list 语料来源保持不变。
 
 本轮展示契约来源：API `5.22.0-dev.20260912.2`、Backend `6fdfa00eaf1f3056ba30f2ffbc529d12eed1c823`；新增 display／mediaDisplays；消费者已获负责人验收，检查与合并整合见本任务 PR 和全场景记录。仅既有 `markdown-editor-list-v1-fixtures.json` 保留 `062412601b3a8dbf4f64494115a2445d312dd53d` 来源与SHA-256，见 contracts/markdown-editor-list-v1-source.json；不将该独立语料误标为本轮主来源。
