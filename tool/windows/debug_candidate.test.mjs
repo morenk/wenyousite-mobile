@@ -51,6 +51,7 @@ exit 0
 `);
     await writeFile(path.join(fixture, 'flutter.ps1'), `
 Write-Host ('STUB flutter ' + ($args -join ' '))
+if ($args[0] -eq 'test') { Write-Host ('STUB_TEST_ARGUMENTS ' + (ConvertTo-Json -InputObject @($args) -Compress)) }
 if ($env:WENYOU_CANDIDATE_TEST_FAIL -eq 'analyze' -and $args[0] -eq 'analyze') { exit 7 }
 if ($env:WENYOU_CANDIDATE_TEST_FAIL -eq 'test' -and $args[0] -eq 'test') { exit 8 }
 if ($args[0] -eq 'build') {
@@ -90,6 +91,13 @@ exit 0
     assert.match(testLine, /test[\\/]features[\\/]sample[\\/]sample_test\.dart/);
     assert.match(testLine, /test[\\/]core/);
     assert.doesNotMatch(testLine, /--concurrency=2\s+test\s/);
+    const argumentLine = passed.stdout.split(/\r?\n/).find((line) => line.startsWith('STUB_TEST_ARGUMENTS '));
+    assert.ok(argumentLine, passed.stdout);
+    assert.deepEqual(JSON.parse(argumentLine.slice('STUB_TEST_ARGUMENTS '.length)), [
+      'test', '--concurrency=2',
+      path.join('test', 'features', 'sample', 'sample_test.dart'),
+      path.join('test', 'core'),
+    ]);
     assert.match(passed.stdout, /STUB flutter build apk --debug/);
     assert.match(passed.stdout, /build[\\/]app[\\/]outputs[\\/]flutter-apk[\\/]app-debug\.apk/);
     assert.match(passed.stdout, new RegExp(createHash('sha256').update(apkContents).digest('hex'), 'i'));
