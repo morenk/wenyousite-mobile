@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_invitation_controller.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_invitation_models.dart';
@@ -72,41 +73,29 @@ class ThreadInviteLinkPanel extends ConsumerWidget {
           ),
         ],
         SizedBox(height: tokens.space16),
-        OutlinedButton.icon(
+        WenyouAsyncButton(
           key: const Key('thread-invite-link-generate'),
+          label: '生成新邀请链接',
+          isLoading: state.isGenerating,
           onPressed: enabled && !state.isGenerating
               ? () => _confirmAndGenerate(context, ref)
               : null,
-          icon: state.isGenerating
-              ? const SizedBox.square(
-                  dimension: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const WenyouIcon(WenyouIconIds.securityPassword),
-          label: Text(state.isGenerating ? '正在生成新邀请' : '生成新邀请链接'),
+          loadingLabel: '正在生成新邀请',
+          icon: WenyouIconIds.securityPassword,
+          variant: WenyouAsyncButtonVariant.outlined,
         ),
       ],
     );
   }
 
   Future<void> _confirmAndGenerate(BuildContext context, WidgetRef ref) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showWenyouConfirmationDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('生成新的邀请链接？'),
-        content: const Text('如果这个主题已经有邀请链接，生成后旧链接会立即失效。确定继续吗？'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('取消'),
-          ),
-          FilledButton(
-            key: const Key('thread-invite-link-generate-confirm'),
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('生成并复制'),
-          ),
-        ],
-      ),
+      title: '生成新的邀请链接？',
+      message: '如果这个主题已经有邀请链接，生成后旧链接会立即失效。确定继续吗？',
+      confirmLabel: '生成并复制',
+      cancelLabel: '取消',
+      confirmKey: const Key('thread-invite-link-generate-confirm'),
     );
     if (confirmed != true || !context.mounted) return;
     final link = await ref

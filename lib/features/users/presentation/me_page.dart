@@ -790,18 +790,15 @@ class _LogoutAction extends ConsumerWidget {
           ),
           SizedBox(height: context.wenyouTokens.space8),
         ],
-        OutlinedButton.icon(
+        WenyouAsyncButton(
           key: const Key('logout-submit'),
+          label: logout.failure == null ? '退出当前账号' : '重试安全退出',
+          isLoading: logout.isSubmitting,
           onPressed: logout.isSubmitting
               ? null
               : () => _confirmAndLogout(context, ref),
-          icon: logout.isSubmitting
-              ? const SizedBox.square(
-                  dimension: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const WenyouIcon(WenyouIconIds.actionLogout),
-          label: Text(logout.failure == null ? '退出当前账号' : '重试安全退出'),
+          icon: WenyouIconIds.actionLogout,
+          variant: WenyouAsyncButtonVariant.outlined,
         ),
         if (logout.failure != null)
           TextButton(

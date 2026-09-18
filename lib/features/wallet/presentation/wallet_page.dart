@@ -7,6 +7,7 @@ import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_pagination.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_sliver_panel.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/wallet/application/wallet_controllers.dart';
@@ -290,35 +291,16 @@ class _WalletTransactionsPanel extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                if (state.loadMoreFailure != null) ...[
-                  SizedBox(height: tokens.space12),
-                  WenyouStatusBanner(
-                    tone: WenyouStatusTone.error,
-                    message: state.loadMoreFailure!.userMessage,
-                    detail: wenyouFailureDetail(state.loadMoreFailure),
-                    action: TextButton(
-                      key: const Key('wallet-load-more-retry'),
-                      onPressed: onLoadMore,
-                      child: const Text('重试加载'),
-                    ),
-                  ),
-                ],
-                if (state.hasMore) ...[
-                  SizedBox(height: tokens.space12),
-                  Center(
-                    child: OutlinedButton.icon(
-                      key: const Key('wallet-load-more'),
-                      onPressed: state.isLoadingMore ? null : onLoadMore,
-                      icon: state.isLoadingMore
-                          ? const SizedBox.square(
-                              dimension: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const WenyouIcon(WenyouIconIds.navigationExpand),
-                      label: const Text('加载更多'),
-                    ),
-                  ),
-                ],
+                WenyouPaginationFooter(
+                  hasMore: state.hasMore,
+                  isLoading: state.isLoadingMore,
+                  failure: state.loadMoreFailure,
+                  onLoadMore: onLoadMore,
+                  showEndLabel: false,
+                  retryLabel: '重试加载',
+                  loadMoreKey: const Key('wallet-load-more'),
+                  retryKey: const Key('wallet-load-more-retry'),
+                ),
               ],
             ),
           ),

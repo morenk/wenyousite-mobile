@@ -253,21 +253,15 @@ class _ReadyDrafts extends ConsumerWidget {
                 ),
                 SizedBox(height: tokens.space8),
               ],
-              SizedBox(
-                height: tokens.minimumTouchTarget,
-                child: FilledButton.icon(
-                  key: const Key('content-drafts-quick-save'),
-                  onPressed: !canSave || state.isBusy || state.usage.isFull
-                      ? null
-                      : () => controller.saveToNextSlot(currentContent),
-                  icon: state.pendingSlot == 0
-                      ? const SizedBox.square(
-                          dimension: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const WenyouIcon(WenyouIconIds.actionSave),
-                  label: const Text('保存到空闲位'),
-                ),
+              WenyouAsyncButton(
+                key: const Key('content-drafts-quick-save'),
+                label: '保存到空闲位',
+                expand: true,
+                isLoading: state.pendingSlot == 0,
+                onPressed: !canSave || state.isBusy || state.usage.isFull
+                    ? null
+                    : () => controller.saveToNextSlot(currentContent),
+                icon: WenyouIconIds.actionSave,
               ),
             ],
           ),
@@ -445,8 +439,10 @@ class _DraftSlotCard extends ConsumerWidget {
                     ],
                   ),
                 ),
-                TextButton(
+                WenyouAsyncButton(
                   key: Key('content-draft-save-$slot'),
+                  label: '保存到这里',
+                  isLoading: pending,
                   onPressed: !canSave || state.isBusy
                       ? null
                       : () => ref
@@ -456,12 +452,7 @@ class _DraftSlotCard extends ConsumerWidget {
                               ).notifier,
                             )
                             .createAtSlot(currentContent, slot),
-                  child: pending
-                      ? const SizedBox.square(
-                          dimension: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Text('保存到这里'),
+                  variant: WenyouAsyncButtonVariant.text,
                 ),
               ],
             )

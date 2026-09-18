@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/direct_messages/application/direct_message_controllers.dart';
 import 'package:wenyousite_mobile/features/direct_messages/domain/direct_message_models.dart';
@@ -200,23 +201,14 @@ class _DirectConversationPageState extends ConsumerState<DirectConversationPage>
     required bool accept,
   }) async {
     if (!accept) {
-      final confirmed = await showDialog<bool>(
+      final confirmed = await showWenyouConfirmationDialog(
         context: context,
-        builder: (dialogContext) => AlertDialog(
-          title: const Text('拒绝消息请求？'),
-          content: const Text('拒绝后首条消息会被删除，对方不能再次主动向你发起请求。'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext, false),
-              child: const Text('取消'),
-            ),
-            FilledButton(
-              key: const Key('direct-conversation-decline-confirm'),
-              onPressed: () => Navigator.pop(dialogContext, true),
-              child: const Text('确认拒绝'),
-            ),
-          ],
-        ),
+        title: '拒绝消息请求？',
+        message: '拒绝后首条消息会被删除，对方不能再次主动向你发起请求。',
+        confirmLabel: '确认拒绝',
+        cancelLabel: '取消',
+        confirmKey: const Key('direct-conversation-decline-confirm'),
+        tone: WenyouConfirmationTone.destructive,
       );
       if (confirmed != true || !context.mounted) return;
     }
@@ -236,23 +228,14 @@ class _DirectConversationPageState extends ConsumerState<DirectConversationPage>
             .conversation
             ?.status ==
         DirectConversationStatus.pending;
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showWenyouConfirmationDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('撤回消息？'),
-        content: Text(pending ? '撤回首条消息会同时取消这次消息请求。' : '撤回后双方只会看到撤回提示。'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('取消'),
-          ),
-          FilledButton(
-            key: const Key('direct-conversation-recall-confirm'),
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('确认撤回'),
-          ),
-        ],
-      ),
+      title: '撤回消息？',
+      message: pending ? '撤回首条消息会同时取消这次消息请求。' : '撤回后双方只会看到撤回提示。',
+      confirmLabel: '确认撤回',
+      cancelLabel: '取消',
+      confirmKey: const Key('direct-conversation-recall-confirm'),
+      tone: WenyouConfirmationTone.destructive,
     );
     if (confirmed != true || !context.mounted) return;
     final succeeded = await notifier.recall(message.id, now: _now);
@@ -395,28 +378,23 @@ class _IncomingRequestPanel extends StatelessWidget {
             Row(
               children: [
                 Expanded(
-                  child: OutlinedButton(
+                  child: WenyouAsyncButton(
                     key: const Key('direct-conversation-decline'),
+                    label: '拒绝',
+                    isLoading:
+                        state.action == DirectConversationAction.declining,
                     onPressed: state.isMutating ? null : onDecline,
-                    child: state.action == DirectConversationAction.declining
-                        ? const SizedBox.square(
-                            dimension: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Text('拒绝'),
+                    variant: WenyouAsyncButtonVariant.outlined,
                   ),
                 ),
                 SizedBox(width: tokens.space12),
                 Expanded(
-                  child: FilledButton(
+                  child: WenyouAsyncButton(
                     key: const Key('direct-conversation-accept'),
+                    label: '接受',
+                    isLoading:
+                        state.action == DirectConversationAction.accepting,
                     onPressed: state.isMutating ? null : onAccept,
-                    child: state.action == DirectConversationAction.accepting
-                        ? const SizedBox.square(
-                            dimension: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Text('接受'),
                   ),
                 ),
               ],

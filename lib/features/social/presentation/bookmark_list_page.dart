@@ -4,11 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
-import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_bookmark_folder_picker.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_bookmark_manage_sheet.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_pagination.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/social/application/bookmark_list_controller.dart';
 import 'package:wenyousite_mobile/features/social/application/bookmark_list_repository_ports.dart';
@@ -301,49 +301,17 @@ class _ReadyBookmarkList extends StatelessWidget {
                 ),
               ],
           ],
-          if (state.loadMoreFailure != null) ...[
-            SizedBox(height: tokens.space12),
-            _CenteredContent(
-              child: WenyouStatusBanner(
-                tone: WenyouStatusTone.error,
-                message: state.loadMoreFailure!.userMessage,
-                detail: wenyouFailureDetail(state.loadMoreFailure),
-                action: TextButton.icon(
-                  key: const Key('bookmark-list-load-more-retry'),
-                  onPressed: state.isBusy ? null : onLoadMore,
-                  icon: const WenyouIcon(WenyouIconIds.actionRefresh, size: 18),
-                  label: const Text('重试'),
-                ),
-              ),
+          _CenteredContent(
+            child: WenyouPaginationFooter(
+              hasMore: state.hasMore,
+              isLoading: state.isLoadingMore,
+              failure: state.loadMoreFailure,
+              onLoadMore: state.isBusy ? null : onLoadMore,
+              showEndLabel: state.items.isNotEmpty && !state.isRefreshingList,
+              loadMoreKey: const Key('bookmark-list-load-more'),
+              retryKey: const Key('bookmark-list-load-more-retry'),
             ),
-          ] else if (state.hasMore) ...[
-            SizedBox(height: tokens.space12),
-            _CenteredContent(
-              child: SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  key: const Key('bookmark-list-load-more'),
-                  onPressed: state.isBusy ? null : onLoadMore,
-                  icon: state.isLoadingMore
-                      ? const SizedBox.square(
-                          dimension: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const WenyouIcon(WenyouIconIds.navigationExpand),
-                  label: Text(state.isLoadingMore ? '正在加载' : '加载更多'),
-                ),
-              ),
-            ),
-          ] else if (state.items.isNotEmpty && !state.isRefreshingList) ...[
-            SizedBox(height: tokens.space12),
-            Text(
-              '没有更多了',
-              textAlign: TextAlign.center,
-              style: Theme.of(
-                context,
-              ).textTheme.wenyouCaption.copyWith(color: tokens.mutedText),
-            ),
-          ],
+          ),
         ],
       ),
     );
@@ -373,7 +341,6 @@ class _BookmarkThreadListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tokens = context.wenyouTokens;
     final isMoving = pendingAction == BookmarkPendingAction.move;
     final isRemoving = pendingAction == BookmarkPendingAction.remove;
     final onManage = disableActions || isMoving || isRemoving
@@ -389,32 +356,16 @@ class _BookmarkThreadListItem extends StatelessWidget {
       ),
       onTagTap: (tag) =>
           context.pushNamed('tag-threads', pathParameters: {'tagId': tag.id}),
-      trailing: Semantics(
-        container: true,
-        label: isMoving
+      trailing: WenyouAsyncIconButton(
+        key: ValueKey('bookmark-manage-${item.bookmarkId}'),
+        label: '管理收藏',
+        semanticLabel: '管理收藏：${item.title}',
+        loadingLabel: isMoving
             ? '正在移动收藏：${item.title}'
-            : isRemoving
-            ? '正在取消收藏：${item.title}'
-            : '管理收藏：${item.title}',
-        button: true,
-        enabled: !(disableActions || isMoving || isRemoving),
-        excludeSemantics: true,
-        onTap: onManage,
-        child: IconButton(
-          key: ValueKey('bookmark-manage-${item.bookmarkId}'),
-          tooltip: '管理收藏',
-          constraints: BoxConstraints.tightFor(
-            width: tokens.minimumTouchTarget,
-            height: tokens.minimumTouchTarget,
-          ),
-          onPressed: onManage,
-          icon: isMoving || isRemoving
-              ? const SizedBox.square(
-                  dimension: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const WenyouIcon(WenyouIconIds.actionMore, size: 18),
-        ),
+            : '正在取消收藏：${item.title}',
+        isLoading: isMoving || isRemoving,
+        onPressed: onManage,
+        icon: WenyouIconIds.actionMore,
       ),
     );
   }

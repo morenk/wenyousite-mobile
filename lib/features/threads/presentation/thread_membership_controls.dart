@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_member_management_controller.dart';
 
@@ -80,18 +81,16 @@ class ThreadMembershipControls extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          OutlinedButton.icon(
+          WenyouAsyncButton(
             key: const Key('thread-player-exit'),
+            label: '退出玩家身份',
+            isLoading: state.isSubmitting,
             onPressed: state.isSubmitting
                 ? null
                 : () => _confirmAndExit(context, ref),
-            icon: state.isSubmitting
-                ? const SizedBox.square(
-                    dimension: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const WenyouIcon(WenyouIconIds.actionLogout),
-            label: Text(state.isSubmitting ? '正在退出' : '退出玩家身份'),
+            loadingLabel: '正在退出',
+            icon: WenyouIconIds.actionLogout,
+            variant: WenyouAsyncButtonVariant.outlined,
           ),
           if (state.failure != null) ...[
             SizedBox(height: tokens.space12),
@@ -115,23 +114,13 @@ class ThreadMembershipControls extends ConsumerWidget {
   }
 
   Future<void> _confirmAndExit(BuildContext context, WidgetRef ref) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showWenyouConfirmationDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('退出玩家身份？'),
-        content: const Text('退出后会从“我参与的”主题中移除，并取消其他用户对你在本帖发言的订阅。'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('取消'),
-          ),
-          FilledButton(
-            key: const Key('thread-player-exit-confirm'),
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('确认退出'),
-          ),
-        ],
-      ),
+      title: '退出玩家身份？',
+      message: '退出后会从“我参与的”主题中移除，并取消其他用户对你在本帖发言的订阅。',
+      confirmLabel: '确认退出',
+      cancelLabel: '取消',
+      confirmKey: const Key('thread-player-exit-confirm'),
     );
     if (confirmed == true && context.mounted) await _exit(context, ref);
   }

@@ -191,15 +191,11 @@ class _ReportDialogState extends ConsumerState<_ReportDialog> {
             onPressed: state.isSubmitting ? null : () => Navigator.pop(context),
             child: const Text('取消'),
           ),
-          FilledButton(
+          WenyouAsyncButton(
             key: const Key('report-submit'),
+            label: '提交举报',
+            isLoading: state.isSubmitting,
             onPressed: state.isSubmitting ? null : _submit,
-            child: state.isSubmitting
-                ? const SizedBox.square(
-                    dimension: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Text('提交举报'),
           ),
         ],
       ),

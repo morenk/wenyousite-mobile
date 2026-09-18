@@ -8,6 +8,7 @@ import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_pagination.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_widgets.dart';
@@ -363,35 +364,17 @@ class _MomentSectionBody extends ConsumerWidget {
           if (index > 0) SizedBox(height: tokens.space12),
           _MomentResultCard(item: state.items[index]),
         ],
-        if (state.failure != null) ...[
-          SizedBox(height: tokens.space12),
-          _SearchInlineError(
-            failure: state.failure!,
-            onRetry: () =>
-                ref.read(searchControllerProvider.notifier).loadMoreMoments(),
-          ),
-        ],
-        if (state.hasMore && state.failure == null) ...[
-          SizedBox(height: tokens.space12),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              key: const Key('search-moments-load-more'),
-              onPressed: state.isLoadingMore
-                  ? null
-                  : () => ref
-                        .read(searchControllerProvider.notifier)
-                        .loadMoreMoments(),
-              icon: state.isLoadingMore
-                  ? const SizedBox.square(
-                      dimension: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const WenyouIcon(WenyouIconIds.navigationExpand),
-              label: Text(state.isLoadingMore ? '正在加载' : '加载更多动态'),
-            ),
-          ),
-        ],
+        WenyouPaginationFooter(
+          hasMore: state.hasMore,
+          isLoading: state.isLoadingMore,
+          failure: state.failure,
+          onLoadMore: () =>
+              ref.read(searchControllerProvider.notifier).loadMoreMoments(),
+          showEndLabel: false,
+          loadMoreLabel: '加载更多动态',
+          retryLabel: '重试加载更多',
+          loadMoreKey: const Key('search-moments-load-more'),
+        ),
       ],
     );
   }
@@ -491,35 +474,17 @@ class _PostSectionBody extends ConsumerWidget {
           if (index > 0) SizedBox(height: tokens.space12),
           _PostResultCard(item: state.items[index]),
         ],
-        if (state.failure != null) ...[
-          SizedBox(height: tokens.space12),
-          _SearchInlineError(
-            failure: state.failure!,
-            onRetry: () =>
-                ref.read(searchControllerProvider.notifier).loadMorePosts(),
-          ),
-        ],
-        if (state.hasMore && state.failure == null) ...[
-          SizedBox(height: tokens.space12),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              key: const Key('search-posts-load-more'),
-              onPressed: state.isLoadingMore
-                  ? null
-                  : () => ref
-                        .read(searchControllerProvider.notifier)
-                        .loadMorePosts(),
-              icon: state.isLoadingMore
-                  ? const SizedBox.square(
-                      dimension: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const WenyouIcon(WenyouIconIds.navigationExpand),
-              label: Text(state.isLoadingMore ? '正在加载' : '加载更多正文'),
-            ),
-          ),
-        ],
+        WenyouPaginationFooter(
+          hasMore: state.hasMore,
+          isLoading: state.isLoadingMore,
+          failure: state.failure,
+          onLoadMore: () =>
+              ref.read(searchControllerProvider.notifier).loadMorePosts(),
+          showEndLabel: false,
+          loadMoreLabel: '加载更多正文',
+          retryLabel: '重试加载更多',
+          loadMoreKey: const Key('search-posts-load-more'),
+        ),
       ],
     );
   }
@@ -690,27 +655,6 @@ class _SearchErrorState extends StatelessWidget {
           icon: const WenyouIcon(WenyouIconIds.actionRefresh),
           label: const Text('重试'),
         ),
-      ),
-    );
-  }
-}
-
-class _SearchInlineError extends StatelessWidget {
-  const _SearchInlineError({required this.failure, required this.onRetry});
-
-  final ApiFailure failure;
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    return WenyouStatusBanner(
-      tone: WenyouStatusTone.error,
-      message: failure.userMessage,
-      detail: wenyouFailureDetail(failure),
-      action: TextButton.icon(
-        onPressed: onRetry,
-        icon: const WenyouIcon(WenyouIconIds.actionRefresh, size: 18),
-        label: const Text('重试加载更多'),
       ),
     );
   }

@@ -62,20 +62,17 @@ class _MessageCenterPageState extends ConsumerState<MessageCenterPage> {
           if (selected == MessageCenterSections.notifications &&
               notificationUnread > 0 &&
               notificationState?.phase == NotificationListPhase.ready)
-            TextButton.icon(
+            WenyouAsyncButton(
               key: const Key('notification-mark-all-read'),
-              onPressed: notificationState!.isMutating
+              label: '全部已读',
+              isLoading:
+                  notificationState!.pendingAction ==
+                  NotificationPendingAction.markAllRead,
+              onPressed: notificationState.isMutating
                   ? null
                   : _markAllNotificationsRead,
-              icon:
-                  notificationState.pendingAction ==
-                      NotificationPendingAction.markAllRead
-                  ? const SizedBox.square(
-                      dimension: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const WenyouIcon(WenyouIconIds.actionMarkRead, size: 19),
-              label: const Text('全部已读'),
+              icon: WenyouIconIds.actionMarkRead,
+              variant: WenyouAsyncButtonVariant.text,
             ),
         ],
       ),
