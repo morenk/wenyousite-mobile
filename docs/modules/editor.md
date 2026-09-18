@@ -193,6 +193,8 @@ S5 于 2026-09-10 启动，已按要求安装 Debug 候选并核验设备内 APK
 
 ## 13. 最近审查的契约版本和后端提交
 
+2026-09-19 行内组合候选契约：独立语料 `markdown-inline-combinations-v1` revision 2 固定 Backend `f3cad6799d7fdd6b484d7341b3b918970767a190`，文件摘要见 `contracts/markdown-inline-combinations-v1-source.json`；依赖 Backend PR #22，未合并、未部署。32 种 marks、11,520 条邻接展开、384 条文本和 15 条命名场景供消费者回归；原 v7 的 48 条操作保持不变。主 HTTP 契约与公网 revision 更新到 `602f57324256f358aea27d204937f9e15644f9c7`，相对原 `6fdfa00` 的 `contracts/` 与移动端指南无差异，OpenAPI 验证及客户端再生成无差异；不将候选测试语料来源写成已部署版本。实现和真机验收仍待完成。
+
 本轮展示契约来源：API `5.22.0-dev.20260912.2`、Backend `6fdfa00eaf1f3056ba30f2ffbc529d12eed1c823`；新增 display／mediaDisplays；消费者已获负责人验收，检查与合并整合见本任务 PR 和全场景记录。仅既有 `markdown-editor-list-v1-fixtures.json` 保留 `062412601b3a8dbf4f64494115a2445d312dd53d` 来源与SHA-256，见 contracts/markdown-editor-list-v1-source.json；不将该独立语料误标为本轮主来源。
 
 2026-09-11 列表契约候选同步：Backend `062412601b3a8dbf4f64494115a2445d312dd53d`，OpenAPI `5.20.1-dev.20260911.1`；新增 editor-list v1 revision 2，夹具最初固定于 `aa1bcbd4d087f03a17817e9eca8bcd1f92bb53da`。同时同步收藏夹计数按当前用户可见性统计的契约说明；字段形状、块边界 v1 revision 2 与既有消费代码保持；列表消费者现已形成结构适配候选，真机验收待完成，见[候选验收记录](../architecture/editor-list-candidate-acceptance.md)。
