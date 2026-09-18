@@ -23,6 +23,8 @@
 
 候选流程中发现多测试路径被脚本合并为单一文件名，已由独立 chore `0243194a` 修正，并用实际参数数组验证旧实现失败／新实现通过。修正前的失败流程及表单回填补充前的中止流程均不作为候选证据。最终证据日志：`%TEMP%/wenyou-selection-candidate-verified.log`。
 
+- 应用源码提交：`d0754f8f6100a1bb26c3d7834e4ebb5baa21258f`；后续记录提交仅补充交付证据。
+- 保留副本：`D:/code/wenyousite/wenyousite-mobile/build/candidates/selection-polish-d0754f8f/wenyou-selection-polish-d0754f8f-debug.apk`，已核对副本 SHA-256；同目录保存 `candidate.log`。
 - 安装包：`D:\code\wenyousite\wenyousite-mobile\build\app\outputs\flutter-apk\app-debug.apk`。
 - 包名：`site.wenyou.app.debug`；应用名：`温油站 Debug`；APK 版本：`0.7.1-debug`，versionCode `95`。
 - 大小：`183233778` 字节。
