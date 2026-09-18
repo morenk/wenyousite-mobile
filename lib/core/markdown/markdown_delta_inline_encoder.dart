@@ -16,6 +16,7 @@ final class MarkdownDeltaInlineEncoder {
   final _pieces = <({String text, bool literal})>[];
   final _runs = <MarkdownInlineRun>[];
   final _legacy = StringBuffer();
+  bool _hasLiteralInput = false;
   Map<String, dynamic> _marks = const {};
   String? _codeSource;
 
@@ -27,6 +28,7 @@ final class MarkdownDeltaInlineEncoder {
       };
 
   void add(String text, Map<String, dynamic>? attributes) {
+    _hasLiteralInput |= attributes?[literalTextKey] == true;
     final marks = visibleMarks(attributes);
     final source = attributes?[MarkdownInlineCodeSource.key] as String?;
     if (!mapEquals(marks, _marks)) _finishRun();
@@ -36,7 +38,7 @@ final class MarkdownDeltaInlineEncoder {
     _pieces.add((text: text, literal: attributes?[literalTextKey] == true));
   }
 
-  void flush() {
+  void flush({bool preserveSourceWhitespace = false}) {
     _finishRun();
     if (_runs.isEmpty) return;
     final normalized = MarkdownInlineRuns.normalizeEdges(_runs);
@@ -44,9 +46,14 @@ final class MarkdownDeltaInlineEncoder {
     if (normalized.every((run) => run.marks.isEmpty)) {
       // 兼容原文和块级空白由外层编码器及最终语义门禁处理。
       // 无样式源码不能被此处行内回退猜测为用户新输入。
-      output.write(legacy);
+      output.write(
+        _hasLiteralInput && !preserveSourceWhitespace
+            ? _protectWhitespace(legacy)
+            : legacy,
+      );
       _legacy.clear();
       _runs.clear();
+      _hasLiteralInput = false;
       return;
     }
     var encoded =
@@ -65,9 +72,27 @@ final class MarkdownDeltaInlineEncoder {
     if (!MarkdownInlineRuns.matches(encoded, normalized)) {
       throw const MarkdownCodecException('行内格式无法安全保存');
     }
-    output.write(encoded);
+    output.write(
+      preserveSourceWhitespace ? encoded : _protectWhitespace(encoded),
+    );
     _legacy.clear();
     _runs.clear();
+    _hasLiteralInput = false;
+  }
+
+  // 新输入与格式区间的危险块级空白使用等价实体，不加入可见字符。
+  // 原始无属性兼容源码仍由既有块级保护处理。
+  static String _protectWhitespace(String source) {
+    final leading = source.replaceFirstMapped(
+      RegExp(r'^ {4,}'),
+      (match) => '&#32;' * match[0]!.length,
+    );
+    return leading.replaceFirstMapped(
+      RegExp(r' {2,}$'),
+      (match) => match.start > 0 && leading[match.start - 1] == '`'
+          ? ' ${'&#32;' * (match[0]!.length - 1)}'
+          : '&#32;' * match[0]!.length,
+    );
   }
 
   void _finishRun() {

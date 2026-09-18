@@ -39,6 +39,23 @@ void main() {
       r'`&amp;&#32;`',
       r'\&amp;',
       r'~~`a` b`c`~~',
+      r'~~x!~~`a`~~',
+      r'\**甲**',
+      r'**甲',
+      r'***甲***',
+      r'****甲****',
+      r'**甲 *乙* 丙**',
+      r'**甲** **乙**',
+      r'[**甲**](https://example.com/a)',
+      r'`**甲**`',
+      r'**&#42;甲&#42;**',
+      r'a**甲**b',
+      r'前**甲**后',
+      r'***x**y**z*',
+      r'***x**y**z',
+      r'~~~x~~y~~z~',
+      r'~~x~~y~~z',
+      r'~~x **y** z~~',
     ]) {
       final original = md.Document(
         extensionSet: md.ExtensionSet.gitHubFlavored,
@@ -58,6 +75,51 @@ void main() {
   });
   test('外部代码后实体与相邻删除线保留标准阅读语义', () {
     for (final (source, expected) in [
+      (
+        '*~~`甲`~~*~~乙~~',
+        [
+          {
+            'text': '甲',
+            'marks': {'italic': true, 'strike': true, 'code': true},
+          },
+          {
+            'text': '乙',
+            'marks': {'strike': true},
+          },
+        ],
+      ),
+      (
+        '&#x61;_`甲`&#x4E59;_&#x62;',
+        [
+          {'text': 'a', 'marks': {}},
+          {
+            'text': '甲',
+            'marks': {'italic': true, 'code': true},
+          },
+          {
+            'text': '乙',
+            'marks': {'italic': true},
+          },
+          {'text': 'b', 'marks': {}},
+        ],
+      ),
+      (
+        '_**[甲](https://example.com/inline-a)**_**乙**',
+        [
+          {
+            'text': '甲',
+            'marks': {
+              'italic': true,
+              'bold': true,
+              'link': 'https://example.com/inline-a',
+            },
+          },
+          {
+            'text': '乙',
+            'marks': {'bold': true},
+          },
+        ],
+      ),
       (
         '&#97;`甲`&#32;**[&#20057;](https://example.com/inline-a)**&#98;',
         [
@@ -172,9 +234,38 @@ void main() {
         expect(actual, expected, reason: '编辑: $source');
         final saved = MarkdownDeltaCodec.encode(delta);
         expect(
-          MarkdownDeltaCodec.encode(MarkdownDeltaCodec.decode(saved).delta),
-          saved,
+          inlineReadingUnits(
+            md.Document(
+              inlineSyntaxes: MarkdownInlineCompatibilitySyntax.create(),
+              extensionSet: md.ExtensionSet.gitHubFlavored,
+              encodeHtml: false,
+            ).parseInline(MarkdownInlineBoundary.canonicalize(saved)),
+          ),
+          expected,
+          reason: '再次保存阅读: $saved',
         );
+        final reopened = MarkdownDeltaCodec.decode(saved).delta;
+        final reopenedUnits = <Object>[
+          for (final operation in reopened.operations)
+            for (final rune
+                in (operation.data as String).replaceAll('\n', '').runes)
+              {
+                'text': String.fromCharCode(rune),
+                'marks': {
+                  for (final key in [
+                    'bold',
+                    'italic',
+                    'strike',
+                    'code',
+                    'link',
+                  ])
+                    if (operation.attributes?[key] != null)
+                      key: operation.attributes![key],
+                },
+              },
+        ];
+        expect(reopenedUnits, expected, reason: '再次保存重开: $saved');
+        expect(MarkdownDeltaCodec.encode(reopened), saved);
       } on Object catch (error) {
         failures.add('${item['id']}: $error');
       }

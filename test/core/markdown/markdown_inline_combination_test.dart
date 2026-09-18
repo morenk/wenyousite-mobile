@@ -4,6 +4,12 @@ import '../../support/inline_combination_assertions.dart';
 const _keys = ['bold', 'italic', 'strike', 'code', 'link'];
 
 void main() {
+  test('代码后正文尾空格不添加保护字符并稳定重开', () {
+    verifyInlineCombination([
+      ('甲', {'code': true}),
+      ('  ', {}),
+    ]);
+  });
   test('逻辑外层内部空格保留两侧共有样式', () {
     for (final outer in ['bold', 'strike', 'link']) {
       final marks = <String, Object>{

@@ -67,6 +67,11 @@ class MarkdownContent {
     r'''[!"#$%&'()*+,\-./:;<=>?@[\\\]^_`{|}~]''',
   );
   static const _wordJoiner = '\u2060';
+  static final _boundarySpaceEntity = RegExp(
+    r'^&#(?:0*32|[xX]0*20);|&#(?:0*32|[xX]0*20);$',
+  );
+  static bool hasBoundarySpaceEntities(String line) =>
+      _boundarySpaceEntity.hasMatch(line);
   static bool hasLeadingWhitespaceGuard(String line) =>
       line.startsWith('$_wordJoiner ') || line.startsWith('$_wordJoiner\t');
   static bool hasWhitespaceGuards(String line) =>
@@ -89,7 +94,7 @@ class MarkdownContent {
   /// by [literalizeLine]. This is used only while reopening saved drafts so
   /// escape slashes and whitespace guards are not exposed in the editor.
   static bool hasCanonicalLiteralEncoding(String line) =>
-      decodeLiteralSpans(line) != null;
+      hasBoundarySpaceEntities(line) || decodeLiteralSpans(line) != null;
 
   /// Replaces decoded literal characters with a private-use placeholder so a
   /// rich-line parser can still recognize supported formatting around them.

@@ -195,6 +195,11 @@ void main() {
 
   tearDownAll(() {
     if (export) {
+      expect(exports, hasLength(11904));
+      expect(
+        const String.fromEnvironment('CANDIDATE_SHA'),
+        matches(r'^[0-9a-f]{40}$'),
+      );
       final file = File('build/inline-combinations-mobile.json');
       file.parent.createSync(recursive: true);
       file.writeAsStringSync(

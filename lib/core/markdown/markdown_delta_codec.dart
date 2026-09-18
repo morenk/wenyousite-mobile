@@ -524,7 +524,12 @@ class MarkdownDeltaCodec {
             lineHasLiteralText || attributes?[literalTextAttribute] == true;
       }
       if (!isLineBreak) break;
-      inline.flush();
+      inline.flush(
+        preserveSourceWhitespace:
+            attributes?[MarkdownDeltaLineMetadata.guardedWhitespaceKey] ==
+                true ||
+            attributes?[literalLineAttribute] == true,
+      );
       final encodedLine = MarkdownDeltaBlockEncoder.encode(
         line.toString(),
         attributes,

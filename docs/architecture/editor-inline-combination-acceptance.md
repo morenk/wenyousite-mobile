@@ -14,7 +14,7 @@
 
 编码器优先保留既有规范拼写，必要时按共享标记前缀嵌套，选择无歧义的星号/下划线边界及字符实体。每个候选拼写均经过独立 Markdown AST 的逐字文字/marks 检查，最终完整文档语义门禁继续有效。非代码空格只保留两侧共有 marks，代码内部空格、反引号、反斜杠和实体字面值保持。纯兼容源码继续交由原块级编码处理，不扩展本次行内转换的适用范围。
 
-Dart Markdown 7.3.1 对闭合代码后第一个字符实体有额外 backquote 拒绝条件，部分相邻删除线与实体组合还会触发 `openersBottom` 缓存索引残留。写入使用经过阅读校验的等价拼写；读取增加两条局部 InlineSyntax：实体委托原解析器单独校验解码，明确完整的删除线包裹 code span 在原定界符开闭规则通过后提前消费。编辑与阅读共用，不改依赖缓存，不注入格式占位字符。跨端读取以另一端实际候选导出进行独立验证。
+Dart Markdown 7.3.1 对闭合代码后第一个字符实体有额外 backquote 拒绝条件，部分相邻删除线与实体组合还会触发 `openersBottom` 缓存索引残留。写入使用经过阅读校验的等价拼写；新 literal 输入的段落边界空格采用实体并保留来源，已有 guarded/literal 源码继续沿用原保护路径。读取增加局部 InlineSyntax：实体委托原解析器单独校验解码，明确完整的删除线包裹 code span 在原定界符开闭规则通过后提前消费；无嵌套双星/双波浪纯文字共用受限适配，仅在 opener 不能关闭前方格式、原开闭规则通过且独立原解析恰为单一目标标签且全部子节点为 Text 时提前消费，三连及更长定界符、嵌套和转义仍交给原解析器；代码原子也不得抢占前方闭合符。编辑与阅读共用，不改依赖缓存，不注入格式占位字符。跨端读取以另一端实际候选导出进行独立验证。
 
 ## 契约与检查记录
 
@@ -23,9 +23,13 @@ Dart Markdown 7.3.1 对闭合代码后第一个字符实体有额外 backquote �
 - `test/features/editor/editor_inline_combination_contract_test.dart`：32 种 marks、11,520 条邻接（含 0/1/2 空格及中英文外侧上下文、不同链接目标）、384 条特殊文字、15 条命名场景。
 - `test/core/markdown/markdown_inline_combination_test.dart`：独立阅读 AST、代码字面内容、共享空格样式和稳定保存。
 - `test/features/editor/editor_inline_combination_entry_test.dart`：真实长按、整词原选区、部分/反向混合选区、底部工具栏、逐字样式、取消、撤销/重做，真实主题页面输入/快照/重开/发布，以及站内结构化剪贴板、编辑/阅读实际字形。
-- 格式策略与既有阅读复制回归同步为保留代码组合。最终门禁、旧实现对照及 APK 信息在候选验证结束后补录。
+- 格式策略与既有阅读复制回归同步为保留代码组合。最终完整门禁及 APK 信息在候选验证结束后补录。
 - 基线 `cbd46995` 上仅恢复旧编码器和格式策略，新增“真实长按原词后点击斜体”回归失败（代码属性被清除，Flutter 退出码 1）；通过字节备份和 finally 恢复候选文件后，同一回归通过。此证据确认旧策略与新组合需求冲突，不冒充未取得原文的真机复现。
-- `test/features/editor/editor_inline_combination_cross_test.dart` 默认验证两条外部解析反例及转义/代码/未闭合保护；传入 `--dart-define=INLINE_COMBINATION_WEB_IMPORT=<JSON绝对路径>` 时消费完整 Web 实际导出，验证阅读 AST、逐字编辑 marks、再次保存和重开。
+- `test/features/editor/editor_inline_combination_cross_test.dart` 默认验证外部解析反例及转义/代码/未闭合保护；传入 `--dart-define=INLINE_COMBINATION_WEB_IMPORT=<JSON绝对路径>` 时消费完整 Web 实际导出，验证阅读 AST、逐字编辑 marks、再次保存和重开。
+
+## 跨端候选检查边界
+
+Web 输入固定 [Frontend PR #26](https://github.com/morenk/wenyousite-frontend/pull/26) 的 daa5e59c9c40cdd30b7d9cb6389c3616901a015a，实际 11,904 条 JSON 的 SHA-256 为 b1b4ba04321e54399245ee7f57d08996445eed10110f694262caf2beba7467e1。首轮 38 个失败分为 21 个粗体闭合、2 个大写十六进制实体和 15 个边界空格保存问题；收紧代码原子的闭合优先级后，另记录 30 个同源的后续纯文字删除线失败。失败轮不作为通过证据；最终互读必须分别核对 incoming、saved 阅读 AST、再次解码逐字 marks 和保存幂等。
 
 ## 负责人真机复验
 

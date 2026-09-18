@@ -6,12 +6,18 @@ abstract final class MarkdownInlineCompatibilitySyntax {
   static List<md.InlineSyntax> create() => [
     _EntityAfterBacktick(),
     _StruckCode(),
+    _PlainFormatting('**', 'strong', md.EmphasisSyntax.asterisk()),
+    _PlainFormatting('~~', 'del', md.StrikethroughSyntax()),
   ];
 }
 
 class _EntityAfterBacktick extends md.InlineSyntax {
   _EntityAfterBacktick()
-    : super(md.DecodeHtmlSyntax().pattern.pattern, startCharacter: 38);
+    : super(
+        md.DecodeHtmlSyntax().pattern.pattern,
+        startCharacter: 38,
+        caseSensitive: false,
+      );
 
   @override
   bool tryMatch(md.InlineParser parser, [int? startMatchPos]) {
@@ -61,7 +67,9 @@ class _StruckCode extends md.InlineSyntax {
       node: md.Text('~~'),
       allowIntraWord: true,
     );
-    if (delimiter(start)?.canOpen != true ||
+    final opener = delimiter(start);
+    if (opener?.canOpen != true ||
+        opener!.canClose ||
         delimiter(code.end)?.canClose != true) {
       return false;
     }
@@ -82,4 +90,66 @@ class _StruckCode extends md.InlineSyntax {
     parser.addNode(md.Element('del', nodes));
     return true;
   }
+}
+
+/// 无嵌套的双定界符纯文字可独立证明语义，避开相邻格式的索引缓存缺陷。
+class _PlainFormatting extends md.InlineSyntax {
+  _PlainFormatting(this.marker, this.tag, this.syntax)
+    : super(
+        '${RegExp.escape(marker)}'
+        r'([^*_~`\\\[\]<\r\n]+)'
+        '${RegExp.escape(marker)}',
+        startCharacter: marker.codeUnitAt(0),
+      );
+  final String marker;
+  final String tag;
+  final md.DelimiterSyntax syntax;
+
+  @override
+  bool tryMatch(md.InlineParser parser, [int? startMatchPos]) {
+    final start = startMatchPos ?? parser.pos;
+    if (!parser.source.startsWith(marker, start) ||
+        (start > 0 && parser.source[start - 1] == marker[0])) {
+      return false;
+    }
+    final match = pattern.matchAsPrefix(parser.source, start);
+    if (match == null ||
+        (match.end < parser.source.length &&
+            parser.source[match.end] == marker[0])) {
+      return false;
+    }
+    md.DelimiterRun? delimiter(int offset) => md.DelimiterRun.tryParse(
+      parser,
+      offset,
+      offset + 2,
+      syntax: syntax,
+      tags: [md.DelimiterTag(tag, 2)],
+      node: md.Text(marker),
+      allowIntraWord: true,
+    );
+    final opener = delimiter(start);
+    if (opener?.canOpen != true ||
+        opener!.canClose ||
+        delimiter(match.end - 2)?.canClose != true) {
+      return false;
+    }
+    final nodes = md.Document(
+      extensionSet: md.ExtensionSet.gitHubFlavored,
+      encodeHtml: parser.encodeHtml,
+    ).parseInline(match[0]!);
+    if (nodes.length != 1 || nodes.single is! md.Element) return false;
+    final element = nodes.single as md.Element;
+    if (element.tag != tag ||
+        element.children == null ||
+        !element.children!.every((node) => node is md.Text)) {
+      return false;
+    }
+    parser.writeText();
+    parser.addNode(element);
+    parser.consume(match.end - start);
+    return true;
+  }
+
+  @override
+  bool onMatch(md.InlineParser parser, Match match) => false;
 }
