@@ -150,7 +150,8 @@ Foundation 已 fetch origin 与 tags，最新正式 Tag 为 `v7.0.0`，与 pubsp
 - 稳定交付文件：`D:/code/wenyousite/artifacts/component-consistency-1-20260919/wenyou-debug-95-ed3c5dee.apk`，复制后重新校验哈希相同。
 - 原构建产物：`C:/Users/quhui/.codex/worktrees/component-consistency-1/wenyousite-mobile/build/app/outputs/flutter-apk/app-debug.apk`。
 - 完整日志及旧失败证据：`D:/code/wenyousite/artifacts/component-consistency-1-20260919/`，最终通过日志为 `final-quality-gate.log`。
-- 未安装设备，未执行真机验收；此包仅为候选，不代表原问题已获负责人验收通过。
+- 2026-09-19 经负责人明确授权，已通过 `adb install -r` 安装至连接的 Android 真机（型号 `2509FPN0BC`）。安装前核对现有正式／Debug 两个包及候选 applicationId；安装后 `lastUpdateTime=2026-09-19 05:56:56`，设备内 `base.apk` SHA-256 与上述候选完全相同。应打开“温油站 Debug”（`site.wenyou.app.debug`）复验；完整安装证据为同交付目录的 `adb-install-verification.json`。
+- 安装核验通过，负责人真机验收仍待完成；安装成功不代表原问题已获验收通过。
 
 ## 负责人真机验收清单
 
@@ -161,4 +162,4 @@ Foundation 已 fetch origin 与 tags，最新正式 Tag 为 `v7.0.0`，与 pubsp
 5. 亮色／黑夜、320–360dp、系统大字号检查确认框和按钮，无截断、溢出、点击区缩小或不可读加载状态。开启 TalkBack 检查处理中播报。
 6. 注销、邀请失效、成员权限和私信拒绝涉及真实副作用，仅使用专用测试账号；自动检查使用假仓储，不对共享开发数据批量操作。
 
-没有可复用且授权的 Debug 会话，本任务不宣称已完成页面视觉或真机验收；不自行安装、合并、发布。负责人确认候选验收通过后才更新完成状态并等待明确合并授权。
+已按负责人授权安装 Debug 候选，尚未取得负责人对页面视觉或原问题的真机验收结果；未合并或发布。负责人确认候选验收通过后才更新完成状态并等待明确合并授权。
