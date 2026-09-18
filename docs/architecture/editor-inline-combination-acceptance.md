@@ -1,6 +1,6 @@
 # 行内格式组合候选验收
 
-状态：候选验证中／待负责人验收。不得以自动测试或构建代替原问题的真机复验。
+状态：候选验证通过／待负责人验收。不得以自动测试或构建代替原问题的真机复验。
 
 ## 原始反馈与范围
 
@@ -23,7 +23,7 @@ Dart Markdown 7.3.1 对闭合代码后第一个字符实体有额外 backquote �
 - `test/features/editor/editor_inline_combination_contract_test.dart`：32 种 marks、11,520 条邻接（含 0/1/2 空格及中英文外侧上下文、不同链接目标）、384 条特殊文字、15 条命名场景。
 - `test/core/markdown/markdown_inline_combination_test.dart`：独立阅读 AST、代码字面内容、共享空格样式和稳定保存。
 - `test/features/editor/editor_inline_combination_entry_test.dart`：真实长按、整词原选区、部分/反向混合选区、底部工具栏、逐字样式、取消、撤销/重做，真实主题页面输入/快照/重开/发布，以及站内结构化剪贴板、编辑/阅读实际字形。
-- 格式策略与既有阅读复制回归同步为保留代码组合。最终完整门禁及 APK 信息在候选验证结束后补录。
+- 格式策略与既有阅读复制回归同步为保留代码组合。最终完整门禁及 APK 信息见下方记录。
 - 基线 `cbd46995` 上仅恢复旧编码器和格式策略，新增“真实长按原词后点击斜体”回归失败（代码属性被清除，Flutter 退出码 1）；通过字节备份和 finally 恢复候选文件后，同一回归通过。此证据确认旧策略与新组合需求冲突，不冒充未取得原文的真机复现。
 - `test/features/editor/editor_inline_combination_cross_test.dart` 默认验证外部解析反例及转义/代码/未闭合保护；传入 `--dart-define=INLINE_COMBINATION_WEB_IMPORT=<JSON绝对路径>` 时消费完整 Web 实际导出，验证阅读 AST、逐字编辑 marks、再次保存和重开。
 
@@ -48,6 +48,18 @@ Web 最终候选 `e3e23f02093240ea8ee1f63d657cd56998d91e58` 使用原始 importe
 独立审查进一步提供 `&#x61;_**~~甲~~**_**a\_b**b`：后段原本应为粗体字面 `a_b`，但旧纯文字适配排除了反斜杠和下划线，退回原解析缺陷并泄露双星。新增回归在旧实现真实失败（`inline-escaped-old-red.log`）；候选允许不重叠的转义双字符与普通文字分支扫描，词内下划线和转义标点必须仍经独立原片段 AST 证明为单一目标标签且子节点全为 Text。保持精确双定界符、开闭优先级及嵌套拒绝。粗体/删除线各自的 `a\_b`、`a\*b`、`a_b` 六个变体及原负例通过；Web 文本 384 条与自产文本 384 条重新通过（日志 `inline-escaped-cross.log`、`inline-escaped-own-text.log`），无需重复未受影响的中央邻接互读。
 
 应用源码固定 `9b90b0f3a94dfe6fb11c03bb29f4482b5d53b3c2` 后，全量测试收集为 4,528 通过、1 项既有跳过、2 条旧预期失败。失败分别为工具栏仍要求加粗清除代码，以及新外部粘贴仍要求 WJ 空白保护；均与本次独立组合及不注入字符的明确需求冲突。只更新对应测试，补充各格式分别取消、实际文字、无 WJ、保存重开稳定断言；`editor_toolbar_test.dart` 与 `rich_editor_session_test.dart` 共 63 项通过（`inline-updated-legacy-expectations.log`），应用源码不变。此失败轮不作为完整门禁通过证据。
+
+## 最终 Windows 验证与安装包
+
+2026-09-19，在提交 `6c7ab7d417e3b3d653e8d3796adc52fa4c273865` 上运行 `npm run check:apk -- -TestConcurrency 4`，真实退出码 0，完整日志为工作区忽略文件 `inline-check-apk-final-candidate.log`。应用源码固定 `9b90b0f3a94dfe6fb11c03bb29f4482b5d53b3c2`；后续仅测试与验收记录，无应用、Android、依赖或生成客户端差异。
+
+- 全仓格式、应用及生成客户端全量静态分析零问题，架构、21 个模块文档、API 覆盖、契约固定来源/摘要、公网兼容和客户端再生成一致性全部通过。
+- 完整 `test/` 共 4,530 项通过，1 项既有跳过：`test/core/diagnostics/diagnostic_live_receipt_test.dart` 默认关闭的线上 Sentry 回执；18 项 Windows 工具测试通过。
+- 直接受影响路径包括 `test/core/markdown/`、`test/core/widgets/wenyou_markdown_test.dart`、`test/features/editor/`；完整入口包含新增组合、真实长按/工具栏、剪贴板、主题页面保存/重开/发布、撤销重做和字形测试。外部导入专项及红绿回归的实际文件、样本与日志见前文。
+- 同次 Debug APK 构建成功，`aapt dump badging` 确认应用为“温油站 Debug”、包名 `site.wenyou.app.debug`、`versionName=0.7.1-debug`、`versionCode=95`，最低 API 26，包含开发用 ARM32/ARM64/x86_64。
+- APK：`C:\Users\quhui\.codex\worktrees\65a5\wenyousite-mobile\build\app\outputs\flutter-apk\app-debug.apk`，183,257,418 字节；SHA-256：`fa1b0c2ab472dce3b73aaf0a37ede99a0ba69e45353997b401beb01dc3089066`。
+
+[Mobile PR #42](https://github.com/morenk/wenyousite-mobile/pull/42) 保持候选草稿。未安装设备，未执行负责人真机验收，未合并、部署或发布；原移动端输入与原始选区仍未取得，因此不得标记原问题修复完成。
 
 ## 负责人真机复验
 
