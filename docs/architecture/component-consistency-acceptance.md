@@ -142,6 +142,8 @@ Foundation 已 fetch origin 与 tags，最新正式 Tag 为 `v7.0.0`，与 pubsp
 
 ### Debug APK 交付
 
+- 应用源码提交：`e245e07d5dfb949fff396b9e275171b194f95b92`；此前契约来源 chore 为 `dc3e52a4`。后续交付补记仅修改文档，不改变对应源码或 APK。
+
 - 应用 ID：`site.wenyou.app.debug`；APK versionName：`0.7.1-debug`；versionCode：`95`（pubspec 为 `0.7.1+95`，本批未晋级版本）。
 - 大小：183,228,110 字节。
 - SHA-256：`ed3c5dee8dd2ce1b7f014fcadb0feab1564d5222c40fa7fd77d56192f77fe5e7`。
