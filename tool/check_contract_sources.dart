@@ -51,8 +51,9 @@ void main() {
       final hash = sha256
           .convert(File('contracts/$name').readAsBytesSync())
           .toString();
-      if (files[name] != hash)
+      if (files[name] != hash) {
         throw FormatException('固定行内组合契约SHA-256不一致：$name');
+      }
     }
     stdout.writeln('固定行内组合契约来源验证通过：${inlineSource['backendRevision']}。');
   } on Object catch (error) {

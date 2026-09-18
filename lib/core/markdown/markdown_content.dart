@@ -149,6 +149,17 @@ class MarkdownContent {
 
     var index = 0;
     while (index < source.length) {
+      // code span 的反斜杠和实体都是可见代码，不参与字面转义恢复。
+      if (source[index] == '`' && (index == 0 || source[index - 1] != '`')) {
+        final code = RegExp(
+          r'(`+(?!`))((?:.|\n)*?[^`])\1(?!`)',
+        ).matchAsPrefix(source, index);
+        if (code != null) {
+          plain.write(code.group(0));
+          index = code.end;
+          continue;
+        }
+      }
       if (source[index] != r'\') {
         plain.write(source[index]);
         index += 1;
@@ -361,11 +372,11 @@ class MarkdownContent {
     String? marker;
     var markerLength = 0;
     for (var index = 0; index < lines.length; index++) {
-      final token = _fenceStart.firstMatch(lines[index])?.group(1);
       if (marker == null) {
-        if (token == null) continue;
-        marker = token[0];
-        markerLength = token.length;
+        final opening = _openingFence(lines[index]);
+        if (opening == null) continue;
+        marker = opening.marker;
+        markerLength = opening.length;
         affected.add(index);
         continue;
       }
@@ -684,8 +695,15 @@ class MarkdownContent {
   }
 
   static _Fence? _openingFence(String line) {
-    final match = RegExp(r'^ {0,3}(`{3,}|~{3,})').firstMatch(line);
+    final match = _fenceStart.firstMatch(line);
     final token = match?.group(1);
+    // CommonMark 的反引号围栏 info string 不能再含反引号；同一行
+    // 三反引号包住含双反引号的正文仍是合法 code span。
+    if (token != null &&
+        token[0] == '`' &&
+        line.substring(match!.end).contains('`')) {
+      return null;
+    }
     return token == null ? null : _Fence(token[0], token.length);
   }
 
