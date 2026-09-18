@@ -207,7 +207,7 @@ void main() {
       final cases = samples
           .cast<Map>()
           .where(
-          (item) => !textOnly || (item['id'] as String).startsWith('text:'),
+            (item) => !textOnly || (item['id'] as String).startsWith('text:'),
           )
           .toList();
       expect(cases.length, textOnly ? 384 : 11904);

@@ -37,6 +37,14 @@ Web 输入固定 [Frontend PR #26](https://github.com/morenk/wenyousite-frontend
 
 后续最小修正将新规范输入的全部段落前置空格编码为实体，既有 guarded/literal 源码继续走原兼容路径。独立阅读断言升级为整段 `parseLines`，并覆盖全部 32 种 marks 的两/三个边界空格、纯空格及代码内部空格。Dart 原生块解析本身不会复现 Web 的缩进消费，因此另断言规范输出不能以原始缩进起始；该断言在 `01b363d4` 上真实失败（退出码 1），最终语义仍需 Web 实际互读核验，不以 Dart 自洽代替。
 
+新应用源码 `0c70cc5d374970b7900267b134968ca48b513012` 的自产 11,904 条及 15 个命名场景在整段阅读 oracle 下通过，contract 文件 19 项测试、真实退出码 0，日志 `inline-export-block-final.log`。Web → Mobile 文本子集 384 条重新核验 incoming/saved 整段阅读及两次解码，cross 文件 4 项通过，日志 `inline-block-web-subset.log`；其余 Web 输入此前全量通过，前置空格修正不影响无前置空格的邻接语料。
+
+新导出仍为 `build/inline-combinations-mobile.json`，11,904 条且 ID 唯一，`producerCommit` 为 `0c70cc5d374970b7900267b134968ca48b513012`，SHA-256 为 `89ddf93f558b164f2e3c444321105a2bbeb6293fdf44239e1968ea647a48b69e`。Windows/VPS 传输后已核对同一摘要。
+
+Web 最终候选 `e3e23f02093240ea8ee1f63d657cd56998d91e58` 使用原始 importer 完整消费上述 Mobile 导出，11,904 条全部通过、真实退出码 0，未放宽预期。该 Web 候选的序列化、解析与导出源码和 `daa5e59c9c40cdd30b7d9cb6389c3616901a015a` 逐字一致，仅补充代码叠加强调的 CSS 与浏览器字形验证。因此两方向的实际候选数据互读证据均已取得；原始移动端真机问题仍待负责人复验。
+
+完整门禁随后检出既有容器源码幂等回归：列表内代码转为兼容正文后，部分带原始缩进的转义行重开时未继承历史空白来源。补充解码标记仅匹配“原始空格开头且存在 canonical literal encoding”的旧源码，保持其原保护路径。`markdown_container_code_protection_test.dart`、`markdown_inline_combination_test.dart` 与带 Web 文本子集的 cross 文件合计 15 项通过，真实退出码 0，日志 `inline-legacy-provenance.log`。两端各 11,904 条实际导出均无原始空格开头，故不进入该新分支；既有互读数据继续对应，最终完整门禁仍需在补充后的应用源码上通过。
+
 ## 负责人真机复验
 
 1. 在“温油站 Debug”对应候选中复现原始正文与原始长按操作；请保留实际字符、空格和选区，明确反馈是否仍异常。
