@@ -350,11 +350,11 @@ class _HomeQueryFilters extends StatelessWidget {
       top: tokens.space8,
       child: Row(
         children: [
-          Expanded(
+          Flexible(
             child: WenyouDropdownFilter<HomeFeedSort>(
               key: const Key('home-sort-menu'),
               tooltip: '选择主题排序',
-              icon: WenyouIconIds.actionSort,
+              appearance: WenyouDropdownFilterAppearance.quiet,
               options: [
                 for (final value in HomeFeedSort.values)
                   WenyouFilterOption(value: value, label: value.label),
@@ -364,11 +364,11 @@ class _HomeQueryFilters extends StatelessWidget {
             ),
           ),
           SizedBox(width: tokens.space8),
-          Expanded(
+          Flexible(
             child: WenyouDropdownFilter<HomeThreadStatusFilter>(
               key: const Key('home-status-menu'),
               tooltip: '选择主题状态',
-              icon: WenyouIconIds.actionFilter,
+              appearance: WenyouDropdownFilterAppearance.quiet,
               options: [
                 for (final value in HomeThreadStatusFilter.values)
                   WenyouFilterOption(value: value, label: value.label),

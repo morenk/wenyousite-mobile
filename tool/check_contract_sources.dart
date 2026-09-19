@@ -29,6 +29,33 @@ void main() {
       '固定列表契约来源验证通过：${manifest['backendRevision']} / $actual。'
       '其余契约来源见backend-contract.properties。',
     );
+    final inlineSource =
+        jsonDecode(
+              File(
+                'contracts/markdown-inline-combinations-v1-source.json',
+              ).readAsStringSync(),
+            )
+            as Map<String, dynamic>;
+    if (inlineSource['schemaVersion'] != 1 ||
+        inlineSource['backendRevision'] is! String ||
+        !RegExp(
+          r'^[0-9a-f]{40}$',
+        ).hasMatch(inlineSource['backendRevision'] as String)) {
+      throw const FormatException('固定行内组合契约来源不完整');
+    }
+    final files = inlineSource['files'] as Map<String, dynamic>;
+    for (final name in [
+      'markdown-inline-combinations-v1-fixtures.json',
+      'markdown-inline-combinations-v1.schema.json',
+    ]) {
+      final hash = sha256
+          .convert(File('contracts/$name').readAsBytesSync())
+          .toString();
+      if (files[name] != hash) {
+        throw FormatException('固定行内组合契约SHA-256不一致：$name');
+      }
+    }
+    stdout.writeln('固定行内组合契约来源验证通过：${inlineSource['backendRevision']}。');
   } on Object catch (error) {
     stderr.writeln('contract:source 检查失败：$error');
     exitCode = 1;

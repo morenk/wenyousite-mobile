@@ -5,6 +5,7 @@ import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_pagination.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/search/application/search_controller.dart';
 import 'package:wenyousite_mobile/features/search/domain/search_models.dart';
@@ -181,38 +182,16 @@ class _ThreadSearchResults extends ConsumerWidget {
             if (index > 0) SizedBox(height: tokens.space12),
             _ThreadSearchResultCard(item: state.items[index]),
           ],
-          if (state.failure != null) ...[
-            SizedBox(height: tokens.space12),
-            WenyouStatusBanner(
-              tone: WenyouStatusTone.error,
-              message: state.failure!.userMessage,
-              detail: wenyouFailureDetail(state.failure),
-              action: TextButton.icon(
-                onPressed: () => ref.read(provider.notifier).loadMore(),
-                icon: const WenyouIcon(WenyouIconIds.actionRefresh, size: 18),
-                label: const Text('重试加载更多'),
-              ),
-            ),
-          ],
-          if (state.hasMore && state.failure == null) ...[
-            SizedBox(height: tokens.space12),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                key: const Key('thread-search-load-more'),
-                onPressed: state.isLoadingMore
-                    ? null
-                    : () => ref.read(provider.notifier).loadMore(),
-                icon: state.isLoadingMore
-                    ? const SizedBox.square(
-                        dimension: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const WenyouIcon(WenyouIconIds.navigationExpand),
-                label: Text(state.isLoadingMore ? '正在加载' : '加载更多结果'),
-              ),
-            ),
-          ],
+          WenyouPaginationFooter(
+            hasMore: state.hasMore,
+            isLoading: state.isLoadingMore,
+            failure: state.failure,
+            onLoadMore: () => ref.read(provider.notifier).loadMore(),
+            showEndLabel: false,
+            loadMoreLabel: '加载更多结果',
+            retryLabel: '重试加载更多',
+            loadMoreKey: const Key('thread-search-load-more'),
+          ),
         ],
       ),
     };

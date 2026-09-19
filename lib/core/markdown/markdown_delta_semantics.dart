@@ -7,6 +7,7 @@ import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_inline_encoder.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_line_metadata.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_dice_contract.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_inline_runs.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_reference.dart';
 
 /// Compares visible editor state without encoding it a second time.
@@ -166,26 +167,24 @@ final class _SemanticLine {
 
   Delta get normalizedRuns {
     final output = Delta();
+    final textRuns = <MarkdownInlineRun>[];
+    void flush() {
+      for (final run in MarkdownInlineRuns.normalizeEdges(textRuns)) {
+        output.insert(run.text, run.marks);
+      }
+      textRuns.clear();
+    }
+
     for (final op in runs.operations) {
       final data = op.data;
-      final attributes = op.attributes;
-      if (data is! String ||
-          attributes == null ||
-          attributes.isEmpty ||
-          attributes['code'] == true) {
-        output.insert(data, attributes);
-        continue;
-      }
-      // Markdown's existing edge-whitespace rule leaves those spaces outside
-      // marks. Interior whitespace in a merged logical run retains all marks.
-      final leading = data.length - data.trimLeft().length;
-      final core = data.trim();
-      if (leading > 0) output.insert(data.substring(0, leading));
-      if (core.isNotEmpty) output.insert(core, attributes);
-      if (leading + core.length < data.length) {
-        output.insert(data.substring(leading + core.length));
+      if (data is String) {
+        textRuns.add(MarkdownInlineRun(data, op.attributes ?? const {}));
+      } else {
+        flush();
+        output.insert(data, op.attributes);
       }
     }
+    flush();
     // Delta merges equal adjacent attributes; explicit empty maps are omitted.
     return Delta.fromJson([
       for (final op in output.operations)

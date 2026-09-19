@@ -9,7 +9,7 @@
 - 2026-09-11 契约同步：本任务分支已同步后端 `0ee2c0de1d9c570e495e778be6661b074b7a4bef` 的 `5.20.0-dev.20260909.1`，生成客户端增加可空封面媒体与动画预览字段，暂不接入播放。同日 01:16 完整门禁已确认公网更新至该契约及精确 revision，主题响应兼容检查通过；下列旧契约条目保留此前交付背景。
 
 - 客户端：`0.7.1+95` Android 正式发布（GIF 正文上传修复）；新正式 APK 仅支持 Android 8+ ARM64，正文、标题和品牌文字继承平台系统字体，KaTeX、等宽呈现与 Material Icons 等功能依赖保留。正式包名 `site.wenyou.app`，Debug 包名 `site.wenyou.app.debug`，真机性能包名 `site.wenyou.app.profile`。负责人已对 GIF 修复同签名候选完成 ADB 覆盖安装并明确验证通过；build 95 应用 AOT 代码与该验收包摘要一致，线上 `/meta` 已晋级推荐 build 95。
-- 后端契约：`5.22.0-dev.20260912.2`，来源 `6fdfa00eaf1f3056ba30f2ffbc529d12eed1c823`；完整门禁已核对公网 API、精确 revision、Markdown v5 激活状态与 `GET /threads` 兼容性。
+- 后端契约：`5.23.0-dev.20260913.1`，来源 `e214fd18637cb10d79576c5ab5a4cf42340fef71`；2026-09-19 诊断补全候选的完整门禁已核对公网 API、精确 revision、Markdown v5 激活状态与 `GET /threads` 兼容性。
 - 正文契约：公网当前激活 Markdown v5；客户端兼容 `{3, 4, 5}`，独占一行的普通图片可使用左、中、右块对齐；站内引用契约：`wenyousite-internal-reference` v1。
 - 视觉依赖：Foundation `v7.0.0`；系统字体迁移候选待 Android 8、较新 Android 与两种厂商字体真机验收。
 - 表情网格及共享排序动画：2026-09-11 负责人真机验收通过并授权合并；表情管理采用五列紧凑网格、长按排序与静默乐观保存，子贴排序复用抬起／落下反馈。未取得 Profile 帧时间采样，见[验收记录](docs/architecture/sticker-grid-acceptance.md)。
@@ -21,6 +21,8 @@
 - 故障诊断：已接入帖子、上传、网络与全局错误的脱敏记录和独立 Sentry 发送器；独立移动端 DSN 已在仓库外配置，Windows SDK 已收到同编号事件接收确认；手机收件、私密帖编辑及后端日志关联按 [诊断验收清单](docs/architecture/failure-diagnostics.md) 完成。
 
 ## 当前优先级
+
+组件统一修缮（2026-09-19）：第一批确认弹窗、异步按钮和分页反馈已通过完整本地门禁与 Debug APK 构建，负责人已明确真机验收通过并授权合并清理；第二至四批分别处理底部弹层、表单字段与校验、身份与时间展示，前批验收并获授权合并后继续。第四批内容时间保留“分钟前／小时前／天前”，满三天后的日期取消时分，同年仅月日、跨年带年份；精确业务时间单独保留。调用点与交付记录见[组件统一验收](docs/architecture/component-consistency-acceptance.md)。候选后端来源为 `602f57324256f358aea27d204937f9e15644f9c7`。集成期间公网升级为 `5.23.0`，既有接口保持兼容；负责人已明确允许本批线上契约版本检查例外，独立收藏夹契约同步仍由 PR #41 承担。
 
 富文本跨端稳定性专项沿用[阶段计划](docs/architecture/rich-text-stability-plan.md)、[三端历史基线](docs/architecture/rich-text-stability-baseline.md)和[共享操作矩阵提案](docs/architecture/rich-text-stability-matrix.md)。这些记录描述 2026-09-10 的审查现场；当前依赖和后续整改以上方最新基线及下述整改计划为准。
 
@@ -52,7 +54,7 @@
 
 ## 持续债务
 
-- 存量 `StateNotifier` 59 处、跨 feature 内部层引用 35 条精确文件边、feature presentation 原始加载圆环 77 处已由架构门禁冻结；内部引用不再以文本匹配总量放行，新边与删除旧边不能相互抵扣。后续只在对应业务切片中逐步迁移为 `Notifier` / `AsyncNotifier`、feature facade 和共享状态组件，不做一次性大改。
+- 存量 `StateNotifier` 59 处、跨 feature 内部层引用 35 条精确文件边、feature presentation 原始加载圆环 31 处已由架构门禁冻结（组件统一第一批候选从原 77 上限收紧）；内部引用不再以文本匹配总量放行，新边与删除旧边不能相互抵扣。后续只在对应业务切片中逐步迁移为 `Notifier` / `AsyncNotifier`、feature facade 和共享状态组件，不做一次性大改。
 - `flutter_image_compress_common` 的当前可解析版本仍使用插件 Kotlin Gradle Plugin，Flutter 已提示未来需迁移 Built-in Kotlin；待上游提供兼容版本后单独升级和重新构建验收。
 - 动态卡片与详情的可选 `canInteract` 已在收藏主链按“字段缺失视为允许”消费：`false` 禁止新增收藏与移动但允许取消；点赞、评论和加油仍需独立接入该权限投影。
 - 主题列表、草稿、详情、邀请预览与订阅响应已提供稳定的 `categoryInfo` 分类展示投影；移动端当前仍通过旧 `category` slug 与分类目录解析名称，需要独立迁移共享主题读模型并保留未知历史分类的安全降级。

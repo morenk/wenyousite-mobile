@@ -53,9 +53,11 @@ flutter run --dart-define=API_BASE_URL=http://10.0.2.2:3000/api/v1
 pwsh -NoProfile -File tool/sync_backend_contract.ps1
 npm run api:validate
 npm run api:generate
+dart run tool/generate_diagnostic_routes.dart
+dart format lib/core/diagnostics/diagnostic_routes.g.dart
 ```
 
-生成代码禁止手改。契约变化必须使用独立 `chore` 切片，并同步受影响模块文档与 [`docs/CHANGELOG.md`](docs/CHANGELOG.md)。
+生成代码禁止手改。诊断端点表仅保留静态路由与 operationId，自动测试核对它与固定 OpenAPI 一致。契约变化必须使用独立 `chore` 切片，并同步受影响模块文档与 [`docs/CHANGELOG.md`](docs/CHANGELOG.md)。
 
 ## 质量门禁
 
@@ -64,6 +66,8 @@ npm run api:generate
 ```bash
 npm run candidate:apk -- test/features/example/example_test.dart -TestConcurrency 2
 ```
+
+可以在 `-TestConcurrency` 前依次传入多个 `test/` 内的测试文件或目录，每条路径会作为独立参数传给 Flutter；包含空格的路径需要单独加引号。候选脚本的 Windows 回归会核对实际参数数组，避免把多个测试路径拼成一个文件名。
 
 该入口不会运行全量 Flutter 测试或安装 APK。候选经负责人验收后、合并前运行一次完整本地门禁；认证、契约、网络、上传、持久化、幂等、注销、依赖和 Android 原生配置等高风险候选直接运行 `npm run check:apk`。不需要构建 APK 的阶段验收使用：
 

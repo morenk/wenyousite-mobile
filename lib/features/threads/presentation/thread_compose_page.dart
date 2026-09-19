@@ -11,6 +11,7 @@ import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_anchored_popover.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/drafts/application/content_drafts_controller.dart';
 import 'package:wenyousite_mobile/features/drafts/presentation/content_drafts_sheet.dart';
@@ -108,7 +109,6 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
     );
     _scheduleDocumentSync(state);
     final locked = state.isSubmitting || uploadState.isBusy;
-    final tokens = context.wenyouTokens;
     _editorSession.readOnly = locked;
 
     return PopScope<Object?>(
@@ -158,32 +158,18 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
               ),
             if (state.phase == ThreadComposePhase.ready ||
                 state.phase == ThreadComposePhase.published)
-              FilledButton.icon(
+              WenyouAsyncButton(
                 key: const Key('compose-publish'),
-                style: FilledButton.styleFrom(
-                  minimumSize: Size(0, tokens.minimumTouchTarget),
-                  padding: EdgeInsets.symmetric(horizontal: tokens.space12),
-                  backgroundColor: tokens.actionSurface,
-                  foregroundColor: tokens.onActionSurface,
-                  disabledBackgroundColor: tokens.border,
-                  disabledForegroundColor: tokens.mutedText,
-                ),
+                label: '发布',
+                compact: true,
+                icon: WenyouIconIds.actionSend,
+                isLoading: state.action == ThreadComposeAction.publish,
                 onPressed:
                     !locked &&
                         _editorSession.codecFailure == null &&
                         state.canPublish
                     ? _publish
                     : null,
-                icon: state.action == ThreadComposeAction.publish
-                    ? SizedBox.square(
-                        dimension: 18,
-                        child: CircularProgressIndicator(
-                          color: tokens.onActionSurface,
-                          strokeWidth: 2,
-                        ),
-                      )
-                    : const WenyouIcon(WenyouIconIds.actionSend, size: 18),
-                label: const Text('发布'),
               ),
           ],
         ),
@@ -577,22 +563,13 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
     final latest = ref.read(threadComposeControllerProvider);
     if (latest.remoteDraft?.id != selected.id &&
         hasMeaningfulThreadComposeContent(latest)) {
-      final confirmed = await showDialog<bool>(
+      final confirmed = await showWenyouConfirmationDialog(
         context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('切换云端草稿？'),
-          content: const Text('打开后会用所选云端草稿替换当前内容。若要保留当前修改，请先取消并保存到云端。'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('先不切换'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text('确认切换'),
-            ),
-          ],
-        ),
+        title: '切换云端草稿？',
+        message: '打开后会用所选云端草稿替换当前内容。若要保留当前修改，请先取消并保存到云端。',
+        confirmLabel: '确认切换',
+        cancelLabel: '先不切换',
+        tone: WenyouConfirmationTone.destructive,
       );
       if (confirmed != true || !mounted) return;
     }
@@ -676,22 +653,13 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
     final latest = ref.read(threadComposeControllerProvider);
     if (latest.phase == ThreadComposePhase.ready &&
         latest.localSnapshotStatus == LocalSnapshotStatus.failed) {
-      final leaveAnyway = await showDialog<bool>(
+      final leaveAnyway = await showWenyouConfirmationDialog(
         context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('本地内容尚未保存'),
-          content: const Text('现在退出可能丢失刚才的修改。建议留下并检查设备存储后重试。'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('留下'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text('仍然退出'),
-            ),
-          ],
-        ),
+        title: '本地内容尚未保存',
+        message: '现在退出可能丢失刚才的修改。建议留下并检查设备存储后重试。',
+        confirmLabel: '仍然退出',
+        cancelLabel: '留下',
+        tone: WenyouConfirmationTone.destructive,
       );
       if (leaveAnyway != true || !mounted) {
         _preparingPop = false;

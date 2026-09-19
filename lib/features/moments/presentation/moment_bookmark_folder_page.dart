@@ -5,12 +5,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:waterfall_flow/waterfall_flow.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
-import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/application/bookmark_folder_catalog_controller.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_bookmark_folder_picker.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_bookmark_manage_sheet.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_pagination.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/moments/application/moment_bookmark_list_controller.dart';
 import 'package:wenyousite_mobile/features/moments/application/moment_bookmark_repository_ports.dart';
@@ -100,6 +100,7 @@ class _MomentBookmarkFolderPageState
     provider,
   ) {
     if (notification.metrics.axis == Axis.vertical &&
+        ref.read(provider).loadMoreFailure == null &&
         notification.metrics.extentAfter <= 480 &&
         (notification is ScrollUpdateNotification ||
             notification is OverscrollNotification)) {
@@ -240,17 +241,13 @@ class _MomentBookmarkFolderPageState
     return WenyouContentFrame(
       top: 12,
       bottom: 80,
-      child: Center(
-        child: state.isLoadingMore
-            ? const CircularProgressIndicator()
-            : state.hasMore
-            ? OutlinedButton.icon(
-                key: const Key('moment-bookmark-load-more'),
-                onPressed: ref.read(provider.notifier).loadMore,
-                icon: const WenyouIcon(WenyouIconIds.navigationExpand),
-                label: const Text('加载更多'),
-              )
-            : Text('已经看到这里了', style: Theme.of(context).textTheme.wenyouCaption),
+      child: WenyouLoadMoreControl(
+        hasMore: state.hasMore,
+        isLoading: state.isLoadingMore,
+        failure: state.loadMoreFailure,
+        onLoadMore: state.isBusy ? null : ref.read(provider.notifier).loadMore,
+        loadMoreKey: const Key('moment-bookmark-load-more'),
+        retryKey: const Key('moment-bookmark-load-more-retry'),
       ),
     );
   }

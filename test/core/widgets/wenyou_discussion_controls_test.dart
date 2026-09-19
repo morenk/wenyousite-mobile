@@ -160,7 +160,7 @@ void main() {
     expect(find.text('讨论设置'), findsNothing);
   });
 
-  testWidgets('作者与顺序使用一致的紧凑排版，菜单保留独立宽度', (tester) async {
+  testWidgets('作者与顺序使用一致的紧凑排版，抽屉完整展示长名字', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(360, 640);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -224,9 +224,14 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text(longAuthor), findsOneWidget);
+    expect(find.byType(PopupMenuItem<String>), findsNothing);
+    final sheet = find.byType(BottomSheet);
+    expect(sheet, findsOneWidget);
+    expect(tester.getSize(sheet).width, closeTo(360, 0.1));
+    expect(tester.getBottomLeft(sheet).dy, closeTo(640, 0.1));
     expect(
-      tester.getSize(find.byType(PopupMenuItem<String>).first).width,
-      greaterThanOrEqualTo(160),
+      tester.widget<Text>(find.text(longAuthor)).overflow,
+      isNot(TextOverflow.ellipsis),
     );
   });
 

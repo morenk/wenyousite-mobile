@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -26,6 +27,8 @@ import 'package:wenyousite_mobile/features/posts/presentation/post_replies_page.
 import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
 import 'package:wenyousite_mobile/features/stickers/application/sticker_repository_ports.dart';
 import 'package:wenyousite_mobile/features/stickers/domain/sticker_models.dart';
+
+import '../../support/button_finder.dart';
 import 'post_replies_page_upload_operations.dart';
 
 Future<ProviderContainer> postRepliesPageTestPostContainer(
@@ -148,7 +151,9 @@ Future<void> postRepliesPageTestConfirmImageCrop(WidgetTester tester) async {
   await tester.pumpAndSettle();
   expect(find.byKey(const Key('editor-image-crop-dialog')), findsOneWidget);
   tester
-      .widget<FilledButton>(find.byKey(const Key('image-crop-confirm')))
+      .widget<FilledButton>(
+        findButtonControl(find.byKey(const Key('image-crop-confirm'))),
+      )
       .onPressed!();
   await tester.pump();
   await tester.pump(const Duration(milliseconds: 400));

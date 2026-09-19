@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/thread_feed/thread_feed_catalog.dart';
 import 'package:wenyousite_mobile/features/threads/application/remote_thread_drafts_controller.dart';
@@ -145,22 +146,13 @@ class RemoteThreadDraftsSheet extends ConsumerWidget {
     WidgetRef ref,
     ThreadRemoteDraftSummary draft,
   ) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showWenyouConfirmationDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('删除云端草稿？'),
-        content: Text('“${draft.displayTitle}”删除后无法恢复，其他设备也将无法继续编辑。'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('取消'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('确认删除'),
-          ),
-        ],
-      ),
+      title: '删除云端草稿？',
+      message: '“${draft.displayTitle}”删除后无法恢复，其他设备也将无法继续编辑。',
+      confirmLabel: '确认删除',
+      cancelLabel: '取消',
+      tone: WenyouConfirmationTone.destructive,
     );
     if (confirmed != true || !context.mounted) return;
     final removed = await ref
@@ -259,16 +251,12 @@ class _DraftCard extends ConsumerWidget {
                 ),
               ),
               SizedBox(width: tokens.space8),
-              IconButton(
+              WenyouAsyncIconButton(
                 key: Key('remote-draft-remove-${draft.id}'),
-                tooltip: isCurrent ? '当前编辑中的草稿不能删除' : '删除云端草稿',
+                label: isCurrent ? '当前编辑中的草稿不能删除' : '删除云端草稿',
+                icon: WenyouIconIds.actionDelete,
+                isLoading: removing,
                 onPressed: actionsLocked ? null : onRemove,
-                icon: removing
-                    ? const SizedBox.square(
-                        dimension: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const WenyouIcon(WenyouIconIds.actionDelete),
               ),
             ],
           ),

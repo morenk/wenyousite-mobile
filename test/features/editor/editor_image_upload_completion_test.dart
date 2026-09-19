@@ -19,6 +19,7 @@ import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
 import 'package:wenyousite_mobile/features/posts/presentation/post_composer_sheet.dart';
 import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
 
+import '../../support/button_finder.dart';
 import '../../support/deterministic_test_fonts.dart';
 import '../../support/fake_image_crop_processor.dart';
 import '../moments/moment_animation_fixture.dart';
@@ -79,7 +80,9 @@ void main() {
       expect(controller.state.body, '上传前正文');
       expect(
         tester
-            .widget<FilledButton>(find.byKey(const Key('compose-publish')))
+            .widget<FilledButton>(
+              findButtonControl(find.byKey(const Key('compose-publish'))),
+            )
             .onPressed,
         isNull,
       );

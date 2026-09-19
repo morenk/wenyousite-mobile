@@ -110,11 +110,11 @@ class UserRelationBlockIconButton extends ConsumerWidget {
     final provider = userRelationControllerProvider(target);
     final state = ref.watch(provider);
     final isLoading = state.pendingAction == UserRelationAction.block;
-    final color = Theme.of(context).colorScheme.error;
-    return IconButton(
+    return WenyouAsyncIconButton(
       key: const Key('user-relation-block'),
-      tooltip: state.isBlocked ? '取消拉黑' : '拉黑',
-      color: color,
+      label: state.isBlocked ? '取消拉黑' : '拉黑',
+      tone: WenyouAsyncButtonTone.destructive,
+      isLoading: isLoading,
       onPressed: state.isPending
           ? null
           : () => _toggleUserBlock(
@@ -123,16 +123,9 @@ class UserRelationBlockIconButton extends ConsumerWidget {
               target,
               state.isBlocked,
             ),
-      icon: isLoading
-          ? SizedBox.square(
-              dimension: 18,
-              child: CircularProgressIndicator(strokeWidth: 2, color: color),
-            )
-          : WenyouIcon(
-              state.isBlocked
-                  ? WenyouIconIds.actionUnlock
-                  : WenyouIconIds.actionBlock,
-            ),
+      icon: state.isBlocked
+          ? WenyouIconIds.actionUnlock
+          : WenyouIconIds.actionBlock,
     );
   }
 }

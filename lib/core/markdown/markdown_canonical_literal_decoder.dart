@@ -27,10 +27,13 @@ class MarkdownCanonicalLiteralDecoder {
     required bool Function(Delta candidate) preservesSource,
   }) {
     final masked = MarkdownContent.maskCanonicalLiteralLine(source);
-    if (masked == null) return null;
+    final hasEdgeSpaceEntities = MarkdownContent.hasBoundarySpaceEntities(
+      source,
+    );
+    if (masked == null && !hasEdgeSpaceEntities) return null;
     final richLine = inlineOnly
-        ? MarkdownRichLineDecoder.decodeInline(masked.source)
-        : MarkdownRichLineDecoder.decode(masked.source);
+        ? MarkdownRichLineDecoder.decodeInline(masked?.source ?? source)
+        : MarkdownRichLineDecoder.decode(masked?.source ?? source);
     if (richLine == null) return null;
 
     final decoded = Delta();
@@ -47,15 +50,25 @@ class MarkdownCanonicalLiteralDecoder {
         });
         continue;
       }
+      // 边界空格实体按原 Markdown 解析，不用非空白占位符改变强调的
+      // flanking 规则；已解析文字保留 literal 来源供下次安全写回。
+      final textAttributes = {
+        ...?span.attributes,
+        if (hasEdgeSpaceEntities) literalTextAttribute: true,
+      };
+      if (masked == null) {
+        decoded.insert(span.text, textAttributes);
+        continue;
+      }
       var start = 0;
       while (start < span.text.length) {
         final marker = span.text.indexOf(masked.placeholder, start);
         if (marker < 0) {
-          decoded.insert(span.text.substring(start), span.attributes);
+          decoded.insert(span.text.substring(start), textAttributes);
           break;
         }
         if (marker > start) {
-          decoded.insert(span.text.substring(start, marker), span.attributes);
+          decoded.insert(span.text.substring(start, marker), textAttributes);
         }
         if (literalIndex >= masked.literals.length) return null;
         decoded.insert(masked.literals[literalIndex], {
@@ -66,7 +79,7 @@ class MarkdownCanonicalLiteralDecoder {
         start = marker + masked.placeholder.length;
       }
     }
-    if (literalIndex != masked.literals.length) return null;
+    if (masked != null && literalIndex != masked.literals.length) return null;
 
     final lineAttributes = {
       ...richLine.lineAttributes,

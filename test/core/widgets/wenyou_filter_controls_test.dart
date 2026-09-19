@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
@@ -200,7 +199,6 @@ void main() {
                 selected: 0,
                 onSelected: (_) {},
                 tooltip: '选择排序',
-                icon: WenyouIconIds.actionSort,
               ),
             ),
           ),
@@ -219,7 +217,8 @@ void main() {
     );
     expect(popup.borderRadius, expectedRadius);
     expect(
-      (popup.shape! as RoundedRectangleBorder).borderRadius,
+      (AppTheme.light.popupMenuTheme.shape! as RoundedRectangleBorder)
+          .borderRadius,
       expectedRadius,
     );
     expect(popup.clipBehavior, Clip.antiAlias);
@@ -256,9 +255,9 @@ void main() {
                 key: const Key('test-dropdown-form-field'),
                 initialValue: 0,
                 decoration: const InputDecoration(labelText: '主题状态'),
-                items: const [
-                  DropdownMenuItem(value: 0, child: Text('招募中')),
-                  DropdownMenuItem(value: 1, child: Text('已停招')),
+                options: const [
+                  WenyouFilterOption(value: 0, label: '招募中'),
+                  WenyouFilterOption(value: 1, label: '已停招'),
                 ],
                 onChanged: (_) {},
               ),
@@ -268,18 +267,14 @@ void main() {
       ),
     );
 
-    final field = tester.widget<DropdownButton<int>>(
-      find.descendant(
-        of: find.byKey(const Key('test-dropdown-form-field')),
-        matching: find.byType(DropdownButton<int>),
-      ),
-    );
-    expect(field.isExpanded, isTrue);
-    expect(field.itemHeight, WenyouThemeTokens.light.minimumTouchTarget);
-    expect(
-      field.borderRadius,
-      BorderRadius.circular(WenyouThemeTokens.light.radius16),
-    );
+    expect(find.byType(InputDecorator), findsOneWidget);
+    await tester.tap(find.byKey(const Key('test-dropdown-form-field')));
+    await tester.pumpAndSettle();
+    expect(find.byType(PopupMenuItem<int>), findsNWidgets(2));
+    await tester.tap(find.text('已停招').last);
+    await tester.pumpAndSettle();
+    expect(find.text('已停招'), findsOneWidget);
+    expect(find.text('招募中'), findsNothing);
   });
 
   testWidgets('四栏内容页签在 360dp 等宽铺满且不溢出', (tester) async {

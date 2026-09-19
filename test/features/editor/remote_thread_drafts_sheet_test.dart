@@ -8,6 +8,7 @@ import 'package:wenyousite_mobile/features/threads/data/thread_compose_repositor
 import 'package:wenyousite_mobile/features/threads/domain/thread_compose_models.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/remote_thread_drafts_sheet.dart';
 
+import '../../support/button_finder.dart';
 import '../../support/fake_thread_category_catalog.dart';
 
 void main() {
@@ -53,7 +54,9 @@ void main() {
     expect(
       tester
           .widget<IconButton>(
-            find.byKey(const Key('remote-draft-remove-draft-current')),
+            findButtonControl(
+              find.byKey(const Key('remote-draft-remove-draft-current')),
+            ),
           )
           .onPressed,
       isNull,

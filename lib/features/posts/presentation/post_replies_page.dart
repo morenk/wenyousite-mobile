@@ -7,6 +7,7 @@ import 'package:wenyousite_mobile/core/navigation/wenyou_page_transitions.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/discussion_author_filter_restore.dart';
 import 'package:wenyousite_mobile/core/widgets/reading_quick_scroll.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_discussion_scroll_policy.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_controllers.dart';
@@ -372,22 +373,13 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
     PostItem post, {
     required bool root,
   }) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showWenyouConfirmationDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(root ? '删除原楼层？' : '删除这条回复？'),
-        content: Text(root ? '原楼层删除后，楼中楼讨论将不再可访问。' : '删除后无法恢复。'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('取消'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('删除'),
-          ),
-        ],
-      ),
+      title: root ? '删除原楼层？' : '删除这条回复？',
+      message: root ? '原楼层删除后，楼中楼讨论将不再可访问。' : '删除后无法恢复。',
+      confirmLabel: '删除',
+      cancelLabel: '取消',
+      tone: WenyouConfirmationTone.destructive,
     );
     if (confirmed != true || !context.mounted) return;
     final removed = await ref.read(actionsProvider.notifier).remove(post);

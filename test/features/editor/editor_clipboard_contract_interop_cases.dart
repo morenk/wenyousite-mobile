@@ -432,22 +432,26 @@ void registerEditorClipboardContractInteropCases() {
     expect(attributes, contains(containsPair('code', true)));
     expect(
       attributes,
-      isNot(
-        contains(
-          allOf(
-            containsPair('code', true),
-            anyOf(contains('italic'), contains('bold')),
-          ),
-        ),
-      ),
+      contains(allOf(containsPair('code', true), containsPair('italic', true))),
     );
     expect(
-      MarkdownDeltaCodec.encode(delta),
-      '> *斜体开头* `inline code` *斜体结尾*\n'
-      '>\n'
-      '> **粗体开头** `second code` **粗体结尾**\n\n'
-      '> 独立引用',
+      attributes,
+      contains(allOf(containsPair('code', true), containsPair('bold', true))),
     );
+    final reopened = Document.fromDelta(
+      MarkdownDeltaCodec.decode(MarkdownDeltaCodec.encode(delta)).delta,
+    );
+    expect(reopened.toPlainText(), session.controller.document.toPlainText());
+    for (final (text, mark) in [
+      ('inline code', 'italic'),
+      ('second code', 'bold'),
+    ]) {
+      final offset = reopened.toPlainText().indexOf(text);
+      final style = reopened.collectStyle(offset, text.length).attributes;
+      expect(style['code']?.value, true);
+      expect(style[mark]?.value, true);
+    }
+    reopened.close();
   });
 
   testWidgets('移动阅读菜单把 Web 列表标记归一为编辑器列表', (tester) async {

@@ -17,6 +17,8 @@ class WenyouPaginationFooter extends StatelessWidget {
     this.loadMoreLabel = '加载更多',
     this.loadingLabel = '正在加载更多',
     this.endLabel = '已经到底了',
+    this.showEndLabel = true,
+    this.retryLabel = '重试',
     this.loadMoreKey,
     this.retryKey,
     super.key,
@@ -29,11 +31,16 @@ class WenyouPaginationFooter extends StatelessWidget {
   final String loadMoreLabel;
   final String loadingLabel;
   final String endLabel;
+  final bool showEndLabel;
+  final String retryLabel;
   final Key? loadMoreKey;
   final Key? retryKey;
 
   @override
   Widget build(BuildContext context) {
+    if (!showEndLabel && !hasMore && !isLoading && failure == null) {
+      return const SizedBox.shrink();
+    }
     final tokens = context.wenyouTokens;
     return Padding(
       padding: EdgeInsets.symmetric(vertical: tokens.space16),
@@ -46,6 +53,8 @@ class WenyouPaginationFooter extends StatelessWidget {
           loadMoreLabel: loadMoreLabel,
           loadingLabel: loadingLabel,
           endLabel: endLabel,
+          showEndLabel: showEndLabel,
+          retryLabel: retryLabel,
           loadMoreKey: loadMoreKey,
           retryKey: retryKey,
         ),
@@ -63,6 +72,8 @@ class WenyouLoadMoreControl extends StatelessWidget {
     this.loadMoreLabel = '加载更多',
     this.loadingLabel = '正在加载更多',
     this.endLabel = '已经到底了',
+    this.showEndLabel = true,
+    this.retryLabel = '重试',
     this.loadMoreKey,
     this.retryKey,
     super.key,
@@ -75,6 +86,8 @@ class WenyouLoadMoreControl extends StatelessWidget {
   final String loadMoreLabel;
   final String loadingLabel;
   final String endLabel;
+  final bool showEndLabel;
+  final String retryLabel;
   final Key? loadMoreKey;
   final Key? retryKey;
 
@@ -88,7 +101,7 @@ class WenyouLoadMoreControl extends StatelessWidget {
         action: TextButton(
           key: retryKey,
           onPressed: isLoading ? null : onLoadMore,
-          child: const Text('重试'),
+          child: Text(retryLabel),
         ),
       );
     } else if (isLoading) {
@@ -103,7 +116,7 @@ class WenyouLoadMoreControl extends StatelessWidget {
               child: CircularProgressIndicator(strokeWidth: 2),
             ),
             SizedBox(width: tokens.space8),
-            Text(loadingLabel),
+            Flexible(child: Text(loadingLabel)),
           ],
         ),
       );
@@ -113,7 +126,7 @@ class WenyouLoadMoreControl extends StatelessWidget {
         onPressed: onLoadMore,
         child: Text(loadMoreLabel),
       );
-    } else {
+    } else if (showEndLabel) {
       child = Text(
         endLabel,
         textAlign: TextAlign.center,
@@ -121,6 +134,8 @@ class WenyouLoadMoreControl extends StatelessWidget {
           context,
         ).textTheme.wenyouCaption.copyWith(color: tokens.mutedText),
       );
+    } else {
+      child = const SizedBox.shrink();
     }
     return child;
   }

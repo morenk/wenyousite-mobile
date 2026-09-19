@@ -7,6 +7,7 @@ import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/media/media_display.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_selection_menu.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/drafts/application/content_drafts_controller.dart';
 import 'package:wenyousite_mobile/features/drafts/domain/content_draft_models.dart';
@@ -253,21 +254,15 @@ class _ReadyDrafts extends ConsumerWidget {
                 ),
                 SizedBox(height: tokens.space8),
               ],
-              SizedBox(
-                height: tokens.minimumTouchTarget,
-                child: FilledButton.icon(
-                  key: const Key('content-drafts-quick-save'),
-                  onPressed: !canSave || state.isBusy || state.usage.isFull
-                      ? null
-                      : () => controller.saveToNextSlot(currentContent),
-                  icon: state.pendingSlot == 0
-                      ? const SizedBox.square(
-                          dimension: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const WenyouIcon(WenyouIconIds.actionSave),
-                  label: const Text('保存到空闲位'),
-                ),
+              WenyouAsyncButton(
+                key: const Key('content-drafts-quick-save'),
+                label: '保存到空闲位',
+                expand: true,
+                isLoading: state.pendingSlot == 0,
+                onPressed: !canSave || state.isBusy || state.usage.isFull
+                    ? null
+                    : () => controller.saveToNextSlot(currentContent),
+                icon: WenyouIconIds.actionSave,
               ),
             ],
           ),
@@ -445,8 +440,10 @@ class _DraftSlotCard extends ConsumerWidget {
                     ],
                   ),
                 ),
-                TextButton(
+                WenyouAsyncButton(
                   key: Key('content-draft-save-$slot'),
+                  label: '保存到这里',
+                  isLoading: pending,
                   onPressed: !canSave || state.isBusy
                       ? null
                       : () => ref
@@ -456,12 +453,7 @@ class _DraftSlotCard extends ConsumerWidget {
                               ).notifier,
                             )
                             .createAtSlot(currentContent, slot),
-                  child: pending
-                      ? const SizedBox.square(
-                          dimension: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Text('保存到这里'),
+                  variant: WenyouAsyncButtonVariant.text,
                 ),
               ],
             )
@@ -519,12 +511,10 @@ class _DraftSlotCard extends ConsumerWidget {
                           PopupMenuItem<void>(
                             key: Key('content-draft-delete-$slot'),
                             onTap: () => _delete(context, ref, item),
-                            child: Row(
-                              children: [
-                                const WenyouIcon(WenyouIconIds.actionDelete),
-                                SizedBox(width: tokens.space8),
-                                const Text('删除草稿'),
-                              ],
+                            child: const WenyouMenuActionLabel(
+                              icon: WenyouIconIds.actionDelete,
+                              label: '删除草稿',
+                              destructive: true,
                             ),
                           ),
                         ],

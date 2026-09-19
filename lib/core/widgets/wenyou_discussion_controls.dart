@@ -3,8 +3,10 @@ import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
-import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_author_picker.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
+
+export 'wenyou_author_picker.dart' show WenyouDiscussionAuthorOption;
 
 @immutable
 class WenyouDiscussionOrderOption<T extends Object> {
@@ -17,19 +19,6 @@ class WenyouDiscussionOrderOption<T extends Object> {
   final T value;
   final String label;
   final String? summaryLabel;
-}
-
-@immutable
-class WenyouDiscussionAuthorOption {
-  const WenyouDiscussionAuthorOption({
-    required this.id,
-    required this.label,
-    this.supportingLabel,
-  });
-
-  final String id;
-  final String label;
-  final String? supportingLabel;
 }
 
 @immutable
@@ -189,8 +178,6 @@ class _DiscussionDirectActions<T extends Object> extends StatelessWidget {
     required this.orderKey,
   });
 
-  static const _allAuthorsValue = '__all_discussion_authors__';
-
   final T order;
   final List<WenyouDiscussionOrderOption<T>> orderOptions;
   final String? authorId;
@@ -243,29 +230,50 @@ class _DiscussionDirectActions<T extends Object> extends StatelessWidget {
     if (authors.isEmpty) {
       return _DiscussionAuthorStatus(key: authorKey, label: '暂无可筛选作者');
     }
-    final selectedAuthorExists =
-        authorId == null || authors.any((author) => author.id == authorId);
-    final selectedValue = selectedAuthorExists && authorId != null
-        ? authorId!
-        : _allAuthorsValue;
-    return WenyouDropdownFilter<String>(
+    final selectedAuthor = authors
+        .where((author) => author.id == authorId)
+        .firstOrNull;
+    final tokens = context.wenyouTokens;
+    return TextButton(
       key: authorKey,
-      tooltip: '选择讨论作者',
-      icon: WenyouIconIds.identityMember,
-      appearance: WenyouDropdownFilterAppearance.quiet,
-      enabled: enabled,
-      options: [
-        WenyouFilterOption(value: _allAuthorsValue, label: allAuthorsLabel),
-        for (final author in authors)
-          WenyouFilterOption(
-            value: author.id,
-            label: author.label,
-            supportingLabel: author.supportingLabel,
+      onPressed: !enabled
+          ? null
+          : () async {
+              final selection = await showWenyouAuthorPicker(
+                context: context,
+                authors: authors,
+                selectedId: selectedAuthor?.id,
+                allAuthorsLabel: allAuthorsLabel,
+              );
+              if (!context.mounted ||
+                  selection == null ||
+                  selection.authorId == authorId) {
+                return;
+              }
+              onAuthorChanged(selection.authorId);
+            },
+      style: TextButton.styleFrom(
+        minimumSize: Size(tokens.minimumTouchTarget, tokens.minimumTouchTarget),
+        padding: EdgeInsets.symmetric(horizontal: tokens.space4),
+        foregroundColor: tokens.mutedText,
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Flexible(
+            child: Text(
+              selectedAuthor?.label ?? allAuthorsLabel,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(
+                context,
+              ).textTheme.wenyouCaption.copyWith(fontWeight: FontWeight.w500),
+            ),
           ),
-      ],
-      selected: selectedValue,
-      onSelected: (value) =>
-          onAuthorChanged(value == _allAuthorsValue ? null : value),
+          SizedBox(width: tokens.space4),
+          const WenyouIcon(WenyouIconIds.navigationExpand, size: 16),
+        ],
+      ),
     );
   }
 }

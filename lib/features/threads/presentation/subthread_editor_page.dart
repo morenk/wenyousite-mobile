@@ -8,6 +8,7 @@ import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/application/write_reconciler.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/threads/application/subthread_management_controller.dart';
@@ -62,18 +63,14 @@ class _SubthreadEditorPageState extends ConsumerState<SubthreadEditorPage> {
         appBar: AppBar(
           title: Text(widget.creating ? '添加子贴' : '编辑子贴'),
           actions: [
-            IconButton(
+            WenyouAsyncIconButton(
               key: const Key('subthread-editor-save'),
-              tooltip: locked ? '正在保存' : '保存子贴',
-              onPressed: !_initialized || locked ? null : _save,
-              icon:
+              label: '保存子贴',
+              icon: WenyouIconIds.actionSave,
+              isLoading:
                   state.pendingAction == SubthreadManagementAction.creating ||
-                      state.pendingAction == SubthreadManagementAction.updating
-                  ? const SizedBox.square(
-                      dimension: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const WenyouIcon(WenyouIconIds.actionSave),
+                  state.pendingAction == SubthreadManagementAction.updating,
+              onPressed: !_initialized || locked ? null : _save,
             ),
           ],
         ),
@@ -146,10 +143,10 @@ class _SubthreadEditorPageState extends ConsumerState<SubthreadEditorPage> {
           key: const Key('subthread-form-policy'),
           initialValue: _policy,
           decoration: const InputDecoration(labelText: '发帖权限'),
-          items: SubthreadPostingPolicy.values
+          options: SubthreadPostingPolicy.values
               .map(
                 (policy) =>
-                    DropdownMenuItem(value: policy, child: Text(policy.label)),
+                    WenyouFilterOption(value: policy, label: policy.label),
               )
               .toList(growable: false),
           onChanged: locked
@@ -286,23 +283,14 @@ class _SubthreadEditorPageState extends ConsumerState<SubthreadEditorPage> {
       await _pop();
       return;
     }
-    final discard = await showDialog<bool>(
+    final discard = await showWenyouConfirmationDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('放弃未保存的修改？'),
-        content: const Text('标题或发帖权限尚未保存，离开后会丢失。'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('继续编辑'),
-          ),
-          FilledButton(
-            key: const Key('subthread-editor-discard'),
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('放弃修改'),
-          ),
-        ],
-      ),
+      title: '放弃未保存的修改？',
+      message: '标题或发帖权限尚未保存，离开后会丢失。',
+      confirmLabel: '放弃修改',
+      cancelLabel: '继续编辑',
+      confirmKey: const Key('subthread-editor-discard'),
+      tone: WenyouConfirmationTone.destructive,
     );
     if (discard == true && mounted) await _pop();
   }

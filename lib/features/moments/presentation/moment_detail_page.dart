@@ -19,6 +19,7 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_discussion_reply_card.dart
 import 'package:wenyousite_mobile/core/widgets/wenyou_discussion_scroll_policy.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_internal_reference_text.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_overflow_content.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_pagination.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_transient_target_frame.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/moments/application/moment_controllers.dart';
@@ -277,18 +278,15 @@ class _MomentDetailPageState extends ConsumerState<MomentDetailPage> {
                       child: WenyouContentFrame(
                         top: context.wenyouTokens.space12,
                         child: Center(
-                          child: state.isLoadingMoreComments
-                              ? const CircularProgressIndicator()
-                              : OutlinedButton.icon(
-                                  key: const Key('moment-comments-load-more'),
-                                  onPressed: () => ref
-                                      .read(provider.notifier)
-                                      .loadMoreComments(),
-                                  icon: const WenyouIcon(
-                                    WenyouIconIds.navigationExpand,
-                                  ),
-                                  label: const Text('加载更多评论'),
-                                ),
+                          child: WenyouLoadMoreControl(
+                            hasMore: state.hasMoreComments,
+                            isLoading: state.isLoadingMoreComments,
+                            onLoadMore: () =>
+                                ref.read(provider.notifier).loadMoreComments(),
+                            loadMoreLabel: '加载更多评论',
+                            showEndLabel: false,
+                            loadMoreKey: const Key('moment-comments-load-more'),
+                          ),
                         ),
                       ),
                     ),
