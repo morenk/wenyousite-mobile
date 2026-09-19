@@ -114,10 +114,12 @@ import 'package:wenyou_api/src/model/bookmark_response_dto.dart';
 import 'package:wenyou_api/src/model/bookmark_thread_response_dto.dart';
 import 'package:wenyou_api/src/model/bookmarks_create201_response.dart';
 import 'package:wenyou_api/src/model/bookmarks_create_folder201_response.dart';
+import 'package:wenyou_api/src/model/bookmarks_delete_folder200_response.dart';
 import 'package:wenyou_api/src/model/bookmarks_find_all200_response.dart';
 import 'package:wenyou_api/src/model/bookmarks_find_folders200_response.dart';
 import 'package:wenyou_api/src/model/bookmarks_move200_response.dart';
 import 'package:wenyou_api/src/model/bookmarks_remove200_response.dart';
+import 'package:wenyou_api/src/model/bookmarks_rename_folder200_response.dart';
 import 'package:wenyou_api/src/model/business_error_code.dart';
 import 'package:wenyou_api/src/model/change_email_request_dto.dart';
 import 'package:wenyou_api/src/model/change_email_verify_dto.dart';
@@ -149,6 +151,7 @@ import 'package:wenyou_api/src/model/create_upload_url_dto.dart';
 import 'package:wenyou_api/src/model/current_thread_membership_response_dto.dart';
 import 'package:wenyou_api/src/model/current_user_response_dto.dart';
 import 'package:wenyou_api/src/model/daily_check_in_response_dto.dart';
+import 'package:wenyou_api/src/model/delete_bookmark_folder_response_dto.dart';
 import 'package:wenyou_api/src/model/delete_draft_response_dto.dart';
 import 'package:wenyou_api/src/model/dice_roll_response_dto.dart';
 import 'package:wenyou_api/src/model/direct_conversation_lookup_response_dto.dart';
@@ -261,12 +264,14 @@ import 'package:wenyou_api/src/model/moments_comments_list200_response.dart';
 import 'package:wenyou_api/src/model/moments_create201_response.dart';
 import 'package:wenyou_api/src/model/moments_create_bookmark_folder201_response.dart';
 import 'package:wenyou_api/src/model/moments_create_comment201_response.dart';
+import 'package:wenyou_api/src/model/moments_delete_bookmark_folder200_response.dart';
 import 'package:wenyou_api/src/model/moments_detail200_response.dart';
 import 'package:wenyou_api/src/model/moments_like201_response.dart';
 import 'package:wenyou_api/src/model/moments_list200_response.dart';
 import 'package:wenyou_api/src/model/moments_move_bookmark200_response.dart';
 import 'package:wenyou_api/src/model/moments_remove200_response.dart';
 import 'package:wenyou_api/src/model/moments_remove_comment200_response.dart';
+import 'package:wenyou_api/src/model/moments_rename_bookmark_folder200_response.dart';
 import 'package:wenyou_api/src/model/moments_replies200_response.dart';
 import 'package:wenyou_api/src/model/moments_unbookmark200_response.dart';
 import 'package:wenyou_api/src/model/moments_unlike200_response.dart';
@@ -327,6 +332,8 @@ import 'package:wenyou_api/src/model/recent_reply_thread_response_dto.dart';
 import 'package:wenyou_api/src/model/refresh_dto.dart';
 import 'package:wenyou_api/src/model/register_code_response_dto.dart';
 import 'package:wenyou_api/src/model/register_mobile_device_dto.dart';
+import 'package:wenyou_api/src/model/rename_bookmark_folder_dto.dart';
+import 'package:wenyou_api/src/model/rename_moment_bookmark_folder_dto.dart';
 import 'package:wenyou_api/src/model/reorder_stickers_dto.dart';
 import 'package:wenyou_api/src/model/reorder_subthreads_dto.dart';
 import 'package:wenyou_api/src/model/reordered_subthread_response_dto.dart';
@@ -595,10 +602,12 @@ part 'serializers.g.dart';
   BookmarkThreadResponseDto,
   BookmarksCreate201Response,
   BookmarksCreateFolder201Response,
+  BookmarksDeleteFolder200Response,
   BookmarksFindAll200Response,
   BookmarksFindFolders200Response,
   BookmarksMove200Response,
   BookmarksRemove200Response,
+  BookmarksRenameFolder200Response,
   BusinessErrorCode,
   ChangeEmailRequestDto,
   ChangeEmailVerifyDto,
@@ -630,6 +639,7 @@ part 'serializers.g.dart';
   CurrentThreadMembershipResponseDto,
   CurrentUserResponseDto,
   DailyCheckInResponseDto,
+  DeleteBookmarkFolderResponseDto,
   DeleteDraftResponseDto,
   DiceRollResponseDto,
   DirectConversationLookupResponseDto,
@@ -742,12 +752,14 @@ part 'serializers.g.dart';
   MomentsCreate201Response,
   MomentsCreateBookmarkFolder201Response,
   MomentsCreateComment201Response,
+  MomentsDeleteBookmarkFolder200Response,
   MomentsDetail200Response,
   MomentsLike201Response,
   MomentsList200Response,
   MomentsMoveBookmark200Response,
   MomentsRemove200Response,
   MomentsRemoveComment200Response,
+  MomentsRenameBookmarkFolder200Response,
   MomentsReplies200Response,
   MomentsUnbookmark200Response,
   MomentsUnlike200Response,
@@ -808,6 +820,8 @@ part 'serializers.g.dart';
   RefreshDto,
   RegisterCodeResponseDto,
   RegisterMobileDeviceDto,
+  RenameBookmarkFolderDto,
+  RenameMomentBookmarkFolderDto,
   ReorderStickersDto,
   ReorderSubthreadsDto,
   ReorderedSubthreadResponseDto,

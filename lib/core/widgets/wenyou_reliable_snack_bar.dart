@@ -10,12 +10,13 @@ class WenyouSnackBarReceipt {
   final String message;
 }
 
-/// The caller owns the receipt until a foreground presentation completes.
+/// The caller owns the receipt until its first foreground presentation.
 class WenyouReliableSnackBar extends StatefulWidget {
   const WenyouReliableSnackBar({
     required this.child,
     required this.receipt,
     required this.onDelivered,
+    required this.deliveryScope,
     this.visibility,
     super.key,
   });
@@ -23,6 +24,9 @@ class WenyouReliableSnackBar extends StatefulWidget {
   final Widget child;
   final WenyouSnackBarReceipt? receipt;
   final ValueChanged<Object> onDelivered;
+
+  /// Invalidates an active presentation when its account or date expires.
+  final Object deliveryScope;
   final WenyouFeedbackVisibility? visibility;
 
   @override
@@ -35,6 +39,7 @@ class _WenyouReliableSnackBarState extends State<WenyouReliableSnackBar>
   WenyouSnackBarActivity? _activity;
   ScaffoldFeatureController<SnackBar, SnackBarClosedReason>? _showing;
   Object? _showingId;
+  Object? _showingScope;
   Object? _deliveredId;
   bool _scheduled = false;
   bool _closing = false;
@@ -117,8 +122,15 @@ class _WenyouReliableSnackBarState extends State<WenyouReliableSnackBar>
   }
 
   void _present() {
-    if (!_ready || _showingId != widget.receipt?.id) _pause();
     final receipt = widget.receipt;
+    // Consuming a visible receipt must not close its active presentation.
+    // Scope changes still remove old-account or previous-day feedback.
+    final consumed = receipt == null && _showingId == _deliveredId;
+    if (!_ready ||
+        _showingScope != widget.deliveryScope ||
+        (!consumed && _showingId != receipt?.id)) {
+      _pause();
+    }
     final messenger = _messenger;
     if (!_ready ||
         _closing ||
@@ -134,24 +146,41 @@ class _WenyouReliableSnackBarState extends State<WenyouReliableSnackBar>
       pacing: WenyouSnackBarPacing.extended,
       tone: WenyouSnackBarTone.success,
       deferred: true,
+      onVisible: () => _onVisible(receipt.id),
     );
     _showing = controller;
     _showingId = receipt.id;
-    controller.closed.then((reason) {
+    _showingScope = widget.deliveryScope;
+    controller.closed.then((_) {
       if (!mounted || _showing != controller) return;
       _showing = null;
       _showingId = null;
-      if (_ready &&
-          widget.receipt?.id == receipt.id &&
-          (reason == SnackBarClosedReason.timeout ||
-              reason == SnackBarClosedReason.swipe ||
-              reason == SnackBarClosedReason.action ||
-              reason == SnackBarClosedReason.dismiss)) {
-        _deliveredId = receipt.id;
-        widget.onDelivered(receipt.id);
-      }
+      _showingScope = null;
       _changed();
     });
+  }
+
+  void _onVisible(Object id) {
+    if (!mounted ||
+        !_ready ||
+        _showingId != id ||
+        _showingScope != widget.deliveryScope ||
+        widget.receipt?.id != id ||
+        _deliveredId == id) {
+      return;
+    }
+    // Flutter can report visibility for more than one Scaffold. Record it
+    // immediately, then notify the owner outside the rendering phase.
+    _deliveredId = id;
+    final scope = widget.deliveryScope;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted &&
+          widget.deliveryScope == scope &&
+          widget.receipt?.id == id) {
+        widget.onDelivered(id);
+      }
+    });
+    WidgetsBinding.instance.ensureVisualUpdate();
   }
 
   void _pause() {
@@ -159,6 +188,7 @@ class _WenyouReliableSnackBarState extends State<WenyouReliableSnackBar>
     if (controller == null) return;
     _showing = null;
     _showingId = null;
+    _showingScope = null;
     _closing = true;
     controller.close();
     controller.closed.then((_) {

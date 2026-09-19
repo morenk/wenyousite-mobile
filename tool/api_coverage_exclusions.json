@@ -1,7 +1,11 @@
 {
   "schemaVersion": 1,
-  "contractVersion": "5.22.0-dev.20260912.2",
+  "contractVersion": "5.23.0-dev.20260913.1",
   "exclusions": [
+    { "operationId": "bookmarksRenameFolder", "category": "planned_bookmark_management", "reason": "后端 5.23 兼容新增收藏夹管理；移动端由独立收藏夹管理候选接入，本诊断切片仅同步契约，未提供业务入口。" },
+    { "operationId": "bookmarksDeleteFolder", "category": "planned_bookmark_management", "reason": "后端 5.23 兼容新增收藏夹管理；移动端由独立收藏夹管理候选接入，本诊断切片仅同步契约，未提供业务入口。" },
+    { "operationId": "momentsRenameBookmarkFolder", "category": "planned_bookmark_management", "reason": "后端 5.23 兼容新增收藏夹管理；移动端由独立收藏夹管理候选接入，本诊断切片仅同步契约，未提供业务入口。" },
+    { "operationId": "momentsDeleteBookmarkFolder", "category": "planned_bookmark_management", "reason": "后端 5.23 兼容新增收藏夹管理；移动端由独立收藏夹管理候选接入，本诊断切片仅同步契约，未提供业务入口。" },
     { "operationId": "adminIndex", "category": "admin_product", "reason": "移动端 V1 不承载管理产品。" },
     { "operationId": "adminSendSystemNotification", "category": "admin_product", "reason": "移动端 V1 不承载管理产品。" },
     { "operationId": "adminGetHistory", "category": "admin_product", "reason": "移动端 V1 不承载管理产品。" },
