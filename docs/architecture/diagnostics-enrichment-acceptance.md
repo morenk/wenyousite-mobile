@@ -20,6 +20,8 @@ Sentry 抽查 build 95 / 0.7.1 的 MOBILE-3、7、9、1、4、5、8、C 最新�
 
 候选修复／待负责人验收。完整门禁与 Debug 构建已通过；尚未取得 Android 原场景与新 Sentry 事件的负责人验收，不关闭历史业务故障。
 
+2026-09-20 负责人明确要求“合并清理分支”，授权将 PR #45 合入 `dev` 并清理任务分支与临时 Worktree。本次合并授权不作为真机或真实收件验收通过的证据；这些验证继续保留为后续事项。APK、探针和全部测试日志迁移至 `D:\code\wenyousite\artifacts\mobile-sentry-diagnostics-20260920\evidence`，逐文件摘要保存在同目录上层的 `SHA256SUMS.txt`，不再依赖临时 Worktree。
+
 ## 已取得的本地证据
 
 - 基线：`origin/dev` 的 `afc11c8749bce79f6b15195df41f214909296951`；独立契约同步提交 `b24cfcbb` 固定已部署 API 5.23 / e214fd18，OpenAPI 验证、客户端生成、来源、154/154 业务覆盖、模块文档和公网核验通过。
@@ -49,6 +51,7 @@ PR #45 创建后发现 `dev` 已合入 PR #42（`cd348373`），包含行内格�
 - 应用源码：整合提交 `ccfa6a2c14d13b02f5e96f59941f2f02191e18d4`，后续仅更新交付文档。
 - 2026-09-19 23:56 使用相同源码和本机私有诊断配置重建成功，`WENYOU_ENABLE_ERROR_REPORTING=true`；日志 `build/diagnostic-evidence/diagnostic-integrated-apk.log`。
 - 文件：`build/diagnostic-evidence/wenyou-0.7.1-95-diagnostics-ccfa6a2c-debug.apk`，223,507,681 字节。
+- 清理后的稳定位置：`D:\code\wenyousite\artifacts\mobile-sentry-diagnostics-20260920\evidence\wenyou-0.7.1-95-diagnostics-ccfa6a2c-debug.apk`。
 - SHA-256：`53D22DC1D98B69316A21E56E8BC886A10616C2C252AF37A1AF4ED4388D8AB549`。
 - 已用 `aapt` 核验包名 `site.wenyou.app.debug`、名称“温油站 Debug”、版本 `0.7.1-debug/95`、最低 API 26 与三个 Debug ABI；未安装、未发布，实际 Android 原场景和 Sentry 新事件仍待负责人验收。
 
