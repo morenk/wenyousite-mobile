@@ -5,6 +5,97 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_reliable_snack_bar.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_snack_bar.dart';
 
 void main() {
+  testWidgets('构建阶段的可见回调延后确认，宿主卸载也不丢失', (tester) async {
+    WenyouSnackBarReceipt? receipt = const WenyouSnackBarReceipt(
+      id: 'today',
+      message: '签到奖励',
+    );
+    final delivered = <Object>[];
+    late StateSetter rebuild;
+    VoidCallback? visibilityDuringBuild;
+    var hideHost = false;
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: StatefulBuilder(
+          builder: (context, setState) {
+            rebuild = setState;
+            // Exercise a rendering-phase callback without mutating state in build.
+            visibilityDuringBuild?.call();
+            visibilityDuringBuild = null;
+            if (hideHost) return const Scaffold(body: Text('内容'));
+            return WenyouReliableSnackBar(
+              deliveryScope: 'account-day',
+              receipt: receipt,
+              onDelivered: (id) {
+                delivered.add(id);
+                setState(() => receipt = null);
+              },
+              child: const Scaffold(body: Text('内容')),
+            );
+          },
+        ),
+      ),
+    );
+    await tester.pump();
+    final onVisible = tester.widget<SnackBar>(find.byType(SnackBar)).onVisible!;
+    rebuild(() {
+      hideHost = true;
+      visibilityDuringBuild = onVisible;
+    });
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(delivered, ['today']);
+    expect(receipt, isNull);
+  });
+
+  testWidgets('提示可见同帧宿主卸载仍消费回执，重新挂载不重播', (tester) async {
+    var showHost = true;
+    WenyouSnackBarReceipt? receipt = const WenyouSnackBarReceipt(
+      id: 'today',
+      message: '签到奖励',
+    );
+    final delivered = <Object>[];
+    late StateSetter rebuild;
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: StatefulBuilder(
+          builder: (context, setState) {
+            rebuild = setState;
+            const page = Scaffold(body: Text('内容'));
+            return showHost
+                ? WenyouReliableSnackBar(
+                    deliveryScope: 'account-day',
+                    receipt: receipt,
+                    onDelivered: (id) {
+                      delivered.add(id);
+                      setState(() => receipt = null);
+                    },
+                    child: page,
+                  )
+                : page;
+          },
+        ),
+      ),
+    );
+    await tester.pump();
+    final animation = tester.widget<SnackBar>(find.byType(SnackBar)).animation!;
+    void replaceHost(AnimationStatus status) {
+      if (status == AnimationStatus.completed) rebuild(() => showHost = false);
+    }
+
+    animation.addStatusListener(replaceHost);
+    await tester.pumpAndSettle();
+    animation.removeStatusListener(replaceHost);
+    expect(delivered, ['today']);
+    expect(receipt, isNull);
+    rebuild(() => showHost = true);
+    await tester.pumpAndSettle();
+    expect(find.text('签到奖励'), findsNothing);
+    expect(delivered, ['today']);
+  });
+
   testWidgets('尚未实际显示就切后台不消费，恢复后首次显示才确认', (tester) async {
     final binding = tester.binding;
     binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);

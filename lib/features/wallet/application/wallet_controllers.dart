@@ -287,7 +287,9 @@ class DailyCheckInController extends StateNotifier<DailyCheckInState> {
   }
 
   void acknowledgeReceipt(String date) {
-    if (state.pendingReceipt?.date != date) return;
+    // A visible host may disappear before its end-of-frame acknowledgement.
+    // Ignore old-account callbacks after the session-owned controller expires.
+    if (!mounted || state.pendingReceipt?.date != date) return;
     _acknowledgedDate = date;
     state = DailyCheckInState(
       phase: state.phase,

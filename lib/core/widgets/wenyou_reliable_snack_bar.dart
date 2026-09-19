@@ -23,6 +23,9 @@ class WenyouReliableSnackBar extends StatefulWidget {
 
   final Widget child;
   final WenyouSnackBarReceipt? receipt;
+
+  /// Rendering-phase callbacks are deferred even if this host is then removed.
+  /// The receipt owner must reject callbacks for disposed or replaced state.
   final ValueChanged<Object> onDelivered;
 
   /// Invalidates an active presentation when its account or date expires.
@@ -172,13 +175,18 @@ class _WenyouReliableSnackBarState extends State<WenyouReliableSnackBar>
     // Flutter can report visibility for more than one Scaffold. Record it
     // immediately, then notify the owner outside the rendering phase.
     _deliveredId = id;
-    final scope = widget.deliveryScope;
+    final onDelivered = widget.onDelivered;
+    if (SchedulerBinding.instance.schedulerPhase !=
+        SchedulerPhase.persistentCallbacks) {
+      // Animation completion precedes the frame's rebuild. Consume now so a
+      // replacement host cannot queue a stale receipt in that same frame.
+      onDelivered(id);
+      return;
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted &&
-          widget.deliveryScope == scope &&
-          widget.receipt?.id == id) {
-        widget.onDelivered(id);
-      }
+      // Visibility is an observed fact even if the host unmounts this frame.
+      // Capture the original owner; never deliver through a replacement widget.
+      onDelivered(id);
     });
     WidgetsBinding.instance.ensureVisualUpdate();
   }

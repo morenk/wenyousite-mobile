@@ -47,6 +47,10 @@ void main() {
     expect(find.text('已订阅主题官方更新。'), findsOneWidget);
     await tester.pump(const Duration(seconds: 4));
     await tester.pumpAndSettle();
+    await tester.pumpWidget(_app(container));
+    await tester.pumpAndSettle();
+    expect(find.text('已订阅主题官方更新。'), findsNothing);
+    expect(repository.createdTargets, [null]);
 
     await tester.tap(find.byKey(const Key('thread-subscription-players')));
     await tester.pumpAndSettle();

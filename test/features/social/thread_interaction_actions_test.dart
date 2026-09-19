@@ -74,6 +74,11 @@ void main() {
     await tester.pump(const Duration(seconds: 4));
     await tester.pumpAndSettle();
     expect(find.text('已收藏到“默认收藏夹”。'), findsNothing);
+    tester.element(find.byType(ThreadInteractionActions)).markNeedsBuild();
+    await tester.pumpAndSettle();
+    expect(find.text('已收藏到“默认收藏夹”。'), findsNothing);
+    expect(find.text('已喜欢这个主题。'), findsNothing);
+    expect(repository.likeCalls, 1);
     expect(bookmarkRepository.moves, isEmpty);
     expect(repository.createdFolderIds, ['folder-default']);
 

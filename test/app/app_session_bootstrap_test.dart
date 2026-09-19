@@ -23,6 +23,55 @@ import 'package:wenyousite_mobile/features/wallet/presentation/daily_check_in_st
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  testWidgets('真实签到宿主在首次可见同帧重挂载不重复请求或补弹', (tester) async {
+    final repository = _CheckInRepository(
+      (_) async => _result(date: '2026-09-03', claimedNow: true),
+    );
+    final container = await _authenticatedContainer(repository, []);
+    addTearDown(container.dispose);
+    _restoreResumedLifecycle(tester);
+    var generation = 0;
+    late StateSetter rebuild;
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: StatefulBuilder(
+            builder: (context, setState) {
+              rebuild = setState;
+              return AppSessionBootstrap(
+                key: ValueKey(generation),
+                now: () => DateTime.utc(2026, 9, 3, 2),
+                child: const Scaffold(body: Text('内容页')),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+    await _settle(tester);
+    final animation = tester.widget<SnackBar>(find.byType(SnackBar)).animation!;
+    void replaceHost(AnimationStatus status) {
+      if (status == AnimationStatus.completed) rebuild(() => generation++);
+    }
+
+    animation.addStatusListener(replaceHost);
+    await tester.pumpAndSettle();
+    animation.removeStatusListener(replaceHost);
+    expect(tester.takeException(), isNull);
+    expect(generation, 1);
+    expect(repository.checkInCalls, 1);
+    expect(
+      container.read(dailyCheckInControllerProvider).pendingReceipt,
+      isNull,
+    );
+    expect(find.textContaining('今日签到获得'), findsNothing);
+    await tester.pump(const Duration(seconds: 5));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('今日签到获得'), findsNothing);
+  });
+
   testWidgets('启动恢复保留诊断，退出账号清除诊断', (tester) async {
     final previous = FailureDiagnostics.instance;
     final diagnostics = FailureDiagnostics();
@@ -112,8 +161,13 @@ void main() {
     expect(find.text('今日已签到，获得 3 升温油'), findsOneWidget);
   });
 
-  for (final rootDialog in [true, false]) {
-    testWidgets('真实路由首帧与${rootDialog ? '根' : '分支'}弹窗遮挡：关闭后补显', (tester) async {
+  for (final modal in [
+    (root: true, sheet: false),
+    (root: false, sheet: false),
+    (root: true, sheet: true),
+    (root: false, sheet: true),
+  ]) {
+    testWidgets('真实路由首帧与弹层遮挡 $modal：关闭后仅首次补显', (tester) async {
       final response = Completer<DailyCheckInResult>();
       final repository = _CheckInRepository((_) => response.future);
       final container = await _authenticatedContainer(repository, []);
@@ -131,10 +185,8 @@ void main() {
                     path: '/',
                     builder: (context, state) => Scaffold(
                       body: TextButton(
-                        onPressed: () => showDialog<void>(
-                          context: context,
-                          useRootNavigator: rootDialog,
-                          builder: (context) => AlertDialog(
+                        onPressed: () {
+                          Widget content(BuildContext context) => AlertDialog(
                             title: const Text('前往传送门？'),
                             actions: [
                               TextButton(
@@ -142,8 +194,25 @@ void main() {
                                 child: const Text('暂不前往'),
                               ),
                             ],
-                          ),
-                        ),
+                          );
+                          if (modal.sheet) {
+                            unawaited(
+                              showModalBottomSheet<void>(
+                                context: context,
+                                useRootNavigator: modal.root,
+                                builder: content,
+                              ),
+                            );
+                          } else {
+                            unawaited(
+                              showDialog<void>(
+                                context: context,
+                                useRootNavigator: modal.root,
+                                builder: content,
+                              ),
+                            );
+                          }
+                        },
                         child: const Text('打开弹窗'),
                       ),
                     ),

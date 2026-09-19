@@ -112,6 +112,10 @@ void main() {
     await tester.pump(const Duration(seconds: 5));
     await tester.pumpAndSettle();
     expect(find.text('正文已保存到草稿位 2。'), findsNothing);
+    await _pumpSheet(tester, controller, currentContent: '当前编辑器正文');
+    await tester.pumpAndSettle();
+    expect(find.text('正文已保存到草稿位 2。'), findsNothing);
+    expect(repository.createdSlots, [2]);
   });
 
   testWidgets('草稿位 1 已有内容时确认后开启并显示自动保存状态', (tester) async {
