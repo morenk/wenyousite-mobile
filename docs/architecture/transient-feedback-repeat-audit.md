@@ -47,7 +47,7 @@
 - `test/features/app_shell/background_reminder_runtime_test.dart`
 - `test/core/diagnostics/`、`test/app/app_router_test.dart`
 
-关注、收藏、订阅和草稿仅补充测试断言，不改变运行时逻辑。实际源码影响限定为签到展示宿主、应用组合层回调、签到回执消费及后台提醒协调器的展示确认；不修改认证、网络、依赖、契约、原生配置或持久化。本轮按普通候选流程执行上述相关测试、全量静态检查与 Debug APK 构建；第一轮完整门禁记录不冒充本轮应用源码的完整门禁，负责人验收后、合并前还需执行最终集成检查。已整合 `origin/dev` 的 `1c46ef44`，冲突仅为历史契约说明，并加跑 `test/core/diagnostics/` 与 `test/app/app_router_test.dart`。
+关注、收藏、订阅和草稿仅补充测试断言，不改变运行时逻辑。实际源码影响限定为签到展示宿主、应用组合层回调、签到回执消费及后台提醒协调器的展示确认；不修改认证、网络、依赖、契约、原生配置或持久化。本轮按普通候选流程执行上述相关测试、全量静态检查与 Debug APK 构建；第一轮完整门禁记录不冒充本轮应用源码的完整门禁；负责人随后明确授权合并清理，当前源码已另行通过最终完整门禁，见签到验收记录。已整合 `origin/dev` 的 `1c46ef44`，冲突仅为历史契约说明，并加跑 `test/core/diagnostics/` 与 `test/app/app_router_test.dart`。
 
 ## 真机验收边界
 
