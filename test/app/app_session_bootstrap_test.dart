@@ -23,6 +23,55 @@ import 'package:wenyousite_mobile/features/wallet/presentation/daily_check_in_st
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  testWidgets('真实签到宿主在首次可见同帧重挂载不重复请求或补弹', (tester) async {
+    final repository = _CheckInRepository(
+      (_) async => _result(date: '2026-09-03', claimedNow: true),
+    );
+    final container = await _authenticatedContainer(repository, []);
+    addTearDown(container.dispose);
+    _restoreResumedLifecycle(tester);
+    var generation = 0;
+    late StateSetter rebuild;
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: StatefulBuilder(
+            builder: (context, setState) {
+              rebuild = setState;
+              return AppSessionBootstrap(
+                key: ValueKey(generation),
+                now: () => DateTime.utc(2026, 9, 3, 2),
+                child: const Scaffold(body: Text('内容页')),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+    await _settle(tester);
+    final animation = tester.widget<SnackBar>(find.byType(SnackBar)).animation!;
+    void replaceHost(AnimationStatus status) {
+      if (status == AnimationStatus.completed) rebuild(() => generation++);
+    }
+
+    animation.addStatusListener(replaceHost);
+    await tester.pumpAndSettle();
+    animation.removeStatusListener(replaceHost);
+    expect(tester.takeException(), isNull);
+    expect(generation, 1);
+    expect(repository.checkInCalls, 1);
+    expect(
+      container.read(dailyCheckInControllerProvider).pendingReceipt,
+      isNull,
+    );
+    expect(find.textContaining('今日签到获得'), findsNothing);
+    await tester.pump(const Duration(seconds: 5));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('今日签到获得'), findsNothing);
+  });
+
   testWidgets('启动恢复保留诊断，退出账号清除诊断', (tester) async {
     final previous = FailureDiagnostics.instance;
     final diagnostics = FailureDiagnostics();
@@ -112,8 +161,13 @@ void main() {
     expect(find.text('今日已签到，获得 3 升温油'), findsOneWidget);
   });
 
-  for (final rootDialog in [true, false]) {
-    testWidgets('真实路由首帧与${rootDialog ? '根' : '分支'}弹窗遮挡：关闭后补显', (tester) async {
+  for (final modal in [
+    (root: true, sheet: false),
+    (root: false, sheet: false),
+    (root: true, sheet: true),
+    (root: false, sheet: true),
+  ]) {
+    testWidgets('真实路由首帧与弹层遮挡 $modal：关闭后仅首次补显', (tester) async {
       final response = Completer<DailyCheckInResult>();
       final repository = _CheckInRepository((_) => response.future);
       final container = await _authenticatedContainer(repository, []);
@@ -131,10 +185,8 @@ void main() {
                     path: '/',
                     builder: (context, state) => Scaffold(
                       body: TextButton(
-                        onPressed: () => showDialog<void>(
-                          context: context,
-                          useRootNavigator: rootDialog,
-                          builder: (context) => AlertDialog(
+                        onPressed: () {
+                          Widget content(BuildContext context) => AlertDialog(
                             title: const Text('前往传送门？'),
                             actions: [
                               TextButton(
@@ -142,8 +194,25 @@ void main() {
                                 child: const Text('暂不前往'),
                               ),
                             ],
-                          ),
-                        ),
+                          );
+                          if (modal.sheet) {
+                            unawaited(
+                              showModalBottomSheet<void>(
+                                context: context,
+                                useRootNavigator: modal.root,
+                                builder: content,
+                              ),
+                            );
+                          } else {
+                            unawaited(
+                              showDialog<void>(
+                                context: context,
+                                useRootNavigator: modal.root,
+                                builder: content,
+                              ),
+                            );
+                          }
+                        },
                         child: const Text('打开弹窗'),
                       ),
                     ),
@@ -191,13 +260,20 @@ void main() {
       unawaited(router.push<void>('/next'));
       await tester.pumpAndSettle();
       expect(find.text('下一页'), findsOneWidget);
-      expect(find.text('今日签到获得 3 升温油。'), findsOneWidget);
+      expect(find.text('今日签到获得 3 升温油。'), findsNothing);
+      router.pop();
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('打开弹窗'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('暂不前往'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('今日签到获得'), findsNothing);
       expect(repository.checkInCalls, 1);
       await tester.pumpWidget(const SizedBox.shrink());
     });
   }
 
-  testWidgets('提示显示途中切后台会暂停，恢复后完整显示并确认回执', (tester) async {
+  testWidgets('提示首次显示即确认回执，显示途中切后台后不再补显', (tester) async {
     final repository = _CheckInRepository(
       (_) async => _result(date: '2026-09-03', claimedNow: true),
     );
@@ -214,11 +290,11 @@ void main() {
     await tester.pump(const Duration(seconds: 8));
     expect(
       container.read(dailyCheckInControllerProvider).pendingReceipt,
-      isNotNull,
+      isNull,
     );
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
     await tester.pumpAndSettle();
-    expect(find.text('今日签到获得 3 升温油。'), findsOneWidget);
+    expect(find.text('今日签到获得 3 升温油。'), findsNothing);
     await tester.pump(const Duration(seconds: 4));
     await tester.pumpAndSettle();
     expect(
@@ -322,24 +398,54 @@ void main() {
     expect(repository.checkInCalls, 1);
   });
 
-  testWidgets('签到提示被操作提示打断后补显，操作反馈优先', (tester) async {
+  testWidgets('跨零点签到提示被多次操作提示打断后不再补显', (tester) async {
+    var now = DateTime.utc(2026, 9, 2, 15, 59, 58);
+    final repository = _CheckInRepository(
+      (call) async => call == 1
+          ? _result(date: '2026-09-02', claimedNow: false)
+          : _result(date: '2026-09-03', claimedNow: true),
+    );
+    final container = await _authenticatedContainer(repository, []);
+    addTearDown(container.dispose);
+    _restoreResumedLifecycle(tester);
+    await tester.pumpWidget(_app(container, now: () => now));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('今日签到获得'), findsNothing);
+    now = DateTime.utc(2026, 9, 2, 16, 0, 1);
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('今日签到获得 3 升温油'), findsOneWidget);
+    for (final message in ['已收藏', '已取消收藏', '已收藏']) {
+      showWenyouSnackBar(tester.element(find.byType(Scaffold)), message);
+      await tester.pumpAndSettle();
+      expect(find.text(message), findsOneWidget);
+      await tester.pump(const Duration(seconds: 3));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('今日签到获得'), findsNothing);
+    }
+    expect(repository.checkInCalls, 2);
+  });
+
+  testWidgets('首次显示消费回执后仍正常停留，途中重新挂载不会重复提示', (tester) async {
     final repository = _CheckInRepository(
       (_) async => _result(date: '2026-09-03', claimedNow: true),
     );
     final container = await _authenticatedContainer(repository, []);
     addTearDown(container.dispose);
     _restoreResumedLifecycle(tester);
-    await tester.pumpWidget(
-      _app(container, now: () => DateTime.utc(2026, 9, 3, 2)),
+    final app = _app(container, now: () => DateTime.utc(2026, 9, 3, 2));
+    await tester.pumpWidget(app);
+    await tester.pumpAndSettle();
+    expect(
+      container.read(dailyCheckInControllerProvider).pendingReceipt,
+      isNull,
     );
-    await _settle(tester);
-    await tester.pump(const Duration(milliseconds: 500));
-    showWenyouSnackBar(tester.element(find.byType(Scaffold)), '已收藏');
-    await tester.pumpAndSettle();
-    expect(find.text('已收藏'), findsOneWidget);
-    await tester.pump(const Duration(seconds: 3));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(seconds: 1));
     expect(find.textContaining('今日签到获得 3 升温油'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpWidget(app);
+    await tester.pumpAndSettle();
+    expect(find.textContaining('今日签到获得'), findsNothing);
     expect(repository.checkInCalls, 1);
   });
 

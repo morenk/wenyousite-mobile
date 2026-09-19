@@ -26,9 +26,17 @@ void main() {
     expect(find.text('已关注'), findsOneWidget);
     expect(find.text('关注成功。'), findsOneWidget);
 
+    await tester.pump(const Duration(seconds: 4));
+    await tester.pumpAndSettle();
+    await tester.pumpWidget(_app(repository));
+    await tester.pumpAndSettle();
+    expect(find.text('关注成功。'), findsNothing);
+    expect(repository.followCalls, 1);
+
     await tester.tap(find.byKey(const Key('user-relation-follow')));
     await tester.pumpAndSettle();
     expect(repository.unfollowCalls, 1);
+    expect(find.text('已取消关注。'), findsOneWidget);
     expect(find.text('关注'), findsOneWidget);
   });
 

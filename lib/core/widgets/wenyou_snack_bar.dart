@@ -18,6 +18,7 @@ ScaffoldFeatureController<SnackBar, SnackBarClosedReason>? showWenyouSnackBar(
   WenyouSnackBarTone tone = WenyouSnackBarTone.neutral,
   String? actionLabel,
   VoidCallback? onAction,
+  VoidCallback? onVisible,
   Key? key,
   Key? actionKey,
   SnackBarBehavior? behavior,
@@ -29,6 +30,7 @@ ScaffoldFeatureController<SnackBar, SnackBarClosedReason>? showWenyouSnackBar(
     tone: tone,
     actionLabel: actionLabel,
     onAction: onAction,
+    onVisible: onVisible,
     key: key,
     actionKey: actionKey,
     behavior: behavior,
@@ -43,6 +45,7 @@ extension WenyouSnackBarMessenger on ScaffoldMessengerState {
     WenyouSnackBarTone tone = WenyouSnackBarTone.neutral,
     String? actionLabel,
     VoidCallback? onAction,
+    VoidCallback? onVisible,
     Key? key,
     Key? actionKey,
     SnackBarBehavior? behavior,
@@ -82,6 +85,7 @@ extension WenyouSnackBarMessenger on ScaffoldMessengerState {
     final controller = showSnackBar(
       SnackBar(
         key: key,
+        onVisible: onVisible,
         backgroundColor: tokens.panel,
         elevation: WenyouOverlayContract.elevation['floating'],
         shape: RoundedRectangleBorder(
