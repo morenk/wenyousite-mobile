@@ -5,6 +5,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
+import 'package:wenyousite_mobile/core/diagnostics/diagnostic_error_details.dart';
 import 'package:wenyousite_mobile/core/diagnostics/diagnostic_record.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 
@@ -35,6 +36,8 @@ class FailureDiagnostics extends ChangeNotifier {
   final _failureIds = Expando<String>();
   final _requestIds = <String, String>{};
   Map<String, Object?> environment = const {};
+  String? screen;
+  String? Function()? lifecycle;
   bool automaticSending = true;
   bool storageAvailable = true;
   bool _notifying = false;
@@ -95,6 +98,7 @@ class FailureDiagnostics extends ChangeNotifier {
     ApiFailure? failure,
     DiagnosticStage? stage,
     DiagnosticOperation? operation,
+    String? frameworkLibrary,
   }) {
     final context = DiagnosticAttempt.current;
     if (context != null && context.generation != _generation) return null;
@@ -126,9 +130,21 @@ class FailureDiagnostics extends ChangeNotifier {
     final id = const Uuid().v4();
     final shouldSend =
         api == null || shouldSendDiagnostic(api, resolvedOperation);
+    final cause = dio?.error ?? api?.cause ?? error;
+    final causeStack = cause is Error ? cause.stackTrace : null;
+    final resolvedStack =
+        stackTrace ??
+        causeStack ??
+        dio?.stackTrace ??
+        (error is Error ? error.stackTrace : null);
+    final frames = safeDiagnosticStack(resolvedStack);
     final fields = sanitizeDiagnosticFields({
       ...environment,
+      'screen': screen,
+      'frameworkLibrary': frameworkLibrary,
+      'lifecycle': lifecycle?.call(),
       if (context != null) ...context.fields,
+      ...diagnosticErrorDetails(error, api),
       'requestId': requestId,
       'httpStatus': api?.httpStatus ?? context?.httpStatus,
       'businessCode': api?.businessCode,
@@ -139,8 +155,16 @@ class FailureDiagnostics extends ChangeNotifier {
           (context?.apiEnvelopeReceived ?? false) ||
           (dio?.response?.data is Map &&
               (dio!.response!.data as Map)['code'] is num),
-      'errorType': (dio?.error ?? api?.cause ?? error).runtimeType.toString(),
-      'stack': safeDiagnosticStack(stackTrace ?? dio?.stackTrace),
+      'errorType': cause.runtimeType.toString(),
+      'stack': frames,
+      'stackStatus': diagnosticStackStatus(resolvedStack, frames),
+      'stackOrigin': stackTrace != null
+          ? 'caught'
+          : causeStack != null
+          ? 'error'
+          : dio != null
+          ? 'cause'
+          : 'none',
     });
     _records.add(
       DiagnosticRecord(
