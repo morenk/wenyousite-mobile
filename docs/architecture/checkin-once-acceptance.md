@@ -27,6 +27,7 @@
 
 ## 安装包与日志
 
+- 应用源码提交：`96e561f7`；任务分支：`codex/20260920-checkin-once`。后续仅补充本验收记录，不改变已验证的应用、测试、依赖或生成客户端。
 - 应用：温油站 Debug；`applicationId=site.wenyou.app.debug`；`versionName=0.7.1-debug`；`versionCode=95`；最低 API 26；开发 ABI 为 ARM32、ARM64、x86_64，已用 `aapt dump badging` 核对。
 - 稳定归档：`D:\code\wenyousite\artifacts\mobile-checkin-once-20260920\wenyou-checkin-once-debug.apk`，183,302,862 字节。
 - SHA-256：`6071d93196060d22a41831a2741339204b9e3d422b24e790401fcda475ada041`。
