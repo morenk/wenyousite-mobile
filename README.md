@@ -53,9 +53,11 @@ flutter run --dart-define=API_BASE_URL=http://10.0.2.2:3000/api/v1
 pwsh -NoProfile -File tool/sync_backend_contract.ps1
 npm run api:validate
 npm run api:generate
+dart run tool/generate_diagnostic_routes.dart
+dart format lib/core/diagnostics/diagnostic_routes.g.dart
 ```
 
-生成代码禁止手改。契约变化必须使用独立 `chore` 切片，并同步受影响模块文档与 [`docs/CHANGELOG.md`](docs/CHANGELOG.md)。
+生成代码禁止手改。诊断端点表仅保留静态路由与 operationId，自动测试核对它与固定 OpenAPI 一致。契约变化必须使用独立 `chore` 切片，并同步受影响模块文档与 [`docs/CHANGELOG.md`](docs/CHANGELOG.md)。
 
 ## 质量门禁
 

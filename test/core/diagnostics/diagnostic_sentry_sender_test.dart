@@ -22,11 +22,19 @@ void main() {
         return http.Response(jsonEncode({'id': header['event_id']}), 200);
       }),
     );
-    final diagnostics = FailureDiagnostics(sender: sender);
+    final diagnostics = FailureDiagnostics(sender: sender)
+      ..environment = {
+        'buildMode': 'release',
+        'deviceModel': 'Google Pixel 9',
+        'androidApi': 35,
+        'body': 'private-body',
+        'token': 'secret',
+      };
     final id = diagnostics.capture(
       StateError('private-body'),
       stackTrace: StackTrace.fromString(
-        '#0 secret (package:wenyousite_mobile/main.dart:1:2)',
+        '#0 secret (package:wenyousite_mobile/main.dart:1)\n'
+        '#1 secret (package:flutter_quill/src/controller.dart:2:3)',
       ),
     );
     await diagnostics.settled;
@@ -37,6 +45,14 @@ void main() {
     expect(outgoing.single, isNot(contains('"user":')));
     expect(outgoing.single, isNot(contains('"request":')));
     expect(outgoing.single, isNot(contains('"breadcrumbs":')));
+    expect(outgoing.single, contains('package:wenyousite_mobile/main.dart'));
+    expect(
+      outgoing.single,
+      contains('package:flutter_quill/src/controller.dart'),
+    );
+    expect(outgoing.single, contains('"stackStatus":"captured"'));
+    expect(outgoing.single, contains('"buildMode":"release"'));
+    expect(outgoing.single, contains('Google Pixel 9'));
     expect(diagnostics.records.single.pending, isFalse);
     sender.cancel();
   });

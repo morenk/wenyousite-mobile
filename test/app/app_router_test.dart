@@ -1,8 +1,44 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:wenyousite_mobile/app/app_router.dart';
+import 'package:wenyousite_mobile/core/diagnostics/failure_diagnostics.dart';
 import 'package:wenyousite_mobile/core/network/session_controller.dart';
 
 void main() {
+  testWidgets('诊断跟随页面名称，不保留路径参数和查询词，销毁时释放监听', (tester) async {
+    final diagnostics = FailureDiagnostics();
+    final router = GoRouter(
+      initialLocation: '/threads/private-id?q=private-query',
+      routes: [
+        GoRoute(
+          path: '/threads/:id',
+          name: 'thread-detail',
+          builder: (_, _) => const SizedBox(),
+        ),
+        GoRoute(
+          path: '/appearance',
+          name: 'appearance',
+          builder: (_, _) => const SizedBox(),
+        ),
+      ],
+    );
+    final unbind = bindRouterDiagnostics(router, diagnostics);
+    await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+    await tester.pumpAndSettle();
+    expect(diagnostics.screen, 'thread-detail');
+    diagnostics.capture(StateError('private-body'));
+    await diagnostics.settled;
+    expect(diagnostics.export(), isNot(contains('private-')));
+    router.go('/appearance');
+    await tester.pumpAndSettle();
+    expect(diagnostics.screen, 'appearance');
+    unbind();
+    expect(diagnostics.screen, isNull);
+    await tester.pumpWidget(const SizedBox());
+    router.dispose();
+    diagnostics.dispose();
+  });
   test('清理失败仅放行已确认注销页，不放行其他账号页面', () {
     for (final path in ['/me/security/delete-account', '/me/edit']) {
       expect(

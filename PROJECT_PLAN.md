@@ -9,7 +9,7 @@
 - 2026-09-11 契约同步：本任务分支已同步后端 `0ee2c0de1d9c570e495e778be6661b074b7a4bef` 的 `5.20.0-dev.20260909.1`，生成客户端增加可空封面媒体与动画预览字段，暂不接入播放。同日 01:16 完整门禁已确认公网更新至该契约及精确 revision，主题响应兼容检查通过；下列旧契约条目保留此前交付背景。
 
 - 客户端：`0.7.1+95` Android 正式发布（GIF 正文上传修复）；新正式 APK 仅支持 Android 8+ ARM64，正文、标题和品牌文字继承平台系统字体，KaTeX、等宽呈现与 Material Icons 等功能依赖保留。正式包名 `site.wenyou.app`，Debug 包名 `site.wenyou.app.debug`，真机性能包名 `site.wenyou.app.profile`。负责人已对 GIF 修复同签名候选完成 ADB 覆盖安装并明确验证通过；build 95 应用 AOT 代码与该验收包摘要一致，线上 `/meta` 已晋级推荐 build 95。
-- 后端契约：`5.22.0-dev.20260912.2`，来源 `6fdfa00eaf1f3056ba30f2ffbc529d12eed1c823`；完整门禁已核对公网 API、精确 revision、Markdown v5 激活状态与 `GET /threads` 兼容性。
+- 后端契约：`5.23.0-dev.20260913.1`，来源 `e214fd18637cb10d79576c5ab5a4cf42340fef71`；2026-09-19 诊断补全候选的完整门禁已核对公网 API、精确 revision、Markdown v5 激活状态与 `GET /threads` 兼容性。
 - 正文契约：公网当前激活 Markdown v5；客户端兼容 `{3, 4, 5}`，独占一行的普通图片可使用左、中、右块对齐；站内引用契约：`wenyousite-internal-reference` v1。
 - 视觉依赖：Foundation `v7.0.0`；系统字体迁移候选待 Android 8、较新 Android 与两种厂商字体真机验收。
 - 表情网格及共享排序动画：2026-09-11 负责人真机验收通过并授权合并；表情管理采用五列紧凑网格、长按排序与静默乐观保存，子贴排序复用抬起／落下反馈。未取得 Profile 帧时间采样，见[验收记录](docs/architecture/sticker-grid-acceptance.md)。
