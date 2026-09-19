@@ -10,9 +10,9 @@
 
 ## 自动验证与候选包
 
-- 在最新 `origin/dev` 上整合后，`npm run check:apk` 通过：固定契约与生产 API 校验、生成客户端一致性、格式、应用及生成包静态分析、架构与模块文档、158/158 已接入 API 覆盖、全量 Flutter 测试、18 项 Windows 发布工具测试和 Android Debug 构建。
+- 在最新 `origin/dev`（含 PR #46）上整合后，`npm run check:apk` 通过：固定契约与生产 API 校验、生成客户端一致性、格式、应用及生成包静态分析、架构与模块文档、158/158 已接入 API 覆盖、全量 Flutter 测试、18 项 Windows 发布工具测试和 Android Debug 构建。应用源码提交为 `8356af15ce7cb5430be29cafa20ea0fc3d8a7e03`；随后仅更新本验收记录，不修改应用代码。
 - 收藏夹专项测试覆盖 360/400dp 顶栏、默认夹无管理入口、两类自建夹菜单、重命名输入与失败保留、删除提示、服务端返回目标夹切换及失败恢复；控制器测试覆盖 trim、并发管理请求和释放后的迟到响应。
-- 构建产物：`C:/Users/quhui/.codex/worktrees/3cfc/wenyousite-mobile/build/app/outputs/flutter-apk/app-debug.apk`，223,527,606 字节，SHA-256 `6226447D8081A4A13E428520CDC30DF6E94BE65E73A1A912EBE153B5AC2D75E8`。
+- 构建产物：`C:/Users/quhui/.codex/worktrees/3cfc/wenyousite-mobile/build/app/outputs/flutter-apk/app-debug.apk`，223,522,317 字节，SHA-256 `0FC7BC0F0D17146C718E85BD6B4936C785528E87EA5FDD97C8E8BEB547F0A13A`。合入 PR #46 前的 Debug APK 已被该路径的新构建覆盖，不作为本次最终候选。
 - APK 标识：`site.wenyou.app.debug`，“温油站 Debug”，`versionName=0.7.1-debug`、`versionCode=95`、最低 API 26。此 Debug 包不等于正式发布包；没有通过本任务安装到真机或上传发布桶。
 
 ## 负责人复验路径与结论
