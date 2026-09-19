@@ -7,6 +7,7 @@ import 'package:wenyousite_mobile/core/application/bookmark_folder_catalog.dart'
 import 'package:wenyousite_mobile/core/application/bookmark_folder_catalog_controller.dart';
 import 'package:wenyousite_mobile/core/models/bookmark_folder_models.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_bookmark_folder_create_dialog.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_bookmark_folder_management.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 
@@ -49,6 +50,17 @@ class _BookmarkFolderCatalogPageState
       appBar: AppBar(
         title: const Text('我的收藏'),
         actions: [
+          if (selectedFolder != null && !selectedFolder.isDefault)
+            WenyouAsyncIconButton(
+              key: Key('bookmark-folder-manage-${_kind.name}'),
+              label: '管理收藏夹',
+              loadingLabel: '正在管理收藏夹',
+              icon: WenyouIconIds.actionMore,
+              isLoading: state.isManaging,
+              onPressed: state.isBusy
+                  ? null
+                  : () => _manageFolder(selectedFolder, notifier),
+            ),
           WenyouAsyncIconButton(
             key: Key('bookmark-folder-create-${_kind.name}'),
             label: '新建收藏夹',
@@ -163,6 +175,7 @@ class _BookmarkFolderCatalogPageState
     for (final folder in state.folders) {
       if (folder.id == requestedId) return folder;
     }
+    if (requestedId != null) return null;
     return state.folders.where((folder) => folder.isDefault).firstOrNull ??
         state.folders.first;
   }
@@ -245,5 +258,51 @@ class _BookmarkFolderCatalogPageState
       '已新建“${folder.name}”。',
       tone: WenyouSnackBarTone.success,
     );
+  }
+
+  Future<void> _manageFolder(
+    BookmarkFolderItem folder,
+    BookmarkFolderCatalogController notifier,
+  ) async {
+    if (folder.isDefault || notifier.isBusy) return;
+    final action = await showWenyouBookmarkFolderManageSheet(
+      context: context,
+      folder: folder,
+    );
+    if (!mounted || action == null) return;
+    notifier.clearActionFailure();
+    switch (action) {
+      case BookmarkFolderManagementAction.rename:
+        await showWenyouBookmarkFolderRenameDialog(
+          context: context,
+          folder: folder,
+          onRename: (name) => notifier.renameFolder(folder.id, name),
+          readFailure: () => notifier.actionFailure,
+        );
+        return;
+      case BookmarkFolderManagementAction.delete:
+        final result = await showWenyouBookmarkFolderDeleteDialog(
+          context: context,
+          onDelete: () async {
+            final deleted = await notifier.deleteFolder(folder.id);
+            if (deleted != null && mounted) {
+              setState(
+                () => _selectedFolderIds[_kind] = deleted.destinationFolderId,
+              );
+            }
+            return deleted;
+          },
+          readFailure: () => notifier.actionFailure,
+        );
+        if (!mounted || result == null) return;
+        await notifier.refresh();
+        if (!mounted) return;
+        showWenyouSnackBar(
+          context,
+          '收藏已移到默认收藏夹。',
+          tone: WenyouSnackBarTone.success,
+        );
+        return;
+    }
   }
 }

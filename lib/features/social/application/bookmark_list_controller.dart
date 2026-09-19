@@ -211,7 +211,7 @@ class BookmarkListController extends StateNotifier<BookmarkListState> {
   Future<BookmarkFolderItem?> createFolder(String name) async {
     if (state.phase != BookmarkListPhase.ready || state.isBusy) return null;
     final trimmedName = name.trim();
-    if (trimmedName.isEmpty || trimmedName.length > 24) {
+    if (trimmedName.isEmpty || trimmedName.runes.length > 24) {
       state = state.copyWith(
         actionFailure: const ApiFailure(userMessage: '收藏夹名称需为 1–24 个字符。'),
       );

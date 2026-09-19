@@ -59,7 +59,7 @@ class ApiBookmarkListRepository implements BookmarkListRepository {
   @override
   Future<BookmarkFolderItem> createFolder(String name) async {
     final trimmedName = name.trim();
-    if (trimmedName.isEmpty || trimmedName.length > 24) {
+    if (trimmedName.isEmpty || trimmedName.runes.length > 24) {
       throw const ApiFailure(userMessage: '收藏夹名称需为 1–24 个字符。');
     }
     try {
@@ -77,6 +77,48 @@ class ApiBookmarkListRepository implements BookmarkListRepository {
         error,
         featureMessages: const {40900: '已有同名收藏夹，请换一个名称。'},
       );
+    }
+  }
+
+  @override
+  Future<BookmarkFolderItem> renameFolder(String folderId, String name) async {
+    final trimmedName = name.trim();
+    if (trimmedName.isEmpty || trimmedName.runes.length > 24) {
+      throw ArgumentError('收藏夹名称长度须为 1–24 个字符。');
+    }
+    try {
+      final envelope = (await _api.bookmarksRenameFolder(
+        id: folderId,
+        renameBookmarkFolderDto: RenameBookmarkFolderDto(
+          (builder) => builder.name = trimmedName,
+        ),
+      )).data;
+      if (envelope == null) {
+        throw const ApiFailure.invalidResponse(
+          diagnosticCode: 'bookmark_folder_rename_empty',
+        );
+      }
+      return _mapFolder(envelope.data);
+    } on DioException catch (error) {
+      throw ApiFailure.fromDio(
+        error,
+        featureMessages: const {40900: '名称重复或收藏夹已发生变化，请刷新后重试。'},
+      );
+    }
+  }
+
+  @override
+  Future<BookmarkFolderDeleteResult> deleteFolder(String folderId) async {
+    try {
+      final data = (await _api.bookmarksDeleteFolder(id: folderId)).data?.data;
+      if (data == null) {
+        throw const ApiFailure.invalidResponse(
+          diagnosticCode: 'bookmark_folder_delete_empty',
+        );
+      }
+      return _mapDeleteFolderResult(data);
+    } on DioException catch (error) {
+      throw ApiFailure.fromDio(error);
     }
   }
 
@@ -187,6 +229,22 @@ class ApiBookmarkListRepository implements BookmarkListRepository {
       isDefault: dto.isDefault,
       bookmarkCount: dto.bookmarkCount.toInt(),
       createdAt: dto.createdAt,
+    );
+  }
+
+  BookmarkFolderDeleteResult _mapDeleteFolderResult(
+    DeleteBookmarkFolderResponseDto dto,
+  ) {
+    final deletedFolderId = dto.deletedFolderId.trim();
+    final destinationFolderId = dto.destinationFolderId.trim();
+    if (deletedFolderId.isEmpty || destinationFolderId.isEmpty) {
+      throw const ApiFailure.invalidResponse(
+        diagnosticCode: 'bookmark_folder_delete_ids_empty',
+      );
+    }
+    return BookmarkFolderDeleteResult(
+      deletedFolderId: deletedFolderId,
+      destinationFolderId: destinationFolderId,
     );
   }
 

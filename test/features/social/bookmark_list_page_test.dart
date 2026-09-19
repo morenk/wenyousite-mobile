@@ -49,6 +49,7 @@ void main() {
     expect(source.tokens.every((token) => token.isCancelled), isTrue);
   });
   setUpAll(loadDeterministicTestFonts);
+
   testWidgets('收藏管理入口位于卡片内且不再外置两种按钮', (tester) async {
     final repository = _FakeRepository(items: [_item('bookmark-1')]);
     final router = _router();
@@ -487,13 +488,17 @@ Future<void> _openManage(WidgetTester tester) async {
   await tester.pumpAndSettle();
 }
 
-GoRouter _router({String initialLocation = '/'}) {
+GoRouter _router({
+  String initialLocation = '/',
+  BookmarkFolderContentKind initialKind = BookmarkFolderContentKind.thread,
+}) {
   return GoRouter(
     initialLocation: initialLocation,
     routes: [
       GoRoute(
         path: '/',
         builder: (_, _) => BookmarkFolderCatalogPage(
+          initialKind: initialKind,
           contentBuilder: (context, kind, folder, refreshCatalog) =>
               switch (kind) {
                 BookmarkFolderContentKind.thread => BookmarkListView(
@@ -610,10 +615,14 @@ class _FakeRepository implements BookmarkListRepository {
   final bool failLoadMore;
   final bool failRemove;
   bool failFolders;
+  bool failRename = false;
+  bool failDelete = false;
   Completer<void>? removeGate;
   final List<String> removedIds = [];
   final List<String?> requestedFolders = [];
   final List<String> createdNames = [];
+  final List<(String, String)> renamedFolders = [];
+  final List<String> deletedFolders = [];
   final List<({String bookmarkId, String folderId})> moves = [];
   late final List<BookmarkFolderItem> _folders;
 
@@ -672,6 +681,48 @@ class _FakeRepository implements BookmarkListRepository {
     final folder = _folder('folder-created', name);
     _folders.add(folder);
     return folder;
+  }
+
+  @override
+  Future<BookmarkFolderItem> renameFolder(String folderId, String name) async {
+    renamedFolders.add((folderId, name));
+    if (failRename) {
+      throw const ApiFailure(userMessage: '重命名暂时失败，请重试。');
+    }
+    final index = _folders.indexWhere((folder) => folder.id == folderId);
+    if (index < 0 || _folders[index].isDefault) {
+      throw const ApiFailure(userMessage: '收藏夹不存在。');
+    }
+    final renamed = _folders[index].copyWith(name: name);
+    _folders[index] = renamed;
+    return renamed;
+  }
+
+  @override
+  Future<BookmarkFolderDeleteResult> deleteFolder(String folderId) async {
+    if (failDelete) {
+      throw const ApiFailure(userMessage: '删除暂时失败，请重试。');
+    }
+    final index = _folders.indexWhere((folder) => folder.id == folderId);
+    if (index < 0 || _folders[index].isDefault) {
+      throw const ApiFailure(userMessage: '收藏夹不存在。');
+    }
+    deletedFolders.add(folderId);
+    final deleted = _folders.removeAt(index);
+    final defaultIndex = _folders.indexWhere((folder) => folder.isDefault);
+    final destination = _folders[defaultIndex];
+    _folders[defaultIndex] = destination.copyWith(
+      bookmarkCount: destination.bookmarkCount + deleted.bookmarkCount,
+    );
+    for (var itemIndex = 0; itemIndex < _items.length; itemIndex++) {
+      if (_items[itemIndex].folderId == folderId) {
+        _items[itemIndex] = _items[itemIndex].copyWithFolderId(destination.id);
+      }
+    }
+    return BookmarkFolderDeleteResult(
+      deletedFolderId: folderId,
+      destinationFolderId: destination.id,
+    );
   }
 
   @override

@@ -9,6 +9,12 @@ import 'package:wenyousite_mobile/features/moments/data/moment_bookmark_reposito
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
 
 void main() {
+  setUpAll(() {
+    registerFallbackValue(
+      RenameMomentBookmarkFolderDto((builder) => builder.name = 'x'),
+    );
+  });
+
   test('动态收藏夹查询与创建使用独立接口和动态计数', () async {
     final api = _MockMomentsApi();
     final moments = _MockMomentRepository();
@@ -55,6 +61,89 @@ void main() {
         createMomentBookmarkFolderDto: createBody,
       ),
     ).called(1);
+  });
+
+  test('动态收藏夹重命名 trim 名称，删除返回响应指定的默认夹 ID', () async {
+    final api = _MockMomentsApi();
+    final repository = ApiMomentBookmarkRepository(
+      api,
+      _MockMomentRepository(),
+    );
+    when(
+      () => api.momentsRenameBookmarkFolder(
+        id: 'moment-custom',
+        renameMomentBookmarkFolderDto: any(
+          named: 'renameMomentBookmarkFolderDto',
+        ),
+      ),
+    ).thenAnswer(
+      (_) async => _response(
+        '/api/v1/moments/bookmark-folders/moment-custom',
+        MomentsRenameBookmarkFolder200Response(
+          (builder) => builder
+            ..code = ApiSuccessEnvelopeCodeEnum.number0
+            ..message = 'ok'
+            ..data.replace(_folderDto('moment-custom', '稍后阅读', count: 2)),
+        ),
+      ),
+    );
+    when(() => api.momentsDeleteBookmarkFolder(id: 'moment-custom')).thenAnswer(
+      (_) async => _response(
+        '/api/v1/moments/bookmark-folders/moment-custom',
+        MomentsDeleteBookmarkFolder200Response(
+          (builder) => builder
+            ..code = ApiSuccessEnvelopeCodeEnum.number0
+            ..message = 'ok'
+            ..data.replace(
+              DeleteBookmarkFolderResponseDto(
+                (result) => result
+                  ..deletedFolderId = 'moment-custom'
+                  ..destinationFolderId = 'moment-default',
+              ),
+            ),
+        ),
+      ),
+    );
+
+    final renamed = await repository.renameFolder('moment-custom', '  稍后阅读  ');
+    final deleted = await repository.deleteFolder('moment-custom');
+    final captured =
+        verify(
+              () => api.momentsRenameBookmarkFolder(
+                id: 'moment-custom',
+                renameMomentBookmarkFolderDto: captureAny(
+                  named: 'renameMomentBookmarkFolderDto',
+                ),
+              ),
+            ).captured.single
+            as RenameMomentBookmarkFolderDto;
+
+    expect(captured.name, '稍后阅读');
+    expect(renamed.id, 'moment-custom');
+    expect(renamed.name, '稍后阅读');
+    expect(deleted.deletedFolderId, 'moment-custom');
+    expect(deleted.destinationFolderId, 'moment-default');
+  });
+
+  test('动态收藏夹重命名拒绝非法名称且不发送请求', () async {
+    final api = _MockMomentsApi();
+    final repository = ApiMomentBookmarkRepository(
+      api,
+      _MockMomentRepository(),
+    );
+
+    await expectLater(
+      repository.renameFolder('moment-custom', '  '),
+      throwsArgumentError,
+    );
+    verifyNever(
+      () => api.momentsRenameBookmarkFolder(
+        id: 'moment-custom',
+        renameMomentBookmarkFolderDto: any(
+          named: 'renameMomentBookmarkFolderDto',
+        ),
+      ),
+    );
   });
 
   test('动态收藏分页、首次入夹、移动和取消只委托动态仓储', () async {

@@ -14,6 +14,9 @@ void main() {
       CreateBookmarkFolderDto((builder) => builder.name = 'x'),
     );
     registerFallbackValue(MoveBookmarkDto((builder) => builder.folderId = 'x'));
+    registerFallbackValue(
+      RenameBookmarkFolderDto((builder) => builder.name = 'x'),
+    );
   });
 
   test('本人收藏传递游标并映射完整主题卡与下一页', () async {
@@ -116,6 +119,55 @@ void main() {
             ).captured.single
             as CreateBookmarkFolderDto;
     expect(captured.name, '跑团资料');
+  });
+
+  test('主题收藏夹重命名 trim 名称，删除使用响应返回的目标夹 ID', () async {
+    final api = _MockBookmarksApi();
+    when(
+      () => api.bookmarksRenameFolder(
+        id: 'folder-custom',
+        renameBookmarkFolderDto: any(named: 'renameBookmarkFolderDto'),
+      ),
+    ).thenAnswer((_) async => _renameFolderResponse());
+    when(
+      () => api.bookmarksDeleteFolder(id: 'folder-custom'),
+    ).thenAnswer((_) async => _deleteFolderResponse());
+    final repository = ApiBookmarkListRepository(api);
+
+    final renamed = await repository.renameFolder('folder-custom', '  新名字  ');
+    final deleted = await repository.deleteFolder('folder-custom');
+    final captured =
+        verify(
+              () => api.bookmarksRenameFolder(
+                id: 'folder-custom',
+                renameBookmarkFolderDto: captureAny(
+                  named: 'renameBookmarkFolderDto',
+                ),
+              ),
+            ).captured.single
+            as RenameBookmarkFolderDto;
+
+    expect(captured.name, '新名字');
+    expect(renamed.id, 'folder-custom');
+    expect(renamed.name, '新名字');
+    expect(deleted.deletedFolderId, 'folder-custom');
+    expect(deleted.destinationFolderId, 'folder-default');
+  });
+
+  test('主题收藏夹重命名拒绝非法名称且不发送请求', () async {
+    final api = _MockBookmarksApi();
+    final repository = ApiBookmarkListRepository(api);
+
+    await expectLater(
+      repository.renameFolder('folder-custom', '  '),
+      throwsArgumentError,
+    );
+    verifyNever(
+      () => api.bookmarksRenameFolder(
+        id: 'folder-custom',
+        renameBookmarkFolderDto: any(named: 'renameBookmarkFolderDto'),
+      ),
+    );
   });
 
   test('移动使用收藏记录 ID 与目标收藏夹 ID，空响应不伪装成功', () async {
@@ -326,6 +378,40 @@ Response<BookmarksCreateFolder201Response> _createFolderResponse() {
         ..code = ApiSuccessEnvelopeCodeEnum.number0
         ..message = 'ok'
         ..data.replace(_folderDto('folder-created', '跑团资料')),
+    ),
+  );
+}
+
+Response<BookmarksRenameFolder200Response> _renameFolderResponse() {
+  return Response(
+    requestOptions: RequestOptions(
+      path: '/api/v1/bookmarks/folders/folder-custom',
+    ),
+    data: BookmarksRenameFolder200Response(
+      (response) => response
+        ..code = ApiSuccessEnvelopeCodeEnum.number0
+        ..message = 'ok'
+        ..data.replace(_folderDto('folder-custom', '新名字', count: 1)),
+    ),
+  );
+}
+
+Response<BookmarksDeleteFolder200Response> _deleteFolderResponse() {
+  return Response(
+    requestOptions: RequestOptions(
+      path: '/api/v1/bookmarks/folders/folder-custom',
+    ),
+    data: BookmarksDeleteFolder200Response(
+      (response) => response
+        ..code = ApiSuccessEnvelopeCodeEnum.number0
+        ..message = 'ok'
+        ..data.replace(
+          DeleteBookmarkFolderResponseDto(
+            (result) => result
+              ..deletedFolderId = 'folder-custom'
+              ..destinationFolderId = 'folder-default',
+          ),
+        ),
     ),
   );
 }

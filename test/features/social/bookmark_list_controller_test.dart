@@ -392,6 +392,14 @@ class _FakeRepository implements BookmarkListRepository {
   }
 
   @override
+  Future<BookmarkFolderItem> renameFolder(String folderId, String name) =>
+      throw UnimplementedError();
+
+  @override
+  Future<BookmarkFolderDeleteResult> deleteFolder(String folderId) =>
+      throw UnimplementedError();
+
+  @override
   Future<void> move(String bookmarkId, String folderId) async {
     await writeGate?.future;
     moves.add((bookmarkId: bookmarkId, folderId: folderId));
