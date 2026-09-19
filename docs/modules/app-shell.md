@@ -41,7 +41,7 @@ Android 后台消息提醒默认开启，可在账号设置按设备关闭，选
 
 ## 6. 状态模型和数据流
 
-签到的已领取日期与待展示回执分别保存，按 `SessionScope` 隔离。应用级反馈宿主观察生命周期、根与分支路由、模态弹层和普通操作消息；后台或被遮挡时保留回执，页面就绪后显示“今日签到获得 N 升温油。”，完整显示 4 秒或主动关闭后确认消费。普通操作消息优先，打断的签到回执在其结束后补显。跨日丢弃旧回执，退出和切号不保留旧账号消息，补显不重新签到；组件重新挂载复用当前会话的签到状态，进程重启则以钱包状态和流水核对。
+签到的已领取日期与待展示回执分别保存，按 `SessionScope` 隔离。应用级反馈宿主观察生命周期、根与分支路由、模态弹层和普通操作消息；后台或被遮挡时保留回执，页面就绪后显示“今日签到获得 N 升温油。”，首次实际显示即确认消费，未被打断时仍显示 4 秒。普通操作消息优先，已显示的签到提示被切页、模态弹层、其他操作提示或切后台打断后不再补显；尚未显示的回执继续等待可见时机。跨日丢弃旧回执，退出和切号不保留旧账号消息，补显不重新签到；组件重新挂载复用当前会话的签到状态，进程重启则以钱包状态和流水核对。
 
 客户端兼容集合固定为 Markdown v3/v4/v5；未知版本继续进入不可绕过的更新流程。`AppCapabilities.markdownAlignment` 从元信息声明 v4 起启用普通段落与 H2/H3 对齐，`markdownImageAlignment` 只在声明 v5 时启用独立普通图片块对齐；主题与帖子只消费纯 capability，不直接读取启动控制器，冷启动和回前台静默重查共用同一判定。剪贴板导航只复用 `internal-reference v1` 解析结果与应用根路由，不新增链接解析器或预取请求；原生层以 Android `ClipDescription.timestamp` 或 iOS `UIPasteboard.changeCount` 标识复制事件，Dart 层持久化最后一次已处理事件和 SHA-256 指纹，恢复后的首帧只处理新的完整目标。
 
@@ -88,6 +88,8 @@ Android 正式 APK 仅支持 `arm64-v8a`，Debug/Profile 保留 ARM32、ARM64 �
 遵循[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)、[依赖边界与架构门禁](../architecture/dependencies.md)和[Foundation v6.9.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.9.0/docs/platforms/mobile.md)。app 组合层只连接 capability、全局外观与跨 feature 缓存失效等接口，不持有业务页面状态。亮色与黑夜只使用中央 `WenyouThemeTokens`、Foundation 语义色/等级/图标及全局 `ColorScheme`；图片内容与布局结构保持一致。原生图标与启动图只同步 Foundation 平台资产，Flutter 页面只消费 `WenyouBrandContract` 和 `WenyouBrandMark`；更新页复用中央 Token、语义图标、共享面板、状态横幅和 Foundation 最小触控目标的主按钮，以“当前构建 → 可用构建”作为版本识别元素。Android 竖屏优先；iOS 不下载 IPA，只交给 TestFlight。
 
 ## 11. 测试场景与验收条件
+
+- 自动签到提示单次显示候选／待负责人验收：首次可见即消费，同会话同日被打断或重新挂载不再弹出；未显示回执仍等待前台就绪。回归与真机步骤见[候选记录](../architecture/checkin-once-acceptance.md)。
 
 - [ ] 常驻与系统横幅候选的 30 分钟双消息、锁屏/勿扰、划掉停止与休眠恢复真机验收，见[验收记录](../architecture/background-reminders-acceptance.md)。
 

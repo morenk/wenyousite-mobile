@@ -120,6 +120,7 @@ class _AppSessionBootstrapState extends ConsumerState<AppSessionBootstrap>
         ? pendingReceipt
         : null;
     return WenyouReliableSnackBar(
+      deliveryScope: (scope, _beijingDateKey(_now())),
       visibility: widget.feedbackVisibility,
       receipt: receipt == null
           ? null
