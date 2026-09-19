@@ -45,6 +45,7 @@ class BackgroundOnlineReminderCoordinator {
   bool _includeDirectMessages = false;
   bool _disposed = false;
   int _epoch = 0;
+  final _presentedUncommitted = <(int, String, String, String)>{};
 
   void prepare({required bool includeDirectMessages}) {
     if (_disposed) return;
@@ -74,6 +75,7 @@ class BackgroundOnlineReminderCoordinator {
     _timer = null;
     _prepared = false;
     _active = false;
+    _presentedUncommitted.clear();
     pollingSession.invalidate();
     _record('schedule', {'outcome': 'stopped'});
   }
@@ -91,6 +93,7 @@ class BackgroundOnlineReminderCoordinator {
     _active = false;
     _prepared = true;
     _includeDirectMessages = includeDirectMessages;
+    _presentedUncommitted.clear();
     pollingSession.invalidate();
   }
 
@@ -170,16 +173,24 @@ class BackgroundOnlineReminderCoordinator {
       });
 
       stage = 'present';
+      // Keep only acknowledgements relevant to this uncommitted batch. A
+      // later alert's failure must not replay earlier successful platform calls.
+      _presentedUncommitted.retainAll(batch.alerts.map(_alertKey));
       for (final alert in batch.alerts) {
+        final key = _alertKey(alert);
+        if (_presentedUncommitted.contains(key)) continue;
         if (!await _checkExecution(epoch) || !_isActiveEpochCurrent(epoch)) {
           return;
         }
         await notificationGateway.showAlerts([alert]);
+        if (!_isActiveEpochCurrent(epoch)) return;
+        _presentedUncommitted.add(key);
       }
       if (!_isActiveEpochCurrent(epoch)) return;
 
       stage = 'commit';
       final committed = batch.commit();
+      if (committed) _presentedUncommitted.clear();
       _record(stage, {'outcome': committed ? 'committed' : 'stale'});
     } on Object catch (error) {
       if (_isActiveEpochCurrent(epoch)) {
@@ -192,6 +203,9 @@ class BackgroundOnlineReminderCoordinator {
       _cycleInFlight = false;
     }
   }
+
+  (int, String, String, String) _alertKey(BackgroundLocalAlert alert) =>
+      (alert.id, alert.title, alert.body, alert.payload);
 
   Future<void> _denyPermissionAndStop(int epoch) async {
     await onPermissionDenied();

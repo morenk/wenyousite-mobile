@@ -41,13 +41,13 @@ Android 后台消息提醒默认开启，可在账号设置按设备关闭，选
 
 ## 6. 状态模型和数据流
 
-签到的已领取日期与待展示回执分别保存，按 `SessionScope` 隔离。应用级反馈宿主观察生命周期、根与分支路由、模态弹层和普通操作消息；后台或被遮挡时保留回执，页面就绪后显示“今日签到获得 N 升温油。”，完整显示 4 秒或主动关闭后确认消费。普通操作消息优先，打断的签到回执在其结束后补显。跨日丢弃旧回执，退出和切号不保留旧账号消息，补显不重新签到；组件重新挂载复用当前会话的签到状态，进程重启则以钱包状态和流水核对。
+签到的已领取日期与待展示回执分别保存，按 `SessionScope` 隔离。应用级反馈宿主观察生命周期、根与分支路由、模态弹层和普通操作消息；后台或被遮挡时保留回执，页面就绪后显示“今日签到获得 N 升温油。”，首次实际显示即确认消费，未被打断时仍显示 4 秒。普通操作消息优先，已显示的签到提示被切页、模态弹层、其他操作提示或切后台打断后不再补显；尚未显示的回执继续等待可见时机。跨日丢弃旧回执，退出和切号不保留旧账号消息，补显不重新签到；组件重新挂载复用当前会话的签到状态，进程重启则以钱包状态和流水核对。
 
 客户端兼容集合固定为 Markdown v3/v4/v5；未知版本继续进入不可绕过的更新流程。`AppCapabilities.markdownAlignment` 从元信息声明 v4 起启用普通段落与 H2/H3 对齐，`markdownImageAlignment` 只在声明 v5 时启用独立普通图片块对齐；主题与帖子只消费纯 capability，不直接读取启动控制器，冷启动和回前台静默重查共用同一判定。剪贴板导航只复用 `internal-reference v1` 解析结果与应用根路由，不新增链接解析器或预取请求；原生层以 Android `ClipDescription.timestamp` 或 iOS `UIPasteboard.changeCount` 标识复制事件，Dart 层持久化最后一次已处理事件和 SHA-256 指纹，恢复后的首帧只处理新的完整目标。
 
 外观偏好状态包含当前选择、写入中、失败目标、读取失败和用户提示；应用根只观察当前选择并映射为 Flutter `ThemeMode.system/light/dark`，复用已缓存的亮/黑夜 `ThemeData`，在下一帧直接换主题而不创建根 `AnimatedTheme`，主题变化不进入业务控制器。启动状态为 checking、ready、updateRequired、updateWaiting、failed；推荐更新作为 ready 的可选展示数据，不阻断应用壳。更新动作另有 idle、checking、downloading、verifying、installing、openingExternalPage、permissionRequired、installerOpened、externalPageOpened、failed。元信息映射为纯 `ContractInfo`，应用根通过 `AppCapabilities` 把 stickers、directMessages、pushNotifications 能力注入业务入口；入口默认关闭并只在服务端明确启用后创建，feature 不反向依赖 app-shell 控制器。元信息读取、安装包可用性预检、更新执行与推荐更新忽略记录均由 `app_shell/application` 端口表达，`main.dart` 组合根绑定 data 实现；application 控制器不直接依赖 Dio、MethodChannel 或 SharedPreferences。签到状态由 wallet 独立管理，不进入启动兼容状态机。生成客户端负责 `/api/v1`；APK 使用不带认证拦截器的独立 Dio，避免向下载地址泄露 Token。
 
-签到调度独立观察登录作用域与应用生命周期：服务端日期确认同日成功后不因 Widget 重建或重复恢复再次调用，前台只保留一个零点计时器和一个有限补试计时器；进入后台、退出或切号立即取消计时，重叠事件合并，旧作用域的迟到结果不进入当前账号。前台未读角标与后台提醒分别使用应用壳唯一计时器和后台协调器；前台按 30 秒校准角标，后台由 BackgroundReminderRuntime 结合设备开关、账号作用域与 BackgroundExecutionGateway 实际状态编排；仅服务确认 running 后准备基线并启动固定 30 秒 Timer，保持原 Flutter isolate 与会话刷新锁，不引入第二份 Token。后台 poller 只保存当前后台时段的通知 ID/内容指纹、会话最后消息指纹和未读基线；每轮先生成候选批次，只有系统卡片全部提交成功后才原子更新指纹和计数，接口或卡片展示失败均保留旧基线供下一节拍重试。生命周期 epoch 使回前台后的 HTTP 结果不能再显示或提交；通知点击载荷是本地严格 v1 JSON，只允许通知目标、私聊会话和消息中心三类内部坐标，新站内通知载荷额外携带成对的通知 ID 和接收账号。冷/热启动确认会话后立即交给路由鉴权，同时提交对应单条已读并校准列表/角标，不等待网络才导航；旧载荷和汇总仅保留导航，不猜测或批量标记。
+签到调度独立观察登录作用域与应用生命周期：服务端日期确认同日成功后不因 Widget 重建或重复恢复再次调用，前台只保留一个零点计时器和一个有限补试计时器；进入后台、退出或切号立即取消计时，重叠事件合并，旧作用域的迟到结果不进入当前账号。前台未读角标与后台提醒分别使用应用壳唯一计时器和后台协调器；前台按 30 秒校准角标，后台由 BackgroundReminderRuntime 结合设备开关、账号作用域与 BackgroundExecutionGateway 实际状态编排；仅服务确认 running 后准备基线并启动固定 30 秒 Timer，保持原 Flutter isolate 与会话刷新锁，不引入第二份 Token。后台 poller 只保存当前后台时段的通知 ID/内容指纹、会话最后消息指纹和未读基线；每轮先生成候选批次，只有系统卡片全部提交成功后才原子更新指纹和计数，接口或卡片展示失败均保留旧基线供下一节拍重试；批次中已确认展示的相同通知不重复提交到系统，当前批次之外、提交成功或结束后台周期后清除临时确认记录，内容变化仍继续提醒。生命周期 epoch 使回前台后的 HTTP 结果不能再显示或提交；通知点击载荷是本地严格 v1 JSON，只允许通知目标、私聊会话和消息中心三类内部坐标，新站内通知载荷额外携带成对的通知 ID 和接收账号。冷/热启动确认会话后立即交给路由鉴权，同时提交对应单条已读并校准列表/角标，不等待网络才导航；旧载荷和汇总仅保留导航，不猜测或批量标记。
 
 全局 `WenyouInstantKeyboardInsets` 观察应用生命周期：Android 非 resumed 状态把有效底部高度固定为零，恢复后继续等待新的前台原生回调，后台迟到结果不会覆盖；iOS 等其他平台继续使用引擎 `MediaQuery`。`MainActivity` 从根视图实际应用的 `WindowInsetsCompat` 读取 IME 可见性和高度，只有 Activity 已恢复且窗口聚焦时才发布正值；IME 动画仍只发布最终目标，不转发逐帧进度，恢复和聚焦则先发布零值并请求重新分发 Insets。
 
@@ -90,6 +90,9 @@ Android 正式 APK 仅支持 `arm64-v8a`，Debug/Profile 保留 ARM32、ARM64 �
 遵循[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)、[依赖边界与架构门禁](../architecture/dependencies.md)和[Foundation v6.9.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.9.0/docs/platforms/mobile.md)。app 组合层只连接 capability、全局外观与跨 feature 缓存失效等接口，不持有业务页面状态。亮色与黑夜只使用中央 `WenyouThemeTokens`、Foundation 语义色/等级/图标及全局 `ColorScheme`；图片内容与布局结构保持一致。原生图标与启动图只同步 Foundation 平台资产，Flutter 页面只消费 `WenyouBrandContract` 和 `WenyouBrandMark`；更新页复用中央 Token、语义图标、共享面板、状态横幅和 Foundation 最小触控目标的主按钮，以“当前构建 → 可用构建”作为版本识别元素。Android 竖屏优先；iOS 不下载 IPA，只交给 TestFlight。
 
 ## 11. 测试场景与验收条件
+
+- 自动签到提示单次显示候选／待负责人验收：首次可见即消费，同会话同日被打断或重新挂载不再弹出；未显示回执仍等待前台就绪。回归与真机步骤见[候选记录](../architecture/checkin-once-acceptance.md)。
+- 扩展候选覆盖首次可见同帧替换宿主、根/分支底部弹层与对话框、迟到回调及其他一次性引导；见[提示重复排查矩阵](../architecture/transient-feedback-repeat-audit.md)。
 
 - [ ] 常驻与系统横幅候选的 30 分钟双消息、锁屏/勿扰、划掉停止与休眠恢复真机验收，见[验收记录](../architecture/background-reminders-acceptance.md)。
 

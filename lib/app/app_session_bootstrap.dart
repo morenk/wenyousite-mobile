@@ -100,6 +100,7 @@ class _AppSessionBootstrapState extends ConsumerState<AppSessionBootstrap>
     final session = ref.watch(sessionControllerProvider);
     final scope = ref.watch(sessionScopeProvider);
     final checkIn = ref.watch(dailyCheckInControllerProvider);
+    final checkInController = ref.read(dailyCheckInControllerProvider.notifier);
     ref.listen(
       dailyCheckInControllerProvider.select((value) => value.retryRevision),
       (before, after) {
@@ -120,6 +121,7 @@ class _AppSessionBootstrapState extends ConsumerState<AppSessionBootstrap>
         ? pendingReceipt
         : null;
     return WenyouReliableSnackBar(
+      deliveryScope: (scope, _beijingDateKey(_now())),
       visibility: widget.feedbackVisibility,
       receipt: receipt == null
           ? null
@@ -128,14 +130,10 @@ class _AppSessionBootstrapState extends ConsumerState<AppSessionBootstrap>
               message: '今日签到获得 ${receipt.rewardAmount} 升温油。',
             ),
       onDelivered: (id) {
-        if (ref.read(sessionScopeProvider) != scope ||
-            receipt == null ||
-            id != (scope, receipt.date)) {
+        if (receipt == null || id != (scope, receipt.date)) {
           return;
         }
-        ref
-            .read(dailyCheckInControllerProvider.notifier)
-            .acknowledgeReceipt(receipt.date);
+        checkInController.acknowledgeReceipt(receipt.date);
       },
       child: widget.child,
     );
