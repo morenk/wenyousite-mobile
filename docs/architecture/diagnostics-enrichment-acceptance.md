@@ -29,6 +29,15 @@ Sentry 抽查 build 95 / 0.7.1 的 MOBILE-3、7、9、1、4、5、8、C 最新�
 - 初轮全量分析发现导入顺序、工具条件分支花括号及未移出的临时探针 lint，均已整理后才进入最终门禁；未关闭 lint。
 - 最终 `npm run check:apk -- -TestConcurrency 2` 成功退出：格式、应用和生成客户端全量分析、架构、模块文档、API 覆盖、契约来源/再生成一致性及公网精确 revision 均通过；全量 Flutter 测试 4,532 项通过、1 项显式真实收件测试跳过，Windows 发布工具测试 18 项通过，Debug APK 构建通过。完整日志 `build/diagnostic-evidence/full-check-apk-resume.log`。后续仅完善文档，不重复同一应用源码的门禁。
 
+## 候选 APK
+
+- 应用源码提交：`1bd0e3a4366848ddd54680576d67b174eac14ebf`；后续交付记录仅修改文档。
+- 2026-09-19 完整门禁默认 Debug 构建成功后，以相同应用源码、本机私有诊断配置与 `--dart-define=WENYOU_ENABLE_ERROR_REPORTING=true` 重新构建成功，交付包启用自动发送；未向仓库复制私有配置，未触发真实上报测试。
+- 文件：`build/diagnostic-evidence/wenyou-0.7.1-95-diagnostics-1bd0e3a4-debug.apk`，223,490,667 字节。
+- SHA-256：`47178F7B9AEC0F269C8C223AFB8618A1707186E2B421FC5A8CE30438F7457A31`。
+- `aapt dump badging` 核验：包名 `site.wenyou.app.debug`，显示名“温油站 Debug”，versionName `0.7.1-debug`，versionCode `95`，最低 API 26，包含 ARM64、ARM32 与 x86_64。
+- 未安装到设备、未签发正式 Release、未上传分发或更新 `/meta`；APK 哈希与源码提交用于区分同构建号候选。负责人验收结果：待取得。
+
 ## 负责人真机与 Sentry 复验
 
 1. 安装候选后打开 Debug 应用（`site.wenyou.app.debug`），不要误开正式应用 `site.wenyou.app`；本任务未自行操作或安装负责人设备。
