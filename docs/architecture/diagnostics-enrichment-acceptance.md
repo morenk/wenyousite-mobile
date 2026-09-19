@@ -44,6 +44,14 @@ PR #45 创建后发现 `dev` 已合入 PR #42（`cd348373`），包含行内格�
 
 整合后 `npm run check:apk -- -TestConcurrency 2` 成功退出：全量 Flutter 测试 4,575 项通过、1 项真实收件测试按显式开关跳过，Windows 工具测试 18 项通过；格式、应用/生成客户端分析、架构、文档、API 覆盖、固定语料来源、客户端再生成和公网精确 revision 均通过，Debug APK 构建成功。日志 `build/diagnostic-evidence/full-check-apk-integrated.log`。
 
+## 最终候选 APK（用于负责人复验）
+
+- 应用源码：整合提交 `ccfa6a2c14d13b02f5e96f59941f2f02191e18d4`，后续仅更新交付文档。
+- 2026-09-19 23:56 使用相同源码和本机私有诊断配置重建成功，`WENYOU_ENABLE_ERROR_REPORTING=true`；日志 `build/diagnostic-evidence/diagnostic-integrated-apk.log`。
+- 文件：`build/diagnostic-evidence/wenyou-0.7.1-95-diagnostics-ccfa6a2c-debug.apk`，223,507,681 字节。
+- SHA-256：`53D22DC1D98B69316A21E56E8BC886A10616C2C252AF37A1AF4ED4388D8AB549`。
+- 已用 `aapt` 核验包名 `site.wenyou.app.debug`、名称“温油站 Debug”、版本 `0.7.1-debug/95`、最低 API 26 与三个 Debug ABI；未安装、未发布，实际 Android 原场景和 Sentry 新事件仍待负责人验收。
+
 ## 负责人真机与 Sentry 复验
 
 1. 安装候选后打开 Debug 应用（`site.wenyou.app.debug`），不要误开正式应用 `site.wenyou.app`；本任务未自行操作或安装负责人设备。
