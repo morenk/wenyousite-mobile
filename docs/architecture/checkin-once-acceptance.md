@@ -54,6 +54,7 @@
 
 ### 扩展候选安装包与复验
 
+- 应用源码及测试提交：`0e86821a1cf5e4ee479337870475783567bb9c59`；后续仅补充本提交身份记录，不改变已验证源码或 APK。任务分支 `codex/20260920-checkin-once`，Draft PR #46。
 - 应用为“温油站 Debug”，`applicationId=site.wenyou.app.debug`，`versionName=0.7.1-debug`，`versionCode=95`，最低 API 26，ARM32、ARM64、x86_64；已用 `aapt dump badging` 核对。与第一轮版本号相同，必须用下列哈希区分候选。
 - 归档：`D:\code\wenyousite\artifacts\mobile-checkin-once-expanded-20260920\wenyou-checkin-once-expanded-debug.apk`，223,508,494 字节。
 - SHA-256：`097fc39055fd9202e434a7cd1a93ea083b615d9dc26ecd7041784651b2895012`。
