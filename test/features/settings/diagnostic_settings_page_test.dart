@@ -45,6 +45,17 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.byType(WenyouSettingsTypography), findsOneWidget);
+    expect(
+      tester.widget<SwitchListTile>(find.byType(SwitchListTile)).subtitle,
+      isNull,
+    );
+    await tester.tap(find.byTooltip('自动发送故障诊断说明'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('不包含正文、图片、链接和账号信息。'), findsOneWidget);
+    expect(find.textContaining('最多保留 7 天内的 50 条记录。'), findsOneWidget);
+    expect(diagnostics.automaticSending, isTrue);
+    await tester.tap(find.text('关闭'));
+    await tester.pumpAndSettle();
     await tester.scrollUntilVisible(
       find.text('复制问题详情').hitTestable(),
       200,

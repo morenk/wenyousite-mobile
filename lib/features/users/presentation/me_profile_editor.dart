@@ -158,10 +158,7 @@ class MeProfileEditor extends ConsumerWidget {
             onChanged: (_) => _clearFeedback(ref),
           ),
           SizedBox(height: tokens.space16),
-          const WenyouSectionHeader(
-            title: '主页公开内容',
-            subtitle: '选择其他人能在你的主页看到的内容。',
-          ),
+          const WenyouSectionHeader(title: '主页公开内容'),
           SizedBox(height: tokens.space4),
           _PrivacySwitch(
             key: const Key('me-privacy-replies'),

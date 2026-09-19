@@ -84,10 +84,10 @@ class _DataSaverSetting extends ConsumerWidget {
       padding: EdgeInsets.zero,
       child: Column(
         children: [
-          SwitchListTile(
-            key: const Key('cover-data-saver'),
-            title: const Text('省流量'),
-            subtitle: const Text('开启后，帖子列表封面保持静态'),
+          WenyouSettingsToggle(
+            toggleKey: const Key('cover-data-saver'),
+            title: '省流量',
+            help: '开启后，帖子列表封面保持静态。',
             value: state.enabled,
             onChanged: state.isSaving
                 ? null
@@ -137,11 +137,6 @@ class _AppearanceOption extends StatelessWidget {
         selected: selected,
         leading: WenyouIcon(preference.icon),
         title: Text(preference.label),
-        subtitle: Text(switch (preference) {
-          AppearancePreference.system => '随设备外观自动切换',
-          AppearancePreference.light => '始终使用亮色外观',
-          AppearancePreference.dark => '始终使用深色外观',
-        }),
         trailing: selected
             ? const WenyouIcon(WenyouIconIds.actionConfirm)
             : null,
