@@ -6,13 +6,6 @@ import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 
 /// Keeps toolbar-created Delta inside the Markdown editor contract.
 abstract final class WenyouEditorFormatPolicy {
-  static const _inlineCodeConflicts = <Attribute>[
-    Attribute.bold,
-    Attribute.italic,
-    Attribute.strikeThrough,
-    Attribute.link,
-  ];
-
   static bool isActive(Style style, Attribute attribute) {
     final current = style.attributes[attribute.key];
     return current != null && current.value == attribute.value;
@@ -79,15 +72,7 @@ abstract final class WenyouEditorFormatPolicy {
   }) {
     final length = selection.end - selection.start;
     if (length <= 0) return;
-    controller.formatText(
-      selection.start,
-      length,
-      Attribute.clone(Attribute.inlineCode, null),
-    );
     controller.formatText(selection.start, length, LinkAttribute(url));
-    if (controller.selection.isCollapsed) {
-      controller.formatSelection(Attribute.clone(Attribute.inlineCode, null));
-    }
   }
 
   static void _toggleInline(QuillController controller, Attribute attribute) {
@@ -95,13 +80,6 @@ abstract final class WenyouEditorFormatPolicy {
     if (isActive(style, attribute)) {
       controller.formatSelection(Attribute.clone(attribute, null));
       return;
-    }
-    if (attribute.key == Attribute.inlineCode.key) {
-      for (final conflict in _inlineCodeConflicts) {
-        controller.formatSelection(Attribute.clone(conflict, null));
-      }
-    } else {
-      controller.formatSelection(Attribute.clone(Attribute.inlineCode, null));
     }
     controller.formatSelection(attribute);
   }

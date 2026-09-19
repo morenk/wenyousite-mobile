@@ -27,9 +27,9 @@ Sentry 抽查 build 95 / 0.7.1 的 MOBILE-3、7、9、1、4、5、8、C 最新�
 - `flutter test test/core/diagnostics test/app/app_router_test.dart --reporter expanded --concurrency=2`：46 项通过、1 项既有真实收件测试按显式开关跳过。目录内包含 `diagnostic_stack_regression_test.dart`、`diagnostic_enrichment_test.dart`、`diagnostic_sentry_sender_test.dart`、`diagnostic_bootstrap_test.dart`、`failure_diagnostics_test.dart`、`debug_diagnostic_console_test.dart`、`debug_render_geometry_test.dart`；路由名称跟踪、清除监听和参数不泄漏也已验证。日志 `build/diagnostic-evidence/diagnostics-final.log`。
 - 本机重新编译独立 Windows AOT 探针并调用候选过滤器，实际无列号的 Dart runtime 帧得以保留，输出 `AOT_LINE_ONLY_CAPTURE_OK`。为避免探针成为产品源码，探针原文以 `.dart.txt` 随本地证据保留；日志 `build/diagnostic-evidence/aot-after.log`。
 - 初轮全量分析发现导入顺序、工具条件分支花括号及未移出的临时探针 lint，均已整理后才进入最终门禁；未关闭 lint。
-- 最终 `npm run check:apk -- -TestConcurrency 2` 成功退出：格式、应用和生成客户端全量分析、架构、模块文档、API 覆盖、契约来源/再生成一致性及公网精确 revision 均通过；全量 Flutter 测试 4,532 项通过、1 项显式真实收件测试跳过，Windows 发布工具测试 18 项通过，Debug APK 构建通过。完整日志 `build/diagnostic-evidence/full-check-apk-resume.log`。后续仅完善文档，不重复同一应用源码的门禁。
+- 首个候选 `1bd0e3a4` 的 `npm run check:apk -- -TestConcurrency 2` 成功退出：格式、应用和生成客户端全量分析、架构、模块文档、API 覆盖、契约来源/再生成一致性及公网精确 revision 均通过；全量 Flutter 测试 4,532 项通过、1 项显式真实收件测试跳过，Windows 发布工具测试 18 项通过，Debug APK 构建通过。完整日志 `build/diagnostic-evidence/full-check-apk-resume.log`。
 
-## 候选 APK
+## 首个候选 APK（整合前留档）
 
 - 应用源码提交：`1bd0e3a4366848ddd54680576d67b174eac14ebf`；后续交付记录仅修改文档。
 - 2026-09-19 完整门禁默认 Debug 构建成功后，以相同应用源码、本机私有诊断配置与 `--dart-define=WENYOU_ENABLE_ERROR_REPORTING=true` 重新构建成功，交付包启用自动发送；未向仓库复制私有配置，未触发真实上报测试。
@@ -37,6 +37,12 @@ Sentry 抽查 build 95 / 0.7.1 的 MOBILE-3、7、9、1、4、5、8、C 最新�
 - SHA-256：`47178F7B9AEC0F269C8C223AFB8618A1707186E2B421FC5A8CE30438F7457A31`。
 - `aapt dump badging` 核验：包名 `site.wenyou.app.debug`，显示名“温油站 Debug”，versionName `0.7.1-debug`，versionCode `95`，最低 API 26，包含 ARM64、ARM32 与 x86_64。
 - 未安装到设备、未签发正式 Release、未上传分发或更新 `/meta`；APK 哈希与源码提交用于区分同构建号候选。负责人验收结果：待取得。
+
+## 整合 dev 的复验
+
+PR #45 创建后发现 `dev` 已合入 PR #42（`cd348373`），包含行内格式组合实现和独立测试语料。21 份模块文档的版本记录冲突已整理，保留当前 API 5.23 来源与此前行内组合审查记录；应用代码自动合并，未覆盖新合入的实现。整合改变了应用源码，因此重新运行完整门禁并重建候选，旧 APK 只作为此前证据保留。
+
+整合后 `npm run check:apk -- -TestConcurrency 2` 成功退出：全量 Flutter 测试 4,575 项通过、1 项真实收件测试按显式开关跳过，Windows 工具测试 18 项通过；格式、应用/生成客户端分析、架构、文档、API 覆盖、固定语料来源、客户端再生成和公网精确 revision 均通过，Debug APK 构建成功。日志 `build/diagnostic-evidence/full-check-apk-integrated.log`。
 
 ## 负责人真机与 Sentry 复验
 

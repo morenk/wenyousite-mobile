@@ -128,11 +128,25 @@ DefaultStyles wenyouEditorTextStyles(BuildContext context) {
       ),
     ),
     inlineCode: InlineCodeStyle(
-      style: spec.inlineCode,
+      style: TextStyle(
+        fontSize: spec.inlineCode.fontSize,
+        fontFamily: 'monospace',
+        height: spec.inlineCode.height,
+        color: spec.inlineCode.color,
+        backgroundColor: spec.inlineCode.backgroundColor,
+      ),
       backgroundColor: tokens.softPanel,
       radius: Radius.circular((spec.inlineCode.fontSize ?? 14) * 0.35),
-      header2: spec.inlineCode.copyWith(fontSize: spec.h2.fontSize),
-      header3: spec.inlineCode.copyWith(fontSize: spec.h3.fontSize),
+      header2: TextStyle(
+        fontFamily: 'monospace',
+        fontSize: spec.h2.fontSize,
+        color: spec.inlineCode.color,
+      ),
+      header3: TextStyle(
+        fontFamily: 'monospace',
+        fontSize: spec.h3.fontSize,
+        color: spec.inlineCode.color,
+      ),
     ),
     link: spec.link,
     bold: spec.strong,

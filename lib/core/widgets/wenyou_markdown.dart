@@ -10,6 +10,7 @@ import 'package:wenyousite_mobile/core/markdown/markdown_alignment.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_empty_paragraphs.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_inline_boundary.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_inline_compatibility_syntax.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_quote_line_syntax.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_reader_paragraph_syntax.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_source_protection.dart';
@@ -291,6 +292,7 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
       const MarkdownReaderParagraphSyntax(),
     ],
     inlineSyntaxes: [
+      ...MarkdownInlineCompatibilitySyntax.create(),
       _InternalReferenceInlineSyntax(),
       _UserMentionInlineSyntax(),
       _AllPlayersMentionInlineSyntax(),
@@ -560,6 +562,8 @@ class _InlineCodeMarkdownBuilder extends WenyouMarkdownInlineBuilder {
       text: element.textContent,
       style: mergedStyle?.copyWith(
         fontStyle: parentStyle?.fontStyle ?? mergedStyle.fontStyle,
+        fontWeight: parentStyle?.fontWeight ?? mergedStyle.fontWeight,
+        decoration: parentStyle?.decoration ?? mergedStyle.decoration,
       ),
     );
   }
