@@ -1,4 +1,7 @@
+import 'package:wenyousite_mobile/core/diagnostics/diagnostic_stack.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+
+export 'diagnostic_stack.dart';
 
 enum DiagnosticOperation {
   apiRead,
@@ -136,23 +139,6 @@ String? safeDiagnosticVersion(Object? value) =>
     ? value
     : null;
 
-List<String> safeDiagnosticStack(StackTrace? stack) =>
-    sanitizeDiagnosticStackLines(stack?.toString().split('\n') ?? const []);
-
-List<String> sanitizeDiagnosticStackLines(Iterable<Object?> lines) {
-  // Retain code coordinates only; a frame's function text can be supplied by
-  // an exception and can contain arbitrary user input.
-  final coordinate = RegExp(
-    r'(?:package:(?:wenyousite_mobile|wenyou_api|flutter)/[a-zA-Z0-9_./-]+\.dart|dart:[a-zA-Z0-9_./-]+):(\d+):(\d+)',
-  );
-  return lines
-      .whereType<String>()
-      .map((line) => coordinate.firstMatch(line)?.group(0))
-      .whereType<String>()
-      .take(40)
-      .toList(growable: false);
-}
-
 Map<String, Object?> sanitizeDiagnosticFields(Map<String, Object?> input) {
   final result = <String, Object?>{};
   for (final key in const ['sessionId', 'attemptId', 'requestId']) {
@@ -185,6 +171,12 @@ Map<String, Object?> sanitizeDiagnosticFields(Map<String, Object?> input) {
     'characters',
     'images',
     'blocks',
+    'requestElapsedMs',
+    'connectTimeoutMs',
+    'sendTimeoutMs',
+    'receiveTimeoutMs',
+    'androidApi',
+    'osErrorCode',
   ]) {
     final value = input[key];
     if (value is int && value >= 0 && value <= 100000000) result[key] = value;
@@ -199,6 +191,56 @@ Map<String, Object?> sanitizeDiagnosticFields(Map<String, Object?> input) {
   }
   final stack = input['stack'];
   if (stack is List) result['stack'] = sanitizeDiagnosticStackLines(stack);
+  for (final key in const ['diagnosticCode', 'apiOperation', 'screen']) {
+    final value = input[key];
+    if (value is String &&
+        RegExp(r'^[a-zA-Z][a-zA-Z0-9_.-]{0,119}$').hasMatch(value)) {
+      result[key] = value;
+    }
+  }
+  final model = input['deviceModel'];
+  if (model is String &&
+      RegExp(r'^[a-zA-Z0-9][a-zA-Z0-9 ._()+-]{0,95}$').hasMatch(model)) {
+    result['deviceModel'] = model;
+  }
+  for (final entry in const {
+    'appPackage': [
+      'site.wenyou.app',
+      'site.wenyou.app.debug',
+      'site.wenyou.app.profile',
+    ],
+    'frameworkLibrary': [
+      'widgets library',
+      'rendering library',
+      'gestures library',
+      'animation library',
+      'scheduler library',
+      'services library',
+      'painting library',
+      'foundation library',
+      'semantics library',
+    ],
+    'httpMethod': ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    'dioType': [
+      'connectionTimeout',
+      'sendTimeout',
+      'receiveTimeout',
+      'badCertificate',
+      'badResponse',
+      'cancel',
+      'connectionError',
+      'unknown',
+    ],
+    'stackStatus': ['captured', 'missing', 'filtered', 'requiresSymbols'],
+    'stackOrigin': ['caught', 'cause', 'error', 'none'],
+    'buildMode': ['debug', 'profile', 'release'],
+    'lifecycle': ['resumed', 'inactive', 'hidden', 'paused', 'detached'],
+    'renderer': ['impeller-requested', 'skia-opengles-requested'],
+  }.entries) {
+    if (entry.value.contains(input[entry.key])) {
+      result[entry.key] = input[entry.key];
+    }
+  }
   final stages = input['stages'];
   if (stages is List) {
     result['stages'] = stages

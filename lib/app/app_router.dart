@@ -7,6 +7,7 @@ import 'package:wenyousite_mobile/app/routes/account_routes.dart';
 import 'package:wenyousite_mobile/app/routes/app_shell_routes.dart';
 import 'package:wenyousite_mobile/app/routes/auth_routes.dart';
 import 'package:wenyousite_mobile/app/routes/content_routes.dart';
+import 'package:wenyousite_mobile/core/diagnostics/failure_diagnostics.dart';
 import 'package:wenyousite_mobile/core/navigation/wenyou_feedback_visibility.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/network/session_controller.dart';
@@ -20,6 +21,7 @@ final feedbackVisibilityProvider = Provider<WenyouFeedbackVisibility>((ref) {
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   final feedbackVisibility = ref.watch(feedbackVisibilityProvider);
+  final diagnostics = ref.watch(failureDiagnosticsProvider);
   final router = GoRouter(
     observers: [feedbackVisibility.createObserver()],
     initialLocation: AppRouteLocations.home,
@@ -41,9 +43,29 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     ],
   );
   ref.listen(sessionControllerProvider, (_, _) => router.refresh());
+  ref.onDispose(bindRouterDiagnostics(router, diagnostics));
   ref.onDispose(router.dispose);
   return router;
 });
+
+void Function() bindRouterDiagnostics(
+  GoRouter router,
+  FailureDiagnostics diagnostics,
+) {
+  void updateDiagnosticScreen() {
+    // 只记录代码定义的路由名称，不读取 URI、参数、搜索词或实体 ID。
+    if (router.routerDelegate.currentConfiguration.isNotEmpty) {
+      diagnostics.screen = router.state.name;
+    }
+  }
+
+  router.routerDelegate.addListener(updateDiagnosticScreen);
+  updateDiagnosticScreen();
+  return () {
+    router.routerDelegate.removeListener(updateDiagnosticScreen);
+    diagnostics.screen = null;
+  };
+}
 
 String? resolveSessionRedirect({
   required SessionState session,
