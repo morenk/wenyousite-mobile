@@ -13,6 +13,7 @@ import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart
 import 'package:wenyousite_mobile/features/media/presentation/editor_image_selection.dart';
 import 'package:wenyousite_mobile/features/media/presentation/media_upload_status_banner.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
+import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
 import 'package:wenyousite_mobile/features/stickers/domain/sticker_models.dart';
 import 'package:wenyousite_mobile/features/stickers/presentation/sticker_widgets.dart';
 
@@ -59,6 +60,9 @@ class _MomentCommentComposerState extends ConsumerState<MomentCommentComposer> {
   UserSticker? _sticker;
   final Object _uploadTaskId = Object();
   var _closing = false;
+  var _attachmentBusy = false;
+  var _attachmentGeneration = 0;
+  var _sending = false;
 
   @override
   void initState() {
@@ -91,7 +95,7 @@ class _MomentCommentComposerState extends ConsumerState<MomentCommentComposer> {
     final uploadState = ref.watch(
       mediaUploadTaskControllerProvider(_uploadTaskId),
     );
-    final uploading = uploadState.isBusy;
+    final uploading = _attachmentBusy || uploadState.isBusy;
     return PopScope<Object?>(
       canPop: _closing,
       onPopInvokedWithResult: (didPop, _) {
@@ -100,6 +104,7 @@ class _MomentCommentComposerState extends ConsumerState<MomentCommentComposer> {
       child: WenyouInlineComposerDock(
         editor: WenyouAtomicTextEditor(
           controller: _textController,
+          enabled: !_sending && !widget.isSending,
           editorKey: const Key('moment-comment-input'),
           placeholder: widget.replyTo == null ? '发表评论…' : '写下回复…',
           semanticLabel: widget.replyTo == null ? '发表评论' : '写下回复',
@@ -112,7 +117,9 @@ class _MomentCommentComposerState extends ConsumerState<MomentCommentComposer> {
               alignment: Alignment.centerLeft,
               child: InputChip(
                 label: Text('回复 @${widget.replyTo!.author.username}'),
-                onDeleted: widget.onCancelReply,
+                onDeleted: _sending || widget.isSending
+                    ? null
+                    : widget.onCancelReply,
               ),
             ),
             SizedBox(height: tokens.space8),
@@ -129,53 +136,81 @@ class _MomentCommentComposerState extends ConsumerState<MomentCommentComposer> {
             _SelectedCommentAsset(
               image: _image,
               sticker: _sticker,
-              onRemove: () {
-                setState(() {
-                  _image = null;
-                  _sticker = null;
-                });
-                _notifyDraftChanged();
-              },
+              onRemove: _sending || widget.isSending
+                  ? null
+                  : () {
+                      if (_sending || widget.isSending) return;
+                      _cancelAttachment();
+                      setState(() {
+                        _image = null;
+                        _sticker = null;
+                      });
+                      _notifyDraftChanged();
+                    },
             ),
+            if (_image != null)
+              Row(
+                children: [
+                  TextButton(
+                    key: const Key('moment-comment-replace-image'),
+                    onPressed: uploading || _sending || widget.isSending
+                        ? null
+                        : _pickImage,
+                    child: const Text('更换图片'),
+                  ),
+                  const Flexible(child: Text('仅支持一张图片')),
+                ],
+              ),
             SizedBox(height: tokens.space8),
           ],
           if (uploadState.isBusy || uploadState.failure != null) ...[
             MediaUploadStatusBanner(
               key: const Key('moment-comment-upload-failure'),
               state: uploadState,
-              onCancel: () => ref
-                  .read(
-                    mediaUploadTaskControllerProvider(_uploadTaskId).notifier,
-                  )
-                  .cancel(),
+              onCancel: _cancelAttachment,
               onRetry: _retryImage,
               cancelLabel: '取消',
               cancelKey: const Key('moment-comment-cancel-upload'),
               retryKey: const Key('moment-comment-retry-upload'),
             ),
+            if (uploadState.failure != null)
+              TextButton(
+                key: const Key('moment-comment-discard-upload'),
+                onPressed: _cancelAttachment,
+                child: const Text('放弃这次上传'),
+              ),
             SizedBox(height: tokens.space8),
           ],
         ],
         leadingActions: [
           IconButton(
             key: const Key('moment-comment-image'),
-            onPressed: uploading || widget.isSending ? null : _pickImage,
-            tooltip: '添加一张图片',
+            onPressed: uploading || _sending || widget.isSending
+                ? null
+                : _pickImage,
+            tooltip: _image == null ? '添加一张图片' : '更换图片（仅支持一张）',
             icon: const WenyouIcon(WenyouIconIds.actionImage),
           ),
         ],
         trailingActions: [
-          IconButton(
-            key: const Key('moment-comment-sticker'),
-            onPressed: uploading || widget.isSending ? null : _pickSticker,
-            tooltip: '添加一个表情',
-            icon: const WenyouIcon(WenyouIconIds.actionAddReaction),
-          ),
+          if (ref.watch(stickersEnabledProvider))
+            IconButton(
+              key: const Key('moment-comment-sticker'),
+              onPressed: uploading || _sending || widget.isSending
+                  ? null
+                  : _pickSticker,
+              tooltip: '添加一个表情',
+              icon: const WenyouIcon(WenyouIconIds.actionAddReaction),
+            ),
         ],
         submitAction: WenyouComposerSubmitButton(
           key: const Key('moment-comment-send'),
-          enabled: !uploading && !widget.isSending,
-          loading: widget.isSending,
+          enabled:
+              !uploading &&
+              !_sending &&
+              !widget.isSending &&
+              uploadState.failure == null,
+          loading: _sending || widget.isSending,
           label: '发送',
           onPressed: () => _send(),
         ),
@@ -184,14 +219,8 @@ class _MomentCommentComposerState extends ConsumerState<MomentCommentComposer> {
   }
 
   Future<void> _requestClose() async {
-    if (_closing || widget.isSending) return;
-    final uploadController = ref.read(
-      mediaUploadTaskControllerProvider(_uploadTaskId).notifier,
-    );
-    if (ref.read(mediaUploadTaskControllerProvider(_uploadTaskId)).isBusy) {
-      uploadController.cancel();
-      if (!mounted) return;
-    }
+    if (_closing || _sending || widget.isSending) return;
+    _cancelAttachment();
     _notifyDraftChanged();
     if (!mounted) return;
     setState(() => _closing = true);
@@ -203,46 +232,100 @@ class _MomentCommentComposerState extends ConsumerState<MomentCommentComposer> {
   Future<void> _retryImage() => _runImageUpload(retry: true);
 
   Future<void> _runImageUpload({required bool retry}) async {
+    if (_attachmentBusy || _closing || _sending || widget.isSending) return;
+    final generation = ++_attachmentGeneration;
+    setState(() => _attachmentBusy = true);
     final controller = ref.read(
       mediaUploadTaskControllerProvider(_uploadTaskId).notifier,
     );
-    final image = retry
-        ? await controller.retryUpload()
-        : await pickAndUploadEditorImage(
-            context,
-            ref,
-            uploadTaskId: _uploadTaskId,
-            purpose: MediaUploadPurpose.momentComment,
-          );
-    if (!mounted || _closing || image == null) return;
-    setState(() {
-      _sticker = null;
-      _image = image;
-    });
-    _notifyDraftChanged();
+    try {
+      UploadedEditorImage? image;
+      if (retry) {
+        image = await controller.retryUpload();
+      } else {
+        // 新选择替代旧失败任务，取消相册也不能重试上一次附件。
+        controller.reset();
+        final inputs = await pickEditorImages(
+          context,
+          ref,
+          purpose: MediaUploadPurpose.momentComment,
+          isCurrent: () => _isCurrentAttachment(generation),
+        );
+        if (!_isCurrentAttachment(generation) ||
+            inputs == null ||
+            inputs.isEmpty) {
+          return;
+        }
+        image = await controller.uploadInput(inputs.single);
+      }
+      if (!_isCurrentAttachment(generation) || image == null) return;
+      setState(() {
+        _sticker = null;
+        _image = image;
+      });
+      _notifyDraftChanged();
+    } finally {
+      if (_isCurrentAttachment(generation)) {
+        setState(() => _attachmentBusy = false);
+      }
+    }
   }
 
   Future<void> _pickSticker() async {
-    final sticker = await showStickerPicker(context);
-    if (sticker == null || !mounted) return;
+    if (!ref.read(stickersEnabledProvider)) return;
+    if (_attachmentBusy || _closing || _sending || widget.isSending) return;
+    final generation = ++_attachmentGeneration;
+    setState(() => _attachmentBusy = true);
     ref.read(mediaUploadTaskControllerProvider(_uploadTaskId).notifier).reset();
-    setState(() {
-      _image = null;
-      _sticker = sticker;
-    });
-    _notifyDraftChanged();
+    try {
+      final sticker = await showStickerPicker(context);
+      if (sticker == null || !_isCurrentAttachment(generation)) return;
+      setState(() {
+        _image = null;
+        _sticker = sticker;
+      });
+      _notifyDraftChanged();
+    } finally {
+      if (_isCurrentAttachment(generation)) {
+        setState(() => _attachmentBusy = false);
+      }
+    }
+  }
+
+  bool _isCurrentAttachment(int generation) =>
+      mounted && !_closing && generation == _attachmentGeneration;
+
+  void _cancelAttachment() {
+    _attachmentGeneration++;
+    ref.read(mediaUploadTaskControllerProvider(_uploadTaskId).notifier).reset();
+    setState(() => _attachmentBusy = false);
   }
 
   Future<void> _send() async {
+    final upload = ref.read(mediaUploadTaskControllerProvider(_uploadTaskId));
+    if (_attachmentBusy ||
+        _closing ||
+        _sending ||
+        widget.isSending ||
+        upload.isBusy ||
+        upload.failure != null) {
+      return;
+    }
     if (!_textController.flush()) return;
-    final sent = await widget.onSend(
-      MomentCommentInput(
-        content: _textController.markdown,
-        mediaId: _image?.mediaId,
-        stickerAssetId: _sticker?.asset.id,
-        replyToCommentId: widget.replyTo?.id,
-      ),
-    );
+    setState(() => _sending = true);
+    bool sent;
+    try {
+      sent = await widget.onSend(
+        MomentCommentInput(
+          content: _textController.markdown,
+          mediaId: _image?.mediaId,
+          stickerAssetId: _sticker?.asset.id,
+          replyToCommentId: widget.replyTo?.id,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _sending = false);
+    }
     if (!sent || !mounted) return;
     _textController.clear();
     setState(() {
@@ -274,7 +357,7 @@ class _SelectedCommentAsset extends StatelessWidget {
 
   final UploadedEditorImage? image;
   final UserSticker? sticker;
-  final VoidCallback onRemove;
+  final VoidCallback? onRemove;
 
   @override
   Widget build(BuildContext context) {

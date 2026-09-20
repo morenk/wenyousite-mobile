@@ -147,7 +147,11 @@ class MomentWaterfallCard extends StatelessWidget {
                   count: moment.likeCount,
                   selected: moment.viewerLiked,
                   pending: pendingAction == MomentInteractionAction.like,
-                  onPressed: pendingAction == null ? onLike : null,
+                  onPressed:
+                      pendingAction == null &&
+                          (moment.canInteract || moment.viewerLiked)
+                      ? onLike
+                      : null,
                 ),
               ],
             ),

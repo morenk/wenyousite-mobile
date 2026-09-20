@@ -170,7 +170,7 @@ class _ReadyDrafts extends ConsumerWidget {
     );
     final canSave =
         MarkdownContent.hasVisibleContent(currentContent) &&
-        currentContent.length <= 10000;
+        currentContent.runes.length <= 10000;
     return ListView(
       key: const Key('content-drafts-list'),
       padding: EdgeInsets.fromLTRB(

@@ -20,6 +20,8 @@
 
 ## 4. 用户操作流程
 
+2026-09-21 能力一致性候选／待负责人验收：本模块输入边界、附件生命周期或权限入口与固定后端契约对齐；已证实偏差、逐入口证据、回归及未验证边界见[能力一致性盘查](../architecture/capability-consistency-audit.md)。长度按后端 Unicode 码点计算，编辑光标仍使用原有 UTF16 偏移；密码保持原始内容，用户名与标签白名单不扩展。
+
 组件统一第一批（2026-09-19，负责人验收通过）：用户名保存、退出当前账号接入共享异步按钮；公开创建／参与／收藏主题接入共享分页，嵌入内容无更多时不显示结束提示。用户名校验、等级与时间格式留待后续批次。 入口清单、自动检查及真机步骤见[组件统一验收](../architecture/component-consistency-acceptance.md)。
 
 通知设置文案：账号设置只保留“后台常驻提醒，可能增加耗电；划掉应用后停止”和“管理消息弹窗”等必要提示，移除默认提示音及轮询周期说明；不改变开关、申请权限或频道跳转行为。
@@ -164,3 +166,5 @@ Android 账号设置新增“后台消息提醒”设备开关，默认开启；
 ## 14. 相关代码与架构文档
 
 代码入口：`lib/features/users/application/user_repository_ports.dart`、`lib/features/users/data/`、`lib/main.dart`。参见[动态](moments.md)、[搜索](search.md)、[社交关系](social.md)、[温油钱包](wallet.md)、[社区举报](reports.md)、[治理决定与申诉](moderation.md)、[站内私聊](direct-messages.md)、[设置](settings.md)、[Foundation v6.9.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.9.0/docs/platforms/mobile.md)。
+
+个人简介的可见计数、读屏剩余字数和提交校验统一按 trim 后的 Unicode 码点计数；组合 emoji 超过 255 时保留输入并在提交前拦截。

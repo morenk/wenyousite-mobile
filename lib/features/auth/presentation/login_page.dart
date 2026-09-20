@@ -5,6 +5,7 @@ import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/internal_location.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/application/credential_input_policy.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/network/session_controller.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_password_field.dart';
@@ -131,7 +132,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       ? null
                       : (_) => _submit(),
                   validator: (value) =>
-                      value == null || value.isEmpty ? '请输入密码' : null,
+                      CredentialInputPolicy.validateCurrentPassword(
+                        value,
+                        minimumLength: 8,
+                        emptyMessage: '请输入密码',
+                      ),
                 ),
                 if (state.failure != null) ...[
                   SizedBox(height: tokens.space16),

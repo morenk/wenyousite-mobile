@@ -13,6 +13,7 @@ import 'package:wenyousite_mobile/features/moments/application/moment_draft_stor
 import 'package:wenyousite_mobile/features/moments/data/moment_repository.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_compose_page.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_detail_page.dart';
+import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
 import '../../support/deterministic_test_fonts.dart';
 import '../../support/moment_test_draft_store.dart';
 import 'moment_pages_test_support.dart';
@@ -258,6 +259,7 @@ void registerMomentPagesComposeUploadCases() {
     final repository = MomentPagesTestPageRepository();
     final container = ProviderContainer(
       overrides: [
+        stickersEnabledProvider.overrideWithValue(true),
         tokenStoreProvider.overrideWithValue(MomentPagesTestMemoryTokenStore()),
         sessionRemoteProvider.overrideWithValue(
           MomentPagesTestFakeSessionRemote(),
