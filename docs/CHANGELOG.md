@@ -1,4 +1,10 @@
 # 移动端变更记录
+
+## 2026-09-21 — 图片上传切片前同步已发布后端契约
+
+- 固定 Backend `fc88ea09a808af9c54c1f5b971e116b3be4a471b` / OpenAPI `5.24.0-dev.20260920.1`，按固定生成器同步客户端；三个兼容新增管理端点登记为移动端 V1 不适用。
+- 上传、确认、查询及 Markdown 消费契约不变；同步审查与验证见[契约同步记录](architecture/image-upload-contract-sync.md)。图片上传交互实现单独交付。
+
 ## 2026-09-21 — 同步 Foundation 正式日期呈现契约
 
 - Foundation 固定正式 `v7.1.0`（`dcf75d385e39cc0c55d550a6f35921cd9a7aa508`），Schema 保持 3；本次不更新 Backend HTTP 或 Markdown 契约。

@@ -1,7 +1,10 @@
 {
   "schemaVersion": 1,
-  "contractVersion": "5.23.0-dev.20260913.1",
+  "contractVersion": "5.24.0-dev.20260920.1",
   "exclusions": [
+    { "operationId": "adminContentList", "category": "admin_product", "reason": "移动端 V1 不承载管理产品。" },
+    { "operationId": "adminContentDetail", "category": "admin_product", "reason": "移动端 V1 不承载管理产品。" },
+    { "operationId": "adminContentUpdateTaxonomy", "category": "admin_product", "reason": "移动端 V1 不承载管理产品。" },
     { "operationId": "adminIndex", "category": "admin_product", "reason": "移动端 V1 不承载管理产品。" },
     { "operationId": "adminSendSystemNotification", "category": "admin_product", "reason": "移动端 V1 不承载管理产品。" },
     { "operationId": "adminGetHistory", "category": "admin_product", "reason": "移动端 V1 不承载管理产品。" },
