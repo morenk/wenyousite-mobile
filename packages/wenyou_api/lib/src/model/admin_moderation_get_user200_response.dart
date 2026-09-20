@@ -3,9 +3,9 @@
 //
 
 // ignore_for_file: unused_element
-import 'package:wenyou_api/src/model/admin_user_moderation_response_dto.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:wenyou_api/src/model/api_success_envelope.dart';
+import 'package:wenyou_api/src/model/admin_user_detail_response_dto.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 
@@ -20,7 +20,7 @@ part 'admin_moderation_get_user200_response.g.dart';
 @BuiltValue()
 abstract class AdminModerationGetUser200Response implements ApiSuccessEnvelope, Built<AdminModerationGetUser200Response, AdminModerationGetUser200ResponseBuilder> {
   @BuiltValueField(wireName: r'data')
-  AdminUserModerationResponseDto get data;
+  AdminUserDetailResponseDto get data;
 
   AdminModerationGetUser200Response._();
 
@@ -48,7 +48,7 @@ class _$AdminModerationGetUser200ResponseSerializer implements PrimitiveSerializ
     yield r'data';
     yield serializers.serialize(
       object.data,
-      specifiedType: const FullType(AdminUserModerationResponseDto),
+      specifiedType: const FullType(AdminUserDetailResponseDto),
     );
     yield r'message';
     yield serializers.serialize(
@@ -86,8 +86,8 @@ class _$AdminModerationGetUser200ResponseSerializer implements PrimitiveSerializ
         case r'data':
           final valueDes = serializers.deserialize(
             value,
-            specifiedType: const FullType(AdminUserModerationResponseDto),
-          ) as AdminUserModerationResponseDto;
+            specifiedType: const FullType(AdminUserDetailResponseDto),
+          ) as AdminUserDetailResponseDto;
           result.data.replace(valueDes);
           break;
         case r'message':

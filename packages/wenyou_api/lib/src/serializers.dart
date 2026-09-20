@@ -33,7 +33,14 @@ import 'package:wenyou_api/src/model/admin_auth_verify_step_up200_response.dart'
 import 'package:wenyou_api/src/model/admin_capability_response_dto.dart';
 import 'package:wenyou_api/src/model/admin_challenge_response_dto.dart';
 import 'package:wenyou_api/src/model/admin_challenge_verify_dto.dart';
+import 'package:wenyou_api/src/model/admin_content_detail200_response.dart';
+import 'package:wenyou_api/src/model/admin_content_detail_response_dto.dart';
+import 'package:wenyou_api/src/model/admin_content_list200_response.dart';
+import 'package:wenyou_api/src/model/admin_content_media_dto.dart';
 import 'package:wenyou_api/src/model/admin_content_moderation_response_dto.dart';
+import 'package:wenyou_api/src/model/admin_content_response_dto.dart';
+import 'package:wenyou_api/src/model/admin_content_tag_dto.dart';
+import 'package:wenyou_api/src/model/admin_content_update_taxonomy200_response.dart';
 import 'package:wenyou_api/src/model/admin_dashboard_activity_metrics_dto.dart';
 import 'package:wenyou_api/src/model/admin_dashboard_category_distribution_item_dto.dart';
 import 'package:wenyou_api/src/model/admin_dashboard_distribution_item_dto.dart';
@@ -84,6 +91,8 @@ import 'package:wenyou_api/src/model/admin_taxonomy_list_categories200_response.
 import 'package:wenyou_api/src/model/admin_taxonomy_list_tags200_response.dart';
 import 'package:wenyou_api/src/model/admin_taxonomy_update_category200_response.dart';
 import 'package:wenyou_api/src/model/admin_taxonomy_update_tag200_response.dart';
+import 'package:wenyou_api/src/model/admin_user_content_counts_dto.dart';
+import 'package:wenyou_api/src/model/admin_user_detail_response_dto.dart';
 import 'package:wenyou_api/src/model/admin_user_moderation_response_dto.dart';
 import 'package:wenyou_api/src/model/admin_user_sanction_response_dto.dart';
 import 'package:wenyou_api/src/model/admin_user_search_item_dto.dart';
@@ -447,6 +456,7 @@ import 'package:wenyou_api/src/model/tip_response_dto.dart';
 import 'package:wenyou_api/src/model/transfer_super_admin_dto.dart';
 import 'package:wenyou_api/src/model/unread_notification_count_response_dto.dart';
 import 'package:wenyou_api/src/model/update_admin_role_dto.dart';
+import 'package:wenyou_api/src/model/update_content_taxonomy_dto.dart';
 import 'package:wenyou_api/src/model/update_draft_dto.dart';
 import 'package:wenyou_api/src/model/update_managed_tag_dto.dart';
 import 'package:wenyou_api/src/model/update_moment_dto.dart';
@@ -521,7 +531,14 @@ part 'serializers.g.dart';
   AdminCapabilityResponseDto,
   AdminChallengeResponseDto,
   AdminChallengeVerifyDto,
+  AdminContentDetail200Response,
+  AdminContentDetailResponseDto,
+  AdminContentList200Response,
+  AdminContentMediaDto,
   AdminContentModerationResponseDto,
+  AdminContentResponseDto,
+  AdminContentTagDto,
+  AdminContentUpdateTaxonomy200Response,
   AdminDashboardActivityMetricsDto,
   AdminDashboardCategoryDistributionItemDto,
   AdminDashboardDistributionItemDto,
@@ -572,6 +589,8 @@ part 'serializers.g.dart';
   AdminTaxonomyListTags200Response,
   AdminTaxonomyUpdateCategory200Response,
   AdminTaxonomyUpdateTag200Response,
+  AdminUserContentCountsDto,
+  AdminUserDetailResponseDto,
   AdminUserModerationResponseDto,
   AdminUserSanctionResponseDto,
   AdminUserSearchItemDto,
@@ -935,6 +954,7 @@ part 'serializers.g.dart';
   TransferSuperAdminDto,
   UnreadNotificationCountResponseDto,
   UpdateAdminRoleDto,
+  UpdateContentTaxonomyDto,
   UpdateDraftDto,
   UpdateManagedTagDto,
   UpdateMomentDto,

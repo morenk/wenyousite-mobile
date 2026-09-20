@@ -31,6 +31,9 @@ const AdminAuditLogResponseDtoActionEnum
 _$adminAuditLogResponseDtoActionEnum_CONTENT_RESTORED =
     const AdminAuditLogResponseDtoActionEnum._('CONTENT_RESTORED');
 const AdminAuditLogResponseDtoActionEnum
+_$adminAuditLogResponseDtoActionEnum_THREAD_TAXONOMY_UPDATED =
+    const AdminAuditLogResponseDtoActionEnum._('THREAD_TAXONOMY_UPDATED');
+const AdminAuditLogResponseDtoActionEnum
 _$adminAuditLogResponseDtoActionEnum_REPORT_RESOLVED =
     const AdminAuditLogResponseDtoActionEnum._('REPORT_RESOLVED');
 const AdminAuditLogResponseDtoActionEnum
@@ -132,6 +135,8 @@ AdminAuditLogResponseDtoActionEnum _$adminAuditLogResponseDtoActionEnumValueOf(
       return _$adminAuditLogResponseDtoActionEnum_CONTENT_HIDDEN;
     case 'CONTENT_RESTORED':
       return _$adminAuditLogResponseDtoActionEnum_CONTENT_RESTORED;
+    case 'THREAD_TAXONOMY_UPDATED':
+      return _$adminAuditLogResponseDtoActionEnum_THREAD_TAXONOMY_UPDATED;
     case 'REPORT_RESOLVED':
       return _$adminAuditLogResponseDtoActionEnum_REPORT_RESOLVED;
     case 'REPORT_DISMISSED':
@@ -199,6 +204,7 @@ _$adminAuditLogResponseDtoActionEnumValues =
         _$adminAuditLogResponseDtoActionEnum_USER_SANCTION_REVOKED,
         _$adminAuditLogResponseDtoActionEnum_CONTENT_HIDDEN,
         _$adminAuditLogResponseDtoActionEnum_CONTENT_RESTORED,
+        _$adminAuditLogResponseDtoActionEnum_THREAD_TAXONOMY_UPDATED,
         _$adminAuditLogResponseDtoActionEnum_REPORT_RESOLVED,
         _$adminAuditLogResponseDtoActionEnum_REPORT_DISMISSED,
         _$adminAuditLogResponseDtoActionEnum_SYSTEM_NOTIFICATION_SENT,
@@ -363,6 +369,7 @@ class _$AdminAuditLogResponseDtoActionEnumSerializer
     'USER_SANCTION_REVOKED': 'USER_SANCTION_REVOKED',
     'CONTENT_HIDDEN': 'CONTENT_HIDDEN',
     'CONTENT_RESTORED': 'CONTENT_RESTORED',
+    'THREAD_TAXONOMY_UPDATED': 'THREAD_TAXONOMY_UPDATED',
     'REPORT_RESOLVED': 'REPORT_RESOLVED',
     'REPORT_DISMISSED': 'REPORT_DISMISSED',
     'SYSTEM_NOTIFICATION_SENT': 'SYSTEM_NOTIFICATION_SENT',
@@ -398,6 +405,7 @@ class _$AdminAuditLogResponseDtoActionEnumSerializer
     'USER_SANCTION_REVOKED': 'USER_SANCTION_REVOKED',
     'CONTENT_HIDDEN': 'CONTENT_HIDDEN',
     'CONTENT_RESTORED': 'CONTENT_RESTORED',
+    'THREAD_TAXONOMY_UPDATED': 'THREAD_TAXONOMY_UPDATED',
     'REPORT_RESOLVED': 'REPORT_RESOLVED',
     'REPORT_DISMISSED': 'REPORT_DISMISSED',
     'SYSTEM_NOTIFICATION_SENT': 'SYSTEM_NOTIFICATION_SENT',

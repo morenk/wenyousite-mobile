@@ -15,6 +15,8 @@ part 'admin_dashboard_period_metrics_dto.g.dart';
 /// * [newUsers]
 /// * [publishedThreads]
 /// * [newPosts] - 新增楼层数，不包含主题正文 BODY
+/// * [newMoments]
+/// * [newMomentComments]
 /// * [reportsReceived]
 /// * [reportsHandled]
 @BuiltValue()
@@ -32,6 +34,12 @@ abstract class AdminDashboardPeriodMetricsDto implements Built<AdminDashboardPer
   /// 新增楼层数，不包含主题正文 BODY
   @BuiltValueField(wireName: r'newPosts')
   num get newPosts;
+
+  @BuiltValueField(wireName: r'newMoments')
+  num get newMoments;
+
+  @BuiltValueField(wireName: r'newMomentComments')
+  num get newMomentComments;
 
   @BuiltValueField(wireName: r'reportsReceived')
   num get reportsReceived;
@@ -80,6 +88,16 @@ class _$AdminDashboardPeriodMetricsDtoSerializer implements PrimitiveSerializer<
     yield r'newPosts';
     yield serializers.serialize(
       object.newPosts,
+      specifiedType: const FullType(num),
+    );
+    yield r'newMoments';
+    yield serializers.serialize(
+      object.newMoments,
+      specifiedType: const FullType(num),
+    );
+    yield r'newMomentComments';
+    yield serializers.serialize(
+      object.newMomentComments,
       specifiedType: const FullType(num),
     );
     yield r'reportsReceived';
@@ -142,6 +160,20 @@ class _$AdminDashboardPeriodMetricsDtoSerializer implements PrimitiveSerializer<
             specifiedType: const FullType(num),
           ) as num;
           result.newPosts = valueDes;
+          break;
+        case r'newMoments':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(num),
+          ) as num;
+          result.newMoments = valueDes;
+          break;
+        case r'newMomentComments':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(num),
+          ) as num;
+          result.newMomentComments = valueDes;
           break;
         case r'reportsReceived':
           final valueDes = serializers.deserialize(
