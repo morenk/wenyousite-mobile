@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
@@ -8,6 +7,8 @@ import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/media/media_display.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_selection_menu.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_sheet.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_time_text.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/drafts/application/content_drafts_controller.dart';
 import 'package:wenyousite_mobile/features/drafts/domain/content_draft_models.dart';
@@ -19,19 +20,13 @@ Future<void> showContentDraftsSheet({
   required ValueChanged<String> onRestore,
   ValueChanged<Map<String, MediaDisplay>>? onRestoreDisplays,
 }) {
-  return showModalBottomSheet<void>(
+  return showWenyouSheet<void>(
     context: context,
-    isScrollControlled: true,
-    useSafeArea: true,
-    showDragHandle: true,
-    builder: (context) => FractionallySizedBox(
-      heightFactor: 0.9,
-      child: ContentDraftsSheet(
-        draftSessionKey: draftSessionKey,
-        currentContent: currentContent,
-        onRestore: onRestore,
-        onRestoreDisplays: onRestoreDisplays,
-      ),
+    builder: (context) => ContentDraftsSheet(
+      draftSessionKey: draftSessionKey,
+      currentContent: currentContent,
+      onRestore: onRestore,
+      onRestoreDisplays: onRestoreDisplays,
     ),
   );
 }
@@ -80,68 +75,34 @@ class _ContentDraftsSheetState extends ConsumerState<ContentDraftsSheet> {
       }
     });
     final controller = ref.read(provider.notifier);
-    final tokens = context.wenyouTokens;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Padding(
-          padding: EdgeInsets.fromLTRB(
-            tokens.space16,
-            0,
-            tokens.space8,
-            tokens.space12,
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const WenyouIcon(WenyouIconIds.statusCloud),
-              SizedBox(width: tokens.space12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '正文草稿',
-                      style: Theme.of(context).textTheme.wenyouOverlayTitle,
-                    ),
-                    SizedBox(height: tokens.space4),
-                    Text(
-                      '只保存当前正文 · 已用 ${state.usage.usedSlots}/${state.usage.maxSlots}',
-                      style: Theme.of(context).textTheme.wenyouCaption.copyWith(
-                        color: tokens.mutedText,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              IconButton(
-                tooltip: '关闭正文草稿',
-                onPressed: () => Navigator.pop(context),
-                icon: const WenyouIcon(WenyouIconIds.actionClose),
-              ),
-            ],
+    return WenyouSheetBody(
+      title: '正文草稿',
+      scrollKey: const Key('content-drafts-list'),
+      slivers: [
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: EdgeInsets.only(bottom: context.wenyouTokens.space12),
+            child: Text(
+              '已用 ${state.usage.usedSlots}/${state.usage.maxSlots}',
+              style: Theme.of(context).textTheme.wenyouCaption,
+            ),
           ),
         ),
-        const Divider(height: 1),
-        Expanded(
-          child: switch (state.phase) {
-            ContentDraftsPhase.loading => const Padding(
-              padding: EdgeInsets.all(12),
-              child: WenyouListSkeleton(label: '正在加载正文草稿', showAvatar: false),
-            ),
-            ContentDraftsPhase.failed => _LoadFailure(
-              state: state,
-              onRetry: controller.load,
-            ),
-            ContentDraftsPhase.ready => _ReadyDrafts(
-              draftSessionKey: widget.draftSessionKey,
-              state: state,
-              currentContent: widget.currentContent,
-              onRestore: widget.onRestore,
-              onRestoreDisplays: widget.onRestoreDisplays,
-            ),
-          },
-        ),
+        switch (state.phase) {
+          ContentDraftsPhase.loading => const SliverToBoxAdapter(
+            child: WenyouListSkeleton(label: '正在加载正文草稿', showAvatar: false),
+          ),
+          ContentDraftsPhase.failed => SliverToBoxAdapter(
+            child: _LoadFailure(state: state, onRetry: controller.load),
+          ),
+          ContentDraftsPhase.ready => _ReadyDrafts(
+            draftSessionKey: widget.draftSessionKey,
+            state: state,
+            currentContent: widget.currentContent,
+            onRestore: widget.onRestore,
+            onRestoreDisplays: widget.onRestoreDisplays,
+          ),
+        },
       ],
     );
   }
@@ -171,14 +132,7 @@ class _ReadyDrafts extends ConsumerWidget {
     final canSave =
         MarkdownContent.hasVisibleContent(currentContent) &&
         currentContent.length <= 10000;
-    return ListView(
-      key: const Key('content-drafts-list'),
-      padding: EdgeInsets.fromLTRB(
-        tokens.space12,
-        tokens.space16,
-        tokens.space12,
-        tokens.space24,
-      ),
+    return SliverList.list(
       children: [
         WenyouPanel(
           key: const Key('content-drafts-auto-save'),
@@ -485,9 +439,11 @@ class _DraftSlotCard extends ConsumerWidget {
                             overflow: TextOverflow.ellipsis,
                           ),
                           SizedBox(height: tokens.space8),
-                          Text(
-                            '更新于 ${DateFormat('yyyy-MM-dd HH:mm').format(item.updatedAt.toLocal())}'
-                            '${slot == 1 ? ' · 自动保存位置' : ''}',
+                          WenyouTimeText(
+                            value: item.updatedAt,
+                            prefix: '更新于 ',
+                            semanticsPrefix: '更新于 ',
+                            suffix: slot == 1 ? ' · 自动保存位置' : '',
                             style: Theme.of(context).textTheme.wenyouCaption
                                 .copyWith(color: tokens.mutedText),
                           ),

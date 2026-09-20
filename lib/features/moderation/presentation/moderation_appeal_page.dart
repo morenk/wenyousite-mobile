@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
@@ -228,7 +227,7 @@ class _DecisionList extends ConsumerWidget {
             key: const Key('appeal-credential-expiry'),
             tone: WenyouStatusTone.accent,
             message:
-                '申诉通道有效至 ${DateFormat('HH:mm').format(state.credentialExpiresAt!.toLocal())}；离开本页会立即清除凭据。',
+                '申诉通道有效至 ${formatWenyouExactTime(state.credentialExpiresAt!)}；离开本页会立即清除凭据。',
           ),
           SizedBox(height: tokens.space12),
         ],
@@ -286,9 +285,7 @@ class _DecisionCard extends StatelessWidget {
                 style: Theme.of(context).textTheme.wenyouRowTitle,
               ),
               Text(
-                DateFormat(
-                  'yyyy-MM-dd HH:mm',
-                ).format(decision.createdAt.toLocal()),
+                formatWenyouExactTime(decision.createdAt),
                 style: Theme.of(context).textTheme.wenyouCaption,
               ),
             ],

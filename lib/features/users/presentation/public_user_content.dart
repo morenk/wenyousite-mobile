@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
@@ -9,6 +8,7 @@ import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_pagination.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_time_text.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/thread_feed/thread_feed_widgets.dart';
 import 'package:wenyousite_mobile/features/users/application/public_user_controller.dart';
@@ -274,9 +274,10 @@ class _UserReplyCard extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             ),
             SizedBox(height: tokens.space8),
-            Text(
-              '${item.subthreadTitle} · '
-              '${DateFormat('yyyy-MM-dd HH:mm').format(item.createdAt)}',
+            WenyouTimeText(
+              value: item.createdAt,
+              prefix: '${item.subthreadTitle} · ',
+              semanticsPrefix: '${item.subthreadTitle}，发布时间：',
               style: Theme.of(context).textTheme.wenyouCaption,
             ),
           ],

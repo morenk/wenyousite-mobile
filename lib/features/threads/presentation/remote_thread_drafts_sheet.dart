@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_sheet.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_time_text.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/thread_feed/thread_feed_catalog.dart';
 import 'package:wenyousite_mobile/features/threads/application/remote_thread_drafts_controller.dart';
@@ -14,15 +15,10 @@ Future<ThreadRemoteDraftSummary?> showRemoteThreadDraftsSheet({
   required BuildContext context,
   String? currentDraftId,
 }) {
-  return showModalBottomSheet<ThreadRemoteDraftSummary>(
+  return showWenyouSheet<ThreadRemoteDraftSummary>(
     context: context,
-    isScrollControlled: true,
-    useSafeArea: true,
-    showDragHandle: true,
-    builder: (context) => FractionallySizedBox(
-      heightFactor: 0.9,
-      child: RemoteThreadDraftsSheet(currentDraftId: currentDraftId),
-    ),
+    builder: (context) =>
+        RemoteThreadDraftsSheet(currentDraftId: currentDraftId),
   );
 }
 
@@ -34,42 +30,21 @@ class RemoteThreadDraftsSheet extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(remoteThreadDraftsControllerProvider);
-    final tokens = context.wenyouTokens;
-    return Padding(
-      padding: EdgeInsets.fromLTRB(
-        tokens.space16,
-        0,
-        tokens.space16,
-        tokens.space16,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          WenyouSectionHeader(
-            title: '云端主题草稿',
-            trailing: IconButton(
-              key: const Key('remote-drafts-refresh'),
-              tooltip: '刷新云端草稿',
-              onPressed: state.isRemoving
-                  ? null
-                  : () async {
-                      await Future.wait([
-                        ref
-                            .read(remoteThreadDraftsControllerProvider.notifier)
-                            .load(),
-                        ref
-                            .read(
-                              threadCategoryCatalogControllerProvider.notifier,
-                            )
-                            .refresh(),
-                      ]);
-                    },
-              icon: const WenyouIcon(WenyouIconIds.actionRefresh),
-            ),
-          ),
-          SizedBox(height: tokens.space12),
-          if (state.removeFailure != null) ...[
-            WenyouStatusBanner(
+    return WenyouSheetBody(
+      title: '云端主题草稿',
+      scrollKey: const Key('remote-drafts-list'),
+      actions: [
+        IconButton(
+          key: const Key('remote-drafts-refresh'),
+          tooltip: '刷新云端草稿',
+          onPressed: state.isRemoving ? null : () => _refresh(ref),
+          icon: const WenyouIcon(WenyouIconIds.actionRefresh),
+        ),
+      ],
+      slivers: [
+        if (state.removeFailure != null)
+          SliverToBoxAdapter(
+            child: WenyouStatusBanner(
               key: const Key('remote-drafts-remove-failure'),
               message: state.removeFailure!.userMessage,
               detail: wenyouFailureDetail(
@@ -78,67 +53,61 @@ class RemoteThreadDraftsSheet extends ConsumerWidget {
               ),
               tone: WenyouStatusTone.error,
             ),
-            SizedBox(height: tokens.space12),
-          ],
-          Expanded(child: _buildBody(context, ref, state)),
-        ],
-      ),
+          ),
+        if (state.phase == RemoteThreadDraftsPhase.ready &&
+            state.drafts.isNotEmpty)
+          SliverList.separated(
+            itemCount: state.drafts.length,
+            separatorBuilder: (_, _) =>
+                SizedBox(height: context.wenyouTokens.space8),
+            itemBuilder: (context, index) {
+              final draft = state.drafts[index];
+              final isCurrent = draft.id == currentDraftId;
+              return _DraftCard(
+                draft: draft,
+                isCurrent: isCurrent,
+                removing: state.removingId == draft.id,
+                actionsLocked: state.isRemoving,
+                onOpen: () => Navigator.pop(context, draft),
+                onRemove: isCurrent
+                    ? null
+                    : () => _confirmRemove(context, ref, draft),
+              );
+            },
+          )
+        else
+          SliverToBoxAdapter(
+            child: switch (state.phase) {
+              RemoteThreadDraftsPhase.loading => const WenyouListSkeleton(
+                label: '正在加载云端主题草稿',
+                showAvatar: false,
+              ),
+              RemoteThreadDraftsPhase.failed => WenyouEmptyState(
+                icon: WenyouIconIds.statusOffline,
+                title: '云端草稿加载失败',
+                message: state.failure?.userMessage ?? '请检查网络后重试。',
+                detail: wenyouFailureDetail(state.failure),
+                action: FilledButton.icon(
+                  onPressed: () => _refresh(ref),
+                  icon: const WenyouIcon(WenyouIconIds.actionRefresh),
+                  label: const Text('重试'),
+                ),
+              ),
+              RemoteThreadDraftsPhase.ready => const WenyouEmptyState(
+                icon: WenyouIconIds.statusSynced,
+                title: '还没有云端主题草稿',
+              ),
+            },
+          ),
+      ],
     );
   }
 
-  Widget _buildBody(
-    BuildContext context,
-    WidgetRef ref,
-    RemoteThreadDraftsState state,
-  ) {
-    return switch (state.phase) {
-      RemoteThreadDraftsPhase.loading => const Center(
-        child: CircularProgressIndicator(),
-      ),
-      RemoteThreadDraftsPhase.failed => WenyouEmptyState(
-        icon: WenyouIconIds.statusOffline,
-        title: '云端草稿加载失败',
-        message: state.failure?.userMessage ?? '请检查网络后重试。',
-        detail: wenyouFailureDetail(state.failure),
-        action: FilledButton.icon(
-          onPressed: () async {
-            await Future.wait([
-              ref.read(remoteThreadDraftsControllerProvider.notifier).load(),
-              ref
-                  .read(threadCategoryCatalogControllerProvider.notifier)
-                  .refresh(),
-            ]);
-          },
-          icon: const WenyouIcon(WenyouIconIds.actionRefresh),
-          label: const Text('重试'),
-        ),
-      ),
-      RemoteThreadDraftsPhase.ready when state.drafts.isEmpty =>
-        const WenyouEmptyState(
-          icon: WenyouIconIds.statusSynced,
-          title: '还没有云端主题草稿',
-        ),
-      RemoteThreadDraftsPhase.ready => ListView.separated(
-        key: const Key('remote-drafts-list'),
-        itemCount: state.drafts.length,
-        separatorBuilder: (_, _) =>
-            SizedBox(height: context.wenyouTokens.space8),
-        itemBuilder: (context, index) {
-          final draft = state.drafts[index];
-          final isCurrent = draft.id == currentDraftId;
-          return _DraftCard(
-            draft: draft,
-            isCurrent: isCurrent,
-            removing: state.removingId == draft.id,
-            actionsLocked: state.isRemoving,
-            onOpen: () => Navigator.pop(context, draft),
-            onRemove: isCurrent
-                ? null
-                : () => _confirmRemove(context, ref, draft),
-          );
-        },
-      ),
-    };
+  Future<void> _refresh(WidgetRef ref) async {
+    await Future.wait([
+      ref.read(remoteThreadDraftsControllerProvider.notifier).load(),
+      ref.read(threadCategoryCatalogControllerProvider.notifier).refresh(),
+    ]);
   }
 
   Future<void> _confirmRemove(
@@ -223,8 +192,10 @@ class _DraftCard extends ConsumerWidget {
             ).textTheme.wenyouCaption.copyWith(color: tokens.mutedText),
           ),
           SizedBox(height: tokens.space4),
-          Text(
-            '更新于 ${DateFormat('yyyy-MM-dd HH:mm').format(draft.updatedAt.toLocal())}',
+          WenyouTimeText(
+            value: draft.updatedAt,
+            prefix: '更新于 ',
+            semanticsPrefix: '更新于 ',
             style: Theme.of(
               context,
             ).textTheme.wenyouCaption.copyWith(color: tokens.mutedText),

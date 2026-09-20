@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
@@ -13,6 +12,7 @@ import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_settings_body.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
 import 'package:wenyousite_mobile/features/users/application/avatar_controller.dart';
@@ -355,7 +355,7 @@ class MeSettingsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final page = Scaffold(
       appBar: AppBar(title: const Text('账号设置')),
-      body: _MePageList(
+      body: WenyouSettingsBody(
         children: [
           const _AppearanceSettingsPanel(),
           const _AccountSecurityPanel(disabled: false),
@@ -676,7 +676,7 @@ class _ProfileOverview extends StatelessWidget {
       level: profile.level,
       bio: profile.bio?.trim().isNotEmpty == true ? profile.bio : '还没有填写个人简介。',
       metadata:
-          '${DateFormat('yyyy-MM-dd').format(profile.createdAt)} 加入温油站 · ${_maskEmail(profile.email)}',
+          '${formatWenyouDate(profile.createdAt)} 加入温油站 · ${_maskEmail(profile.email)}',
       levelProgress: profile.levelProgress,
       levelProgressLabel: profile.nextLevelExperience == null
           ? '已达到当前最高等级'
