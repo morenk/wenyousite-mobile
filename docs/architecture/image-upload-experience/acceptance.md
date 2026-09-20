@@ -48,5 +48,8 @@
 - APK：`build/app/outputs/flutter-apk/app-debug.apk`，183512826 bytes；包名 `site.wenyou.app.debug`，版本 `0.7.1-debug` / versionCode 95，minSdk 26 / targetSdk 36。使用 aapt 从实际产物核验。
 - APK SHA-256：`751EEF7AF9CE315CC0A2CE0D7C0F908B6F1356223FF7F191FCCB6D2266EA75E2`。
 - 完整门禁日志保留在任务 Worktree 的 `artifacts-check-apk.log`，SHA-256：`401546473BCE376EC97ED0231387B225CFDB180B147F2D7F560371CDB6412AAE`。两轮失败日志分别保留为 `artifacts-check-apk-first-failed.log`、`artifacts-check-apk-second-failed.log`，没有以失败轮次或旧 APK 交付。
-- 门禁后未修改应用源码；最终源码提交与 PR 在交付绑定记录中登记。没有安装、合并、部署或真机验收。
+- APK 对应应用源码提交：`b8752aa8c5613c601009d4596aed68b2d0e654eb`。该提交保存完整门禁所测工作树；门禁结束后仅补文档，未修改应用、测试或构建配置。
+- PR：[Mobile #52](https://github.com/morenk/wenyousite-mobile/pull/52)，目标 `dev`；候选待负责人真机验收，没有安装、合并或部署。
 - 构建包含既有 flutter_image_compress_common 的 Kotlin Gradle Plugin 未来兼容性警告；当前构建成功，未来 Flutter 升级时另行迁移插件。
+
+前置独立提交：Foundation `5bc62ed096b90659ed7e92555b00a76524e5a39f`、Backend 契约 `61ae8aa0f7414c77a142689ff10415ae95f806b2`、日期视觉与诊断回归 `51c70bfb5ef3ce962600a183cbc63f365fd0efa7`。Backend 来源与公共媒体契约不变的审查见[同步记录](../image-upload-contract-sync.md)。
