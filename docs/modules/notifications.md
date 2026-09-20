@@ -14,6 +14,8 @@
 
 “消息”是底部主分支，规范路由使用 `/notifications`；“私聊”页签写入 `/notifications?section=directMessages`，旧 `/messages` 仅作兼容重定向。游客留在分支内看到登录引导并携带同一路径回跳。通知项按 `target.kind` 导航：主楼层使用 `/threads/:threadId?post=:postId`，楼中楼回复使用 `/threads/:threadId/posts/:parentPostId/replies?post=:postId`，thread 使用 `/threads/:threadId`，user 使用 `/users/:userId`，moment 使用 `/moments/:momentId`；动态评论目标附加 `?comment=:momentCommentId`，由详情重新读取权威上下文。未知类型、无目标和已删除目标只展示安全正文。
 
+Foundation v7.1.0 时间呈现候选／待验收：普通内容不足 72 小时保留相对时间，满 72 小时和未来时间显示同年短日期或跨年完整日期；读屏提供完整日期，不含时分。安全、审计、账务、预约及到期时刻保留精确时间。原始时间戳不变。
+
 ## 4. 用户操作流程
 
 组件统一第一批（2026-09-19，负责人验收通过）：单条通知删除接入共享异步图标按钮；列表分页继续使用已有共享入口，批量已读由消息中心提供，通知导航和已读事实不变。 入口清单、自动检查及真机步骤见[组件统一验收](../architecture/component-consistency-acceptance.md)。

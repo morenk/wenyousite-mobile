@@ -27,7 +27,7 @@ class WenyouTimeText extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Semantics(
-      label: '$semanticsPrefix${formatWenyouExactTime(value)}$suffix',
+      label: '$semanticsPrefix${formatWenyouDate(value)}$suffix',
       excludeSemantics: true,
       child: Text(
         '$prefix${formatWenyouTime(value, reference: reference)}$suffix',

@@ -519,7 +519,7 @@ class _PostAuthorLine extends StatelessWidget {
                     '回复 ${post.replyToAuthor!.username}'
                   else if (!root)
                     '回复',
-                  '发布时间：${formatWenyouExactTime(post.createdAt)}',
+                  '发布时间：${formatWenyouDate(post.createdAt)}',
                 ].join('，'),
                 excludeSemantics: true,
                 child: Text(

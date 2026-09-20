@@ -14,6 +14,8 @@
 
 私聊列表的规范路径是底部“消息”分支内的 `/notifications?section=directMessages`；旧 `/messages` 兼容重定向到该地址。新私聊继续使用 `/messages/new/:userId`，会话继续使用 `/messages/:conversationId`。其他用户主页在确认当前登录身份且 capability 开启后展示“发私聊”。已有 ACCEPTED/PENDING 联系从新私聊页替换到原会话；DECLINED/CANCELED/UNAVAILABLE 按服务端 `canInitiate` 展示重新建立或受限说明，不猜测新目标。
 
+Foundation v7.1.0 时间呈现候选／待验收：普通内容不足 72 小时保留相对时间，满 72 小时和未来时间显示同年短日期或跨年完整日期；读屏提供完整日期，不含时分。安全、审计、账务、预约及到期时刻保留精确时间。原始时间戳不变。
+
 ## 4. 用户操作流程
 
 组件统一第一批（2026-09-19，负责人验收通过）：拒绝消息请求和撤回使用共享确认框，保留操作后果说明；接受／拒绝按钮统一处理中反馈，更早消息使用共享分页状态并保留逆序列表及原游标。 入口清单、自动检查及真机步骤见[组件统一验收](../architecture/component-consistency-acceptance.md)。
