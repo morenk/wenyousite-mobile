@@ -1,5 +1,11 @@
 # 移动端变更记录
 
+## 2026-09-20 — Debug/Profile 统一 ARM64 构建
+
+- Debug、Profile、Release 在 Gradle 公共配置统一只保留 `arm64-v8a`，Debug 本地候选、完整门禁及手动 CI 构建显式使用 ARM64。
+- 同步开发规范与应用壳、Windows 构建说明，保留原包名、签名规则、构建号和单 APK；历史多架构候选记录不改写。
+- 完整门禁、Debug/Profile 制品核验和待执行真机步骤见[全构建 ARM64 验证](architecture/all-builds-arm64-acceptance.md)。
+
 ## 2026-09-20 — ARM64 构建调整前同步已部署契约
 
 - 后端来源同步至 `4b133355c14198506e4a4380fd741cccd19d844d`，与公网 `/meta` 和 `origin/dev` 一致；API 保持 `5.23.0-dev.20260913.1`，部署仍使用 Markdown v5。
