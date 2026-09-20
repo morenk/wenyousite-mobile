@@ -12,6 +12,7 @@ const diagnosticApiRoutes = <String, String>{
   'GET /api/v1/admin/audit-logs/export': 'adminModerationExportAuditLogs',
   'GET /api/v1/admin/auth/session': 'adminAuthSession',
   'GET /api/v1/admin/cases': 'moderationCasesList',
+  'GET /api/v1/admin/content': 'adminContentList',
   'GET /api/v1/admin/content/hidden': 'adminModerationListHiddenContent',
   'GET /api/v1/admin/dashboard/distributions': 'adminDashboardDistributions',
   'GET /api/v1/admin/dashboard/overview': 'adminDashboardOverview',
@@ -174,6 +175,8 @@ const diagnosticApiRoutes = <String, String>{
   'GET /api/v1/users/{id}/moments': 'userMomentsList',
   'GET /api/v1/users/{id}/played-threads': 'usersGetUserPlayedThreads',
   'GET /api/v1/users/{id}/recent-replies': 'usersGetUserRecentReplies',
+  'PATCH /api/v1/admin/content/thread/{id}/taxonomy':
+      'adminContentUpdateTaxonomy',
   'PATCH /api/v1/admin/tags/{id}': 'adminTaxonomyUpdateTag',
   'PATCH /api/v1/admin/thread-categories/{id}': 'adminTaxonomyUpdateCategory',
   'PATCH /api/v1/admin/users/{id}/role': 'adminModerationUpdateRole',
@@ -224,6 +227,7 @@ const diagnosticApiRoutes = <String, String>{
   'PUT /api/v1/threads/{threadId}/subthreads/reorder': 'subthreadsReorder',
   'DELETE /api/v1/moments/{id}/comments/{commentId}': 'momentsRemoveComment',
   'DELETE /api/v1/threads/{threadId}/tags/{tagId}': 'threadTagsRemove',
+  'GET /api/v1/admin/content/{type}/{id}': 'adminContentDetail',
   'GET /api/v1/moments/{id}/comments/{commentId}/context':
       'momentsCommentContext',
   'GET /api/v1/moments/{id}/comments/{commentId}/replies': 'momentsReplies',
