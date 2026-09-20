@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,11 +9,13 @@ import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_inline_composer_dock.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
+import 'package:wenyousite_mobile/features/media/application/pending_media_file_store_ports.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
 import 'package:wenyousite_mobile/features/moments/application/moment_draft_store_ports.dart';
 import 'package:wenyousite_mobile/features/moments/data/moment_repository.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_compose_page.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_detail_page.dart';
+
 import '../../support/deterministic_test_fonts.dart';
 import '../../support/moment_test_draft_store.dart';
 import 'moment_pages_test_support.dart';
@@ -347,6 +350,9 @@ void registerMomentPagesComposeUploadCases() {
           editorImagePickerPortProvider.overrideWithValue(
             MomentPagesTestFakeImagePicker(),
           ),
+          pendingMediaFileStoreProvider.overrideWithValue(
+            MomentTestPendingMediaStore(),
+          ),
           mediaUploadGatewayPortProvider.overrideWithValue(gateway),
         ],
         child: MaterialApp(
@@ -362,33 +368,16 @@ void registerMomentPagesComposeUploadCases() {
     expect(find.byKey(const Key('editor-image-crop-dialog')), findsNothing);
     await tester.pumpAndSettle();
 
-    expect(find.text('图片处理失败'), findsOneWidget);
-    expect(find.textContaining('问题编号：moment-upload-one'), findsOneWidget);
-    expect(
-      find.byKey(const Key('moment-compose-retry-upload')),
-      findsOneWidget,
-    );
-    expect(find.text('取消上传'), findsOneWidget);
-    expect(
-      tester
-          .widget<FilledButton>(
-            find.descendant(
-              of: find.byKey(const Key('moment-compose-submit')),
-              matching: find.byType(FilledButton),
-            ),
-          )
-          .onPressed,
-      isNull,
-    );
-
-    await tester.tap(find.byKey(const Key('moment-compose-retry-upload')));
+    expect(find.text('未完成'), findsOneWidget);
+    expect(find.text('取消上传'), findsNothing);
+    await tester.tap(find.text('重试'));
     await tester.pumpAndSettle();
 
     expect(gateway.inputs, hasLength(2));
     expect(gateway.inputs[1], same(gateway.inputs[0]));
     expect(find.byKey(const ValueKey('moment-image')), findsOneWidget);
     expect(find.text('1/9'), findsOneWidget);
-    expect(find.byKey(const Key('moment-compose-retry-upload')), findsNothing);
+    expect(find.text('重试'), findsNothing);
     expect(
       tester
           .widget<FilledButton>(
@@ -416,6 +405,9 @@ void registerMomentPagesComposeUploadCases() {
           ),
           momentDraftStoreProvider.overrideWithValue(MemoryMomentDraftStore()),
           editorImagePickerPortProvider.overrideWithValue(picker),
+          pendingMediaFileStoreProvider.overrideWithValue(
+            MomentTestPendingMediaStore(),
+          ),
           mediaUploadGatewayPortProvider.overrideWithValue(gateway),
         ],
         child: MaterialApp(
@@ -448,7 +440,7 @@ void registerMomentPagesComposeUploadCases() {
     expect(find.text('3/9'), findsOneWidget);
   });
 
-  testWidgets('动态多选立即展示本地缩略图且后台最多同时处理两张', (tester) async {
+  testWidgets('动态多选立即展示本地缩略图且处理等待不阻塞后续图片', (tester) async {
     final gateway = MomentPagesTestControlledBatchUploadGateway();
     await tester.pumpWidget(
       ProviderScope(
@@ -462,6 +454,9 @@ void registerMomentPagesComposeUploadCases() {
           momentDraftStoreProvider.overrideWithValue(MemoryMomentDraftStore()),
           editorImagePickerPortProvider.overrideWithValue(
             MomentPagesTestFakeMultiImagePicker(),
+          ),
+          pendingMediaFileStoreProvider.overrideWithValue(
+            MomentTestPendingMediaStore(),
           ),
           mediaUploadGatewayPortProvider.overrideWithValue(gateway),
         ],
@@ -482,7 +477,7 @@ void registerMomentPagesComposeUploadCases() {
       find.byKey(const ValueKey('moment-local-thumbnail-0')),
       findsOneWidget,
     );
-    expect(gateway.operations, hasLength(2));
+    expect(gateway.operations, hasLength(3));
 
     gateway.complete(0);
     await tester.pump();
@@ -518,6 +513,9 @@ void registerMomentPagesComposeUploadCases() {
           ),
           momentDraftStoreProvider.overrideWithValue(MemoryMomentDraftStore()),
           editorImagePickerPortProvider.overrideWithValue(picker),
+          pendingMediaFileStoreProvider.overrideWithValue(
+            MomentTestPendingMediaStore(),
+          ),
           mediaUploadGatewayPortProvider.overrideWithValue(gateway),
         ],
         child: MaterialApp(

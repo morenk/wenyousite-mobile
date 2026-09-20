@@ -79,6 +79,7 @@ class PostComposerSheetHeader extends StatelessWidget {
 class PostComposerEditorRegion extends StatelessWidget {
   const PostComposerEditorRegion({
     required this.editorSession,
+    this.pendingImages,
     required this.label,
     required this.placeholder,
     required this.threadId,
@@ -90,6 +91,7 @@ class PostComposerEditorRegion extends StatelessWidget {
   });
 
   final RichEditorSession editorSession;
+  final EditorPendingImages? pendingImages;
   final String label;
   final String placeholder;
   final String threadId;
@@ -137,6 +139,7 @@ class PostComposerEditorRegion extends StatelessWidget {
                                 wenyouEditorLeadingBlockBuilder(context),
                             embedBuilders: wenyouEditorEmbedBuilders(
                               mediaDisplays: editorSession.mediaDisplays,
+                              pendingImages: pendingImages,
                             ),
                             customShortcuts: editorSession.clipboardShortcuts,
                             customActions: editorSession.clipboardActions,

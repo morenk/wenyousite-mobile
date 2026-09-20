@@ -11,9 +11,13 @@ class MomentPublishBar extends StatelessWidget {
     required this.awaitingConfirmation,
     required this.cleanupPending,
     required this.onPressed,
+    this.pendingCount = 0,
+    this.onCancelWait,
     super.key,
   });
 
+  final int pendingCount;
+  final VoidCallback? onCancelWait;
   final bool editing;
   final bool submitting;
   final bool awaitingConfirmation;
@@ -41,21 +45,38 @@ class MomentPublishBar extends StatelessWidget {
               constraints: const BoxConstraints(maxWidth: 600),
               child: SizedBox(
                 width: double.infinity,
-                child: WenyouAsyncPrimaryButton(
-                  key: const Key('moment-compose-submit'),
-                  label: cleanupPending
-                      ? '重试清理'
-                      : awaitingConfirmation
-                      ? '重试确认'
-                      : editing
-                      ? '保存'
-                      : '发布',
-                  loadingLabel: editing ? '正在保存' : '正在发布',
-                  isLoading: submitting,
-                  icon: editing
-                      ? WenyouIconIds.actionSave
-                      : WenyouIconIds.actionSend,
-                  onPressed: onPressed,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (onCancelWait != null)
+                      Row(
+                        children: [
+                          Expanded(child: Text('还有 $pendingCount 张图片未就绪')),
+                          TextButton(
+                            key: const Key('moment-cancel-publish'),
+                            onPressed: onCancelWait,
+                            child: const Text('取消发布'),
+                          ),
+                        ],
+                      ),
+                    WenyouAsyncPrimaryButton(
+                      key: const Key('moment-compose-submit'),
+                      label: cleanupPending
+                          ? '重试清理'
+                          : awaitingConfirmation
+                          ? '重试确认'
+                          : editing
+                          ? '保存'
+                          : '发布',
+                      loadingLabel: editing ? '正在保存…' : '正在发布…',
+                      isLoading: submitting,
+                      icon: editing
+                          ? WenyouIconIds.actionSave
+                          : WenyouIconIds.actionSend,
+                      onPressed: onPressed,
+                    ),
+                  ],
                 ),
               ),
             ),

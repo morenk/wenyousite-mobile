@@ -29,6 +29,7 @@ import 'package:wenyousite_mobile/features/stickers/application/sticker_reposito
 import 'package:wenyousite_mobile/features/stickers/domain/sticker_models.dart';
 
 import '../../support/button_finder.dart';
+import '../../support/memory_pending_media_file_store.dart';
 import 'post_replies_page_upload_operations.dart';
 
 Future<ProviderContainer> postRepliesPageTestPostContainer(
@@ -41,6 +42,7 @@ Future<ProviderContainer> postRepliesPageTestPostContainer(
 }) async {
   final container = ProviderContainer(
     overrides: [
+      memoryPendingMediaFileStoreOverride(),
       appCapabilitiesProvider.overrideWithValue(
         AppCapabilities(
           markdownAlignment: markdownAlignment,

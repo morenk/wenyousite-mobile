@@ -18,6 +18,7 @@ import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_pa
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_target_utils.dart';
 
 import '../../support/deterministic_test_fonts.dart';
+import '../../support/memory_pending_media_file_store.dart';
 import 'thread_detail_page_test_support.dart';
 
 void main() {
@@ -229,6 +230,7 @@ Future<GoRouter> _pumpPage(
 }) async {
   final container = ProviderContainer(
     overrides: [
+      memoryPendingMediaFileStoreOverride(),
       stickersEnabledProvider.overrideWithValue(false),
       tokenStoreProvider.overrideWithValue(
         ThreadDetailPageTestMemoryTokenStore(),

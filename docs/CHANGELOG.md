@@ -5,6 +5,14 @@
 - 固定 Backend `fc88ea09a808af9c54c1f5b971e116b3be4a471b` / OpenAPI `5.24.0-dev.20260920.1`，按固定生成器同步客户端；三个兼容新增管理端点登记为移动端 V1 不适用。
 - 上传、确认、查询及 Markdown 消费契约不变；同步审查与验证见[契约同步记录](architecture/image-upload-contract-sync.md)。图片上传交互实现单独交付。
 
+
+## 图片上传体验候选（待负责人验收）
+
+- 正文、动态及动态评论先显示本机图片，后台准备；发布等待可取消，逐图重试/移除，恢复不自动发布。
+- 分离准备、传输、服务端查询并发，保留同一 mediaId 续查；本机附件按账号与目标持久保存，暂停含未完成图片的云草稿同步。
+- 去除创作入口上传横幅及安全处理文案，使用延迟动效和真实传输百分比。
+- 服务端只读样本与真机验收见[图片上传体验候选](architecture/image-upload-experience/acceptance.md)。未合并、未部署、未安装真机。
+
 ## 2026-09-21 — 同步 Foundation 正式日期呈现契约
 
 - Foundation 固定正式 `v7.1.0`（`dcf75d385e39cc0c55d550a6f35921cd9a7aa508`），Schema 保持 3；本次不更新 Backend HTTP 或 Markdown 契约。

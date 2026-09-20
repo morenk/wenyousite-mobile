@@ -3,6 +3,9 @@
 library;
 
 export 'presentation/editor_embed_builders.dart' show wenyouEditorEmbedBuilders;
+export 'presentation/editor_pending_image_widget.dart'
+    show EditorPublishWaiting;
+export 'presentation/editor_pending_images.dart' show EditorPendingImages;
 export 'presentation/editor_reader_clipboard.dart'
     show
         ReaderMarkdownClipboardWriter,

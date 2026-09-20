@@ -18,6 +18,7 @@ import 'package:wenyousite_mobile/features/stickers/application/sticker_collecti
 
 import '../../support/deterministic_test_fonts.dart';
 import '../../support/fake_image_crop_processor.dart';
+import '../../support/memory_pending_media_file_store.dart';
 import 'post_replies_page_test_support.dart';
 
 void registerPostRepliesPageScrollingLifecycleCases() {
@@ -26,6 +27,7 @@ void registerPostRepliesPageScrollingLifecycleCases() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          memoryPendingMediaFileStoreOverride(),
           stickersEnabledProvider.overrideWithValue(false),
           postRepositoryProvider.overrideWithValue(
             PostRepliesPageTestFakePostRepository(
@@ -65,6 +67,7 @@ void registerPostRepliesPageScrollingLifecycleCases() {
     final uploadGateway = PostRepliesPageTestLateCompletingMediaUploadGateway();
     final container = ProviderContainer(
       overrides: [
+        memoryPendingMediaFileStoreOverride(),
         tokenStoreProvider.overrideWithValue(
           PostRepliesPageTestMemoryTokenStore(),
         ),
@@ -102,7 +105,7 @@ void registerPostRepliesPageScrollingLifecycleCases() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('editor-image')));
     await postRepliesPageTestConfirmImageCrop(tester);
-    expect(find.textContaining('正在上传'), findsOneWidget);
+    expect(find.text('移除'), findsOneWidget);
 
     await postRepliesPageTestDismissPostComposerFromOutside(tester);
     expect(uploadGateway.operation.cancelled, isTrue);
@@ -125,6 +128,7 @@ void registerPostRepliesPageScrollingLifecycleCases() {
     );
     final container = ProviderContainer(
       overrides: [
+        memoryPendingMediaFileStoreOverride(),
         tokenStoreProvider.overrideWithValue(
           PostRepliesPageTestMemoryTokenStore(),
         ),
@@ -211,6 +215,7 @@ void registerPostRepliesPageScrollingLifecycleCases() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          memoryPendingMediaFileStoreOverride(),
           stickersEnabledProvider.overrideWithValue(false),
           postRepositoryProvider.overrideWithValue(
             PostRepliesPageTestFakePostRepository(initialReplies: replies),
@@ -271,6 +276,7 @@ void registerPostRepliesPageScrollingLifecycleCases() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          memoryPendingMediaFileStoreOverride(),
           stickersEnabledProvider.overrideWithValue(false),
           postRepositoryProvider.overrideWithValue(
             PostRepliesPageTestFakePostRepository(),
@@ -311,6 +317,7 @@ void registerPostRepliesPageScrollingLifecycleCases() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
+            memoryPendingMediaFileStoreOverride(),
             stickersEnabledProvider.overrideWithValue(false),
             postRepositoryProvider.overrideWithValue(
               PostRepliesPageTestFakePostRepository(),
@@ -352,6 +359,7 @@ void registerPostRepliesPageScrollingLifecycleCases() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          memoryPendingMediaFileStoreOverride(),
           stickersEnabledProvider.overrideWithValue(false),
           postRepositoryProvider.overrideWithValue(
             PostRepliesPageTestFakePostRepository(),
@@ -397,6 +405,7 @@ void registerPostRepliesPageScrollingLifecycleCases() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          memoryPendingMediaFileStoreOverride(),
           stickersEnabledProvider.overrideWithValue(false),
           postRepositoryProvider.overrideWithValue(
             PostRepliesPageTestFakePostRepository(),
@@ -454,6 +463,7 @@ void registerPostRepliesPageScrollingLifecycleCases() {
     addTearDown(tester.view.resetPhysicalSize);
     final container = ProviderContainer(
       overrides: [
+        memoryPendingMediaFileStoreOverride(),
         tokenStoreProvider.overrideWithValue(
           PostRepliesPageTestMemoryTokenStore(),
         ),
