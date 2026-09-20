@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
-import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_selection_menu.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_settings_row.dart';
 import 'package:wenyousite_mobile/features/threads/domain/subthread_management_models.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_management_models.dart';
 
@@ -74,9 +74,10 @@ class ThreadManagementBasicsSection extends StatelessWidget {
           builder: (field) => Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _ThreadSettingRow(
+              WenyouSettingsLink(
+                contentPadding: EdgeInsets.zero,
                 key: const Key('thread-management-category'),
-                label: '所在分区',
+                title: '所在分区',
                 value: selectedCategory == null
                     ? '请选择'
                     : selectedCategory.isSelectable
@@ -132,9 +133,10 @@ class ThreadManagementBasicsSection extends StatelessWidget {
           ),
         ),
         SizedBox(height: tokens.space4),
-        _ThreadSettingRow(
+        WenyouSettingsLink(
+          contentPadding: EdgeInsets.zero,
           key: const Key('thread-management-edit-tags'),
-          label: '主题标签',
+          title: '主题标签',
           value: tags.isEmpty ? '未添加' : tags.join('、'),
           enabled: enabled,
           onTap: enabled ? onEditTags : null,
@@ -172,9 +174,10 @@ class ThreadManagementPublishingSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _ThreadSettingRow(
+        WenyouSettingsLink(
+          contentPadding: EdgeInsets.zero,
           key: const Key('thread-management-status'),
-          label: '招募状态',
+          title: '招募状态',
           value: status.label,
           enabled: enabled,
           onTap: !enabled
@@ -205,9 +208,10 @@ class ThreadManagementPublishingSection extends StatelessWidget {
                 },
         ),
         SizedBox(height: tokens.space4),
-        _ThreadSettingRow(
+        WenyouSettingsLink(
+          contentPadding: EdgeInsets.zero,
           key: const Key('thread-management-visibility'),
-          label: '可见范围',
+          title: '可见范围',
           value: canChangeVisibility
               ? visibility.label
               : '${visibility.label} · 仅楼主可改',
@@ -241,9 +245,10 @@ class ThreadManagementPublishingSection extends StatelessWidget {
         ),
         if (postingPolicy != null) ...[
           SizedBox(height: tokens.space4),
-          _ThreadSettingRow(
+          WenyouSettingsLink(
+            contentPadding: EdgeInsets.zero,
             key: const Key('thread-management-posting-policy'),
-            label: '主贴发言权限',
+            title: '主贴发言权限',
             value: postingPolicy!.label,
             enabled: enabled,
             onTap: !enabled
@@ -284,63 +289,6 @@ class ThreadManagementPublishingSection extends StatelessWidget {
           ),
         ],
       ],
-    );
-  }
-}
-
-class _ThreadSettingRow extends StatelessWidget {
-  const _ThreadSettingRow({
-    required this.label,
-    required this.value,
-    required this.enabled,
-    required this.onTap,
-    super.key,
-  });
-
-  final String label;
-  final String value;
-  final bool enabled;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = context.wenyouTokens;
-    final actionable = enabled && onTap != null;
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      minTileHeight: 56,
-      enabled: enabled,
-      titleTextStyle: Theme.of(context).textTheme.wenyouRowTitle,
-      title: Text(label),
-      trailing: ConstrainedBox(
-        constraints: BoxConstraints(
-          maxWidth: MediaQuery.sizeOf(context).width * .45,
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Flexible(
-              child: Text(
-                value,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(
-                  context,
-                ).textTheme.wenyouCompactBody.copyWith(color: tokens.mutedText),
-              ),
-            ),
-            if (actionable) ...[
-              SizedBox(width: tokens.space4),
-              WenyouIcon(
-                WenyouIconIds.navigationNext,
-                size: 18,
-                color: tokens.mutedText,
-              ),
-            ],
-          ],
-        ),
-      ),
-      onTap: actionable ? onTap : null,
     );
   }
 }
@@ -401,32 +349,16 @@ Future<T?> _showChoiceSheet<T>({
                   final option = options[index];
                   final enabled = isEnabled?.call(option.value) ?? true;
                   final isSelected = option.value == selected;
-                  return Semantics(
-                    selected: isSelected,
-                    child: ListTile(
-                      key: ValueKey(
-                        '$optionKeyPrefix-${option.keyValue ?? option.value}',
-                      ),
-                      enabled: enabled,
-                      selected: isSelected,
-                      titleTextStyle: Theme.of(
-                        sheetContext,
-                      ).textTheme.wenyouRowTitle,
-                      subtitleTextStyle: Theme.of(sheetContext)
-                          .textTheme
-                          .wenyouCompactBody
-                          .copyWith(color: tokens.mutedText),
-                      title: Text(option.label),
-                      subtitle: option.supportingLabel == null
-                          ? null
-                          : Text(option.supportingLabel!),
-                      trailing: isSelected
-                          ? const WenyouIcon(WenyouIconIds.actionConfirm)
-                          : null,
-                      onTap: enabled
-                          ? () => Navigator.pop(sheetContext, option.value)
-                          : null,
+                  return WenyouSelectionTile(
+                    key: ValueKey(
+                      '$optionKeyPrefix-${option.keyValue ?? option.value}',
                     ),
+                    selected: isSelected,
+                    label: option.label,
+                    supportingLabel: option.supportingLabel,
+                    onTap: enabled
+                        ? () => Navigator.pop(sheetContext, option.value)
+                        : null,
                   );
                 },
               ),

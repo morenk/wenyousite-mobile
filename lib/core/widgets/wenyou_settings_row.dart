@@ -11,6 +11,8 @@ class WenyouSettingsLink extends StatelessWidget {
     this.icon,
     this.value,
     this.destructive = false,
+    this.enabled = true,
+    this.contentPadding,
     super.key,
   });
 
@@ -19,17 +21,22 @@ class WenyouSettingsLink extends StatelessWidget {
   final String? icon;
   final String? value;
   final bool destructive;
+  final bool enabled;
+  final EdgeInsetsGeometry? contentPadding;
 
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
-    final color = onTap == null
+    final actionable = enabled && onTap != null;
+    final color = !enabled
         ? Theme.of(context).disabledColor
         : destructive
         ? Theme.of(context).colorScheme.error
         : null;
     return ListTile(
-      enabled: onTap != null,
+      enabled: enabled,
+      contentPadding: contentPadding,
+      titleTextStyle: Theme.of(context).textTheme.wenyouRowTitle,
       leading: icon == null ? null : WenyouIcon(icon!, color: color),
       title: Row(
         children: [
@@ -47,14 +54,18 @@ class WenyouSettingsLink extends StatelessWidget {
               child: Text(
                 value!,
                 textAlign: TextAlign.end,
-                style: Theme.of(context).textTheme.wenyouCaption,
+                style: Theme.of(context).textTheme.wenyouCompactBody.copyWith(
+                  color: enabled ? tokens.mutedText : color,
+                ),
               ),
             ),
           ],
         ],
       ),
-      trailing: WenyouIcon(WenyouIconIds.navigationNext, color: color),
-      onTap: onTap,
+      trailing: actionable
+          ? WenyouIcon(WenyouIconIds.navigationNext, color: color)
+          : null,
+      onTap: actionable ? onTap : null,
     );
   }
 }
