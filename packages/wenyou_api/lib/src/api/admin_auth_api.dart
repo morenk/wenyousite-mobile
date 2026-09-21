@@ -16,6 +16,7 @@ import 'package:wenyou_api/src/model/admin_auth_verify200_response.dart';
 import 'package:wenyou_api/src/model/admin_auth_verify_step_up200_response.dart';
 import 'package:wenyou_api/src/model/admin_challenge_verify_dto.dart';
 import 'package:wenyou_api/src/model/admin_login_challenge_dto.dart';
+import 'package:wenyou_api/src/model/admin_login_verify_dto.dart';
 import 'package:wenyou_api/src/model/api_error_envelope.dart';
 
 class AdminAuthApi {
@@ -389,7 +390,7 @@ class AdminAuthApi {
   ///
   ///
   /// Parameters:
-  /// * [adminChallengeVerifyDto]
+  /// * [adminLoginVerifyDto]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -400,7 +401,7 @@ class AdminAuthApi {
   /// Returns a [Future] containing a [Response] with a [AdminAuthVerify200Response] as data
   /// Throws [DioException] if API call or serialization fails
   Future<Response<AdminAuthVerify200Response>> adminAuthVerify({
-    required AdminChallengeVerifyDto adminChallengeVerifyDto,
+    required AdminLoginVerifyDto adminLoginVerifyDto,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -425,8 +426,8 @@ class AdminAuthApi {
     dynamic _bodyData;
 
     try {
-      const _type = FullType(AdminChallengeVerifyDto);
-      _bodyData = _serializers.serialize(adminChallengeVerifyDto, specifiedType: _type);
+      const _type = FullType(AdminLoginVerifyDto);
+      _bodyData = _serializers.serialize(adminLoginVerifyDto, specifiedType: _type);
 
     } catch(error, stackTrace) {
       throw DioException(

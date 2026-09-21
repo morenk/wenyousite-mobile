@@ -1,4 +1,10 @@
 # 移动端变更记录
+## 2026-09-22 — 同步图片图集候选契约
+
+- 固定 Backend `1f6a65e15dd66f88841bc80502f726804a07fa99` / OpenAPI `5.26.0-dev.20260922.3`，标准生成新增图集客户端及共享普通图片位置语料。
+- 同步既有管理会话、管理内容与移除粉丝基线。管理接口仍排除于消费端产品；移除粉丝由关系管理独立任务接入，当前列为有明确移除条件的 `planned_social`。
+- 图集业务在后续功能提交接入，候选兼容后端尚未部署。详见 [契约同步](architecture/image-gallery-contract-sync.md)。
+
 ## 2026-09-21 — 同步 Foundation 正式日期呈现契约
 
 - Foundation 固定正式 `v7.1.0`（`dcf75d385e39cc0c55d550a6f35921cd9a7aa508`），Schema 保持 3；本次不更新 Backend HTTP 或 Markdown 契约。

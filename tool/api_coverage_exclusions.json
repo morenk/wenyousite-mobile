@@ -1,7 +1,11 @@
 {
   "schemaVersion": 1,
-  "contractVersion": "5.23.0-dev.20260913.1",
+  "contractVersion": "5.26.0-dev.20260922.3",
   "exclusions": [
+    { "operationId": "adminContentList", "category": "admin_product", "reason": "移动端 V1 不承载管理产品。" },
+    { "operationId": "adminContentDetail", "category": "admin_product", "reason": "移动端 V1 不承载管理产品。" },
+    { "operationId": "adminContentUpdateTaxonomy", "category": "admin_product", "reason": "移动端 V1 不承载管理产品。" },
+    { "operationId": "usersFollowRemoveFollower", "category": "planned_social", "reason": "Backend 5.25 基线新增移除粉丝；关系管理独立任务负责入口与权限回归，其消费端实现合入时必须删除本排除项。本次图集切片仅同步兼容契约。" },
     { "operationId": "adminIndex", "category": "admin_product", "reason": "移动端 V1 不承载管理产品。" },
     { "operationId": "adminSendSystemNotification", "category": "admin_product", "reason": "移动端 V1 不承载管理产品。" },
     { "operationId": "adminGetHistory", "category": "admin_product", "reason": "移动端 V1 不承载管理产品。" },
