@@ -38,7 +38,8 @@ abstract class WenyouMarkdownInlineBuilder extends MarkdownElementBuilder {
         : wrap(child, alignment: inlineAlignment(element));
   }
 
-  /// 图片回调不经过元素 builder；行内表情也须使用同一接入方式。
+  /// 行内表情与其他自定义节点共用此入口；普通图片通过 usesInlineLayout
+  /// 保留块尺寸，旧的独立图片回调也可显式调用 wrap。
   static Text wrap(
     Widget child, {
     PlaceholderAlignment alignment = PlaceholderAlignment.baseline,
