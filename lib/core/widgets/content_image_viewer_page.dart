@@ -6,6 +6,7 @@ import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/application/image_gallery.dart';
 import 'package:wenyousite_mobile/core/application/user_facing_failure.dart';
+import 'package:wenyousite_mobile/core/application/visibility_cache_invalidation.dart';
 import 'package:wenyousite_mobile/core/media/media_display.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_image_viewer_page.dart';
@@ -19,6 +20,10 @@ class ContentImageViewerPage extends ConsumerStatefulWidget {
     this.onAddToStickers,
     this.closeKey,
     this.imageBuilder,
+    this.titleBuilder,
+    this.bottomOverlay,
+    this.extraActions = const [],
+    this.onPageChanged,
     super.key,
   }) : assert(items.length > 0),
        assert(initialIndex >= 0 && initialIndex < items.length);
@@ -52,6 +57,10 @@ class ContentImageViewerPage extends ConsumerStatefulWidget {
   final int initialIndex;
   final Future<String> Function(WenyouImageViewerItem item)? onAddToStickers;
   final Key? closeKey;
+  final String Function(int index, int count)? titleBuilder;
+  final Widget? bottomOverlay;
+  final List<Widget> extraActions;
+  final ValueChanged<int>? onPageChanged;
   final Widget? Function(BuildContext context, int index, bool current)?
   imageBuilder;
 
@@ -66,6 +75,7 @@ class _ContentImageViewerPageState
   _ContentImageAction? _busyAction;
   _ContentImageFailure? _failure;
   ImageGallerySaveOperation? _saveOperation;
+  bool _sessionInvalidated = false;
 
   @override
   void initState() {
@@ -80,12 +90,41 @@ class _ContentImageViewerPageState
   }
 
   @override
+  void didUpdateWidget(covariant ContentImageViewerPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final oldItem = oldWidget.items[_index];
+    final next = oldItem.id == null
+        ? _index.clamp(0, widget.items.length - 1)
+        : widget.items.indexWhere((item) => item.id == oldItem.id);
+    _index = next >= 0 ? next : widget.initialIndex;
+  }
+
+  @override
   Widget build(BuildContext context) {
+    ref.listen(viewerScopeProvider, (previous, next) {
+      if (previous != null && previous != next) {
+        _saveOperation?.cancel();
+        setState(() => _sessionInvalidated = true);
+      }
+    });
+    if (_sessionInvalidated) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('查看图片')),
+        body: const Center(child: Text('请重新打开图片')),
+      );
+    }
     final tokens = context.wenyouTokens;
     final gallery = ref.watch(imageGalleryServiceProvider);
     final canSave = gallery.isSupported;
     final canAddSticker = widget.onAddToStickers != null;
-    final currentFailure = _failure?.targetIndex == _index ? _failure : null;
+    final failedItem = _failure?.item;
+    final currentFailure =
+        failedItem != null &&
+            (failedItem.id == null
+                ? identical(failedItem, widget.items[_index])
+                : failedItem.id == widget.items[_index].id)
+        ? _failure
+        : null;
     return WenyouImageViewerPage(
       viewerKey: const Key('content-image-viewer'),
       closeTooltip: '关闭原图',
@@ -93,13 +132,19 @@ class _ContentImageViewerPageState
       items: widget.items,
       imageBuilder: widget.imageBuilder,
       initialIndex: widget.initialIndex,
-      onPageChanged: (index) => setState(() => _index = index),
-      titleBuilder: (index, count) {
-        final label = widget.items[index].semanticLabel.trim();
-        if (count == 1) return label.isEmpty ? '查看原图' : label;
-        return '${index + 1} / $count';
+      onPageChanged: (index) {
+        setState(() => _index = index);
+        widget.onPageChanged?.call(index);
       },
+      titleBuilder:
+          widget.titleBuilder ??
+          (index, count) {
+            final label = widget.items[index].semanticLabel.trim();
+            if (count == 1) return label.isEmpty ? '查看原图' : label;
+            return '${index + 1} / $count';
+          },
       actions: [
+        ...widget.extraActions,
         if (canSave || canAddSticker)
           PopupMenuButton<_ContentImageAction>(
             icon: const WenyouIcon(WenyouIconIds.actionMore),
@@ -109,9 +154,9 @@ class _ContentImageViewerPageState
             onSelected: (action) {
               switch (action) {
                 case _ContentImageAction.saveImage:
-                  unawaited(_saveImage(_index));
+                  unawaited(_saveImage(widget.items[_index]));
                 case _ContentImageAction.addSticker:
-                  unawaited(_addToStickers(_index));
+                  unawaited(_addToStickers(widget.items[_index]));
               }
             },
             itemBuilder: (context) => [
@@ -148,7 +193,7 @@ class _ContentImageViewerPageState
           ),
       ],
       bottomOverlay: currentFailure == null
-          ? null
+          ? widget.bottomOverlay
           : WenyouFailureView(
               failure: currentFailure.failure,
               action: TextButton(
@@ -162,11 +207,11 @@ class _ContentImageViewerPageState
     );
   }
 
-  Future<void> _saveImage(int targetIndex) async {
+  Future<void> _saveImage(WenyouImageViewerItem item) async {
     if (_busyAction != null) return;
     final gallery = ref.read(imageGalleryServiceProvider);
     if (!gallery.isSupported) return;
-    final item = widget.items[targetIndex];
+
     setState(() {
       _busyAction = _ContentImageAction.saveImage;
       _failure = null;
@@ -180,18 +225,18 @@ class _ContentImageViewerPageState
     _saveOperation = operation;
     try {
       await operation.result;
-      if (!mounted) return;
+      if (!mounted || _sessionInvalidated) return;
       showWenyouSnackBar(
         context,
         '图片已保存到系统相册。',
         tone: WenyouSnackBarTone.success,
       );
     } on Object catch (error) {
-      if (!mounted) return;
+      if (!mounted || _sessionInvalidated) return;
       final galleryFailure = error is ImageGalleryException ? error : null;
       setState(() {
         _failure = _ContentImageFailure(
-          targetIndex: targetIndex,
+          item: item,
           action: _ContentImageAction.saveImage,
           failure: _localFailure(
             title: '图片保存失败',
@@ -209,7 +254,7 @@ class _ContentImageViewerPageState
     }
   }
 
-  Future<void> _addToStickers(int targetIndex) async {
+  Future<void> _addToStickers(WenyouImageViewerItem item) async {
     final addToStickers = widget.onAddToStickers;
     if (_busyAction != null || addToStickers == null) return;
     setState(() {
@@ -217,14 +262,14 @@ class _ContentImageViewerPageState
       _failure = null;
     });
     try {
-      final message = await addToStickers(widget.items[targetIndex]);
-      if (!mounted) return;
+      final message = await addToStickers(item);
+      if (!mounted || _sessionInvalidated) return;
       showWenyouSnackBar(context, message, tone: WenyouSnackBarTone.success);
     } on Object catch (error) {
-      if (!mounted) return;
+      if (!mounted || _sessionInvalidated) return;
       setState(() {
         _failure = _ContentImageFailure(
-          targetIndex: targetIndex,
+          item: item,
           action: _ContentImageAction.addSticker,
           failure: error is ApiFailure
               ? UserFacingFailure.fromApi(error)
@@ -241,10 +286,10 @@ class _ContentImageViewerPageState
       try {
         await ref.read(imageGalleryServiceProvider).openSettings();
       } on Object catch (error) {
-        if (!mounted) return;
+        if (!mounted || _sessionInvalidated) return;
         setState(() {
           _failure = _ContentImageFailure(
-            targetIndex: failure.targetIndex,
+            item: failure.item,
             action: failure.action,
             failure: _localFailure(
               title: '系统设置无法打开',
@@ -261,9 +306,9 @@ class _ContentImageViewerPageState
     }
     switch (failure.action) {
       case _ContentImageAction.saveImage:
-        await _saveImage(failure.targetIndex);
+        await _saveImage(failure.item);
       case _ContentImageAction.addSticker:
-        await _addToStickers(failure.targetIndex);
+        await _addToStickers(failure.item);
     }
   }
 }
@@ -272,13 +317,13 @@ enum _ContentImageAction { saveImage, addSticker }
 
 class _ContentImageFailure {
   const _ContentImageFailure({
-    required this.targetIndex,
+    required this.item,
     required this.action,
     required this.failure,
     this.settingsRequired = false,
   });
 
-  final int targetIndex;
+  final WenyouImageViewerItem item;
   final _ContentImageAction action;
   final UserFacingFailure failure;
   final bool settingsRequired;

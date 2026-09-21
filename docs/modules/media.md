@@ -31,12 +31,20 @@ GIF 在客户端不提供裁剪或转码，校验通过后保留原始文件名�
 
 ## 5. API operationId 与生成类型
 
+galleryList：读取 GalleryList200Response / GalleryPageDto / GalleryImageDto，传scope、scopeId、首次anchorId/index/version、order、authorId及后续不透明cursor，默认每页20张。
+
+跨模块入口使用 `reading_gallery.dart` 公开门面；收藏动作由来源模块注入并接收当前 `ReadingGalleryImage`，媒体模块不依赖表情收藏内部状态。
+
 - 媒体管线：`mediaGetUploadUrl`、`mediaConfirmUpload`、`mediaGetMedia`；契约已提供 `mediaReissueUploadUrl`，当前等待同一媒体重签与重传切片接入。
 - 头像：`usersSetAvatar`、`usersRemoveAvatar`。
 - 主页背景：`usersSetProfileCover`、`usersRemoveProfileCover`。
 - 主要生成类型：`CreateUploadUrlDto`（含 purpose）、`ConfirmUploadDto`、`MediaResponseDto`（含 purpose/animated 与派生 URL）、`SetAvatarDto`、`SetProfileCoverDto`、`PrivateUserResponseDto`。
 
 ## 6. 状态模型和数据流
+
+全屏图集候选：正文按子贴（正文与主楼层）或某楼层回复讨论分组，动态按正文、一级评论、某评论回复分组；不跨层级。点击立即使用已加载原图，独立 `ReadingGalleryController` 后台取得锚点及双向游标，跟随打开时的排序与作者筛选。正文 AST 普通图片序号保留重复 URL，排除贴纸、代码与未发布路径；共享 occurrences fixtures 验证后端一致性。图片的稳定展示键使用来源、版本和出现位置，前插页不改变当前图片，活动触摸期间集合前插取消本次导航意图。
+
+查看器支持真实双指 1–5 倍中心缩放、点击点双击 2 倍/复位、适屏单指横滑及下滑关闭；放大后仅平移，两指变一指仍锁住本次导航。每次切图复位，不循环。相邻图片预取首帧，非当前图 TickerMode 停止动画流；动态沿用共享播放组件及 PageStorage 失败状态。保存与表情收藏绑定当前图片来源，另有显式定位楼层/评论动作，普通关闭保持正文阅读位置。
 
 正文上传完成衔接修复（2026-09-13，负责人验收通过）：完成结果返回后，主题及帖子页面在插入图片前同步当前编辑锁，避免沿用安全处理阶段的只读状态而丢弃图片。媒体上传控制器、GIF 原件上传和完整 WebP 展示协议不变；见[GIF 上传验收](../architecture/editor-gif-upload-acceptance.md)。
 
@@ -47,6 +55,8 @@ GIF 在客户端不提供裁剪或转码，校验通过后保留原始文件名�
 `MediaUploadInput` 在当前进程持有文件名、声明类型、强类型业务用途以及已实体化字节或系统选图文件句柄；动态、评论和私聊等直接上传入口只在上传任务进入准备阶段时实体化字节，需要取景的富正文和收藏表情则在引擎解码前实体化，均不会在选择多图时立即并发读取全部原图。`CropImageSource` 额外持有低分辨率预览、原图尺寸和是否允许裁剪，`NormalizedCropRect` 只表达 0..1 范围内的取景区域。`MediaUploadTaskState` 统一表达打开相册、准备、上传、确认、处理、待继续查询与失败，进度和用户文案由同一状态生成；正文、帖子、主题管理与动态评论复用同一状态横幅，不再各自解释阶段。`UploadedEditorImage` 暴露媒体 ID、安全主 URL、可选 thumbnail/feed/medium URL、内容类型、动画标记、尺寸和可选完整 display。上传 adapter 在申请地址前通过 native 编码器归一化静态图；进程级工作协调器把 CPU/内存密集准备限制为单路、网络传输限制为双路。同一输入成功归一化后由进程内缓存复用于明确重试，编码失败则清除缓存并允许重新处理，绝不退回上传未归一化原图。Debug 构建只记录非敏感阶段耗时。各业务入口按页面或实例创建 autoDispose 上传任务；已有私聊会话在气泡 application 状态内直接消费上传端口。
 
 ## 7. 鉴权、权限和隐私规则
+
+图集 GET 每页重新授权；401/403/404 或账号 scope 变化立即撤掉图像、取消请求并丢弃迟到响应。网络失败保留当前图原位重试；内容版本冲突停止其它分页并要求关闭后重新打开；历史索引未就绪仅提示图集加载失败，不伪装完整范围。图集只持内存，不写草稿或修改业务内容，线上自动验收仅只读，写入 E2E 必须使用已核验隔离资源。
 
 申请与确认使用主 API 会话；对象存储 PUT 与原图保存下载都使用独立无鉴权客户端，避免向第三方地址发送 Token。预签名 URL、原图查询参数和文件路径不写日志、数据库或 UI 错误详情；文件仅在用户明确选择或点按保存后读取。Android Photo Picker 只授予用户所选文件的读取能力，不申请整库相册权限；保存图片仅在 Android 8–9 按操作请求旧版写入权限，Android 10+ 使用 MediaStore，iOS 只申请添加照片权限。公网公开图和上传地址都要求 HTTPS，仅固定回环开发主机允许 HTTP；地址必须有有效 authority 且不能携带 userinfo，保存过程逐跳复核重定向。头像额外排除 GIF/AVIF 与格式伪装；编码层仍防御性移除 Markdown alt 中协议不允许的换行和 `]`，当前编辑器 UI 固定使用“图片”且不接受用户描述输入。用户资料端点失败时保留已完成的媒体 ID，显式重试不重复上传。
 

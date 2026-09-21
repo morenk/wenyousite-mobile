@@ -8,6 +8,7 @@ import 'package:wenyousite_mobile/core/widgets/reading_quick_scroll.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_content_item_divider.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_discussion_scroll_policy.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
+import 'package:wenyousite_mobile/features/media/reading_gallery.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_controllers.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_discussion_author_directory_ports.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_discussion_author.dart';
@@ -124,6 +125,10 @@ List<Widget> buildThreadDetailReadingSlivers(
                 detail,
                 selected!,
                 onEdit: onCompose,
+                galleryOrder: state.floorOrder.name == 'newest'
+                    ? ReadingGalleryOrder.newest
+                    : ReadingGalleryOrder.oldest,
+                galleryAuthorId: state.floorAuthorId,
                 diagnosticMarkdownKey: renderGeometry.markdownKey,
               ),
             ),
@@ -242,6 +247,14 @@ List<Widget> buildThreadDetailReadingSlivers(
                           key: ValueKey('thread-floor-${floor.id}'),
                           threadId: threadId,
                           floor: floor,
+                          galleryTarget: ReadingGalleryTarget(
+                            scope: ReadingGalleryScope.subthread,
+                            scopeId: selected.id,
+                            authorId: state.floorAuthorId,
+                            order: state.floorOrder.name == 'newest'
+                                ? ReadingGalleryOrder.newest
+                                : ReadingGalleryOrder.oldest,
+                          ),
                           isFocused: focused,
                           targetFrameKey: focused ? targetKey : null,
                           canEdit: floor.author.id == viewerId,

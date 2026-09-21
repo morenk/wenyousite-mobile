@@ -9,6 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_alignment.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_empty_paragraphs.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_image_occurrence_syntax.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_inline_boundary.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_inline_compatibility_syntax.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_quote_line_syntax.dart';
@@ -45,6 +46,7 @@ class WenyouMarkdown extends StatefulWidget {
     this.diceDetails = const {},
     this.onInternalLink,
     this.onAddImageToStickers,
+    this.onOpenImage,
     this.onTapText,
     this.onLongPressNonText,
     this.bodyFontSize = 17,
@@ -61,6 +63,7 @@ class WenyouMarkdown extends StatefulWidget {
   final Map<String, WenyouDiceRollDetail> diceDetails;
   final ValueChanged<Uri>? onInternalLink;
   final Future<String> Function(Uri uri)? onAddImageToStickers;
+  final void Function(int imageIndex, Uri uri, String? alt)? onOpenImage;
   final VoidCallback? onTapText;
   final VoidCallback? onLongPressNonText;
   final double bodyFontSize;
@@ -80,6 +83,7 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
   late String _normalizedData;
   List<MarkdownRenderSegment> _renderSegments = const [];
   List<InternalReferencePortal> _internalReferences = const [];
+  Map<String, md.LinkReference> _imageReferences = const {};
   MarkdownStyleSheet? _styleSheet;
   Widget? _renderedBody;
   var _usesPlainTextFastPath = false;
@@ -204,6 +208,11 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
       imageAlignment: true,
     );
     _internalReferences = prepared.references;
+    final referenceDocument = md.Document(
+      extensionSet: md.ExtensionSet.gitHubFlavored,
+    );
+    referenceDocument.parse(_normalizedData);
+    _imageReferences = referenceDocument.linkReferences;
     _usesPlainTextFastPath =
         widget.enablePlainTextFastPath &&
         prepared.references.isEmpty &&
@@ -232,6 +241,17 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
               _alignedStyleSheet(_renderSegments[index].alignment),
               expandBlockWidth: _renderSegments[index].isAligned,
               alignment: _renderSegments[index].alignment,
+              imageStartIndex: _renderSegments
+                  .take(index)
+                  .fold<int>(
+                    0,
+                    (count, segment) =>
+                        count +
+                        MarkdownImageOccurrenceSyntax.count(
+                          segment.markdown,
+                          references: _imageReferences,
+                        ),
+                  ),
             ),
           ),
         ],
@@ -274,6 +294,7 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
     MarkdownStyleSheet? styleSheet, {
     bool expandBlockWidth = false,
     WenyouTextAlignment alignment = WenyouTextAlignment.left,
+    int imageStartIndex = 0,
   }) => WenyouMarkdownBody(
     data: data,
     selectable: false,
@@ -292,6 +313,10 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
       const MarkdownReaderParagraphSyntax(),
     ],
     inlineSyntaxes: [
+      MarkdownImageOccurrenceSyntax(
+        startIndex: imageStartIndex,
+        references: _imageReferences,
+      ),
       ...MarkdownInlineCompatibilitySyntax.create(),
       _InternalReferenceInlineSyntax(),
       _UserMentionInlineSyntax(),
@@ -299,6 +324,36 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
       _DiceInlineSyntax(),
     ],
     builders: {
+      'img': _OccurrenceImageBuilder((element) {
+        final uri = Uri.parse(element.attributes['src']!);
+        final title = element.attributes['title'];
+        final alt = element.attributes['alt'];
+        final imageIndex = int.tryParse(
+          element.attributes['data-image-index'] ?? '',
+        );
+        final image = WenyouMarkdownImage(
+          uri: uri,
+          display: widget.mediaDisplays[uri.toString()],
+          title: title,
+          alt: alt,
+          onOpen: imageIndex == null || widget.onOpenImage == null
+              ? null
+              : () => widget.onOpenImage!(imageIndex, uri, alt),
+          onAddToStickers: widget.onAddImageToStickers == null
+              ? null
+              : _addImageToStickers,
+          onLongPress: widget.onLongPressNonText == null
+              ? null
+              : _handleNonTextLongPress,
+          blockAlignment: alignment,
+        );
+        return title?.startsWith('wenyousite-sticker:') == true
+            ? WenyouMarkdownInlineBuilder.wrap(
+                image,
+                alignment: PlaceholderAlignment.middle,
+              )
+            : image;
+      }),
       _emptyParagraphTag: _EmptyParagraphMarkdownBuilder(
         lineHeight: widget.bodyFontSize * widget.bodyHeight,
       ),
@@ -324,27 +379,6 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
       'hr': _HorizontalRuleMarkdownBuilder(fontSize: widget.bodyFontSize),
     },
     onTapLink: (_, href, _) => _openLink(context, href),
-    imageBuilder: (uri, title, alt) {
-      final image = WenyouMarkdownImage(
-        uri: uri,
-        display: widget.mediaDisplays[uri.toString()],
-        title: title,
-        alt: alt,
-        onAddToStickers: widget.onAddImageToStickers == null
-            ? null
-            : _addImageToStickers,
-        onLongPress: widget.onLongPressNonText == null
-            ? null
-            : _handleNonTextLongPress,
-        blockAlignment: alignment,
-      );
-      return title?.startsWith('wenyousite-sticker:') == true
-          ? WenyouMarkdownInlineBuilder.wrap(
-              image,
-              alignment: PlaceholderAlignment.middle,
-            )
-          : image;
-    },
   );
 
   void _handleTapText() {
@@ -567,6 +601,15 @@ class _InlineCodeMarkdownBuilder extends WenyouMarkdownInlineBuilder {
       ),
     );
   }
+}
+
+class _OccurrenceImageBuilder extends MarkdownElementBuilder {
+  _OccurrenceImageBuilder(this.buildImage);
+  final Widget Function(md.Element element) buildImage;
+
+  @override
+  Widget visitElementAfter(md.Element element, TextStyle? preferredStyle) =>
+      buildImage(element);
 }
 
 class _HorizontalRuleMarkdownBuilder extends MarkdownElementBuilder {

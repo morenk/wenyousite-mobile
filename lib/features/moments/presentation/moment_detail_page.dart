@@ -22,6 +22,7 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_overflow_content.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_pagination.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_transient_target_frame.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
+import 'package:wenyousite_mobile/features/media/domain/reading_image_gallery.dart';
 import 'package:wenyousite_mobile/features/moments/application/moment_controllers.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_comment_composer.dart';
@@ -251,6 +252,9 @@ class _MomentDetailPageState extends ConsumerState<MomentDetailPage> {
                                 Divider(height: context.wenyouTokens.space24),
                               _MomentRootCommentPanel(
                                 root: comment,
+                                galleryNewestFirst:
+                                    state.commentOrder ==
+                                    MomentCommentOrder.newest,
                                 replyPage: projection.replyPages[comment.id],
                                 busyCommentIds: state.busyCommentIds,
                                 viewerId: viewerId,
@@ -593,6 +597,7 @@ class _MomentDetailPanel extends StatelessWidget {
           MomentGallery(
             momentId: detail.card.id,
             images: detail.images,
+            version: detail.version,
             coverMedia: detail.card.coverMedia,
           ),
         ],
@@ -658,6 +663,7 @@ class _CommentOrderControls extends StatelessWidget {
 class _MomentRootCommentPanel extends StatelessWidget {
   const _MomentRootCommentPanel({
     required this.root,
+    required this.galleryNewestFirst,
     required this.replyPage,
     required this.busyCommentIds,
     required this.viewerId,
@@ -671,6 +677,7 @@ class _MomentRootCommentPanel extends StatelessWidget {
   });
 
   final MomentRootComment root;
+  final bool galleryNewestFirst;
   final MomentReplyPageState? replyPage;
   final Set<String> busyCommentIds;
   final String? viewerId;
@@ -693,6 +700,9 @@ class _MomentRootCommentPanel extends StatelessWidget {
           root,
           MomentCommentBody(
             comment: root,
+            galleryOrder: galleryNewestFirst
+                ? ReadingGalleryOrder.newest
+                : ReadingGalleryOrder.oldest,
             busy: busyCommentIds.contains(root.id),
             onReply: () => onReply(root),
             onDelete: root.canDelete ? () => onDelete(root) : null,

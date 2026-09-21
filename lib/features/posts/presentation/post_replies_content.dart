@@ -18,6 +18,7 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_markdown.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_transient_target_frame.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/editor/editor.dart';
+import 'package:wenyousite_mobile/features/media/reading_gallery.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_controllers.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_discussion_author.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
@@ -96,6 +97,10 @@ class PostDiscussionList extends StatelessWidget {
           child: _PostCard(
             key: const Key('post-discussion-root'),
             post: root,
+            galleryTarget: ReadingGalleryTarget(
+              scope: ReadingGalleryScope.subthread,
+              scopeId: root.subthreadId,
+            ),
             root: true,
             timeReference: timeReference,
             canEdit: root.isAuthoredBy(viewerId),
@@ -200,6 +205,14 @@ class PostDiscussionList extends StatelessWidget {
                           child: _PostCard(
                             key: Key('post-reply-${reply.id}'),
                             post: reply,
+                            galleryTarget: ReadingGalleryTarget(
+                              scope: ReadingGalleryScope.postReplies,
+                              scopeId: root.id,
+                              authorId: state.authorId,
+                              order: state.order == PostReplyOrder.newest
+                                  ? ReadingGalleryOrder.newest
+                                  : ReadingGalleryOrder.oldest,
+                            ),
                             timeReference: timeReference,
                             focused: reply.id == focusedReplyId,
                             targetFrameKey: reply.id == focusedReplyId
@@ -272,6 +285,7 @@ class PostDiscussionList extends StatelessWidget {
 class _PostCard extends ConsumerWidget {
   const _PostCard({
     required this.post,
+    required this.galleryTarget,
     this.root = false,
     this.focused = false,
     this.canEdit = false,
@@ -289,6 +303,7 @@ class _PostCard extends ConsumerWidget {
   });
 
   final PostItem post;
+  final ReadingGalleryTarget galleryTarget;
   final bool root;
   final bool focused;
   final bool canEdit;
@@ -335,6 +350,8 @@ class _PostCard extends ConsumerWidget {
             else
               StickerPostMarkdown(
                 postId: post.id,
+                postVersion: post.version,
+                galleryTarget: galleryTarget,
                 data: post.content,
                 mediaDisplays: post.mediaDisplays,
                 diceLabels: _postDiceLabels(post.diceRolls),

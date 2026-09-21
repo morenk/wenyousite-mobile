@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
+import 'package:wenyousite_mobile/features/media/application/reading_gallery_controller.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
 import 'package:wenyousite_mobile/features/moments/application/moment_draft_store_ports.dart';
 import 'package:wenyousite_mobile/features/moments/data/moment_repository.dart';
@@ -12,6 +13,7 @@ import 'package:wenyousite_mobile/features/moments/presentation/moment_compose_p
 import 'package:wenyousite_mobile/features/moments/presentation/moment_detail_page.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_playback_image.dart';
 import '../../support/moment_test_draft_store.dart';
+import '../../support/reading_gallery_test_repository.dart';
 import 'moment_pages_test_support.dart';
 
 void registerMomentPagesRecoveryMediaCases() {
@@ -81,7 +83,18 @@ void registerMomentPagesRecoveryMediaCases() {
 
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [momentRepositoryProvider.overrideWithValue(repository)],
+        overrides: [
+          momentRepositoryProvider.overrideWithValue(repository),
+          readingGalleryRepositoryProvider.overrideWithValue(
+            ReadingGalleryTestRepository(
+              (request) => momentGalleryTestImages(
+                'moment-1',
+                momentPagesTestDetailWithImages().images,
+                version: request.anchorVersion,
+              ),
+            ),
+          ),
+        ],
         child: MaterialApp(
           theme: AppTheme.light,
           home: const MomentDetailPage(momentId: 'moment-1'),

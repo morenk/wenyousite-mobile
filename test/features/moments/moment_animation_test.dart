@@ -5,10 +5,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
+import 'package:wenyousite_mobile/features/media/application/reading_gallery_controller.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_detail_comment_body.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_playback_image.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_widgets.dart';
+
+import '../../support/reading_gallery_test_repository.dart';
 import 'moment_animation_fixture.dart';
 
 void main() {
@@ -384,6 +387,13 @@ List<String> _animationUrls(WidgetTester tester) => tester
     .where((url) => url == _media.url || url == _second.url)
     .toList();
 Widget _app(Widget child) => ProviderScope(
+  overrides: [
+    readingGalleryRepositoryProvider.overrideWithValue(
+      ReadingGalleryTestRepository(
+        (request) => momentGalleryTestImages('m', [_media, _second]),
+      ),
+    ),
+  ],
   child: MaterialApp(
     theme: AppTheme.light,
     home: Scaffold(body: child),

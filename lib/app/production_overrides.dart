@@ -36,10 +36,12 @@ import 'package:wenyousite_mobile/features/media/application/avatar_image_ports.
 import 'package:wenyousite_mobile/features/media/application/image_crop_ports.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
 import 'package:wenyousite_mobile/features/media/application/profile_cover_image_ports.dart';
+import 'package:wenyousite_mobile/features/media/application/reading_gallery_controller.dart';
 import 'package:wenyousite_mobile/features/media/data/editor_image_picker.dart';
 import 'package:wenyousite_mobile/features/media/data/image_crop_processor.dart';
 import 'package:wenyousite_mobile/features/media/data/media_upload_repository.dart';
 import 'package:wenyousite_mobile/features/media/data/profile_cover_image_picker.dart';
+import 'package:wenyousite_mobile/features/media/data/reading_gallery_repository.dart';
 import 'package:wenyousite_mobile/features/moderation/data/moderation_appeal_repository.dart';
 import 'package:wenyousite_mobile/features/moments/application/moment_draft_store_ports.dart';
 import 'package:wenyousite_mobile/features/moments/data/moment_bookmark_repository.dart';
@@ -82,6 +84,9 @@ import 'package:wenyousite_mobile/features/users/data/public_user_repository.dar
 import 'package:wenyousite_mobile/features/wallet/data/wallet_repository.dart';
 
 List<Override> productionProviderOverrides() => [
+  readingGalleryRepositoryProvider.overrideWith(
+    (ref) => ref.watch(apiReadingGalleryRepositoryProvider),
+  ),
   notificationGuidanceStoreProvider.overrideWithValue(
     const SharedPreferencesNotificationGuidanceStore(),
   ),
