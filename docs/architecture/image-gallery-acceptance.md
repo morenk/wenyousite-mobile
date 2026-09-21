@@ -26,7 +26,24 @@
 
 所有本地测试使用假仓储或拦截的 HTTP；没有在线上创建账号、草稿、媒体、评论或进行签到。真实写入 E2E 仅由治理和 Backend 核验独立资源后执行；此处不把本地测试通过等同于已完成联网隔离验收。
 
-最终门禁、源码 SHA、APK SHA-256 与实际执行结果在交付记录补充。候选后端尚未部署时生产契约对比可能报告版本差异，该检查不得跳过或虚报通过。
+构建源码固定 `47471a8a0c206cb32e484bc286a0c6ff68d6f2cc`；此后仅补充交付文档，没有改动应用源码。最终执行 `npm run check:apk -- -ContinueAfterFailure -TestConcurrency 2`，4,665 项 Flutter 测试通过，1 项既有 Sentry 线上回执验收因未显式启用而跳过；18 项 Windows 工具测试通过。格式、应用及生成包分析、固定来源、API 重复生成、架构、21 个模块文档、消费端 API 覆盖 159/159 和 Debug APK 构建均通过。
+
+完整门禁退出码为 **1**，唯一失败项是生产契约一致性：只读查询已连通，线上 API `5.25.0-dev.20260922.1` / build `4850e2f456ccc452c763853641e3b2136901e237`，本地候选为 `5.26.0-dev.20260922.3` / Backend `1f6a65e15dd66f88841bc80502f726804a07fa99`。不能称完整门禁全绿；兼容后端部署和历史索引回填后需复验该项。本次未自动部署。
+
+首轮日志保留了两项实际失败（诊断端点索引漏生成、图片 builder 未注册统一行内入口）和当时公网 TLS 握手中断。两处源码问题修复后，使用上述冻结提交重新执行全部门禁，最终全量测试零失败。重点回归实际路径包括 `test/core/widgets/image_gallery_gestures_test.dart`、`content_image_viewer_page_test.dart`、`reading_gallery_occurrences_test.dart`，`test/features/media/reading_gallery_{controller,page,repository}_test.dart`、`test/features/threads/thread_image_gallery_test.dart`，以及动态动作、动画和页面测试。原有行内布局与对齐门禁保留，修复后 45 项相关回归另行通过。
+
+## Debug 候选包
+
+| 项目 | 结果 |
+| --- | --- |
+| 包名 | `site.wenyou.app.debug` |
+| 版本 | `0.7.1-debug` / versionCode `95` |
+| 构建源码 | `47471a8a0c206cb32e484bc286a0c6ff68d6f2cc` |
+| 大小 | `183539770` 字节 |
+| SHA-256 | `fa7787e59d9b5dbb38f3c70d823e900642bed5012794c8dcca31472c48b1377b` |
+| 本机归档 | `D:/code/wenyousite/artifacts/mobile-image-gallery/image-gallery-47471a8a-debug.apk` |
+
+同目录 `candidate.json` 记录来源与摘要；`check-apk-first.log`、`check-apk-final.log` 保留两轮完整证据。没有自动安装、发布或真机操作；本轮没有实测真机帧率、内存曲线和触控结果。
 
 ## 负责人真机清单
 
