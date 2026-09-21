@@ -1,5 +1,19 @@
 # API 合同变更
 
+## 5.25.0-dev.20260922.1
+
+- 兼容新增 DELETE /users/me/followers/{id}：需写权限，仅解除对方关注本人，幂等且不发通知，保留反向关注和重新关注能力。
+- UserFollowRecordResponseDto 新增可选 viewerIsFollowing / viewerIsFollowedBy；仅本人列表（含公开路径 id 为本人）返回当前查看者两个方向的关系。匿名和他人列表省略，消费者缺字段时视为未知。
+- 关注、取消关注、移除粉丝使用相同有序用户锁；列表批量查询互关状态并排除软删除账号，无数据库迁移或旧接口删除。
+
+## 5.24.0-dev.20260920.1
+
+- 兼容新增管理内容列表、详情和主题帖分类标签整理接口，operationId 为 `adminContentList`、`adminContentDetail`、`adminContentUpdateTaxonomy`；旧隐藏列表及管理字段保留。
+- 新检索仅包含已发布公开内容及管理员隐藏项，排除草稿、私密、作者删除及其子项；绑定媒体经同一可见性策略授权后投影。post 列表/计数仅 FLOOR，精确详情兼容可见 BODY 定位。
+- taxonomy 请求省略保持原值、分类不能清空、标签最多 5 个；停用项只允许保留/移除。版本冲突返回 409/40002；更新、版本及新增 THREAD_TAXONOMY_UPDATED 审计同事务，包含兼容枚举 migration。
+- 用户详情增加 bio、level、lastActiveDate、contentCounts，用户列表增加精确 id；看板增加 newMoments/newMomentComments，保留旧指标口径。
+- Backend 兼容版本先行，Web 按精确提交同步；Mobile 的三个管理接口明确标为 not_applicable，仅同步契约快照。Foundation 不发布新包版本或 Token。
+
 ## 5.23.0-dev.20260913.1
 
 - 兼容新增主题帖与动态自定义收藏夹 PATCH/DELETE 管理接口，operationId 为 `bookmarksRenameFolder`、`bookmarksDeleteFolder`、`momentsRenameBookmarkFolder`、`momentsDeleteBookmarkFolder`。PATCH 返回对应现有收藏夹 DTO；DELETE 返回 `DeleteBookmarkFolderResponseDto`。
@@ -458,3 +472,9 @@
 ## 2.1.0-dev.20260806
 
 - 向后兼容新增一对一私聊。
+
+## 行内组合测试契约 v1
+
+- 新增独立 32 种 marks / 1,024 个有序邻接组合语义 fixture 与 schema，保留 v7 原有 48 条操作。
+- 允许行内代码外层组合粗体、斜体、删除线与链接，覆盖边界、字面定界符、实体、空格与反向选择。
+- API/OpenAPI、Markdown v5 编号和 Foundation Token 均无变化，不生成新 SDK。

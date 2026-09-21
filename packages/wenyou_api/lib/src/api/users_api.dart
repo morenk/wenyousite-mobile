@@ -19,6 +19,7 @@ import 'package:wenyou_api/src/model/users_follow_blocks200_response.dart';
 import 'package:wenyou_api/src/model/users_follow_follow200_response.dart';
 import 'package:wenyou_api/src/model/users_follow_followers200_response.dart';
 import 'package:wenyou_api/src/model/users_follow_following200_response.dart';
+import 'package:wenyou_api/src/model/users_follow_remove_follower200_response.dart';
 import 'package:wenyou_api/src/model/users_follow_unblock200_response.dart';
 import 'package:wenyou_api/src/model/users_follow_unfollow200_response.dart';
 import 'package:wenyou_api/src/model/users_follow_user_followers200_response.dart';
@@ -515,6 +516,87 @@ class UsersApi {
     }
 
     return Response<UsersFollowFollowing200Response>(
+      data: _responseData,
+      headers: _response.headers,
+      isRedirect: _response.isRedirect,
+      requestOptions: _response.requestOptions,
+      redirects: _response.redirects,
+      statusCode: _response.statusCode,
+      statusMessage: _response.statusMessage,
+      extra: _response.extra,
+    );
+  }
+
+  /// 移除我的粉丝
+  /// 仅解除对方关注我的关系，保留我对对方的关注。不通知对方，对方仍可重新关注；关系不存在时幂等成功。
+  ///
+  /// Parameters:
+  /// * [id]
+  /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
+  /// * [headers] - Can be used to add additional headers to the request
+  /// * [extras] - Can be used to add flags to the request
+  /// * [validateStatus] - A [ValidateStatus] callback that can be used to determine request success based on the HTTP status of the response
+  /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
+  /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
+  ///
+  /// Returns a [Future] containing a [Response] with a [UsersFollowRemoveFollower200Response] as data
+  /// Throws [DioException] if API call or serialization fails
+  Future<Response<UsersFollowRemoveFollower200Response>> usersFollowRemoveFollower({
+    required String id,
+    CancelToken? cancelToken,
+    Map<String, dynamic>? headers,
+    Map<String, dynamic>? extra,
+    ValidateStatus? validateStatus,
+    ProgressCallback? onSendProgress,
+    ProgressCallback? onReceiveProgress,
+  }) async {
+    final _path = r'/api/v1/users/me/followers/{id}'.replaceAll('{' r'id' '}', encodeQueryParameter(_serializers, id, const FullType(String)).toString());
+    final _options = Options(
+      method: r'DELETE',
+      headers: <String, dynamic>{
+        ...?headers,
+      },
+      extra: <String, dynamic>{
+        'secure': <Map<String, String>>[
+          {
+            'type': 'http',
+            'scheme': 'bearer',
+            'name': 'bearer',
+          },
+        ],
+        ...?extra,
+      },
+      validateStatus: validateStatus,
+    );
+
+    final _response = await _dio.request<Object>(
+      _path,
+      options: _options,
+      cancelToken: cancelToken,
+      onSendProgress: onSendProgress,
+      onReceiveProgress: onReceiveProgress,
+    );
+
+    UsersFollowRemoveFollower200Response? _responseData;
+
+    try {
+      final rawResponse = _response.data;
+      _responseData = rawResponse == null ? null : _serializers.deserialize(
+        rawResponse,
+        specifiedType: const FullType(UsersFollowRemoveFollower200Response),
+      ) as UsersFollowRemoveFollower200Response;
+
+    } catch (error, stackTrace) {
+      throw DioException(
+        requestOptions: _response.requestOptions,
+        response: _response,
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    return Response<UsersFollowRemoveFollower200Response>(
       data: _responseData,
       headers: _response.headers,
       isRedirect: _response.isRedirect,

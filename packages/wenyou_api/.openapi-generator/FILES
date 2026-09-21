@@ -8,6 +8,7 @@ lib/src/api/admin_appeals_api.dart
 lib/src/api/admin_auth_api.dart
 lib/src/api/admin_campaigns_api.dart
 lib/src/api/admin_cases_api.dart
+lib/src/api/admin_content_api.dart
 lib/src/api/admin_dashboard_api.dart
 lib/src/api/admin_moderation_api.dart
 lib/src/api/admin_operations_api.dart
@@ -62,7 +63,14 @@ lib/src/model/admin_auth_verify_step_up200_response.dart
 lib/src/model/admin_capability_response_dto.dart
 lib/src/model/admin_challenge_response_dto.dart
 lib/src/model/admin_challenge_verify_dto.dart
+lib/src/model/admin_content_detail200_response.dart
+lib/src/model/admin_content_detail_response_dto.dart
+lib/src/model/admin_content_list200_response.dart
+lib/src/model/admin_content_media_dto.dart
 lib/src/model/admin_content_moderation_response_dto.dart
+lib/src/model/admin_content_response_dto.dart
+lib/src/model/admin_content_tag_dto.dart
+lib/src/model/admin_content_update_taxonomy200_response.dart
 lib/src/model/admin_dashboard_activity_metrics_dto.dart
 lib/src/model/admin_dashboard_category_distribution_item_dto.dart
 lib/src/model/admin_dashboard_distribution_item_dto.dart
@@ -113,6 +121,8 @@ lib/src/model/admin_taxonomy_list_categories200_response.dart
 lib/src/model/admin_taxonomy_list_tags200_response.dart
 lib/src/model/admin_taxonomy_update_category200_response.dart
 lib/src/model/admin_taxonomy_update_tag200_response.dart
+lib/src/model/admin_user_content_counts_dto.dart
+lib/src/model/admin_user_detail_response_dto.dart
 lib/src/model/admin_user_moderation_response_dto.dart
 lib/src/model/admin_user_sanction_response_dto.dart
 lib/src/model/admin_user_search_item_dto.dart
@@ -477,6 +487,7 @@ lib/src/model/tip_response_dto.dart
 lib/src/model/transfer_super_admin_dto.dart
 lib/src/model/unread_notification_count_response_dto.dart
 lib/src/model/update_admin_role_dto.dart
+lib/src/model/update_content_taxonomy_dto.dart
 lib/src/model/update_draft_dto.dart
 lib/src/model/update_managed_tag_dto.dart
 lib/src/model/update_moment_dto.dart
@@ -504,6 +515,7 @@ lib/src/model/users_follow_blocks200_response.dart
 lib/src/model/users_follow_follow200_response.dart
 lib/src/model/users_follow_followers200_response.dart
 lib/src/model/users_follow_following200_response.dart
+lib/src/model/users_follow_remove_follower200_response.dart
 lib/src/model/users_follow_unblock200_response.dart
 lib/src/model/users_follow_unfollow200_response.dart
 lib/src/model/users_follow_user_followers200_response.dart

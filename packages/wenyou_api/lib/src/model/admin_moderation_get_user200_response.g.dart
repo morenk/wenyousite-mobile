@@ -76,7 +76,7 @@ class _$AdminModerationGetUser200ResponseCodeEnumSerializer
 class _$AdminModerationGetUser200Response
     extends AdminModerationGetUser200Response {
   @override
-  final AdminUserModerationResponseDto data;
+  final AdminUserDetailResponseDto data;
   @override
   final ApiSuccessEnvelopeCodeEnum code;
   @override
@@ -138,10 +138,10 @@ class AdminModerationGetUser200ResponseBuilder
         ApiSuccessEnvelopeBuilder {
   _$AdminModerationGetUser200Response? _$v;
 
-  AdminUserModerationResponseDtoBuilder? _data;
-  AdminUserModerationResponseDtoBuilder get data =>
-      _$this._data ??= AdminUserModerationResponseDtoBuilder();
-  set data(covariant AdminUserModerationResponseDtoBuilder? data) =>
+  AdminUserDetailResponseDtoBuilder? _data;
+  AdminUserDetailResponseDtoBuilder get data =>
+      _$this._data ??= AdminUserDetailResponseDtoBuilder();
+  set data(covariant AdminUserDetailResponseDtoBuilder? data) =>
       _$this._data = data;
 
   ApiSuccessEnvelopeCodeEnum? _code;

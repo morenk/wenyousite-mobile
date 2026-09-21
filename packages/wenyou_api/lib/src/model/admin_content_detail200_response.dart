@@ -4,51 +4,51 @@
 
 // ignore_for_file: unused_element
 import 'package:built_collection/built_collection.dart';
+import 'package:wenyou_api/src/model/admin_content_detail_response_dto.dart';
 import 'package:wenyou_api/src/model/api_success_envelope.dart';
-import 'package:wenyou_api/src/model/admin_user_detail_response_dto.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 
-part 'admin_moderation_get_user200_response.g.dart';
+part 'admin_content_detail200_response.g.dart';
 
-/// AdminModerationGetUser200Response
+/// AdminContentDetail200Response
 ///
 /// Properties:
 /// * [code]
 /// * [message]
 /// * [data]
 @BuiltValue()
-abstract class AdminModerationGetUser200Response implements ApiSuccessEnvelope, Built<AdminModerationGetUser200Response, AdminModerationGetUser200ResponseBuilder> {
+abstract class AdminContentDetail200Response implements ApiSuccessEnvelope, Built<AdminContentDetail200Response, AdminContentDetail200ResponseBuilder> {
   @BuiltValueField(wireName: r'data')
-  AdminUserDetailResponseDto get data;
+  AdminContentDetailResponseDto get data;
 
-  AdminModerationGetUser200Response._();
+  AdminContentDetail200Response._();
 
-  factory AdminModerationGetUser200Response([void updates(AdminModerationGetUser200ResponseBuilder b)]) = _$AdminModerationGetUser200Response;
+  factory AdminContentDetail200Response([void updates(AdminContentDetail200ResponseBuilder b)]) = _$AdminContentDetail200Response;
 
   @BuiltValueHook(initializeBuilder: true)
-  static void _defaults(AdminModerationGetUser200ResponseBuilder b) => b;
+  static void _defaults(AdminContentDetail200ResponseBuilder b) => b;
 
   @BuiltValueSerializer(custom: true)
-  static Serializer<AdminModerationGetUser200Response> get serializer => _$AdminModerationGetUser200ResponseSerializer();
+  static Serializer<AdminContentDetail200Response> get serializer => _$AdminContentDetail200ResponseSerializer();
 }
 
-class _$AdminModerationGetUser200ResponseSerializer implements PrimitiveSerializer<AdminModerationGetUser200Response> {
+class _$AdminContentDetail200ResponseSerializer implements PrimitiveSerializer<AdminContentDetail200Response> {
   @override
-  final Iterable<Type> types = const [AdminModerationGetUser200Response, _$AdminModerationGetUser200Response];
+  final Iterable<Type> types = const [AdminContentDetail200Response, _$AdminContentDetail200Response];
 
   @override
-  final String wireName = r'AdminModerationGetUser200Response';
+  final String wireName = r'AdminContentDetail200Response';
 
   Iterable<Object?> _serializeProperties(
     Serializers serializers,
-    AdminModerationGetUser200Response object, {
+    AdminContentDetail200Response object, {
     FullType specifiedType = FullType.unspecified,
   }) sync* {
     yield r'data';
     yield serializers.serialize(
       object.data,
-      specifiedType: const FullType(AdminUserDetailResponseDto),
+      specifiedType: const FullType(AdminContentDetailResponseDto),
     );
     yield r'message';
     yield serializers.serialize(
@@ -65,7 +65,7 @@ class _$AdminModerationGetUser200ResponseSerializer implements PrimitiveSerializ
   @override
   Object serialize(
     Serializers serializers,
-    AdminModerationGetUser200Response object, {
+    AdminContentDetail200Response object, {
     FullType specifiedType = FullType.unspecified,
   }) {
     return _serializeProperties(serializers, object, specifiedType: specifiedType).toList();
@@ -76,7 +76,7 @@ class _$AdminModerationGetUser200ResponseSerializer implements PrimitiveSerializ
     Object serialized, {
     FullType specifiedType = FullType.unspecified,
     required List<Object?> serializedList,
-    required AdminModerationGetUser200ResponseBuilder result,
+    required AdminContentDetail200ResponseBuilder result,
     required List<Object?> unhandled,
   }) {
     for (var i = 0; i < serializedList.length; i += 2) {
@@ -86,8 +86,8 @@ class _$AdminModerationGetUser200ResponseSerializer implements PrimitiveSerializ
         case r'data':
           final valueDes = serializers.deserialize(
             value,
-            specifiedType: const FullType(AdminUserDetailResponseDto),
-          ) as AdminUserDetailResponseDto;
+            specifiedType: const FullType(AdminContentDetailResponseDto),
+          ) as AdminContentDetailResponseDto;
           result.data.replace(valueDes);
           break;
         case r'message':
@@ -113,12 +113,12 @@ class _$AdminModerationGetUser200ResponseSerializer implements PrimitiveSerializ
   }
 
   @override
-  AdminModerationGetUser200Response deserialize(
+  AdminContentDetail200Response deserialize(
     Serializers serializers,
     Object serialized, {
     FullType specifiedType = FullType.unspecified,
   }) {
-    final result = AdminModerationGetUser200ResponseBuilder();
+    final result = AdminContentDetail200ResponseBuilder();
     final serializedList = (serialized as Iterable<Object?>).toList();
     final unhandled = <Object?>[];
     _deserializeProperties(
@@ -133,17 +133,17 @@ class _$AdminModerationGetUser200ResponseSerializer implements PrimitiveSerializ
   }
 }
 
-class AdminModerationGetUser200ResponseCodeEnum extends EnumClass {
+class AdminContentDetail200ResponseCodeEnum extends EnumClass {
 
   @BuiltValueEnumConst(wireNumber: 0)
-  static const AdminModerationGetUser200ResponseCodeEnum number0 = _$adminModerationGetUser200ResponseCodeEnum_number0;
+  static const AdminContentDetail200ResponseCodeEnum number0 = _$adminContentDetail200ResponseCodeEnum_number0;
   @BuiltValueEnumConst(wireNumber: 11184809, fallback: true)
-  static const AdminModerationGetUser200ResponseCodeEnum unknownDefaultOpenApi = _$adminModerationGetUser200ResponseCodeEnum_unknownDefaultOpenApi;
+  static const AdminContentDetail200ResponseCodeEnum unknownDefaultOpenApi = _$adminContentDetail200ResponseCodeEnum_unknownDefaultOpenApi;
 
-  static Serializer<AdminModerationGetUser200ResponseCodeEnum> get serializer => _$adminModerationGetUser200ResponseCodeEnumSerializer;
+  static Serializer<AdminContentDetail200ResponseCodeEnum> get serializer => _$adminContentDetail200ResponseCodeEnumSerializer;
 
-  const AdminModerationGetUser200ResponseCodeEnum._(String name): super(name);
+  const AdminContentDetail200ResponseCodeEnum._(String name): super(name);
 
-  static BuiltSet<AdminModerationGetUser200ResponseCodeEnum> get values => _$adminModerationGetUser200ResponseCodeEnumValues;
-  static AdminModerationGetUser200ResponseCodeEnum valueOf(String name) => _$adminModerationGetUser200ResponseCodeEnumValueOf(name);
+  static BuiltSet<AdminContentDetail200ResponseCodeEnum> get values => _$adminContentDetail200ResponseCodeEnumValues;
+  static AdminContentDetail200ResponseCodeEnum valueOf(String name) => _$adminContentDetail200ResponseCodeEnumValueOf(name);
 }

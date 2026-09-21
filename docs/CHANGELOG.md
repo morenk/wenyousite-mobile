@@ -1,4 +1,10 @@
 # 移动端变更记录
+## 2026-09-22 — 同步本人关系管理候选契约
+
+- 固定 Backend `ea1ff7e2c6baeae6bf0316e87812ba37bc823d7a`、API `5.25.0-dev.20260922.1`，生成 `usersFollowRemoveFollower` 与可选关系投影字段；保留缺字段兼容和全部旧入口。
+- 同步该基线包含的综合管理 API 生成类型，将三个新增管理端操作归入已有 V1 不承载管理产品的覆盖排除；不为 Mobile 增加管理功能。
+- 契约来源来自已推送候选分支，不代表已合并或部署；功能与真机验收随关系管理切片交付。
+
 ## 2026-09-22 — 同步 Foundation 正式日期呈现契约
 
 - Foundation 固定正式 `v7.1.0`（`dcf75d385e39cc0c55d550a6f35921cd9a7aa508`），Schema 保持 3；本次不更新 Backend HTTP 或 Markdown 契约。
