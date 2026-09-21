@@ -121,6 +121,8 @@ threads 页面消费主题互动和订阅控制器，moments 提供独立动态�
 
 ## 13. 最近审查的契约版本和后端提交
 
+2026-09-22 合并来源同步：Backend `4850e2f456ccc452c763853641e3b2136901e237`（PR #26），OpenAPI `5.25.0-dev.20260922.1`；与此前候选契约逐字节一致，本模块接口及应用代码未变。部署后的精确来源核验见[关系管理候选验收](../architecture/relations-management-acceptance.md)，真机验收仍待负责人完成。
+
 关系管理候选契约：Backend `ea1ff7e2c6baeae6bf0316e87812ba37bc823d7a`，OpenAPI `5.25.0-dev.20260922.1`；新增本人移除粉丝与双向关系可选投影，消费者实现及真机验收另记，不代表部署。Foundation 固定已发布 `v7.1.0`。
 
 2026-09-20 自建收藏夹管理契约复核：Backend 契约来源 `e214fd18637cb10d79576c5ab5a4cf42340fef71`，OpenAPI `5.23.0-dev.20260913.1`；随后部署的 `4b133355c14198506e4a4380fd741cccd19d844d` 保持该接口契约不变。四个新增操作均已接入，负责人已确认最终 Debug 候选真机验收。自动检查、APK 与手测路径见[候选验收](../architecture/bookmark-folder-management-acceptance.md)。
