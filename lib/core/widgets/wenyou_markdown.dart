@@ -347,12 +347,7 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
               : _handleNonTextLongPress,
           blockAlignment: alignment,
         );
-        return title?.startsWith('wenyousite-sticker:') == true
-            ? WenyouMarkdownInlineBuilder.wrap(
-                image,
-                alignment: PlaceholderAlignment.middle,
-              )
-            : image;
+        return image;
       }),
       _emptyParagraphTag: _EmptyParagraphMarkdownBuilder(
         lineHeight: widget.bodyFontSize * widget.bodyHeight,
@@ -603,13 +598,25 @@ class _InlineCodeMarkdownBuilder extends WenyouMarkdownInlineBuilder {
   }
 }
 
-class _OccurrenceImageBuilder extends MarkdownElementBuilder {
+class _OccurrenceImageBuilder extends WenyouMarkdownInlineBuilder {
   _OccurrenceImageBuilder(this.buildImage);
   final Widget Function(md.Element element) buildImage;
 
   @override
-  Widget visitElementAfter(md.Element element, TextStyle? preferredStyle) =>
-      buildImage(element);
+  bool usesInlineLayout(md.Element element) =>
+      element.attributes['title']?.startsWith('wenyousite-sticker:') == true;
+
+  @override
+  PlaceholderAlignment inlineAlignment(md.Element element) =>
+      PlaceholderAlignment.middle;
+
+  @override
+  Widget buildInlineContent(
+    BuildContext context,
+    md.Element element,
+    TextStyle? preferredStyle,
+    TextStyle? parentStyle,
+  ) => buildImage(element);
 }
 
 class _HorizontalRuleMarkdownBuilder extends MarkdownElementBuilder {
