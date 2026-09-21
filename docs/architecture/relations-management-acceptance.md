@@ -24,6 +24,8 @@
 
 最终 Debug 候选由 `flutter build apk --debug --no-pub` 从最终源码构建成功。路径 `build/app/outputs/flutter-apk/app-debug.apk`，183,495,226 字节，SHA-256 `A240C77F8ABE6E71979BC7AE198BB96CFA226B9FD4CC8E0EEC5A4EAB238F8E91`。`aapt dump badging` 确认包名 `site.wenyou.app.debug`、版本名 `0.7.1-debug`、构建号 `95`；未安装到设备。构建仍提示既有插件 Built-in Kotlin 迁移警告，未影响本次 Debug 构建。
 
+应用源码提交为 `6cf95dcca4bad5be2fbd2a30c31e50ac79104322`；其后交付文档补充不改变 APK 源码。本次构建未传入 `API_BASE_URL`，默认连接 VPS 公网开发 API `https://wenyou.site/api/v1`，不是已通过线上门禁的发布包。该环境自动化仅允许只读；关系写入联调需先验证独立隔离后端身份，再使用对应 API 地址重新构建并另记候选 SHA-256。
+
 `build/relations-ui-followers.png` 来自最终共享页签与描边按钮 Widget，PNG SHA-256 为 `5524A09A17B82F75D5F51D429DC8CB62193326D0D0550671FCD5FD52BA88EAED`。仅测试从 Windows 现有 `msyh.ttc` 加载中文字体，产品不捆绑字体；该图用于布局/样式审查，不等于 Android 字形或真机验收。包含回关与互关两种行，另外 Widget 回归验证 320dp 双倍文字、长姓名与亮暗模式不溢出、操作区不少于 48dp。
 
 ## 负责人手动验收清单
