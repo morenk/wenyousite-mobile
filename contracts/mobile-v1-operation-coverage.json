@@ -288,7 +288,8 @@
       "path": "/api/v1/users/me/followers/{id}",
       "module": "users",
       "disposition": "v1",
-      "status": "planned"
+      "status": "implemented",
+      "evidence": ["test/features/social/user_relation_repository_test.dart", "test/features/social/own_relation_lists_controller_test.dart", "test/features/social/own_relation_lists_page_test.dart"]
     },
     {
       "operationId": "usersFollowFollowing",

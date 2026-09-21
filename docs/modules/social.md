@@ -16,6 +16,10 @@
 
 ## 4. 用户操作流程
 
+本人关系管理候选（待负责人验收）：从 `/me/following`、`/me/followers` 或本人公开主页关系列表进入后，使用“关注／粉丝”同级页签就地切换并分别保留滚动位置。回关、取消关注、移除粉丝统一复用 `WenyouAsyncButtonVariant.outlined`，头像姓名位于第一行，操作区在第二行靠右自然换行；互关独立显示为文字，所有操作保留 48dp 命中区。他人公开列表、黑名单与原深链保留原行为。
+
+本人关注列表取消关注后移行；粉丝列表回关后互关，取消关注后仍留行并恢复回关。移除粉丝仅解除对方对自己的关注，保留自己的反向关注；确认前说明不通知、可重新关注、不提供撤销。确认框失败保留输入上下文和错误，提交期间禁止重复和意外关闭；结果不明仅提供读取刷新核实，不能自动再次移除。
+
 自建收藏夹管理候选（2026-09-13，待负责人验收）：仅选中自建收藏夹时，顶栏在“新建收藏夹”左侧提供 48dp 管理入口；默认收藏夹不显示管理入口。管理面板提供重命名和删除：重命名预填当前名称并选中全文，输入 trim 后须为 1–24 个 Unicode 字符，可按 Enter 保存；失败保留弹窗与输入。删除前明确告知收藏会移到默认收藏夹、内容不会删除；成功按服务端返回的目标收藏夹 ID 切换，再刷新目录并提示一次，失败留在原收藏夹及其内容。
 
 组件统一第一批（2026-09-19，负责人验收通过）：主题收藏列表统一分页错误、加载和结束提示，空列表及刷新时隐藏结束提示；关系解除和收藏管理使用共享异步按钮。分页组件继续服从原 isBusy 条件，不改乐观写入或待确认结果处理。 入口清单、自动检查及真机步骤见[组件统一验收](../architecture/component-consistency-acceptance.md)。
@@ -33,12 +37,14 @@
 - 已接入 `bookmarksFindAll`、`bookmarksFindFolders`、`bookmarksCreateFolder`、`bookmarksMove`、`bookmarksCreate`、`bookmarksRemove`；主题首次收藏携带用户确认的 folderId。
 - 已生成并接入 `bookmarksRenameFolder`、`bookmarksDeleteFolder`、`momentsRenameBookmarkFolder`、`momentsDeleteBookmarkFolder`；删除响应指定收藏迁移的目标默认收藏夹 ID。
 - 已接入 `subscriptionsFindAll`、`subscriptionsCreate`、`subscriptionsRemove`，并以 `threadMembersFindAll` 读取玩家候选。
-- 已接入 `usersFollowFollow`、`usersFollowUnfollow`、`usersFollowBlock`、`usersFollowUnblock`。
+- 已接入 `usersFollowFollow`、`usersFollowUnfollow`、`usersFollowRemoveFollower`、`usersFollowBlock`、`usersFollowUnblock`；关注、取消关注与移除粉丝使用禁止自动重放策略。
 - 已接入 `usersFollowFollowing`、`usersFollowFollowers`、`usersFollowUserFollowing`、`usersFollowUserFollowers`、`usersFollowBlocks`。
 - 已接入 `threadsLike`、`threadsUnlike`。
 - 已接入 `momentsBookmarkFolders`、`momentsCreateBookmarkFolder`、`momentsBookmarks`、`momentsBookmark`、`momentsUnbookmark` 与 `momentsMoveBookmark`，本人动态收藏分页始终携带 folderId；`usersGetUserMomentBookmarks` 尚未接入公开用户页。
 
 ## 6. 状态模型和数据流
+
+本人关系管理使用 `OwnRelationListsController` 同时保存关注与粉丝投影、各页签加载状态、按用户 ID 的写入锁及错误；列表行由可选 `viewerIsFollowing`、`viewerIsFollowedBy` 初始化，缺字段保持未知并禁用管理，不逐行请求主页。本人列表成功确认后才更新两个方向，其他原有入口保留其乐观策略。`WriteReconciler` 仅回读相应完整关系列表确认目标，不重放写入；待核实用户在手动刷新两页成功前禁止再次写入。写入世代使旧加载响应失效，任何结果完成后恢复被中断的初始加载。
 
 `BookmarkFolderCatalogController` 以内容类型为 family key，分别保存主题与动态目录，并串行化重命名／删除与目录刷新；删除后由页面先采用接口明确返回的目标 ID 切换当前目录，再刷新数量。
 
@@ -55,6 +61,8 @@
 所有写操作和 `/me/*` 私有列表需要登录；游客进入收藏总览、任一目录或指定收藏夹时先登录并保留完整目标。收藏夹 ID、名称和计数仅属于本人，移动时收藏记录与目标收藏夹都由服务端复核归属，404 不猜测资源是否存在。动态 `canInteract == false` 时禁止新增收藏与移动，但已收藏内容仍可取消；字段缺失按 true 兼容旧服务。游客点赞只进入登录，收藏与订阅入口不显示。主题 capability 或当前成员角色表明楼主/协作者时隐藏订阅控件；普通用户只能选择服务端成员列表中的已标记参与者。收藏列表由服务端过滤已失去访问权的内容，客户端不泄露失效私密条目。
 
 ## 8. 本地存储、缓存及失效规则
+
+本人两页签共用 autoDispose 控制器和行锁，写成功同步移行、互关及数量，保留其他行顺序；切换会话重建控制器，迟到结果不更新新账号。组合根同时失效本人资料、本人公开资料、目标公开资料及旧公开关系列表，不通过全局可见性刷新销毁正在操作的本人双列表。从用户详情返回时读取两页最新关系，滚动位置由页签保留。确认框在切换账号时关闭。
 
 关注/拉黑的写入控制器按会话隔离，收藏和关系列表按 `ViewerScope` 隔离。拉黑/解除成功推进统一可见性版本，由各读 Provider 自行重建，不维护跨模块逐项清理清单。
 
@@ -80,6 +88,8 @@
 threads 页面消费主题互动和订阅控制器，moments 提供独立动态收藏目录、分页和管理端口，users 的“我的”页面进入 social 收藏/关系列表；通知计数不因写入伪造。点赞只使用响应计数，主题收藏和订阅只使用响应记录 ID，动态收藏移动使用动态 ID；玩家候选来自 threads 成员端点。主题与动态目录都映射为共享的单一 `bookmarkCount` 展示字段，但来源 DTO 和 Provider 始终按内容类型隔离，原始计数可能高于当前仍可见内容数，客户端不得从已加载页推算或断言相等。收藏页移动/取消不会主动改写仍存活的详情 Provider，跨页刷新仍以服务端为准。
 
 ## 11. 测试场景与验收条件
+
+本人关系管理回归覆盖单向与互关、移除保留反向、两页计数与资料失效、重复点击、并行不同用户操作、旧刷新、未完成初始加载、退出会话、不明结果只读核对、本人公开入口与他人边界、确认取消/失败、页签位置恢复，以及 320dp/双倍文字/长姓名下统一描边和 48dp。证据和人工步骤见[关系管理候选验收](../architecture/relations-management-acceptance.md)。所有写入自动化在本地模拟仓储或已验证的隔离环境运行，公网仅只读。
 
 - [x] 关注/取消关注和拉黑/解除拉黑增删闭环通过，拉黑必须确认；他人资料页将拉黑作为与举报同级的右上角图标操作，资料卡关系区不重复展示。
 - [x] 快速重复点击只产生一个在途写请求，最终状态正确。

@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/social/application/user_relation_repository_ports.dart';
 import 'package:wenyousite_mobile/features/social/domain/user_relation_models.dart';
@@ -13,7 +14,10 @@ export 'package:wenyousite_mobile/features/social/application/user_relation_repo
         userRelationRepositoryProvider;
 
 class ApiUserRelationRepository
-    implements UserRelationRepository, UserRelationProjectionReader {
+    implements
+        UserRelationRepository,
+        UserRelationProjectionReader,
+        FollowerRemovalRepository {
   ApiUserRelationRepository(this._api);
 
   final UsersApi _api;
@@ -41,12 +45,31 @@ class ApiUserRelationRepository
   }
 
   @override
-  Future<void> follow(String userId) =>
-      _run(() => _api.usersFollowFollow(id: userId), '关注失败，请重新加载。');
+  Future<void> follow(String userId) => _run(
+    () => _api.usersFollowFollow(
+      id: userId,
+      extra: ApiRequestPolicy.authenticatedNonReplayable.extra,
+    ),
+    '关注失败，请重新加载。',
+  );
 
   @override
-  Future<void> unfollow(String userId) =>
-      _run(() => _api.usersFollowUnfollow(id: userId), '取消关注失败，请重新加载。');
+  Future<void> unfollow(String userId) => _run(
+    () => _api.usersFollowUnfollow(
+      id: userId,
+      extra: ApiRequestPolicy.authenticatedNonReplayable.extra,
+    ),
+    '取消关注失败，请重新加载。',
+  );
+
+  @override
+  Future<void> removeFollower(String userId) => _run(
+    () => _api.usersFollowRemoveFollower(
+      id: userId,
+      extra: ApiRequestPolicy.authenticatedNonReplayable.extra,
+    ),
+    '移除粉丝失败，请重新加载。',
+  );
 
   @override
   Future<void> block(String userId) =>
