@@ -7,11 +7,11 @@ import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/application/user_facing_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
-import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/social/application/own_relation_lists_controller.dart';
 import 'package:wenyousite_mobile/features/social/domain/user_relation_list_models.dart';
+import 'package:wenyousite_mobile/features/social/presentation/own_relation_actions_sheet.dart';
 
 class OwnRelationListsPage extends ConsumerStatefulWidget {
   const OwnRelationListsPage({required this.initialKind, super.key});
@@ -30,6 +30,7 @@ class _OwnRelationListsPageState extends ConsumerState<OwnRelationListsPage> {
     UserRelationListKind.followers,
   ];
   final _titleFocus = FocusNode(skipTraversal: true);
+  bool _menuOpen = false;
 
   @override
   void dispose() {
@@ -43,15 +44,20 @@ class _OwnRelationListsPageState extends ConsumerState<OwnRelationListsPage> {
     final controller = ref.read(ownRelationListsControllerProvider.notifier);
     return Scaffold(
       appBar: AppBar(
-        title: Focus(focusNode: _titleFocus, child: const Text('关注与粉丝')),
-      ),
-      body: Column(
-        children: [
-          WenyouContentTabs<UserRelationListKind>(
+        leading: const BackButton(),
+        backgroundColor: context.wenyouTokens.panel,
+        titleSpacing: 0,
+        toolbarHeight: (MediaQuery.textScalerOf(context).scale(24) + 24).clamp(
+          56,
+          120,
+        ),
+        title: Focus(
+          focusNode: _titleFocus,
+          child: WenyouContentTabs<UserRelationListKind>(
             selected: _selected,
             onSelected: (kind) => setState(() => _selected = kind),
             semanticsLabel: '本人关系列表',
-            placement: WenyouTabPlacement.page,
+            placement: WenyouTabPlacement.embedded,
             keyPrefix: 'own-relation-tab',
             options: [
               WenyouFilterOption(
@@ -68,6 +74,10 @@ class _OwnRelationListsPageState extends ConsumerState<OwnRelationListsPage> {
               ),
             ],
           ),
+        ),
+      ),
+      body: Column(
+        children: [
           Expanded(
             child: WenyouSwipeTabRegion<UserRelationListKind>(
               values: _kinds,
@@ -95,6 +105,7 @@ class _OwnRelationListsPageState extends ConsumerState<OwnRelationListsPage> {
                         }
                       },
                       onAct: (item, action) => _act(controller, item, action),
+                      onMenu: (item) => _showMenu(controller, item),
                     ),
                 ],
               ),
@@ -105,33 +116,61 @@ class _OwnRelationListsPageState extends ConsumerState<OwnRelationListsPage> {
     );
   }
 
+  Future<void> _showMenu(
+    OwnRelationListsController controller,
+    UserRelationListItem item,
+  ) async {
+    if (_menuOpen) return;
+    _menuOpen = true;
+    try {
+      await showOwnRelationActions(
+        context: context,
+        ref: ref,
+        item: item,
+        onAct: (action) => _act(controller, item, action),
+      );
+    } finally {
+      _menuOpen = false;
+    }
+  }
+
   Future<void> _act(
     OwnRelationListsController controller,
     UserRelationListItem item,
     OwnRelationAction action,
   ) async {
     final scope = ref.read(sessionScopeProvider);
-    final succeeded = action == OwnRelationAction.removeFollower
+    final succeeded =
+        action == OwnRelationAction.removeFollower ||
+            action == OwnRelationAction.block
         ? await showDialog<bool>(
                 context: context,
                 barrierDismissible: false,
-                builder: (_) =>
-                    _RemoveFollowerDialog(item: item, controller: controller),
+                builder: (_) => OwnRelationConfirmationDialog(
+                  item: item,
+                  controller: controller,
+                  action: action,
+                  scope: scope,
+                ),
               ) ??
               false
         : await controller.act(item, action);
     if (!mounted || scope != ref.read(sessionScopeProvider) || !succeeded) {
       return;
     }
-    if (action == OwnRelationAction.removeFollower ||
-        (action == OwnRelationAction.unfollow &&
-            _selected == UserRelationListKind.following)) {
+    if (!ref
+        .read(ownRelationListsControllerProvider)
+        .list(_selected)
+        .items
+        .any((entry) => entry.userId == item.userId)) {
       _titleFocus.requestFocus();
     }
     showWenyouSnackBar(context, switch (action) {
-      OwnRelationAction.follow => '已回关。',
+      OwnRelationAction.follow =>
+        item.viewerIsFollowedBy == true ? '已回关。' : '已关注。',
       OwnRelationAction.unfollow => '已取消关注。',
       OwnRelationAction.removeFollower => '已移除粉丝。',
+      OwnRelationAction.block => '已拉黑。',
     }, tone: WenyouSnackBarTone.success);
   }
 }
@@ -143,6 +182,7 @@ class _OwnRelationListView extends StatefulWidget {
     required this.onRefresh,
     required this.onOpen,
     required this.onAct,
+    required this.onMenu,
     super.key,
   });
   final UserRelationListKind kind;
@@ -150,6 +190,7 @@ class _OwnRelationListView extends StatefulWidget {
   final Future<void> Function() onRefresh;
   final void Function(UserRelationListItem) onOpen;
   final void Function(UserRelationListItem, OwnRelationAction) onAct;
+  final void Function(UserRelationListItem) onMenu;
 
   @override
   State<_OwnRelationListView> createState() => _OwnRelationListViewState();
@@ -167,7 +208,45 @@ class _OwnRelationListViewState extends State<_OwnRelationListView>
     final list = widget.state.list(widget.kind);
     final title = widget.kind == UserRelationListKind.following ? '关注' : '粉丝';
     if (!list.loaded && list.failure == null) {
-      return WenyouPageBody(child: WenyouListSkeleton(label: '正在加载$title'));
+      return Semantics(
+        label: '正在加载$title',
+        child: ListView.builder(
+          itemCount: 6,
+          padding: EdgeInsets.all(tokens.space16),
+          itemBuilder: (_, _) => Padding(
+            padding: EdgeInsets.symmetric(vertical: tokens.space8),
+            child: Row(
+              children: [
+                WenyouSkeletonBlock(
+                  height: tokens.space20 * 2,
+                  width: tokens.space20 * 2,
+                ),
+                SizedBox(width: tokens.space16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      WenyouSkeletonBlock(
+                        height: tokens.space16,
+                        width: tokens.space24 * 4,
+                      ),
+                      SizedBox(height: tokens.space8),
+                      WenyouSkeletonBlock(
+                        height: tokens.space12,
+                        width: tokens.space24 * 2,
+                      ),
+                    ],
+                  ),
+                ),
+                WenyouSkeletonBlock(
+                  height: tokens.minimumTouchTarget,
+                  width: tokens.space24 * 4,
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
     }
     return RefreshIndicator(
       onRefresh: widget.onRefresh,
@@ -175,9 +254,9 @@ class _OwnRelationListViewState extends State<_OwnRelationListView>
         key: PageStorageKey('own-relations-${widget.kind.name}'),
         physics: const AlwaysScrollableScrollPhysics(),
         padding: EdgeInsets.fromLTRB(
-          tokens.space16,
-          tokens.space16,
-          tokens.space16,
+          tokens.space12,
+          tokens.space4,
+          tokens.space12,
           tokens.space32,
         ),
         children: [
@@ -201,15 +280,27 @@ class _OwnRelationListViewState extends State<_OwnRelationListView>
           for (final item in list.items)
             Padding(
               key: ValueKey('own-relation-${item.userId}'),
-              padding: EdgeInsets.only(bottom: tokens.space8),
+              padding: EdgeInsets.symmetric(vertical: tokens.space4),
               child: WenyouConstrainedWidth(
-                child: _OwnRelationRow(
-                  item: item,
-                  state: widget.state,
-                  kind: widget.kind,
-                  onOpen: () => widget.onOpen(item),
-                  onAct: (action) => widget.onAct(item, action),
-                  onRefresh: widget.onRefresh,
+                child: Column(
+                  children: [
+                    _OwnRelationRow(
+                      item: item,
+                      state: widget.state,
+                      kind: widget.kind,
+                      onOpen: () => widget.onOpen(item),
+                      onAct: (action) => widget.onAct(item, action),
+                      onRefresh: widget.onRefresh,
+                      onMenu: () => widget.onMenu(item),
+                    ),
+                    Padding(
+                      padding: EdgeInsets.only(
+                        left: tokens.minimumTouchTarget + tokens.space8,
+                        top: tokens.space8,
+                      ),
+                      child: const Divider(height: 1),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -227,6 +318,7 @@ class _OwnRelationRow extends StatelessWidget {
     required this.onOpen,
     required this.onAct,
     required this.onRefresh,
+    required this.onMenu,
   });
   final UserRelationListItem item;
   final OwnRelationListsState state;
@@ -234,6 +326,7 @@ class _OwnRelationRow extends StatelessWidget {
   final VoidCallback onOpen;
   final void Function(OwnRelationAction) onAct;
   final VoidCallback onRefresh;
+  final VoidCallback onMenu;
 
   @override
   Widget build(BuildContext context) {
@@ -241,165 +334,140 @@ class _OwnRelationRow extends StatelessWidget {
     final pending = state.pending[item.userId];
     final failure = state.failures[item.userId];
     final unknown = state.unconfirmed.contains(item.userId);
-    Widget action(String label, OwnRelationAction action) => Semantics(
-      label: '${item.username}，$label',
-      child: WenyouAsyncButton(
-        key: ValueKey('${action.name}-${item.userId}'),
-        label: label,
-        variant: WenyouAsyncButtonVariant.outlined,
-        isLoading: pending == action,
-        onPressed: pending != null || unknown ? null : () => onAct(action),
-      ),
-    );
-    return WenyouPanel(
-      padding: EdgeInsets.all(tokens.space12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          InkWell(
-            onTap: onOpen,
-            child: Row(
-              children: [
-                WenyouAvatar(
-                  username: item.username,
-                  avatarUrl: item.avatarUrl,
-                  size: tokens.minimumTouchTarget,
-                ),
-                SizedBox(width: tokens.space12),
-                Expanded(
+    final disabled = pending != null || unknown || !item.hasRelationState;
+    final following = item.viewerIsFollowing == true;
+    final label = !item.hasRelationState
+        ? '状态不可用'
+        : following
+        ? (item.viewerIsFollowedBy == true ? '互相关注' : '已关注')
+        : (item.viewerIsFollowedBy == true ? '回关' : '关注');
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final scale = MediaQuery.textScalerOf(context).scale(1);
+        // 以身份和完整操作文字所需宽度决定换行，不缩小大字或命中区。
+        final actionWidth = tokens.space24 * 4 * scale;
+        final wrap =
+            constraints.maxWidth <
+            actionWidth +
+                tokens.minimumTouchTarget * 2 +
+                tokens.space16 +
+                tokens.space20 * 4 * scale;
+        final identity = Row(
+          children: [
+            WenyouAvatarButton(
+              username: item.username,
+              avatarUrl: item.avatarUrl,
+              visualSize: tokens.space20 * 2,
+              onTap: onOpen,
+            ),
+            SizedBox(width: tokens.space8),
+            Expanded(
+              child: InkWell(
+                onTap: onOpen,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minHeight: tokens.minimumTouchTarget,
+                  ),
                   child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         item.username,
-                        style: Theme.of(context).textTheme.wenyouRowTitle,
+                        maxLines: wrap ? 2 : 1,
+                        overflow: TextOverflow.ellipsis,
+                        semanticsLabel: item.username,
+                        style: Theme.of(context).textTheme.wenyouBody.copyWith(
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
-                      SizedBox(height: tokens.space4),
                       Text(
-                        [
-                          'Lv.${item.level}',
-                          if (item.viewerIsFollowing == true &&
-                              item.viewerIsFollowedBy == true)
-                            '互相关注'
-                          else if (item.viewerIsFollowing == true)
-                            '已关注',
-                        ].join(' · '),
+                        'Lv.${item.level}',
                         style: Theme.of(context).textTheme.wenyouCaption
                             .copyWith(color: tokens.mutedText),
                       ),
                     ],
                   ),
                 ),
-              ],
-            ),
-          ),
-          SizedBox(height: tokens.space12),
-          if (!item.hasRelationState)
-            Text(
-              '关系状态暂不可用，请刷新后再试。',
-              style: Theme.of(context).textTheme.wenyouCaption,
-            )
-          else
-            Wrap(
-              alignment: WrapAlignment.end,
-              spacing: tokens.space8,
-              runSpacing: tokens.space8,
-              children: [
-                if (item.viewerIsFollowing == true)
-                  action('取消关注', OwnRelationAction.unfollow)
-                else if (kind == UserRelationListKind.followers)
-                  action('回关', OwnRelationAction.follow),
-                if (kind == UserRelationListKind.followers &&
-                    item.viewerIsFollowedBy == true)
-                  action('移除粉丝', OwnRelationAction.removeFollower),
-              ],
-            ),
-          if (failure != null) ...[
-            SizedBox(height: tokens.space8),
-            WenyouStatusBanner(
-              message: unknown
-                  ? '请刷新列表，查看操作是否已生效。'
-                  : UserFacingFailure.fromApi(failure).message,
-              detail: wenyouFailureDetail(failure, treatAsWrite: true),
-              tone: unknown ? WenyouStatusTone.neutral : WenyouStatusTone.error,
-              action: unknown
-                  ? TextButton(onPressed: onRefresh, child: const Text('刷新列表'))
-                  : null,
+              ),
             ),
           ],
-        ],
-      ),
-    );
-  }
-}
-
-class _RemoveFollowerDialog extends ConsumerStatefulWidget {
-  const _RemoveFollowerDialog({required this.item, required this.controller});
-  final UserRelationListItem item;
-  final OwnRelationListsController controller;
-  @override
-  ConsumerState<_RemoveFollowerDialog> createState() =>
-      _RemoveFollowerDialogState();
-}
-
-class _RemoveFollowerDialogState extends ConsumerState<_RemoveFollowerDialog> {
-  bool _pending = false;
-  @override
-  Widget build(BuildContext context) {
-    ref.listen(sessionScopeProvider, (before, after) {
-      if (before != after) Navigator.of(context).pop(false);
-    });
-    final state = ref.watch(ownRelationListsControllerProvider);
-    final failure = state.failures[widget.item.userId];
-    final unknown = state.unconfirmed.contains(widget.item.userId);
-    return WenyouPendingConfirmationDialog(
-      title: '移除粉丝「${widget.item.username}」？',
-      message: '移除后，对方将不再关注你。不会通知对方，对方仍可重新关注你。',
-      pending: _pending || state.pending.containsKey(widget.item.userId),
-      confirmKey: const Key('confirm-remove-follower'),
-      confirmLabel: unknown ? '刷新列表' : '移除粉丝',
-      tone: unknown
-          ? WenyouConfirmationTone.normal
-          : WenyouConfirmationTone.destructive,
-      feedback: failure == null
-          ? null
-          : WenyouStatusBanner(
-              message: unknown
-                  ? '请刷新列表，查看操作是否已生效。'
-                  : UserFacingFailure.fromApi(failure).message,
-              detail: wenyouFailureDetail(failure, treatAsWrite: true),
-              tone: unknown ? WenyouStatusTone.neutral : WenyouStatusTone.error,
+        );
+        final actions = Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              width: actionWidth.clamp(
+                tokens.minimumTouchTarget,
+                constraints.maxWidth - tokens.minimumTouchTarget,
+              ),
+              child: WenyouAsyncButton(
+                key: ValueKey(
+                  '${following ? 'status' : 'follow'}-${item.userId}',
+                ),
+                label: label,
+                semanticLabel:
+                    '${item.username}，$label${following ? '，打开关系操作' : ''}',
+                compact: true,
+                variant: following
+                    ? WenyouAsyncButtonVariant.tonal
+                    : WenyouAsyncButtonVariant.filled,
+                isLoading: pending != null,
+                onPressed: disabled
+                    ? null
+                    : following
+                    ? onMenu
+                    : () => onAct(OwnRelationAction.follow),
+              ),
             ),
-      onCancel: () => Navigator.pop(context, false),
-      onConfirm: () async {
-        if (_pending ||
-            ref
-                .read(ownRelationListsControllerProvider)
-                .pending
-                .containsKey(widget.item.userId)) {
-          return;
-        }
-        setState(() => _pending = true);
-        bool result;
-        if (unknown) {
-          await widget.controller.refreshAll();
-          if (!mounted || !widget.controller.isActive) return;
-          final refreshed = ref.read(ownRelationListsControllerProvider);
-          result =
-              refreshed.followers.loaded &&
-              refreshed.followers.failure == null &&
-              !refreshed.followers.items.any(
-                (item) => item.userId == widget.item.userId,
-              );
-        } else {
-          result = await widget.controller.act(
-            widget.item,
-            OwnRelationAction.removeFollower,
-          );
-        }
-        if (!context.mounted) return;
-        setState(() => _pending = false);
-        if (result) Navigator.pop(context, true);
+            IconButton(
+              key: ValueKey('more-${item.userId}'),
+              tooltip: '${item.username}的更多操作',
+              onPressed: disabled ? null : onMenu,
+              icon: const WenyouIcon(WenyouIconIds.actionMore),
+            ),
+          ],
+        );
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (wrap) ...[
+              identity,
+              SizedBox(height: tokens.space8),
+              Align(alignment: Alignment.centerRight, child: actions),
+            ] else
+              Row(
+                children: [
+                  Expanded(child: identity),
+                  SizedBox(width: tokens.space8),
+                  actions,
+                ],
+              ),
+            if (!item.hasRelationState)
+              Text(
+                '关系状态暂不可用，请刷新后再试。',
+                style: Theme.of(context).textTheme.wenyouCaption,
+              ),
+            if (failure != null) ...[
+              SizedBox(height: tokens.space8),
+              WenyouStatusBanner(
+                message: unknown
+                    ? '请刷新列表，查看操作是否已生效。'
+                    : UserFacingFailure.fromApi(failure).message,
+                detail: wenyouFailureDetail(failure, treatAsWrite: true),
+                tone: unknown
+                    ? WenyouStatusTone.neutral
+                    : WenyouStatusTone.error,
+                action: unknown
+                    ? TextButton(
+                        onPressed: onRefresh,
+                        child: const Text('刷新列表'),
+                      )
+                    : null,
+              ),
+            ],
+          ],
+        );
       },
     );
   }

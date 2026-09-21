@@ -72,12 +72,22 @@ class ApiUserRelationRepository
   );
 
   @override
-  Future<void> block(String userId) =>
-      _run(() => _api.usersFollowBlock(id: userId), '拉黑失败，请重新加载。');
+  Future<void> block(String userId) => _run(
+    () => _api.usersFollowBlock(
+      id: userId,
+      extra: ApiRequestPolicy.authenticatedNonReplayable.extra,
+    ),
+    '拉黑失败，请重新加载。',
+  );
 
   @override
-  Future<void> unblock(String userId) =>
-      _run(() => _api.usersFollowUnblock(id: userId), '取消拉黑失败，请重新加载。');
+  Future<void> unblock(String userId) => _run(
+    () => _api.usersFollowUnblock(
+      id: userId,
+      extra: ApiRequestPolicy.authenticatedNonReplayable.extra,
+    ),
+    '取消拉黑失败，请重新加载。',
+  );
 
   Future<void> _run(
     Future<Response<Object?>> Function() request,

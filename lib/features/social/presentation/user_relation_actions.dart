@@ -130,6 +130,9 @@ class UserRelationBlockIconButton extends ConsumerWidget {
   }
 }
 
+String wenyouUserBlockConfirmationMessage(String username) =>
+    '拉黑 $username 后，将屏蔽对方的回复与通知；已有私聊记录保留，但不能继续发送。';
+
 Future<void> _toggleUserBlock(
   BuildContext context,
   UserRelationController notifier,
@@ -140,7 +143,7 @@ Future<void> _toggleUserBlock(
     final confirmed = await showWenyouConfirmationDialog(
       context: context,
       title: '拉黑用户？',
-      message: '拉黑 ${target.username} 后，将屏蔽对方的回复与通知；已有私聊记录保留，但不能继续发送。',
+      message: wenyouUserBlockConfirmationMessage(target.username),
       confirmLabel: '确认拉黑',
       confirmKey: const Key('user-relation-block-confirm'),
       tone: WenyouConfirmationTone.destructive,

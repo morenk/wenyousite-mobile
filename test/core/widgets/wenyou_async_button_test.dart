@@ -5,6 +5,34 @@ import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 
 void main() {
+  testWidgets('文字按钮可保留简短可见文字并朗读目标，加载也保留对象语义', (tester) async {
+    var loading = false;
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Scaffold(
+          body: StatefulBuilder(
+            builder: (_, setState) => WenyouAsyncButton(
+              label: '回关',
+              semanticLabel: '温柔旅人，回关',
+              isLoading: loading,
+              onPressed: () => setState(() => loading = true),
+            ),
+          ),
+        ),
+      ),
+    );
+    expect(find.text('回关'), findsOneWidget);
+    expect(find.bySemanticsLabel('温柔旅人，回关'), findsOneWidget);
+    await tester.tap(find.byType(FilledButton));
+    await tester.pump();
+    expect(find.bySemanticsLabel('温柔旅人，回关，处理中'), findsOneWidget);
+    expect(
+      tester.widget<FilledButton>(find.byType(FilledButton)).onPressed,
+      isNull,
+    );
+  });
+
   testWidgets('图标按钮合并业务朗读并在处理中移除点击动作', (tester) async {
     var calls = 0;
     var loading = false;

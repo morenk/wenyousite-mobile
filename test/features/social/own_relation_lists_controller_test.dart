@@ -3,11 +3,13 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/core/application/profile_cache_invalidation.dart';
+import 'package:wenyousite_mobile/core/application/visibility_cache_invalidation.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/social/application/own_relation_lists_controller.dart';
 import 'package:wenyousite_mobile/features/social/application/user_relation_list_repository_ports.dart';
 import 'package:wenyousite_mobile/features/social/application/user_relation_repository_ports.dart';
 import 'package:wenyousite_mobile/features/social/domain/user_relation_list_models.dart';
+import 'package:wenyousite_mobile/features/social/domain/user_relation_models.dart';
 
 void main() {
   test('互关取消只移出关注页，粉丝保留并可回关，两页计数同步', () async {
@@ -216,6 +218,98 @@ void main() {
     );
     expect(fixture.relations.writes, isEmpty);
   });
+  test('拉黑保留双向关系，未知结果在可见性刷新后仍锁定，只读投影核实', () async {
+    final f = _Fixture();
+    await f.ready();
+    f.relations.failure = const ApiFailure(
+      httpStatus: 503,
+      reason: FailureReason.timeout,
+    );
+    expect(await f.controller.act(_item(), OwnRelationAction.block), false);
+    await f.ready();
+    expect(f.controller.state.unconfirmed, {'u'});
+    f.container.read(contentVisibilityRevisionProvider.notifier).advance();
+    await f.ready();
+    expect(await f.controller.act(_item(), OwnRelationAction.block), false);
+    expect(f.relations.writes, ['block:u']);
+    expect(f.controller.state.following.items, hasLength(1));
+    expect(f.controller.state.followers.items, hasLength(1));
+    f.relations.blocked = true;
+    await f.controller.refreshAll();
+    expect(f.controller.state.unconfirmed, isEmpty);
+    expect(f.controller.state.blocked, {'u'});
+  });
+
+  test('可见性变化保留其他目标正在写入的共享行锁', () async {
+    final f = _Fixture();
+    await f.ready();
+    final pending = Completer<void>();
+    f.relations.pause = pending.future;
+    final write = f.controller.act(_item(), OwnRelationAction.unfollow);
+    f.container.read(contentVisibilityRevisionProvider.notifier).advance();
+    await f.ready();
+    expect(f.controller.state.pending['u'], OwnRelationAction.unfollow);
+    expect(await f.controller.act(_item(), OwnRelationAction.block), false);
+    pending.complete();
+    await write;
+    await f.ready();
+    expect(f.relations.writes, ['unfollow:u']);
+  });
+
+  test('拉黑触发的可见性读取被另一目标写入打断后恢复读取', () async {
+    final f = _Fixture();
+    f.lists.following.add(_item(id: 'v'));
+    f.lists.followers.add(_item(id: 'v'));
+    await f.ready();
+    final old = Completer<List<UserRelationListItem>>();
+    f.lists.nextFollowing = old.future;
+    expect(await f.controller.act(_item(), OwnRelationAction.block), true);
+    await f.ready();
+    expect(f.lists.followingReads, 2);
+    await f.controller.act(_item(id: 'v'), OwnRelationAction.unfollow);
+    old.complete([_item(), _item(id: 'v')]);
+    await f.ready();
+    await f.ready();
+    expect(f.lists.followingReads, 3);
+  });
+
+  test('在其他入口解除拉黑后，刷新已知拉黑投影允许再次管理', () async {
+    final f = _Fixture();
+    await f.ready();
+    f.relations.blocked = true;
+    await f.controller.act(_item(), OwnRelationAction.block);
+    await f.ready();
+    expect(f.controller.state.blocked, {'u'});
+    f.relations.blocked = false;
+    f.container.read(contentVisibilityRevisionProvider.notifier).advance();
+    await f.ready();
+    expect(f.controller.state.blocked, isEmpty);
+  });
+
+  test('旧的未拉黑读取晚于新已拉黑读取到达，不回退核实结果', () async {
+    final f = _Fixture();
+    await f.ready();
+    f.relations.failure = const ApiFailure(
+      httpStatus: 503,
+      reason: FailureReason.timeout,
+    );
+    await f.controller.act(_item(), OwnRelationAction.block);
+    await f.ready();
+    final old = Completer<UserRelationProjection>();
+    final fresh = Completer<UserRelationProjection>();
+    f.relations.projections.addAll([old.future, fresh.future]);
+    final first = f.controller.refreshAll();
+    await f.ready();
+    final second = f.controller.refreshAll();
+    await f.ready();
+    fresh.complete(_projection(true));
+    await second;
+    old.complete(_projection(false));
+    await first;
+    expect(f.controller.state.blocked, {'u'});
+    expect(f.controller.state.unconfirmed, isEmpty);
+    expect(f.relations.writes, ['block:u']);
+  });
 }
 
 UserRelationListItem _item({String id = 'u'}) => UserRelationListItem(
@@ -282,7 +376,16 @@ class _Lists implements UserRelationListRepository {
   Future<List<UserRelationListItem>> fetchBlocks() async => [];
 }
 
-class _Relations implements UserRelationRepository, FollowerRemovalRepository {
+class _Relations
+    implements
+        UserRelationRepository,
+        FollowerRemovalRepository,
+        UserRelationProjectionReader {
+  bool blocked = false;
+  final projections = <Future<UserRelationProjection>>[];
+  @override
+  Future<UserRelationProjection> fetchRelation(String id) async =>
+      projections.isEmpty ? _projection(blocked) : projections.removeAt(0);
   final writes = <String>[];
   Future<void>? pause;
   ApiFailure? failure;
@@ -300,7 +403,14 @@ class _Relations implements UserRelationRepository, FollowerRemovalRepository {
   @override
   Future<void> unfollow(String userId) => write('unfollow:$userId');
   @override
-  Future<void> block(String userId) async {}
+  Future<void> block(String userId) => write('block:$userId');
   @override
   Future<void> unblock(String userId) async {}
 }
+
+UserRelationProjection _projection(bool blocked) => UserRelationProjection(
+  isFollowing: true,
+  isBlocked: blocked,
+  isBlockedBy: false,
+  followerCount: 1,
+);

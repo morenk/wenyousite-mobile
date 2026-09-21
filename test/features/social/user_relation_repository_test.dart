@@ -49,10 +49,16 @@ void main() {
       ),
     ).thenAnswer((_) async => _unfollowResponse());
     when(
-      () => api.usersFollowBlock(id: 'user-1'),
+      () => api.usersFollowBlock(
+        id: 'user-1',
+        extra: ApiRequestPolicy.authenticatedNonReplayable.extra,
+      ),
     ).thenAnswer((_) async => _blockResponse());
     when(
-      () => api.usersFollowUnblock(id: 'user-1'),
+      () => api.usersFollowUnblock(
+        id: 'user-1',
+        extra: ApiRequestPolicy.authenticatedNonReplayable.extra,
+      ),
     ).thenAnswer((_) async => _unblockResponse());
     final repository = ApiUserRelationRepository(api);
 
@@ -73,8 +79,18 @@ void main() {
         extra: ApiRequestPolicy.authenticatedNonReplayable.extra,
       ),
     ).called(1);
-    verify(() => api.usersFollowBlock(id: 'user-1')).called(1);
-    verify(() => api.usersFollowUnblock(id: 'user-1')).called(1);
+    verify(
+      () => api.usersFollowBlock(
+        id: 'user-1',
+        extra: ApiRequestPolicy.authenticatedNonReplayable.extra,
+      ),
+    ).called(1);
+    verify(
+      () => api.usersFollowUnblock(
+        id: 'user-1',
+        extra: ApiRequestPolicy.authenticatedNonReplayable.extra,
+      ),
+    ).called(1);
   });
 
   test('关系响应缺失时不假装操作成功', () async {
