@@ -93,7 +93,7 @@
 
 ## 13. 最近审查的契约版本和后端提交
 
-候选契约复核：OpenAPI `5.26.0-dev.20260922.3`，Backend `1f6a65e15dd66f88841bc80502f726804a07fa99`。新增图集为独立消费切片；管理会话、内容与关系基线保持兼容，本模块既有行为不因生成同步改变。来源及排除范围见 [图集契约同步](../architecture/image-gallery-contract-sync.md)。
+候选契约复核：OpenAPI `5.26.0-dev.20260922.3`，Backend `92b030a81f8957386e324fed477bd1e46faf65ea`。新增图集为独立消费切片；管理会话、内容与关系基线保持兼容，本模块既有行为不因生成同步改变。来源及排除范围见 [图集契约同步](../architecture/image-gallery-contract-sync.md)。
 
 2026-09-13 契约版本登记：当前移动端固定 OpenAPI `5.23.0-dev.20260913.1` 与 Backend revision `df4682548e3fc0291fc2cd19c7111b5f0fa53746`；本模块未因本次收藏夹端点扩展变更行为。
 

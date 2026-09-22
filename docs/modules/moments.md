@@ -147,7 +147,7 @@ media/application 提供相册与上传端口、唯一任务状态、取消、�
 
 ## 13. 最近审查的契约版本和后端提交
 
-候选契约复核：OpenAPI `5.26.0-dev.20260922.3`，Backend `1f6a65e15dd66f88841bc80502f726804a07fa99`。新增图集为独立消费切片；管理会话、内容与关系基线保持兼容，本模块既有行为不因生成同步改变。来源及排除范围见 [图集契约同步](../architecture/image-gallery-contract-sync.md)。
+候选契约复核：OpenAPI `5.26.0-dev.20260922.3`，Backend `92b030a81f8957386e324fed477bd1e46faf65ea`。新增图集为独立消费切片；管理会话、内容与关系基线保持兼容，本模块既有行为不因生成同步改变。来源及排除范围见 [图集契约同步](../architecture/image-gallery-contract-sync.md)。
 
 2026-09-13 收藏夹管理候选契约同步：Backend PR #20 `df4682548e3fc0291fc2cd19c7111b5f0fa53746`，API `5.23.0-dev.20260913.1`；新增动态收藏夹 PATCH/DELETE。PR 尚未合并，公网仍为 `5.22.0-dev.20260912.2`。Foundation 当前固定正式 Tag `v7.0.0`。相关定向测试通过；完整门禁在生产契约版本检查时停止，未构建 Debug APK，等待后端发布及负责人验收。
 

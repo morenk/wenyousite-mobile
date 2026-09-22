@@ -111,7 +111,7 @@ threads 页面消费主题互动和订阅控制器，moments 提供独立动态�
 
 ## 13. 最近审查的契约版本和后端提交
 
-候选契约复核：OpenAPI `5.26.0-dev.20260922.3`，Backend `1f6a65e15dd66f88841bc80502f726804a07fa99`。新增图集为独立消费切片；管理会话、内容与关系基线保持兼容，本模块既有行为不因生成同步改变。来源及排除范围见 [图集契约同步](../architecture/image-gallery-contract-sync.md)。
+候选契约复核：OpenAPI `5.26.0-dev.20260922.3`，Backend `92b030a81f8957386e324fed477bd1e46faf65ea`。新增图集为独立消费切片；管理会话、内容与关系基线保持兼容，本模块既有行为不因生成同步改变。来源及排除范围见 [图集契约同步](../architecture/image-gallery-contract-sync.md)。
 
 2026-09-20 自建收藏夹管理契约复核：Backend 契约来源 `e214fd18637cb10d79576c5ab5a4cf42340fef71`，OpenAPI `5.23.0-dev.20260913.1`；随后部署的 `4b133355c14198506e4a4380fd741cccd19d844d` 保持该接口契约不变。四个新增操作均已接入，负责人已确认最终 Debug 候选真机验收。自动检查、APK 与手测路径见[候选验收](../architecture/bookmark-folder-management-acceptance.md)。
 
