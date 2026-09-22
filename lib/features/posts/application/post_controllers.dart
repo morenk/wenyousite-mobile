@@ -544,7 +544,7 @@ class PostComposerController extends StateNotifier<PostComposerState> {
     if (!MarkdownContent.hasVisibleContent(content)) {
       return '正文和骰子不能同时为空。';
     }
-    if (content.length > 10000) return '正文超过 10000 字符，请精简后重试。';
+    if (content.runes.length > 10000) return '正文超过 10000 字符，请精简后重试。';
     return null;
   }
 

@@ -10,6 +10,45 @@ import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
 import '../../support/moment_test_draft_store.dart';
 
 void main() {
+  test('动态禁止互动时不新增点赞评论，但仍可取消已有点赞收藏', () async {
+    final repository = _ReadOnlyDetailRepository();
+    final controller = MomentDetailController(
+      repository,
+      'moment-1',
+      autoStart: false,
+    );
+    addTearDown(controller.dispose);
+    await controller.load();
+    expect(await controller.toggleLike(), isFalse);
+    expect(repository.likeRequests, isEmpty);
+    expect(
+      await controller.sendComment(const MomentCommentInput(content: '不能发')),
+      isNull,
+    );
+    expect(repository.commentRequestIds, isEmpty);
+    repository.active = true;
+    await controller.load();
+    expect(await controller.toggleLike(), isTrue);
+    expect(repository.likeRequests, [false]);
+    expect(await controller.toggleBookmark(), isTrue);
+    expect(repository.bookmarkRequests, [false]);
+  });
+
+  test('评论更换图片后分配新请求ID，失败原图重试保持原ID', () async {
+    final repository = _DetailRepository(failFirstComment: true);
+    var index = 0;
+    final controller = MomentDetailController(
+      repository,
+      'moment-1',
+      autoStart: false,
+      requestIdFactory: () => 'request-${++index}',
+    );
+    addTearDown(controller.dispose);
+    await controller.load();
+    await controller.sendComment(const MomentCommentInput(mediaId: 'old'));
+    await controller.sendComment(const MomentCommentInput(mediaId: 'new'));
+    expect(repository.commentRequestIds, ['request-1', 'request-2']);
+  });
   for (final bookmark in [false, true]) {
     test('详情互动立即显示且失败不覆盖同时发送的评论：收藏 $bookmark', () async {
       final gate = Completer<MomentActionResult>();
@@ -442,4 +481,36 @@ class _PendingDetailInteraction extends _DetailRepository {
     required bool active,
     String? folderId,
   }) => gate.future;
+}
+
+class _ReadOnlyDetailRepository extends _DetailRepository {
+  var active = false;
+  final likeRequests = <bool>[];
+  final bookmarkRequests = <bool>[];
+  @override
+  Future<MomentDetail> fetchDetail(String momentId) async => _detail().copyWith(
+    card: _card().copyWith(
+      canInteract: false,
+      viewerLiked: active,
+      viewerBookmarked: active,
+    ),
+  );
+  @override
+  Future<MomentActionResult> setLike(
+    String momentId, {
+    required bool active,
+  }) async {
+    likeRequests.add(active);
+    return MomentActionResult(momentId: momentId, count: 0, active: active);
+  }
+
+  @override
+  Future<MomentActionResult> setBookmark(
+    String momentId, {
+    required bool active,
+    String? folderId,
+  }) async {
+    bookmarkRequests.add(active);
+    return MomentActionResult(momentId: momentId, count: 0, active: active);
+  }
 }

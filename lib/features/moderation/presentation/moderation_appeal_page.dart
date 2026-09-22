@@ -121,7 +121,7 @@ class _ModerationAppealPageState extends ConsumerState<ModerationAppealPage> {
               ),
               validator: (value) {
                 if (value == null || value.isEmpty) return '请输入密码';
-                if (value.length < 8) return '密码至少 8 个字符';
+                if (value.runes.length < 8) return '密码至少 8 个字符';
                 return null;
               },
             ),
@@ -464,7 +464,7 @@ class _AppealSheetState extends ConsumerState<_AppealSheet> {
                 alignLabelWithHint: true,
               ),
               validator: (value) {
-                final length = value?.trim().length ?? 0;
+                final length = value?.trim().runes.length ?? 0;
                 if (length < 10) return '请至少写 10 个字';
                 if (length > 2000) return '申诉说明最多 2000 个字';
                 return null;

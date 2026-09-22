@@ -122,6 +122,7 @@ class MeProfileEditor extends ConsumerWidget {
     final coverState = ref.watch(profileCoverControllerProvider);
     final mediaBusy = avatarState.isBusy || coverState.isBusy;
     final mutationBusy = state.isSubmitting || mediaBusy;
+    final bioLength = draft.bioController.text.trim().runes.length;
     final settingsFailure = state.failedAction == MeProfileAction.settings
         ? state.submissionFailure
         : null;
@@ -150,9 +151,14 @@ class MeProfileEditor extends ConsumerWidget {
             minLines: 3,
             maxLines: 5,
             maxLength: 255,
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               hintText: '介绍一下自己',
               alignLabelWithHint: true,
+              counterText: '$bioLength/255',
+              semanticCounterText: MaterialLocalizations.of(context)
+                  .remainingTextFieldCharacterCount(
+                    (255 - bioLength).clamp(0, 255),
+                  ),
             ),
             validator: (value) => _validateBio(value, draft.currentBio),
             onChanged: (_) => _clearFeedback(ref),
@@ -494,7 +500,7 @@ String? _validateUsername(String? value) {
 
 String? _validateBio(String? value, String? currentBio) {
   final bio = value?.trim() ?? '';
-  if (bio.length > 255) return '简介最多 255 个字符';
+  if (bio.runes.length > 255) return '简介最多 255 个字符';
   if (bio.isEmpty && (currentBio?.isNotEmpty ?? false)) {
     return '请至少保留 1 个字符';
   }
