@@ -8,7 +8,7 @@ part of 'admin_session_response_dto.dart';
 
 class _$AdminSessionResponseDto extends AdminSessionResponseDto {
   @override
-  final BuiltMap<String, JsonObject?> session;
+  final AdminSessionInfoDto session;
   @override
   final BuiltMap<String, JsonObject?> user;
   @override
@@ -66,11 +66,10 @@ class AdminSessionResponseDtoBuilder
         Builder<AdminSessionResponseDto, AdminSessionResponseDtoBuilder> {
   _$AdminSessionResponseDto? _$v;
 
-  MapBuilder<String, JsonObject?>? _session;
-  MapBuilder<String, JsonObject?> get session =>
-      _$this._session ??= MapBuilder<String, JsonObject?>();
-  set session(MapBuilder<String, JsonObject?>? session) =>
-      _$this._session = session;
+  AdminSessionInfoDtoBuilder? _session;
+  AdminSessionInfoDtoBuilder get session =>
+      _$this._session ??= AdminSessionInfoDtoBuilder();
+  set session(AdminSessionInfoDtoBuilder? session) => _$this._session = session;
 
   MapBuilder<String, JsonObject?>? _user;
   MapBuilder<String, JsonObject?> get user =>

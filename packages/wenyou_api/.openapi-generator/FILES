@@ -20,6 +20,7 @@ lib/src/api/client_moderation_api.dart
 lib/src/api/direct_messages_api.dart
 lib/src/api/drafts_api.dart
 lib/src/api/health_api.dart
+lib/src/api/image_gallery_api.dart
 lib/src/api/media_api.dart
 lib/src/api/meta_api.dart
 lib/src/api/mobile_devices_api.dart
@@ -91,6 +92,7 @@ lib/src/model/admin_index200_response.dart
 lib/src/model/admin_invite_acceptance_accept201_response.dart
 lib/src/model/admin_invite_created_response_dto.dart
 lib/src/model/admin_login_challenge_dto.dart
+lib/src/model/admin_login_verify_dto.dart
 lib/src/model/admin_moderation_appeals_list200_response.dart
 lib/src/model/admin_moderation_appeals_resolve201_response.dart
 lib/src/model/admin_moderation_get_user200_response.dart
@@ -111,6 +113,7 @@ lib/src/model/admin_reports_find_one200_response.dart
 lib/src/model/admin_reports_resolve200_response.dart
 lib/src/model/admin_search_users200_response.dart
 lib/src/model/admin_send_system_notification201_response.dart
+lib/src/model/admin_session_info_dto.dart
 lib/src/model/admin_session_response_dto.dart
 lib/src/model/admin_step_up_response_dto.dart
 lib/src/model/admin_system_notification_history_item_dto.dart
@@ -237,6 +240,9 @@ lib/src/model/economy_tip_user201_response.dart
 lib/src/model/economy_transactions200_response.dart
 lib/src/model/floor_response_dto.dart
 lib/src/model/forgot_password_dto.dart
+lib/src/model/gallery_image_dto.dart
+lib/src/model/gallery_list200_response.dart
+lib/src/model/gallery_page_dto.dart
 lib/src/model/handle_direct_request_dto.dart
 lib/src/model/health_check200_response.dart
 lib/src/model/health_check200_response_all_of_data.dart
@@ -515,6 +521,7 @@ lib/src/model/users_follow_blocks200_response.dart
 lib/src/model/users_follow_follow200_response.dart
 lib/src/model/users_follow_followers200_response.dart
 lib/src/model/users_follow_following200_response.dart
+lib/src/model/users_follow_remove_follower200_response.dart
 lib/src/model/users_follow_unblock200_response.dart
 lib/src/model/users_follow_unfollow200_response.dart
 lib/src/model/users_follow_user_followers200_response.dart
