@@ -2,7 +2,21 @@
 
 状态：候选／待负责人验收。仅 Windows Mobile；治理任务 `01a0c4bb-9204-7662-93c3-648b8fa03f59`。分支 `codex/20260922-mobile-relations-management`，基线 `c5ba6668`。
 
-## 紧凑列表修订候选
+## 开发基线整合候选
+
+2026-09-23 在原分支普通合并 `origin/dev` 的 `78224480bcb95aa0af88b06820fcfa7f671c936d`（合并提交 `e8eeda1b`），保留紧凑关系管理并整合已合入的设计统一。回复时间沿用新共享组件，避免重复读屏日期；72 小时与未来日期边界测试保留。关系菜单入口复用新增 `showWenyouSheet`，继承宽度、安全区、键盘和高度约束，固定会话与受控路由关闭逻辑不变。
+
+正式脚本从只读 Backend 镜像同步并生成 `92b030a81f8957386e324fed477bd1e46faf65ea` / `5.26.0-dev.20260922.3`（独立提交 `21e07128`）。新增图集读取与管理端记住设备类型，关系接口及投影保持；不在本候选接入图集功能，不改 Backend。Foundation fetch 后最新正式 Tag 仍为 v7.1.0，依赖不变；说明性关系规范最新整合提交为 `7263db135530326ac42b206eeffbf6f179513a91`，交互文档与此前 `d96520b` 一致。
+
+日期、时间组件、关系页面和举报定向 36 项通过；契约校验、固定来源、21 模块文档与 API scope 159/159 通过。整合后 12 张关系截图使用正常比较模式通过（`build/relations-resume-screenshots.log`），与下述 v2 PNG 无像素差异，未更新 Golden。
+
+最终完整入口 `npm run check:apk -- -TestConcurrency 2` **exit 0**（`build/relations-resume-final-v2-gate.log`）：格式、应用和生成包 analyze（零问题）、架构、文档、API 覆盖、契约及再生成一致性全部通过；生产只读核验直接匹配精确 `92b030a81f8957386e324fed477bd1e46faf65ea` / `5.26.0-dev.20260922.3`、部署 Markdown 5 与 `GET /threads`。Flutter **4710 项通过、1 项既有真实 Sentry 收件验收跳过、零失败**；Windows 发布工具 **18 项通过**，Debug APK 构建成功。
+
+前一轮 `build/relations-resume-final-gate.log` 在新增图集端点诊断索引校验失败后主动终止，未完成门禁，不冒充全绿。随后运行仓库 `tool/generate_diagnostic_routes.dart` 并格式化，生成差异仅新增 `galleryList` 一条诊断映射；定向 9 项通过（`build/relations-resume-diagnostic-recovery.log`），最终完整运行包含该恢复回归。该修正不接入图集业务。
+
+新版候选 APK 为 `build/app/outputs/flutter-apk/app-debug.apk`，**223,908,489 字节**，SHA-256 **`8A36344C5F754FC605E70E1E4EADB2583EC2CD6A666E3AE33DD4E1C5D4A2499F`**。`aapt` 核实 `site.wenyou.app.debug`、`0.7.1-debug` / `95`、minSdk 26 / targetSdk 36；默认连接 `https://wenyou.site/api/v1`，未传入覆盖地址。仍为待负责人真机验收的 Debug 候选，未安装或发布；既有 Kotlin 插件迁移提示不影响构建。本包替代下文旧 AF780 APK，旧运行与手测证据只保留历史含义。
+
+## 历史紧凑列表修订候选
 
 本轮按 Foundation 关系体验文档候选 `d96520b` 实现紧凑扁平列表；正式依赖仍为 v7.1.0，Backend 仍锁已部署 `4850e2f456ccc452c763853641e3b2136901e237`。下面历史卡片 APK 与第二行描边截图已被本轮设计替代，不作为新界面的验收依据。
 

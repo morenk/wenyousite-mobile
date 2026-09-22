@@ -10,6 +10,7 @@ import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/network/session_controller.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_sheet.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/reports/domain/report_models.dart';
 import 'package:wenyousite_mobile/features/reports/reports.dart';
@@ -26,10 +27,8 @@ Future<void> showOwnRelationActions({
   required Future<void> Function(OwnRelationAction) onAct,
 }) async {
   final scope = ref.read(sessionScopeProvider);
-  final action = await showModalBottomSheet<_MenuAction>(
+  final action = await showWenyouSheet<_MenuAction>(
     context: context,
-    showDragHandle: true,
-    isScrollControlled: true,
     builder: (_) => _RelationActionsSheet(item: item, scope: scope),
   );
   if (!context.mounted ||
