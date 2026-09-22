@@ -34,6 +34,7 @@ const diagnosticApiRoutes = <String, String>{
   'GET /api/v1/drafts/slots': 'draftsSlotUsage',
   'GET /api/v1/drafts/state': 'draftsState',
   'GET /api/v1/health': 'healthCheck',
+  'GET /api/v1/image-gallery': 'galleryList',
   'GET /api/v1/meta': 'metaGetMeta',
   'GET /api/v1/moderation/decisions/mine': 'userModerationAppealsMine',
   'GET /api/v1/moments': 'momentsList',
