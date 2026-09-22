@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/application/appearance_preference.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_selection_menu.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/settings/presentation/appearance_settings_page.dart';
 
@@ -108,6 +111,37 @@ void main() {
     );
   });
 
+  testWidgets('重复选择不写入，保存期间整行选择禁用且不重复提交', (tester) async {
+    final pending = Completer<void>();
+    final store = _FakeAppearanceStore()..pendingWrite = pending;
+    await tester.pumpWidget(
+      _testApp(store: store, preference: AppearancePreference.system),
+    );
+    await tester.tap(find.byKey(const Key('appearance-option-system')));
+    await tester.pump();
+    expect(store.writes, isEmpty);
+    await tester.tap(find.byKey(const Key('appearance-option-dark')));
+    await tester.pump();
+    expect(
+      tester
+          .widgetList<WenyouSelectionTile>(find.byType(WenyouSelectionTile))
+          .every((tile) => tile.onTap == null),
+      isTrue,
+    );
+    await tester.tap(find.byKey(const Key('appearance-option-light')));
+    expect(store.writes, [AppearancePreference.dark]);
+    pending.complete();
+    await tester.pumpAndSettle();
+    expect(
+      tester
+          .widget<WenyouSelectionTile>(
+            find.byKey(const Key('appearance-option-dark')),
+          )
+          .selected,
+      isTrue,
+    );
+  });
+
   testWidgets('跟随系统会响应设备黑夜外观', (tester) async {
     tester.platformDispatcher.platformBrightnessTestValue = Brightness.dark;
     addTearDown(tester.platformDispatcher.clearPlatformBrightnessTestValue);
@@ -196,6 +230,7 @@ class _FakeAppearanceStore implements AppearancePreferenceStore {
   _FakeAppearanceStore({this.failWrite = false});
 
   bool failWrite;
+  Completer<void>? pendingWrite;
   AppearancePreference value = AppearancePreference.system;
   final List<AppearancePreference> writes = [];
 
@@ -205,6 +240,7 @@ class _FakeAppearanceStore implements AppearancePreferenceStore {
   @override
   Future<void> write(AppearancePreference preference) async {
     writes.add(preference);
+    await pendingWrite?.future;
     if (failWrite) throw StateError('write failed');
     value = preference;
   }

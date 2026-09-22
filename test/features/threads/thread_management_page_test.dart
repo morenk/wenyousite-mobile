@@ -313,6 +313,37 @@ void main() {
     expect(sheetTitle.style?.fontFamily, platformFamily);
   });
 
+  testWidgets('停用分区不能选，重复选择当前分区不保存', (tester) async {
+    final initial = threadManagementTestBootstrap();
+    final repository = ThreadManagementTestRepository(
+      initial: ThreadManagementBootstrap(
+        thread: initial.thread,
+        categories: [
+          ...initial.categories,
+          const ThreadManagementCategory(
+            slug: 'OLD',
+            name: '旧分区',
+            sortOrder: 3,
+            isSelectable: false,
+          ),
+        ],
+      ),
+    );
+    await pumpThreadManagementTestPage(tester, repository);
+    await tester.tap(find.byKey(const Key('thread-management-category')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('旧分区（已停用）'));
+    await tester.pumpAndSettle();
+    expect(find.text('选择主题分区'), findsOneWidget);
+    expect(repository.updateCalls, 0);
+    await tester.tap(
+      find.byKey(const ValueKey('thread-management-category-option-RPG')),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('选择主题分区'), findsNothing);
+    expect(repository.updateCalls, 0);
+  });
+
   testWidgets('关闭单选面板不会修改或保存设置', (tester) async {
     final repository = ThreadManagementTestRepository(
       initial: threadManagementTestBootstrap(),

@@ -600,6 +600,7 @@ class _AccountSecurityPanel extends StatelessWidget {
       child: Column(
         children: [
           WenyouSettingsLink(
+            enabled: !disabled,
             key: const Key('me-open-blocks'),
             icon: WenyouIconIds.actionBlock,
             title: '管理黑名单',
@@ -607,6 +608,7 @@ class _AccountSecurityPanel extends StatelessWidget {
           ),
           const Divider(height: 1),
           WenyouSettingsLink(
+            enabled: !disabled,
             key: const Key('me-open-login-sessions'),
             icon: WenyouIconIds.actionDevices,
             title: '登录终端',
@@ -614,6 +616,7 @@ class _AccountSecurityPanel extends StatelessWidget {
           ),
           const Divider(height: 1),
           WenyouSettingsLink(
+            enabled: !disabled,
             key: const Key('me-open-change-password'),
             icon: WenyouIconIds.securityPassword,
             title: '修改密码',
@@ -621,6 +624,7 @@ class _AccountSecurityPanel extends StatelessWidget {
           ),
           const Divider(height: 1),
           WenyouSettingsLink(
+            enabled: !disabled,
             key: const Key('me-open-change-email'),
             icon: WenyouIconIds.statusMail,
             title: '更换邮箱',
@@ -628,6 +632,7 @@ class _AccountSecurityPanel extends StatelessWidget {
           ),
           const Divider(height: 1),
           WenyouSettingsLink(
+            enabled: !disabled,
             key: const Key('me-open-moderation-appeals'),
             icon: WenyouIconIds.moderationDecision,
             title: '治理决定与申诉',
@@ -637,6 +642,7 @@ class _AccountSecurityPanel extends StatelessWidget {
           ),
           const Divider(height: 1),
           WenyouSettingsLink(
+            enabled: !disabled,
             key: const Key('me-open-delete-account'),
             icon: WenyouIconIds.actionDelete,
             title: '注销账号',

@@ -6,6 +6,7 @@ import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/application/appearance_preference.dart';
 import 'package:wenyousite_mobile/core/application/data_saver_preference.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_selection_menu.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 
 class AppearanceSettingsPage extends ConsumerWidget {
@@ -50,14 +51,24 @@ class AppearanceSettingsPage extends ConsumerWidget {
                     index++
                   ) ...[
                     if (index > 0) const Divider(height: 1),
-                    _AppearanceOption(
-                      preference: AppearancePreference.values[index],
+                    WenyouSelectionTile(
+                      key: Key(
+                        'appearance-option-${AppearancePreference.values[index].name}',
+                      ),
+                      label: AppearancePreference.values[index].label,
+                      leading: WenyouIcon(
+                        AppearancePreference.values[index].icon,
+                      ),
                       selected:
                           state.preference ==
                           AppearancePreference.values[index],
-                      enabled: !state.isSaving,
-                      onSelected: (preference) =>
-                          unawaited(controller.select(preference)),
+                      onTap: state.isSaving
+                          ? null
+                          : () => unawaited(
+                              controller.select(
+                                AppearancePreference.values[index],
+                              ),
+                            ),
                     ),
                   ],
                 ],
@@ -108,39 +119,6 @@ class _DataSaverSetting extends ConsumerWidget {
               ),
             ),
         ],
-      ),
-    );
-  }
-}
-
-class _AppearanceOption extends StatelessWidget {
-  const _AppearanceOption({
-    required this.preference,
-    required this.selected,
-    required this.enabled,
-    required this.onSelected,
-  });
-
-  final AppearancePreference preference;
-  final bool selected;
-  final bool enabled;
-  final ValueChanged<AppearancePreference> onSelected;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      selected: selected,
-      button: true,
-      child: ListTile(
-        key: Key('appearance-option-${preference.name}'),
-        enabled: enabled,
-        selected: selected,
-        leading: WenyouIcon(preference.icon),
-        title: Text(preference.label),
-        trailing: selected
-            ? const WenyouIcon(WenyouIconIds.actionConfirm)
-            : null,
-        onTap: enabled ? () => onSelected(preference) : null,
       ),
     );
   }
