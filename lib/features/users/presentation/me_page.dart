@@ -3,10 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
-import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/application/appearance_preference.dart';
 import 'package:wenyousite_mobile/core/application/session_logout_controller.dart';
@@ -14,6 +12,7 @@ import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_settings_body.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
 import 'package:wenyousite_mobile/features/users/application/avatar_controller.dart';
@@ -87,8 +86,8 @@ class _GuestMePage extends StatelessWidget {
             ),
             SizedBox(height: context.wenyouTokens.space12),
             const _AppearanceSettingsPanel(),
-            ListTile(
-              title: const Text('故障诊断'),
+            WenyouSettingsLink(
+              title: '故障诊断',
               onTap: () => context.pushNamed(AppRouteNames.diagnostics),
             ),
           ],
@@ -356,14 +355,14 @@ class MeSettingsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final page = Scaffold(
       appBar: AppBar(title: const Text('账号设置')),
-      body: _MePageList(
+      body: WenyouSettingsBody(
         children: [
           const _AppearanceSettingsPanel(),
           const _AccountSecurityPanel(disabled: false),
           const BackgroundReminderSettingsPanel(),
           const _LogoutPanel(),
-          ListTile(
-            title: const Text('故障诊断'),
+          WenyouSettingsLink(
+            title: '故障诊断',
             onTap: () => context.pushNamed(AppRouteNames.diagnostics),
           ),
         ],
@@ -385,12 +384,11 @@ class _AppearanceSettingsPanel extends ConsumerWidget {
     );
     return WenyouPanel(
       padding: EdgeInsets.zero,
-      child: ListTile(
+      child: WenyouSettingsLink(
         key: const Key('open-appearance-settings'),
-        leading: WenyouIcon(preference.icon),
-        title: const Text('外观'),
-        subtitle: Text(preference.label),
-        trailing: const WenyouIcon(WenyouIconIds.navigationNext),
+        icon: preference.icon,
+        title: '外观',
+        value: preference.label,
         onTap: () => context.pushNamed(AppRouteNames.appearance),
       ),
     );
@@ -597,78 +595,58 @@ class _AccountSecurityPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     return WenyouPanel(
       padding: EdgeInsets.zero,
       child: Column(
         children: [
-          ListTile(
-            key: const Key('me-open-blocks'),
+          WenyouSettingsLink(
             enabled: !disabled,
-            leading: const WenyouIcon(WenyouIconIds.actionBlock),
-            title: const Text('管理黑名单'),
-            trailing: const WenyouIcon(WenyouIconIds.navigationNext),
+            key: const Key('me-open-blocks'),
+            icon: WenyouIconIds.actionBlock,
+            title: '管理黑名单',
             onTap: disabled ? null : () => context.pushNamed('me-blocks'),
           ),
           const Divider(height: 1),
-          ListTile(
-            key: const Key('me-open-login-sessions'),
+          WenyouSettingsLink(
             enabled: !disabled,
-            leading: const WenyouIcon(WenyouIconIds.actionDevices),
-            title: const Text('登录终端'),
-            trailing: const WenyouIcon(WenyouIconIds.navigationNext),
+            key: const Key('me-open-login-sessions'),
+            icon: WenyouIconIds.actionDevices,
+            title: '登录终端',
             onTap: disabled ? null : () => context.pushNamed('login-sessions'),
           ),
           const Divider(height: 1),
-          ListTile(
-            key: const Key('me-open-change-password'),
+          WenyouSettingsLink(
             enabled: !disabled,
-            leading: const WenyouIcon(WenyouIconIds.securityPassword),
-            title: const Text('修改密码'),
-            subtitle: const Text('修改后所有终端需要重新登录'),
-            trailing: const WenyouIcon(WenyouIconIds.navigationNext),
+            key: const Key('me-open-change-password'),
+            icon: WenyouIconIds.securityPassword,
+            title: '修改密码',
             onTap: disabled ? null : () => context.pushNamed('change-password'),
           ),
           const Divider(height: 1),
-          ListTile(
-            key: const Key('me-open-change-email'),
+          WenyouSettingsLink(
             enabled: !disabled,
-            leading: const WenyouIcon(WenyouIconIds.statusMail),
-            title: const Text('更换邮箱'),
-            trailing: const WenyouIcon(WenyouIconIds.navigationNext),
+            key: const Key('me-open-change-email'),
+            icon: WenyouIconIds.statusMail,
+            title: '更换邮箱',
             onTap: disabled ? null : () => context.pushNamed('change-email'),
           ),
           const Divider(height: 1),
-          ListTile(
-            key: const Key('me-open-moderation-appeals'),
+          WenyouSettingsLink(
             enabled: !disabled,
-            leading: const WenyouIcon(WenyouIconIds.moderationDecision),
-            title: const Text('治理决定与申诉'),
-            subtitle: const Text('查看近 30 天决定与申诉进度'),
-            trailing: const WenyouIcon(WenyouIconIds.navigationNext),
+            key: const Key('me-open-moderation-appeals'),
+            icon: WenyouIconIds.moderationDecision,
+            title: '治理决定与申诉',
             onTap: disabled
                 ? null
                 : () => context.pushNamed('moderation-appeals'),
           ),
           const Divider(height: 1),
-          ListTile(
-            key: const Key('me-open-delete-account'),
+          WenyouSettingsLink(
             enabled: !disabled,
-            leading: WenyouIcon(
-              WenyouIconIds.actionDelete,
-              color: scheme.error,
-            ),
-            title: Text(
-              '注销账号',
-              style: Theme.of(
-                context,
-              ).textTheme.wenyouRowTitle.copyWith(color: scheme.error),
-            ),
-            subtitle: const Text('不可恢复；已发布内容会匿名保留'),
-            trailing: WenyouIcon(
-              WenyouIconIds.navigationNext,
-              color: scheme.error,
-            ),
+            key: const Key('me-open-delete-account'),
+            icon: WenyouIconIds.actionDelete,
+            title: '注销账号',
+            destructive: true,
             onTap: disabled ? null : () => context.pushNamed('delete-account'),
           ),
         ],
@@ -698,7 +676,7 @@ class _ProfileOverview extends StatelessWidget {
       level: profile.level,
       bio: profile.bio?.trim().isNotEmpty == true ? profile.bio : '还没有填写个人简介。',
       metadata:
-          '${DateFormat('yyyy-MM-dd').format(profile.createdAt)} 加入温油站 · ${_maskEmail(profile.email)}',
+          '${formatWenyouDate(profile.createdAt)} 加入温油站 · ${_maskEmail(profile.email)}',
       levelProgress: profile.levelProgress,
       levelProgressLabel: profile.nextLevelExperience == null
           ? '已达到当前最高等级'
@@ -758,19 +736,8 @@ class _LogoutPanel extends StatelessWidget {
   const _LogoutPanel();
 
   @override
-  Widget build(BuildContext context) {
-    final tokens = context.wenyouTokens;
-    return WenyouPanel(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const WenyouSectionHeader(title: '当前会话'),
-          SizedBox(height: tokens.space16),
-          const _LogoutAction(),
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) =>
+      const WenyouPanel(child: _LogoutAction());
 }
 
 class _LogoutAction extends ConsumerWidget {

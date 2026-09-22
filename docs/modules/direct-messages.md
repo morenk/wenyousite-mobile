@@ -14,6 +14,8 @@
 
 私聊列表的规范路径是底部“消息”分支内的 `/notifications?section=directMessages`；旧 `/messages` 兼容重定向到该地址。新私聊继续使用 `/messages/new/:userId`，会话继续使用 `/messages/:conversationId`。其他用户主页在确认当前登录身份且 capability 开启后展示“发私聊”。已有 ACCEPTED/PENDING 联系从新私聊页替换到原会话；DECLINED/CANCELED/UNAVAILABLE 按服务端 `canInitiate` 展示重新建立或受限说明，不猜测新目标。
 
+Foundation v7.1.0 时间呈现候选／待验收：普通内容不足 72 小时保留相对时间，满 72 小时和未来时间显示同年短日期或跨年完整日期；读屏提供完整日期，不含时分。安全、审计、账务、预约及到期时刻保留精确时间。原始时间戳不变。普通内容时间共用一个前台分钟刷新源，恢复前台立即更新，没有消费者或进入后台时停止；不为每行创建计时器。
+
 ## 4. 用户操作流程
 
 组件统一第一批（2026-09-19，负责人验收通过）：拒绝消息请求和撤回使用共享确认框，保留操作后果说明；接受／拒绝按钮统一处理中反馈，更早消息使用共享分页状态并保留逆序列表及原游标。 入口清单、自动检查及真机步骤见[组件统一验收](../architecture/component-consistency-acceptance.md)。
@@ -117,6 +119,8 @@ capability 由 app 组合层从启动契约注入，前台生命周期由应用�
 2026-09-22 合并来源同步：Backend `4850e2f456ccc452c763853641e3b2136901e237`（PR #26），OpenAPI `5.25.0-dev.20260922.1`；与此前候选契约逐字节一致，本模块接口及应用代码未变。部署后的精确来源核验见[关系管理候选验收](../architecture/relations-management-acceptance.md)，真机验收仍待负责人完成。
 
 2026-09-22 候选契约兼容审查：Backend `ea1ff7e2c6baeae6bf0316e87812ba37bc823d7a`，OpenAPI `5.25.0-dev.20260922.1`；新增关系管理及综合管理类型不改变本模块已有接口流程，不代表本模块新功能或真机验收。本次消费者基线固定正式 Foundation `v7.1.0`。
+
+2026-09-20 已部署来源复核：主契约来源同步为 Backend `4b133355c14198506e4a4380fd741cccd19d844d`，API `5.23.0-dev.20260913.1`，与远端 `origin/dev` 和公网 `/meta` 一致。HTTP/OpenAPI、生成客户端与已有 fixtures 无变化；新增行内组合语料与既有独立固定来源相同。本模块行为不变，详见[来源复核](../architecture/contract-source-review-20260920.md)。
 
 2026-09-13 契约版本登记：当前移动端固定 OpenAPI `5.23.0-dev.20260913.1` 与 Backend revision `df4682548e3fc0291fc2cd19c7111b5f0fa53746`；本模块未因本次收藏夹端点扩展变更行为。
 

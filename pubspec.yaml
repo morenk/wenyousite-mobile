@@ -51,7 +51,6 @@ dependencies:
   waterfall_flow: ^3.1.1
   uuid: ^4.6.0
   shared_preferences: ^2.5.5
-  intl: ^0.20.2
   url_launcher: ^6.3.2
   mime: ^2.0.0
   flutter_markdown_plus: ^1.0.12

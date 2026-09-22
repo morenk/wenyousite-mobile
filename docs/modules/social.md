@@ -14,6 +14,8 @@
 
 主题点赞、收藏和订阅入口位于 `/threads/:threadId` 固定底部拇指栏，并与发表楼层形成同一可达操作区，不再占用详情题头；未收藏时先打开收藏夹选择 Sheet，已收藏时点击直接取消。玩家发言订阅仍在移动端 Bottom Sheet 中逐人切换。“我的”将“收藏”与关注、粉丝、温油置于同级入口；`/me/bookmarks` 是统一收藏页，顶部“主题 / 动态”只切换两套隔离目录，收藏夹筛选器默认选中该类型的默认夹并就地展示内容。旧 `/me/bookmarks/threads` 与 `/me/bookmarks/moments` 目录路径重定向回统一页；指定夹路径 `/me/bookmarks/threads/folders/:folderId` 与 `/me/bookmarks/moments/folders/:folderId` 继续保留，旧 `/me/bookmarks/folders/:folderId` 继续兼容主题收藏。两类目录都不提供跨收藏夹“全部”。`/me/following`、`/me/followers`、`/me/blocks` 管理关系。本人路径及收藏子路径均保留登录回跳；公开关系和内容仍从 `/users/:userId` 进入，私有收藏夹名称和分类绝不进入公开用户页。
 
+设计统一后三批候选／待负责人验收：订阅抽屉采用共享容器、响应式宽度、安全区、键盘避让和关闭入口，不再固定占屏幕 72%。玩家列表继续惰性构建，状态失败、重试、结果不明与会话切换关闭逻辑保持；打开、关闭或系统返回本身不修改订阅，只有开关或订阅动作写入。 交付及手测见[三批统一验收](../architecture/design-unification-completion.md)。
+
 ## 4. 用户操作流程
 
 本人关系管理紧凑候选（待负责人验收）：从 `/me/following`、`/me/followers` 或本人公开主页进入，返回和“关注／粉丝”数量页签合并同一顶栏，分别保留滚动位置。列表取消卡片与固定第二操作行，40dp 头像、body 中等字重昵称、caption 等级、昵称起细分隔线；普通行约 65dp，大字空间不足时身份和操作自然换行，姓名省略但保留完整语义。回关／关注复用 filled 主按钮，已关注／互相关注复用共享 tonal 等宽状态按钮；状态或更多打开同一底部菜单，命中区至少 48dp。主／状态按钮的实际读屏语义包含用户名、动作及菜单用途，处理中仍保留目标。他人公开列表、黑名单与原深链保留原行为。
@@ -126,6 +128,8 @@ threads 页面消费主题互动和订阅控制器，moments 提供独立动态�
 2026-09-22 合并来源同步：Backend `4850e2f456ccc452c763853641e3b2136901e237`（PR #26），OpenAPI `5.25.0-dev.20260922.1`；与此前候选契约逐字节一致，本模块接口及应用代码未变。部署后的精确来源核验见[关系管理候选验收](../architecture/relations-management-acceptance.md)，真机验收仍待负责人完成。
 
 关系管理候选契约：Backend `ea1ff7e2c6baeae6bf0316e87812ba37bc823d7a`，OpenAPI `5.25.0-dev.20260922.1`；新增本人移除粉丝与双向关系可选投影，消费者实现及真机验收另记，不代表部署。Foundation 固定已发布 `v7.1.0`。
+
+2026-09-20 已部署来源复核：主契约来源同步为 Backend `4b133355c14198506e4a4380fd741cccd19d844d`，API `5.23.0-dev.20260913.1`，与远端 `origin/dev` 和公网 `/meta` 一致。HTTP/OpenAPI、生成客户端与已有 fixtures 无变化；新增行内组合语料与既有独立固定来源相同。本模块行为不变，详见[来源复核](../architecture/contract-source-review-20260920.md)。
 
 2026-09-20 自建收藏夹管理契约复核：Backend 契约来源 `e214fd18637cb10d79576c5ab5a4cf42340fef71`，OpenAPI `5.23.0-dev.20260913.1`；随后部署的 `4b133355c14198506e4a4380fd741cccd19d844d` 保持该接口契约不变。四个新增操作均已接入，负责人已确认最终 Debug 候选真机验收。自动检查、APK 与手测路径见[候选验收](../architecture/bookmark-folder-management-acceptance.md)。
 
