@@ -21,6 +21,13 @@ void main() {
     );
     final toggle = find.byKey(const Key('cover-data-saver'));
     expect(tester.widget<SwitchListTile>(toggle).value, isFalse);
+    expect(tester.widget<SwitchListTile>(toggle).subtitle, isNull);
+    await tester.tap(find.byTooltip('省流量说明'));
+    await tester.pumpAndSettle();
+    expect(find.text('开启后，帖子列表封面保持静态。'), findsOneWidget);
+    expect(tester.widget<SwitchListTile>(toggle).value, isFalse);
+    await tester.tap(find.text('关闭'));
+    await tester.pumpAndSettle();
     await tester.tap(toggle);
     await tester.pumpAndSettle();
     expect(tester.widget<SwitchListTile>(toggle).value, isTrue);
@@ -38,7 +45,13 @@ void main() {
     expect(find.text('跟随系统'), findsOneWidget);
     expect(find.text('亮色'), findsOneWidget);
     expect(find.text('黑夜'), findsOneWidget);
-    expect(find.text('随设备外观自动切换'), findsOneWidget);
+    expect(find.text('随设备外观自动切换'), findsNothing);
+    expect(
+      tester
+          .widgetList<ListTile>(find.byType(ListTile))
+          .every((tile) => tile.subtitle == null),
+      isTrue,
+    );
     expect(find.byType(WenyouSettingsTypography), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('appearance-option-dark')));
