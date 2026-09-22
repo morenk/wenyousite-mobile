@@ -1,6 +1,16 @@
 # 全屏图片图集候选验收
 
-状态：候选／待负责人真机验收。Mobile 未安装或合并，未发布正式 APK。兼容 Backend 已部署，当前不增加系统后台服务，不改变图片上传、正式 Markdown 或完成状态含义。
+状态：首轮真机验收发现正文图片来源定位失败；二轮候选修正已通过定向回归，待负责人在新 APK 上复验。Mobile 未合并，未发布正式 APK。兼容 Backend 已部署，当前不增加系统后台服务，不改变图片上传、正式 Markdown 或完成状态含义。
+
+## 首轮反馈与二轮候选
+
+负责人实测：在主贴或其他子贴正文点击图片进入全屏，点右上角来源定位按钮后提示“目标楼层已经发生变化，请返回搜索后重试”；普通楼层和楼中楼图片可以定位。代码核对确认，旧按钮把正文 `BODY` 的来源 ID 传给只接受 `FLOOR` 的 `?post=` 路由，且使用了容易被看成分享的外链图标。新候选将无父楼层且无楼层号的正文图片路由到所属 `?subthread=`，保留普通楼层 `?post=` 和楼中楼独立讨论坐标，并与主题页“跳到最新发言”共用 Foundation 指南针图标。按钮 tooltip 分别说明正文、楼层或回复目标。
+
+回归在旧实现先复现主贴/其他子贴正文的错误路由与旧图标；修改后 `test/features/media/reading_gallery_page_test.dart` 覆盖两类正文、普通楼层和楼中楼，四种实际点击路径及图标均通过。自动回归不代替负责人复验，尤其需检查非默认子贴切换后是否落在目标正文、普通关闭是否仍保留原阅读位置。
+
+二轮按普通定位 Bug 候选门禁执行 `npm run candidate:apk -- test/features/media/reading_gallery_page_test.dart test/features/threads/thread_image_gallery_test.dart -TestConcurrency 2`，全仓格式检查、应用与生成客户端全量静态分析、9 项直接相关测试及 Debug APK 构建均退出 0；`docs:check` 和 `architecture:check` 另行通过。本次没有重跑全量 Flutter 测试；上一轮 4,665 项全量通过只对应修改前的源码，不能充作二轮集成门禁。负责人验收通过后、合并前须对二轮最终应用源码运行完整门禁。
+
+二轮本机包：`D:/code/wenyousite/artifacts/mobile-image-gallery/image-gallery-locate-v2-debug.apk`，`site.wenyou.app.debug`，`0.7.1-debug+95`，183,539,770 字节，SHA-256 `7f867a5c1de69ba3c83e4b76efd3d757eb5f3ae9558b9324070b8fec99aa4ab2`。旧包哈希 `fa7787e5…` 不含本次修正，请勿用于复验。当前没有连接的 ADB 设备，未代负责人安装。
 
 ## 图集范围与操作
 
@@ -34,7 +44,7 @@
 
 首轮日志保留了两项实际失败（诊断端点索引漏生成、图片 builder 未注册统一行内入口）和当时公网 TLS 握手中断。两处源码问题修复后，使用上述冻结提交重新执行全部门禁，最终全量测试零失败。重点回归实际路径包括 `test/core/widgets/image_gallery_gestures_test.dart`、`content_image_viewer_page_test.dart`、`reading_gallery_occurrences_test.dart`，`test/features/media/reading_gallery_{controller,page,repository}_test.dart`、`test/features/threads/thread_image_gallery_test.dart`，以及动态动作、动画和页面测试。原有行内布局与对齐门禁保留，修复后 45 项相关回归另行通过。
 
-## Debug 候选包
+## 首轮 Debug 候选包（已被二轮替代）
 
 | 项目 | 结果 |
 | --- | --- |
@@ -54,7 +64,7 @@
 1. 在五类入口分别点首张、中间、末张；验证图集范围、重复图片位置、倒序/作者筛选及楼中楼隔离。
 2. 照片、长截图、透明图和 GIF 分别捏合、双击、平移、横滑、双指松一指再拖动；检查不会误切图或误关闭。
 3. 慢网中先看到本图，继续滑到边缘加载；失败原位重试。单张图片失败仍能滑过；GIF 失败跨查看器不自动重试。
-4. 关闭回到原滚动位置；来源按钮主动跳转当前楼层/评论；切换图片后保存/收藏内容与来源一致。
+4. 主贴及非默认子贴正文分别点图，核对右上角为主题“跳到最新发言”同款指南针，点击后到所属子贴正文且不再报目标楼层变化；普通楼层、楼中楼及动态评论仍定位正确。普通关闭回到原滚动位置；切换图片后保存/收藏内容与来源一致。
 5. 隔离环境中验证打开后内容编辑、删除、权限撤销；版本冲突要求重开，不可见和账号切换立即清除图片且迟到响应不恢复。
 6. 长帖与九图检查内存、清晰度、切换帧率与动画停止；不得以自动手势测试替代真机触控和性能验收。
 

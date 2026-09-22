@@ -230,6 +230,11 @@ class _ReadingImageGalleryPageState
                       image.parentPostId!,
                       postId: image.sourceId,
                     )
+                  : image.floorNumber == null
+                  ? AppRouteLocations.thread(
+                      image.threadId!,
+                      subthreadId: image.subthreadId!,
+                    )
                   : AppRouteLocations.thread(
                       image.threadId!,
                       postId: image.sourceId,
@@ -237,12 +242,16 @@ class _ReadingImageGalleryPageState
               Navigator.pop(context, location);
             },
             tooltip: widget.request.scope == ReadingGalleryScope.moment
-                ? '查看动态'
+                ? '定位到动态'
                 : widget.request.scope == ReadingGalleryScope.momentComments ||
                       widget.request.scope == ReadingGalleryScope.momentReplies
-                ? '查看所在评论'
-                : '查看所在楼层',
-            icon: const WenyouIcon(WenyouIconIds.actionOpenExternal),
+                ? '定位到所在评论'
+                : widget.request.scope == ReadingGalleryScope.postReplies
+                ? '定位到所在回复'
+                : _controller.current!.floorNumber == null
+                ? '定位到所在正文'
+                : '定位到所在楼层',
+            icon: const WenyouIcon(WenyouIconIds.navigationExplore),
           ),
       ],
       bottomOverlay: _controller.needsReload
