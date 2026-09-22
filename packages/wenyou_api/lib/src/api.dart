@@ -27,6 +27,7 @@ import 'package:wenyou_api/src/api/client_moderation_api.dart';
 import 'package:wenyou_api/src/api/direct_messages_api.dart';
 import 'package:wenyou_api/src/api/drafts_api.dart';
 import 'package:wenyou_api/src/api/health_api.dart';
+import 'package:wenyou_api/src/api/image_gallery_api.dart';
 import 'package:wenyou_api/src/api/media_api.dart';
 import 'package:wenyou_api/src/api/meta_api.dart';
 import 'package:wenyou_api/src/api/mobile_devices_api.dart';
@@ -245,6 +246,12 @@ class WenyouApi {
   /// by doing that all interceptors will not be executed
   HealthApi getHealthApi() {
     return HealthApi(dio, serializers);
+  }
+
+  /// Get ImageGalleryApi instance, base route and serializer can be overridden by a given but be careful,
+  /// by doing that all interceptors will not be executed
+  ImageGalleryApi getImageGalleryApi() {
+    return ImageGalleryApi(dio, serializers);
   }
 
   /// Get MediaApi instance, base route and serializer can be overridden by a given but be careful,

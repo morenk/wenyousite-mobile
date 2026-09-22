@@ -1,7 +1,8 @@
 {
   "schemaVersion": 1,
-  "contractVersion": "5.25.0-dev.20260922.1",
+  "contractVersion": "5.26.0-dev.20260922.3",
   "exclusions": [
+    { "operationId": "galleryList", "category": "planned_media", "reason": "后端 5.26 兼容新增完整图片图集读取；图集消费者由独立媒体切片实现锚点、双向游标和权限失效，本关系管理切片仅同步生成类型，保留既有图片查看行为。" },
     { "operationId": "adminContentList", "category": "admin_product", "reason": "移动端 V1 不承载管理产品。" },
     { "operationId": "adminContentDetail", "category": "admin_product", "reason": "移动端 V1 不承载管理产品。" },
     { "operationId": "adminContentUpdateTaxonomy", "category": "admin_product", "reason": "移动端 V1 不承载管理产品。" },

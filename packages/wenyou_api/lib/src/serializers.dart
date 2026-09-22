@@ -61,6 +61,7 @@ import 'package:wenyou_api/src/model/admin_index200_response.dart';
 import 'package:wenyou_api/src/model/admin_invite_acceptance_accept201_response.dart';
 import 'package:wenyou_api/src/model/admin_invite_created_response_dto.dart';
 import 'package:wenyou_api/src/model/admin_login_challenge_dto.dart';
+import 'package:wenyou_api/src/model/admin_login_verify_dto.dart';
 import 'package:wenyou_api/src/model/admin_moderation_appeals_list200_response.dart';
 import 'package:wenyou_api/src/model/admin_moderation_appeals_resolve201_response.dart';
 import 'package:wenyou_api/src/model/admin_moderation_get_user200_response.dart';
@@ -81,6 +82,7 @@ import 'package:wenyou_api/src/model/admin_reports_find_one200_response.dart';
 import 'package:wenyou_api/src/model/admin_reports_resolve200_response.dart';
 import 'package:wenyou_api/src/model/admin_search_users200_response.dart';
 import 'package:wenyou_api/src/model/admin_send_system_notification201_response.dart';
+import 'package:wenyou_api/src/model/admin_session_info_dto.dart';
 import 'package:wenyou_api/src/model/admin_session_response_dto.dart';
 import 'package:wenyou_api/src/model/admin_step_up_response_dto.dart';
 import 'package:wenyou_api/src/model/admin_system_notification_history_item_dto.dart';
@@ -206,6 +208,9 @@ import 'package:wenyou_api/src/model/economy_tip_user201_response.dart';
 import 'package:wenyou_api/src/model/economy_transactions200_response.dart';
 import 'package:wenyou_api/src/model/floor_response_dto.dart';
 import 'package:wenyou_api/src/model/forgot_password_dto.dart';
+import 'package:wenyou_api/src/model/gallery_image_dto.dart';
+import 'package:wenyou_api/src/model/gallery_list200_response.dart';
+import 'package:wenyou_api/src/model/gallery_page_dto.dart';
 import 'package:wenyou_api/src/model/handle_direct_request_dto.dart';
 import 'package:wenyou_api/src/model/health_check200_response.dart';
 import 'package:wenyou_api/src/model/health_check200_response_all_of_data.dart';
@@ -560,6 +565,7 @@ part 'serializers.g.dart';
   AdminInviteAcceptanceAccept201Response,
   AdminInviteCreatedResponseDto,
   AdminLoginChallengeDto,
+  AdminLoginVerifyDto,
   AdminModerationAppealsList200Response,
   AdminModerationAppealsResolve201Response,
   AdminModerationGetUser200Response,
@@ -580,6 +586,7 @@ part 'serializers.g.dart';
   AdminReportsResolve200Response,
   AdminSearchUsers200Response,
   AdminSendSystemNotification201Response,
+  AdminSessionInfoDto,
   AdminSessionResponseDto,
   AdminStepUpResponseDto,
   AdminSystemNotificationHistoryItemDto,
@@ -705,6 +712,9 @@ part 'serializers.g.dart';
   EconomyTransactions200Response,
   FloorResponseDto,
   ForgotPasswordDto,
+  GalleryImageDto,
+  GalleryList200Response,
+  GalleryPageDto,
   HandleDirectRequestDto,
   HealthCheck200Response,
   HealthCheck200ResponseAllOfData,

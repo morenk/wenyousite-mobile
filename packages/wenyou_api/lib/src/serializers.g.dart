@@ -65,6 +65,7 @@ Serializers _$serializers =
           ..add(AdminInviteAcceptanceAccept201Response.serializer)
           ..add(AdminInviteCreatedResponseDto.serializer)
           ..add(AdminLoginChallengeDto.serializer)
+          ..add(AdminLoginVerifyDto.serializer)
           ..add(AdminModerationAppealsList200Response.serializer)
           ..add(AdminModerationAppealsResolve201Response.serializer)
           ..add(AdminModerationGetUser200Response.serializer)
@@ -88,6 +89,7 @@ Serializers _$serializers =
           ..add(AdminReportsResolve200Response.serializer)
           ..add(AdminSearchUsers200Response.serializer)
           ..add(AdminSendSystemNotification201Response.serializer)
+          ..add(AdminSessionInfoDto.serializer)
           ..add(AdminSessionResponseDto.serializer)
           ..add(AdminStepUpResponseDto.serializer)
           ..add(AdminSystemNotificationHistoryItemDto.serializer)
@@ -238,6 +240,9 @@ Serializers _$serializers =
           ..add(FloorResponseDto.serializer)
           ..add(FloorResponseDtoKindEnum.serializer)
           ..add(ForgotPasswordDto.serializer)
+          ..add(GalleryImageDto.serializer)
+          ..add(GalleryList200Response.serializer)
+          ..add(GalleryPageDto.serializer)
           ..add(HandleDirectRequestDto.serializer)
           ..add(HandleDirectRequestDtoActionEnum.serializer)
           ..add(HealthCheck200Response.serializer)
@@ -826,6 +831,10 @@ Serializers _$serializers =
             () => ListBuilder<FloorResponseDto>(),
           )
           ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(GalleryImageDto)]),
+            () => ListBuilder<GalleryImageDto>(),
+          )
+          ..addBuilderFactory(
             const FullType(BuiltList, const [
               const FullType(HomeThreadListItemResponseDto),
             ]),
@@ -1380,13 +1389,6 @@ Serializers _$serializers =
               ]),
             ]),
             () => MapBuilder<String, BuiltMap<String, JsonObject?>>(),
-          )
-          ..addBuilderFactory(
-            const FullType(BuiltMap, const [
-              const FullType(String),
-              const FullType.nullable(JsonObject),
-            ]),
-            () => MapBuilder<String, JsonObject?>(),
           )
           ..addBuilderFactory(
             const FullType(BuiltMap, const [
