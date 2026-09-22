@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
@@ -343,9 +342,7 @@ class _TransactionTile extends StatelessWidget {
                 ),
                 SizedBox(height: tokens.space4),
                 Text(
-                  DateFormat(
-                    'yyyy-MM-dd HH:mm',
-                  ).format(transaction.createdAt.toLocal()),
+                  formatWenyouExactTime(transaction.createdAt),
                   style: Theme.of(
                     context,
                   ).textTheme.wenyouCaption.copyWith(color: tokens.mutedText),

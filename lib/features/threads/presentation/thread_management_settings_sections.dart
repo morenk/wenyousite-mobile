@@ -3,6 +3,7 @@ import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_selection_menu.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_settings_row.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_sheet.dart';
 import 'package:wenyousite_mobile/features/threads/domain/subthread_management_models.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_management_models.dart';
 
@@ -302,70 +303,43 @@ Future<T?> _showChoiceSheet<T>({
   String? supportingText,
   bool Function(T value)? isEnabled,
 }) {
-  return showModalBottomSheet<T>(
+  return showWenyouSheet<T>(
     context: context,
-    isScrollControlled: true,
-    useSafeArea: true,
-    showDragHandle: true,
-    builder: (sheetContext) {
-      final tokens = sheetContext.wenyouTokens;
-      return ConstrainedBox(
-        constraints: BoxConstraints(
-          maxHeight: MediaQuery.sizeOf(sheetContext).height * .9,
-        ),
-        child: ListView(
-          shrinkWrap: true,
-          padding: EdgeInsets.only(bottom: tokens.space16),
-          children: [
-            Padding(
-              padding: EdgeInsets.fromLTRB(
-                tokens.space16,
-                0,
-                tokens.space16,
-                tokens.space8,
+    builder: (sheetContext) => WenyouSheetBody(
+      title: title,
+      slivers: [
+        if (supportingText != null)
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.only(
+                bottom: sheetContext.wenyouTokens.space12,
               ),
               child: Text(
-                title,
-                style: Theme.of(sheetContext).textTheme.wenyouOverlayTitle,
+                supportingText,
+                style: Theme.of(sheetContext).textTheme.wenyouCaption,
               ),
             ),
-            if (supportingText != null)
-              Padding(
-                padding: EdgeInsets.fromLTRB(
-                  tokens.space16,
-                  0,
-                  tokens.space16,
-                  tokens.space12,
-                ),
-                child: Text(
-                  supportingText,
-                  style: Theme.of(sheetContext).textTheme.wenyouCaption,
-                ),
+          ),
+        SliverList.separated(
+          itemCount: options.length,
+          separatorBuilder: (_, _) => const Divider(height: 1),
+          itemBuilder: (context, index) {
+            final option = options[index];
+            final enabled = isEnabled?.call(option.value) ?? true;
+            return WenyouSelectionTile(
+              key: ValueKey(
+                '$optionKeyPrefix-${option.keyValue ?? option.value}',
               ),
-            for (var index = 0; index < options.length; index++) ...[
-              if (index > 0) const Divider(height: 1),
-              Builder(
-                builder: (context) {
-                  final option = options[index];
-                  final enabled = isEnabled?.call(option.value) ?? true;
-                  final isSelected = option.value == selected;
-                  return WenyouSelectionTile(
-                    key: ValueKey(
-                      '$optionKeyPrefix-${option.keyValue ?? option.value}',
-                    ),
-                    selected: isSelected,
-                    label: option.label,
-                    supportingLabel: option.supportingLabel,
-                    onTap: enabled
-                        ? () => Navigator.pop(sheetContext, option.value)
-                        : null,
-                  );
-                },
-              ),
-            ],
-          ],
+              selected: option.value == selected,
+              label: option.label,
+              supportingLabel: option.supportingLabel,
+              onTap: enabled
+                  ? () => Navigator.pop(sheetContext, option.value)
+                  : null,
+            );
+          },
         ),
-      );
-    },
+      ],
+    ),
   );
 }

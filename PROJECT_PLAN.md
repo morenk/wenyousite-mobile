@@ -11,7 +11,7 @@
 - 客户端：`0.7.1+95` Android 正式发布（GIF 正文上传修复）；新正式 APK 仅支持 Android 8+ ARM64，正文、标题和品牌文字继承平台系统字体，KaTeX、等宽呈现与 Material Icons 等功能依赖保留。正式包名 `site.wenyou.app`，Debug 包名 `site.wenyou.app.debug`，真机性能包名 `site.wenyou.app.profile`。负责人已对 GIF 修复同签名候选完成 ADB 覆盖安装并明确验证通过；build 95 应用 AOT 代码与该验收包摘要一致，线上 `/meta` 已晋级推荐 build 95。
 - 后端契约：`5.23.0-dev.20260913.1`，来源 `e214fd18637cb10d79576c5ab5a4cf42340fef71`；2026-09-19 诊断补全候选的完整门禁已核对公网 API、精确 revision、Markdown v5 激活状态与 `GET /threads` 兼容性。
 - 正文契约：公网当前激活 Markdown v5；客户端兼容 `{3, 4, 5}`，独占一行的普通图片可使用左、中、右块对齐；站内引用契约：`wenyousite-internal-reference` v1。
-- 视觉依赖：Foundation `v7.0.0`；系统字体迁移候选待 Android 8、较新 Android 与两种厂商字体真机验收。
+- 视觉依赖：Foundation `v7.1.0`；系统字体迁移候选待 Android 8、较新 Android 与两种厂商字体真机验收。
 - 表情网格及共享排序动画：2026-09-11 负责人真机验收通过并授权合并；表情管理采用五列紧凑网格、长按排序与静默乐观保存，子贴排序复用抬起／落下反馈。未取得 Profile 帧时间采样，见[验收记录](docs/architecture/sticker-grid-acceptance.md)。
 - 空正文选择 H2/H3：2026-09-09 负责人在覆盖安装的 Debug 包 `1c7fb8a6` 上验收通过，原问题修复完成，见[空标题验收](docs/architecture/editor-empty-heading-acceptance.md)。
 - 引用长文本溢出：2026-09-09 负责人在 Debug 包 `562a7954` 上验收通过；按实际行内内容高度排版，保留既有分页和删除调整。源码与验收记录见 [引用溢出验收](docs/architecture/quote-text-overflow-acceptance.md)。
@@ -22,7 +22,7 @@
 
 ## 当前优先级
 
-设置设计统一（2026-09-20）：负责人已授权按[六类设计统一计划](docs/architecture/design-unification-plan.md)开始。四批依次处理设置行与选择项、页面容器与错误重试、底部抽屉、内容时间；第一批候选通过 122 项相关测试、全量静态分析和 Debug APK 构建，待负责人真机验收。副标题清理 PR #47 仍待验收，本轮不代表已验收或授权合并。
+设置设计统一（2026-09-20）：[六类设计统一计划](docs/architecture/design-unification-plan.md)第一批设置行与选择项候选已通过 122 项相关测试、全量静态分析和 Debug APK 构建。负责人随后要求后三批一同完成，页面容器与错误重试、底部抽屉、内容时间已一同通过完整门禁（4,669 项 Flutter 测试、18 项 Windows 工具测试）与 Debug APK 构建，详见[后三批候选验收](docs/architecture/design-unification-completion.md)。全部候选仍待负责人真机验收，包含副标题清理 PR #47 与第一批 PR #48；本轮不代表授权合并或发布。
 
 组件统一修缮（2026-09-19）：第一批确认弹窗、异步按钮和分页反馈已通过完整本地门禁与 Debug APK 构建，负责人已明确真机验收通过并授权合并清理；第二至四批分别处理底部弹层、表单字段与校验、身份与时间展示，前批验收并获授权合并后继续。第四批内容时间保留“分钟前／小时前／天前”，满三天后的日期取消时分，同年仅月日、跨年带年份；精确业务时间单独保留。调用点与交付记录见[组件统一验收](docs/architecture/component-consistency-acceptance.md)。候选后端来源为 `602f57324256f358aea27d204937f9e15644f9c7`。集成期间公网升级为 `5.23.0`，既有接口保持兼容；负责人已明确允许本批线上契约版本检查例外，独立收藏夹契约同步仍由 PR #41 承担。
 

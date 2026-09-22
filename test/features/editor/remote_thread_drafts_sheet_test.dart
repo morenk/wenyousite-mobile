@@ -12,6 +12,56 @@ import '../../support/button_finder.dart';
 import '../../support/fake_thread_category_catalog.dart';
 
 void main() {
+  testWidgets('实际云草稿抽屉关闭返回空值，不恢复或删除草稿', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(320, 800);
+    tester.view.viewInsets = const FakeViewPadding(bottom: 250);
+    tester.platformDispatcher.textScaleFactorTestValue = 2;
+    addTearDown(tester.view.reset);
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    final repository = _FakeRepository([_summary('draft-1', '待选草稿')]);
+    final controller = RemoteThreadDraftsController(
+      repository,
+      autoStart: false,
+    );
+    await controller.load();
+    final results = <ThreadRemoteDraftSummary?>[];
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          remoteThreadDraftsControllerProvider.overrideWith(
+            (ref) => controller,
+          ),
+          threadCategoryCatalogRepositoryProvider.overrideWithValue(
+            FakeThreadCategoryCatalogRepository(),
+          ),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: Scaffold(
+            body: Builder(
+              builder: (context) => TextButton(
+                onPressed: () async {
+                  results.add(
+                    await showRemoteThreadDraftsSheet(context: context),
+                  );
+                },
+                child: const Text('打开草稿'),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('打开草稿'));
+    await tester.pumpAndSettle();
+    expect(find.text('待选草稿'), findsOneWidget);
+    await tester.tap(find.byTooltip('关闭云端主题草稿'));
+    await tester.pumpAndSettle();
+    expect(results, [null]);
+    expect(repository.removedIds, isEmpty);
+    expect(tester.takeException(), isNull);
+  });
   testWidgets('360dp 草稿箱展示当前项并二次确认删除其他云端草稿', (tester) async {
     tester.view.physicalSize = const Size(360, 800);
     tester.view.devicePixelRatio = 1;
