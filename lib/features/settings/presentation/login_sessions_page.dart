@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
@@ -312,5 +311,5 @@ String _platformIcon(LoginSessionPlatform platform) => switch (platform) {
 };
 
 String _formatTime(DateTime value) {
-  return DateFormat('yyyy-MM-dd HH:mm').format(value.toLocal());
+  return formatWenyouExactTime(value);
 }

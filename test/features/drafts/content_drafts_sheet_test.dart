@@ -81,7 +81,7 @@ void main() {
 
     await _pumpSheet(tester, controller, currentContent: '当前正文');
 
-    expect(find.text('只保存当前正文 · 已用 2/5'), findsOneWidget);
+    expect(find.text('已用 2/5'), findsOneWidget);
     expect(find.byKey(const Key('content-draft-slot-1')), findsOneWidget);
     expect(find.byKey(const Key('content-draft-slot-2')), findsOneWidget);
     expect(find.text('草稿位 1'), findsOneWidget);

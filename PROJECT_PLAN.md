@@ -22,6 +22,8 @@
 
 ## 当前优先级
 
+设置设计统一（2026-09-20）：[六类设计统一计划](docs/architecture/design-unification-plan.md)第一批设置行与选择项候选已通过 122 项相关测试、全量静态分析和 Debug APK 构建。负责人随后要求后三批一同完成，页面容器与错误重试、底部抽屉、内容时间已一同通过完整门禁（4,669 项 Flutter 测试、18 项 Windows 工具测试）与 Debug APK 构建，详见[后三批候选验收](docs/architecture/design-unification-completion.md)。全部候选仍待负责人真机验收，包含副标题清理 PR #47 与第一批 PR #48；本轮不代表授权合并或发布。
+
 组件统一修缮（2026-09-19）：第一批确认弹窗、异步按钮和分页反馈已通过完整本地门禁与 Debug APK 构建，负责人已明确真机验收通过并授权合并清理；第二至四批分别处理底部弹层、表单字段与校验、身份与时间展示，前批验收并获授权合并后继续。第四批内容时间保留“分钟前／小时前／天前”，满三天后的日期取消时分，同年仅月日、跨年带年份；精确业务时间单独保留。调用点与交付记录见[组件统一验收](docs/architecture/component-consistency-acceptance.md)。候选后端来源为 `602f57324256f358aea27d204937f9e15644f9c7`。集成期间公网升级为 `5.23.0`，既有接口保持兼容；负责人已明确允许本批线上契约版本检查例外，独立收藏夹契约同步仍由 PR #41 承担。
 
 富文本跨端稳定性专项沿用[阶段计划](docs/architecture/rich-text-stability-plan.md)、[三端历史基线](docs/architecture/rich-text-stability-baseline.md)和[共享操作矩阵提案](docs/architecture/rich-text-stability-matrix.md)。这些记录描述 2026-09-10 的审查现场；当前依赖和后续整改以上方最新基线及下述整改计划为准。

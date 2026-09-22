@@ -8,6 +8,7 @@ import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/network/session_controller.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_sheet.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/social/application/thread_subscription_controller.dart';
 
@@ -172,17 +173,12 @@ class ThreadSubscriptionControls extends ConsumerWidget {
     bool includeThreadToggle = false,
   }) {
     final openedScope = ref.read(sessionScopeProvider);
-    return showModalBottomSheet<void>(
+    return showWenyouSheet<void>(
       context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      builder: (_) => FractionallySizedBox(
-        heightFactor: 0.72,
-        child: _PlayerSubscriptionSheet(
-          threadId: threadId,
-          openedScope: openedScope,
-          includeThreadToggle: includeThreadToggle,
-        ),
+      builder: (_) => _PlayerSubscriptionSheet(
+        threadId: threadId,
+        openedScope: openedScope,
+        includeThreadToggle: includeThreadToggle,
       ),
     );
   }
@@ -215,142 +211,120 @@ class _PlayerSubscriptionSheet extends ConsumerWidget {
     final state = ref.watch(provider);
     final notifier = ref.read(provider.notifier);
     final tokens = context.wenyouTokens;
-    return SafeArea(
-      top: false,
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(
-          tokens.space16,
-          0,
-          tokens.space16,
-          tokens.space16,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              includeThreadToggle ? '管理更新订阅' : '订阅玩家发言',
-              style: Theme.of(context).textTheme.wenyouOverlayTitle,
-            ),
-            SizedBox(height: tokens.space4),
-            Text(
-              includeThreadToggle
-                  ? '选择要接收的官方更新或玩家发言提醒。'
-                  : '只列出本帖中已标记的普通玩家；可同时订阅多人。',
-              style: Theme.of(
-                context,
-              ).textTheme.wenyouCaption.copyWith(color: tokens.mutedText),
-            ),
-            if (state.actionFailure != null) ...[
-              SizedBox(height: tokens.space12),
-              _ActionFailure(
-                message: state.actionFailure!.userMessage,
-                detail: wenyouFailureDetail(
-                  state.actionFailure,
-                  treatAsWrite: true,
+    return WenyouSheetBody(
+      title: includeThreadToggle ? '管理更新订阅' : '订阅玩家发言',
+      slivers: [
+        SliverToBoxAdapter(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (state.actionFailure != null) ...[
+                SizedBox(height: tokens.space12),
+                _ActionFailure(
+                  message: state.actionFailure!.userMessage,
+                  detail: wenyouFailureDetail(
+                    state.actionFailure,
+                    treatAsWrite: true,
+                  ),
+                  onDismiss: notifier.clearActionFailure,
                 ),
-                onDismiss: notifier.clearActionFailure,
-              ),
-            ],
-            if (state.actionOutcome != null) ...[
-              SizedBox(height: tokens.space12),
-              _ActionOutcome(
-                outcome: state.actionOutcome!,
-                failure: state.actionOutcomeFailure,
-                requestId: state.actionRequestId,
-                onRefresh: notifier.load,
-              ),
-            ],
-            SizedBox(height: tokens.space12),
-            if (includeThreadToggle &&
-                state.phase == ThreadSubscriptionPhase.ready) ...[
-              ListTile(
-                key: const Key('thread-subscription-official'),
-                contentPadding: EdgeInsets.zero,
-                leading: WenyouIcon(
-                  !state.isThreadSubscribed
-                      ? WenyouIconIds.statusNotifications
-                      : WenyouIconIds.statusNotificationsActive,
+              ],
+              if (state.actionOutcome != null) ...[
+                SizedBox(height: tokens.space12),
+                _ActionOutcome(
+                  outcome: state.actionOutcome!,
+                  failure: state.actionOutcomeFailure,
+                  requestId: state.actionRequestId,
+                  onRefresh: notifier.load,
                 ),
-                title: const Text('官方更新'),
-                subtitle: Text(!state.isThreadSubscribed ? '尚未订阅' : '已订阅'),
-                trailing: Switch(
-                  value: state.isThreadSubscribed,
-                  onChanged: state.isPending
+              ],
+              SizedBox(height: tokens.space12),
+              if (includeThreadToggle &&
+                  state.phase == ThreadSubscriptionPhase.ready) ...[
+                ListTile(
+                  key: const Key('thread-subscription-official'),
+                  contentPadding: EdgeInsets.zero,
+                  leading: WenyouIcon(
+                    !state.isThreadSubscribed
+                        ? WenyouIconIds.statusNotifications
+                        : WenyouIconIds.statusNotificationsActive,
+                  ),
+                  title: const Text('官方更新'),
+                  trailing: Switch(
+                    value: state.isThreadSubscribed,
+                    onChanged: state.isPending
+                        ? null
+                        : (_) => _toggleThread(context, notifier),
+                  ),
+                  onTap: state.isPending
                       ? null
-                      : (_) => _toggleThread(context, notifier),
+                      : () => _toggleThread(context, notifier),
                 ),
-                onTap: state.isPending
-                    ? null
-                    : () => _toggleThread(context, notifier),
-              ),
-              Divider(height: 1, color: tokens.border),
-              SizedBox(height: tokens.space12),
-              Text('玩家发言', style: Theme.of(context).textTheme.wenyouRowTitle),
-              SizedBox(height: tokens.space4),
+                Divider(height: 1, color: tokens.border),
+                SizedBox(height: tokens.space12),
+                Text('玩家发言', style: Theme.of(context).textTheme.wenyouRowTitle),
+                SizedBox(height: tokens.space4),
+              ],
             ],
-            Expanded(
-              child: switch (state.phase) {
-                ThreadSubscriptionPhase.loading => const Center(
-                  child: CircularProgressIndicator(),
-                ),
-                ThreadSubscriptionPhase.failed => _PlayerLoadFailure(
-                  failure: state.failure,
-                  onRetry: notifier.load,
-                ),
-                ThreadSubscriptionPhase.ready when state.isLoadingCandidates =>
-                  const Center(child: CircularProgressIndicator()),
-                ThreadSubscriptionPhase.ready
-                    when state.candidateFailure != null =>
-                  _PlayerLoadFailure(
-                    failure: state.candidateFailure,
-                    onRetry: notifier.retryCandidates,
-                  ),
-                ThreadSubscriptionPhase.ready when state.candidates.isEmpty =>
-                  Center(
-                    child: Text(
-                      '暂无可订阅的玩家',
-                      style: Theme.of(context).textTheme.wenyouCaption,
-                    ),
-                  ),
-                ThreadSubscriptionPhase.ready => ListView.separated(
-                  itemCount: state.candidates.length,
-                  separatorBuilder: (_, _) => Divider(color: tokens.border),
-                  itemBuilder: (context, index) {
-                    final candidate = state.candidates[index];
-                    final subscribed = state.isUserSubscribed(candidate.userId);
-                    return ListTile(
-                      key: ValueKey(
-                        'thread-subscription-candidate-${candidate.userId}',
-                      ),
-                      contentPadding: EdgeInsets.zero,
-                      leading: WenyouAvatar(
-                        username: candidate.username,
-                        avatarUrl: candidate.avatarUrl,
-                        size: 40,
-                      ),
-                      title: Text(candidate.username),
-                      subtitle: Text('Lv.${candidate.level}'),
-                      trailing: OutlinedButton(
-                        key: ValueKey(
-                          'thread-subscription-user-${candidate.userId}',
-                        ),
-                        onPressed: state.isPending
-                            ? null
-                            : () => _toggleUser(
-                                context,
-                                notifier,
-                                candidate.userId,
-                              ),
-                        child: Text(subscribed ? '取消订阅' : '订阅发言'),
-                      ),
-                    );
-                  },
-                ),
-              },
-            ),
-          ],
+          ),
         ),
-      ),
+        if (state.phase == ThreadSubscriptionPhase.ready &&
+            !state.isLoadingCandidates &&
+            state.candidateFailure == null &&
+            state.candidates.isNotEmpty)
+          SliverList.separated(
+            itemCount: state.candidates.length,
+            separatorBuilder: (_, _) => Divider(color: tokens.border),
+            itemBuilder: (context, index) {
+              final candidate = state.candidates[index];
+              final subscribed = state.isUserSubscribed(candidate.userId);
+              return ListTile(
+                key: ValueKey(
+                  'thread-subscription-candidate-${candidate.userId}',
+                ),
+                contentPadding: EdgeInsets.zero,
+                leading: WenyouAvatar(
+                  username: candidate.username,
+                  avatarUrl: candidate.avatarUrl,
+                  size: 40,
+                ),
+                title: Text(candidate.username),
+                subtitle: Text('Lv.${candidate.level}'),
+                trailing: OutlinedButton(
+                  key: ValueKey('thread-subscription-user-${candidate.userId}'),
+                  onPressed: state.isPending
+                      ? null
+                      : () => _toggleUser(context, notifier, candidate.userId),
+                  child: Text(subscribed ? '取消订阅' : '订阅发言'),
+                ),
+              );
+            },
+          )
+        else
+          SliverToBoxAdapter(
+            child: switch (state.phase) {
+              ThreadSubscriptionPhase.loading => const WenyouListSkeleton(
+                label: '正在加载订阅',
+              ),
+              ThreadSubscriptionPhase.failed => _PlayerLoadFailure(
+                failure: state.failure,
+                onRetry: notifier.load,
+              ),
+              ThreadSubscriptionPhase.ready when state.isLoadingCandidates =>
+                const WenyouListSkeleton(label: '正在加载玩家'),
+              ThreadSubscriptionPhase.ready
+                  when state.candidateFailure != null =>
+                _PlayerLoadFailure(
+                  failure: state.candidateFailure,
+                  onRetry: notifier.retryCandidates,
+                ),
+              ThreadSubscriptionPhase.ready => Text(
+                '暂无可订阅的玩家',
+                style: Theme.of(context).textTheme.wenyouCaption,
+              ),
+            },
+          ),
+      ],
     );
   }
 

@@ -83,6 +83,8 @@ media application 负责相册选择、格式校验、`STICKER_SOURCE` 用途和
 
 2026-09-21 能力盘查基线：Backend `fc88ea09a808af9c54c1f5b971e116b3be4a471b` / API `5.24.0-dev.20260920.1`，与公网 `/meta` 一致。新增三个管理接口不属于移动端 V1；现有非管理 API 行为不变。Foundation 锁定正式 `v7.1.0`，普通内容读屏时间迁移为完整日期；业务能力盘查与候选验收单独记录。
 
+2026-09-20 已部署来源复核：主契约来源同步为 Backend `4b133355c14198506e4a4380fd741cccd19d844d`，API `5.23.0-dev.20260913.1`，与远端 `origin/dev` 和公网 `/meta` 一致。HTTP/OpenAPI、生成客户端与已有 fixtures 无变化；新增行内组合语料与既有独立固定来源相同。本模块行为不变，详见[来源复核](../architecture/contract-source-review-20260920.md)。
+
 2026-09-13 契约版本登记：当前移动端固定 OpenAPI `5.23.0-dev.20260913.1` 与 Backend revision `df4682548e3fc0291fc2cd19c7111b5f0fa53746`；本模块未因本次收藏夹端点扩展变更行为。
 
 2026-09-19 诊断切片契约复核：Backend `e214fd18637cb10d79576c5ab5a4cf42340fef71`，OpenAPI `5.23.0-dev.20260913.1`，与本次公网 `/meta` 一致；仅兼容新增主题/动态收藏夹重命名与删除端点，现有消费行为不变，新能力由独立收藏夹候选接入。
