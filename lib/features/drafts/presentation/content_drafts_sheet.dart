@@ -131,7 +131,7 @@ class _ReadyDrafts extends ConsumerWidget {
     );
     final canSave =
         MarkdownContent.hasVisibleContent(currentContent) &&
-        currentContent.length <= 10000;
+        currentContent.runes.length <= 10000;
     return SliverList.list(
       children: [
         WenyouPanel(

@@ -575,6 +575,7 @@ class AdminModerationApi {
   /// * [xCSRFToken] - 管理后台写操作必填
   /// * [cursor] - 服务端返回的不透明分页游标；首次请求不传，后续必须原样回传
   /// * [limit] - 每页条数（默认 20，最大 50）
+  /// * [id] - 精确用户编号
   /// * [q] - 用户名或邮箱关键词
   /// * [role]
   /// * [status]
@@ -591,6 +592,7 @@ class AdminModerationApi {
     String? xCSRFToken,
     String? cursor,
     num? limit = 20,
+    String? id,
     String? q,
     String? role,
     String? status,
@@ -630,6 +632,7 @@ class AdminModerationApi {
     final _queryParameters = <String, dynamic>{
       if (cursor != null) r'cursor': encodeQueryParameter(_serializers, cursor, const FullType(String)),
       if (limit != null) r'limit': encodeQueryParameter(_serializers, limit, const FullType(num)),
+      if (id != null) r'id': encodeQueryParameter(_serializers, id, const FullType(String)),
       if (q != null) r'q': encodeQueryParameter(_serializers, q, const FullType(String)),
       if (role != null) r'role': encodeQueryParameter(_serializers, role, const FullType(String)),
       if (status != null) r'status': encodeQueryParameter(_serializers, status, const FullType(String)),

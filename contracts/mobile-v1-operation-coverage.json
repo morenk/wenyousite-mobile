@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "contractVersion": "5.23.0-dev.20260913.1",
+  "contractVersion": "5.26.0-dev.20260922.3",
   "counts": {
-    "total": 220,
-    "v1": 103,
+    "total": 225,
+    "v1": 105,
     "deferred": 66,
-    "notApplicable": 50,
+    "notApplicable": 53,
     "infrastructure": 1
   },
   "operations": [
@@ -278,6 +278,14 @@
       "operationId": "usersFollowUnfollow",
       "method": "DELETE",
       "path": "/api/v1/users/follow/{id}",
+      "module": "users",
+      "disposition": "v1",
+      "status": "planned"
+    },
+    {
+      "operationId": "usersFollowRemoveFollower",
+      "method": "DELETE",
+      "path": "/api/v1/users/me/followers/{id}",
       "module": "users",
       "disposition": "v1",
       "status": "planned"
@@ -1411,6 +1419,30 @@
       "status": "not_applicable"
     },
     {
+      "operationId": "adminContentList",
+      "method": "GET",
+      "path": "/api/v1/admin/content",
+      "module": "admin",
+      "disposition": "not_applicable",
+      "status": "not_applicable"
+    },
+    {
+      "operationId": "adminContentDetail",
+      "method": "GET",
+      "path": "/api/v1/admin/content/{type}/{id}",
+      "module": "admin",
+      "disposition": "not_applicable",
+      "status": "not_applicable"
+    },
+    {
+      "operationId": "adminContentUpdateTaxonomy",
+      "method": "PATCH",
+      "path": "/api/v1/admin/content/thread/{id}/taxonomy",
+      "module": "admin",
+      "disposition": "not_applicable",
+      "status": "not_applicable"
+    },
+    {
       "operationId": "adminModerationListUsers",
       "method": "GET",
       "path": "/api/v1/admin/users",
@@ -1797,6 +1829,14 @@
       "module": "economy",
       "disposition": "deferred",
       "status": "deferred"
+    },
+    {
+      "operationId": "galleryList",
+      "method": "GET",
+      "path": "/api/v1/image-gallery",
+      "module": "image-gallery",
+      "disposition": "v1",
+      "status": "planned"
     }
   ]
 }
