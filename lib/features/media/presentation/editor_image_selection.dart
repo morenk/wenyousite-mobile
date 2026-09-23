@@ -25,6 +25,7 @@ Future<List<MediaUploadInput>?> pickEditorImages(
   WidgetRef ref, {
   int maximumSelection = 1,
   MediaUploadPurpose purpose = MediaUploadPurpose.richContent,
+  bool Function()? isCurrent,
 }) async {
   assert(maximumSelection > 0);
   final picker = ref.read(editorImagePickerPortProvider);
@@ -41,7 +42,7 @@ Future<List<MediaUploadInput>?> pickEditorImages(
       useRootNavigator: false,
       barrierDismissible: false,
     );
-    if (!context.mounted) return null;
+    if (!context.mounted || isCurrent?.call() == false) return null;
     if (useRecovered == true) {
       return recoveredStore
           .take(purpose)
@@ -51,7 +52,7 @@ Future<List<MediaUploadInput>?> pickEditorImages(
     }
     recoveredStore.discard(purpose);
   }
-  while (context.mounted) {
+  while (context.mounted && isCurrent?.call() != false) {
     try {
       final List<MediaUploadInput> inputs;
       if (maximumSelection > 1 && picker is RecoveryAwareEditorImagePicker) {
@@ -69,13 +70,15 @@ Future<List<MediaUploadInput>?> pickEditorImages(
         final input = await picker.pickFromGallery();
         inputs = input == null ? const [] : [input];
       }
-      if (!context.mounted || inputs.isEmpty) return null;
+      if (!context.mounted || isCurrent?.call() == false || inputs.isEmpty) {
+        return null;
+      }
       return inputs
           .take(maximumSelection)
           .map((input) => input.withPurpose(purpose))
           .toList(growable: false);
     } on Object catch (error) {
-      if (!context.mounted) return null;
+      if (!context.mounted || isCurrent?.call() == false) return null;
       final retry = await showWenyouConfirmationDialog(
         context: context,
         title: '选择图片失败',

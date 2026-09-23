@@ -17,6 +17,32 @@ import 'package:wenyousite_mobile/features/social/domain/thread_subscription_mod
 import 'package:wenyousite_mobile/features/social/presentation/thread_subscription_controls.dart';
 
 void main() {
+  testWidgets('320dp 两倍字号订阅抽屉可关闭和返回，未操作不写入', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(320, 800);
+    tester.platformDispatcher.textScaleFactorTestValue = 2;
+    addTearDown(tester.view.reset);
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    final repository = _FakeRepository();
+    final container = await _authenticatedContainer(repository);
+    addTearDown(container.dispose);
+    await tester.pumpWidget(_app(container));
+    await tester.pumpAndSettle();
+    for (final close in [true, false]) {
+      await tester.tap(find.byKey(const Key('thread-subscription-players')));
+      await tester.pumpAndSettle();
+      expect(find.text('骰子猫'), findsOneWidget);
+      if (close) {
+        await tester.tap(find.byTooltip('关闭订阅玩家发言'));
+      } else {
+        await tester.binding.handlePopRoute();
+      }
+      await tester.pumpAndSettle();
+      expect(find.byTooltip('关闭订阅玩家发言'), findsNothing);
+      expect(repository.createCalls, 0);
+      expect(tester.takeException(), isNull);
+    }
+  });
   testWidgets('游客与自动接收更新的管理者不加载或显示订阅控件', (tester) async {
     final guestRepository = _FakeRepository();
     await tester.pumpWidget(_guestApp(guestRepository));

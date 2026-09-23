@@ -33,7 +33,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(gateway.requests, 0);
     expect(find.text('消息通知未开启。'), findsOneWidget);
-    expect(find.text('也可在系统设置中开启。'), findsOneWidget);
+    expect(find.text('也可在系统设置中开启。'), findsNothing);
     await tester.ensureVisible(find.text('申请权限'));
     await tester.tap(find.text('申请权限'));
     await tester.pumpAndSettle();
@@ -75,8 +75,35 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(find.text('管理消息弹窗'), findsOneWidget);
+      expect(find.text('管理消息弹窗'), findsNothing);
+      final semantics = tester.ensureSemantics();
+      expect(
+        tester.getSemantics(find.byTooltip('后台消息提醒说明')),
+        matchesSemantics(
+          tooltip: '后台消息提醒说明',
+          isButton: true,
+          hasEnabledState: true,
+          isEnabled: true,
+          isFocusable: true,
+          hasTapAction: true,
+          hasFocusAction: true,
+        ),
+      );
+      semantics.dispose();
+      expect(find.text('后台常驻提醒，可能增加耗电；划掉应用后停止。'), findsNothing);
+      expect(
+        tester.widget<SwitchListTile>(find.byType(SwitchListTile)).subtitle,
+        isNull,
+      );
+      await tester.tap(find.byTooltip('后台消息提醒说明'));
+      await tester.pumpAndSettle();
       expect(find.text('后台常驻提醒，可能增加耗电；划掉应用后停止。'), findsOneWidget);
+      expect(
+        container.read(backgroundReminderPreferenceProvider).enabled,
+        isTrue,
+      );
+      await tester.tap(find.text('关闭'));
+      await tester.pumpAndSettle();
       expect(find.textContaining('系统默认提示音'), findsNothing);
       expect(find.textContaining('30 秒'), findsNothing);
       expect(

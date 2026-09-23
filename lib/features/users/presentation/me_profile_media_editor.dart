@@ -367,13 +367,6 @@ class _CoverEditTarget extends StatelessWidget {
               ),
               SizedBox(height: tokens.space8),
               Text('添加主页背景', style: Theme.of(context).textTheme.wenyouRowTitle),
-              SizedBox(height: tokens.space4),
-              Text(
-                '选择图片后可调整取景',
-                style: Theme.of(
-                  context,
-                ).textTheme.wenyouCaption.copyWith(color: tokens.mutedText),
-              ),
             ],
           ),
         ),

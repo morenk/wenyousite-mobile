@@ -14,6 +14,8 @@
 
 “消息”是底部主分支，规范路由使用 `/notifications`；“私聊”页签写入 `/notifications?section=directMessages`，旧 `/messages` 仅作兼容重定向。游客留在分支内看到登录引导并携带同一路径回跳。通知项按 `target.kind` 导航：主楼层使用 `/threads/:threadId?post=:postId`，楼中楼回复使用 `/threads/:threadId/posts/:parentPostId/replies?post=:postId`，thread 使用 `/threads/:threadId`，user 使用 `/users/:userId`，moment 使用 `/moments/:momentId`；动态评论目标附加 `?comment=:momentCommentId`，由详情重新读取权威上下文。未知类型、无目标和已删除目标只展示安全正文。
 
+Foundation v7.1.0 时间呈现候选／待验收：普通内容不足 72 小时保留相对时间，满 72 小时和未来时间显示同年短日期或跨年完整日期；读屏提供完整日期，不含时分。安全、审计、账务、预约及到期时刻保留精确时间。原始时间戳不变。普通内容时间共用一个前台分钟刷新源，恢复前台立即更新，没有消费者或进入后台时停止；不为每行创建计时器。
+
 ## 4. 用户操作流程
 
 组件统一第一批（2026-09-19，负责人验收通过）：单条通知删除接入共享异步图标按钮；列表分页继续使用已有共享入口，批量已读由消息中心提供，通知导航和已读事实不变。 入口清单、自动检查及真机步骤见[组件统一验收](../architecture/component-consistency-acceptance.md)。
@@ -112,7 +114,11 @@ V1 仅 API 拉取，不做 FCM、WebSocket、SSE、后台唤醒或后台角标�
 
 ## 13. 最近审查的契约版本和后端提交
 
-2026-09-20 构建切片前核对：后端来源同步至 `4b133355c14198506e4a4380fd741cccd19d844d`，API `5.23.0-dev.20260913.1`；OpenAPI 无变化，本模块既有业务行为与验收状态不变。
+2026-09-23 契约同步复核：Backend `92b030a81f8957386e324fed477bd1e46faf65ea`、OpenAPI `5.26.0-dev.20260922.3`，与公网 `/meta` 一致。新增图集、关系管理及管理端字段不改变本切片通知读取与跳转行为；失效目标的通知处理由独立切片推进，本次不提前接入。
+
+2026-09-21 能力盘查基线：Backend `fc88ea09a808af9c54c1f5b971e116b3be4a471b` / API `5.24.0-dev.20260920.1`，与公网 `/meta` 一致。新增三个管理接口不属于移动端 V1；现有非管理 API 行为不变。Foundation 锁定正式 `v7.1.0`，普通内容读屏时间迁移为完整日期；业务能力盘查与候选验收单独记录。
+
+2026-09-20 已部署来源复核：主契约来源同步为 Backend `4b133355c14198506e4a4380fd741cccd19d844d`，API `5.23.0-dev.20260913.1`，与远端 `origin/dev` 和公网 `/meta` 一致。HTTP/OpenAPI、生成客户端与已有 fixtures 无变化；新增行内组合语料与既有独立固定来源相同。本模块行为不变，详见[来源复核](../architecture/contract-source-review-20260920.md)。
 
 2026-09-13 契约版本登记：当前移动端固定 OpenAPI `5.23.0-dev.20260913.1` 与 Backend revision `df4682548e3fc0291fc2cd19c7111b5f0fa53746`；本模块未因本次收藏夹端点扩展变更行为。
 

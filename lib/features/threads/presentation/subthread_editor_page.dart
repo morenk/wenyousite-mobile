@@ -134,7 +134,7 @@ class _SubthreadEditorPageState extends ConsumerState<SubthreadEditorPage> {
           validator: (value) {
             final title = value?.trim() ?? '';
             if (title.isEmpty) return '请输入子贴标题';
-            if (title.length > 100) return '标题不能超过 100 个字符';
+            if (title.runes.length > 100) return '标题不能超过 100 个字符';
             return null;
           },
         ),

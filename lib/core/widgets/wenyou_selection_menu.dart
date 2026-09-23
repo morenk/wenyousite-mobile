@@ -272,6 +272,7 @@ class WenyouSelectionRow extends StatelessWidget {
     this.supportingLabel,
     this.trailingLabel,
     this.leading,
+    this.enabled = true,
     super.key,
   });
 
@@ -280,6 +281,7 @@ class WenyouSelectionRow extends StatelessWidget {
   final String? supportingLabel;
   final String? trailingLabel;
   final Widget? leading;
+  final bool enabled;
 
   @override
   Widget build(BuildContext context) {
@@ -313,7 +315,9 @@ class WenyouSelectionRow extends StatelessWidget {
                       Text(
                         label,
                         style: theme.wenyouCompactBody.copyWith(
-                          color: selected
+                          color: !enabled
+                              ? Theme.of(context).disabledColor
+                              : selected
                               ? tokens.onAccentedBackground
                               : tokens.text,
                           fontWeight: selected
@@ -335,7 +339,9 @@ class WenyouSelectionRow extends StatelessWidget {
                       ? WenyouIcon(
                           WenyouIconIds.actionConfirm,
                           size: 18,
-                          color: tokens.brandForeground,
+                          color: enabled
+                              ? tokens.brandForeground
+                              : Theme.of(context).disabledColor,
                         )
                       : null,
                 ),
@@ -346,6 +352,41 @@ class WenyouSelectionRow extends StatelessWidget {
       ),
     );
   }
+}
+
+/// 页面与抽屉里的整行选择入口，选择和禁用状态共用菜单的呈现。
+class WenyouSelectionTile extends StatelessWidget {
+  const WenyouSelectionTile({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+    this.supportingLabel,
+    this.leading,
+    super.key,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback? onTap;
+  final String? supportingLabel;
+  final Widget? leading;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    button: true,
+    enabled: onTap != null,
+    child: InkWell(
+      borderRadius: BorderRadius.circular(context.wenyouTokens.radius12),
+      onTap: onTap,
+      child: WenyouSelectionRow(
+        label: label,
+        selected: selected,
+        enabled: onTap != null,
+        supportingLabel: supportingLabel,
+        leading: leading,
+      ),
+    ),
+  );
 }
 
 class WenyouMenuActionLabel extends StatelessWidget {

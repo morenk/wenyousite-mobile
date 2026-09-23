@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/diagnostics/diagnostic_widgets.dart';
 import 'package:wenyousite_mobile/core/diagnostics/failure_diagnostics.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_settings_body.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 
 class DiagnosticSettingsPage extends ConsumerWidget {
@@ -14,19 +15,21 @@ class DiagnosticSettingsPage extends ConsumerWidget {
       body: AnimatedBuilder(
         animation: diagnostics,
         builder: (context, _) {
-          return ListView(
+          return WenyouSettingsBody(
             children: [
-              SwitchListTile(
-                title: const Text('自动发送故障诊断'),
-                subtitle: const Text('帮助定位故障。不包含正文、图片、链接和账号信息。'),
+              WenyouSettingsToggle(
+                title: '自动发送故障诊断',
+                help: '不包含正文、图片、链接和账号信息。最多保留 7 天内的 50 条记录。退出账号或切换账号时清除。',
                 value: diagnostics.automaticSending,
                 onChanged: diagnostics.setAutomaticSending,
               ),
               if (!diagnostics.remoteAvailable)
-                const ListTile(title: Text('当前版本仅保留本机记录，可复制后反馈。')),
+                const WenyouStatusBanner(message: '当前版本仅保留本机记录，可复制后反馈。'),
               if (!diagnostics.storageAvailable)
-                const ListTile(title: Text('记录保存失败，请在退出应用前复制需要反馈的问题。')),
-              const ListTile(subtitle: Text('最多保留 7 天内的 50 条记录。退出账号或切换账号时清除。')),
+                const WenyouStatusBanner(
+                  message: '记录保存失败，请在退出应用前复制需要反馈的问题。',
+                  tone: WenyouStatusTone.error,
+                ),
               ListTile(
                 title: const Text('清除本机记录'),
                 enabled: diagnostics.records.isNotEmpty,
