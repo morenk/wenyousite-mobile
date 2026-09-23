@@ -10,12 +10,103 @@ import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/network/session_remote.dart';
 import 'package:wenyousite_mobile/core/storage/token_store.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_async_button.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
 import 'package:wenyousite_mobile/features/reports/data/report_repository.dart';
 import 'package:wenyousite_mobile/features/reports/domain/report_models.dart';
 import 'package:wenyousite_mobile/features/reports/presentation/report_widgets.dart';
 
 void main() {
+  testWidgets('举报取消同帧重复激活只关闭所属表单', (tester) async {
+    final repository = _WidgetReportRepository();
+    await tester.pumpWidget(await _reportApp(repository));
+    await tester.tap(find.text('举报'));
+    await tester.pumpAndSettle();
+    final cancel = tester
+        .widget<TextButton>(find.widgetWithText(TextButton, '取消'))
+        .onPressed!;
+    cancel();
+    cancel();
+    await tester.pumpAndSettle();
+    expect(find.byType(AlertDialog), findsNothing);
+    expect(find.text('举报'), findsOneWidget);
+    expect(repository.calls, 0);
+  });
+
+  testWidgets('举报路由已打开但首帧未构建时切号，不得显示旧目标表单', (tester) async {
+    final repository = _WidgetReportRepository();
+    final container = await _reportContainer(repository);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const MaterialApp(home: Scaffold(body: _ReportTestButton())),
+      ),
+    );
+    await tester.tap(find.text('举报'));
+    await container
+        .read(sessionControllerProvider.notifier)
+        .authenticate(_tokens('reporter-2'));
+    await tester.pumpAndSettle();
+    expect(find.byType(AlertDialog), findsNothing);
+    expect(repository.calls, 0);
+  });
+
+  testWidgets('切号撤下旧举报弹层，旧提交回调不能使用新账号且不误关覆盖路由', (tester) async {
+    final repository = _WidgetReportRepository();
+    final container = await _reportContainer(repository);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const MaterialApp(home: Scaffold(body: _ReportTestButton())),
+      ),
+    );
+    await tester.tap(find.text('举报'));
+    await tester.pumpAndSettle();
+    final staleSubmit = tester
+        .widget<WenyouAsyncButton>(find.byKey(const Key('report-submit')))
+        .onPressed!;
+    final context = tester.element(find.byType(AlertDialog));
+    unawaited(
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => const Scaffold(body: Text('覆盖页面')),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await container
+        .read(sessionControllerProvider.notifier)
+        .authenticate(_tokens('reporter-2'));
+    staleSubmit();
+    await tester.pumpAndSettle();
+    expect(repository.calls, 0);
+    expect(find.text('覆盖页面'), findsOneWidget);
+    expect(find.byType(AlertDialog, skipOffstage: false), findsNothing);
+  });
+
+  testWidgets('举报在途切号丢弃迟到成功，不向新账号展示成功提示', (tester) async {
+    final repository = _DelayedWidgetReportRepository();
+    final container = await _reportContainer(repository);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const MaterialApp(home: Scaffold(body: _ReportTestButton())),
+      ),
+    );
+    await tester.tap(find.text('举报'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('report-submit')));
+    await tester.pump();
+    await container
+        .read(sessionControllerProvider.notifier)
+        .authenticate(_tokens('reporter-2'));
+    repository.complete();
+    await tester.pumpAndSettle();
+    expect(repository.calls, 1);
+    expect(find.byType(AlertDialog), findsNothing);
+    expect(find.textContaining('管理员会根据站点规范进行审核'), findsNothing);
+  });
+
   testWidgets('其他原因必须填写说明，成功展示人工审核确认', (tester) async {
     final repository = _WidgetReportRepository();
     await tester.pumpWidget(await _reportApp(repository));

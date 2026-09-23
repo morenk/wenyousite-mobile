@@ -18,6 +18,13 @@ import 'package:wenyousite_mobile/features/media/domain/media_upload_normalizer.
 
 typedef MediaUploadDelay = Future<void> Function(Duration duration);
 
+const _mediaProcessingFailure = ApiFailure(
+  source: FailureSource.service,
+  reason: FailureReason.validation,
+  recoveryAction: FailureRecoveryAction.retry,
+  diagnosticCode: 'media_processing_failed',
+);
+
 abstract interface class MediaUploadRepository {
   Future<UploadedEditorImage> uploadImage(
     MediaUploadInput input, {
@@ -198,12 +205,7 @@ class ApiMediaUploadRepository
         return _completedImage(confirmed, input.purpose);
       }
       if (confirmed.status == MediaResponseDtoStatusEnum.FAILED) {
-        throw const ApiFailure(
-          source: FailureSource.service,
-          reason: FailureReason.validation,
-          recoveryAction: FailureRecoveryAction.retry,
-          diagnosticCode: 'media_processing_failed',
-        );
+        throw _mediaProcessingFailure;
       }
 
       onProgress?.call(
@@ -275,12 +277,7 @@ class ApiMediaUploadRepository
         return _completedImage(media, purpose);
       }
       if (media.status == MediaResponseDtoStatusEnum.FAILED) {
-        throw const ApiFailure(
-          source: FailureSource.service,
-          reason: FailureReason.validation,
-          recoveryAction: FailureRecoveryAction.retry,
-          diagnosticCode: 'media_processing_failed',
-        );
+        throw _mediaProcessingFailure;
       }
       if (attempt + 1 < _maxPollAttempts) {
         await _wait(const Duration(seconds: 1), cancelToken);
@@ -339,12 +336,7 @@ class ApiMediaUploadRepository
         return _completedImage(media, upload.purpose);
       }
       if (media.status == MediaResponseDtoStatusEnum.FAILED) {
-        throw const ApiFailure(
-          source: FailureSource.service,
-          reason: FailureReason.validation,
-          recoveryAction: FailureRecoveryAction.retry,
-          diagnosticCode: 'media_processing_failed',
-        );
+        throw _mediaProcessingFailure;
       }
     }
     return _waitForCompletedUpload(

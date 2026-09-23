@@ -11,7 +11,11 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_ports.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
+import 'package:wenyousite_mobile/features/media/media_ui.dart';
+import 'package:wenyousite_mobile/features/moments/application/moment_draft_store_ports.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_comment_composer.dart';
+
+import '../../support/memory_pending_media_file_store.dart';
 
 void main() {
   for (final sample in [
@@ -160,13 +164,20 @@ void main() {
     fixture.picker.result.complete(_input);
     await tester.pump();
     expect(fixture.draft.image, isNull);
+    await tester.pump(const Duration(milliseconds: 100));
     fixture.gateway.operations.single.resultCompleter.completeError(
       const ApiFailure(userMessage: '测试上传失败'),
     );
     await tester.pumpAndSettle();
     expect(fixture.draft.image, isNull);
     expect(fixture.draft.content, '保留文字');
-    await tester.tap(find.byKey(const Key('moment-comment-retry-upload')));
+    await tester.tap(
+      find.byWidgetPredicate(
+        (widget) => widget is PendingImageOverlay && widget.failed,
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('重试'));
     await tester.pump();
     expect(fixture.picker.calls, 1);
     expect(fixture.gateway.inputs.map((i) => i.filename), [
@@ -187,7 +198,8 @@ void main() {
     await fixture.pick(tester);
     fixture.picker.result.complete(_input);
     await tester.pump();
-    await tester.tap(find.byKey(const Key('moment-comment-cancel-upload')));
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.tap(find.byTooltip('移除图片 1'));
     await tester.pump();
     expect(fixture.gateway.operations.single.cancelled, isTrue);
     fixture.gateway.operations.single.resultCompleter.complete(_newImage);
@@ -254,6 +266,10 @@ class _Fixture {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          momentComposerOwnerResolverProvider.overrideWithValue(
+            () async => 'owner',
+          ),
+          memoryPendingMediaFileStoreOverride(),
           editorImagePickerPortProvider.overrideWithValue(picker),
           mediaUploadGatewayPortProvider.overrideWithValue(gateway),
         ],

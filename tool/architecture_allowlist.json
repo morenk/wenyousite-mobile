@@ -19,6 +19,7 @@
     "posts->stickers",
     "search->moments",
     "search->thread_feed",
+    "social->reports",
     "social->thread_feed",
     "stickers->media",
     "tags->thread_feed",

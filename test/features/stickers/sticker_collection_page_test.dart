@@ -289,9 +289,8 @@ Future<void> _confirmImageCrop(WidgetTester tester) async {
 class _FakeStickerRepository implements StickerRepository {
   _FakeStickerRepository({
     List<UserSticker> initialItems = const [],
-    List<StickerImport> pendingImports = const [],
-  }) : _items = [...initialItems],
-       _pendingImports = pendingImports;
+    this._pendingImports = const [],
+  }) : _items = [...initialItems];
 
   final List<UserSticker> _items;
   final List<StickerImport> _pendingImports;

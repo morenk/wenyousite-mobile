@@ -27,7 +27,14 @@ class ApiUserRelationListRepository implements UserRelationListRepository {
       return List.unmodifiable(
         records
             .where((record) => record.following != null)
-            .map((record) => _mapAuthor(record.following!, record.createdAt)),
+            .map(
+              (record) => _mapAuthor(
+                record.following!,
+                record.createdAt,
+                following: record.viewerIsFollowing,
+                followedBy: record.viewerIsFollowedBy,
+              ),
+            ),
       );
     } on DioException catch (error) {
       throw ApiFailure.fromDio(error);
@@ -46,7 +53,14 @@ class ApiUserRelationListRepository implements UserRelationListRepository {
       return List.unmodifiable(
         records
             .where((record) => record.follower != null)
-            .map((record) => _mapAuthor(record.follower!, record.createdAt)),
+            .map(
+              (record) => _mapAuthor(
+                record.follower!,
+                record.createdAt,
+                following: record.viewerIsFollowing,
+                followedBy: record.viewerIsFollowedBy,
+              ),
+            ),
       );
     } on DioException catch (error) {
       throw ApiFailure.fromDio(error);
@@ -70,8 +84,10 @@ class ApiUserRelationListRepository implements UserRelationListRepository {
 
   UserRelationListItem _mapAuthor(
     PostAuthorResponseDto author,
-    DateTime relatedAt,
-  ) {
+    DateTime relatedAt, {
+    bool? following,
+    bool? followedBy,
+  }) {
     return UserRelationListItem(
       userId: author.id,
       username: author.username,
@@ -80,6 +96,8 @@ class ApiUserRelationListRepository implements UserRelationListRepository {
       ),
       level: author.level.toInt(),
       relatedAt: relatedAt,
+      viewerIsFollowing: following,
+      viewerIsFollowedBy: followedBy,
     );
   }
 

@@ -232,7 +232,7 @@ class _MomentCommentComposerState extends ConsumerState<MomentCommentComposer>
             placeholder: widget.replyTo == null ? '发表评论…' : '写下回复…',
             semanticLabel: widget.replyTo == null ? '发表评论' : '写下回复',
             autofocus: true,
-            enabled: !_locked,
+            enabled: !_locked && !_picking,
           ),
           dockKey: const Key('moment-comment-editor-dock'),
           supporting: [
@@ -329,7 +329,7 @@ class _MomentCommentComposerState extends ConsumerState<MomentCommentComposer>
           ],
           submitAction: WenyouComposerSubmitButton(
             key: const Key('moment-comment-send'),
-            enabled: !_locked,
+            enabled: !_locked && !_picking,
             loading: _locked,
             label: _waitingToSend ? '正在发布…' : '发送',
             onPressed: () => _send(),
@@ -423,10 +423,13 @@ class _MomentCommentComposerState extends ConsumerState<MomentCommentComposer>
       return;
     }
     setState(() => _picking = true);
+    final selectionGeneration = _generation;
     final inputs = await pickEditorImages(
       context,
       ref,
       purpose: MediaUploadPurpose.momentComment,
+      isCurrent: () =>
+          mounted && !_closing && selectionGeneration == _generation,
     );
     if (!mounted || _closing) return;
     setState(() => _picking = false);
@@ -542,7 +545,7 @@ class _MomentCommentComposerState extends ConsumerState<MomentCommentComposer>
   }
 
   Future<void> _send() async {
-    if (_locked || !_textController.flush()) return;
+    if (_locked || _picking || !_textController.flush()) return;
     _hideImageLimitHint();
     if (_pendingInput != null) {
       if (_failed) {

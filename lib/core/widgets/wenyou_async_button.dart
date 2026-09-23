@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 
-enum WenyouAsyncButtonVariant { filled, outlined, text }
+enum WenyouAsyncButtonVariant { filled, tonal, outlined, text }
 
 enum WenyouAsyncButtonTone { normal, destructive }
 
@@ -40,6 +40,7 @@ class WenyouAsyncButton extends StatelessWidget {
     required this.onPressed,
     this.isLoading = false,
     this.loadingLabel,
+    this.semanticLabel,
     this.icon,
     this.expand = false,
     this.variant = WenyouAsyncButtonVariant.filled,
@@ -52,6 +53,7 @@ class WenyouAsyncButton extends StatelessWidget {
   final VoidCallback? onPressed;
   final bool isLoading;
   final String? loadingLabel;
+  final String? semanticLabel;
   final String? icon;
   final bool expand;
   final WenyouAsyncButtonVariant variant;
@@ -94,10 +96,30 @@ class WenyouAsyncButton extends StatelessWidget {
                     ),
                   )
                 : const ButtonStyle())
+            .merge(
+              variant == WenyouAsyncButtonVariant.tonal
+                  ? ButtonStyle(
+                      backgroundColor: WidgetStateProperty.resolveWith(
+                        (states) => states.contains(WidgetState.disabled)
+                            ? null
+                            : tokens.softPanel,
+                      ),
+                      foregroundColor: WidgetStateProperty.resolveWith(
+                        (states) => states.contains(WidgetState.disabled)
+                            ? null
+                            : destructive
+                            ? scheme.error
+                            : tokens.text,
+                      ),
+                    )
+                  : null,
+            )
             .merge(toneStyle);
     final child = Semantics(
       liveRegion: isLoading,
-      label: isLoading ? (loadingLabel ?? '$label，处理中') : label,
+      label: isLoading
+          ? (loadingLabel ?? '${semanticLabel ?? label}，处理中')
+          : semanticLabel ?? label,
       excludeSemantics: true,
       child: Stack(
         alignment: Alignment.center,
@@ -135,6 +157,11 @@ class WenyouAsyncButton extends StatelessWidget {
         child: child,
       ),
       WenyouAsyncButtonVariant.outlined => OutlinedButton(
+        style: style,
+        onPressed: callback,
+        child: child,
+      ),
+      WenyouAsyncButtonVariant.tonal => FilledButton.tonal(
         style: style,
         onPressed: callback,
         child: child,
