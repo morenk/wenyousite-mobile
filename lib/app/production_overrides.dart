@@ -55,6 +55,7 @@ import 'package:wenyousite_mobile/features/settings/application/settings_reposit
 import 'package:wenyousite_mobile/features/settings/data/account_deletion_repository.dart';
 import 'package:wenyousite_mobile/features/settings/data/credential_security_repository.dart';
 import 'package:wenyousite_mobile/features/settings/data/login_session_repository.dart';
+import 'package:wenyousite_mobile/features/social/application/user_relation_list_controller.dart';
 import 'package:wenyousite_mobile/features/social/data/bookmark_list_repository.dart';
 import 'package:wenyousite_mobile/features/social/data/thread_interaction_repository.dart';
 import 'package:wenyousite_mobile/features/social/data/thread_subscription_repository.dart';
@@ -281,6 +282,11 @@ List<Override> productionProviderOverrides() => [
   profileCacheInvalidatorProvider.overrideWith((ref) {
     return (userId) {
       ref.invalidate(meProfileControllerProvider);
+      ref.invalidate(userRelationListControllerProvider);
+      final accountId = ref.read(sessionScopeProvider).accountId;
+      if (accountId != null && accountId != userId) {
+        ref.invalidate(publicUserControllerProvider(accountId));
+      }
       if (userId != null) {
         ref.invalidate(publicUserControllerProvider(userId));
       }

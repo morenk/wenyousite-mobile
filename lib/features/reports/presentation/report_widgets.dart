@@ -5,6 +5,7 @@ import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/core/network/session_controller.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/reports/application/report_controller.dart';
@@ -65,13 +66,18 @@ Future<void> showWenyouReportFlow({
     );
     return;
   }
+  final scope = ref.read(sessionScopeProvider);
   final outcome = await showDialog<ReportResult>(
     context: context,
     barrierDismissible: false,
     builder: (context) =>
-        _ReportDialog(target: target, targetLabel: targetLabel),
+        _ReportDialog(target: target, targetLabel: targetLabel, scope: scope),
   );
-  if (!context.mounted || outcome == null) return;
+  if (!context.mounted ||
+      outcome == null ||
+      scope != ref.read(sessionScopeProvider)) {
+    return;
+  }
   showWenyouSnackBar(
     context,
     '举报已提交，管理员会根据站点规范进行审核。',
@@ -81,10 +87,15 @@ Future<void> showWenyouReportFlow({
 }
 
 class _ReportDialog extends ConsumerStatefulWidget {
-  const _ReportDialog({required this.target, required this.targetLabel});
+  const _ReportDialog({
+    required this.target,
+    required this.targetLabel,
+    required this.scope,
+  });
 
   final ReportTarget target;
   final String targetLabel;
+  final SessionScope scope;
 
   @override
   ConsumerState<_ReportDialog> createState() => _ReportDialogState();
@@ -94,6 +105,33 @@ class _ReportDialogState extends ConsumerState<_ReportDialog> {
   final _formKey = GlobalKey<FormState>();
   final _detailsController = TextEditingController();
   ReportReason _reason = ReportReason.spam;
+  SessionScope get _scope => widget.scope;
+  bool _invalidated = false;
+
+  void _close(ReportResult? result) {
+    if (!mounted || _invalidated) return;
+    _invalidated = true;
+    final route = ModalRoute.of(context);
+    if (route != null && route.isActive) {
+      if (route.isCurrent) {
+        Navigator.pop(context, result);
+      } else {
+        Navigator.of(context).removeRoute(route, result);
+      }
+    }
+  }
+
+  void _invalidate() {
+    if (_invalidated) return;
+    _invalidated = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final route = ModalRoute.of(context);
+      if (route != null && route.isActive) {
+        Navigator.of(context).removeRoute(route);
+      }
+    });
+  }
 
   @override
   void dispose() {
@@ -103,6 +141,14 @@ class _ReportDialogState extends ConsumerState<_ReportDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final scope = _scope;
+    ref.listen(sessionScopeProvider, (_, after) {
+      if (scope != after) _invalidate();
+    });
+    if (scope != ref.watch(sessionScopeProvider)) {
+      _invalidate();
+      return const SizedBox.shrink();
+    }
     final tokens = context.wenyouTokens;
     final provider = reportControllerProvider(widget.target);
     final state = ref.watch(provider);
@@ -187,7 +233,11 @@ class _ReportDialogState extends ConsumerState<_ReportDialog> {
         ),
         actions: [
           TextButton(
-            onPressed: state.isSubmitting ? null : () => Navigator.pop(context),
+            onPressed: state.isSubmitting
+                ? null
+                : () {
+                    if (!ref.read(provider).isSubmitting) _close(null);
+                  },
             child: const Text('取消'),
           ),
           WenyouAsyncButton(
@@ -202,10 +252,18 @@ class _ReportDialogState extends ConsumerState<_ReportDialog> {
   }
 
   Future<void> _submit() async {
+    if (!mounted || _invalidated || _scope != ref.read(sessionScopeProvider)) {
+      return;
+    }
     if (!(_formKey.currentState?.validate() ?? false)) return;
     final result = await ref
         .read(reportControllerProvider(widget.target).notifier)
         .submit(_reason, _detailsController.text);
-    if (result != null && mounted) Navigator.pop(context, result);
+    if (result != null &&
+        mounted &&
+        !_invalidated &&
+        _scope == ref.read(sessionScopeProvider)) {
+      _close(result);
+    }
   }
 }
