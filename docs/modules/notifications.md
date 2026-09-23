@@ -116,7 +116,7 @@ V1 仅 API 拉取，不做 FCM、WebSocket、SSE、后台唤醒或后台角标�
 
 ## 13. 最近审查的契约版本和后端提交
 
-2026-09-23 删除目标候选：Backend `92b030a81f8957386e324fed477bd1e46faf65ea`、OpenAPI `5.26.0-dev.20260922.3`，与公网 `/meta` 一致；移动端已消费 `target.state`，并与 Web 的删除内容、注销用户及普通无目标语义对齐。负责人原场景真机验收待完成，见[候选记录](../architecture/notification-deleted-target-acceptance.md)。
+2026-09-23 删除目标修复：Backend `92b030a81f8957386e324fed477bd1e46faf65ea`、OpenAPI `5.26.0-dev.20260922.3`，与公网 `/meta` 一致；移动端已消费 `target.state`，并与 Web 的删除内容、注销用户及普通无目标语义对齐。负责人已明确授权合并与清理，见[验收记录](../architecture/notification-deleted-target-acceptance.md)。
 
 2026-09-23 契约同步复核：Backend `92b030a81f8957386e324fed477bd1e46faf65ea`、OpenAPI `5.26.0-dev.20260922.3`，与公网 `/meta` 一致。新增图集、关系管理及管理端字段不改变本切片通知读取与跳转行为；失效目标的通知处理由独立切片推进，本次不提前接入。
 

@@ -1,6 +1,6 @@
-# 通知删除目标历史态候选验收
+# 通知删除目标历史态验收记录
 
-状态：候选修复／待负责人验收
+状态：负责人验收通过／修复完成
 
 ## 原始问题与复现边界
 
@@ -14,7 +14,7 @@
 
 Web 当前实现只允许 `ACTIVE` 导航，并按 `CONTENT_DELETED`、`USER_DEACTIVATED`、`NO_TARGET` 分别处理。移动端候选现已采用相同状态边界，同时保留适合移动端现有列表的历史态提示交互。
 
-## 候选行为
+## 最终行为
 
 - `ACTIVE`：按 post、thread、moment、user 的稳定坐标导航。
 - `CONTENT_DELETED`：按残留坐标显示“该评论已删除”“该动态已删除”“该内容已删除”；没有可判定坐标时显示“该内容已删除或不可访问”。
@@ -35,7 +35,7 @@ flutter test test/features/notifications/notification_repository_test.dart
 
 结果：24 项通过。回归覆盖旧实现失败的 `kind=none + CONTENT_DELETED` 映射，以及评论、动态、未知内容、注销用户、无目标、未知状态、页面提示、不导航和不重复标记已读。
 
-候选验证在最新 `origin/dev` 合并基线 `536bc30652dd5d40eff9df90b2602e7c56f5e580` 上执行 `npm run check:apk`：OpenAPI 校验、固定契约来源、生成客户端一致性、公网兼容、格式、应用与生成客户端静态分析、架构、模块文档、API 覆盖均通过；Flutter 测试 4696 项通过、1 项 live Sentry 预期跳过，Windows 发布工具测试 18/18 通过，并成功构建 Debug APK。
+候选验证在最新 `origin/dev` 合并基线 `536bc30652dd5d40eff9df90b2602e7c56f5e580` 上执行 `npm run check:apk`：OpenAPI 校验、固定契约来源、生成客户端一致性、公网兼容、格式、应用与生成客户端静态分析、架构、模块文档、API 覆盖均通过；Flutter 测试 4696 项通过、1 项 live Sentry 预期跳过，Windows 发布工具测试 18/18 通过，并成功构建 Debug APK。负责人在合并时明确要求跳过重复全量测试，只复跑通知相关测试。
 
 候选 APK：
 
@@ -45,14 +45,12 @@ flutter test test/features/notifications/notification_repository_test.dart
 - SHA-256：`EA5A24DCE62D56531BFD0B3EF42A3A690B1FD3CD07F7F9FE487602309C8199F6`
 - 构建时间：2026-09-23 23:47:19 +08:00
 
-## 负责人真机复验
+## 负责人验收结果
 
-负责人使用上述候选 APK、原账号和原通知复验：
+负责人于 2026-09-23 明确确认可以合并并清理任务分支，本候选据此进入“负责人验收通过／修复完成”。合并前按负责人要求只复跑以下通知相关路径：
 
-1. 打开 Debug 应用 `site.wenyou.app.debug`，进入“消息 → 通知”。
-2. 找到原先目标对象已经删除的通知，确认列表显示与对象类型匹配的历史态，且没有未读点。
-3. 点按通知，确认只出现同样的历史态提示，不进入不存在页面。
-4. 返回前台或等待一次后台检查，确认该历史通知不会再次产生系统顶部提醒。
-5. 另点一条仍存在目标的通知，确认正常导航未受影响；普通无目标系统通知不显示“已删除”。
+1. `test/features/notifications/notification_repository_test.dart`
+2. `test/features/notifications/notification_contract_test.dart`
+3. `test/features/notifications/notifications_page_test.dart`
 
-负责人明确确认原问题通过前，本记录保持“候选修复／待负责人验收”，不得标记修复完成。
+合并前结果：24 项通过；按负责人要求未重复执行全量测试。
