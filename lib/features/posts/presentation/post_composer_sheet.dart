@@ -529,7 +529,14 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet>
     try {
       final readiness = _pendingImages.waitForReady();
       final intent = _pendingImages.publishGeneration;
-      if (!await readiness || !mounted) return;
+      final ready = await readiness;
+      if (!mounted) return;
+      if (!ready) {
+        if (await _pendingImages.revealFirstFailure() && mounted) {
+          showWenyouSnackBar(context, '先处理未完成的图片');
+        }
+        return;
+      }
       await _submitReadyContent(intent);
     } finally {
       _pendingImages.finishWaiting();

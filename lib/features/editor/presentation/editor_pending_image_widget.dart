@@ -1,13 +1,13 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
-import 'package:wenyousite_mobile/core/widgets/wenyou_progress_ring.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_pending_images.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
 import 'package:wenyousite_mobile/features/media/media_ui.dart';
 
-class EditorPendingImageWidget extends StatefulWidget {
+class EditorPendingImageWidget extends StatelessWidget {
   const EditorPendingImageWidget({
     required this.id,
     required this.images,
@@ -15,89 +15,71 @@ class EditorPendingImageWidget extends StatefulWidget {
   });
   final String id;
   final EditorPendingImages images;
-  @override
-  State<EditorPendingImageWidget> createState() =>
-      _EditorPendingImageWidgetState();
-}
-
-class _EditorPendingImageWidgetState extends State<EditorPendingImageWidget> {
-  bool _showProgress = false;
-  Timer? _timer;
-  @override
-  void initState() {
-    super.initState();
-    _timer = Timer(const Duration(milliseconds: 300), () {
-      if (mounted) setState(() => _showProgress = true);
-    });
-  }
-
-  @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable: widget.images,
+      listenable: images,
       builder: (context, _) {
-        final item = widget.images.images[widget.id];
+        final item = images.images[id];
         final state = item?.state;
         final failed = item == null || item.missing || state?.failure != null;
         final delayed = state?.phase == MediaUploadTaskPhase.processingPending;
-        final fraction = state?.phase == MediaUploadTaskPhase.uploading
-            ? state?.progress?.fraction
-            : null;
         return Container(
-          key: ValueKey('pending-image-${widget.id}'),
+          key: images.anchorFor(id),
           constraints: const BoxConstraints(minHeight: 120, maxHeight: 320),
           color: context.wenyouTokens.softPanel,
           child: Stack(
-            alignment: Alignment.bottomRight,
+            alignment: Alignment.topRight,
             children: [
-              if (item?.input != null)
-                MediaUploadInputImage(
-                  input: item!.input!,
-                  fit: BoxFit.contain,
-                  errorBuilder: (_, _, _) => const SizedBox(
-                    height: 120,
-                    child: Center(child: Text('本机图片不可用')),
-                  ),
-                )
-              else
-                const SizedBox(
-                  height: 120,
-                  child: Center(child: Text('本机图片不可用')),
+              ConstrainedBox(
+                constraints: const BoxConstraints(
+                  minWidth: 120,
+                  minHeight: 120,
                 ),
-              Material(
-                color: Theme.of(context).colorScheme.surface,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (failed) ...[
-                      Text(delayed ? '图片准备较久' : '未完成'),
-                      if (item?.input != null &&
-                          state?.failure?.canRetry != false)
-                        TextButton(
-                          onPressed: widget.images.waitingToPublish
-                              ? null
-                              : () => widget.images.retry(widget.id),
-                          child: Text(delayed ? '继续' : '重试'),
+                child: PendingImageOverlay(
+                  key: ValueKey('pending-image-$id'),
+                  active: state?.isActivelyWorking ?? false,
+                  failed: failed,
+                  onFailureTap: () async {
+                    final action = await showPendingImageActions(
+                      context,
+                      title: delayed ? '图片准备较久' : '图片未完成',
+                      retryLabel: delayed ? '继续等待' : '重试',
+                      removeLabel: '移除图片',
+                      detail: state?.failure?.userMessage,
+                      canRetry:
+                          item?.input != null &&
+                          state?.failure?.canRetry != false &&
+                          !images.waitingToPublish,
+                    );
+                    if (!context.mounted) return;
+                    if (action == PendingImageAction.retry) {
+                      unawaited(images.retry(id));
+                    }
+                    if (action == PendingImageAction.remove) images.remove(id);
+                  },
+                  child: item?.input != null
+                      ? MediaUploadInputImage(
+                          input: item!.input!,
+                          fit: BoxFit.contain,
+                          errorBuilder: (_, _, _) => const SizedBox(
+                            height: 120,
+                            child: Center(child: Text('本机图片不可用')),
+                          ),
+                        )
+                      : const SizedBox(
+                          height: 120,
+                          child: Center(child: Text('本机图片不可用')),
                         ),
-                    ] else if (_showProgress) ...[
-                      WenyouProgressRing(value: fraction),
-                      if (fraction != null)
-                        Text(' ${(fraction * 100).round()}%'),
-                    ],
-                    TextButton(
-                      onPressed: widget.images.waitingToPublish
-                          ? null
-                          : () => widget.images.remove(widget.id),
-                      child: const Text('移除'),
-                    ),
-                  ],
                 ),
+              ),
+              IconButton.filledTonal(
+                tooltip: '移除图片',
+                onPressed: images.waitingToPublish
+                    ? null
+                    : () => images.remove(id),
+                icon: const WenyouIcon(WenyouIconIds.actionClose, size: 18),
               ),
             ],
           ),
@@ -114,14 +96,17 @@ class EditorPublishWaiting extends StatelessWidget {
   Widget build(BuildContext context) => ListenableBuilder(
     listenable: images,
     builder: (context, _) => images.waitingToPublish
-        ? Row(
-            children: [
-              Expanded(child: Text('还有 ${images.pendingCount} 张图片未就绪')),
-              TextButton(
-                onPressed: images.cancelPublish,
-                child: const Text('取消发布'),
-              ),
-            ],
+        ? DelayedPendingNotice(
+            waiting: true,
+            child: Row(
+              children: [
+                Expanded(child: Text('还有 ${images.pendingCount} 张图片未就绪')),
+                TextButton(
+                  onPressed: images.cancelPublish,
+                  child: const Text('取消发布'),
+                ),
+              ],
+            ),
           )
         : images.saveFailure != null
         ? Text(

@@ -623,10 +623,13 @@ class RepositoryMediaUploadGateway
       inputBytes: input.bytes.length,
       operation: () async {
         onProgress?.call(
-          const MediaUploadProgress(stage: MediaUploadStage.preparing),
+          const MediaUploadProgress(stage: MediaUploadStage.queued),
         );
         final normalized = await workCoordinator.prepare(() {
           _throwIfUploadCanceled(cancelToken);
+          onProgress?.call(
+            const MediaUploadProgress(stage: MediaUploadStage.preparing),
+          );
           return normalizer.normalize(input);
         });
         if (cancelToken.isCancelled) {
@@ -635,6 +638,9 @@ class RepositoryMediaUploadGateway
             cause: cancelToken.cancelError,
           );
         }
+        onProgress?.call(
+          const MediaUploadProgress(stage: MediaUploadStage.queued),
+        );
         final transferred = Completer<void>();
         return workCoordinator.transfer(() {
           _throwIfUploadCanceled(cancelToken);

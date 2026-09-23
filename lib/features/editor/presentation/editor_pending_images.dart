@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import 'package:wenyousite_mobile/core/media/media_display.dart';
@@ -49,6 +49,27 @@ class EditorPendingImages extends ChangeNotifier {
   final String? baseline;
   final Future<bool?> Function()? confirmRestore;
   final Map<String, EditorPendingImage> images = {};
+  final Map<String, GlobalKey> _imageAnchors = {};
+  GlobalKey anchorFor(String id) =>
+      _imageAnchors.putIfAbsent(id, () => GlobalKey());
+
+  Future<bool> revealFirstFailure() async {
+    for (final id in ids) {
+      final item = images[id];
+      if (item != null && !item.missing && item.state.failure == null) continue;
+      final context = _imageAnchors[id]?.currentContext;
+      if (context != null) {
+        await Scrollable.ensureVisible(
+          context,
+          duration: const Duration(milliseconds: 250),
+          alignment: 0.2,
+        );
+      }
+      return true;
+    }
+    return false;
+  }
+
   bool _disposed = false;
   bool _scheduled = false;
   bool _restoring = false;

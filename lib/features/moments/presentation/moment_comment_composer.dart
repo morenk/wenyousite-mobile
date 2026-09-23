@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -14,10 +15,12 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
 import 'package:wenyousite_mobile/features/media/application/pending_media_file_store_ports.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
+import 'package:wenyousite_mobile/features/media/media_ui.dart';
 import 'package:wenyousite_mobile/features/media/presentation/editor_image_selection.dart';
 import 'package:wenyousite_mobile/features/moments/application/moment_draft_store_ports.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_compose_images.dart';
+import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
 import 'package:wenyousite_mobile/features/stickers/domain/sticker_models.dart';
 import 'package:wenyousite_mobile/features/stickers/presentation/sticker_widgets.dart';
 
@@ -79,6 +82,8 @@ class _MomentCommentComposerState extends ConsumerState<MomentCommentComposer>
   UploadedEditorImage? _image;
   UserSticker? _sticker;
   final Object _uploadTaskId = Object();
+  final _imageLimitOverlay = OverlayPortalController();
+  Timer? _imageLimitTimer;
   var _closing = false;
   var _waitingToSend = false;
   var _sending = false;
@@ -150,6 +155,7 @@ class _MomentCommentComposerState extends ConsumerState<MomentCommentComposer>
 
   @override
   void dispose() {
+    _imageLimitTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     _generation++;
     _saveTimer?.cancel();
@@ -216,109 +222,118 @@ class _MomentCommentComposerState extends ConsumerState<MomentCommentComposer>
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) unawaited(_requestClose());
       },
-      child: WenyouInlineComposerDock(
-        editor: WenyouAtomicTextEditor(
-          controller: _textController,
-          editorKey: const Key('moment-comment-input'),
-          placeholder: widget.replyTo == null ? '发表评论…' : '写下回复…',
-          semanticLabel: widget.replyTo == null ? '发表评论' : '写下回复',
-          autofocus: true,
-          enabled: !_locked,
-        ),
-        dockKey: const Key('moment-comment-editor-dock'),
-        supporting: [
-          if (widget.replyTo != null) ...[
-            Align(
-              alignment: Alignment.centerLeft,
-              child: InputChip(
-                label: Text('回复 @${widget.replyTo!.author.username}'),
-                onDeleted: _locked ? null : widget.onCancelReply,
+      child: OverlayPortal.overlayChildLayoutBuilder(
+        controller: _imageLimitOverlay,
+        overlayChildBuilder: _buildImageLimitHint,
+        child: WenyouInlineComposerDock(
+          editor: WenyouAtomicTextEditor(
+            controller: _textController,
+            editorKey: const Key('moment-comment-input'),
+            placeholder: widget.replyTo == null ? '发表评论…' : '写下回复…',
+            semanticLabel: widget.replyTo == null ? '发表评论' : '写下回复',
+            autofocus: true,
+            enabled: !_locked,
+          ),
+          dockKey: const Key('moment-comment-editor-dock'),
+          supporting: [
+            if (widget.replyTo != null) ...[
+              Align(
+                alignment: Alignment.centerLeft,
+                child: InputChip(
+                  label: Text('回复 @${widget.replyTo!.author.username}'),
+                  onDeleted: _locked ? null : widget.onCancelReply,
+                ),
               ),
-            ),
-            SizedBox(height: tokens.space8),
-          ],
-          if (_textController.failure case final failure?) ...[
-            WenyouStatusBanner(
-              key: const Key('moment-comment-content-failure'),
-              message: failure,
-              tone: WenyouStatusTone.error,
-            ),
-            SizedBox(height: tokens.space8),
-          ],
-          if (_pendingInput == null &&
-              (_image != null || _sticker != null)) ...[
-            _SelectedCommentAsset(
-              image: _image,
-              sticker: _sticker,
-              onRemove: _locked
-                  ? null
-                  : () {
-                      setState(() {
-                        _image = null;
-                        _sticker = null;
-                      });
-                      _notifyDraftChanged();
-                    },
-            ),
-            SizedBox(height: tokens.space8),
-          ],
-          if (_pendingInput != null) ...[
-            Align(
-              alignment: Alignment.centerLeft,
-              child: SizedBox(
-                height: 112,
-                child: MomentPendingImageThumbnail(
-                  key: ValueKey(_attachmentId),
-                  pending: MomentPendingComposeImage(
-                    id: _attachmentId,
-                    input: _pendingInput!,
-                    state: uploadState,
-                    completed: false,
-                    active: uploadState.isBusy,
-                    failed: _failed,
+              SizedBox(height: tokens.space8),
+            ],
+            if (_textController.failure case final failure?) ...[
+              WenyouStatusBanner(
+                key: const Key('moment-comment-content-failure'),
+                message: failure,
+                tone: WenyouStatusTone.error,
+              ),
+              SizedBox(height: tokens.space8),
+            ],
+            if (_pendingInput == null &&
+                (_image != null || _sticker != null)) ...[
+              _SelectedCommentAsset(
+                image: _image,
+                sticker: _sticker,
+                onRemove: _locked
+                    ? null
+                    : () {
+                        _hideImageLimitHint();
+                        setState(() {
+                          _image = null;
+                          _sticker = null;
+                        });
+                        _notifyDraftChanged();
+                      },
+              ),
+              SizedBox(height: tokens.space8),
+            ],
+            if (_pendingInput != null) ...[
+              Align(
+                alignment: Alignment.centerLeft,
+                child: SizedBox(
+                  height: 112,
+                  child: MomentPendingImageThumbnail(
+                    key: ValueKey(_attachmentId),
+                    pending: MomentPendingComposeImage(
+                      id: _attachmentId,
+                      input: _pendingInput!,
+                      state: uploadState,
+                      completed: false,
+                      active: uploadState.isActivelyWorking,
+                      failed: _failed,
+                    ),
+                    index: 0,
+                    onRemove: _locked ? null : _removePending,
+                    onRetry: _locked ? null : _retryImage,
                   ),
-                  index: 0,
-                  onRemove: _locked ? null : _removePending,
-                  onRetry: _locked ? null : _retryImage,
                 ),
               ),
-            ),
-            SizedBox(height: tokens.space8),
-          ],
-          if (_waitingToSend)
-            Row(
-              children: [
-                const Expanded(child: Text('还有 1 张图片未就绪')),
-                TextButton(
-                  key: const Key('moment-comment-cancel-publish'),
-                  onPressed: () => setState(() => _waitingToSend = false),
-                  child: const Text('取消发布'),
+              SizedBox(height: tokens.space8),
+            ],
+            if (_waitingToSend)
+              DelayedPendingNotice(
+                waiting: true,
+                child: Row(
+                  children: [
+                    const Expanded(child: Text('还有 1 张图片未就绪')),
+                    TextButton(
+                      key: const Key('moment-comment-cancel-publish'),
+                      onPressed: () => setState(() => _waitingToSend = false),
+                      child: const Text('取消发布'),
+                    ),
+                  ],
                 ),
-              ],
+              ),
+          ],
+          leadingActions: [
+            IconButton(
+              key: const Key('moment-comment-image'),
+              onPressed: _locked || _picking ? null : _pickImage,
+              tooltip: '添加一张图片',
+              icon: const WenyouIcon(WenyouIconIds.actionImage),
             ),
-        ],
-        leadingActions: [
-          IconButton(
-            key: const Key('moment-comment-image'),
-            onPressed: _locked || _picking ? null : _pickImage,
-            tooltip: '添加一张图片',
-            icon: const WenyouIcon(WenyouIconIds.actionImage),
+          ],
+          trailingActions: [
+            if (ref.watch(stickersEnabledProvider))
+              IconButton(
+                key: const Key('moment-comment-sticker'),
+                onPressed: _locked || _picking ? null : _pickSticker,
+                tooltip: '添加一个表情',
+                icon: const WenyouIcon(WenyouIconIds.actionAddReaction),
+              ),
+          ],
+          submitAction: WenyouComposerSubmitButton(
+            key: const Key('moment-comment-send'),
+            enabled: !_locked,
+            loading: _locked,
+            label: _waitingToSend ? '正在发布…' : '发送',
+            onPressed: () => _send(),
           ),
-        ],
-        trailingActions: [
-          IconButton(
-            key: const Key('moment-comment-sticker'),
-            onPressed: _locked || _picking ? null : _pickSticker,
-            tooltip: '添加一个表情',
-            icon: const WenyouIcon(WenyouIconIds.actionAddReaction),
-          ),
-        ],
-        submitAction: WenyouComposerSubmitButton(
-          key: const Key('moment-comment-send'),
-          enabled: !_locked,
-          loading: _locked,
-          label: _waitingToSend ? '正在发布…' : '发送',
-          onPressed: () => _send(),
         ),
       ),
     );
@@ -326,6 +341,7 @@ class _MomentCommentComposerState extends ConsumerState<MomentCommentComposer>
 
   Future<void> _requestClose() async {
     if (_closing || _sending || widget.isSending) return;
+    _hideImageLimitHint();
     _waitingToSend = false;
     _pendingUpload =
         ref
@@ -351,8 +367,61 @@ class _MomentCommentComposerState extends ConsumerState<MomentCommentComposer>
     widget.onClose();
   }
 
+  void _hideImageLimitHint() {
+    _imageLimitTimer?.cancel();
+    _imageLimitTimer = null;
+    _imageLimitOverlay.hide();
+  }
+
+  Widget _buildImageLimitHint(
+    BuildContext context,
+    OverlayChildLayoutInfo info,
+  ) {
+    final media = MediaQuery.of(context);
+    final systemPadding = MediaQueryData.fromView(View.of(context)).viewPadding;
+    final safeRect = Rect.fromLTRB(
+      systemPadding.left + 16,
+      systemPadding.top + 8,
+      info.overlaySize.width - systemPadding.right - 16,
+      info.overlaySize.height -
+          math.max(media.viewInsets.bottom, systemPadding.bottom) -
+          8,
+    );
+    final top = MatrixUtils.transformPoint(
+      info.childPaintTransform,
+      Offset.zero,
+    ).dy;
+    final bar = buildWenyouSnackBar(context, '评论只能添加一张图片');
+    return CustomSingleChildLayout(
+      delegate: _CommentHintLayout(safeRect, top),
+      child: Semantics(
+        container: true,
+        liveRegion: true,
+        onDismiss: _hideImageLimitHint,
+        child: SingleChildScrollView(
+          key: const Key('moment-comment-image-limit-hint'),
+          child: Material(
+            color: bar.backgroundColor,
+            elevation: bar.elevation!,
+            shape: bar.shape,
+            child: Padding(padding: bar.padding!, child: bar.content),
+          ),
+        ),
+      ),
+    );
+  }
+
   Future<void> _pickImage() async {
     if (_locked || _picking) return;
+    if (_pendingInput != null || _image != null) {
+      _imageLimitTimer?.cancel();
+      _imageLimitOverlay.show();
+      _imageLimitTimer = Timer(
+        wenyouBriefSnackBarDuration,
+        _hideImageLimitHint,
+      );
+      return;
+    }
     setState(() => _picking = true);
     final inputs = await pickEditorImages(
       context,
@@ -377,6 +446,7 @@ class _MomentCommentComposerState extends ConsumerState<MomentCommentComposer>
   Future<void> _retryImage() => _runImageUpload();
 
   void _removePending() {
+    _hideImageLimitHint();
     _generation++;
     _task?.reset();
     setState(() {
@@ -456,6 +526,8 @@ class _MomentCommentComposerState extends ConsumerState<MomentCommentComposer>
   }
 
   Future<void> _pickSticker() async {
+    if (!ref.read(stickersEnabledProvider)) return;
+    _hideImageLimitHint();
     final sticker = await showStickerPicker(context);
     if (sticker == null || !mounted) return;
     _generation++;
@@ -471,8 +543,12 @@ class _MomentCommentComposerState extends ConsumerState<MomentCommentComposer>
 
   Future<void> _send() async {
     if (_locked || !_textController.flush()) return;
+    _hideImageLimitHint();
     if (_pendingInput != null) {
-      if (_failed) return;
+      if (_failed) {
+        showWenyouSnackBar(context, '先处理未完成的图片');
+        return;
+      }
       setState(() => _waitingToSend = true);
       return;
     }
@@ -686,4 +762,31 @@ UserSticker? _decodeSticker(Object? raw) {
   } on Object {
     return null;
   }
+}
+
+class _CommentHintLayout extends SingleChildLayoutDelegate {
+  const _CommentHintLayout(this.safeRect, this.composerTop);
+  final Rect safeRect;
+  final double composerTop;
+
+  @override
+  BoxConstraints getConstraintsForChild(BoxConstraints constraints) =>
+      BoxConstraints(
+        maxWidth: math.max(0, math.min(600, safeRect.width)),
+        maxHeight: math.max(0, safeRect.height),
+      );
+
+  @override
+  Offset getPositionForChild(Size size, Size childSize) => Offset(
+    safeRect.center.dx - childSize.width / 2,
+    (composerTop - childSize.height - 8).clamp(
+      safeRect.top,
+      math.max(safeRect.top, safeRect.bottom - childSize.height),
+    ),
+  );
+
+  @override
+  bool shouldRelayout(_CommentHintLayout oldDelegate) =>
+      safeRect != oldDelegate.safeRect ||
+      composerTop != oldDelegate.composerTop;
 }

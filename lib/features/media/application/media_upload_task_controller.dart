@@ -11,6 +11,7 @@ import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart
 enum MediaUploadTaskPhase {
   idle,
   picking,
+  queued,
   preparing,
   uploading,
   confirming,
@@ -54,6 +55,7 @@ class MediaUploadTaskState {
 
   bool get isBusy => switch (phase) {
     MediaUploadTaskPhase.picking ||
+    MediaUploadTaskPhase.queued ||
     MediaUploadTaskPhase.preparing ||
     MediaUploadTaskPhase.uploading ||
     MediaUploadTaskPhase.confirming ||
@@ -63,8 +65,17 @@ class MediaUploadTaskState {
     MediaUploadTaskPhase.failed => false,
   };
 
+  bool get isActivelyWorking => switch (phase) {
+    MediaUploadTaskPhase.preparing ||
+    MediaUploadTaskPhase.uploading ||
+    MediaUploadTaskPhase.confirming ||
+    MediaUploadTaskPhase.processing => true,
+    _ => false,
+  };
+
   String get progressLabel => switch (phase) {
     MediaUploadTaskPhase.picking => '正在打开相册…',
+    MediaUploadTaskPhase.queued => '等待准备图片…',
     MediaUploadTaskPhase.preparing => '正在准备图片…',
     MediaUploadTaskPhase.uploading when progress?.fraction != null =>
       '正在上传图片 ${((progress!.fraction ?? 0) * 100).round()}%',
@@ -270,6 +281,11 @@ class MediaUploadTaskController
         if (!_isCurrent(runId)) return null;
         _retryInput = selected;
       }
+      state = MediaUploadTaskState(
+        phase: MediaUploadTaskPhase.queued,
+        progress: const MediaUploadProgress(stage: MediaUploadStage.queued),
+        pendingUpload: pending,
+      );
       void onProgress(MediaUploadProgress progress) {
         if (!acceptProgress || !_isCurrent(runId)) return;
         _pendingUpload = progress.pendingUpload ?? _pendingUpload;
@@ -430,6 +446,7 @@ class MediaUploadTaskController
   }
 
   MediaUploadTaskPhase _phaseFor(MediaUploadStage stage) => switch (stage) {
+    MediaUploadStage.queued => MediaUploadTaskPhase.queued,
     MediaUploadStage.preparing => MediaUploadTaskPhase.preparing,
     MediaUploadStage.uploading => MediaUploadTaskPhase.uploading,
     MediaUploadStage.confirming => MediaUploadTaskPhase.confirming,

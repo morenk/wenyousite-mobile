@@ -5,7 +5,7 @@ import 'package:wenyousite_mobile/core/media/media_display.dart';
 
 const maxMediaImageBytes = 10 * 1024 * 1024;
 
-enum MediaUploadStage { preparing, uploading, confirming, processing }
+enum MediaUploadStage { queued, preparing, uploading, confirming, processing }
 
 enum MediaUploadPurpose {
   avatar,

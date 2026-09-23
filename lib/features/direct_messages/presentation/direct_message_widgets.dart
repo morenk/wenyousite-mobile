@@ -22,8 +22,10 @@ import 'package:wenyousite_mobile/features/direct_messages/domain/direct_message
 import 'package:wenyousite_mobile/features/direct_messages/presentation/direct_message_composer_support.dart';
 import 'package:wenyousite_mobile/features/direct_messages/presentation/direct_message_media.dart';
 import 'package:wenyousite_mobile/features/direct_messages/presentation/direct_message_notice.dart';
+import 'package:wenyousite_mobile/features/direct_messages/presentation/direct_message_sticker_feedback.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
+import 'package:wenyousite_mobile/features/media/media_ui.dart';
 import 'package:wenyousite_mobile/features/media/presentation/editor_image_selection.dart';
 import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
 import 'package:wenyousite_mobile/features/stickers/domain/sticker_models.dart';
@@ -135,32 +137,14 @@ class _DirectMessageComposerState extends ConsumerState<DirectMessageComposer> {
       if (_selectedImage != null) ...[
         DirectMessageImagePreview(
           image: _selectedImage!,
-          onRemove: _disabled ? null : _removeImage,
-        ),
-        SizedBox(height: tokens.space8),
-      ],
-      if (uploadState.isBusy) ...[
-        DirectMessageUploadProgress(
-          state: uploadState,
-          onCancel: () => ref
-              .read(mediaUploadTaskControllerProvider(_uploadTaskId).notifier)
-              .cancel(),
-        ),
-        SizedBox(height: tokens.space8),
-      ],
-      if (uploadState.failure case final uploadFailure?) ...[
-        DirectMessageComposerStatusLine(
-          key: const Key('direct-message-composer-upload-failure'),
-          icon: WenyouIconIds.statusError,
-          message: [
-            uploadFailure.userMessage,
-            ?uploadFailure.resolvedPresentation.problemDetail,
-          ].join('\n'),
-          error: true,
-          onRetry: uploadFailure.canRetry ? _retryImageUpload : null,
-          onDismiss: _abandonImageUpload,
-          retryKey: const Key('direct-message-composer-retry-upload'),
-          dismissKey: const Key('direct-message-composer-abandon-upload'),
+          busy: uploadState.isActivelyWorking,
+          failed: uploadState.failure != null,
+          onFailureTap: () => _showImageFailureActions(uploadState),
+          onRemove: uploadState.isBusy
+              ? _removeImage
+              : _disabled
+              ? null
+              : _removeImage,
         ),
         SizedBox(height: tokens.space8),
       ],
@@ -242,20 +226,28 @@ class _DirectMessageComposerState extends ConsumerState<DirectMessageComposer> {
         key: const Key('direct-message-composer-submit'),
         enabled: !_disabled && !uploadLocked && _hasPayload,
         loading: _busy,
-        label: _submitLabel(uploadState),
+        label: _busy ? '正在发送…' : widget.submitLabel,
         onPressed: () => _submit(),
       ),
     );
   }
 
-  String _submitLabel(MediaUploadTaskState uploadState) {
-    final progress = uploadState.progress;
-    if (uploadState.phase == MediaUploadTaskPhase.uploading &&
-        progress?.fraction != null) {
-      return '上传 ${(progress!.fraction! * 100).round()}%';
+  Future<void> _showImageFailureActions(MediaUploadTaskState state) async {
+    final delayed = state.phase == MediaUploadTaskPhase.processingPending;
+    final action = await showPendingImageActions(
+      context,
+      title: delayed ? '图片准备较久' : '图片未完成',
+      retryLabel: delayed ? '继续等待' : '重试发送',
+      removeLabel: '移除图片',
+      detail: state.failure?.userMessage,
+      canRetry: state.failure?.canRetry != false,
+    );
+    if (!mounted) return;
+    if (action == PendingImageAction.retry) {
+      await _retryImageUpload();
+    } else if (action == PendingImageAction.remove) {
+      _removeImage();
     }
-    if (uploadState.isBusy) return '图片处理中';
-    return _busy ? '处理中' : widget.submitLabel;
   }
 
   Future<void> _pickImage() async {
@@ -288,10 +280,6 @@ class _DirectMessageComposerState extends ConsumerState<DirectMessageComposer> {
       _selectedImage = null;
       _localFailure = null;
     });
-  }
-
-  void _abandonImageUpload() {
-    ref.read(mediaUploadTaskControllerProvider(_uploadTaskId).notifier).reset();
   }
 
   Future<void> _submit({bool retryUpload = false}) async {
@@ -664,7 +652,9 @@ class _DirectMessageBubbleState extends ConsumerState<DirectMessageBubble> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              if (widget.mine && (sending || failed)) ...[
+              if (widget.mine &&
+                  widget.pendingMedia == null &&
+                  (sending || failed)) ...[
                 if (sending)
                   Semantics(
                     label: '消息发送中',
@@ -796,6 +786,30 @@ class _DirectMessageBubbleState extends ConsumerState<DirectMessageBubble> {
                                     SizedBox(height: tokens.space8),
                                   DirectMessagePendingImage(
                                     input: widget.pendingMedia!.input,
+                                    sending: sending,
+                                    failed: failed || processing,
+                                    onFailureTap: () async {
+                                      final action =
+                                          await showPendingImageActions(
+                                            context,
+                                            title: processing
+                                                ? '图片准备较久'
+                                                : '图片消息未完成',
+                                            retryLabel: processing
+                                                ? '继续等待'
+                                                : '重试发送',
+                                            removeLabel: '删除这条未发出的消息',
+                                            detail: widget.failure?.userMessage,
+                                            canRetry: widget.onRetry != null,
+                                          );
+                                      if (!context.mounted) return;
+                                      if (action == PendingImageAction.retry) {
+                                        widget.onRetry?.call();
+                                      } else if (action ==
+                                          PendingImageAction.remove) {
+                                        widget.onAbandon?.call();
+                                      }
+                                    },
                                   ),
                                 ],
                                 if (media == null &&
@@ -868,31 +882,12 @@ class _DirectMessageBubbleState extends ConsumerState<DirectMessageBubble> {
     await onReport(context, widget.message.id);
   }
 
-  Future<void> _saveSticker() async {
-    var failed = false;
-    late final String message;
-    try {
-      message = await _importMessageSticker();
-    } on Object catch (error) {
-      failed = true;
-      message = _asFailure(error, '收藏表情失败，请稍后重试。').userMessage;
-    }
-    if (!mounted) return;
-    showDirectMessageNotice(
-      context,
-      message,
-      pacing: failed
-          ? WenyouSnackBarPacing.extended
-          : WenyouSnackBarPacing.brief,
-      tone: failed ? WenyouSnackBarTone.error : WenyouSnackBarTone.success,
-    );
-  }
+  Future<void> _saveSticker() =>
+      saveDirectMessageStickerWithFeedback(context, ref, widget.message.id);
 
-  Future<String> _importMessageSticker() {
-    return ref
-        .read(stickerCollectionControllerProvider.notifier)
-        .importSourceForFeedback(StickerDirectMessageSource(widget.message.id));
-  }
+  Future<String> _importMessageSticker() => ref
+      .read(stickerCollectionControllerProvider.notifier)
+      .importSourceForFeedback(StickerDirectMessageSource(widget.message.id));
 }
 
 ApiFailure _asFailure(Object error, String fallback) {

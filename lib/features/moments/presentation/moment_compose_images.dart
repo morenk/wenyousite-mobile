@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
@@ -181,30 +179,26 @@ class MomentPendingImageThumbnail extends StatefulWidget {
 }
 
 class _PendingThumbnailState extends State<MomentPendingImageThumbnail> {
-  Timer? _timer;
-  bool _showProgress = false;
-  @override
-  void initState() {
-    super.initState();
-    _timer = Timer(const Duration(milliseconds: 300), () {
-      if (mounted) setState(() => _showProgress = true);
-    });
-  }
-
-  @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
+  Future<void> _showFailureActions() async {
+    final slow =
+        widget.pending.state.phase == MediaUploadTaskPhase.processingPending;
+    final action = await showPendingImageActions(
+      context,
+      title: slow ? '图片准备较久' : '图片未完成',
+      retryLabel: slow ? '继续等待' : '重试',
+      removeLabel: '移除图片',
+      detail: widget.pending.state.failure?.userMessage,
+      canRetry: widget.onRetry != null,
+    );
+    if (!mounted) return;
+    if (action == PendingImageAction.retry) widget.onRetry?.call();
+    if (action == PendingImageAction.remove) widget.onRemove?.call();
   }
 
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
     final pending = widget.pending;
-    final slow = pending.state.phase == MediaUploadTaskPhase.processingPending;
-    final fraction = pending.state.phase == MediaUploadTaskPhase.uploading
-        ? pending.state.progress?.fraction
-        : null;
     return Semantics(
       image: true,
       selected: widget.isCover,
@@ -218,19 +212,33 @@ class _PendingThumbnailState extends State<MomentPendingImageThumbnail> {
             child: Stack(
               fit: StackFit.expand,
               children: [
-                GestureDetector(
-                  onTap: widget.onCover,
-                  child: MediaUploadInputImage(
-                    input: pending.input,
-                    key: ValueKey('moment-local-thumbnail-${widget.index}'),
-                    fit: BoxFit.cover,
-                    cacheWidth: 264,
-                    gaplessPlayback: true,
-                    errorBuilder: (_, _, _) => ColoredBox(
-                      color: tokens.softPanel,
-                      child: WenyouIcon(
-                        WenyouIconIds.actionImage,
-                        color: tokens.mutedText,
+                PendingImageOverlay(
+                  key: ValueKey(pending.id),
+                  active:
+                      pending.active &&
+                      pending.state.isActivelyWorking &&
+                      !pending.completed,
+                  failed: pending.failed,
+                  onFailureTap: _showFailureActions,
+                  semanticLabel: pending.failed
+                      ? '图片 ${widget.index + 1} 未完成，点按选择操作'
+                      : pending.active
+                      ? '图片 ${widget.index + 1} 准备中'
+                      : '图片 ${widget.index + 1} 预览',
+                  child: GestureDetector(
+                    onTap: widget.onCover,
+                    child: MediaUploadInputImage(
+                      input: pending.input,
+                      key: ValueKey('moment-local-thumbnail-${widget.index}'),
+                      fit: BoxFit.cover,
+                      cacheWidth: 264,
+                      gaplessPlayback: true,
+                      errorBuilder: (_, _, _) => ColoredBox(
+                        color: tokens.softPanel,
+                        child: WenyouIcon(
+                          WenyouIconIds.actionImage,
+                          color: tokens.mutedText,
+                        ),
                       ),
                     ),
                   ),
@@ -242,41 +250,6 @@ class _PendingThumbnailState extends State<MomentPendingImageThumbnail> {
                     child: ColoredBox(
                       color: tokens.brandSurface,
                       child: const Text('封面'),
-                    ),
-                  ),
-                if (!pending.failed && !pending.completed && _showProgress)
-                  Positioned(
-                    left: 6,
-                    bottom: 6,
-                    child: Container(
-                      padding: const EdgeInsets.all(4),
-                      color: tokens.background,
-                      child: fraction == null
-                          ? const SizedBox.square(
-                              dimension: 16,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : Text('${(fraction * 100).round()}%'),
-                    ),
-                  ),
-                if (pending.failed)
-                  Positioned(
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    child: Material(
-                      color: tokens.background,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(slow ? '图片准备较久' : '未完成'),
-                          TextButton(
-                            key: ValueKey('moment-retry-${pending.id}'),
-                            onPressed: widget.onRetry,
-                            child: Text(slow ? '继续' : '重试'),
-                          ),
-                        ],
-                      ),
                     ),
                   ),
                 Positioned(

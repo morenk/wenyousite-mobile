@@ -105,7 +105,7 @@ void registerPostRepliesPageScrollingLifecycleCases() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('editor-image')));
     await postRepliesPageTestConfirmImageCrop(tester);
-    expect(find.text('移除'), findsOneWidget);
+    expect(find.byTooltip('移除图片'), findsOneWidget);
 
     await postRepliesPageTestDismissPostComposerFromOutside(tester);
     expect(uploadGateway.operation.cancelled, isTrue);

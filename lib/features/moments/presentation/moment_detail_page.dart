@@ -168,7 +168,9 @@ class _MomentDetailPageState extends ConsumerState<MomentDetailPage> {
                       child: _MomentDetailPanel(
                         detail: state.detail!,
                         pendingAction: state.pendingMomentAction,
-                        onTip: state.detail!.canEdit
+                        onTip:
+                            state.detail!.canEdit ||
+                                !state.detail!.card.canInteract
                             ? null
                             : () => unawaited(
                                 showWenyouTipFlow(
@@ -257,9 +259,11 @@ class _MomentDetailPageState extends ConsumerState<MomentDetailPage> {
                                 returnTo: _location,
                                 targetCommentId: projection.targetId,
                                 targetKey: _targetKey,
-                                onReply: (target) => _authenticated(
-                                  () => _openCommentComposer(target),
-                                ),
+                                onReply: !state.detail!.card.canInteract
+                                    ? null
+                                    : (target) => _authenticated(
+                                        () => _openCommentComposer(target),
+                                      ),
                                 onDelete: (target) =>
                                     _deleteComment(context, provider, target),
                                 onReport: (target) =>
@@ -305,7 +309,9 @@ class _MomentDetailPageState extends ConsumerState<MomentDetailPage> {
         ),
       },
       floatingActionButton:
-          state.phase == MomentLoadPhase.ready && !_commentComposerOpen
+          state.phase == MomentLoadPhase.ready &&
+              state.detail!.card.canInteract &&
+              !_commentComposerOpen
           ? WenyouComposerAction(
               key: const Key('moment-comment-dock'),
               label: session.isAuthenticated ? '发表评论…' : '登录后发表评论',
@@ -455,6 +461,7 @@ class _MomentDetailPageState extends ConsumerState<MomentDetailPage> {
       return;
     }
     final provider = momentDetailControllerProvider(widget.momentId);
+    if (ref.read(provider).detail?.card.canInteract != true) return;
     var currentReplyTo = replyTo ?? _commentDraftReplyTo;
     setState(() => _commentComposerOpen = true);
     try {
@@ -678,7 +685,7 @@ class _MomentRootCommentPanel extends StatelessWidget {
   final String returnTo;
   final String? targetCommentId;
   final GlobalKey targetKey;
-  final ValueChanged<MomentComment> onReply;
+  final ValueChanged<MomentComment>? onReply;
   final ValueChanged<MomentComment> onDelete;
   final Future<void> Function(MomentComment) onReport;
   final VoidCallback onLoadReplies;
@@ -695,7 +702,7 @@ class _MomentRootCommentPanel extends StatelessWidget {
           MomentCommentBody(
             comment: root,
             busy: busyCommentIds.contains(root.id),
-            onReply: () => onReply(root),
+            onReply: onReply == null ? null : () => onReply!(root),
             onDelete: root.canDelete ? () => onDelete(root) : null,
             onReport: () => onReport(root),
             reportReturnTo: root.author.id == viewerId ? null : returnTo,
@@ -714,7 +721,9 @@ class _MomentRootCommentPanel extends StatelessWidget {
                       comment: replies[index],
                       compact: true,
                       busy: busyCommentIds.contains(replies[index].id),
-                      onReply: () => onReply(replies[index]),
+                      onReply: onReply == null
+                          ? null
+                          : () => onReply!(replies[index]),
                       onDelete: replies[index].canDelete
                           ? () => onDelete(replies[index])
                           : null,

@@ -242,6 +242,9 @@ const BusinessErrorCode _$APPEAL_WINDOW_CLOSED = const BusinessErrorCode._(
 const BusinessErrorCode _$ADMIN_INVITE_CONFLICT = const BusinessErrorCode._(
   'ADMIN_INVITE_CONFLICT',
 );
+const BusinessErrorCode _$IMAGE_GALLERY_NOT_READY = const BusinessErrorCode._(
+  'IMAGE_GALLERY_NOT_READY',
+);
 const BusinessErrorCode _$REGISTRATION_PAUSED = const BusinessErrorCode._(
   'REGISTRATION_PAUSED',
 );
@@ -432,6 +435,8 @@ BusinessErrorCode _$valueOf(String name) {
       return _$APPEAL_WINDOW_CLOSED;
     case 'ADMIN_INVITE_CONFLICT':
       return _$ADMIN_INVITE_CONFLICT;
+    case 'IMAGE_GALLERY_NOT_READY':
+      return _$IMAGE_GALLERY_NOT_READY;
     case 'REGISTRATION_PAUSED':
       return _$REGISTRATION_PAUSED;
     case 'CONTENT_WRITES_PAUSED':
@@ -535,6 +540,7 @@ final BuiltSet<BusinessErrorCode> _$values =
       _$APPEAL_ALREADY_SUBMITTED,
       _$APPEAL_WINDOW_CLOSED,
       _$ADMIN_INVITE_CONFLICT,
+      _$IMAGE_GALLERY_NOT_READY,
       _$REGISTRATION_PAUSED,
       _$CONTENT_WRITES_PAUSED,
       _$RATE_LIMITED,
@@ -644,6 +650,7 @@ class _$BusinessErrorCodeMeta {
   BusinessErrorCode get APPEAL_ALREADY_SUBMITTED => _$APPEAL_ALREADY_SUBMITTED;
   BusinessErrorCode get APPEAL_WINDOW_CLOSED => _$APPEAL_WINDOW_CLOSED;
   BusinessErrorCode get ADMIN_INVITE_CONFLICT => _$ADMIN_INVITE_CONFLICT;
+  BusinessErrorCode get IMAGE_GALLERY_NOT_READY => _$IMAGE_GALLERY_NOT_READY;
   BusinessErrorCode get REGISTRATION_PAUSED => _$REGISTRATION_PAUSED;
   BusinessErrorCode get CONTENT_WRITES_PAUSED => _$CONTENT_WRITES_PAUSED;
   BusinessErrorCode get RATE_LIMITED => _$RATE_LIMITED;
@@ -751,6 +758,7 @@ class _$BusinessErrorCodeSerializer
     'APPEAL_ALREADY_SUBMITTED': 40921,
     'APPEAL_WINDOW_CLOSED': 40922,
     'ADMIN_INVITE_CONFLICT': 40923,
+    'IMAGE_GALLERY_NOT_READY': 40926,
     'REGISTRATION_PAUSED': 40924,
     'CONTENT_WRITES_PAUSED': 40925,
     'RATE_LIMITED': 42900,
@@ -844,6 +852,7 @@ class _$BusinessErrorCodeSerializer
     40921: 'APPEAL_ALREADY_SUBMITTED',
     40922: 'APPEAL_WINDOW_CLOSED',
     40923: 'ADMIN_INVITE_CONFLICT',
+    40926: 'IMAGE_GALLERY_NOT_READY',
     40924: 'REGISTRATION_PAUSED',
     40925: 'CONTENT_WRITES_PAUSED',
     42900: 'RATE_LIMITED',

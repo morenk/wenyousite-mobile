@@ -629,7 +629,14 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
     try {
       final readiness = _pendingImages.waitForReady();
       final intent = _pendingImages.publishGeneration;
-      if (!await readiness || !mounted) return;
+      final ready = await readiness;
+      if (!mounted) return;
+      if (!ready) {
+        if (await _pendingImages.revealFirstFailure() && mounted) {
+          showWenyouSnackBar(context, '先处理未完成的图片');
+        }
+        return;
+      }
       if (!await _editorSession.flush() || !mounted) return;
       if (!_pendingImages.isPublishIntentCurrent(intent)) return;
       _pendingImages.finishWaiting();

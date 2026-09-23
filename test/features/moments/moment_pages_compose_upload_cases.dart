@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,11 +10,12 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_inline_composer_dock.dart'
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
 import 'package:wenyousite_mobile/features/media/application/pending_media_file_store_ports.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
+import 'package:wenyousite_mobile/features/media/media_ui.dart';
 import 'package:wenyousite_mobile/features/moments/application/moment_draft_store_ports.dart';
 import 'package:wenyousite_mobile/features/moments/data/moment_repository.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_compose_page.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_detail_page.dart';
-
+import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
 import '../../support/deterministic_test_fonts.dart';
 import '../../support/moment_test_draft_store.dart';
 import 'moment_pages_test_support.dart';
@@ -261,6 +261,7 @@ void registerMomentPagesComposeUploadCases() {
     final repository = MomentPagesTestPageRepository();
     final container = ProviderContainer(
       overrides: [
+        stickersEnabledProvider.overrideWithValue(true),
         tokenStoreProvider.overrideWithValue(MomentPagesTestMemoryTokenStore()),
         sessionRemoteProvider.overrideWithValue(
           MomentPagesTestFakeSessionRemote(),
@@ -368,8 +369,33 @@ void registerMomentPagesComposeUploadCases() {
     expect(find.byKey(const Key('editor-image-crop-dialog')), findsNothing);
     await tester.pumpAndSettle();
 
-    expect(find.text('未完成'), findsOneWidget);
-    expect(find.text('取消上传'), findsNothing);
+    expect(find.text('图片处理失败'), findsNothing);
+    expect(
+      find.byWidgetPredicate(
+        (widget) => widget is PendingImageOverlay && widget.failed,
+      ),
+      findsOneWidget,
+    );
+    expect(find.byKey(const Key('moment-compose-retry-upload')), findsNothing);
+    expect(
+      tester
+          .widget<FilledButton>(
+            find.descendant(
+              of: find.byKey(const Key('moment-compose-submit')),
+              matching: find.byType(FilledButton),
+            ),
+          )
+          .onPressed,
+      isNotNull,
+    );
+
+    await tester.tap(
+      find.byWidgetPredicate(
+        (widget) => widget is PendingImageOverlay && widget.failed,
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('图片未完成'), findsOneWidget);
     await tester.tap(find.text('重试'));
     await tester.pumpAndSettle();
 
@@ -377,7 +403,7 @@ void registerMomentPagesComposeUploadCases() {
     expect(gateway.inputs[1], same(gateway.inputs[0]));
     expect(find.byKey(const ValueKey('moment-image')), findsOneWidget);
     expect(find.text('1/9'), findsOneWidget);
-    expect(find.text('重试'), findsNothing);
+    expect(find.byKey(const Key('moment-compose-retry-upload')), findsNothing);
     expect(
       tester
           .widget<FilledButton>(
@@ -440,7 +466,7 @@ void registerMomentPagesComposeUploadCases() {
     expect(find.text('3/9'), findsOneWidget);
   });
 
-  testWidgets('动态多选立即展示本地缩略图且处理等待不阻塞后续图片', (tester) async {
+  testWidgets('动态多选立即展示本地缩略图且不限制完整流程为两张', (tester) async {
     final gateway = MomentPagesTestControlledBatchUploadGateway();
     await tester.pumpWidget(
       ProviderScope(

@@ -301,7 +301,7 @@ class _MomentComposePageState extends ConsumerState<_MomentComposeEditor>
                     counterText: '',
                   ),
                   validator: (value) {
-                    final length = value?.trim().length ?? 0;
+                    final length = value?.trim().runes.length ?? 0;
                     return length < 2 || length > 40 ? '请输入 2～40 个字符的标题' : null;
                   },
                 ),

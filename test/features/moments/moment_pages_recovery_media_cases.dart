@@ -7,6 +7,7 @@ import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
 import 'package:wenyousite_mobile/features/media/application/pending_media_file_store_ports.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
+import 'package:wenyousite_mobile/features/media/media_ui.dart';
 import 'package:wenyousite_mobile/features/moments/application/moment_draft_store_ports.dart';
 import 'package:wenyousite_mobile/features/moments/data/moment_repository.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_compose_page.dart';
@@ -407,13 +408,23 @@ void registerMomentPagesRecoveryMediaCases() {
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('editor-image-crop-dialog')), findsNothing);
 
-    expect(find.text('未完成'), findsNWidgets(2));
+    expect(
+      find.byWidgetPredicate(
+        (widget) => widget is PendingImageOverlay && widget.failed,
+      ),
+      findsNWidgets(2),
+    );
     await tester.tap(find.byTooltip('移除图片 3'));
     await tester.pumpAndSettle();
     await tester.tap(find.byTooltip('移除图片 2'));
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('moment-image-1')), findsOneWidget);
-    expect(find.text('未完成'), findsNothing);
+    expect(
+      find.byWidgetPredicate(
+        (widget) => widget is PendingImageOverlay && widget.failed,
+      ),
+      findsNothing,
+    );
     expect(find.text('1/9'), findsOneWidget);
   });
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_time_clock.dart';
 
 class WenyouTimeText extends StatelessWidget {
   const WenyouTimeText({
@@ -26,11 +27,21 @@ class WenyouTimeText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (reference == null) {
+      return ListenableBuilder(
+        listenable: _contentClock,
+        builder: (context, _) => _buildTime(context, _contentClock.value),
+      );
+    }
+    return _buildTime(context, reference!);
+  }
+
+  Widget _buildTime(BuildContext context, DateTime now) {
     return Semantics(
       label: '$semanticsPrefix${formatWenyouDate(value)}$suffix',
       excludeSemantics: true,
       child: Text(
-        '$prefix${formatWenyouTime(value, reference: reference)}$suffix',
+        '$prefix${formatWenyouTime(value, reference: now)}$suffix',
         style: style ?? Theme.of(context).textTheme.wenyouUtilityCaption,
         maxLines: maxLines,
         overflow: overflow,
@@ -38,3 +49,5 @@ class WenyouTimeText extends StatelessWidget {
     );
   }
 }
+
+final _contentClock = WenyouTimeClock();

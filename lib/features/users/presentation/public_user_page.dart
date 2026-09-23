@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_capabilities.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
@@ -322,7 +321,7 @@ class _UserProfileContent extends ConsumerWidget {
       bio: profile.bio?.trim().isNotEmpty == true ? profile.bio : '这个人还没有填写简介。',
       metadata: profile.createdAt == null
           ? null
-          : '${DateFormat('yyyy-MM-dd').format(profile.createdAt!)} 加入温油站',
+          : '${formatWenyouDate(profile.createdAt!)} 加入温油站',
       statuses: statuses,
       stats: [
         UserProfileStatItem(

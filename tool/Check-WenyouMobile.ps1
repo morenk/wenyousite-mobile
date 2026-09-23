@@ -100,7 +100,9 @@ if ($BuildDebugApk) {
   Invoke-WenyouCheckStep 'Build Android Debug APK' $flutterCommand @(
     'build',
     'apk',
-    '--debug'
+    '--debug',
+    '--target-platform',
+    'android-arm64'
   )
 }
 

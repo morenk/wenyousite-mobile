@@ -112,10 +112,11 @@ void main() {
 
     expect(gateway.inputs, hasLength(1));
     expect(repository.importedSources, isEmpty);
-    expect(find.byKey(const Key('stickers-upload-failure')), findsOneWidget);
-    expect(find.byKey(const Key('stickers-retry-upload')), findsOneWidget);
-
-    await tester.tap(find.byKey(const Key('stickers-retry-upload')));
+    expect(find.byKey(const Key('sticker-local-pending')), findsOneWidget);
+    expect(find.byKey(const Key('stickers-upload-failure')), findsNothing);
+    await tester.tap(find.byKey(const Key('sticker-local-pending')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('重试'));
     await tester.pumpAndSettle();
 
     expect(picker.calls, 1);
@@ -148,7 +149,8 @@ void main() {
     await _confirmImageCrop(tester);
     await tester.pump();
 
-    expect(find.text('正在上传图片 50%'), findsOneWidget);
+    expect(find.byKey(const Key('sticker-local-pending')), findsOneWidget);
+    expect(find.text('正在上传图片 50%'), findsNothing);
     expect(
       tester
           .widget<OutlinedButton>(
@@ -163,7 +165,7 @@ void main() {
     await tester.pump();
 
     expect(gateway.operation.cancelled, isTrue);
-    expect(find.text('正在上传图片 50%'), findsNothing);
+    expect(find.byKey(const Key('sticker-local-pending')), findsNothing);
     expect(find.byKey(const Key('stickers-upload-failure')), findsNothing);
     expect(repository.importedSources, isEmpty);
     expect(
@@ -212,6 +214,40 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   }
+
+  testWidgets('重进收藏页时仅有服务端待处理项显示清晰占位格', (tester) async {
+    final repository = _FakeStickerRepository(
+      pendingImports: const [
+        StickerImport(
+          id: 'server-pending',
+          status: StickerImportStatus.processing,
+          alreadySaved: false,
+        ),
+      ],
+    );
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: _overrides(repository),
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const StickerCollectionPage(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final tile = find.byKey(
+      const ValueKey('sticker-server-pending-server-pending'),
+    );
+    expect(tile, findsOneWidget);
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(
+      find.descendant(
+        of: tile,
+        matching: find.byType(CircularProgressIndicator),
+      ),
+      findsNothing,
+    );
+  });
 }
 
 List<Override> _overrides(
@@ -251,10 +287,14 @@ Future<void> _confirmImageCrop(WidgetTester tester) async {
 }
 
 class _FakeStickerRepository implements StickerRepository {
-  _FakeStickerRepository({List<UserSticker> initialItems = const []})
-    : _items = [...initialItems];
+  _FakeStickerRepository({
+    List<UserSticker> initialItems = const [],
+    List<StickerImport> pendingImports = const [],
+  }) : _items = [...initialItems],
+       _pendingImports = pendingImports;
 
   final List<UserSticker> _items;
+  final List<StickerImport> _pendingImports;
   final List<StickerImportSource> importedSources = [];
   var fetchCalls = 0;
   var version = 3;
@@ -320,7 +360,7 @@ class _FakeStickerRepository implements StickerRepository {
     limit: 200,
     items: List.unmodifiable(_items),
     recent: const [],
-    pendingImports: const [],
+    pendingImports: _pendingImports,
   );
 }
 

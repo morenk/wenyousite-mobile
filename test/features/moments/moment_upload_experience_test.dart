@@ -11,6 +11,7 @@ import 'package:wenyousite_mobile/features/media/application/media_upload_ports.
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
 import 'package:wenyousite_mobile/features/media/application/pending_media_file_store_ports.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
+import 'package:wenyousite_mobile/features/media/presentation/pending_image_overlay.dart';
 import 'package:wenyousite_mobile/features/moments/application/moment_draft_store_ports.dart';
 import 'package:wenyousite_mobile/features/moments/data/moment_repository.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
@@ -116,16 +117,21 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(gateway.resumes, 1);
-    expect(find.text('未完成'), findsOneWidget);
+    final failedImage = find.byWidgetPredicate(
+      (widget) => widget is PendingImageOverlay && widget.failed,
+    );
+    expect(failedImage, findsOneWidget);
+    await tester.tap(failedImage);
+    await tester.pumpAndSettle();
     await tester.tap(find.text('重试'));
     await tester.pumpAndSettle();
     expect(gateway.resumes, 1);
     expect(gateway.uploads, 1);
-    expect(find.text('未完成'), findsNothing);
+    expect(failedImage, findsNothing);
     expect(sent, isEmpty);
   });
 
-  testWidgets('评论重选图片不复用上一选择的在途持久化结果', (tester) async {
+  testWidgets('评论单图提示后移除重选，不复用旧选择的持久化结果', (tester) async {
     final store = _DelayedFileStore();
     final gateway = MomentPagesTestControlledBatchUploadGateway();
     await tester.pumpWidget(
@@ -155,6 +161,17 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('moment-comment-image')));
     await tester.pump();
+    await tester.pump();
+    expect(store.pending, hasLength(1));
+    await tester.tap(find.byKey(const Key('moment-comment-image')));
+    await tester.pump();
+    await tester.pump();
+    expect(
+      find.byKey(const Key('moment-comment-image-limit-hint')),
+      findsOneWidget,
+    );
+    expect(store.pending, hasLength(1));
+    await tester.tap(find.byTooltip('移除图片 1'));
     await tester.pump();
     await tester.tap(find.byKey(const Key('moment-comment-image')));
     await tester.pump();
@@ -273,6 +290,8 @@ void main() {
     await tester.pump();
     await tester.tap(find.byKey(const Key('moment-compose-submit')));
     await tester.pump();
+    expect(find.text('还有 2 张图片未就绪'), findsNothing);
+    await tester.pump(const Duration(seconds: 3));
     expect(find.text('还有 2 张图片未就绪'), findsOneWidget);
     expect(
       tester
@@ -353,6 +372,8 @@ void main() {
       await tester.pump();
       await tester.tap(find.byKey(const Key('moment-comment-send')));
       await tester.pump();
+      expect(find.text('还有 1 张图片未就绪'), findsNothing);
+      await tester.pump(const Duration(seconds: 3));
       expect(find.text('还有 1 张图片未就绪'), findsOneWidget);
       expect(editor.controller.readOnly, isTrue);
       expect(sent, isEmpty);
@@ -418,10 +439,11 @@ void main() {
     );
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('moment-comment-image')));
-    await tester.pumpAndSettle();
-    expect(find.text('未完成'), findsOneWidget);
-    await tester.tap(find.byTooltip('移除图片 1'));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    expect(
+      find.byKey(const Key('moment-comment-image-limit-hint')),
+      findsOneWidget,
+    );
     await tester.tap(find.byKey(const Key('moment-comment-send')));
     await tester.pumpAndSettle();
     expect(sent.single.mediaId, 'old-image');

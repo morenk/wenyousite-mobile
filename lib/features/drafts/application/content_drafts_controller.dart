@@ -501,7 +501,7 @@ class ContentDraftsController extends StateNotifier<ContentDraftsState> {
     if (!MarkdownContent.hasVisibleContent(content)) {
       return allowEmpty ? null : '当前正文为空，先写一点内容再保存。';
     }
-    if (content.length > 10000) {
+    if (content.runes.length > 10000) {
       return '正文超过 10000 字符，请精简后再保存。';
     }
     if (MarkdownDiceContract.countMarkdownNodes(content) >

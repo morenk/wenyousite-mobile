@@ -33,7 +33,7 @@ if ($env:WENYOU_GATE_TEST_FAIL -eq 'yes' -and $args -contains 'api:verify:produc
     assert.doesNotMatch(stopped.stdout, /STUB flutter test/);
     const collected = run(['-ContinueAfterFailure', '-BuildDebugApk'], 'yes');
     assert.equal(collected.status, 1, collected.stdout + collected.stderr);
-    for (const step of ['flutter analyze', 'dart run tool/check_architecture.dart', 'flutter test', 'npm run test:release-tool', 'flutter build apk --debug']) {
+    for (const step of ['flutter analyze', 'dart run tool/check_architecture.dart', 'flutter test', 'npm run test:release-tool', 'flutter build apk --debug --target-platform android-arm64']) {
       assert.ok(collected.stdout.includes(`STUB ${step}`), collected.stdout);
     }
     assert.match(collected.stdout, /quality gate FAILED \(1 steps\)/);

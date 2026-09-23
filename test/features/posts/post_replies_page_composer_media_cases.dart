@@ -13,6 +13,7 @@ import 'package:wenyousite_mobile/features/media/application/image_crop_ports.da
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
 import 'package:wenyousite_mobile/features/media/data/media_upload_repository.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
+import 'package:wenyousite_mobile/features/media/media_ui.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_thread_context_ports.dart';
 import 'package:wenyousite_mobile/features/posts/data/post_repository.dart';
 import 'package:wenyousite_mobile/features/posts/presentation/post_replies_page.dart';
@@ -500,8 +501,13 @@ void registerPostRepliesPageComposerMediaCases() {
         await postRepliesPageTestConfirmImageCrop(tester);
         await _settleEditorImage(tester);
 
-        expect(find.text('未完成'), findsOneWidget);
-        expect(find.text('重试'), findsOneWidget);
+        expect(
+          find.byWidgetPredicate(
+            (widget) => widget is PendingImageOverlay && widget.failed,
+          ),
+          findsOneWidget,
+        );
+        expect(find.text('重试'), findsNothing);
         var editor = tester.widget<QuillEditor>(
           find.byKey(const Key('post-composer-body')),
         );
@@ -521,6 +527,9 @@ void registerPostRepliesPageComposerMediaCases() {
           isTrue,
         );
 
+        await tester.tap(find.byType(PendingImageOverlay));
+        await tester.pumpAndSettle();
+        expect(find.text('图片未完成'), findsOneWidget);
         await tester.tap(find.text('重试'));
         await _settleEditorImage(tester);
 
@@ -618,6 +627,8 @@ void registerPostRepliesPageComposerMediaCases() {
           expect(find.textContaining('安全处理'), findsNothing);
           await tester.tap(find.byKey(const Key('editor-submit')));
           await tester.pump();
+          expect(find.text('还有 1 张图片未就绪'), findsNothing);
+          await tester.pump(const Duration(seconds: 3));
           expect(find.text('还有 1 张图片未就绪'), findsOneWidget);
           expect(editor.controller.readOnly, isTrue);
           expect(repository.createInputs, isEmpty);

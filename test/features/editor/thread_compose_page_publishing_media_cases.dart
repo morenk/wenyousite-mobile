@@ -13,6 +13,7 @@ import 'package:wenyousite_mobile/features/editor/presentation/editor_pending_im
 import 'package:wenyousite_mobile/features/editor/presentation/editor_toolbar.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/mention_suggestions.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
+import 'package:wenyousite_mobile/features/media/media_ui.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_compose_controller.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_compose_models.dart';
 
@@ -317,7 +318,7 @@ void registerThreadComposePagePublishingMediaCases() {
     );
   });
 
-  testWidgets('图片上传显示本地预览和真实百分比，仍可编辑和移除', (tester) async {
+  testWidgets('图片上传显示本地预览与延迟遮罩，仍可编辑和移除', (tester) async {
     final controller =
         await threadComposePageTestReadyController(
             ThreadComposePageTestMemorySnapshotStore(),
@@ -358,16 +359,9 @@ void registerThreadComposePagePublishingMediaCases() {
     await tester.pump(const Duration(milliseconds: 1));
 
     expect(find.byType(EditorPendingImageWidget), findsOneWidget);
-    expect(find.text(' 50%'), findsOneWidget);
+    expect(find.text(' 50%'), findsNothing);
     expect(find.textContaining('安全处理'), findsNothing);
-    expect(
-      tester
-          .widgetList<CircularProgressIndicator>(
-            find.byType(CircularProgressIndicator),
-          )
-          .any((indicator) => indicator.value == .5),
-      isTrue,
-    );
+    expect(inlineProgress, findsOneWidget);
     expect(
       tester.widget<FilledButton>(findButtonControl(publish)).onPressed,
       isNotNull,
@@ -385,7 +379,7 @@ void registerThreadComposePagePublishingMediaCases() {
     await tester.pump(const Duration(milliseconds: 400));
     expect(editor.controller.document.toPlainText(), contains('继续写作'));
 
-    await tester.tap(find.text('移除'));
+    await tester.tap(find.byTooltip('移除图片'));
     await tester.pump();
     await tester.pump();
 
@@ -467,6 +461,8 @@ void registerThreadComposePagePublishingMediaCases() {
     await threadComposePageTestConfirmImageCrop(tester);
     await tester.tap(find.byKey(const Key('compose-publish')));
     await tester.pump();
+    expect(find.text('还有 1 张图片未就绪'), findsNothing);
+    await tester.pump(const Duration(seconds: 3));
     expect(find.text('还有 1 张图片未就绪'), findsOneWidget);
     expect(find.text('正在发布…'), findsOneWidget);
     expect(repository.createCalls, 0);
@@ -523,6 +519,8 @@ void registerThreadComposePagePublishingMediaCases() {
     await threadComposePageTestConfirmImageCrop(tester);
     await tester.tap(find.byKey(const Key('compose-publish')));
     await tester.pump();
+    expect(find.text('取消发布'), findsNothing);
+    await tester.pump(const Duration(seconds: 3));
     await tester.tap(find.text('取消发布'));
     await tester.pump();
     expect(gateway.current.cancelled, isFalse);
@@ -567,9 +565,17 @@ void registerThreadComposePagePublishingMediaCases() {
     await tester.pump();
     gateway.current.fail(const ApiFailure(userMessage: '图片上传失败，请重试。'));
     await tester.pumpAndSettle();
-    expect(find.text('未完成'), findsOneWidget);
+    expect(
+      find.byWidgetPredicate(
+        (widget) => widget is PendingImageOverlay && widget.failed,
+      ),
+      findsOneWidget,
+    );
     expect(find.text('取消发布'), findsNothing);
     expect(repository.createCalls, 0);
+    await tester.tap(find.byType(PendingImageOverlay));
+    await tester.pumpAndSettle();
+    expect(find.text('图片未完成'), findsOneWidget);
     await tester.tap(find.text('重试'));
     await tester.pump();
     expect(gateway.starts, 2);

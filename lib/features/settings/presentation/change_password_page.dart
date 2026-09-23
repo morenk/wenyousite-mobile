@@ -80,7 +80,11 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
                     enabled: !state.isSubmitting,
                     autofillHints: const [AutofillHints.password],
                     textInputAction: TextInputAction.next,
-                    validator: CredentialInputPolicy.validateCurrentPassword,
+                    validator: (value) =>
+                        CredentialInputPolicy.validateCurrentPassword(
+                          value,
+                          minimumLength: 8,
+                        ),
                   ),
                   SizedBox(height: tokens.space16),
                   WenyouPasswordField(

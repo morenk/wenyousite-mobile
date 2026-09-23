@@ -98,7 +98,7 @@ exit 0
       path.join('test', 'features', 'sample', 'sample_test.dart'),
       path.join('test', 'core'),
     ]);
-    assert.match(passed.stdout, /STUB flutter build apk --debug/);
+    assert.match(passed.stdout, /STUB flutter build apk --debug --target-platform android-arm64/);
     assert.match(passed.stdout, /build[\\/]app[\\/]outputs[\\/]flutter-apk[\\/]app-debug\.apk/);
     assert.match(passed.stdout, new RegExp(createHash('sha256').update(apkContents).digest('hex'), 'i'));
 

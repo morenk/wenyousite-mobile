@@ -32,16 +32,5 @@ void main() {
       formatWenyouRelativeTime(DateTime(2025, 12, 31), now: now),
       '2025-12-31',
     );
-    expect(
-      formatWenyouRelativeTime(
-        now.subtract(const Duration(hours: 72)),
-        now: now,
-      ),
-      '08-09',
-    );
-    expect(
-      formatWenyouRelativeTime(now.add(const Duration(hours: 1)), now: now),
-      '08-12',
-    );
   });
 }

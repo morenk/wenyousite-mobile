@@ -268,8 +268,8 @@ String? validateThreadDraft({
   required List<String> tags,
 }) {
   if (containsLocalImageMarker(body)) return '图片尚未就绪，请等待或移除。';
-  if (title.trim().length > 100) return '标题不能超过 100 个字符。';
-  if (MarkdownContent.normalize(body).length > 10000) {
+  if (title.trim().runes.length > 100) return '标题不能超过 100 个字符。';
+  if (MarkdownContent.normalize(body).runes.length > 10000) {
     return '正文不能超过 10000 个字符。';
   }
   if (MarkdownDiceContract.countMarkdownNodes(body) >

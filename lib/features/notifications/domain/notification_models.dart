@@ -13,6 +13,14 @@ enum NotificationKind {
 
 enum NotificationTargetKind { post, thread, moment, user, none, unknown }
 
+enum NotificationTargetState {
+  active,
+  contentDeleted,
+  userDeactivated,
+  noTarget,
+  unknown,
+}
+
 class NotificationActor {
   const NotificationActor({
     required this.id,
@@ -56,6 +64,7 @@ class NotificationPayload {
 class NotificationTarget {
   const NotificationTarget({
     required this.kind,
+    this.state = NotificationTargetState.active,
     this.threadId,
     this.postId,
     this.parentPostId,
@@ -66,6 +75,7 @@ class NotificationTarget {
   });
 
   final NotificationTargetKind kind;
+  final NotificationTargetState state;
   final String? threadId;
   final String? postId;
   final String? parentPostId;
@@ -75,6 +85,7 @@ class NotificationTarget {
   final String? deletedHint;
 
   bool get canOpen =>
+      state == NotificationTargetState.active &&
       deletedHint == null &&
       switch (kind) {
         NotificationTargetKind.post => threadId != null && postId != null,

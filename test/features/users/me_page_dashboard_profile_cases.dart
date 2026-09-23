@@ -362,7 +362,7 @@ void registerMePageDashboardProfileCases() {
 
     expect(find.text('添加主页背景'), findsOneWidget);
     expect(find.byType(WenyouSettingsTypography), findsOneWidget);
-    expect(find.text('选择图片后可调整取景'), findsOneWidget);
+    expect(find.text('选择图片后可调整取景'), findsNothing);
     expect(find.bySemanticsLabel('添加主页背景'), findsOneWidget);
     expect(find.bySemanticsLabel('添加头像'), findsOneWidget);
     expect(find.text('主页公开内容'), findsOneWidget);
@@ -480,7 +480,7 @@ void registerMePageDashboardProfileCases() {
     expect(media.uploadCalls, 1);
     expect(avatar.setCalls, 1);
     expect(avatar.lastMediaId, 'media-avatar-1');
-    expect(find.text('头像已更新。'), findsOneWidget);
+    expect(find.text('头像已更新。'), findsNothing);
     expect(find.bySemanticsLabel('更换头像'), findsOneWidget);
   });
 
