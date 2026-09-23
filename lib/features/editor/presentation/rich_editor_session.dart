@@ -9,6 +9,7 @@ import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_quill/quill_delta.dart';
 import 'package:uuid/uuid.dart';
 import 'package:wenyousite_mobile/core/diagnostics/failure_diagnostics.dart';
+import 'package:wenyousite_mobile/core/markdown/local_image_marker.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_line_metadata.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_editing_compatibility.dart';
@@ -123,6 +124,7 @@ class RichEditorSession extends ChangeNotifier {
   int _documentGeneration = 0;
   int _scheduledExternalRevision = -1;
   String _lastMarkdown = '';
+  String get localMarkdown => _lastMarkdown;
   String? _codecFailure;
   String? diagnosticId;
   RichEditorOperationFailure? _operationFailure;
@@ -273,9 +275,8 @@ class RichEditorSession extends ChangeNotifier {
         (start == 0 || plainText[start - 1] == '\n') &&
         selection.end < plainText.length &&
         plainText[selection.end] == '\n';
-    final delta = sourceDelta.slice(
-      start,
-      selection.end + (copiesCompleteBlocks ? 1 : 0),
+    final delta = withoutLocalClipboardImages(
+      sourceDelta.slice(start, selection.end + (copiesCompleteBlocks ? 1 : 0)),
     );
     final marker = const Uuid().v4();
     final fallback = _clipboardStore.capture(
@@ -402,7 +403,9 @@ class RichEditorSession extends ChangeNotifier {
         controller.document.toDelta(),
         imageAlignment: imageAlignment,
       );
-      MarkdownSubmissionGuard.validate(markdown);
+      // 本机占位只在编辑会话和本机草稿中流转，永不通知业务发布控制器。
+      final hasLocalImages = containsLocalImageMarker(markdown);
+      if (!hasLocalImages) MarkdownSubmissionGuard.validate(markdown);
       _serializedLength = markdown.length;
       if (_serializedLength > maximumSerializedLength) {
         _setOperationFailure(
@@ -419,7 +422,7 @@ class RichEditorSession extends ChangeNotifier {
       _dirty = false;
       if (markdown != _lastMarkdown) {
         _lastMarkdown = markdown;
-        onMarkdownChanged(markdown);
+        if (!hasLocalImages) onMarkdownChanged(markdown);
       }
       notifyListeners();
       return true;

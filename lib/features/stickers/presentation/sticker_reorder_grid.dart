@@ -18,6 +18,7 @@ class StickerReorderGrid extends StatefulWidget {
     required this.scrollController,
     required this.viewportKey,
     required this.addButton,
+    this.pendingTiles = const [],
     required this.onReorder,
     required this.onRemove,
     required this.onDragChanged,
@@ -32,6 +33,9 @@ class StickerReorderGrid extends StatefulWidget {
   final ScrollController scrollController;
   final GlobalKey viewportKey;
   final Widget addButton;
+
+  /// 固定在已收藏表情之后，不参与拖动和服务端排序。
+  final List<Widget> pendingTiles;
   final ValueChanged<List<UserSticker>> onReorder;
   final ValueChanged<UserSticker> onRemove;
   final ValueChanged<bool> onDragChanged;
@@ -277,7 +281,9 @@ class _StickerReorderGridState extends State<StickerReorderGrid>
                 .clamp(3, 8);
         _size = (constraints.maxWidth - (_columns - 1) * _gap) / _columns;
         _rtl = Directionality.of(context) == TextDirection.rtl;
-        final rows = ((_order.length + 1) / _columns).ceil();
+        final rows =
+            ((_order.length + widget.pendingTiles.length + 1) / _columns)
+                .ceil();
         final height = rows * (_size + _gap) - _gap;
         final scrollOffset = widget.scrollController.hasClients
             ? widget.scrollController.offset
@@ -407,6 +413,15 @@ class _StickerReorderGridState extends State<StickerReorderGrid>
                         ),
                       ),
                     ),
+                for (final (index, tile) in widget.pendingTiles.indexed)
+                  Positioned(
+                    key: ValueKey('pending-sticker-slot-$index'),
+                    left: _slot(_order.length + index + 1).dx,
+                    top: _slot(_order.length + index + 1).dy,
+                    width: _size,
+                    height: _size,
+                    child: tile,
+                  ),
               ],
             ),
           ),

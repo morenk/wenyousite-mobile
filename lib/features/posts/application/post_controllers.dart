@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
 import 'package:wenyousite_mobile/core/application/visibility_cache_invalidation.dart';
+import 'package:wenyousite_mobile/core/markdown/local_image_marker.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_dice_contract.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
@@ -533,6 +534,7 @@ class PostComposerController extends StateNotifier<PostComposerState> {
   }
 
   String? _validate(String content) {
+    if (containsLocalImageMarker(content)) return '图片尚未就绪，请等待或移除。';
     if (MarkdownDiceContract.countMarkdownNodes(content) >
         MarkdownDiceContract.maximumNodesPerPost) {
       return '当前正文最多可插入 20 个骰子，请删除一个后重试。';

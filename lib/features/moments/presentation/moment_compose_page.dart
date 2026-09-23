@@ -13,6 +13,7 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_atomic_text_editor.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
+import 'package:wenyousite_mobile/features/media/application/pending_media_file_store_ports.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
 import 'package:wenyousite_mobile/features/media/presentation/editor_image_selection.dart';
 import 'package:wenyousite_mobile/features/moments/application/moment_controllers.dart';
@@ -20,6 +21,8 @@ import 'package:wenyousite_mobile/features/moments/application/moment_draft_stor
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_compose_actions.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_compose_images.dart';
+import 'package:wenyousite_mobile/features/moments/presentation/moment_compose_leave.dart';
+import 'package:wenyousite_mobile/features/moments/presentation/moment_compose_upload.dart';
 
 class MomentComposePage extends ConsumerWidget {
   const MomentComposePage({this.momentId, super.key});
@@ -50,8 +53,11 @@ class _MomentComposePageState extends ConsumerState<_MomentComposeEditor>
   late final WenyouAtomicTextController _contentController;
   List<UploadedEditorImage> _images = [];
   String? _coverMediaId;
+  List<String> _imageOrder = [];
+  bool _waitingToPublish = false;
+  bool _selectingImages = false;
   int? _hydratedVersion;
-  List<_MomentPendingUpload> _pendingImageUploads = const [];
+  List<MomentComposeUpload> _pendingImageUploads = const [];
   Timer? _draftTimer;
   MomentLocalDraft? _baselineDraft;
   var _baselineSignature = '';
@@ -59,6 +65,8 @@ class _MomentComposePageState extends ConsumerState<_MomentComposeEditor>
   var _draftReadScheduled = false;
   var _applyingContent = false;
   var _allowPop = false;
+  var _leaving = false;
+  var _suspended = false;
 
   @override
   void initState() {
@@ -74,6 +82,10 @@ class _MomentComposePageState extends ConsumerState<_MomentComposeEditor>
 
   @override
   void dispose() {
+    _leaving = true;
+    for (final upload in _pendingImageUploads) {
+      upload.generation++;
+    }
     WidgetsBinding.instance.removeObserver(this);
     _draftTimer?.cancel();
     _titleController.removeListener(_onDraftChanged);
@@ -85,10 +97,19 @@ class _MomentComposePageState extends ConsumerState<_MomentComposeEditor>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.inactive ||
-        state == AppLifecycleState.paused) {
+    if (state == AppLifecycleState.paused) {
+      _suspended = true;
+      _pauseUploads();
+      for (final upload in _pendingImageUploads) {
+        upload.active = false;
+        upload.started = upload.failed;
+      }
       _draftTimer?.cancel();
       unawaited(_saveDraftNow(reportFailure: true));
+      if (mounted) setState(() {});
+    } else if (state == AppLifecycleState.resumed && _suspended) {
+      _suspended = false;
+      if (!_leaving) _pumpImageUploads();
     }
   }
 
@@ -107,7 +128,18 @@ class _MomentComposePageState extends ConsumerState<_MomentComposeEditor>
           final taskState = ref.watch(
             mediaUploadTaskControllerProvider(upload.taskId),
           );
+          ref.listen(mediaUploadTaskControllerProvider(upload.taskId), (
+            previous,
+            next,
+          ) {
+            if (next.pendingUpload != null &&
+                next.pendingUpload != upload.pending) {
+              upload.pending = next.pendingUpload;
+              _onDraftChanged();
+            }
+          });
           return MomentPendingComposeImage(
+            id: upload.id,
             input: upload.input,
             state: upload.failure == null || taskState.failure != null
                 ? taskState
@@ -115,13 +147,13 @@ class _MomentComposePageState extends ConsumerState<_MomentComposeEditor>
                     phase: MediaUploadTaskPhase.failed,
                     failure: upload.failure,
                   ),
-            completed: upload.result != null,
+            completed: false,
             active: upload.active,
             failed: upload.failed,
           );
         })
         .toList(growable: false);
-    final uploadState = _aggregateUploadState(pendingImages);
+    final uploadState = aggregateMomentUploadState(pendingImages);
     _hydrate(state.initialDetail);
     final editing = widget.momentId != null;
     if (!editing &&
@@ -135,7 +167,7 @@ class _MomentComposePageState extends ConsumerState<_MomentComposeEditor>
     final editable =
         state.phase != MomentComposerPhase.loading &&
         state.phase != MomentComposerPhase.failed;
-    final hasPendingImages = _hasPendingImageWork(uploadState);
+    final hasPendingImages = _pendingImageUploads.isNotEmpty;
     return PopScope(
       canPop:
           _allowPop ||
@@ -154,7 +186,8 @@ class _MomentComposePageState extends ConsumerState<_MomentComposeEditor>
               IconButton(
                 key: const Key('moment-compose-delete'),
                 onPressed:
-                    state.isSubmitting ||
+                    _waitingToPublish ||
+                        state.isSubmitting ||
                         state.phase == MomentComposerPhase.succeeded
                     ? null
                     : _confirmDelete,
@@ -176,10 +209,14 @@ class _MomentComposePageState extends ConsumerState<_MomentComposeEditor>
         bottomNavigationBar: editable
             ? MomentPublishBar(
                 editing: editing,
-                submitting: state.isSubmitting,
+                submitting: state.isSubmitting || _waitingToPublish,
+                pendingCount: _waitingToPublish
+                    ? _pendingImageUploads.length
+                    : 0,
+                onCancelWait: _waitingToPublish ? _cancelPublishWait : null,
                 awaitingConfirmation: state.awaitingConfirmation,
                 cleanupPending: state.phase == MomentComposerPhase.succeeded,
-                onPressed: hasPendingImages ? null : _submit,
+                onPressed: _submit,
               )
             : null,
       ),
@@ -231,30 +268,21 @@ class _MomentComposePageState extends ConsumerState<_MomentComposeEditor>
                   SizedBox(height: tokens.space8),
                 ],
                 IgnorePointer(
-                  ignoring: !state.canEditContent,
+                  ignoring: (!state.canEditContent || _waitingToPublish),
                   child: MomentComposeImageStrip(
                     images: _images,
                     coverMediaId: _coverMediaId,
                     uploadState: uploadState,
                     pendingImages: pendingImages,
+                    order: _imageOrder,
                     onAdd:
-                        _images.length >= 9 ||
+                        _imageOrder.length >= 9 ||
                             !state.canEditContent ||
-                            _hasPendingImageWork(uploadState)
+                            _waitingToPublish ||
+                            _selectingImages
                         ? null
                         : _pickAndUpload,
-                    onCancelUpload: !state.canEditContent
-                        ? null
-                        : _cancelPendingImageUpload,
-                    onRetryUpload:
-                        uploadState.failure?.canRetry == true &&
-                            !state.isSubmitting &&
-                            _pendingImageUploads
-                                    .where((upload) => upload.active)
-                                    .length <
-                                2
-                        ? _retryUpload
-                        : null,
+                    onRetry: _retryUpload,
                     onCoverSelected: _selectCover,
                     onRemove: _removeImage,
                     onReorder: _reorderImages,
@@ -264,7 +292,7 @@ class _MomentComposePageState extends ConsumerState<_MomentComposeEditor>
                 TextFormField(
                   key: const Key('moment-compose-title'),
                   controller: _titleController,
-                  readOnly: !state.canEditContent,
+                  readOnly: (!state.canEditContent || _waitingToPublish),
                   maxLength: 40,
                   textInputAction: TextInputAction.next,
                   decoration: const InputDecoration(
@@ -286,7 +314,7 @@ class _MomentComposePageState extends ConsumerState<_MomentComposeEditor>
                     ),
                     child: WenyouAtomicTextEditor(
                       controller: _contentController,
-                      enabled: state.canEditContent,
+                      enabled: state.canEditContent && !_waitingToPublish,
                       editorKey: const Key('moment-compose-content'),
                       placeholder: '分享此刻的想法…',
                       semanticLabel: '正文（选填）',
@@ -335,6 +363,7 @@ class _MomentComposePageState extends ConsumerState<_MomentComposeEditor>
         )
         .toList(growable: false);
     _coverMediaId = detail.card.coverMedia?.id;
+    _imageOrder = _images.map((image) => image.mediaId).toList();
     _applyingContent = false;
     _contentReady = true;
     _baselineDraft = _currentDraft();
@@ -343,71 +372,78 @@ class _MomentComposePageState extends ConsumerState<_MomentComposeEditor>
   }
 
   Future<void> _pickAndUpload() async {
+    if (_selectingImages || _waitingToPublish) return;
+    setState(() => _selectingImages = true);
     final inputs = await pickEditorImages(
       context,
       ref,
-      maximumSelection: 9 - _images.length - _pendingImageUploads.length,
+      maximumSelection: 9 - _imageOrder.length,
       purpose: MediaUploadPurpose.moment,
     );
-    if (!mounted || inputs == null || inputs.isEmpty) return;
+    if (!mounted) return;
+    setState(() => _selectingImages = false);
+    if (inputs == null || inputs.isEmpty || _waitingToPublish) return;
+    final uploads = inputs.map(MomentComposeUpload.new).toList();
     setState(() {
-      _pendingImageUploads = inputs
-          .map(_MomentPendingUpload.new)
-          .toList(growable: false);
+      _pendingImageUploads = [..._pendingImageUploads, ...uploads];
+      _imageOrder = [..._imageOrder, ...uploads.map((item) => item.id)];
+      _coverMediaId ??= uploads.first.id;
     });
+    _onDraftChanged();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _pumpImageUploads();
     });
   }
 
-  Future<void> _retryUpload() async {
-    if (_pendingImageUploads.where((item) => item.active).length >= 2) return;
+  void _retryUpload(String id) {
     final upload = _pendingImageUploads
-        .where((item) => item.failed && !item.active)
+        .where((item) => item.id == id)
         .firstOrNull;
-    if (upload == null) return;
-    await _runImageUpload(upload);
+    if (upload == null || upload.active || _waitingToPublish) return;
+    unawaited(_runImageUpload(upload));
   }
 
-  void _cancelPendingImageUpload() {
-    final completed = _pendingImageUploads
-        .map((upload) => upload.result)
-        .nonNulls
-        .toList(growable: false);
+  void _pauseUploads() {
+    _waitingToPublish = false;
     for (final upload in _pendingImageUploads) {
-      ref
-          .read(mediaUploadTaskControllerProvider(upload.taskId).notifier)
-          .reset();
+      final controller = ref.read(
+        mediaUploadTaskControllerProvider(upload.taskId).notifier,
+      );
+      upload.pending =
+          ref
+              .read(mediaUploadTaskControllerProvider(upload.taskId))
+              .pendingUpload ??
+          upload.pending;
+      upload.generation++;
+      controller.pause();
     }
-    setState(() {
-      _images = List.unmodifiable([..._images, ...completed]);
-      _coverMediaId ??= completed.firstOrNull?.mediaId;
-      _pendingImageUploads = const [];
-    });
-    if (completed.isNotEmpty) _onDraftChanged();
   }
 
   void _pumpImageUploads() {
-    while (_pendingImageUploads.where((upload) => upload.active).length < 2) {
-      final upload = _pendingImageUploads
-          .where(
-            (item) =>
-                !item.active &&
-                !item.failed &&
-                item.result == null &&
-                !item.started,
-          )
-          .firstOrNull;
-      if (upload == null) return;
-      upload
-        ..active = true
-        ..started = true;
+    for (final upload
+        in _pendingImageUploads.where((item) => !item.started).toList()) {
+      upload.started = true;
       unawaited(_runImageUpload(upload));
     }
-    if (mounted) setState(() {});
   }
 
-  Future<void> _runImageUpload(_MomentPendingUpload upload) async {
+  Future<void> _persistUpload(MomentComposeUpload upload) {
+    return upload.persisting ??= (() async {
+      final resolveOwner = ref.read(momentComposerOwnerResolverProvider);
+      final store = ref.read(pendingMediaFileStoreProvider);
+      final owner = await resolveOwner();
+      upload.input = await store.persist(
+        upload.input,
+        accountId: owner,
+        target: 'moment:${widget.momentId ?? 'new'}',
+        attachmentId: upload.id,
+      );
+      upload.persisted = true;
+    })().whenComplete(() => upload.persisting = null);
+  }
+
+  Future<void> _runImageUpload(MomentComposeUpload upload) async {
+    final generation = ++upload.generation;
     upload
       ..active = true
       ..failed = false
@@ -416,40 +452,82 @@ class _MomentComposePageState extends ConsumerState<_MomentComposeEditor>
     final controller = ref.read(
       mediaUploadTaskControllerProvider(upload.taskId).notifier,
     );
-    final image =
-        ref
-                .read(mediaUploadTaskControllerProvider(upload.taskId))
-                .pendingUpload ==
-            null
-        ? await controller.uploadInput(upload.input)
-        : await controller.retryUpload();
-    if (!mounted || !_pendingImageUploads.contains(upload)) return;
+    try {
+      if (!upload.persisted) {
+        await _persistUpload(upload);
+        upload.persisted = true;
+        if (!mounted ||
+            _leaving ||
+            _suspended ||
+            generation != upload.generation ||
+            !_pendingImageUploads.contains(upload)) {
+          return;
+        }
+        await _saveDraftNow();
+      }
+    } on Object {
+      // 保留预览与原始选择，让本机保存失败可由用户重试。
+      if (!mounted ||
+          _leaving ||
+          generation != upload.generation ||
+          !_pendingImageUploads.contains(upload)) {
+        return;
+      }
+      setState(() {
+        upload.active = false;
+        upload.failed = true;
+        _waitingToPublish = false;
+      });
+      return;
+    }
+    if (!mounted ||
+        _leaving ||
+        _suspended ||
+        generation != upload.generation ||
+        !_pendingImageUploads.contains(upload)) {
+      return;
+    }
+    final image = upload.pending != null
+        ? await controller.resumeUpload(upload.input, upload.pending!)
+        : await controller.uploadInput(upload.input);
+    if (!mounted ||
+        _leaving ||
+        generation != upload.generation ||
+        !_pendingImageUploads.contains(upload)) {
+      return;
+    }
     upload.active = false;
+    upload.pending = ref
+        .read(mediaUploadTaskControllerProvider(upload.taskId))
+        .pendingUpload;
     if (image == null) {
       upload.failure = ref
           .read(mediaUploadTaskControllerProvider(upload.taskId))
           .failure;
-      upload.failed = upload.failure != null;
-      setState(() {});
-      _pumpImageUploads();
-      return;
-    }
-    upload.result = image;
-    if (_pendingImageUploads.every((item) => item.result != null)) {
-      final completed = _pendingImageUploads
-          .map((item) => item.result!)
-          .toList(growable: false);
       setState(() {
-        _images = List.unmodifiable([..._images, ...completed]);
-        _coverMediaId ??= completed.first.mediaId;
-        _pendingImageUploads = const [];
+        upload.failed = true;
+        _waitingToPublish = false;
       });
       _onDraftChanged();
       return;
     }
-    setState(() {});
-    _pumpImageUploads();
+    setState(() {
+      _images = [..._images, image];
+      _imageOrder = _imageOrder
+          .map((id) => id == upload.id ? image.mediaId : id)
+          .toList();
+      if (_coverMediaId == upload.id) _coverMediaId = image.mediaId;
+      _pendingImageUploads = _pendingImageUploads
+          .where((item) => item != upload)
+          .toList();
+    });
+    _onDraftChanged();
+    if (_waitingToPublish && _pendingImageUploads.isEmpty) {
+      unawaited(_submitReady());
+    }
   }
+
+  void _cancelPublishWait() => setState(() => _waitingToPublish = false);
 
   void _selectCover(String mediaId) {
     if (_coverMediaId == mediaId) return;
@@ -457,37 +535,47 @@ class _MomentComposePageState extends ConsumerState<_MomentComposeEditor>
     _onDraftChanged();
   }
 
-  void _removeImage(String mediaId) {
+  void _removeImage(String id) {
+    if (_waitingToPublish) return;
+    final upload = _pendingImageUploads
+        .where((item) => item.id == id)
+        .firstOrNull;
+    if (upload != null) {
+      ref
+          .read(mediaUploadTaskControllerProvider(upload.taskId).notifier)
+          .reset();
+    }
     setState(() {
-      _images = _images
-          .where((image) => image.mediaId != mediaId)
-          .toList(growable: false);
-      if (_coverMediaId == mediaId ||
-          !_images.any((image) => image.mediaId == _coverMediaId)) {
-        _coverMediaId = _images.isEmpty ? null : _images.first.mediaId;
-      }
+      _pendingImageUploads = _pendingImageUploads
+          .where((item) => item.id != id)
+          .toList();
+      _images = _images.where((image) => image.mediaId != id).toList();
+      _imageOrder = _imageOrder.where((item) => item != id).toList();
+      if (_coverMediaId == id) _coverMediaId = _imageOrder.firstOrNull;
     });
     _onDraftChanged();
   }
 
   void _reorderImages(int oldIndex, int newIndex) {
-    if (oldIndex == newIndex ||
+    if (_waitingToPublish ||
+        oldIndex == newIndex ||
         oldIndex < 0 ||
-        oldIndex >= _images.length ||
         newIndex < 0 ||
-        newIndex >= _images.length) {
+        oldIndex >= _imageOrder.length ||
+        newIndex >= _imageOrder.length) {
       return;
     }
     setState(() {
-      final reordered = [..._images];
-      final image = reordered.removeAt(oldIndex);
-      reordered.insert(newIndex, image);
-      _images = List.unmodifiable(reordered);
+      final order = [..._imageOrder];
+      final item = order.removeAt(oldIndex);
+      order.insert(newIndex, item);
+      _imageOrder = order;
     });
     _onDraftChanged();
   }
 
   Future<void> _submit() async {
+    if (_waitingToPublish || _composerState.isSubmitting) return;
     if (_composerState.phase == MomentComposerPhase.succeeded) {
       final saved = _composerState.savedDetail;
       if (saved != null) {
@@ -502,6 +590,20 @@ class _MomentComposePageState extends ConsumerState<_MomentComposeEditor>
       _showFeedback(_contentController.failure ?? '正文暂时无法保存，请重新编辑后再试。');
       return;
     }
+    if (_pendingImageUploads.any((item) => item.failed)) {
+      _showFeedback('请先重试或移除未完成的图片');
+      return;
+    }
+    if (_pendingImageUploads.isNotEmpty) {
+      setState(() => _waitingToPublish = true);
+      return;
+    }
+    await _submitReady();
+  }
+
+  Future<void> _submitReady() async {
+    if (!mounted || _composerState.isSubmitting) return;
+    setState(() => _waitingToPublish = false);
     _draftTimer?.cancel();
     final saved = await _composer.submit(_draftInput(), draft: _currentDraft());
     if (saved == null || !mounted) return;
@@ -511,7 +613,7 @@ class _MomentComposePageState extends ConsumerState<_MomentComposeEditor>
   MomentDraftInput _draftInput() => MomentDraftInput(
     title: _titleController.text,
     content: _contentController.markdown,
-    mediaIds: _images.map((image) => image.mediaId).toList(),
+    mediaIds: List.of(_imageOrder),
     coverMediaId: _coverMediaId,
   );
 
@@ -603,35 +705,33 @@ class _MomentComposePageState extends ConsumerState<_MomentComposeEditor>
   bool get _hasUnsavedChanges =>
       _contentReady && _signature() != _baselineSignature;
 
-  bool _hasPendingImageWork(MediaUploadTaskState uploadState) =>
-      uploadState.isBusy || _pendingImageUploads.isNotEmpty;
-
-  MediaUploadTaskState _aggregateUploadState(
-    List<MomentPendingComposeImage> pending,
-  ) {
-    final failure = pending
-        .map((image) => image.state)
-        .where((state) => state.failure != null)
-        .firstOrNull;
-    if (failure != null) return failure;
-    return pending
-            .map((image) => image.state)
-            .where((state) => state.isBusy)
-            .firstOrNull ??
-        const MediaUploadTaskState();
-  }
-
   String _signature() => jsonEncode({
     'title': _titleController.text,
     'content': _contentController.markdown,
     'coverMediaId': _coverMediaId,
-    'mediaIds': [for (final image in _images) image.mediaId],
+    'mediaIds': _imageOrder,
+    'pending': [
+      for (final upload in _pendingImageUploads) upload.pending?.mediaId,
+    ],
   });
 
   MomentLocalDraft _currentDraft() => MomentLocalDraft(
     title: _titleController.text,
     content: _contentController.markdown,
-    images: List.unmodifiable(_images),
+    images: [
+      for (final id in _imageOrder)
+        ..._images.where((image) => image.mediaId == id),
+    ],
+    imageOrder: List.unmodifiable(_imageOrder),
+    pendingImages: [
+      for (final upload in _pendingImageUploads)
+        if (upload.persisted)
+          MomentPendingDraftImage(
+            id: upload.id,
+            input: upload.input,
+            pending: upload.pending,
+          ),
+    ],
     coverMediaId: _coverMediaId,
     updatedAt: DateTime.now(),
   );
@@ -675,19 +775,43 @@ class _MomentComposePageState extends ConsumerState<_MomentComposeEditor>
     _titleController.text = draft.title;
     _contentController.applyMarkdown(draft.content);
     final images = draft.images.take(9).toList(growable: false);
-    final cover = images.any((image) => image.mediaId == draft.coverMediaId)
+    final uploads = draft.pendingImages
+        .map(
+          (item) => MomentComposeUpload(item.input, id: item.id)
+            ..pending = item.pending
+            ..persisted = true,
+        )
+        .toList();
+    final validIds = {
+      ...images.map((image) => image.mediaId),
+      ...uploads.map((item) => item.id),
+    };
+    final order = [
+      ...draft.imageOrder.where(validIds.contains),
+      ...validIds.where((id) => !draft.imageOrder.contains(id)),
+    ];
+    final cover = order.contains(draft.coverMediaId)
         ? draft.coverMediaId
-        : images.firstOrNull?.mediaId;
+        : order.firstOrNull;
     setState(() {
       _images = images;
+      _pendingImageUploads = uploads;
+      _imageOrder = order;
       _coverMediaId = cover;
     });
     _applyingContent = false;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _pumpImageUploads();
+    });
   }
 
   Future<void> _restoreBaseline() async {
     final baseline = _baselineDraft;
-    if (baseline == null || !_composerState.canEditContent) return;
+    if (baseline == null ||
+        !_composerState.canEditContent ||
+        _waitingToPublish) {
+      return;
+    }
     _draftTimer?.cancel();
     try {
       await _composer.deleteDraft();
@@ -719,65 +843,36 @@ class _MomentComposePageState extends ConsumerState<_MomentComposeEditor>
 
   Future<void> _confirmLeave(MediaUploadTaskState uploadState) async {
     if (_composerState.isSubmitting) return;
+    if (_waitingToPublish) setState(() => _waitingToPublish = false);
     final pending = _composerState.awaitingConfirmation;
-    final hasPendingImages = _hasPendingImageWork(uploadState);
-    final decision = await showModalBottomSheet<_LeaveDraftDecision>(
-      context: context,
-      useSafeArea: true,
-      showDragHandle: true,
-      builder: (context) {
-        final tokens = context.wenyouTokens;
-        return Padding(
-          padding: EdgeInsets.fromLTRB(
-            tokens.space16,
-            0,
-            tokens.space16,
-            tokens.space16,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                pending ? '已保留这次发布的内容' : '要保存这次编辑吗？',
-                style: Theme.of(context).textTheme.wenyouOverlayTitle,
-              ),
-              if (hasPendingImages) ...[
-                SizedBox(height: tokens.space8),
-                Text(
-                  '尚未完成的图片不会保留，已完成的图片会随草稿保存。',
-                  style: Theme.of(context).textTheme.wenyouCompactBody.copyWith(
-                    color: tokens.mutedText,
-                  ),
-                ),
-              ],
-              SizedBox(height: tokens.space16),
-              FilledButton(
-                key: const Key('moment-leave-save'),
-                onPressed: () =>
-                    Navigator.pop(context, _LeaveDraftDecision.save),
-                child: Text(pending ? '保留并退出' : '保存草稿并退出'),
-              ),
-              SizedBox(height: tokens.space8),
-              if (!pending)
-                TextButton(
-                  key: const Key('moment-leave-discard'),
-                  onPressed: () =>
-                      Navigator.pop(context, _LeaveDraftDecision.discard),
-                  child: const Text('不保存'),
-                ),
-            ],
-          ),
-        );
-      },
+    final hasPendingImages = _pendingImageUploads.isNotEmpty;
+    final decision = await showMomentLeaveDraftSheet(
+      context,
+      pending: pending,
+      hasPendingImages: hasPendingImages,
     );
     if (!mounted || decision == null) return;
     _draftTimer?.cancel();
-    _cancelPendingImageUpload();
-    final completed = decision == _LeaveDraftDecision.save
+    _waitingToPublish = false;
+    if (decision == MomentLeaveDraftDecision.save) {
+      try {
+        await Future.wait(
+          _pendingImageUploads
+              .where((item) => !item.persisted)
+              .map(_persistUpload),
+        );
+      } on Object {
+        if (mounted) _showFeedback('图片保存失败，请重试后退出。');
+        return;
+      }
+      if (!mounted) return;
+    }
+    final completed = decision == MomentLeaveDraftDecision.save
         ? await _saveDraftNow(reportFailure: true)
         : await _deleteDraft();
     if (!completed || !mounted) return;
+    _leaving = true;
+    _pauseUploads();
     setState(() => _allowPop = true);
     Navigator.of(context).pop();
   }
@@ -801,18 +896,4 @@ class _MomentComposePageState extends ConsumerState<_MomentComposeEditor>
   }
 }
 
-enum _LeaveDraftDecision { save, discard }
-
 enum _ConflictDecision { keepMine, useLatest }
-
-class _MomentPendingUpload {
-  _MomentPendingUpload(this.input);
-
-  final MediaUploadInput input;
-  final Object taskId = Object();
-  bool started = false;
-  bool active = false;
-  bool failed = false;
-  MediaUploadFailure? failure;
-  UploadedEditorImage? result;
-}

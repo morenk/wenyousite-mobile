@@ -3,6 +3,7 @@ import 'package:flutter_quill/flutter_quill.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/markdown/local_image_marker.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/core/media/media_display.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_reference.dart';
@@ -11,15 +12,18 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_dice_node.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_inline_text_elements.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_internal_reference_text.dart';
+import 'package:wenyousite_mobile/features/editor/presentation/editor_pending_image_widget.dart';
+import 'package:wenyousite_mobile/features/editor/presentation/editor_pending_images.dart';
 
 List<EmbedBuilder> wenyouEditorEmbedBuilders({
   Map<String, MediaDisplay> mediaDisplays = const {},
+  EditorPendingImages? pendingImages,
 }) => [
   _InternalReferenceEmbedBuilder(),
   _MentionEmbedBuilder(),
   _DiceEmbedBuilder(),
   _StickerEmbedBuilder(mediaDisplays),
-  _ImageEmbedBuilder(mediaDisplays),
+  _ImageEmbedBuilder(mediaDisplays, pendingImages),
   _CompatibilityEmbedBuilder(),
   _HorizontalRuleEmbedBuilder(),
 ];
@@ -190,7 +194,9 @@ class _StickerEmbedBuilder extends EmbedBuilder {
 }
 
 class _ImageEmbedBuilder extends EmbedBuilder {
-  const _ImageEmbedBuilder(this.mediaDisplays);
+  const _ImageEmbedBuilder(this.mediaDisplays, this.pendingImages);
+
+  final EditorPendingImages? pendingImages;
 
   final Map<String, MediaDisplay> mediaDisplays;
 
@@ -213,6 +219,15 @@ class _ImageEmbedBuilder extends EmbedBuilder {
         : '正文图片：$alt';
     if (url == null) {
       return const _UnavailableImage(message: '图片加载失败');
+    }
+    if (url.startsWith(localImageMarkerPrefix)) {
+      return pendingImages == null
+          ? const _UnavailableImage(message: '本机图片不可用')
+          : EditorPendingImageWidget(
+              key: ValueKey(url),
+              id: url.substring(localImageMarkerPrefix.length),
+              images: pendingImages!,
+            );
     }
     return Semantics(
       image: true,

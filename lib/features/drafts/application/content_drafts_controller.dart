@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
+import 'package:wenyousite_mobile/core/markdown/local_image_marker.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_dice_contract.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
@@ -31,6 +32,16 @@ class ContentDraftsController extends StateNotifier<ContentDraftsState> {
   var _autoSaveRevision = 0;
   Timer? _autoSaveTimer;
   String _latestContent = '';
+  bool _localAttachmentsPending = false;
+
+  void pauseForLocalAttachments(bool paused) {
+    if (_localAttachmentsPending == paused) return;
+    _localAttachmentsPending = paused;
+    _autoSaveRevision++;
+    _autoSaveTimer?.cancel();
+    if (!paused) _scheduleAutoSave();
+  }
+
   ContentDraft? _autoSaveDraft;
   String? _pendingAutoCreateId;
   String? _pendingAutoCreateContent;
@@ -341,7 +352,7 @@ class ContentDraftsController extends StateNotifier<ContentDraftsState> {
 
   void _scheduleAutoSave() {
     _autoSaveTimer?.cancel();
-    if (!state.autoSaveEnabled) return;
+    if (!state.autoSaveEnabled || _localAttachmentsPending) return;
     final content = _latestContent;
     final writeInFlight =
         state.autoSaveStatus == ContentDraftAutoSaveStatus.saving;
@@ -370,7 +381,10 @@ class ContentDraftsController extends StateNotifier<ContentDraftsState> {
   }
 
   Future<void> _saveAutomatically(String content, int revision) async {
-    if (!mounted || !state.autoSaveEnabled || revision != _autoSaveRevision) {
+    if (!mounted ||
+        !state.autoSaveEnabled ||
+        _localAttachmentsPending ||
+        revision != _autoSaveRevision) {
       return;
     }
     if (state.phase == ContentDraftsPhase.failed) {
@@ -483,6 +497,7 @@ class ContentDraftsController extends StateNotifier<ContentDraftsState> {
   }
 
   String? _contentValidationFailure(String content, {bool allowEmpty = true}) {
+    if (containsLocalImageMarker(content)) return '图片尚未就绪，已保存在本机。';
     if (!MarkdownContent.hasVisibleContent(content)) {
       return allowEmpty ? null : '当前正文为空，先写一点内容再保存。';
     }

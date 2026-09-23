@@ -479,6 +479,7 @@ class _MomentDetailPageState extends ConsumerState<MomentDetailPage> {
                   child: SizedBox(
                     width: double.infinity,
                     child: MomentCommentComposer(
+                      momentId: widget.momentId,
                       replyTo: currentReplyTo,
                       initialDraft: _commentDraft ?? const MomentCommentDraft(),
                       onDraftChanged: (draft) {

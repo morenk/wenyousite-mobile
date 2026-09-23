@@ -14,6 +14,7 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/media/application/image_crop_ports.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
+import 'package:wenyousite_mobile/features/media/media_ui.dart';
 import 'package:wenyousite_mobile/features/media/presentation/image_crop_dialog.dart';
 import 'package:wenyousite_mobile/features/users/application/avatar_controller.dart';
 import 'package:wenyousite_mobile/features/users/application/me_profile_controller.dart';
@@ -57,6 +58,13 @@ class MeProfileMediaEditor extends ConsumerWidget {
                     child: _CoverEditTarget(
                       profile: profile,
                       previewBytes: coverState.previewBytes,
+                      busy:
+                          coverState.isBusy && coverState.previewBytes != null,
+                      failed:
+                          coverState.failure != null &&
+                          coverState.previewBytes != null,
+                      onFailureTap: () =>
+                          _showCoverFailure(context, ref, coverState),
                       enabled: !targetsDisabled,
                       onTap: () => _handleCoverTap(context, ref),
                     ),
@@ -67,6 +75,14 @@ class MeProfileMediaEditor extends ConsumerWidget {
                     child: _AvatarEditTarget(
                       profile: profile,
                       previewBytes: avatarState.previewBytes,
+                      busy:
+                          avatarState.isBusy &&
+                          avatarState.previewBytes != null,
+                      failed:
+                          avatarState.failure != null &&
+                          avatarState.previewBytes != null,
+                      onFailureTap: () =>
+                          _showAvatarFailure(context, ref, avatarState),
                       enabled: !targetsDisabled,
                       onTap: () => _handleAvatarTap(context, ref),
                     ),
@@ -76,14 +92,16 @@ class MeProfileMediaEditor extends ConsumerWidget {
             );
           },
         ),
-        if (avatarState.isBusy || avatarState.failure != null) ...[
+        if ((avatarState.isBusy || avatarState.failure != null) &&
+            avatarState.previewBytes == null) ...[
           SizedBox(height: tokens.space8),
           _AvatarTaskFeedback(
             state: avatarState,
             onCancel: ref.read(avatarControllerProvider.notifier).cancelUpload,
             onRetry: () => _retryAvatar(context, ref),
           ),
-        ] else if (coverState.isBusy || coverState.failure != null) ...[
+        ] else if ((coverState.isBusy || coverState.failure != null) &&
+            coverState.previewBytes == null) ...[
           SizedBox(height: tokens.space8),
           _CoverTaskFeedback(
             state: coverState,
@@ -95,6 +113,54 @@ class MeProfileMediaEditor extends ConsumerWidget {
         ],
       ],
     );
+  }
+
+  Future<void> _showAvatarFailure(
+    BuildContext context,
+    WidgetRef ref,
+    AvatarState state,
+  ) async {
+    final delayed =
+        state.uploadFailure?.failure.source == FailureSource.expected &&
+        state.uploadFailure?.failure.reason == FailureReason.timeout;
+    final action = await showPendingImageActions(
+      context,
+      title: delayed ? '图片准备较久' : '头像未完成',
+      retryLabel: delayed ? '继续等待' : '重试',
+      removeLabel: '放弃本次更换',
+      detail: state.failure?.userMessage,
+      canRetry: state.uploadFailure?.canRetry != false,
+    );
+    if (!context.mounted) return;
+    if (action == PendingImageAction.retry) {
+      await _retryAvatar(context, ref);
+    } else if (action == PendingImageAction.remove) {
+      ref.read(avatarControllerProvider.notifier).clearFailure();
+    }
+  }
+
+  Future<void> _showCoverFailure(
+    BuildContext context,
+    WidgetRef ref,
+    ProfileCoverState state,
+  ) async {
+    final delayed =
+        state.uploadFailure?.failure.source == FailureSource.expected &&
+        state.uploadFailure?.failure.reason == FailureReason.timeout;
+    final action = await showPendingImageActions(
+      context,
+      title: delayed ? '图片准备较久' : '主页背景未完成',
+      retryLabel: delayed ? '继续等待' : '重试',
+      removeLabel: '放弃本次更换',
+      detail: state.failure?.userMessage,
+      canRetry: state.uploadFailure?.canRetry != false,
+    );
+    if (!context.mounted) return;
+    if (action == PendingImageAction.retry) {
+      await _retryCover(context, ref);
+    } else if (action == PendingImageAction.remove) {
+      ref.read(profileCoverControllerProvider.notifier).clearFailure();
+    }
   }
 
   Future<void> _handleAvatarTap(BuildContext context, WidgetRef ref) async {
@@ -172,7 +238,7 @@ class MeProfileMediaEditor extends ConsumerWidget {
     if (cropped == null) return;
     final result = await controller.setImage(cropped);
     if (result == null) return;
-    _applyAvatarResult(navigator, container, result, '头像已更新。');
+    _applyAvatarResult(container, result);
   }
 
   Future<void> _chooseCover(BuildContext context, WidgetRef ref) async {
@@ -190,7 +256,7 @@ class MeProfileMediaEditor extends ConsumerWidget {
     if (selection == null) return;
     final result = await controller.setSelection(selection);
     if (result == null) return;
-    _applyCoverResult(navigator, container, result, '主页背景已更新。');
+    _applyCoverResult(container, result);
   }
 
   Future<void> _confirmRemoveAvatar(BuildContext context, WidgetRef ref) async {
@@ -206,10 +272,8 @@ class MeProfileMediaEditor extends ConsumerWidget {
     final result = await ref.read(avatarControllerProvider.notifier).remove();
     if (!context.mounted || result == null) return;
     _applyAvatarResult(
-      Navigator.of(context, rootNavigator: true),
       ProviderScope.containerOf(context, listen: false),
       result,
-      '头像已移除。',
     );
   }
 
@@ -228,10 +292,8 @@ class MeProfileMediaEditor extends ConsumerWidget {
         .remove();
     if (!context.mounted || result == null) return;
     _applyCoverResult(
-      Navigator.of(context, rootNavigator: true),
       ProviderScope.containerOf(context, listen: false),
       result,
-      '主页背景已移除。',
     );
   }
 
@@ -246,10 +308,8 @@ class MeProfileMediaEditor extends ConsumerWidget {
     final result = await ref.read(avatarControllerProvider.notifier).retry();
     if (!context.mounted || result == null) return;
     _applyAvatarResult(
-      Navigator.of(context, rootNavigator: true),
       ProviderScope.containerOf(context, listen: false),
       result,
-      operation == AvatarOperation.remove ? '头像已移除。' : '头像已更新。',
     );
   }
 
@@ -267,18 +327,14 @@ class MeProfileMediaEditor extends ConsumerWidget {
         .retry();
     if (!context.mounted || result == null) return;
     _applyCoverResult(
-      Navigator.of(context, rootNavigator: true),
       ProviderScope.containerOf(context, listen: false),
       result,
-      removing ? '主页背景已移除。' : '主页背景已更新。',
     );
   }
 
   void _applyAvatarResult(
-    NavigatorState navigator,
     ProviderContainer container,
     AvatarUpdateResult result,
-    String message,
   ) {
     final previousUrl = container
         .read(meProfileControllerProvider)
@@ -290,20 +346,11 @@ class MeProfileMediaEditor extends ConsumerWidget {
     if (previousUrl != null) {
       unawaited(WenyouCachedImage.evictFromCache(previousUrl));
     }
-    if (navigator.mounted) {
-      showWenyouSnackBar(
-        navigator.context,
-        message,
-        tone: WenyouSnackBarTone.success,
-      );
-    }
   }
 
   void _applyCoverResult(
-    NavigatorState navigator,
     ProviderContainer container,
     ProfileCoverUpdateResult result,
-    String message,
   ) {
     final oldUrls =
         container
@@ -319,13 +366,6 @@ class MeProfileMediaEditor extends ConsumerWidget {
     for (final url in oldUrls) {
       unawaited(WenyouCachedImage.evictFromCache(url));
     }
-    if (navigator.mounted) {
-      showWenyouSnackBar(
-        navigator.context,
-        message,
-        tone: WenyouSnackBarTone.success,
-      );
-    }
   }
 }
 
@@ -337,12 +377,18 @@ class _CoverEditTarget extends StatelessWidget {
   const _CoverEditTarget({
     required this.profile,
     required this.previewBytes,
+    required this.busy,
+    required this.failed,
+    required this.onFailureTap,
     required this.enabled,
     required this.onTap,
   });
 
   final MeProfileModel profile;
   final Uint8List? previewBytes;
+  final bool busy;
+  final bool failed;
+  final VoidCallback onFailureTap;
   final bool enabled;
   final VoidCallback onTap;
 
@@ -395,7 +441,11 @@ class _CoverEditTarget extends StatelessWidget {
     return Semantics(
       button: true,
       enabled: enabled,
-      label: label,
+      label: failed
+          ? '$label，图片未完成，点按选择操作'
+          : busy
+          ? '$label，图片准备中'
+          : label,
       excludeSemantics: true,
       child: Material(
         color: tokens.softPanel,
@@ -403,11 +453,16 @@ class _CoverEditTarget extends StatelessWidget {
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           key: const Key('me-profile-cover-change'),
-          onTap: enabled ? onTap : null,
+          onTap: enabled ? (failed ? onFailureTap : onTap) : null,
           child: Stack(
             fit: StackFit.expand,
             children: [
-              image,
+              PendingImageOverlay(
+                active: busy,
+                failed: failed,
+                onFailureTap: onFailureTap,
+                child: image,
+              ),
               if (hasCover)
                 Positioned(
                   top: tokens.space8,
@@ -426,12 +481,18 @@ class _AvatarEditTarget extends StatelessWidget {
   const _AvatarEditTarget({
     required this.profile,
     required this.previewBytes,
+    required this.busy,
+    required this.failed,
+    required this.onFailureTap,
     required this.enabled,
     required this.onTap,
   });
 
   final MeProfileModel profile;
   final Uint8List? previewBytes;
+  final bool busy;
+  final bool failed;
+  final VoidCallback onFailureTap;
   final bool enabled;
   final VoidCallback onTap;
 
@@ -465,7 +526,11 @@ class _AvatarEditTarget extends StatelessWidget {
     return Semantics(
       button: true,
       enabled: enabled,
-      label: label,
+      label: failed
+          ? '$label，图片未完成，点按选择操作'
+          : busy
+          ? '$label，图片准备中'
+          : label,
       excludeSemantics: true,
       child: Material(
         key: const Key('me-avatar-change'),
@@ -473,14 +538,23 @@ class _AvatarEditTarget extends StatelessWidget {
         shape: CircleBorder(side: BorderSide(color: tokens.border)),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
-          onTap: enabled ? onTap : null,
+          onTap: enabled ? (failed ? onFailureTap : onTap) : null,
           customBorder: const CircleBorder(),
           child: SizedBox.square(
             dimension: 72,
             child: Stack(
               clipBehavior: Clip.none,
               children: [
-                Center(child: avatar),
+                Center(
+                  child: ClipOval(
+                    child: PendingImageOverlay(
+                      active: busy,
+                      failed: failed,
+                      onFailureTap: onFailureTap,
+                      child: avatar,
+                    ),
+                  ),
+                ),
                 const Positioned(right: 0, bottom: 0, child: _MediaEditBadge()),
               ],
             ),

@@ -6,15 +6,19 @@ import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/core/models/editor_models.dart';
+import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_markdown.dart';
 import 'package:wenyousite_mobile/features/editor/data/editor_snapshot_store.dart';
+import 'package:wenyousite_mobile/features/editor/presentation/editor_pending_image_widget.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_toolbar.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/mention_suggestions.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
+import 'package:wenyousite_mobile/features/media/media_ui.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_compose_controller.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_compose_models.dart';
 
 import '../../support/button_finder.dart';
+import '../../support/memory_pending_media_file_store.dart';
 import 'thread_compose_page_test_support.dart';
 
 void registerThreadComposePagePublishingMediaCases() {
@@ -314,18 +318,18 @@ void registerThreadComposePagePublishingMediaCases() {
     );
   });
 
-  testWidgets('图片上传中锁定发布，取消后保留原正文', (tester) async {
+  testWidgets('图片上传显示本地预览与延迟遮罩，仍可编辑和移除', (tester) async {
     final controller =
         await threadComposePageTestReadyController(
             ThreadComposePageTestMemorySnapshotStore(),
           )
           ..updateBody('保留的主题正文');
-    final mediaRepository = ThreadComposePageTestBlockingMediaRepository();
+    final mediaGateway = ThreadComposePageTestControlledMediaGateway();
     await threadComposePageTestPumpPage(
       tester,
       controller,
       picker: ThreadComposePageTestFakePicker(),
-      mediaRepository: mediaRepository,
+      mediaGateway: mediaGateway,
     );
     final publish = find.byKey(const Key('compose-publish'));
     expect(
@@ -336,30 +340,53 @@ void registerThreadComposePagePublishingMediaCases() {
     final imageButton = find.byKey(const Key('editor-image'));
     await tester.ensureVisible(imageButton);
     await tester.tap(imageButton);
-    await threadComposePageTestConfirmImageCrop(tester);
+    await tester.pumpAndSettle();
+    expect(mediaGateway.starts, 0);
+    tester
+        .widget<FilledButton>(
+          findButtonControl(find.byKey(const Key('image-crop-confirm'))),
+        )
+        .onPressed!();
     await tester.pump();
-
-    expect(find.textContaining('正在上传图片'), findsOneWidget);
-    expect(
-      tester
-          .widgetList<LinearProgressIndicator>(
-            find.byType(LinearProgressIndicator),
-          )
-          .any((indicator) => indicator.value == .5),
-      isTrue,
+    await tester.pump();
+    final inlineProgress = find.descendant(
+      of: find.byType(EditorPendingImageWidget),
+      matching: find.byType(CircularProgressIndicator),
     );
+    expect(inlineProgress, findsNothing);
+    await tester.pump(const Duration(milliseconds: 299));
+    expect(inlineProgress, findsNothing);
+    await tester.pump(const Duration(milliseconds: 1));
+
+    expect(find.byType(EditorPendingImageWidget), findsOneWidget);
+    expect(find.text(' 50%'), findsNothing);
+    expect(find.textContaining('安全处理'), findsNothing);
+    expect(inlineProgress, findsOneWidget);
     expect(
       tester.widget<FilledButton>(findButtonControl(publish)).onPressed,
-      isNull,
+      isNotNull,
     );
+    final editor = tester.widget<QuillEditor>(
+      find.byKey(const Key('compose-body')),
+    );
+    expect(editor.controller.readOnly, isFalse);
+    editor.controller.replaceText(
+      0,
+      0,
+      '继续写作',
+      const TextSelection.collapsed(offset: 4),
+    );
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(editor.controller.document.toPlainText(), contains('继续写作'));
 
-    await tester.tap(find.text('取消上传'));
+    await tester.tap(find.byTooltip('移除图片'));
     await tester.pump();
     await tester.pump();
 
-    expect(mediaRepository.cancelled, isTrue);
+    expect(mediaGateway.current.cancelled, isTrue);
     expect(find.textContaining('正在上传图片'), findsNothing);
-    expect(controller.state.body, '保留的主题正文');
+    expect(controller.state.body, contains('继续写作'));
+    expect(controller.state.body, contains('保留的主题正文'));
     expect(controller.state.body, isNot(contains('wenyou_image')));
     expect(
       tester.widget<FilledButton>(findButtonControl(publish)).onPressed,
@@ -367,8 +394,10 @@ void registerThreadComposePagePublishingMediaCases() {
     );
   });
 
-  testWidgets('上传中系统返回先取消任务且迟到成功不会写入草稿', (tester) async {
+  testWidgets('上传中系统返回保存本机附件，迟到成功不会恢复旧操作', (tester) async {
     final store = ThreadComposePageTestMemorySnapshotStore();
+    final mediaStore = MemoryPendingMediaFileStore();
+    addTearDown(mediaStore.dispose);
     final controller = await threadComposePageTestReadyController(store)
       ..updateBody('返回前正文');
     final gateway = ThreadComposePageTestLateCompletingMediaUploadGateway();
@@ -377,13 +406,15 @@ void registerThreadComposePagePublishingMediaCases() {
       controller,
       picker: ThreadComposePageTestFakePicker(),
       mediaGateway: gateway,
+      pendingMediaStore: mediaStore,
     );
 
     await tester.tap(find.byKey(const Key('editor-image')));
     await threadComposePageTestConfirmImageCrop(tester);
-    expect(find.textContaining('正在上传图片'), findsOneWidget);
+    expect(find.byType(EditorPendingImageWidget), findsOneWidget);
 
     await tester.binding.handlePopRoute();
+    await tester.pump();
     expect(gateway.operation.cancelled, isTrue);
     gateway.operation.complete(
       const UploadedEditorImage(
@@ -396,7 +427,257 @@ void registerThreadComposePagePublishingMediaCases() {
 
     expect(controller.state.body, '返回前正文');
     expect(controller.state.body, isNot(contains('late.png')));
+    final saved = await mediaStore.read(
+      accountId: 'user-one',
+      target: 'thread:new',
+    );
+    expect(
+      saved?['markdown'],
+      contains('https://local.invalid/wenyou-pending/'),
+    );
+    expect(saved?['images'], hasLength(1));
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('点击一次发布等待图片且锁定编辑，完成后只提交一次', (tester) async {
+    final repository = ThreadComposePageTestFakeRepository();
+    final controller =
+        await threadComposePageTestReadyController(
+            ThreadComposePageTestMemorySnapshotStore(),
+            repository: repository,
+          )
+          ..updateTitle('带图主题')
+          ..updateCategory('TRPG')
+          ..updateBody('正文');
+    final gateway = ThreadComposePageTestControlledMediaGateway();
+    await threadComposePageTestPumpPage(
+      tester,
+      controller,
+      picker: ThreadComposePageTestFakePicker(),
+      mediaGateway: gateway,
+      withThreadRoute: true,
+    );
+    await tester.tap(find.byKey(const Key('editor-image')));
+    await threadComposePageTestConfirmImageCrop(tester);
+    await tester.tap(find.byKey(const Key('compose-publish')));
+    await tester.pump();
+    expect(find.text('还有 1 张图片未就绪'), findsNothing);
+    await tester.pump(const Duration(seconds: 3));
+    expect(find.text('还有 1 张图片未就绪'), findsOneWidget);
+    expect(find.text('正在发布…'), findsOneWidget);
+    expect(repository.createCalls, 0);
+    expect(
+      tester
+          .widget<QuillEditor>(find.byKey(const Key('compose-body')))
+          .controller
+          .readOnly,
+      isTrue,
+    );
+    gateway.progress(
+      const MediaUploadProgress(
+        stage: MediaUploadStage.processing,
+        sentBytes: 10,
+        totalBytes: 10,
+        pendingUpload: PendingMediaUpload(
+          mediaId: 'media-one',
+          purpose: MediaUploadPurpose.richContent,
+        ),
+      ),
+    );
+    await tester.pump();
+    expect(find.text(' 50%'), findsNothing);
+    expect(find.text(' 100%'), findsNothing);
+    gateway.complete();
+    await tester.pumpAndSettle();
+    expect(repository.createCalls, 1);
+    expect(
+      repository.createPayload?.body,
+      contains('https://cdn.example.com/editor.png'),
+    );
+    expect(repository.createPayload?.body, isNot(contains('local.invalid')));
+    expect(find.byKey(const Key('published-thread-route')), findsOneWidget);
+  });
+
+  testWidgets('取消发布后图片继续准备，完成也不会自动提交', (tester) async {
+    final repository = ThreadComposePageTestFakeRepository();
+    final controller =
+        await threadComposePageTestReadyController(
+            ThreadComposePageTestMemorySnapshotStore(),
+            repository: repository,
+          )
+          ..updateTitle('取消等待')
+          ..updateCategory('TRPG')
+          ..updateBody('保留正文');
+    final gateway = ThreadComposePageTestControlledMediaGateway();
+    await threadComposePageTestPumpPage(
+      tester,
+      controller,
+      picker: ThreadComposePageTestFakePicker(),
+      mediaGateway: gateway,
+    );
+    await tester.tap(find.byKey(const Key('editor-image')));
+    await threadComposePageTestConfirmImageCrop(tester);
+    await tester.tap(find.byKey(const Key('compose-publish')));
+    await tester.pump();
+    expect(find.text('取消发布'), findsNothing);
+    await tester.pump(const Duration(seconds: 3));
+    await tester.tap(find.text('取消发布'));
+    await tester.pump();
+    expect(gateway.current.cancelled, isFalse);
+    expect(
+      tester
+          .widget<QuillEditor>(find.byKey(const Key('compose-body')))
+          .controller
+          .readOnly,
+      isFalse,
+    );
+    gateway.complete();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(repository.createCalls, 0);
+    expect(
+      controller.state.body,
+      contains('https://cdn.example.com/editor.png'),
+    );
+  });
+
+  testWidgets('图片失败终止发布意图，重试就绪后仍需主动发布', (tester) async {
+    final repository = ThreadComposePageTestFakeRepository();
+    final controller =
+        await threadComposePageTestReadyController(
+            ThreadComposePageTestMemorySnapshotStore(),
+            repository: repository,
+          )
+          ..updateTitle('重试主题')
+          ..updateCategory('TRPG')
+          ..updateBody('失败仍保留');
+    final gateway = ThreadComposePageTestControlledMediaGateway();
+    await threadComposePageTestPumpPage(
+      tester,
+      controller,
+      picker: ThreadComposePageTestFakePicker(),
+      mediaGateway: gateway,
+      withThreadRoute: true,
+    );
+    await tester.tap(find.byKey(const Key('editor-image')));
+    await threadComposePageTestConfirmImageCrop(tester);
+    await tester.tap(find.byKey(const Key('compose-publish')));
+    await tester.pump();
+    gateway.current.fail(const ApiFailure(userMessage: '图片上传失败，请重试。'));
+    await tester.pumpAndSettle();
+    expect(
+      find.byWidgetPredicate(
+        (widget) => widget is PendingImageOverlay && widget.failed,
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('取消发布'), findsNothing);
+    expect(repository.createCalls, 0);
+    await tester.tap(find.byType(PendingImageOverlay));
+    await tester.pumpAndSettle();
+    expect(find.text('图片未完成'), findsOneWidget);
+    await tester.tap(find.text('重试'));
+    await tester.pump();
+    expect(gateway.starts, 2);
+    gateway.complete();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(repository.createCalls, 0);
+    await tester.tap(find.byKey(const Key('compose-publish')));
+    await tester.pumpAndSettle();
+    expect(repository.createCalls, 1);
+  });
+
+  testWidgets('仅图片正文可等待就绪后发布，未就绪节点不进入正式正文', (tester) async {
+    final repository = ThreadComposePageTestFakeRepository();
+    final controller =
+        await threadComposePageTestReadyController(
+            ThreadComposePageTestMemorySnapshotStore(),
+            repository: repository,
+          )
+          ..updateTitle('纯图片主题')
+          ..updateCategory('TRPG');
+    final gateway = ThreadComposePageTestControlledMediaGateway();
+    await threadComposePageTestPumpPage(
+      tester,
+      controller,
+      picker: ThreadComposePageTestFakePicker(),
+      mediaGateway: gateway,
+      withThreadRoute: true,
+    );
+    await tester.tap(find.byKey(const Key('editor-image')));
+    await threadComposePageTestConfirmImageCrop(tester);
+    expect(controller.state.body, isEmpty);
+    await tester.tap(find.byKey(const Key('compose-publish')));
+    await tester.pump();
+    expect(repository.createCalls, 0);
+    gateway.complete();
+    await tester.pumpAndSettle();
+    expect(repository.createCalls, 1);
+    expect(
+      repository.createPayload?.body,
+      startsWith('![图片](https://cdn.example.com/editor.png)'),
+    );
+  });
+
+  testWidgets('重开本机图片草稿只续查已知媒体，不恢复发布意图', (tester) async {
+    final store = MemoryPendingMediaFileStore();
+    addTearDown(store.dispose);
+    final snapshots = ThreadComposePageTestMemorySnapshotStore();
+    final first = await threadComposePageTestReadyController(snapshots)
+      ..updateTitle('待完成草稿')
+      ..updateCategory('TRPG')
+      ..updateBody('重开正文');
+    final original = ThreadComposePageTestControlledMediaGateway();
+    await threadComposePageTestPumpPage(
+      tester,
+      first,
+      picker: ThreadComposePageTestFakePicker(),
+      mediaGateway: original,
+      pendingMediaStore: store,
+    );
+    await tester.tap(find.byKey(const Key('editor-image')));
+    await threadComposePageTestConfirmImageCrop(tester);
+    original.progress(
+      const MediaUploadProgress(
+        stage: MediaUploadStage.processing,
+        pendingUpload: PendingMediaUpload(
+          mediaId: 'known-media',
+          purpose: MediaUploadPurpose.richContent,
+        ),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.tap(find.byKey(const Key('compose-publish')));
+    await tester.pump();
+    await tester.binding.handlePopRoute();
+    await tester.pump();
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
+    expect(original.current.cancelled, isTrue);
+    final repository = ThreadComposePageTestFakeRepository();
+    final reopened = await threadComposePageTestReadyController(
+      snapshots,
+      repository: repository,
+    );
+    final resumed = ThreadComposePageTestControlledMediaGateway();
+    await threadComposePageTestPumpPage(
+      tester,
+      reopened,
+      mediaGateway: resumed,
+      pendingMediaStore: store,
+    );
+    await tester.pump();
+    expect(resumed.starts, 0);
+    expect(resumed.resumed.single.mediaId, 'known-media');
+    expect(find.byType(EditorPendingImageWidget), findsOneWidget);
+    expect(find.text('取消发布'), findsNothing);
+    resumed.complete(mediaId: 'known-media');
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(repository.createCalls, 0);
+    expect(reopened.state.body, contains('重开正文'));
+    expect(reopened.state.body, contains('https://cdn.example.com/editor.png'));
   });
 
   for (final size in const [

@@ -7,6 +7,7 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
+import 'package:wenyousite_mobile/features/media/media_ui.dart';
 import 'package:wenyousite_mobile/features/media/presentation/editor_image_crop_dialog.dart';
 import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
 import 'package:wenyousite_mobile/features/stickers/domain/sticker_models.dart';
@@ -26,6 +27,9 @@ class _StickerCollectionPageState extends ConsumerState<StickerCollectionPage> {
   final _viewportKey = GlobalKey();
   bool _managing = false;
   bool _dragging = false;
+  MediaUploadInput? _pendingInput;
+  String? _pendingImportId;
+  bool _pendingFailed = false;
 
   @override
   void dispose() {
@@ -38,6 +42,29 @@ class _StickerCollectionPageState extends ConsumerState<StickerCollectionPage> {
     final enabled = ref.watch(stickersEnabledProvider);
     if (!enabled) return const _StickersUnavailablePage();
     final state = ref.watch(stickerCollectionControllerProvider);
+    ref.listen(stickerCollectionControllerProvider, (previous, next) {
+      final id = _pendingImportId;
+      if (id == null ||
+          previous?.collection == null ||
+          next.collection == null) {
+        return;
+      }
+      final wasPending = previous!.collection!.pendingImports.any(
+        (item) => item.id == id,
+      );
+      final stillPending = next.collection!.pendingImports.any(
+        (item) => item.id == id,
+      );
+      if (wasPending && !stillPending && mounted) {
+        setState(() {
+          _pendingFailed = next.transientFailure != null;
+          if (!_pendingFailed) {
+            _pendingInput = null;
+            _pendingImportId = null;
+          }
+        });
+      }
+    });
     final uploadState = ref.watch(
       mediaUploadTaskControllerProvider(_uploadTaskId),
     );
@@ -132,7 +159,8 @@ class _StickerCollectionPageState extends ConsumerState<StickerCollectionPage> {
                   ],
                 ),
                 SizedBox(height: tokens.space12),
-                if (state.transientFailure != null) ...[
+                if (state.transientFailure != null &&
+                    _pendingInput == null) ...[
                   WenyouStatusBanner(
                     key: const Key('stickers-action-failure'),
                     tone: WenyouStatusTone.error,
@@ -156,59 +184,16 @@ class _StickerCollectionPageState extends ConsumerState<StickerCollectionPage> {
                   ),
                   SizedBox(height: tokens.space12),
                 ],
-                if (uploadState.failure case final uploadFailure?) ...[
-                  WenyouStatusBanner(
-                    key: const Key('stickers-upload-failure'),
-                    tone: WenyouStatusTone.error,
-                    message: uploadFailure.userMessage,
-                    detail: uploadFailure.resolvedPresentation.problemDetail,
-                    action: uploadFailure.canRetry
-                        ? TextButton(
-                            key: const Key('stickers-retry-upload'),
-                            onPressed: _retryUpload,
-                            child: const Text('重试上传'),
-                          )
-                        : null,
-                  ),
-                  SizedBox(height: tokens.space12),
-                ],
-                if (uploadState.isBusy) ...[
-                  SizedBox(height: tokens.space12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          uploadState.progressLabel,
-                          style: Theme.of(context).textTheme.wenyouCaption,
-                        ),
-                      ),
-                      TextButton(
-                        key: const Key('stickers-cancel-upload'),
-                        onPressed: () => ref
-                            .read(
-                              mediaUploadTaskControllerProvider(
-                                _uploadTaskId,
-                              ).notifier,
-                            )
-                            .cancel(),
-                        child: const Text('取消'),
-                      ),
-                    ],
-                  ),
-                  LinearProgressIndicator(
-                    value: uploadState.progress?.fraction,
-                  ),
-                ],
-                if (collection.pendingImports.isNotEmpty) ...[
-                  SizedBox(height: tokens.space12),
-                  Text(
-                    '正在处理 ${collection.pendingImports.length} 个表情…',
-                    style: Theme.of(context).textTheme.wenyouCaption,
-                  ),
-                ],
                 SizedBox(height: tokens.space12),
                 StickerReorderGrid(
                   items: collection.items,
+                  pendingTiles: [
+                    if (_pendingInput != null)
+                      _buildPendingTile(context, uploadState, state),
+                    for (final pending in collection.pendingImports)
+                      if (pending.id != _pendingImportId)
+                        _buildServerPendingTile(context, pending),
+                  ],
                   scrollController: _scrollController,
                   viewportKey: _viewportKey,
                   managing: _managing,
@@ -236,6 +221,7 @@ class _StickerCollectionPageState extends ConsumerState<StickerCollectionPage> {
                       onPressed:
                           state.isBusy ||
                               uploadState.isBusy ||
+                              _pendingInput != null ||
                               collection.isFull ||
                               _dragging
                           ? null
@@ -247,7 +233,9 @@ class _StickerCollectionPageState extends ConsumerState<StickerCollectionPage> {
                     ),
                   ),
                 ),
-                if (collection.items.isEmpty) ...[
+                if (collection.items.isEmpty &&
+                    collection.pendingImports.isEmpty &&
+                    _pendingInput == null) ...[
                   SizedBox(height: tokens.space24),
                   const WenyouEmptyState(
                     icon: WenyouIconIds.actionAddReaction,
@@ -263,30 +251,213 @@ class _StickerCollectionPageState extends ConsumerState<StickerCollectionPage> {
   }
 
   Future<void> _addFromGallery() async {
-    await _uploadAndImport(retry: false);
+    final inputs = await pickAndCropEditorImages(
+      context,
+      ref,
+      purpose: MediaUploadPurpose.stickerSource,
+      title: '裁剪收藏表情',
+    );
+    if (!mounted || inputs == null || inputs.isEmpty) return;
+    final input = inputs.single;
+    setState(() {
+      _pendingInput = input;
+      _pendingImportId = null;
+      _pendingFailed = false;
+    });
+    final uploaded = await ref
+        .read(mediaUploadTaskControllerProvider(_uploadTaskId).notifier)
+        .uploadInput(input);
+    if (!mounted || !identical(_pendingInput, input) || uploaded == null) {
+      return;
+    }
+    await _importUploaded(uploaded.mediaId);
   }
 
   Future<void> _retryUpload() async {
-    await _uploadAndImport(retry: true);
+    final input = _pendingInput;
+    setState(() => _pendingFailed = false);
+    final uploaded = await ref
+        .read(mediaUploadTaskControllerProvider(_uploadTaskId).notifier)
+        .retryUpload();
+    if (!mounted || !identical(_pendingInput, input) || uploaded == null) {
+      return;
+    }
+    await _importUploaded(uploaded.mediaId);
   }
 
-  Future<void> _uploadAndImport({required bool retry}) async {
-    final uploadController = ref.read(
-      mediaUploadTaskControllerProvider(_uploadTaskId).notifier,
-    );
-    final uploaded = retry
-        ? await uploadController.retryUpload()
-        : await pickCropAndUploadEditorImage(
-            context,
-            ref,
-            uploadTaskId: _uploadTaskId,
-            purpose: MediaUploadPurpose.stickerSource,
-            title: '裁剪收藏表情',
-          );
-    if (!mounted || uploaded == null) return;
-    await ref
+  Future<void> _importUploaded(String mediaId) async {
+    final result = await ref
         .read(stickerCollectionControllerProvider.notifier)
-        .importMedia(uploaded.mediaId);
+        .importMedia(mediaId);
+    if (!mounted) return;
+    if (result == null) {
+      setState(() => _pendingFailed = true);
+      return;
+    }
+    if (result.status == StickerImportStatus.processing) {
+      setState(() {
+        _pendingImportId = result.id;
+        _pendingFailed = false;
+      });
+      return;
+    }
+    setState(() {
+      _pendingInput = null;
+      _pendingImportId = null;
+      _pendingFailed = false;
+    });
+    if (result.alreadySaved) showWenyouSnackBar(context, '已经收藏过这个表情。');
+  }
+
+  Widget _buildPendingTile(
+    BuildContext context,
+    MediaUploadTaskState upload,
+    StickerCollectionState collectionState,
+  ) {
+    final tokens = context.wenyouTokens;
+    final pendingOnServer =
+        _pendingImportId != null &&
+        (collectionState.collection?.pendingImports.any(
+              (item) => item.id == _pendingImportId,
+            ) ??
+            false);
+    final failed = upload.failure != null || _pendingFailed;
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(tokens.radius12),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          PendingImageOverlay(
+            key: const Key('sticker-local-pending'),
+            active:
+                upload.isActivelyWorking ||
+                collectionState.action == StickerAction.importing ||
+                pendingOnServer,
+            failed: failed,
+            onFailureTap: () => _showPendingFailure(upload, collectionState),
+            child: SizedBox.expand(
+              child: MediaUploadInputImage(
+                input: _pendingInput!,
+                fit: BoxFit.contain,
+                cacheWidth: 256,
+              ),
+            ),
+          ),
+          if (!failed &&
+              _pendingImportId == null &&
+              collectionState.action != StickerAction.importing)
+            Positioned(
+              top: 0,
+              right: 0,
+              child: IconButton.filledTonal(
+                key: const Key('stickers-cancel-upload'),
+                tooltip: '取消添加表情',
+                onPressed: _cancelPendingSticker,
+                icon: const WenyouIcon(WenyouIconIds.actionClose, size: 18),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  void _cancelPendingSticker() {
+    ref
+        .read(mediaUploadTaskControllerProvider(_uploadTaskId).notifier)
+        .cancel();
+    setState(() {
+      _pendingInput = null;
+      _pendingImportId = null;
+      _pendingFailed = false;
+    });
+  }
+
+  Widget _buildServerPendingTile(BuildContext context, StickerImport pending) {
+    final tokens = context.wenyouTokens;
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(tokens.radius12),
+      child: PendingImageOverlay(
+        key: ValueKey('sticker-server-pending-${pending.id}'),
+        active: false,
+        semanticLabel: '收藏表情待处理',
+        child: ColoredBox(
+          color: tokens.softPanel,
+          child: Center(
+            child: WenyouIcon(
+              WenyouIconIds.actionImage,
+              color: tokens.mutedText,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showPendingFailure(
+    MediaUploadTaskState upload,
+    StickerCollectionState collectionState,
+  ) async {
+    final delayed = upload.phase == MediaUploadTaskPhase.processingPending;
+    final canRetry =
+        upload.failure?.canRetry == true || collectionState.retrySource != null;
+    final action = await showPendingImageActions(
+      context,
+      title: delayed ? '图片准备较久' : '收藏表情未完成',
+      retryLabel: delayed
+          ? '继续等待'
+          : canRetry
+          ? '重试'
+          : '重新选择',
+      removeLabel: '放弃本次添加',
+      detail:
+          upload.failure?.userMessage ??
+          collectionState.transientFailure?.userMessage,
+      canRetry: true,
+    );
+    if (!mounted) return;
+    if (action == PendingImageAction.retry) {
+      if (upload.failure != null && upload.failure!.canRetry) {
+        await _retryUpload();
+      } else if (collectionState.retrySource != null) {
+        final result = await ref
+            .read(stickerCollectionControllerProvider.notifier)
+            .retryImport();
+        if (!mounted) return;
+        if (result == null) {
+          setState(() => _pendingFailed = true);
+        } else if (result.status == StickerImportStatus.processing) {
+          setState(() {
+            _pendingImportId = result.id;
+            _pendingFailed = false;
+          });
+        } else {
+          setState(() {
+            _pendingInput = null;
+            _pendingImportId = null;
+            _pendingFailed = false;
+          });
+        }
+      } else {
+        ref
+            .read(mediaUploadTaskControllerProvider(_uploadTaskId).notifier)
+            .reset();
+        setState(() {
+          _pendingInput = null;
+          _pendingImportId = null;
+          _pendingFailed = false;
+        });
+        await _addFromGallery();
+      }
+    } else if (action == PendingImageAction.remove) {
+      ref
+          .read(mediaUploadTaskControllerProvider(_uploadTaskId).notifier)
+          .reset();
+      setState(() {
+        _pendingInput = null;
+        _pendingImportId = null;
+        _pendingFailed = false;
+      });
+    }
   }
 
   Future<void> _confirmRemove(UserSticker sticker) async {

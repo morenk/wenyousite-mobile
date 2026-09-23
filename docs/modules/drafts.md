@@ -78,7 +78,7 @@
 
 本模块页面排版统一遵循[移动端视觉基线](../architecture/visual-baseline.md)中的 Foundation v6.9.0 语义文字角色，不自定义字号或直接依赖 Material 字体槽位。
 
-Markdown 规范化和可见性由编辑器与核心 Markdown 能力保持，数据库规则见[持久化](../architecture/persistence.md)。主题实体草稿与后端 `/drafts` 五槽位正文草稿是不同资源，页面和文档不得混称。完整主题草稿箱复用 threads 的详情与删除端点，切换编排同样归 threads；媒体只有完成后的公开 URL 能进入任一快照；恢复五槽位正文不修改主题表单元数据。
+Markdown 规范化和可见性由编辑器与核心 Markdown 能力保持，数据库规则见[持久化](../architecture/persistence.md)。主题实体草稿与后端 `/drafts` 五槽位正文草稿是不同资源，页面和文档不得混称。完整主题草稿箱复用 threads 的详情与删除端点，切换编排同样归 threads；只有完成后的公开 URL 能进入云端草稿和正式正文；未完成附件只进入独立的本机私有快照；恢复五槽位正文不修改主题表单元数据。
 
 ## 11. 测试场景与验收条件
 

@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -18,7 +19,9 @@ import 'package:wenyousite_mobile/features/posts/data/post_repository.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
 import 'package:wenyousite_mobile/features/posts/presentation/post_replies_page.dart';
 import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
+
 import '../../support/fake_image_crop_processor.dart';
+import '../../support/memory_pending_media_file_store.dart';
 import 'post_replies_page_test_support.dart';
 
 void registerPostRepliesPageSessionEditingCases() {
@@ -196,6 +199,7 @@ void registerPostRepliesPageSessionEditingCases() {
     final navigatorKey = GlobalKey<NavigatorState>();
     final container = ProviderContainer(
       overrides: [
+        memoryPendingMediaFileStoreOverride(),
         tokenStoreProvider.overrideWithValue(
           PostRepliesPageTestMemoryTokenStore(),
         ),
@@ -289,6 +293,7 @@ void registerPostRepliesPageSessionEditingCases() {
         PostRepliesPageTestMutablePostDiscussionAuthorDirectory();
     final container = ProviderContainer(
       overrides: [
+        memoryPendingMediaFileStoreOverride(),
         tokenStoreProvider.overrideWithValue(
           PostRepliesPageTestMemoryTokenStore(),
         ),

@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:wenyousite_mobile/core/markdown/local_image_marker.dart';
+
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_dice_contract.dart';
 import 'package:wenyousite_mobile/core/media/media_display.dart';
@@ -265,6 +267,7 @@ String? validateThreadDraft({
   required String body,
   required List<String> tags,
 }) {
+  if (containsLocalImageMarker(body)) return '图片尚未就绪，请等待或移除。';
   if (title.trim().runes.length > 100) return '标题不能超过 100 个字符。';
   if (MarkdownContent.normalize(body).runes.length > 10000) {
     return '正文不能超过 10000 个字符。';

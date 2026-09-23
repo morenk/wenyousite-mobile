@@ -5,6 +5,48 @@ import 'package:wenyousite_mobile/features/drafts/data/content_draft_repository.
 import 'package:wenyousite_mobile/features/drafts/domain/content_draft_models.dart';
 
 void main() {
+  test('本机占位即使直接传入云草稿控制器也不得发送', () async {
+    final repository = _FakeRepository(drafts: []);
+    final controller = ContentDraftsController(repository, autoStart: false);
+    addTearDown(controller.dispose);
+    await controller.load();
+    expect(
+      await controller.createAtSlot(
+        '![图片](https://local.invalid/wenyou-pending/local-id)',
+        1,
+      ),
+      isFalse,
+    );
+    expect(repository.createdContents, isEmpty);
+  });
+
+  test('本机附件暂停取消排队云保存，就绪后仅同步最终正文', () async {
+    final repository = _FakeRepository(drafts: []);
+    final controller = ContentDraftsController(
+      repository,
+      autoStart: false,
+      autoSaveDebounce: Duration.zero,
+      requestIdFactory: () => _requestId,
+    );
+    addTearDown(controller.dispose);
+    await controller.load();
+    controller.enableAutoSave('原正文');
+    controller.updateAutoSaveContent('选图前正文');
+    controller.pauseForLocalAttachments(true);
+    await _settleAutoSave();
+    expect(repository.createdContents, isEmpty);
+    controller.updateAutoSaveContent(
+      '最终正文 ![图片](https://cdn.example.com/ready.png)',
+    );
+    await _settleAutoSave();
+    expect(repository.createdContents, isEmpty);
+    controller.pauseForLocalAttachments(false);
+    await _settleAutoSave();
+    expect(repository.createdContents, [
+      '最终正文 ![图片](https://cdn.example.com/ready.png)',
+    ]);
+  });
+
   test('加载、指定空槽创建和版本更新同步本地槽位状态', () async {
     final repository = _FakeRepository(drafts: [_draft(slot: 1)]);
     final controller = ContentDraftsController(repository, autoStart: false);
