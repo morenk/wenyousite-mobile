@@ -141,6 +141,7 @@ class ApiNotificationRepository implements NotificationRepository {
             NotificationTargetKind.none,
           _ => NotificationTargetKind.unknown,
         },
+        state: _targetState(target.state),
         threadId: target.threadId,
         postId: target.postId,
         parentPostId: dto.post?.parentPostId,
@@ -158,29 +159,50 @@ class ApiNotificationRepository implements NotificationRepository {
               level: actor.level.toInt(),
               isDeleted: actor.deletedAt != null,
             ),
-      isRead: dto.isRead,
+      isRead:
+          dto.isRead ||
+          target.state ==
+              NotificationTargetResponseDtoStateEnum.CONTENT_DELETED ||
+          target.state ==
+              NotificationTargetResponseDtoStateEnum.USER_DEACTIVATED,
       createdAt: dto.createdAt,
     );
   }
 
   String? _deletedHint(NotificationResponseDto dto) {
-    final kind = dto.target.kind;
-    if ((kind == NotificationTargetResponseDtoKindEnum.post ||
-            kind == NotificationTargetResponseDtoKindEnum.thread) &&
-        (dto.thread?.deletedAt != null || dto.post?.deletedAt != null)) {
-      return '该内容已删除';
-    }
-    if (kind == NotificationTargetResponseDtoKindEnum.moment &&
-        (dto.moment?.deletedAt != null ||
-            dto.momentComment?.deletedAt != null)) {
-      return '该动态或评论已删除';
-    }
-    if (kind == NotificationTargetResponseDtoKindEnum.user &&
-        dto.fromUser?.deletedAt != null) {
+    final state = dto.target.state;
+    if (state == NotificationTargetResponseDtoStateEnum.USER_DEACTIVATED) {
       return '该用户已注销';
     }
-    return null;
+    if (state != NotificationTargetResponseDtoStateEnum.CONTENT_DELETED) {
+      return null;
+    }
+    if (dto.momentComment != null || dto.momentCommentId != null) {
+      return '该评论已删除';
+    }
+    if (dto.moment != null || dto.momentId != null) return '该动态已删除';
+    if (dto.post != null ||
+        dto.postId != null ||
+        dto.thread != null ||
+        dto.threadId != null) {
+      return '该内容已删除';
+    }
+    return '该内容已删除或不可访问';
   }
+
+  NotificationTargetState _targetState(
+    NotificationTargetResponseDtoStateEnum state,
+  ) => switch (state) {
+    NotificationTargetResponseDtoStateEnum.ACTIVE =>
+      NotificationTargetState.active,
+    NotificationTargetResponseDtoStateEnum.CONTENT_DELETED =>
+      NotificationTargetState.contentDeleted,
+    NotificationTargetResponseDtoStateEnum.USER_DEACTIVATED =>
+      NotificationTargetState.userDeactivated,
+    NotificationTargetResponseDtoStateEnum.NO_TARGET =>
+      NotificationTargetState.noTarget,
+    _ => NotificationTargetState.unknown,
+  };
 }
 
 final apiNotificationRepositoryProvider = Provider<NotificationRepository>((
