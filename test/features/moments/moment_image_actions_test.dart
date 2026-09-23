@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show RenderParagraph;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/network/session_controller.dart';
@@ -100,6 +102,166 @@ void main() {
       'comment-1',
     );
     expect(source.mediaId, 'comment-media-1');
+  });
+
+  testWidgets('动态根评论图片同行空白长按打开评论操作', (tester) async {
+    final fixture = await _fixture();
+    addTearDown(fixture.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: fixture.container,
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: Scaffold(
+            body: MomentCommentBody(
+              comment: MomentComment(
+                id: 'comment-blank-long-press',
+                momentId: 'moment-1',
+                author: _author,
+                media: const MomentMedia(
+                  id: 'comment-media-blank-long-press',
+                  url: 'https://cdn.example.com/comment.webp',
+                  thumbnailUrl: 'https://cdn.example.com/comment-thumb.webp',
+                  animated: true,
+                  width: 120,
+                  height: 80,
+                ),
+                deleted: false,
+                canDelete: true,
+                createdAt: DateTime.utc(2026, 9, 3),
+              ),
+              busy: false,
+              onDelete: () {},
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    final imageRect = tester.getRect(
+      find.byKey(const Key('moment-comment-image-comment-blank-long-press')),
+    );
+    final cardRect = tester.getRect(
+      find.byKey(const Key('moment-comment-card-comment-blank-long-press')),
+    );
+    final blankPosition = Offset(imageRect.right + 24, imageRect.center.dy);
+    expect(blankPosition.dx, lessThan(cardRect.right));
+
+    await tester.longPressAt(blankPosition);
+    await tester.pump();
+
+    expect(
+      find.byKey(
+        const Key('moment-comment-action-comment-blank-long-press-delete'),
+      ),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('动态评论只有头像可进入作者个人主页', (tester) async {
+    final fixture = await _fixture();
+    addTearDown(fixture.dispose);
+    final router = GoRouter(
+      routes: [
+        GoRoute(
+          path: '/',
+          builder: (context, state) => Scaffold(
+            body: MomentCommentBody(
+              comment: MomentComment(
+                id: 'comment-author-target',
+                momentId: 'moment-1',
+                author: _author,
+                content: '评论正文',
+                deleted: false,
+                canDelete: false,
+                createdAt: DateTime.utc(2026, 9, 3),
+              ),
+              busy: false,
+            ),
+          ),
+        ),
+        GoRoute(
+          name: 'user-profile',
+          path: '/users/:userId',
+          builder: (context, state) => const Scaffold(
+            body: Text('个人主页', key: Key('profile-destination')),
+          ),
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: fixture.container,
+        child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('温油'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('profile-destination')), findsNothing);
+
+    await tester.tap(
+      find.byKey(
+        const Key('moment-comment-author-avatar-comment-author-target'),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('profile-destination')), findsOneWidget);
+  });
+
+  testWidgets('动态根评论文字长按仍优先选字而不打开评论操作', (tester) async {
+    final fixture = await _fixture();
+    addTearDown(fixture.dispose);
+    const content = '可选择的评论正文';
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: fixture.container,
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: Scaffold(
+            body: MomentCommentBody(
+              comment: MomentComment(
+                id: 'comment-selectable-text',
+                momentId: 'moment-1',
+                author: _author,
+                content: content,
+                deleted: false,
+                canDelete: true,
+                createdAt: DateTime.utc(2026, 9, 3),
+              ),
+              busy: false,
+              onDelete: () {},
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    final paragraph = tester.renderObject<RenderParagraph>(
+      find.byWidgetPredicate(
+        (widget) => widget is RichText && widget.text.toPlainText() == content,
+      ),
+    );
+    final glyph = paragraph
+        .getBoxesForSelection(
+          const TextSelection(baseOffset: 2, extentOffset: 3),
+        )
+        .single
+        .toRect();
+    await tester.longPressAt(paragraph.localToGlobal(glyph.center));
+    await tester.pump();
+
+    expect(
+      find.byKey(
+        const Key('moment-comment-action-comment-selectable-text-delete'),
+      ),
+      findsNothing,
+    );
+    expect(paragraph.selections, isNotEmpty);
   });
 }
 
