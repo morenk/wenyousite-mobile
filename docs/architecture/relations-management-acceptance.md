@@ -1,8 +1,20 @@
-# 本人关系管理候选验收
+# 本人关系管理验收记录
 
-状态：候选／待负责人验收。仅 Windows Mobile；治理任务 `01a0c4bb-9204-7662-93c3-648b8fa03f59`。分支 `codex/20260922-mobile-relations-management`，基线 `c5ba6668`。
+状态：负责人已于 2026-09-24 确认关系候选验收通过，并授权合并 dev；不正式发布 Android。仅 Windows Mobile；治理任务 `01a0c4bb-9204-7662-93c3-648b8fa03f59`。分支 `codex/20260922-mobile-relations-management`，基线 `c5ba6668`。
 
-## 最终集成候选
+## 负责人验收与合并前集成
+
+负责人确认的关系候选为应用源码 `fbddcf1436426dcc7796377be89b5162e3a112ec`、APK SHA-256 `2292997BEFBC3271E309497746DA5D7184BD4D2EBCB644CC4242143B1B529EAC`。原包与截图已保留，不把后续集成包表述为已经再次真机验收。
+
+合并前普通整合 `origin/dev` 的 `53705e2239bda917379eda9e93eb0a6ba4f52b0a`，最终应用源码为 `9dfa750ddc6b10cdae91bf95c0b5ad4e207bff88`。真实冲突仅 CHANGELOG 与通知模块记录，保留双方说明；新基线包含全部构建仅 ARM64 和通知目标删除态处理，关系管理源码、契约与生成客户端未改。Foundation 关系说明已合并 main `f4189a69634f5028a9f06bf4ef98fdf0fc90ad30`，应用依赖仍为正式 v7.1.0。
+
+最终完整 `npm run check:apk -- -TestConcurrency 4` **exit 0**（`build/relations-537-final-gate.log`）：Flutter **4737 项通过、1 项既有真实 Sentry 回执验收跳过、零失败**，Windows 发布工具 **18 项通过**。格式、双 analyze（零问题）、架构、21 模块文档、API scope 159/159、契约及生成一致性、生产精确 Backend `92b030a81f8957386e324fed477bd1e46faf65ea` / API `5.26.0-dev.20260922.3` 校验和 APK 构建全部通过。Gradle 343.3 秒，既有 Kotlin 插件及 SDK XML 提示不影响成功。最终 12 张关系截图正常 Golden 比较通过（`build/relations-537-screenshots.log`），无像素差异，未更新基准。
+
+最新集成 Debug APK **109,118,276 字节**，SHA-256 **`29D362E2B8BF0FCE5F3112541E514BDA88274BE62B8E39507417BB7827CC95BA`**。ZIP 仅含 `arm64-v8a`；包名 `site.wenyou.app.debug`、`0.7.1-debug` / `95`、minSdk 26 / targetSdk 36，默认 API `https://wenyou.site/api/v1`。未自动安装、上传或正式发布。
+
+稳定保留目录为 `D:/code/wenyousite/artifacts/mobile-relations-management/`：已验收包 `wenyou-relations-accepted-debug-2292997B.apk`、最新包 `wenyou-relations-integrated-arm64-debug-29D362E2.apk`、`screenshots/`、`logs/` 与逐文件 SHA-256 清单 `manifest.json`。后续仅文档提交不改变此应用源码和产物。任务 Worktree 与分支在合并复核后等待治理任务安全清理通知；不创建 Android Tag 或 Release。
+
+## 已验收关系候选（536 基线，以下保留当时记录）
 
 本轮锁定 Mobile `origin/dev` 的 `536bc30652dd5d40eff9df90b2602e7c56f5e580`，普通合并提交及最终应用源码为 `fbddcf1436426dcc7796377be89b5162e3a112ec`。该基线在前一候选验证期间合入能力修复；真实文本冲突仅 CHANGELOG 和 21 模块的契约记录，保留双方说明。契约与生成客户端逐字节相同，无需再次生成。自动合并的 API 清单去除重复项，已消费的移除粉丝继续计入覆盖，不退回计划排除。
 
