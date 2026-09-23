@@ -270,7 +270,10 @@ class _NotificationCard extends StatelessWidget {
     final copy = formatNotificationCopy(item);
     return Semantics(
       button: true,
-      label: '${item.isRead ? '已读' : '未读'}通知：${copy.plainText}',
+      label: [
+        '${item.isRead ? '已读' : '未读'}通知：${copy.plainText}',
+        ?item.target.deletedHint,
+      ].join('，'),
       child: Material(
         key: ValueKey('notification-${item.id}'),
         color: tokens.background,

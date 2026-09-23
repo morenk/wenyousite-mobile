@@ -159,6 +159,39 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('已删除通知显示历史态且不导航、不重复标记已读', (tester) async {
+    final repository = _FakeRepository(
+      items: [
+        _item(
+          'deleted-target',
+          isRead: true,
+          target: const NotificationTarget(
+            kind: NotificationTargetKind.none,
+            state: NotificationTargetState.contentDeleted,
+            deletedHint: '该评论已删除',
+          ),
+        ),
+      ],
+    );
+    final router = _router();
+    final container = await _authenticatedContainer(repository);
+    addTearDown(router.dispose);
+    addTearDown(container.dispose);
+    await _pumpAuthenticated(tester, container, router);
+
+    expect(find.text('该评论已删除'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('notification-unread-deleted-target')),
+      findsNothing,
+    );
+    await tester.tap(find.byKey(const ValueKey('notification-deleted-target')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('该评论已删除'), findsNWidgets(2));
+    expect(repository.readIds, isEmpty);
+    expect(find.byKey(const Key('notification-filter-menu')), findsOneWidget);
+  });
+
   testWidgets('消息中心主栏目与紧凑通知筛选无布局溢出', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(360, 640);
