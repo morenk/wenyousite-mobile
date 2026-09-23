@@ -85,7 +85,7 @@ Android Manifest 明确关闭全量备份，Android 11 及以下和 Android 12+ 
 
 全局临时消息统一通过 `showWenyouSnackBar`，以 Foundation 面板色、细边框、16dp 圆角和浮层层级 2 显示；信息、成功和失败由调用处明确选择语义图标及色彩。正文完整换行，可操作消息把按钮放到正文下方，避免大字号挤窄正文；原有替换队列、2.5/4 秒节奏及重试/撤销行为保留。全局 Scaffold 处理键盘、安全区和底栏避让；评论 modal 内的单图限制短提示复用 `buildWenyouSnackBar` 外观，通过归属弹层的 OverlayPortal 即时显示，取实际 FlutterView 安全区和弹层位置，关闭时清除，不进入全局队列。私聊继续保留输入区额外净空；关键失败与待确认写入仍留在原操作区域，不仅靠临时消息表达。
 
-Android 正式 APK 仅支持 `arm64-v8a`，Debug/Profile 保留 ARM32、ARM64 和 x86_64。正式构建仍为单 APK，原包名、签名、构建号和站内更新比较规则不变；文楷、Noto Sans SC 和 Nunito 均保留。构建与上传入口在本地校验 ABI、引擎和字体条目，拒绝混入其他架构或缺失必要资源的制品。
+Android 的 Debug、Profile 和 Release 均仅支持 `arm64-v8a`，使用 ARM64 设备开发和验收。所有构建保持单 APK，原包名、签名、构建号和站内更新比较规则不变；正文与品牌文字使用系统字体。正式构建与上传入口在本地校验 ABI、引擎和字体条目，拒绝混入其他架构、缺失引擎或包含已移除 UI 字体的制品。构建验证和真机检查见[全构建 ARM64 验证](../architecture/all-builds-arm64-acceptance.md)。
 
 本模块页面排版统一遵循[移动端视觉基线](../architecture/visual-baseline.md)中的 Foundation v6.9.0 语义文字角色，不自定义字号或直接依赖 Material 字体槽位。
 

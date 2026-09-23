@@ -30,4 +30,4 @@ jobs:
           cache: true
 
       - run: flutter pub get
-      - run: flutter build apk --debug
+      - run: flutter build apk --debug --target-platform android-arm64

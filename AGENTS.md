@@ -25,7 +25,7 @@
 
 温油站移动端使用 Flutter 构建。首发 Android，最低 Android 8（API 26），手机竖屏优先；共享 Dart 代码保持 iOS 可兼容，但当前不做 iOS 签名和真机验收。
 
-Android 正式 Release 仅支持 `arm64-v8a`，正文与品牌文字使用平台系统字体，不捆绑应用 UI 字体；KaTeX、系统等宽呈现和 Material Icons 等功能字体依赖按实际用途保留。Debug/Profile 保留开发所需 ARM32、ARM64 和 x86_64。正式分发保持单 APK 与原构建号，不使用 ABI 分包偏移版本号。
+Android 的 Debug、Profile 和 Release 均仅支持 `arm64-v8a`，不再为开发保留 ARM32 或 x86_64。正文与品牌文字使用平台系统字体，不捆绑应用 UI 字体；KaTeX、系统等宽呈现和 Material Icons 等功能字体依赖按实际用途保留。所有构建保持单 APK 与原构建号，不使用 ABI 分包偏移版本号。
 
 - 应用名称：温油站
 - Android applicationId：`site.wenyou.app`
