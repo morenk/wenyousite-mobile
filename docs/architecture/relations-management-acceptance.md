@@ -2,7 +2,21 @@
 
 状态：候选／待负责人验收。仅 Windows Mobile；治理任务 `01a0c4bb-9204-7662-93c3-648b8fa03f59`。分支 `codex/20260922-mobile-relations-management`，基线 `c5ba6668`。
 
-## 开发基线整合候选
+## 最终集成候选
+
+本轮锁定 Mobile `origin/dev` 的 `536bc30652dd5d40eff9df90b2602e7c56f5e580`，普通合并提交及最终应用源码为 `fbddcf1436426dcc7796377be89b5162e3a112ec`。该基线在前一候选验证期间合入能力修复；真实文本冲突仅 CHANGELOG 和 21 模块的契约记录，保留双方说明。契约与生成客户端逐字节相同，无需再次生成。自动合并的 API 清单去除重复项，已消费的移除粉丝继续计入覆盖，不退回计划排除。
+
+关系、会话核心与受控弹层代码无冲突；直接调用交集是举报说明按 Unicode code point 计数、共享 SnackBar 的构造提取。整合其他输入、草稿和评论附件修复后，对同一最终树重新运行完整 `npm run check:apk -- -TestConcurrency 4`，**exit 0**（`build/relations-536-final-gate.log`）：Flutter **4734 项通过、1 项既有真实 Sentry 回执验收跳过、零失败**，Windows 发布工具 **18 项通过**；格式、双 analyze（零问题）、架构、21 模块文档、API scope 159/159、契约、生成一致性及生产精确来源检查全部通过，APK 构建成功。
+
+运行期间本机发生长时间暂停，测试 elapsed 从约 5 分钟跃升至 946 分钟以上；原因未据此断定。恢复后原进程与测试计数继续推进，无 TimeoutException 或测试失败，保留原运行完成结果，不把显示的 elapsed 表述为持续计算时长。Gradle 构建 304.2 秒，既有 Kotlin 插件和 SDK XML 工具版本提示未影响成功结果。
+
+当前 APK：`build/app/outputs/flutter-apk/app-debug.apk`，**223,911,942 字节**，SHA-256 **`2292997BEFBC3271E309497746DA5D7184BD4D2EBCB644CC4242143B1B529EAC`**。包名 `site.wenyou.app.debug`，版本 `0.7.1-debug` / `95`，minSdk 26 / targetSdk 36，默认 API `https://wenyou.site/api/v1`。固定 Backend `92b030a81f8957386e324fed477bd1e46faf65ea` / `5.26.0-dev.20260922.3`、正式 Foundation v7.1.0；说明性关系规范引用 `7263db135530326ac42b206eeffbf6f179513a91`。尚未安装、发布或通过负责人真机验收。
+
+最终 `536bc306` 集成树的 12 张亮暗、关注／粉丝／菜单、390dp 正常字与 320dp 双倍字截图再次以正常 Golden 比较通过（`build/relations-536-screenshots.log`），与 `build/relations-compact-v2-{list|following|sheet}-{light|dark}-{1x|2x}.png` 无像素差异，没有更新基准。测试中文字体不打包产品，截图不替代真机验收。
+
+前一 `8A363` APK 已另存 `build/relations-candidate-8A363.apk`，其通过证据仅覆盖当时的 `78224480` 基线；以下记录均保留历史含义，当前候选以本节为准。后续验收文档提交不改变已构建的应用源码。
+
+## 历史开发基线整合候选
 
 2026-09-23 在原分支普通合并 `origin/dev` 的 `78224480bcb95aa0af88b06820fcfa7f671c936d`（合并提交 `e8eeda1b`），保留紧凑关系管理并整合已合入的设计统一。回复时间沿用新共享组件，避免重复读屏日期；72 小时与未来日期边界测试保留。关系菜单入口复用新增 `showWenyouSheet`，继承宽度、安全区、键盘和高度约束，固定会话与受控路由关闭逻辑不变。
 
