@@ -10,7 +10,7 @@ void main() {
   test('移动主题完整映射 Foundation 核心 Token', () {
     const tokens = WenyouThemeTokens.light;
 
-    expect(WenyouFoundationVersion.value, '7.1.0');
+    expect(WenyouFoundationVersion.value, '7.1.1');
     expect(WenyouFoundationVersion.schema, 3);
     expect(WenyouEditorContract.surfaces, [
       'page',
@@ -68,6 +68,8 @@ void main() {
         WenyouFoundationMobile.radiusPanel,
       ],
     );
+    expect(tokens.radiusCard, WenyouFoundationMobile.radiusCard);
+    expect(tokens.cardGap, WenyouCollectionContract.cardGap);
     expect(
       tokens.minimumTouchTarget,
       WenyouFoundationMobile.minimumTouchTarget,

@@ -43,6 +43,7 @@ class MomentCardTile extends StatelessWidget {
     final tokens = context.wenyouTokens;
     return WenyouPanel(
       padding: EdgeInsets.zero,
+      contentCard: true,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -50,14 +51,14 @@ class MomentCardTile extends StatelessWidget {
             key: Key('moment-open-${moment.id}'),
             onTap: onTap,
             borderRadius: BorderRadius.vertical(
-              top: Radius.circular(tokens.radius20),
+              top: Radius.circular(tokens.radiusCard),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 ClipRRect(
                   borderRadius: BorderRadius.vertical(
-                    top: Radius.circular(tokens.radius20),
+                    top: Radius.circular(tokens.radiusCard),
                   ),
                   child: AspectRatio(
                     aspectRatio: 16 / 9,

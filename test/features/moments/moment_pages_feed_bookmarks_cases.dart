@@ -179,7 +179,10 @@ void registerMomentPagesFeedBookmarksCases() {
       expect(footer, findsOneWidget);
       expect(
         tester.getSize(footer).width,
-        closeTo(tester.getSize(lastCard).width * 2 + 12, 0.1),
+        closeTo(
+          tester.getSize(lastCard).width * 2 + WenyouCollectionContract.cardGap,
+          0.1,
+        ),
       );
       expect(tester.takeException(), isNull);
 
@@ -237,7 +240,13 @@ void registerMomentPagesFeedBookmarksCases() {
     expect(firstTopLeft.dx, lessThan(secondTopLeft.dx));
     expect(thirdTopLeft.dx, closeTo(firstTopLeft.dx, 0.1));
     expect(thirdTopLeft.dy, greaterThan(firstTopLeft.dy));
-    expect(thirdTopLeft.dy, closeTo(tester.getBottomRight(first).dy + 12, 0.1));
+    expect(
+      thirdTopLeft.dy,
+      closeTo(
+        tester.getBottomRight(first).dy + WenyouCollectionContract.cardGap,
+        0.1,
+      ),
+    );
 
     final likeSize = tester.getSize(
       find.byKey(const Key('moment-like-moment-1')),
@@ -287,6 +296,23 @@ void registerMomentPagesFeedBookmarksCases() {
     await expectLater(
       find.byKey(const Key('moment-feed-visual')),
       matchesGoldenFile('goldens/moment_waterfall_360.png'),
+    );
+  });
+
+  testWidgets('360dp 黑夜动态瀑布流保持内容卡片视觉基线', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(360, 760);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+
+    await tester.pumpWidget(
+      momentPagesTestFeedApp(MomentPagesTestPageRepository(), dark: true),
+    );
+    await tester.pumpAndSettle();
+
+    await expectLater(
+      find.byKey(const Key('moment-feed-visual')),
+      matchesGoldenFile('goldens/moment_waterfall_360_dark.png'),
     );
   });
 

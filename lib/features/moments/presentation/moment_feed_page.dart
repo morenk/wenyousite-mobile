@@ -227,8 +227,8 @@ class _MomentFeedListState extends ConsumerState<MomentFeedList> {
           ),
           sliver: SliverWaterfallFlow.count(
             crossAxisCount: _usesTwoColumnWaterfall ? 2 : 1,
-            mainAxisSpacing: context.wenyouTokens.space12,
-            crossAxisSpacing: context.wenyouTokens.space12,
+            mainAxisSpacing: context.wenyouTokens.cardGap,
+            crossAxisSpacing: context.wenyouTokens.cardGap,
             children: [
               for (var index = 0; index < 4; index++)
                 _MomentWaterfallSkeletonCard(index: index),
@@ -296,8 +296,8 @@ class _MomentFeedListState extends ConsumerState<MomentFeedList> {
         sliver: SliverWaterfallFlow(
           gridDelegate: SliverWaterfallFlowDelegateWithFixedCrossAxisCount(
             crossAxisCount: _usesTwoColumnWaterfall ? 2 : 1,
-            mainAxisSpacing: context.wenyouTokens.space12,
-            crossAxisSpacing: context.wenyouTokens.space12,
+            mainAxisSpacing: context.wenyouTokens.cardGap,
+            crossAxisSpacing: context.wenyouTokens.cardGap,
             lastChildLayoutTypeBuilder: (index) => index == state.items.length
                 ? LastChildLayoutType.fullCrossAxisExtent
                 : LastChildLayoutType.none,
@@ -392,10 +392,10 @@ class _MomentWaterfallSkeletonCard extends StatelessWidget {
           decoration: BoxDecoration(
             color: tokens.panel,
             border: Border.all(color: tokens.border),
-            borderRadius: BorderRadius.circular(tokens.radius12),
+            borderRadius: BorderRadius.circular(tokens.radiusCard),
           ),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(tokens.radius12),
+            borderRadius: BorderRadius.circular(tokens.radiusCard),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [

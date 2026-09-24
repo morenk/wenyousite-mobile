@@ -179,7 +179,7 @@ class _ThreadSearchResults extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           for (var index = 0; index < state.items.length; index++) ...[
-            if (index > 0) SizedBox(height: tokens.space12),
+            if (index > 0) SizedBox(height: tokens.cardGap),
             _ThreadSearchResultCard(item: state.items[index]),
           ],
           WenyouPaginationFooter(
@@ -211,6 +211,7 @@ class _ThreadSearchResultCard extends StatelessWidget {
       label: '打开当前主题中的匹配正文',
       child: WenyouPanel(
         key: Key('thread-search-result-${item.id}'),
+        contentCard: true,
         onTap: () => context.pushNamed(
           'thread-detail',
           pathParameters: {'threadId': item.threadId},

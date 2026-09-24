@@ -333,6 +333,7 @@ class WenyouPanel extends StatelessWidget {
     this.color,
     this.onTap,
     this.clipBehavior,
+    this.contentCard = false,
     super.key,
   });
 
@@ -341,6 +342,7 @@ class WenyouPanel extends StatelessWidget {
   final Color? color;
   final VoidCallback? onTap;
   final Clip? clipBehavior;
+  final bool contentCard;
 
   @override
   Widget build(BuildContext context) {
@@ -351,6 +353,12 @@ class WenyouPanel extends StatelessWidget {
     );
     return Card(
       color: color ?? tokens.panel,
+      shape: contentCard
+          ? RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(tokens.radiusCard),
+              side: BorderSide(color: tokens.border),
+            )
+          : null,
       clipBehavior:
           clipBehavior ?? (onTap == null ? Clip.none : Clip.antiAlias),
       child: onTap == null ? content : InkWell(onTap: onTap, child: content),
@@ -363,12 +371,14 @@ class WenyouListSkeleton extends StatelessWidget {
     this.label = '内容加载中',
     this.itemCount = 3,
     this.showAvatar = true,
+    this.contentCards = false,
     super.key,
   });
 
   final String label;
   final int itemCount;
   final bool showAvatar;
+  final bool contentCards;
 
   @override
   Widget build(BuildContext context) {
@@ -382,8 +392,12 @@ class WenyouListSkeleton extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             for (var index = 0; index < itemCount; index++) ...[
-              if (index > 0) SizedBox(height: tokens.space12),
+              if (index > 0)
+                SizedBox(
+                  height: contentCards ? tokens.cardGap : tokens.space12,
+                ),
               WenyouPanel(
+                contentCard: contentCards,
                 padding: EdgeInsets.all(tokens.space12),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,

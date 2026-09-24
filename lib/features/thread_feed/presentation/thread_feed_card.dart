@@ -38,6 +38,10 @@ class ThreadFeedCard extends StatelessWidget {
       label: '打开主题：${thread.title}，作者 ${thread.ownerName}',
       onTap: onTap,
       child: Card(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(tokens.radiusCard),
+          side: BorderSide(color: tokens.border),
+        ),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: onTap,

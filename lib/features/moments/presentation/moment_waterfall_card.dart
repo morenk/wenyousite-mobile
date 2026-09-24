@@ -37,7 +37,7 @@ class MomentWaterfallCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
     final shape = RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(tokens.radius12),
+      borderRadius: BorderRadius.circular(tokens.radiusCard),
       side: BorderSide(color: tokens.border),
     );
     return Semantics(
@@ -95,7 +95,7 @@ class MomentWaterfallCard extends StatelessWidget {
                     child: InkWell(
                       key: Key('moment-author-${moment.id}'),
                       onTap: onAuthorTap,
-                      borderRadius: BorderRadius.circular(tokens.radius12),
+                      borderRadius: BorderRadius.circular(tokens.radiusCard),
                       child: ConstrainedBox(
                         constraints: BoxConstraints(
                           minHeight: tokens.minimumTouchTarget,

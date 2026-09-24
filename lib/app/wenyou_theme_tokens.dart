@@ -42,9 +42,11 @@ class WenyouThemeTokens extends ThemeExtension<WenyouThemeTokens> {
     required this.space24,
     required this.space32,
     required this.radius12,
+    required this.radiusCard,
     required this.radius16,
     required this.radius20,
     required this.radiusPill,
+    required this.cardGap,
     required this.minimumTouchTarget,
     required this.compactHorizontalPadding,
     required this.regularHorizontalPadding,
@@ -93,9 +95,11 @@ class WenyouThemeTokens extends ThemeExtension<WenyouThemeTokens> {
     space24: WenyouFoundationMobile.space24,
     space32: WenyouFoundationMobile.space32,
     radius12: WenyouFoundationMobile.radiusCompact,
+    radiusCard: WenyouFoundationMobile.radiusCard,
     radius16: WenyouFoundationMobile.radiusControl,
     radius20: WenyouFoundationMobile.radiusPanel,
     radiusPill: WenyouFoundationMobile.radiusPill,
+    cardGap: WenyouCollectionContract.cardGap,
     minimumTouchTarget: WenyouFoundationMobile.minimumTouchTarget,
     compactHorizontalPadding: WenyouFoundationMobile.compactHorizontalPadding,
     regularHorizontalPadding: WenyouFoundationMobile.regularHorizontalPadding,
@@ -145,9 +149,11 @@ class WenyouThemeTokens extends ThemeExtension<WenyouThemeTokens> {
     space24: WenyouFoundationMobile.space24,
     space32: WenyouFoundationMobile.space32,
     radius12: WenyouFoundationMobile.radiusCompact,
+    radiusCard: WenyouFoundationMobile.radiusCard,
     radius16: WenyouFoundationMobile.radiusControl,
     radius20: WenyouFoundationMobile.radiusPanel,
     radiusPill: WenyouFoundationMobile.radiusPill,
+    cardGap: WenyouCollectionContract.cardGap,
     minimumTouchTarget: WenyouFoundationMobile.minimumTouchTarget,
     compactHorizontalPadding: WenyouFoundationMobile.compactHorizontalPadding,
     regularHorizontalPadding: WenyouFoundationMobile.regularHorizontalPadding,
@@ -198,9 +204,11 @@ class WenyouThemeTokens extends ThemeExtension<WenyouThemeTokens> {
   final double space32;
 
   final double radius12;
+  final double radiusCard;
   final double radius16;
   final double radius20;
   final double radiusPill;
+  final double cardGap;
   final double minimumTouchTarget;
   final double compactHorizontalPadding;
   final double regularHorizontalPadding;
@@ -249,9 +257,11 @@ class WenyouThemeTokens extends ThemeExtension<WenyouThemeTokens> {
     double? space24,
     double? space32,
     double? radius12,
+    double? radiusCard,
     double? radius16,
     double? radius20,
     double? radiusPill,
+    double? cardGap,
     double? minimumTouchTarget,
     double? compactHorizontalPadding,
     double? regularHorizontalPadding,
@@ -301,9 +311,11 @@ class WenyouThemeTokens extends ThemeExtension<WenyouThemeTokens> {
       space24: space24 ?? this.space24,
       space32: space32 ?? this.space32,
       radius12: radius12 ?? this.radius12,
+      radiusCard: radiusCard ?? this.radiusCard,
       radius16: radius16 ?? this.radius16,
       radius20: radius20 ?? this.radius20,
       radiusPill: radiusPill ?? this.radiusPill,
+      cardGap: cardGap ?? this.cardGap,
       minimumTouchTarget: minimumTouchTarget ?? this.minimumTouchTarget,
       compactHorizontalPadding:
           compactHorizontalPadding ?? this.compactHorizontalPadding,
@@ -376,9 +388,11 @@ class WenyouThemeTokens extends ThemeExtension<WenyouThemeTokens> {
       space24: _lerpDouble(space24, other.space24, t),
       space32: _lerpDouble(space32, other.space32, t),
       radius12: _lerpDouble(radius12, other.radius12, t),
+      radiusCard: _lerpDouble(radiusCard, other.radiusCard, t),
       radius16: _lerpDouble(radius16, other.radius16, t),
       radius20: _lerpDouble(radius20, other.radius20, t),
       radiusPill: _lerpDouble(radiusPill, other.radiusPill, t),
+      cardGap: _lerpDouble(cardGap, other.cardGap, t),
       minimumTouchTarget: _lerpDouble(
         minimumTouchTarget,
         other.minimumTouchTarget,

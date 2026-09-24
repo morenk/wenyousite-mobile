@@ -242,7 +242,7 @@ class _ThreadFeedCoverState extends State<ThreadFeedCover> {
                 },
               );
     return ClipRRect(
-      borderRadius: BorderRadius.circular(tokens.radius12),
+      borderRadius: BorderRadius.circular(tokens.radiusCard),
       child: AspectRatio(
         key: _boundsKey,
         aspectRatio: 16 / 9,

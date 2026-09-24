@@ -333,7 +333,7 @@ class _OverviewGroup extends StatelessWidget {
         ),
         SizedBox(height: tokens.space8),
         for (var index = 0; index < children.length; index++) ...[
-          if (index > 0) SizedBox(height: tokens.space12),
+          if (index > 0) SizedBox(height: tokens.cardGap),
           children[index],
         ],
       ],
@@ -361,7 +361,7 @@ class _MomentSectionBody extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         for (var index = 0; index < state.items.length; index++) ...[
-          if (index > 0) SizedBox(height: tokens.space12),
+          if (index > 0) SizedBox(height: tokens.cardGap),
           _MomentResultCard(item: state.items[index]),
         ],
         WenyouPaginationFooter(
@@ -435,7 +435,7 @@ class _SectionBody<T> extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           for (var index = 0; index < state.items.length; index++) ...[
-            if (index > 0) SizedBox(height: tokens.space12),
+            if (index > 0) SizedBox(height: tokens.cardGap),
             itemBuilder(context, state.items[index]),
           ],
         ],
@@ -471,7 +471,7 @@ class _PostSectionBody extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         for (var index = 0; index < state.items.length; index++) ...[
-          if (index > 0) SizedBox(height: tokens.space12),
+          if (index > 0) SizedBox(height: tokens.cardGap),
           _PostResultCard(item: state.items[index]),
         ],
         WenyouPaginationFooter(
@@ -527,6 +527,7 @@ class _UserResultCard extends StatelessWidget {
       label: '打开用户 ${item.username}',
       child: WenyouPanel(
         key: Key('search-user-${item.id}'),
+        contentCard: true,
         onTap: () => context.pushNamed(
           'user-profile',
           pathParameters: {'userId': item.id},
@@ -579,6 +580,7 @@ class _PostResultCard extends StatelessWidget {
       label: '打开 ${item.threadTitle} 中的匹配正文',
       child: WenyouPanel(
         key: Key('search-post-${item.id}'),
+        contentCard: true,
         onTap: () => context.push(location),
         padding: EdgeInsets.all(tokens.space16),
         child: Column(
@@ -631,7 +633,11 @@ class _SearchLoadingState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const WenyouListSkeleton(label: '正在搜索', itemCount: 2);
+    return const WenyouListSkeleton(
+      label: '正在搜索',
+      itemCount: 2,
+      contentCards: true,
+    );
   }
 }
 

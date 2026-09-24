@@ -189,8 +189,8 @@ class _MomentBookmarkFolderPageState
         sliver: SliverWaterfallFlow(
           gridDelegate: SliverWaterfallFlowDelegateWithFixedCrossAxisCount(
             crossAxisCount: _usesTwoColumnWaterfall ? 2 : 1,
-            mainAxisSpacing: context.wenyouTokens.space12,
-            crossAxisSpacing: context.wenyouTokens.space12,
+            mainAxisSpacing: context.wenyouTokens.cardGap,
+            crossAxisSpacing: context.wenyouTokens.cardGap,
             lastChildLayoutTypeBuilder: (index) => index == state.items.length
                 ? LastChildLayoutType.fullCrossAxisExtent
                 : LastChildLayoutType.none,
