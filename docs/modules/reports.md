@@ -79,6 +79,8 @@ users、threads、posts、moments 和 direct_messages 只提供目标事实与�
 
 ## 13. 最近审查的契约版本和后端提交
 
+候选契约复核：OpenAPI `5.26.0-dev.20260922.3`，Backend `92b030a81f8957386e324fed477bd1e46faf65ea`。新增图集为独立消费切片；管理会话、内容与关系基线保持兼容，本模块既有行为不因生成同步改变。来源及排除范围见 [图集契约同步](../architecture/image-gallery-contract-sync.md)。
+
 2026-09-23 关系候选整合复核：固定已部署 Backend `92b030a81f8957386e324fed477bd1e46faf65ea`、OpenAPI `5.26.0-dev.20260922.3`。兼容新增图集读取与管理端记住设备字段，既有关系 path 和投影 Schema 不变；本模块原行为与验收状态保持。图集新入口由独立媒体切片接入，本轮仅同步生成类型。
 
 2026-09-22 合并来源同步：Backend `4850e2f456ccc452c763853641e3b2136901e237`（PR #26），OpenAPI `5.25.0-dev.20260922.1`；与此前候选契约逐字节一致，本模块接口及应用代码未变。部署后的精确来源核验见[关系管理候选验收](../architecture/relations-management-acceptance.md)，真机验收仍待负责人完成。

@@ -21,6 +21,7 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_time_text.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_transient_target_frame.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/editor/editor.dart';
+import 'package:wenyousite_mobile/features/media/reading_gallery.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
 import 'package:wenyousite_mobile/features/reports/domain/report_models.dart';
 import 'package:wenyousite_mobile/features/reports/presentation/report_widgets.dart';
@@ -119,6 +120,8 @@ class ThreadSubthreadBody extends ConsumerWidget {
     required this.onEdit,
     this.pending = false,
     this.diagnosticMarkdownKey,
+    this.galleryOrder = ReadingGalleryOrder.oldest,
+    this.galleryAuthorId,
     super.key,
   });
 
@@ -126,6 +129,8 @@ class ThreadSubthreadBody extends ConsumerWidget {
   final ThreadSubthreadModel subthread;
   final bool pending;
   final GlobalKey? diagnosticMarkdownKey;
+  final ReadingGalleryOrder galleryOrder;
+  final String? galleryAuthorId;
   final ValueChanged<PostComposerTarget> onEdit;
   bool get canManage => detail.canManageThread;
 
@@ -177,6 +182,13 @@ class ThreadSubthreadBody extends ConsumerWidget {
             StickerPostMarkdown(
               key: Key('thread-body-${subthread.id}'),
               postId: body.postId!,
+              postVersion: body.version ?? 1,
+              galleryTarget: ReadingGalleryTarget(
+                scope: ReadingGalleryScope.subthread,
+                scopeId: subthread.id,
+                order: galleryOrder,
+                authorId: galleryAuthorId,
+              ),
               data: body.markdown,
               mediaDisplays: body.mediaDisplays,
               diceLabels: threadDiceLabels(body.diceRolls),
@@ -361,10 +373,12 @@ class ThreadFloorCard extends ConsumerWidget {
     this.reportReturnTo,
     this.isFocused = false,
     this.targetFrameKey,
+    this.galleryTarget,
     super.key,
   });
 
   final String threadId;
+  final ReadingGalleryTarget? galleryTarget;
   final ThreadFloorModel floor;
   final bool isFocused;
   final GlobalKey? targetFrameKey;
@@ -474,6 +488,8 @@ class ThreadFloorCard extends ConsumerWidget {
                   else
                     StickerPostMarkdown(
                       postId: floor.id,
+                      postVersion: floor.version,
+                      galleryTarget: galleryTarget,
                       data: floor.body.markdown,
                       mediaDisplays: floor.body.mediaDisplays,
                       diceLabels: threadDiceLabels(floor.body.diceRolls),
@@ -654,6 +670,11 @@ class _FloorInlineReplyCard extends StatelessWidget {
           else
             StickerPostMarkdown(
               postId: reply.id,
+              postVersion: reply.version,
+              galleryTarget: ReadingGalleryTarget(
+                scope: ReadingGalleryScope.postReplies,
+                scopeId: floorId,
+              ),
               data: reply.body.markdown,
               mediaDisplays: reply.body.mediaDisplays,
               diceLabels: threadDiceLabels(reply.body.diceRolls),

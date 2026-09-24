@@ -170,6 +170,7 @@ $threadCategorySource = Resolve-UniqueBackendContract `
   'thread category'
 
 $contractFiles = @(
+  @{ Source = 'contracts/gallery-image-occurrences.json'; Destination = 'gallery-image-occurrences.json' },
   @{ Source = 'contracts/openapi.json'; Destination = 'openapi.json' },
   @{ Source = $markdownFixtureSource; Destination = (Split-Path -Leaf $markdownFixtureSource) },
   @{ Source = $markdownNodesSource; Destination = (Split-Path -Leaf $markdownNodesSource) },

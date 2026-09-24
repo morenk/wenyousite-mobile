@@ -9,6 +9,7 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_content_action_menu.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_discussion_reply_card.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_internal_reference_text.dart';
+import 'package:wenyousite_mobile/features/media/reading_gallery.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_playback_image.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_widgets.dart';
@@ -24,6 +25,7 @@ class MomentCommentBody extends ConsumerWidget {
     this.onReport,
     this.reportReturnTo,
     this.compact = false,
+    this.galleryOrder = ReadingGalleryOrder.newest,
     super.key,
   });
 
@@ -34,6 +36,7 @@ class MomentCommentBody extends ConsumerWidget {
   final Future<void> Function()? onReport;
   final String? reportReturnTo;
   final bool compact;
+  final ReadingGalleryOrder galleryOrder;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -108,21 +111,37 @@ class MomentCommentBody extends ConsumerWidget {
                       alignment: Alignment.centerLeft,
                       child: InkWell(
                         key: Key('moment-comment-image-${comment.id}'),
-                        onTap: () => openMomentGallery(
+                        onTap: () => openReadingImageGallery(
                           context,
-                          [comment.media!],
-                          0,
-                          onAddToStickers: !stickersEnabled || !authenticated
+                          target: ReadingGalleryTarget(
+                            scope: comment.parentCommentId == null
+                                ? ReadingGalleryScope.momentComments
+                                : ReadingGalleryScope.momentReplies,
+                            scopeId:
+                                comment.parentCommentId ?? comment.momentId,
+                            order: comment.parentCommentId == null
+                                ? galleryOrder
+                                : ReadingGalleryOrder.oldest,
+                          ),
+                          sourceId: comment.id,
+                          version: 1,
+                          imageIndex: 0,
+                          url: comment.media!.url,
+                          display: comment.media!.display,
+                          mediaId: comment.media!.id,
+                          animated: comment.media!.isAnimated,
+                          previewUrls: comment.media!.playbackPreviewUrls,
+                          onCollect: !stickersEnabled || !authenticated
                               ? null
-                              : (item) => ref
+                              : (image) => ref
                                     .read(
                                       stickerCollectionControllerProvider
                                           .notifier,
                                     )
                                     .importSourceForFeedback(
                                       StickerMomentCommentImageSource(
-                                        momentCommentId: comment.id,
-                                        mediaId: item.id! as String,
+                                        momentCommentId: image.sourceId,
+                                        mediaId: image.mediaId!,
                                       ),
                                     ),
                         ),

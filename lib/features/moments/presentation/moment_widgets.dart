@@ -6,7 +6,6 @@ import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/navigation/wenyou_page_transitions.dart';
-import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/content_image_viewer_page.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
@@ -15,6 +14,7 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_interaction_toggle.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_level_badge.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_time_text.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
+import 'package:wenyousite_mobile/features/media/reading_gallery.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_playback_image.dart';
 import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
@@ -296,12 +296,14 @@ class MomentGallery extends ConsumerStatefulWidget {
   const MomentGallery({
     required this.momentId,
     required this.images,
+    this.version = 1,
     this.coverMedia,
     super.key,
   });
 
   final String momentId;
   final List<MomentMedia> images;
+  final int version;
   final MomentMedia? coverMedia;
 
   @override
@@ -351,11 +353,8 @@ class _MomentGalleryState extends ConsumerState<MomentGallery> {
   @override
   Widget build(BuildContext context) {
     final images = widget.images;
-    if (images.isEmpty) return const SizedBox.shrink();
     final stickersEnabled = ref.watch(stickersEnabledProvider);
-    final authenticated = ref.watch(
-      sessionControllerProvider.select((session) => session.isAuthenticated),
-    );
+    if (images.isEmpty) return const SizedBox.shrink();
     final tokens = context.wenyouTokens;
     final ratio =
         (widget.coverMedia?.aspectRatio ?? images.first.aspectRatio ?? 1)
@@ -389,22 +388,45 @@ class _MomentGalleryState extends ConsumerState<MomentGallery> {
                   key: const Key('moment-detail-image'),
                   behavior: HitTestBehavior.opaque,
                   excludeFromSemantics: true,
-                  onTap: () => openMomentGallery(
+                  onTap: () => openReadingImageGallery(
                     context,
-                    images,
-                    _index,
-                    onAddToStickers: !stickersEnabled || !authenticated
+                    target: ReadingGalleryTarget(
+                      scope: ReadingGalleryScope.moment,
+                      scopeId: widget.momentId,
+                    ),
+                    sourceId: widget.momentId,
+                    version: widget.version,
+                    imageIndex: _index,
+                    url: images[_index].url,
+                    display: images[_index].display,
+                    onCollect: !stickersEnabled
                         ? null
-                        : (item) => ref
+                        : (image) => ref
                               .read(
                                 stickerCollectionControllerProvider.notifier,
                               )
                               .importSourceForFeedback(
                                 StickerMomentImageSource(
-                                  momentId: widget.momentId,
-                                  mediaId: item.id! as String,
+                                  momentId: image.sourceId,
+                                  mediaId: image.mediaId!,
                                 ),
                               ),
+                    initialImages: [
+                      for (var index = 0; index < images.length; index++)
+                        ReadingGalleryImage(
+                          id: images[index].id,
+                          sourceId: widget.momentId,
+                          sourceVersion: widget.version,
+                          imageIndex: index,
+                          imageCount: images.length,
+                          url: images[index].url,
+                          display: images[index].display,
+                          mediaId: images[index].id,
+                          animated: images[index].isAnimated,
+                          previewUrls: images[index].playbackPreviewUrls,
+                          momentId: widget.momentId,
+                        ),
+                    ],
                   ),
                   child: Stack(
                     fit: StackFit.expand,

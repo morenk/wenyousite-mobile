@@ -10,6 +10,7 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_markdown.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
+import 'package:wenyousite_mobile/features/media/reading_gallery.dart';
 import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
 import 'package:wenyousite_mobile/features/stickers/domain/sticker_models.dart';
 
@@ -294,6 +295,8 @@ class StickerPostMarkdown extends ConsumerWidget {
   const StickerPostMarkdown({
     required this.postId,
     required this.data,
+    this.postVersion = 1,
+    this.galleryTarget,
     this.mediaDisplays = const {},
     this.diceLabels = const {},
     this.diceSemantics = const {},
@@ -309,6 +312,8 @@ class StickerPostMarkdown extends ConsumerWidget {
   });
 
   final String postId;
+  final int postVersion;
+  final ReadingGalleryTarget? galleryTarget;
   final String data;
   final Map<String, MediaDisplay> mediaDisplays;
   final Map<String, String> diceLabels;
@@ -330,6 +335,27 @@ class StickerPostMarkdown extends ConsumerWidget {
     );
     return WenyouMarkdown(
       data: data,
+      onOpenImage: galleryTarget == null
+          ? null
+          : (index, uri, alt) => openReadingImageGallery(
+              context,
+              target: galleryTarget!,
+              sourceId: postId,
+              version: postVersion,
+              imageIndex: index,
+              url: uri.toString(),
+              display: mediaDisplays[uri.toString()],
+              onCollect: !enabled || !authenticated
+                  ? null
+                  : (image) => ref
+                        .read(stickerCollectionControllerProvider.notifier)
+                        .importSourceForFeedback(
+                          StickerPostImageSource(
+                            postId: image.sourceId,
+                            imageUrl: image.url,
+                          ),
+                        ),
+            ),
       mediaDisplays: mediaDisplays,
       diceLabels: diceLabels,
       diceSemantics: diceSemantics,

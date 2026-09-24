@@ -8,12 +8,15 @@ import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/network/session_controller.dart';
 import 'package:wenyousite_mobile/core/network/session_remote.dart';
 import 'package:wenyousite_mobile/core/storage/token_store.dart';
+import 'package:wenyousite_mobile/features/media/application/reading_gallery_controller.dart';
+import 'package:wenyousite_mobile/features/media/domain/reading_image_gallery.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_detail_comment_body.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_widgets.dart';
 import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
 import 'package:wenyousite_mobile/features/stickers/data/sticker_repository.dart';
 import 'package:wenyousite_mobile/features/stickers/domain/sticker_models.dart';
+import '../../support/reading_gallery_test_repository.dart';
 
 void main() {
   testWidgets('动态正文当前图片可从原图页添加到表情收藏', (tester) async {
@@ -47,11 +50,8 @@ void main() {
     await tester.tap(find.byKey(const Key('moment-detail-image')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 350));
-    tester
-        .widget<PageView>(find.byType(PageView).last)
-        .controller!
-        .jumpToPage(1);
-    await tester.pump();
+    await tester.drag(find.byType(PageView).last, const Offset(-250, 0));
+    await tester.pump(const Duration(milliseconds: 350));
     await _addCurrentImageToStickers(tester);
 
     final source = fixture.repository.sources.single;
@@ -60,7 +60,7 @@ void main() {
     expect(source.mediaId, 'media-2');
   });
 
-  testWidgets('动态评论图片可从原图页添加到表情收藏', (tester) async {
+  testWidgets('动态评论翻到另一评论后收藏取当前图片所属评论', (tester) async {
     final fixture = await _fixture();
     addTearDown(fixture.dispose);
     await tester.pumpWidget(
@@ -93,15 +93,17 @@ void main() {
     await tester.tap(find.byKey(const Key('moment-comment-image-comment-1')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 350));
+    await tester.drag(find.byType(PageView).last, const Offset(-250, 0));
+    await tester.pump(const Duration(milliseconds: 350));
     await _addCurrentImageToStickers(tester);
 
     final source = fixture.repository.sources.single;
     expect(source, isA<StickerMomentCommentImageSource>());
     expect(
       (source as StickerMomentCommentImageSource).momentCommentId,
-      'comment-1',
+      'comment-2',
     );
-    expect(source.mediaId, 'comment-media-1');
+    expect(source.mediaId, 'comment-media-2');
   });
 
   testWidgets('动态根评论图片同行空白长按打开评论操作', (tester) async {
@@ -282,6 +284,39 @@ Future<_Fixture> _fixture() async {
       ),
       stickersEnabledProvider.overrideWithValue(true),
       stickerRepositoryProvider.overrideWithValue(repository),
+      readingGalleryRepositoryProvider.overrideWithValue(
+        ReadingGalleryTestRepository((request) {
+          if (request.scope == ReadingGalleryScope.moment) {
+            return momentGalleryTestImages('moment-1', const [
+              MomentMedia(
+                id: 'media-1',
+                url: 'https://cdn.example.com/one.png',
+              ),
+              MomentMedia(
+                id: 'media-2',
+                url: 'https://cdn.example.com/two.png',
+              ),
+            ]);
+          }
+          expect(request.scope, ReadingGalleryScope.momentComments);
+          expect(request.scopeId, 'moment-1');
+          return [
+            for (var index = 1; index <= 2; index++)
+              ReadingGalleryImage(
+                id: 'comment:comment-$index:1:0',
+                sourceId: 'comment-$index',
+                sourceVersion: 1,
+                imageIndex: 0,
+                imageCount: 1,
+                url: index == 1
+                    ? 'https://cdn.example.com/comment.png'
+                    : 'https://cdn.example.com/other-comment.png',
+                mediaId: 'comment-media-$index',
+                momentId: 'moment-1',
+              ),
+          ];
+        }),
+      ),
       stickerCollectionControllerProvider.overrideWith(
         (ref) => StickerCollectionController(
           repository,
