@@ -109,7 +109,9 @@ Invoke-WenyouCandidateStep 'Run relevant Flutter tests' $flutterCommand $flutter
 Invoke-WenyouCandidateStep 'Build Android Debug APK' $flutterCommand @(
   'build',
   'apk',
-  '--debug'
+  '--debug',
+  '--target-platform',
+  'android-arm64'
 )
 
 $apkPath = Join-Path $repository 'build\app\outputs\flutter-apk\app-debug.apk'

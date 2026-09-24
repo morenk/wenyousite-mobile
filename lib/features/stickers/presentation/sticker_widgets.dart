@@ -106,19 +106,6 @@ class _StickerPickerPanelState extends ConsumerState<StickerPickerPanel> {
             child: _buildTabs(collection),
           ),
         ],
-        if (collection?.pendingImports.isNotEmpty ?? false)
-          Padding(
-            padding: EdgeInsets.fromLTRB(
-              tokens.space16,
-              tokens.space8,
-              tokens.space16,
-              0,
-            ),
-            child: Text(
-              '正在处理 ${collection!.pendingImports.length} 个表情…',
-              style: Theme.of(context).textTheme.wenyouCaption,
-            ),
-          ),
         SizedBox(height: widget.compact ? tokens.space8 : tokens.space12),
         Expanded(child: _buildBody(context, state, shown)),
       ],

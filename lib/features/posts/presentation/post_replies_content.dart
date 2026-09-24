@@ -6,7 +6,6 @@ import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
-import 'package:wenyousite_mobile/core/formatters/relative_time.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/reading_quick_scroll.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
@@ -15,6 +14,7 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_content_item_divider.dart'
 import 'package:wenyousite_mobile/core/widgets/wenyou_discussion_scroll_policy.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_level_badge.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_markdown.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_time_text.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_transient_target_frame.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/editor/editor.dart';
@@ -529,32 +529,28 @@ class _PostAuthorLine extends StatelessWidget {
                 ],
               ),
               SizedBox(height: tokens.space4 / 2),
-              Semantics(
-                label: [
+              WenyouTimeText(
+                value: post.createdAt,
+                reference: timeReference,
+                semanticsPrefix: [
                   if (root) '楼层 ${post.floorNumber ?? '-'}',
                   if (!root && post.replyToAuthor != null)
                     '回复 ${post.replyToAuthor!.username}'
                   else if (!root)
                     '回复',
-                  '发布时间：${formatWenyouDate(post.createdAt)}',
+                  '发布时间：',
                 ].join('，'),
-                excludeSemantics: true,
-                child: Text(
-                  [
-                    if (root) '#${post.floorNumber ?? '-'}',
-                    if (!root && post.replyToAuthor != null)
-                      '回复 @${post.replyToAuthor!.username}'
-                    else if (!root)
-                      '回复',
-                    formatWenyouRelativeTime(
-                      post.createdAt,
-                      now: timeReference,
-                    ),
-                  ].join(' · '),
-                  style: Theme.of(
-                    context,
-                  ).textTheme.wenyouCaption.copyWith(color: tokens.mutedText),
-                ),
+                prefix: [
+                  if (root) '#${post.floorNumber ?? '-'}',
+                  if (!root && post.replyToAuthor != null)
+                    '回复 @${post.replyToAuthor!.username}'
+                  else if (!root)
+                    '回复',
+                  '',
+                ].join(' · '),
+                style: Theme.of(
+                  context,
+                ).textTheme.wenyouCaption.copyWith(color: tokens.mutedText),
               ),
             ],
           ),

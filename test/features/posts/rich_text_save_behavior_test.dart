@@ -17,6 +17,7 @@ import 'package:wenyousite_mobile/features/posts/presentation/post_composer_targ
 import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
 
 import '../../support/deterministic_test_fonts.dart';
+import '../../support/memory_pending_media_file_store.dart';
 import '../../support/rich_text_behavior_projection.dart';
 import '../../support/rich_text_behavior_report.dart';
 
@@ -81,6 +82,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
+            memoryPendingMediaFileStoreOverride(),
             postRepositoryProvider.overrideWithValue(repository),
             stickersEnabledProvider.overrideWithValue(false),
           ],

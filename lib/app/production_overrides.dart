@@ -35,11 +35,13 @@ import 'package:wenyousite_mobile/features/home/data/home_repository.dart';
 import 'package:wenyousite_mobile/features/media/application/avatar_image_ports.dart';
 import 'package:wenyousite_mobile/features/media/application/image_crop_ports.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
+import 'package:wenyousite_mobile/features/media/application/pending_media_file_store_ports.dart';
 import 'package:wenyousite_mobile/features/media/application/profile_cover_image_ports.dart';
 import 'package:wenyousite_mobile/features/media/application/reading_gallery_controller.dart';
 import 'package:wenyousite_mobile/features/media/data/editor_image_picker.dart';
 import 'package:wenyousite_mobile/features/media/data/image_crop_processor.dart';
 import 'package:wenyousite_mobile/features/media/data/media_upload_repository.dart';
+import 'package:wenyousite_mobile/features/media/data/private_pending_media_file_store.dart';
 import 'package:wenyousite_mobile/features/media/data/profile_cover_image_picker.dart';
 import 'package:wenyousite_mobile/features/media/data/reading_gallery_repository.dart';
 import 'package:wenyousite_mobile/features/moderation/data/moderation_appeal_repository.dart';
@@ -57,6 +59,7 @@ import 'package:wenyousite_mobile/features/settings/application/settings_reposit
 import 'package:wenyousite_mobile/features/settings/data/account_deletion_repository.dart';
 import 'package:wenyousite_mobile/features/settings/data/credential_security_repository.dart';
 import 'package:wenyousite_mobile/features/settings/data/login_session_repository.dart';
+import 'package:wenyousite_mobile/features/social/application/user_relation_list_controller.dart';
 import 'package:wenyousite_mobile/features/social/data/bookmark_list_repository.dart';
 import 'package:wenyousite_mobile/features/social/data/thread_interaction_repository.dart';
 import 'package:wenyousite_mobile/features/social/data/thread_subscription_repository.dart';
@@ -86,6 +89,9 @@ import 'package:wenyousite_mobile/features/wallet/data/wallet_repository.dart';
 List<Override> productionProviderOverrides() => [
   readingGalleryRepositoryProvider.overrideWith(
     (ref) => ref.watch(apiReadingGalleryRepositoryProvider),
+  ),
+  pendingMediaFileStoreProvider.overrideWithValue(
+    PrivatePendingMediaFileStore(),
   ),
   notificationGuidanceStoreProvider.overrideWithValue(
     const SharedPreferencesNotificationGuidanceStore(),
@@ -286,6 +292,11 @@ List<Override> productionProviderOverrides() => [
   profileCacheInvalidatorProvider.overrideWith((ref) {
     return (userId) {
       ref.invalidate(meProfileControllerProvider);
+      ref.invalidate(userRelationListControllerProvider);
+      final accountId = ref.read(sessionScopeProvider).accountId;
+      if (accountId != null && accountId != userId) {
+        ref.invalidate(publicUserControllerProvider(accountId));
+      }
       if (userId != null) {
         ref.invalidate(publicUserControllerProvider(userId));
       }

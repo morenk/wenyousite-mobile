@@ -10,6 +10,7 @@ import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/core/media/media_display.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/features/editor/presentation/editor_pending_image_widget.dart';
 import 'package:wenyousite_mobile/features/media/application/image_crop_ports.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_ports.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
@@ -22,6 +23,7 @@ import 'package:wenyousite_mobile/features/stickers/application/sticker_collecti
 import '../../support/button_finder.dart';
 import '../../support/deterministic_test_fonts.dart';
 import '../../support/fake_image_crop_processor.dart';
+import '../../support/memory_pending_media_file_store.dart';
 import '../moments/moment_animation_fixture.dart';
 import '../posts/post_replies_page_test_support.dart';
 import 'thread_compose_page_test_support.dart';
@@ -50,7 +52,10 @@ const _uploaded = UploadedEditorImage(
 void main() {
   setUpAll(loadDeterministicTestFonts);
 
-  testWidgets('主题 GIF 安全处理跨帧完成后插入预览并保留发布正文', (tester) async {
+  testWidgets('主题 GIF 先显示本机预览并可继续写，跨帧完成后保留发布正文', (tester) async {
+    final mediaStore = MemoryPendingMediaFileStore();
+    // 网络图片夹具会先卸载页面并排空图片回调，再由测试释放本机文件。
+    addTearDown(mediaStore.dispose);
     await MomentAnimationFixture.run(tester, (fixture) async {
       final repository = ThreadComposePageTestFakeRepository();
       final controller =
@@ -69,14 +74,16 @@ void main() {
         mediaGateway: gateway,
         cropProcessor: const _GifCropProcessor(),
         withThreadRoute: true,
+        pendingMediaStore: mediaStore,
       );
       await tester.tap(find.byKey(const Key('editor-image')));
       await threadComposePageTestConfirmImageCrop(tester);
       final editor = tester
           .widget<QuillEditor>(find.byKey(const Key('compose-body')))
           .controller;
-      expect(find.text('图片正在安全处理中…'), findsOneWidget);
-      expect(editor.readOnly, isTrue);
+      expect(find.byType(EditorPendingImageWidget), findsOneWidget);
+      expect(find.text('图片正在安全处理中…'), findsNothing);
+      expect(editor.readOnly, isFalse);
       expect(controller.state.body, '上传前正文');
       expect(
         tester
@@ -84,14 +91,19 @@ void main() {
               findButtonControl(find.byKey(const Key('compose-publish'))),
             )
             .onPressed,
-        isNull,
+        isNotNull,
       );
+      editor.replaceText(editor.document.length - 1, 0, '处理中继续写', null);
+      await _pumpImage(tester);
+      expect(editor.document.toPlainText(), contains('处理中继续写'));
+      expect(fixture.requests, isNot(contains(_displayUrl)));
 
       // 完成结果进入微任务后才泵下一帧，模拟真实网络轮询完成。
       gateway.complete();
       await tester.pump();
       expect(controller.state.body, contains(_imageMarkdown));
       expect(controller.state.body, contains('上传前正文'));
+      expect(controller.state.body, contains('处理中继续写'));
       expect(controller.state.mediaDisplays[_sourceUrl], same(_display));
       expect(editor.readOnly, isFalse);
       expect(find.text('图片正在安全处理中…'), findsNothing);
@@ -108,7 +120,9 @@ void main() {
   });
 
   for (final kind in PostComposerKind.values) {
-    testWidgets('${kind.name} GIF 安全处理跨帧完成后预览、保存和重开保留图片', (tester) async {
+    testWidgets('${kind.name} GIF 本机预览可继续写，跨帧完成后保存和重开保留图片', (tester) async {
+      final mediaStore = MemoryPendingMediaFileStore();
+      addTearDown(mediaStore.dispose);
       await MomentAnimationFixture.run(tester, (fixture) async {
         final gateway = _DelayedUploadGateway();
         final repository = _RecordingPostRepository(
@@ -116,6 +130,7 @@ void main() {
         );
         final container = ProviderContainer(
           overrides: [
+            pendingMediaFileStoreProvider.overrideWithValue(mediaStore),
             tokenStoreProvider.overrideWithValue(
               PostRepliesPageTestMemoryTokenStore(),
             ),
@@ -160,9 +175,14 @@ void main() {
         final editor = tester
             .widget<QuillEditor>(find.byKey(const Key('post-composer-body')))
             .controller;
-        expect(editor.readOnly, isTrue);
-        expect(find.text('图片正在安全处理中…'), findsOneWidget);
+        expect(editor.readOnly, isFalse);
+        expect(find.byType(EditorPendingImageWidget), findsOneWidget);
+        expect(find.text('图片正在安全处理中…'), findsNothing);
         expect(repository.saved, isEmpty);
+        editor.replaceText(editor.document.length - 1, 0, '处理中继续写', null);
+        await _pumpImage(tester);
+        expect(editor.document.toPlainText(), contains('处理中继续写'));
+        expect(fixture.requests, isNot(contains(_displayUrl)));
 
         gateway.complete();
         await tester.pump();
@@ -196,6 +216,7 @@ void main() {
         expect(_imageMarkdown.allMatches(markdown), hasLength(1));
         expect(markdown.split('\n'), contains(_imageMarkdown));
         expect(markdown, contains('上传前正文'));
+        expect(markdown, contains('处理中继续写'));
         expect(markdown, contains('图片后文字'));
         expect(markdown, isNot(contains(_displayUrl)));
 
@@ -335,7 +356,13 @@ class _DelayedUploadGateway implements MediaUploadGateway {
     void Function(MediaUploadProgress progress)? onProgress,
   }) {
     onProgress?.call(
-      const MediaUploadProgress(stage: MediaUploadStage.processing),
+      const MediaUploadProgress(
+        stage: MediaUploadStage.processing,
+        pendingUpload: PendingMediaUpload(
+          mediaId: 'gif-upload',
+          purpose: MediaUploadPurpose.richContent,
+        ),
+      ),
     );
     return _DelayedUploadOperation(_completer.future);
   }

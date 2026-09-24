@@ -3,22 +3,62 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
 import 'package:wenyousite_mobile/features/social/data/user_relation_repository.dart';
 
 void main() {
+  test('移除粉丝使用指定本人端点，禁止网络层自动重放', () async {
+    final api = _MockUsersApi();
+    when(
+      () => api.usersFollowRemoveFollower(
+        id: 'fan',
+        extra: ApiRequestPolicy.authenticatedNonReplayable.extra,
+      ),
+    ).thenAnswer(
+      (_) async => Response(
+        requestOptions: RequestOptions(path: '/api/v1/users/me/followers/fan'),
+        data: UsersFollowRemoveFollower200Response(
+          (response) => response
+            ..code = ApiSuccessEnvelopeCodeEnum.number0
+            ..message = 'ok'
+            ..data.update((data) => data.message = '已移除粉丝'),
+        ),
+      ),
+    );
+    await ApiUserRelationRepository(api).removeFollower('fan');
+    verify(
+      () => api.usersFollowRemoveFollower(
+        id: 'fan',
+        extra: ApiRequestPolicy.authenticatedNonReplayable.extra,
+      ),
+    ).called(1);
+    verifyNever(() => api.usersFollowUnfollow(id: any(named: 'id')));
+  });
   test('四类关系写操作按目标 ID 调用无 body 生成接口', () async {
     final api = _MockUsersApi();
     when(
-      () => api.usersFollowFollow(id: 'user-1'),
+      () => api.usersFollowFollow(
+        id: 'user-1',
+        extra: ApiRequestPolicy.authenticatedNonReplayable.extra,
+      ),
     ).thenAnswer((_) async => _followResponse());
     when(
-      () => api.usersFollowUnfollow(id: 'user-1'),
+      () => api.usersFollowUnfollow(
+        id: 'user-1',
+        extra: ApiRequestPolicy.authenticatedNonReplayable.extra,
+      ),
     ).thenAnswer((_) async => _unfollowResponse());
     when(
-      () => api.usersFollowBlock(id: 'user-1'),
+      () => api.usersFollowBlock(
+        id: 'user-1',
+        extra: ApiRequestPolicy.authenticatedNonReplayable.extra,
+      ),
     ).thenAnswer((_) async => _blockResponse());
     when(
-      () => api.usersFollowUnblock(id: 'user-1'),
+      () => api.usersFollowUnblock(
+        id: 'user-1',
+        extra: ApiRequestPolicy.authenticatedNonReplayable.extra,
+      ),
     ).thenAnswer((_) async => _unblockResponse());
     final repository = ApiUserRelationRepository(api);
 
@@ -27,15 +67,40 @@ void main() {
     await repository.block('user-1');
     await repository.unblock('user-1');
 
-    verify(() => api.usersFollowFollow(id: 'user-1')).called(1);
-    verify(() => api.usersFollowUnfollow(id: 'user-1')).called(1);
-    verify(() => api.usersFollowBlock(id: 'user-1')).called(1);
-    verify(() => api.usersFollowUnblock(id: 'user-1')).called(1);
+    verify(
+      () => api.usersFollowFollow(
+        id: 'user-1',
+        extra: ApiRequestPolicy.authenticatedNonReplayable.extra,
+      ),
+    ).called(1);
+    verify(
+      () => api.usersFollowUnfollow(
+        id: 'user-1',
+        extra: ApiRequestPolicy.authenticatedNonReplayable.extra,
+      ),
+    ).called(1);
+    verify(
+      () => api.usersFollowBlock(
+        id: 'user-1',
+        extra: ApiRequestPolicy.authenticatedNonReplayable.extra,
+      ),
+    ).called(1);
+    verify(
+      () => api.usersFollowUnblock(
+        id: 'user-1',
+        extra: ApiRequestPolicy.authenticatedNonReplayable.extra,
+      ),
+    ).called(1);
   });
 
   test('关系响应缺失时不假装操作成功', () async {
     final api = _MockUsersApi();
-    when(() => api.usersFollowFollow(id: 'user-1')).thenAnswer(
+    when(
+      () => api.usersFollowFollow(
+        id: 'user-1',
+        extra: ApiRequestPolicy.authenticatedNonReplayable.extra,
+      ),
+    ).thenAnswer(
       (_) async => Response<UsersFollowFollow200Response>(
         requestOptions: RequestOptions(path: '/api/v1/users/follow/user-1'),
       ),

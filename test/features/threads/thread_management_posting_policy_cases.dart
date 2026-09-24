@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_selection_menu.dart';
 import 'package:wenyousite_mobile/features/threads/domain/subthread_management_models.dart';
 import '../../support/deterministic_test_fonts.dart';
 import 'thread_management_test_support.dart';
@@ -35,7 +36,7 @@ void registerThreadManagementPostingPolicyCases() {
     expect(find.text('玩家、楼主和协作者可以发言'), findsOneWidget);
     expect(
       tester
-          .widget<ListTile>(
+          .widget<WenyouSelectionTile>(
             find.byKey(
               const ValueKey('thread-management-posting-policy-choice-players'),
             ),

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
-import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
 import 'package:wenyousite_mobile/features/media/media_ui.dart';
 
@@ -70,11 +69,17 @@ class DirectMessageComposerStatusLine extends StatelessWidget {
 class DirectMessageImagePreview extends StatelessWidget {
   const DirectMessageImagePreview({
     required this.image,
+    this.busy = false,
+    this.failed = false,
+    this.onFailureTap,
     this.onRemove,
     super.key,
   });
 
   final MediaUploadInput image;
+  final bool busy;
+  final bool failed;
+  final VoidCallback? onFailureTap;
   final VoidCallback? onRemove;
 
   @override
@@ -91,13 +96,18 @@ class DirectMessageImagePreview extends StatelessWidget {
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(tokens.radius12),
-            child: MediaUploadInputImage(
-              input: image,
-              width: 64,
-              height: 64,
-              fit: BoxFit.cover,
-              cacheWidth: 192,
-              gaplessPlayback: true,
+            child: PendingImageOverlay(
+              active: busy,
+              failed: failed,
+              onFailureTap: onFailureTap,
+              child: MediaUploadInputImage(
+                input: image,
+                width: 64,
+                height: 64,
+                fit: BoxFit.cover,
+                cacheWidth: 192,
+                gaplessPlayback: true,
+              ),
             ),
           ),
           SizedBox(width: tokens.space8),
@@ -118,49 +128,6 @@ class DirectMessageImagePreview extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-class DirectMessageUploadProgress extends StatelessWidget {
-  const DirectMessageUploadProgress({
-    required this.state,
-    required this.onCancel,
-    super.key,
-  });
-
-  final MediaUploadTaskState state;
-  final VoidCallback onCancel;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = context.wenyouTokens;
-    return Row(
-      children: [
-        SizedBox.square(
-          dimension: 16,
-          child: CircularProgressIndicator(
-            strokeWidth: 2,
-            value: state.progress?.fraction,
-          ),
-        ),
-        SizedBox(width: tokens.space8),
-        Expanded(
-          child: Text(
-            state.progressLabel,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.wenyouCaption,
-          ),
-        ),
-        IconButton(
-          key: const Key('direct-message-composer-cancel-upload'),
-          onPressed: onCancel,
-          tooltip: '取消上传',
-          visualDensity: VisualDensity.compact,
-          icon: const WenyouIcon(WenyouIconIds.actionClose, size: 18),
-        ),
-      ],
     );
   }
 }

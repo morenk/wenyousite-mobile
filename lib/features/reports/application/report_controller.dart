@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/reports/application/report_repository_ports.dart';
 import 'package:wenyousite_mobile/features/reports/domain/report_models.dart';
 
@@ -51,5 +52,6 @@ class ReportController extends StateNotifier<ReportState> {
 
 final reportControllerProvider = StateNotifierProvider.autoDispose
     .family<ReportController, ReportState, ReportTarget>((ref, target) {
+      ref.watch(sessionScopeProvider);
       return ReportController(ref.watch(reportRepositoryProvider), target);
-    }, dependencies: [reportRepositoryProvider]);
+    }, dependencies: [reportRepositoryProvider, sessionScopeProvider]);

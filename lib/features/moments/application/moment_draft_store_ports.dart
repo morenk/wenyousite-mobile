@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/media/media_display.dart';
 import 'package:wenyousite_mobile/core/models/editor_models.dart';
+import 'package:wenyousite_mobile/features/media/application/pending_media_file_store_ports.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
 
 class MomentLocalDraft {
@@ -12,8 +13,12 @@ class MomentLocalDraft {
     this.coverMediaId,
     this.clientRequestId,
     this.pendingCreate,
+    this.imageOrder = const [],
+    this.pendingImages = const [],
   });
 
+  final List<String> imageOrder;
+  final List<MomentPendingDraftImage> pendingImages;
   final String title;
   final String content;
   final List<UploadedEditorImage> images;
@@ -33,9 +38,13 @@ class MomentLocalDraft {
     updatedAt: updatedAt,
     clientRequestId: requestId,
     pendingCreate: pending,
+    imageOrder: imageOrder,
+    pendingImages: pendingImages,
   );
 
   Map<String, Object?> toJson() => {
+    'imageOrder': imageOrder,
+    'pendingImages': [for (final image in pendingImages) image.toJson()],
     'title': title,
     'content': content,
     'coverMediaId': coverMediaId,
@@ -91,6 +100,15 @@ class MomentLocalDraft {
         );
       }
       return MomentLocalDraft(
+        imageOrder:
+            (json['imageOrder'] as List?)?.whereType<String>().toList() ??
+            const [],
+        pendingImages:
+            (json['pendingImages'] as List?)
+                ?.map(MomentPendingDraftImage.fromJson)
+                .nonNulls
+                .toList() ??
+            const [],
         title: title,
         content: content,
         images: List.unmodifiable(images),
@@ -165,3 +183,35 @@ final momentComposerOwnerResolverProvider =
     });
 
 StateError _error() => StateError('动态本机草稿存储尚未在应用组合根绑定。');
+
+class MomentPendingDraftImage {
+  const MomentPendingDraftImage({
+    required this.id,
+    required this.input,
+    this.pending,
+  });
+  final String id;
+  final MediaUploadInput input;
+  final PendingMediaUpload? pending;
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'input': encodePendingMediaInput(input),
+    'pending': pending?.toJson(),
+  };
+  static MomentPendingDraftImage? fromJson(Object? value) {
+    if (value is! Map<String, dynamic> ||
+        value['id'] is! String ||
+        value['input'] is! Map<String, dynamic>) {
+      return null;
+    }
+    final input = decodePendingMediaInput(
+      value['input'] as Map<String, dynamic>,
+    );
+    if (input == null) return null;
+    return MomentPendingDraftImage(
+      id: value['id'] as String,
+      input: input,
+      pending: PendingMediaUpload.fromJson(value['pending']),
+    );
+  }
+}

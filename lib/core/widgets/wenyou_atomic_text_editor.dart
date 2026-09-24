@@ -50,7 +50,7 @@ class WenyouAtomicTextController extends ChangeNotifier {
   String get markdown => _markdown;
   String? get failure => _failure;
   bool get isEmpty => _markdown.trim().isEmpty;
-  bool get isOverLimit => _markdown.length > maximumMarkdownLength;
+  bool get isOverLimit => _markdown.trim().runes.length > maximumMarkdownLength;
   int get documentLength => quillController.document.length - 1;
   TextSelection get selection => quillController.selection;
 

@@ -131,6 +131,20 @@ void main() {
       '/moments/moment-1',
     );
   });
+
+  test('只有 ACTIVE 目标允许导航，未知状态不会猜测目标', () {
+    expect(
+      notificationTargetLocation(
+        const NotificationTarget(
+          kind: NotificationTargetKind.post,
+          state: NotificationTargetState.unknown,
+          threadId: 'thread-1',
+          postId: 'post-1',
+        ),
+      ),
+      isNull,
+    );
+  });
 }
 
 NotificationListItem _item({

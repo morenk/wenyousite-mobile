@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:flutter/semantics.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
-import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
 import 'package:wenyousite_mobile/features/media/media_ui.dart';
@@ -17,8 +15,8 @@ class MomentComposeImageStrip extends StatelessWidget {
     required this.uploadState,
     required this.pendingImages,
     required this.onAdd,
-    required this.onCancelUpload,
-    required this.onRetryUpload,
+    required this.onRetry,
+    required this.order,
     required this.onCoverSelected,
     required this.onRemove,
     required this.onReorder,
@@ -30,8 +28,8 @@ class MomentComposeImageStrip extends StatelessWidget {
   final MediaUploadTaskState uploadState;
   final List<MomentPendingComposeImage> pendingImages;
   final VoidCallback? onAdd;
-  final VoidCallback? onCancelUpload;
-  final VoidCallback? onRetryUpload;
+  final ValueChanged<String> onRetry;
+  final List<String> order;
   final ValueChanged<String> onCoverSelected;
   final ValueChanged<String> onRemove;
   final ReorderCallback onReorder;
@@ -84,62 +82,47 @@ class MomentComposeImageStrip extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              if (pendingImages.isNotEmpty)
-                Expanded(
-                  child: ListView.builder(
-                    key: const Key('moment-compose-pending-image-list'),
-                    scrollDirection: Axis.horizontal,
-                    scrollCacheExtent: const ScrollCacheExtent.pixels(0),
-                    itemCount: images.length + pendingImages.length,
-                    itemBuilder: (context, index) {
-                      if (index < images.length) {
-                        final image = images[index];
-                        return _ComposeThumbnail(
-                          key: ValueKey(image.mediaId),
-                          image: image,
+              Expanded(
+                child: ReorderableListView.builder(
+                  key: const Key('moment-compose-image-list'),
+                  scrollDirection: Axis.horizontal,
+                  buildDefaultDragHandles: false,
+                  itemCount: order.length,
+                  onReorderItem: onReorder,
+                  itemBuilder: (context, index) {
+                    final id = order[index];
+                    final pending = pendingImages
+                        .where((item) => item.id == id)
+                        .firstOrNull;
+                    if (pending != null) {
+                      return ReorderableDelayedDragStartListener(
+                        key: ValueKey(id),
+                        index: index,
+                        child: MomentPendingImageThumbnail(
+                          pending: pending,
                           index: index,
-                          imageCount: images.length,
-                          isCover: image.mediaId == coverMediaId,
-                          onCoverSelected: onCoverSelected,
-                          onRemove: onRemove,
-                          onMove: (targetIndex) {},
-                          reorderable: false,
-                        );
-                      }
-                      return _PendingComposeThumbnail(
-                        pending: pendingImages[index - images.length],
-                        index: index - images.length,
+                          isCover: id == coverMediaId,
+                          onCover: () => onCoverSelected(id),
+                          onRemove: () => onRemove(id),
+                          onRetry: () => onRetry(id),
+                        ),
                       );
-                    },
-                  ),
-                )
-              else if (images.isNotEmpty)
-                Expanded(
-                  child: ReorderableListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    buildDefaultDragHandles: false,
-                    itemCount: images.length,
-                    onReorderItem: onReorder,
-                    itemBuilder: (context, index) => _ComposeThumbnail(
-                      key: ValueKey(images[index].mediaId),
-                      image: images[index],
+                    }
+                    return _ComposeThumbnail(
+                      key: ValueKey(id),
+                      image: images.firstWhere((image) => image.mediaId == id),
                       index: index,
-                      imageCount: images.length,
-                      isCover: images[index].mediaId == coverMediaId,
+                      imageCount: order.length,
+                      isCover: id == coverMediaId,
                       onCoverSelected: onCoverSelected,
                       onRemove: onRemove,
-                      onMove: (targetIndex) => onReorder(index, targetIndex),
-                    ),
-                  ),
+                      onMove: (target) => onReorder(index, target),
+                    );
+                  },
                 ),
-              if (pendingImages.isEmpty &&
-                  images.isNotEmpty &&
-                  images.length < 9)
-                SizedBox(width: tokens.space8),
-              if (pendingImages.isEmpty && images.length < 9)
-                _AddImageTile(onPressed: onAdd)
-              else if (images.isEmpty)
-                const SizedBox.shrink(),
+              ),
+              if (order.length < 9) SizedBox(width: tokens.space8),
+              if (order.length < 9) _AddImageTile(onPressed: onAdd),
             ],
           ),
         ),
@@ -152,79 +135,22 @@ class MomentComposeImageStrip extends StatelessWidget {
             ).textTheme.wenyouCaption.copyWith(color: tokens.mutedText),
           ),
         ],
-        if (pendingImages.isNotEmpty && uploadState.isBusy) ...[
-          SizedBox(height: tokens.space8),
-          LinearProgressIndicator(value: uploadState.progress?.fraction),
-          Row(
-            children: [
-              Expanded(child: Text(_progressLabel(uploadState))),
-              TextButton(
-                key: const Key('moment-compose-cancel-upload'),
-                onPressed: onCancelUpload,
-                child: const Text('取消上传'),
-              ),
-            ],
-          ),
-        ],
-        if (uploadState.failure case final failure?) ...[
-          SizedBox(height: tokens.space8),
-          WenyouStatusBanner(
-            key: const Key('moment-compose-upload-failure'),
-            message: failure.userMessage,
-            detail: failure.resolvedPresentation.problemDetail,
-            tone: uploadState.phase == MediaUploadTaskPhase.processingPending
-                ? WenyouStatusTone.neutral
-                : WenyouStatusTone.error,
-            action: Wrap(
-              spacing: tokens.space8,
-              children: [
-                TextButton(
-                  key: const Key('moment-compose-cancel-upload'),
-                  onPressed: onCancelUpload,
-                  child: const Text('取消上传'),
-                ),
-                if (failure.canRetry)
-                  TextButton(
-                    key: const Key('moment-compose-retry-upload'),
-                    onPressed: onRetryUpload,
-                    child: Text(
-                      uploadState.pendingUpload == null ? '重新上传' : '继续查询',
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ],
       ],
     );
-  }
-
-  String _progressLabel(MediaUploadTaskState state) {
-    final completed = pendingImages.where((image) => image.completed).length;
-    final position = '（已完成 $completed/${pendingImages.length}）';
-    return switch (state.phase) {
-      MediaUploadTaskPhase.picking => '正在打开相册…',
-      MediaUploadTaskPhase.preparing => '正在准备图片$position…',
-      MediaUploadTaskPhase.uploading when state.progress?.fraction != null =>
-        '正在上传$position ${((state.progress!.fraction ?? 0) * 100).round()}%',
-      MediaUploadTaskPhase.uploading => '正在上传图片$position…',
-      MediaUploadTaskPhase.confirming => '正在确认图片$position…',
-      MediaUploadTaskPhase.processing => '正在处理图片$position…',
-      MediaUploadTaskPhase.processingPending => '图片仍在处理中，可继续查询。',
-      MediaUploadTaskPhase.idle || MediaUploadTaskPhase.failed => '',
-    };
   }
 }
 
 class MomentPendingComposeImage {
   const MomentPendingComposeImage({
     required this.input,
+    required this.id,
     required this.state,
     required this.completed,
     required this.active,
     required this.failed,
   });
 
+  final String id;
   final MediaUploadInput input;
   final MediaUploadTaskState state;
   final bool completed;
@@ -232,25 +158,53 @@ class MomentPendingComposeImage {
   final bool failed;
 }
 
-class _PendingComposeThumbnail extends StatelessWidget {
-  const _PendingComposeThumbnail({required this.pending, required this.index});
-
+class MomentPendingImageThumbnail extends StatefulWidget {
+  const MomentPendingImageThumbnail({
+    required this.pending,
+    required this.index,
+    required this.onRemove,
+    required this.onRetry,
+    this.onCover,
+    this.isCover = false,
+    super.key,
+  });
   final MomentPendingComposeImage pending;
   final int index;
+  final VoidCallback? onRemove;
+  final VoidCallback? onRetry;
+  final VoidCallback? onCover;
+  final bool isCover;
+  @override
+  State<MomentPendingImageThumbnail> createState() => _PendingThumbnailState();
+}
+
+class _PendingThumbnailState extends State<MomentPendingImageThumbnail> {
+  Future<void> _showFailureActions() async {
+    final slow =
+        widget.pending.state.phase == MediaUploadTaskPhase.processingPending;
+    final action = await showPendingImageActions(
+      context,
+      title: slow ? '图片准备较久' : '图片未完成',
+      retryLabel: slow ? '继续等待' : '重试',
+      removeLabel: '移除图片',
+      detail: widget.pending.state.failure?.userMessage,
+      canRetry: widget.onRetry != null,
+    );
+    if (!mounted) return;
+    if (action == PendingImageAction.retry) widget.onRetry?.call();
+    if (action == PendingImageAction.remove) widget.onRemove?.call();
+  }
 
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
-    final failed = pending.failed;
+    final pending = widget.pending;
     return Semantics(
       image: true,
-      label: failed
-          ? '图片 ${index + 1} 上传失败'
-          : pending.completed
-          ? '图片 ${index + 1} 已上传'
-          : '图片 ${index + 1} 正在处理',
+      selected: widget.isCover,
+      label: '图片 ${widget.index + 1}${widget.isCover ? '，当前封面' : ''}',
       child: SizedBox(
-        width: 96,
+        width: 112,
         child: Padding(
           padding: EdgeInsets.only(right: tokens.space8),
           child: ClipRRect(
@@ -258,41 +212,54 @@ class _PendingComposeThumbnail extends StatelessWidget {
             child: Stack(
               fit: StackFit.expand,
               children: [
-                MediaUploadInputImage(
-                  input: pending.input,
-                  key: ValueKey('moment-local-thumbnail-$index'),
-                  fit: BoxFit.cover,
-                  cacheWidth: 264,
-                  gaplessPlayback: true,
-                  errorBuilder: (_, _, _) => ColoredBox(
-                    color: tokens.softPanel,
-                    child: WenyouIcon(
-                      WenyouIconIds.actionImage,
-                      color: tokens.mutedText,
+                PendingImageOverlay(
+                  key: ValueKey(pending.id),
+                  active:
+                      pending.active &&
+                      pending.state.isActivelyWorking &&
+                      !pending.completed,
+                  failed: pending.failed,
+                  onFailureTap: _showFailureActions,
+                  semanticLabel: pending.failed
+                      ? '图片 ${widget.index + 1} 未完成，点按选择操作'
+                      : pending.active
+                      ? '图片 ${widget.index + 1} 准备中'
+                      : '图片 ${widget.index + 1} 预览',
+                  child: GestureDetector(
+                    onTap: widget.onCover,
+                    child: MediaUploadInputImage(
+                      input: pending.input,
+                      key: ValueKey('moment-local-thumbnail-${widget.index}'),
+                      fit: BoxFit.cover,
+                      cacheWidth: 264,
+                      gaplessPlayback: true,
+                      errorBuilder: (_, _, _) => ColoredBox(
+                        color: tokens.softPanel,
+                        child: WenyouIcon(
+                          WenyouIconIds.actionImage,
+                          color: tokens.mutedText,
+                        ),
+                      ),
                     ),
                   ),
                 ),
-                ColoredBox(color: tokens.text.withValues(alpha: 0.2)),
-                Center(
-                  child: failed
-                      ? WenyouIcon(
-                          WenyouIconIds.statusError,
-                          color: tokens.background,
-                        )
-                      : pending.completed
-                      ? WenyouIcon(
-                          WenyouIconIds.statusSuccess,
-                          color: tokens.background,
-                        )
-                      : pending.active
-                      ? const SizedBox.square(
-                          dimension: 24,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : WenyouIcon(
-                          WenyouIconIds.statusHistory,
-                          color: tokens.background,
-                        ),
+                if (widget.isCover)
+                  Positioned(
+                    left: 4,
+                    top: 4,
+                    child: ColoredBox(
+                      color: tokens.brandSurface,
+                      child: const Text('封面'),
+                    ),
+                  ),
+                Positioned(
+                  top: 0,
+                  right: 0,
+                  child: IconButton.filledTonal(
+                    tooltip: '移除图片 ${widget.index + 1}',
+                    onPressed: widget.onRemove,
+                    icon: const WenyouIcon(WenyouIconIds.actionClose, size: 14),
+                  ),
                 ),
               ],
             ),
@@ -346,7 +313,6 @@ class _ComposeThumbnail extends StatelessWidget {
     required this.onCoverSelected,
     required this.onRemove,
     required this.onMove,
-    this.reorderable = true,
     super.key,
   });
 
@@ -357,7 +323,7 @@ class _ComposeThumbnail extends StatelessWidget {
   final ValueChanged<String> onCoverSelected;
   final ValueChanged<String> onRemove;
   final ValueChanged<int> onMove;
-  final bool reorderable;
+  final bool reorderable = true;
 
   @override
   Widget build(BuildContext context) {
@@ -477,4 +443,19 @@ class _ComposeThumbnail extends StatelessWidget {
   Widget _maybeReorderable(int index, Widget child) => reorderable
       ? ReorderableDelayedDragStartListener(index: index, child: child)
       : child;
+}
+
+MediaUploadTaskState aggregateMomentUploadState(
+  List<MomentPendingComposeImage> pending,
+) {
+  final failure = pending
+      .map((image) => image.state)
+      .where((state) => state.failure != null)
+      .firstOrNull;
+  if (failure != null) return failure;
+  return pending
+          .map((image) => image.state)
+          .where((state) => state.isBusy)
+          .firstOrNull ??
+      const MediaUploadTaskState();
 }

@@ -66,6 +66,16 @@ void registerMePageSettingsLayoutCases() {
 
     expect(repository.fetchCalls, 0);
     expect(find.text('账号设置'), findsOneWidget);
+    expect(
+      tester
+          .widgetList<ListTile>(find.byType(ListTile))
+          .every((tile) => tile.subtitle == null),
+      isTrue,
+    );
+    expect(find.text('跟随系统'), findsOneWidget);
+    expect(find.text('修改后所有终端需要重新登录'), findsNothing);
+    expect(find.text('查看近 30 天决定与申诉进度'), findsNothing);
+    expect(find.text('不可恢复；已发布内容会匿名保留'), findsNothing);
     expect(find.byType(WenyouSettingsTypography), findsOneWidget);
     expect(find.text('登录终端'), findsOneWidget);
     expect(find.text('修改密码'), findsOneWidget);
@@ -73,6 +83,53 @@ void registerMePageSettingsLayoutCases() {
     expect(find.byKey(const Key('logout-submit')), findsOneWidget);
     expect(find.text('账号状态加载失败'), findsNothing);
   });
+
+  for (final dark in [false, true]) {
+    for (final scale in [1.0, 2.0]) {
+      testWidgets('账号设置无副标题，深色 $dark 字号 $scale', (tester) async {
+        tester.view.devicePixelRatio = 1;
+        tester.view.physicalSize = const Size(360, 900);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        addTearDown(tester.view.resetPhysicalSize);
+        final container = await mePageTestAuthenticatedContainer(
+          MePageTestFakeMeProfileRepository(),
+        );
+        addTearDown(container.dispose);
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: container,
+            child: MaterialApp(
+              theme: dark ? AppTheme.dark : AppTheme.light,
+              builder: (context, child) => MediaQuery(
+                data: MediaQuery.of(
+                  context,
+                ).copyWith(textScaler: TextScaler.linear(scale)),
+                child: child!,
+              ),
+              home: const RepaintBoundary(
+                key: Key('account-settings-golden'),
+                child: MeSettingsPage(),
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        expect(find.text('当前会话'), findsNothing);
+        if (scale == 1) {
+          await expectLater(
+            find.byKey(const Key('account-settings-golden')),
+            matchesGoldenFile(
+              'goldens/account_settings_${dark ? 'dark' : 'light'}_360.png',
+            ),
+          );
+        }
+        await tester.ensureVisible(find.byKey(const Key('logout-submit')));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+      });
+    }
+  }
 
   for (final visual in const [
     (name: 'me_profile_edit_empty_360_light.png', dark: false),

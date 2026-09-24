@@ -1,4 +1,5 @@
 import 'package:markdown/markdown.dart' as md;
+import 'package:wenyousite_mobile/core/markdown/local_image_marker.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_codec_types.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_source_protection.dart';
@@ -6,6 +7,9 @@ import 'package:wenyousite_mobile/core/markdown/markdown_source_protection.dart'
 /// 源码降级只保留编辑内容；实际保存前仍须拒绝白名单之外的 URL scheme。
 abstract final class MarkdownSubmissionGuard {
   static void validate(String markdown) {
+    if (containsLocalImageMarker(markdown)) {
+      throw const MarkdownCodecException('图片尚未就绪，请等待或移除后再发布。');
+    }
     final source = MarkdownSourceProtection.prepareForReader(markdown);
     final nodes = md.Document(
       extensionSet: md.ExtensionSet.gitHubFlavored,

@@ -6,6 +6,7 @@ import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 export 'package:wenyousite_mobile/core/widgets/wenyou_actions.dart';
 export 'package:wenyousite_mobile/core/widgets/wenyou_async_button.dart';
 export 'package:wenyousite_mobile/core/widgets/wenyou_feedback.dart';
+export 'package:wenyousite_mobile/core/widgets/wenyou_settings_row.dart';
 export 'package:wenyousite_mobile/core/widgets/wenyou_snack_bar.dart';
 
 double wenyouHorizontalPagePadding(

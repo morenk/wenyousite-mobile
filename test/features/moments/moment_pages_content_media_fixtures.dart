@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_quill/flutter_quill.dart';
@@ -10,11 +11,13 @@ import 'package:wenyousite_mobile/core/models/bookmark_folder_models.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_ports.dart';
+import 'package:wenyousite_mobile/features/media/application/pending_media_file_store_ports.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
 import 'package:wenyousite_mobile/features/moments/application/moment_draft_store_ports.dart';
 import 'package:wenyousite_mobile/features/moments/data/moment_repository.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_feed_page.dart';
+
 import '../../support/moment_test_draft_store.dart';
 import 'moment_pages_session_wallet_fixtures.dart';
 
@@ -544,3 +547,35 @@ class MomentPagesTestLateCompletingUploadOperation
 
 MomentAuthor momentPagesTestAuthor() =>
     const MomentAuthor(id: 'user-1', username: '温柔测试员', level: 4);
+
+class MomentTestPendingMediaStore implements PendingMediaFileStore {
+  final values = <String, Map<String, Object?>>{};
+  @override
+  Future<MediaUploadInput> persist(
+    MediaUploadInput input, {
+    required String accountId,
+    required String target,
+    required String attachmentId,
+  }) async => input;
+  @override
+  Future<Map<String, Object?>?> read({
+    required String accountId,
+    required String target,
+  }) async => values['$accountId:$target'];
+  @override
+  Future<void> write({
+    required String accountId,
+    required String target,
+    required Map<String, Object?> payload,
+  }) async {
+    values['$accountId:$target'] = payload;
+  }
+
+  @override
+  Future<void> delete({
+    required String accountId,
+    required String target,
+  }) async {
+    values.remove('$accountId:$target');
+  }
+}

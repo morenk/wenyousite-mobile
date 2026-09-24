@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -14,14 +15,12 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/drafts/application/content_drafts_controller.dart';
 import 'package:wenyousite_mobile/features/drafts/presentation/content_drafts_sheet.dart';
 import 'package:wenyousite_mobile/features/editor/editor.dart';
-import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
-import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
 import 'package:wenyousite_mobile/features/media/presentation/editor_image_crop_dialog.dart';
-import 'package:wenyousite_mobile/features/media/presentation/media_upload_status_banner.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_composer_draft.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_controllers.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
 import 'package:wenyousite_mobile/features/posts/presentation/post_composer_diagnostics.dart';
+import 'package:wenyousite_mobile/features/posts/presentation/post_composer_expansion.dart';
 import 'package:wenyousite_mobile/features/posts/presentation/post_composer_opening.dart';
 import 'package:wenyousite_mobile/features/posts/presentation/post_composer_sheet_layout.dart';
 import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
@@ -109,11 +108,13 @@ class _PostComposerRouteHostState extends State<_PostComposerRouteHost> {
           opaque: false,
           transitionDuration: Duration.zero,
           reverseTransitionDuration: Duration.zero,
-          pageBuilder: (context, _, _) => _ExpandablePostComposer(
+          pageBuilder: (context, _, _) => ExpandablePostComposer(
             target: widget.target,
             baseline: widget.baseline,
             onDraftChanged: widget.onDraftChanged,
             composerKey: _composerKey,
+            onRequestClose: () =>
+                _composerKey.currentState?.requestCloseFromOutside(),
             onClose: _close,
           ),
         ),
@@ -126,183 +127,6 @@ class _PostComposerRouteHostState extends State<_PostComposerRouteHost> {
     final navigator = _outerNavigator;
     if (route == null || navigator == null || !route.isActive) return;
     navigator.removeRoute<Object?>(route, result);
-  }
-}
-
-class _ExpandablePostComposer extends StatefulWidget {
-  const _ExpandablePostComposer({
-    required this.target,
-    required this.baseline,
-    required this.composerKey,
-    required this.onClose,
-    this.onDraftChanged,
-  });
-
-  final PostComposerTarget target;
-  final PostComposerBaseline baseline;
-  final ValueChanged<PostComposerDraft?>? onDraftChanged;
-  final GlobalKey<_PostComposerSheetState> composerKey;
-  final ValueChanged<PostItem?> onClose;
-
-  @override
-  State<_ExpandablePostComposer> createState() =>
-      _ExpandablePostComposerState();
-}
-
-class _ExpandablePostComposerState extends State<_ExpandablePostComposer> {
-  static const _minimumExtent = .30;
-  static const _maximumExtent = .94;
-  late final double _restingExtent;
-  late double _extent;
-  double? _extentBeforeToolbar;
-  bool _toolbarAutoExpanded = false;
-  bool _dismissEnabled = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _restingExtent = switch (widget.target.kind) {
-      PostComposerKind.createFloor || PostComposerKind.createReply => .40,
-      PostComposerKind.editPost || PostComposerKind.upsertBody => .52,
-    };
-    _extent = _restingExtent;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final keyboard = MediaQuery.viewInsetsOf(context).bottom;
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final availableHeight = (constraints.maxHeight - keyboard).clamp(
-          0.0,
-          constraints.maxHeight,
-        );
-        final desiredHeight = constraints.maxHeight * _extent;
-        final sheetHeight = desiredHeight < availableHeight
-            ? desiredHeight
-            : availableHeight;
-        return Stack(
-          fit: StackFit.expand,
-          children: [
-            Semantics(
-              label: '收起编辑器并保留草稿',
-              button: true,
-              enabled: _dismissEnabled,
-              child: GestureDetector(
-                key: const Key('post-composer-dismiss-region'),
-                behavior: HitTestBehavior.opaque,
-                onTap: _dismissEnabled
-                    ? () => widget.composerKey.currentState
-                          ?.requestCloseFromOutside()
-                    : null,
-                child: const ColoredBox(color: Colors.transparent),
-              ),
-            ),
-            Padding(
-              padding: EdgeInsets.only(bottom: keyboard),
-              child: Align(
-                alignment: Alignment.bottomCenter,
-                child: SizedBox(
-                  key: const Key('post-composer-viewport'),
-                  height: sheetHeight,
-                  width: double.infinity,
-                  child: ClipRRect(
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(20),
-                    ),
-                    child: Material(
-                      color: Theme.of(context).scaffoldBackgroundColor,
-                      child: PostComposerSheet(
-                        key: widget.composerKey,
-                        target: widget.target,
-                        baseline: widget.baseline,
-                        onDraftChanged: widget.onDraftChanged,
-                        onClose: widget.onClose,
-                        expanded: _extent >= _maximumExtent - .01,
-                        onResize: (delta) {
-                          _cancelToolbarRestore();
-                          setState(() {
-                            _extent = (_extent - delta / constraints.maxHeight)
-                                .clamp(_minimumExtent, _maximumExtent);
-                          });
-                        },
-                        onToggleExpanded: () {
-                          _cancelToolbarRestore();
-                          setState(() {
-                            _extent = _extent >= _maximumExtent - .01
-                                ? _restingExtent
-                                : _maximumExtent;
-                          });
-                        },
-                        onToolbarInteractionChanged: (open, requiredHeight) =>
-                            _handleToolbarInteraction(
-                              open: open,
-                              requiredHeight: requiredHeight,
-                              viewportHeight: constraints.maxHeight,
-                            ),
-                        onMinimumHeightRequired: (requiredHeight) =>
-                            _ensureMinimumHeight(
-                              requiredHeight: requiredHeight,
-                              viewportHeight: constraints.maxHeight,
-                            ),
-                        onDismissEnabledChanged: (enabled) {
-                          if (!mounted || _dismissEnabled == enabled) return;
-                          setState(() => _dismissEnabled = enabled);
-                        },
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _handleToolbarInteraction({
-    required bool open,
-    required double requiredHeight,
-    required double viewportHeight,
-  }) {
-    if (!mounted || viewportHeight <= 0) return;
-    if (!open) {
-      final previous = _extentBeforeToolbar;
-      final shouldRestore = _toolbarAutoExpanded && previous != null;
-      _extentBeforeToolbar = null;
-      _toolbarAutoExpanded = false;
-      if (shouldRestore && (_extent - previous).abs() > .001) {
-        setState(() => _extent = previous);
-      }
-      return;
-    }
-    final requiredExtent = (requiredHeight / viewportHeight).clamp(
-      _minimumExtent,
-      _maximumExtent,
-    );
-    if (requiredExtent <= _extent + .001) return;
-    _extentBeforeToolbar ??= _extent;
-    _toolbarAutoExpanded = true;
-    setState(() => _extent = requiredExtent);
-  }
-
-  void _cancelToolbarRestore() {
-    _extentBeforeToolbar = null;
-    _toolbarAutoExpanded = false;
-  }
-
-  void _ensureMinimumHeight({
-    required double requiredHeight,
-    required double viewportHeight,
-  }) {
-    if (!mounted || viewportHeight <= 0) return;
-    final requiredExtent = (requiredHeight / viewportHeight).clamp(
-      _minimumExtent,
-      _maximumExtent,
-    );
-    if (requiredExtent <= _extent + .001) return;
-    setState(() => _extent = requiredExtent);
   }
 }
 
@@ -339,7 +163,8 @@ class PostComposerSheet extends ConsumerStatefulWidget {
   ConsumerState<PostComposerSheet> createState() => _PostComposerSheetState();
 }
 
-class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
+class _PostComposerSheetState extends ConsumerState<PostComposerSheet>
+    with WidgetsBindingObserver {
   late final RichEditorSession _editorSession;
   late final Object _openedSessionScope;
   final WenyouEditorToolbarController _toolbarController =
@@ -352,16 +177,17 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
   bool? _reportedDismissEnabled;
   int _toolbarInteractionGeneration = 0;
   int _minimumHeightGeneration = 0;
-  final Object _uploadTaskId = Object();
+  late final EditorPendingImages _pendingImages;
+  bool _publishing = false;
   final _diagnostics = PostComposerDiagnostics();
   final Object _contentDraftSessionKey = Object();
 
-  bool get _uploading =>
-      ref.read(mediaUploadTaskControllerProvider(_uploadTaskId)).isBusy;
+  bool get _uploading => _pendingImages.hasPending;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _openedSessionScope = ref.read(sessionScopeProvider);
     _editorSession = RichEditorSession(
       initialMarkdown: widget.target.initialContent,
@@ -385,10 +211,47 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
         _notifyDraft(markdown);
       },
     )..addListener(_onEditorSessionChanged);
+    _pendingImages = EditorPendingImages(
+      ref: ref,
+      editor: _editorSession,
+      target: 'post:${postComposerDraftKey(widget.target)}',
+      baseline: jsonEncode([
+        widget.baseline.postId,
+        widget.baseline.version,
+        widget.baseline.content,
+      ]),
+      confirmRestore: () async => await showWenyouConfirmationDialog(
+        context: context,
+        title: '正文已有更新',
+        message: '本机仍有之前的草稿。恢复后发布会覆盖当前正文；选择使用最新版会丢弃这份本机草稿。',
+        confirmLabel: '恢复本机草稿',
+        cancelLabel: '使用最新版',
+        useRootNavigator: false,
+        tone: WenyouConfirmationTone.destructive,
+      ),
+    )..addListener(_onPendingImagesChanged);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) unawaited(_pendingImages.restore());
+    });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached) {
+      _pendingImages.pause();
+      unawaited(_editorSession.flush().then((_) => _pendingImages.save()));
+    } else if (state == AppLifecycleState.resumed) {
+      _pendingImages.resume();
+    }
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _pendingImages
+      ..removeListener(_onPendingImagesChanged)
+      ..dispose();
     _editorSession
       ..removeListener(_onEditorSessionChanged)
       ..dispose();
@@ -407,24 +270,22 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
     final contentDraftsState = ref.watch(
       contentDraftsControllerProvider(_contentDraftSessionKey),
     );
-    final uploadState = ref.watch(
-      mediaUploadTaskControllerProvider(_uploadTaskId),
-    );
+
     _editorSession.scheduleExternalMarkdown(
       markdown: state.content,
       revision: state.documentRevision,
       selection: RichEditorSelectionPlacement.end,
     );
     final tokens = context.wenyouTokens;
-    final locked = state.isSubmitting || uploadState.isBusy;
+    final locked =
+        state.isSubmitting || _publishing || _pendingImages.restoring;
     final hasSupportContent =
         state.failure != null ||
         state.hasAmbiguousCreate ||
         _editorSession.codecFailure != null ||
         _editorSession.operationFailure != null ||
         _editorSession.issues.isNotEmpty ||
-        uploadState.failure != null ||
-        uploadState.isBusy;
+        _pendingImages.waitingToPublish;
     _scheduleMinimumHeightCheck(hasSupportContent);
     _reportDismissEnabled(!state.isSubmitting && !_closing && !_preparingClose);
     _editorSession.readOnly = locked;
@@ -525,27 +386,10 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
                 detail: '这些内容会原样保留。',
               ),
             ),
-          if (uploadState.failure != null || uploadState.isBusy)
-            Padding(
-              padding: EdgeInsets.fromLTRB(
-                tokens.space12,
-                tokens.space12,
-                tokens.space12,
-                0,
-              ),
-              child: MediaUploadStatusBanner(
-                state: uploadState,
-                onCancel: () => ref
-                    .read(
-                      mediaUploadTaskControllerProvider(_uploadTaskId).notifier,
-                    )
-                    .cancel(),
-                onRetry: _retryImageUpload,
-                retryKey: const Key('post-composer-retry-upload'),
-              ),
-            ),
+          EditorPublishWaiting(images: _pendingImages),
           PostComposerEditorRegion(
             editorSession: _editorSession,
+            pendingImages: _pendingImages,
             label: widget.target.label,
             placeholder: _placeholder(widget.target.kind),
             threadId: widget.target.threadId,
@@ -572,10 +416,14 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
                   ? _insertSticker
                   : null,
               onSaveDraft: _openContentDrafts,
-              draftStatusLabel: contentDraftsState.autoSaveToolbarLabel,
+              draftStatusLabel: _uploading
+                  ? _pendingImages.localSaveLabel
+                  : contentDraftsState.autoSaveToolbarLabel,
               onSubmit: _submit,
-              isSubmitting: state.isSubmitting,
-              submitLabel: _submitLabel(widget.target.kind),
+              isSubmitting: state.isSubmitting || _publishing,
+              submitLabel: _publishing
+                  ? '正在发布…'
+                  : _submitLabel(widget.target.kind),
               characterCount: _editorSession.characterCount,
               characterLimit: 10000,
               toolbarController: _toolbarController,
@@ -650,6 +498,14 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
     unawaited(_requestClose());
   }
 
+  void _onPendingImagesChanged() {
+    if (!mounted || _closing) return;
+    ref
+        .read(contentDraftsControllerProvider(_contentDraftSessionKey).notifier)
+        .pauseForLocalAttachments(_pendingImages.hasPending);
+    setState(() {});
+  }
+
   void _onEditorSessionChanged() {
     if (mounted) setState(() {});
   }
@@ -664,15 +520,42 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
   );
 
   Future<void> _submitContent() async {
+    if (_publishing ||
+        ref.read(postComposerControllerProvider(widget.target)).isSubmitting) {
+      return;
+    }
+    setState(() => _publishing = true);
+    _editorSession.readOnly = true;
+    try {
+      final readiness = _pendingImages.waitForReady();
+      final intent = _pendingImages.publishGeneration;
+      final ready = await readiness;
+      if (!mounted) return;
+      if (!ready) {
+        if (await _pendingImages.revealFirstFailure() && mounted) {
+          showWenyouSnackBar(context, '先处理未完成的图片');
+        }
+        return;
+      }
+      await _submitReadyContent(intent);
+    } finally {
+      _pendingImages.finishWaiting();
+      if (mounted) setState(() => _publishing = false);
+    }
+  }
+
+  Future<void> _submitReadyContent(int intent) async {
     if (_closing || ref.read(sessionScopeProvider) != _openedSessionScope) {
       return;
     }
     if (!await _editorSession.flush()) return;
     if (!mounted ||
         _closing ||
-        ref.read(sessionScopeProvider) != _openedSessionScope) {
+        ref.read(sessionScopeProvider) != _openedSessionScope ||
+        !_pendingImages.isPublishIntentCurrent(intent)) {
       return;
     }
+    _pendingImages.finishWaiting();
     final result = await ref
         .read(postComposerControllerProvider(widget.target).notifier)
         .submit();
@@ -682,17 +565,35 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
         result == null) {
       return;
     }
+    final cleaned = await _pendingImages.clear();
+    if (!mounted) return;
+    if (!cleaned) showWenyouSnackBar(context, _pendingImages.saveFailure!);
     widget.onDraftChanged?.call(null);
     setState(() => _closing = true);
     widget.onClose(result);
   }
 
   Future<void> _confirmConflictRetry() async {
-    if (_closing || ref.read(sessionScopeProvider) != _openedSessionScope) {
+    if (_closing ||
+        _publishing ||
+        ref.read(sessionScopeProvider) != _openedSessionScope) {
       return;
     }
+    var intent = _pendingImages.publishGeneration;
+    if (_pendingImages.hasPending) {
+      setState(() => _publishing = true);
+      _editorSession.readOnly = true;
+      try {
+        final readiness = _pendingImages.waitForReady();
+        intent = _pendingImages.publishGeneration;
+        if (!await readiness || !mounted) return;
+      } finally {
+        _pendingImages.finishWaiting();
+        if (mounted) setState(() => _publishing = false);
+      }
+    }
     if (!await _editorSession.flush()) return;
-    if (!mounted) return;
+    if (!mounted || !_pendingImages.isPublishIntentCurrent(intent)) return;
     final confirmed = await showWenyouConfirmationDialog(
       context: context,
       title: '覆盖最新版正文？',
@@ -705,7 +606,8 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
     if (!mounted) return;
     if (_closing ||
         ref.read(sessionScopeProvider) != _openedSessionScope ||
-        confirmed != true) {
+        confirmed != true ||
+        !_pendingImages.isPublishIntentCurrent(intent)) {
       return;
     }
     await _diagnostics.submit(
@@ -724,6 +626,9 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
             result == null) {
           return;
         }
+        final cleaned = await _pendingImages.clear();
+        if (!mounted) return;
+        if (!cleaned) showWenyouSnackBar(context, _pendingImages.saveFailure!);
         widget.onDraftChanged?.call(null);
         setState(() => _closing = true);
         widget.onClose(result);
@@ -743,18 +648,23 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
     if (composerState.isSubmitting) return;
     _preparingClose = true;
     _reportDismissEnabled(false);
-    ref
-        .read(mediaUploadTaskControllerProvider(_uploadTaskId).notifier)
-        .cancel();
+    _pendingImages.pause();
     if (!_editorSession.canCloseProtectedSource &&
         !await _editorSession.flush()) {
       _preparingClose = false;
+      _pendingImages.resume();
       _reportDismissEnabled(true);
       return;
     }
     if (!mounted ||
         _closing ||
         ref.read(sessionScopeProvider) != _openedSessionScope) {
+      return;
+    }
+    if (!await _pendingImages.save()) {
+      _preparingClose = false;
+      _pendingImages.resume();
+      _reportDismissEnabled(true);
       return;
     }
     final current = ref.read(postComposerControllerProvider(widget.target));
@@ -770,6 +680,10 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
   }
 
   Future<void> _openContentDrafts() async {
+    if (_uploading) {
+      await _pendingImages.save();
+      return;
+    }
     if (_closing || ref.read(sessionScopeProvider) != _openedSessionScope) {
       return;
     }
@@ -802,46 +716,23 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
   }
 
   Future<void> _insertImage() async {
-    await _runImageUpload(retry: false);
-  }
-
-  Future<void> _retryImageUpload() async {
-    await _runImageUpload(retry: true);
-  }
-
-  Future<void> _runImageUpload({required bool retry}) =>
-      _diagnostics.upload(() => _uploadImage(retry: retry));
-
-  Future<void> _uploadImage({required bool retry}) async {
-    if (_uploading) return;
-    final controller = ref.read(
-      mediaUploadTaskControllerProvider(_uploadTaskId).notifier,
-    );
-    final uploaded = retry
-        ? await controller.retryUpload()
-        : await pickCropAndUploadEditorImage(
-            context,
-            ref,
-            uploadTaskId: _uploadTaskId,
-            title: '裁剪正文图片',
-          );
-    if (!mounted) return;
-    if (_preparingClose ||
-        _closing ||
-        ref.read(sessionScopeProvider) != _openedSessionScope ||
-        uploaded == null) {
-      return;
-    }
-    _insertBlockImage(uploaded);
-  }
-
-  void _insertBlockImage(UploadedEditorImage image) {
-    // 上传完成回调先于下一帧 build；用当前状态解除上传锁，避免丢弃图片。
-    // 仍保留提交中及 RichEditorSession 对不支持原文的只读保护。
-    _editorSession.readOnly =
-        ref.read(postComposerControllerProvider(widget.target)).isSubmitting ||
-        _uploading;
-    _editorSession.insertBlockImage(url: image.url, display: image.display);
+    await _diagnostics.upload(() async {
+      final inputs = await pickAndCropEditorImages(
+        context,
+        ref,
+        title: '裁剪正文图片',
+      );
+      if (!mounted ||
+          _preparingClose ||
+          _closing ||
+          ref.read(sessionScopeProvider) != _openedSessionScope ||
+          inputs == null) {
+        return;
+      }
+      for (final input in inputs) {
+        _pendingImages.add(input);
+      }
+    });
   }
 
   Future<void> _insertSticker(TextSelection selection) async {
@@ -865,9 +756,7 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
 
   void _closeForSessionChange() {
     _closing = true;
-    ref
-        .read(mediaUploadTaskControllerProvider(_uploadTaskId).notifier)
-        .cancel();
+    _pendingImages.pause();
     widget.onClose(null);
   }
 }

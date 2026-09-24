@@ -11,12 +11,14 @@ class BackgroundReminderPreferenceState {
     this.isSaving = false,
     this.readFailed = false,
     this.failureMessage,
+    this.failedValue,
   });
 
   final bool enabled;
   final bool isSaving;
   final bool readFailed;
   final String? failureMessage;
+  final bool? failedValue;
 }
 
 Future<BackgroundReminderPreferenceState>
@@ -65,6 +67,7 @@ class BackgroundReminderPreferenceController
           enabled: previous.enabled,
           readFailed: previous.readFailed,
           failureMessage: '保存失败，后台消息提醒设置未更改，请重试。',
+          failedValue: enabled,
         );
       }
     }
@@ -80,6 +83,11 @@ class BackgroundReminderPreferenceController
       ref.read(backgroundReminderPreferenceStoreProvider),
     );
     if (!_disposed) state = result;
+  }
+
+  Future<void> retrySave() async {
+    final target = state.failedValue;
+    if (target != null) await select(target);
   }
 }
 

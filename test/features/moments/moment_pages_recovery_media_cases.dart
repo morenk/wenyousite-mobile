@@ -5,13 +5,16 @@ import 'package:go_router/go_router.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
+import 'package:wenyousite_mobile/features/media/application/pending_media_file_store_ports.dart';
 import 'package:wenyousite_mobile/features/media/application/reading_gallery_controller.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
+import 'package:wenyousite_mobile/features/media/media_ui.dart';
 import 'package:wenyousite_mobile/features/moments/application/moment_draft_store_ports.dart';
 import 'package:wenyousite_mobile/features/moments/data/moment_repository.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_compose_page.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_detail_page.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_playback_image.dart';
+
 import '../../support/moment_test_draft_store.dart';
 import '../../support/reading_gallery_test_repository.dart';
 import 'moment_pages_test_support.dart';
@@ -21,6 +24,9 @@ void registerMomentPagesRecoveryMediaCases() {
     final gateway = MomentPagesTestLateCompletingUploadGateway();
     final container = ProviderContainer(
       overrides: [
+        momentComposerOwnerResolverProvider.overrideWithValue(
+          () async => 'user-1',
+        ),
         tokenStoreProvider.overrideWithValue(MomentPagesTestMemoryTokenStore()),
         sessionRemoteProvider.overrideWithValue(
           MomentPagesTestFakeSessionRemote(),
@@ -30,6 +36,9 @@ void registerMomentPagesRecoveryMediaCases() {
         ),
         editorImagePickerPortProvider.overrideWithValue(
           MomentPagesTestFakeImagePicker(),
+        ),
+        pendingMediaFileStoreProvider.overrideWithValue(
+          MomentTestPendingMediaStore(),
         ),
         mediaUploadGatewayPortProvider.overrideWithValue(gateway),
       ],
@@ -54,7 +63,10 @@ void registerMomentPagesRecoveryMediaCases() {
     await tester.pump();
     expect(find.byKey(const Key('editor-image-crop-dialog')), findsNothing);
 
-    expect(find.textContaining('正在上传'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('moment-local-thumbnail-0')),
+      findsOneWidget,
+    );
     expect(gateway.input?.purpose, MediaUploadPurpose.momentComment);
     await tester.binding.handlePopRoute();
     expect(gateway.operation.cancelled, isTrue);
@@ -392,6 +404,9 @@ void registerMomentPagesRecoveryMediaCases() {
           editorImagePickerPortProvider.overrideWithValue(
             MomentPagesTestFakeMultiImagePicker(),
           ),
+          pendingMediaFileStoreProvider.overrideWithValue(
+            MomentTestPendingMediaStore(),
+          ),
           mediaUploadGatewayPortProvider.overrideWithValue(gateway),
         ],
         child: MaterialApp(
@@ -407,19 +422,20 @@ void registerMomentPagesRecoveryMediaCases() {
     expect(find.byKey(const Key('editor-image-crop-dialog')), findsNothing);
 
     expect(
-      find.byKey(const ValueKey('moment-local-thumbnail-0')),
-      findsOneWidget,
+      find.byWidgetPredicate(
+        (widget) => widget is PendingImageOverlay && widget.failed,
+      ),
+      findsNWidgets(2),
     );
-    expect(
-      find.byKey(const Key('moment-compose-upload-failure')),
-      findsOneWidget,
-    );
-    await tester.tap(find.byKey(const Key('moment-compose-cancel-upload')));
+    await tester.tap(find.byTooltip('移除图片 3'));
     await tester.pumpAndSettle();
-
+    await tester.tap(find.byTooltip('移除图片 2'));
+    await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('moment-image-1')), findsOneWidget);
     expect(
-      find.byKey(const Key('moment-compose-upload-failure')),
+      find.byWidgetPredicate(
+        (widget) => widget is PendingImageOverlay && widget.failed,
+      ),
       findsNothing,
     );
     expect(find.text('1/9'), findsOneWidget);

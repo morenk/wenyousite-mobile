@@ -153,6 +153,13 @@ class ProfileCoverController extends StateNotifier<ProfileCoverState> {
     state = const ProfileCoverState();
   }
 
+  void clearFailure() {
+    if (!mounted || state.phase != ProfileCoverPhase.failed) return;
+    _selection = null;
+    _resetTasks();
+    state = const ProfileCoverState();
+  }
+
   void updateUploadState(
     ProfileCoverPhase surfacePhase,
     MediaUploadTaskState uploadState,

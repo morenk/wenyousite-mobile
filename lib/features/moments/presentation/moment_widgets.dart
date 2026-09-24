@@ -205,20 +205,33 @@ class MomentAuthorLine extends StatelessWidget {
     required this.author,
     this.createdAt,
     this.onTap,
+    this.avatarOnlyTap = false,
+    this.avatarKey,
     super.key,
   });
 
   final MomentAuthor author;
   final DateTime? createdAt;
   final VoidCallback? onTap;
+  final bool avatarOnlyTap;
+  final Key? avatarKey;
 
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
+    final avatar = onTap != null && avatarOnlyTap
+        ? WenyouAvatarButton(
+            key: avatarKey,
+            username: author.username,
+            avatarUrl: author.avatarUrl,
+            visualSize: 32,
+            onTap: onTap!,
+          )
+        : MomentAvatar(key: avatarKey, author: author, size: 32);
     final content = Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        MomentAvatar(author: author, size: 32),
+        avatar,
         SizedBox(width: tokens.space8),
         Flexible(
           child: Column(
@@ -251,7 +264,7 @@ class MomentAuthorLine extends StatelessWidget {
         ),
       ],
     );
-    if (onTap == null) return content;
+    if (onTap == null || avatarOnlyTap) return content;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(tokens.radiusPill),
