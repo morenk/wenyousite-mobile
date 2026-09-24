@@ -128,6 +128,8 @@ galleryList：读取 GalleryList200Response / GalleryPageDto / GalleryImageDto�
 
 ## 13. 最近审查的契约版本和后端提交
 
+2026-09-25 发布前来源复核：已部署 Backend `0bc9c45e213fa4dcbde8a3bcf2c466dc88ceb256`、OpenAPI `5.26.0-dev.20260922.3`；与前一来源的契约和生成客户端一致，本次只更新精确来源，不改变本模块接口行为。
+
 候选契约复核：OpenAPI `5.26.0-dev.20260922.3`，Backend PR27 合并提交 `92b030a81f8957386e324fed477bd1e46faf65ea`。合并来源同步仅更新来源元数据，契约和生成客户端不变。新增图集为独立消费切片；管理会话、内容与关系基线保持兼容，本模块既有行为不因生成同步改变。来源及排除范围见 [图集契约同步](../architecture/image-gallery-contract-sync.md)。
 
 2026-09-23 关系候选整合复核：固定已部署 Backend `92b030a81f8957386e324fed477bd1e46faf65ea`、OpenAPI `5.26.0-dev.20260922.3`。兼容新增图集读取与管理端记住设备字段，既有关系 path 和投影 Schema 不变；本模块原行为与验收状态保持。图集新入口由独立媒体切片接入，本轮仅同步生成类型。
