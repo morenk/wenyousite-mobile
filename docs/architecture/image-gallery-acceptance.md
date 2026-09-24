@@ -1,6 +1,14 @@
 # 全屏图片图集候选验收
 
-状态：首轮真机验收发现正文图片来源定位失败；二轮候选修正已通过定向回归，待负责人在新 APK 上复验。Mobile 未合并，未发布正式 APK。兼容 Backend 已部署，当前不增加系统后台服务，不改变图片上传、正式 Markdown 或完成状态含义。
+状态：首轮真机验收发现正文图片来源定位失败；二轮修正已整合最新 Mobile `dev` 并通过完整门禁，待负责人在新 APK 上复验。Mobile PR #54 未合并，未发布正式 APK。兼容 Backend 已部署，当前不增加系统后台服务，不改变图片上传、正式 Markdown 或完成状态含义。
+
+## 最新 `dev` 冲突整合候选
+
+图集分支与图片上传、动态评论长按及关系管理等已合并切片同时修改模块文档、评论图片入口和少量组合根/测试文件，PR 因而出现文本冲突。整合提交 `eb2ff0a039fde1aac5131f4d41efc6d79e0622ed` 包含 `dev` 的 `c9d29567f833bc409cada3057b797cf23e309240`：评论图片点按进入分组图集，图片同行空白长按打开评论操作；作者行仅头像可跳主页。发布时读屏采用新版时间组件。图集读取与已接入的移除粉丝均不再列入 API 待实现排除。
+
+在整合源码上执行 `npm run check:apk -- -TestConcurrency 4` 退出 0：Flutter 4832 项通过、1 项既有 Sentry 线上回执验收按默认配置跳过，Windows 工具 18 项通过；格式、应用及生成客户端分析、架构、21 个模块文档、API 覆盖、生产 API/Markdown 兼容性和 Debug APK 构建均通过。此结果取代此前二轮仅定向验证的交付证据；自动测试不代替负责人对正文指南针定位和真机手势的复验。
+
+新候选 APK：`D:/code/wenyousite/artifacts/mobile-image-gallery/image-gallery-merged-eb2ff0a0-debug.apk`，109242520 字节，SHA-256 `9ECE1C450664A8FC9CED1FA2B12E2FF8DB6B04429CF10335588DF09A810818A0`；包名 `site.wenyou.app.debug`、版本 `0.7.1-debug` / versionCode 95，minSdk 26、targetSdk 36，均从实际 APK 核验。完整门禁日志为同目录 `check-apk-merged-eb2ff0a0.log`，SHA-256 `B23D07085EE7EB7BDA53A1B0617663E221F0493E2BFFADFC05FBE474B053E939`。本轮未安装、合并 PR 或部署。
 
 ## 首轮反馈与二轮候选
 
@@ -10,7 +18,7 @@
 
 二轮按普通定位 Bug 候选门禁执行 `npm run candidate:apk -- test/features/media/reading_gallery_page_test.dart test/features/threads/thread_image_gallery_test.dart -TestConcurrency 2`，全仓格式检查、应用与生成客户端全量静态分析、9 项直接相关测试及 Debug APK 构建均退出 0；`docs:check` 和 `architecture:check` 另行通过。本次没有重跑全量 Flutter 测试；上一轮 4,665 项全量通过只对应修改前的源码，不能充作二轮集成门禁。负责人验收通过后、合并前须对二轮最终应用源码运行完整门禁。
 
-二轮本机包：`D:/code/wenyousite/artifacts/mobile-image-gallery/image-gallery-locate-v2-debug.apk`，`site.wenyou.app.debug`，`0.7.1-debug+95`，183,539,770 字节，SHA-256 `7f867a5c1de69ba3c83e4b76efd3d757eb5f3ae9558b9324070b8fec99aa4ab2`。旧包哈希 `fa7787e5…` 不含本次修正，请勿用于复验。当前没有连接的 ADB 设备，未代负责人安装。
+二轮原本机包：`D:/code/wenyousite/artifacts/mobile-image-gallery/image-gallery-locate-v2-debug.apk`，`site.wenyou.app.debug`，`0.7.1-debug+95`，183,539,770 字节，SHA-256 `7f867a5c1de69ba3c83e4b76efd3d757eb5f3ae9558b9324070b8fec99aa4ab2`。此包未包含最新 `dev`，已由上方整合候选替代；更早的旧包哈希 `fa7787e5…` 不含正文来源修正。当前没有连接的 ADB 设备，未代负责人安装。
 
 ## 图集范围与操作
 
