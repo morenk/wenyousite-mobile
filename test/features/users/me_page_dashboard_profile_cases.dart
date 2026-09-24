@@ -45,6 +45,7 @@ void registerMePageDashboardProfileCases() {
 
     expect(find.text('温柔测试员'), findsWidgets);
     expect(find.textContaining('o***@example.com'), findsOneWidget);
+    expect(find.textContaining('加入温油站'), findsNothing);
     expect(
       find.descendant(
         of: find.byKey(const Key('me-profile-header')),

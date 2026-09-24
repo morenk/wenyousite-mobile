@@ -675,8 +675,7 @@ class _ProfileOverview extends StatelessWidget {
       profileCover: profile.profileCover,
       level: profile.level,
       bio: profile.bio?.trim().isNotEmpty == true ? profile.bio : '还没有填写个人简介。',
-      metadata:
-          '${formatWenyouDate(profile.createdAt)} 加入温油站 · ${_maskEmail(profile.email)}',
+      metadata: _maskEmail(profile.email),
       levelProgress: profile.levelProgress,
       levelProgressLabel: profile.nextLevelExperience == null
           ? '已达到当前最高等级'

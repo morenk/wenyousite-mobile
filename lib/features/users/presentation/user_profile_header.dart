@@ -103,7 +103,7 @@ class UserProfileHeader extends StatelessWidget {
                     Row(
                       children: [
                         WenyouIcon(
-                          WenyouIconIds.statusCalendar,
+                          WenyouIconIds.statusMail,
                           size: 17,
                           color: tokens.mutedText,
                         ),
