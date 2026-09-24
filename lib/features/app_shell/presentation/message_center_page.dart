@@ -106,7 +106,11 @@ class _MessageCenterPageState extends ConsumerState<MessageCenterPage> {
                           _visitedSections.contains(
                             MessageCenterSections.directMessages,
                           )
-                      ? const DirectMessagesPage(embedded: true)
+                      ? DirectMessagesPage(
+                          embedded: true,
+                          active:
+                              selected == MessageCenterSections.directMessages,
+                        )
                       : const SizedBox.expand(),
                 ],
               ),

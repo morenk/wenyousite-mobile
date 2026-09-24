@@ -20,6 +20,7 @@ import 'package:wenyousite_mobile/features/app_shell/application/background_onli
 import 'package:wenyousite_mobile/features/app_shell/application/background_reminder_runtime.dart';
 import 'package:wenyousite_mobile/features/app_shell/presentation/notification_permission_guidance.dart';
 import 'package:wenyousite_mobile/features/direct_messages/application/direct_message_controllers.dart';
+import 'package:wenyousite_mobile/features/direct_messages/domain/direct_message_models.dart';
 import 'package:wenyousite_mobile/features/notifications/application/notification_controllers.dart';
 
 class AppScaffold extends ConsumerStatefulWidget {
@@ -129,6 +130,9 @@ class _AppScaffoldState extends ConsumerState<AppScaffold>
         ref.exists(notificationListControllerProvider)) {
       ref.read(notificationListControllerProvider.notifier).load();
     }
+    if (widget.navigationShell.currentIndex == 2 && messagesEnabled) {
+      _refreshOpenDirectConversationList();
+    }
   }
 
   @override
@@ -196,6 +200,7 @@ class _AppScaffoldState extends ConsumerState<AppScaffold>
                     .refresh();
                 if (messagesEnabled) {
                   ref.read(directUnreadControllerProvider.notifier).refresh();
+                  _refreshOpenDirectConversationList();
                 }
                 if (ref.exists(notificationListControllerProvider)) {
                   ref.read(notificationListControllerProvider.notifier).load();
@@ -351,6 +356,15 @@ class _AppScaffoldState extends ConsumerState<AppScaffold>
     );
     if (_pollDirectMessages) {
       unawaited(ref.read(directUnreadControllerProvider.notifier).refresh());
+    }
+  }
+
+  void _refreshOpenDirectConversationList() {
+    for (final view in DirectConversationView.values) {
+      final provider = directConversationListControllerProvider(view);
+      if (ref.exists(provider)) {
+        unawaited(ref.read(provider.notifier).refresh());
+      }
     }
   }
 

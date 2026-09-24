@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -15,9 +17,14 @@ import 'package:wenyousite_mobile/features/direct_messages/domain/direct_message
 import 'package:wenyousite_mobile/features/direct_messages/presentation/direct_message_widgets.dart';
 
 class DirectMessagesPage extends ConsumerStatefulWidget {
-  const DirectMessagesPage({this.embedded = false, super.key});
+  const DirectMessagesPage({
+    this.embedded = false,
+    this.active = true,
+    super.key,
+  });
 
   final bool embedded;
+  final bool active;
 
   @override
   ConsumerState<DirectMessagesPage> createState() => _DirectMessagesPageState();
@@ -27,12 +34,42 @@ class _DirectMessagesPageState extends ConsumerState<DirectMessagesPage> {
   var _view = DirectConversationView.inbox;
 
   @override
+  void didUpdateWidget(covariant DirectMessagesPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.active || !widget.active) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !widget.active) return;
+      unawaited(
+        ref
+            .read(directConversationListControllerProvider(_view).notifier)
+            .refresh(),
+      );
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final enabled = ref.watch(directMessagesEnabledProvider);
     if (!enabled) return const _DirectMessagesUnavailablePage();
     final provider = directConversationListControllerProvider(_view);
     final state = ref.watch(provider);
     final unread = ref.watch(directUnreadControllerProvider).counts;
+    ref.listen<DirectUnreadState>(directUnreadControllerProvider, (
+      previous,
+      next,
+    ) {
+      if (!widget.active ||
+          previous?.isLoading != true ||
+          next.isLoading ||
+          next.failure != null) {
+        return;
+      }
+      unawaited(
+        ref
+            .read(directConversationListControllerProvider(_view).notifier)
+            .refresh(),
+      );
+    });
     final notifier = ref.read(provider.notifier);
     final body = Column(
       children: [
