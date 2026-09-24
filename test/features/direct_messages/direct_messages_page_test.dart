@@ -62,6 +62,65 @@ void main() {
     expect(find.text('会话=request-1'), findsOneWidget);
   });
 
+  testWidgets('未读总数刷新后同步会话列表，显示具体未读会话', (tester) async {
+    final repository = _FakeRepository(unreadCount: 0);
+    final container = ProviderContainer(overrides: _overrides(repository));
+    addTearDown(container.dispose);
+    final router = _router();
+    addTearDown(router.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey('direct-conversation-unread-conversation-1')),
+      findsNothing,
+    );
+
+    repository.unreadCount = 3;
+    await container.read(directUnreadControllerProvider.notifier).refresh();
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey('direct-conversation-unread-conversation-1')),
+      findsOneWidget,
+    );
+    expect(find.text('3'), findsOneWidget);
+  });
+
+  testWidgets('返回已访问的私聊页签时重新读取会话未读数', (tester) async {
+    final repository = _FakeRepository(unreadCount: 0);
+    var active = false;
+    late StateSetter update;
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: _overrides(repository),
+        child: StatefulBuilder(
+          builder: (context, setState) {
+            update = setState;
+            return MaterialApp(
+              theme: AppTheme.light,
+              home: DirectMessagesPage(active: active),
+            );
+          },
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    repository.unreadCount = 2;
+    update(() => active = true);
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey('direct-conversation-unread-conversation-1')),
+      findsOneWidget,
+    );
+    expect(find.text('2'), findsOneWidget);
+  });
+
   testWidgets('分页失败保留既有会话和请求 ID并可原位重试', (tester) async {
     final repository = _FakeRepository(failLoadMoreOnce: true);
     final router = _router();
@@ -177,10 +236,15 @@ GoRouter _router() {
 }
 
 class _FakeRepository implements DirectMessageRepository {
-  _FakeRepository({this.failLoadMoreOnce = false, this.firstPreview = '你好'});
+  _FakeRepository({
+    this.failLoadMoreOnce = false,
+    this.firstPreview = '你好',
+    this.unreadCount = 2,
+  });
 
   bool failLoadMoreOnce;
   final String firstPreview;
+  int unreadCount;
   final List<DirectConversationView> views = [];
 
   @override
@@ -210,7 +274,9 @@ class _FakeRepository implements DirectMessageRepository {
       );
     }
     return CursorPage(
-      items: [_acceptedConversation(content: firstPreview)],
+      items: [
+        _acceptedConversation(content: firstPreview, unreadCount: unreadCount),
+      ],
       cursor: 'conversation-1',
       hasMore: true,
     );
@@ -218,7 +284,7 @@ class _FakeRepository implements DirectMessageRepository {
 
   @override
   Future<DirectUnreadCounts> fetchUnreadCounts() async {
-    return const DirectUnreadCounts(unreadMessages: 2, pendingRequests: 1);
+    return DirectUnreadCounts(unreadMessages: unreadCount, pendingRequests: 1);
   }
 
   @override
@@ -278,6 +344,7 @@ DirectConversation _acceptedConversation({
   String id = 'conversation-1',
   String name = '小油',
   String content = '你好',
+  int? unreadCount,
 }) {
   return DirectConversation(
     id: id,
@@ -297,7 +364,7 @@ DirectConversation _acceptedConversation({
       isRecalled: false,
       createdAt: _now,
     ),
-    unreadCount: id == 'conversation-1' ? 2 : 0,
+    unreadCount: unreadCount ?? (id == 'conversation-1' ? 2 : 0),
     lastMessageAt: _now,
     createdAt: _now,
     canSend: true,
