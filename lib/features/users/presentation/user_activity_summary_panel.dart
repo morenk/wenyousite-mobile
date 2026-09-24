@@ -30,6 +30,7 @@ class UserActivitySummaryPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
     return WenyouPanel(
+      contentCard: true,
       padding: EdgeInsets.all(tokens.space12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

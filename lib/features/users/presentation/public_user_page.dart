@@ -109,7 +109,7 @@ class _PublicUserPageState extends ConsumerState<PublicUserPage> {
                                             state.profile!.id,
                                   ),
                                   SizedBox(
-                                    height: context.wenyouTokens.space12,
+                                    height: context.wenyouTokens.cardGap,
                                   ),
                                   UserActivitySummaryPanel(
                                     key: const Key(
