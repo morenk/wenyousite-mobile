@@ -89,13 +89,13 @@ class DirectMessageImagePreview extends StatelessWidget {
       key: const Key('direct-message-composer-attachment'),
       decoration: BoxDecoration(
         color: tokens.softPanel,
-        borderRadius: BorderRadius.circular(tokens.radius12),
+        borderRadius: BorderRadius.circular(tokens.radiusCompact),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           ClipRRect(
-            borderRadius: BorderRadius.circular(tokens.radius12),
+            borderRadius: BorderRadius.circular(tokens.radiusCompact),
             child: PendingImageOverlay(
               active: busy,
               failed: failed,

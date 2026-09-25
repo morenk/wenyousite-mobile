@@ -42,7 +42,6 @@ class WenyouSettingsGroup extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
-    final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -63,30 +62,21 @@ class WenyouSettingsGroup extends StatelessWidget {
             ),
           ),
         ],
-        Theme(
-          data: theme.copyWith(
-            textTheme: theme.textTheme.copyWith(
-              titleMedium: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w400,
-              ),
-            ),
-          ),
-          child: WenyouPanel(
-            padding: EdgeInsets.zero,
-            clipBehavior: Clip.antiAlias,
-            child: Column(
-              children: [
-                for (var index = 0; index < children.length; index++) ...[
-                  if (index > 0)
-                    Divider(
-                      height: 1,
-                      indent: tokens.space16,
-                      endIndent: tokens.space16,
-                    ),
-                  children[index],
-                ],
+        WenyouPanel(
+          padding: EdgeInsets.zero,
+          clipBehavior: Clip.antiAlias,
+          child: Column(
+            children: [
+              for (var index = 0; index < children.length; index++) ...[
+                if (index > 0)
+                  Divider(
+                    height: 1,
+                    indent: tokens.space16,
+                    endIndent: tokens.space16,
+                  ),
+                children[index],
               ],
-            ),
+            ],
           ),
         ),
       ],

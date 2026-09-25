@@ -118,8 +118,8 @@ abstract final class AppTheme {
       ),
       labelSmall: caption,
     );
-    final rounded16 = RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(tokens.radius16),
+    final controlShape = RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(tokens.radiusControl),
     );
     final controlSize = Size(0, tokens.minimumTouchTarget);
 
@@ -155,7 +155,7 @@ abstract final class AppTheme {
         elevation: 0,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(tokens.radius20),
+          borderRadius: BorderRadius.circular(tokens.radiusCard),
           side: BorderSide(color: tokens.border),
         ),
       ),
@@ -166,7 +166,7 @@ abstract final class AppTheme {
         focusElevation: 2,
         hoverElevation: 3,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(tokens.radius16),
+          borderRadius: BorderRadius.circular(tokens.radiusControl),
         ),
       ),
       filledButtonTheme: FilledButtonThemeData(
@@ -175,7 +175,7 @@ abstract final class AppTheme {
           padding: const WidgetStatePropertyAll(
             EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           ),
-          shape: WidgetStatePropertyAll(rounded16),
+          shape: WidgetStatePropertyAll(controlShape),
           backgroundColor: WidgetStateProperty.resolveWith(
             (states) => states.contains(WidgetState.disabled)
                 ? tokens.border
@@ -196,7 +196,7 @@ abstract final class AppTheme {
           padding: const WidgetStatePropertyAll(
             EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           ),
-          shape: WidgetStatePropertyAll(rounded16),
+          shape: WidgetStatePropertyAll(controlShape),
           side: WidgetStatePropertyAll(BorderSide(color: tokens.border)),
           foregroundColor: WidgetStatePropertyAll(tokens.text),
           animationDuration: tokens.feedbackDuration,
@@ -205,6 +205,7 @@ abstract final class AppTheme {
       textButtonTheme: TextButtonThemeData(
         style: ButtonStyle(
           minimumSize: WidgetStatePropertyAll(controlSize),
+          shape: WidgetStatePropertyAll(controlShape),
           foregroundColor: WidgetStatePropertyAll(tokens.text),
           textStyle: WidgetStatePropertyAll(textTheme.wenyouLabel),
           animationDuration: tokens.feedbackDuration,
@@ -232,17 +233,21 @@ abstract final class AppTheme {
         helperStyle: textTheme.wenyouCaption,
         prefixIconColor: tokens.mutedText,
         suffixIconColor: tokens.mutedText,
-        border: _inputBorder(tokens.border, tokens.radius16),
-        enabledBorder: _inputBorder(tokens.border, tokens.radius16),
+        border: _inputBorder(tokens.border, tokens.radiusControl),
+        enabledBorder: _inputBorder(tokens.border, tokens.radiusControl),
         disabledBorder: _inputBorder(
           tokens.border.withValues(alpha: 0.72),
-          tokens.radius16,
+          tokens.radiusControl,
         ),
-        focusedBorder: _inputBorder(tokens.focus, tokens.radius16, width: 2),
-        errorBorder: _inputBorder(colorScheme.error, tokens.radius16),
+        focusedBorder: _inputBorder(
+          tokens.focus,
+          tokens.radiusControl,
+          width: 2,
+        ),
+        errorBorder: _inputBorder(colorScheme.error, tokens.radiusControl),
         focusedErrorBorder: _inputBorder(
           colorScheme.error,
-          tokens.radius16,
+          tokens.radiusControl,
           width: 2,
         ),
       ),
@@ -265,7 +270,7 @@ abstract final class AppTheme {
           side: WidgetStatePropertyAll(BorderSide(color: tokens.border)),
           shape: WidgetStatePropertyAll(
             RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(tokens.radius12),
+              borderRadius: BorderRadius.circular(tokens.radiusControl),
             ),
           ),
           animationDuration: tokens.feedbackDuration,
@@ -277,7 +282,7 @@ abstract final class AppTheme {
         disabledColor: tokens.softPanel,
         side: BorderSide(color: tokens.border),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(tokens.radiusPill),
+          borderRadius: BorderRadius.circular(tokens.radiusControl),
         ),
         padding: EdgeInsets.symmetric(horizontal: tokens.space8),
         labelStyle: textTheme.wenyouLabel.copyWith(color: tokens.text),
@@ -291,7 +296,7 @@ abstract final class AppTheme {
         iconColor: tokens.mutedText,
         textColor: tokens.text,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(tokens.radius12),
+          borderRadius: BorderRadius.circular(tokens.radiusCompact),
         ),
       ),
       badgeTheme: BadgeThemeData(
@@ -331,7 +336,7 @@ abstract final class AppTheme {
         titleTextStyle: textTheme.wenyouOverlayTitle,
         contentTextStyle: textTheme.wenyouBody,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(tokens.radius20),
+          borderRadius: BorderRadius.circular(tokens.radiusPanel),
         ),
       ),
       bottomSheetTheme: BottomSheetThemeData(
@@ -340,7 +345,7 @@ abstract final class AppTheme {
         modalElevation: WenyouOverlayContract.elevation['floating'],
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(
-            top: Radius.circular(tokens.radius20),
+            top: Radius.circular(tokens.radiusPanel),
           ),
         ),
       ),
@@ -359,7 +364,7 @@ abstract final class AppTheme {
         ),
         elevation: WenyouOverlayContract.elevation['popup'],
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(tokens.radius16),
+          borderRadius: BorderRadius.circular(tokens.radiusPanel),
           side: BorderSide(color: tokens.border),
         ),
       ),
@@ -372,7 +377,7 @@ abstract final class AppTheme {
           color: tokens.text,
         ),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(tokens.radius16),
+          borderRadius: BorderRadius.circular(tokens.radiusPanel),
           side: BorderSide(color: tokens.border),
         ),
       ),

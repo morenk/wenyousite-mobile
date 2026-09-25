@@ -151,7 +151,7 @@ class _ThreadSection extends StatelessWidget {
       slivers: [
         SliverList.separated(
           itemCount: section.items.length,
-          separatorBuilder: (_, _) => SizedBox(height: tokens.space12),
+          separatorBuilder: (_, _) => SizedBox(height: tokens.cardGap),
           itemBuilder: (context, index) {
             final item = section.items[index];
             return WenyouConstrainedWidth(
@@ -223,7 +223,7 @@ class _ReplySection extends StatelessWidget {
     final tokens = context.wenyouTokens;
     return SliverList.separated(
       itemCount: section.items.length,
-      separatorBuilder: (_, _) => SizedBox(height: tokens.space12),
+      separatorBuilder: (_, _) => SizedBox(height: tokens.cardGap),
       itemBuilder: (context, index) => WenyouConstrainedWidth(
         key: ValueKey(section.items[index].id),
         child: _UserReplyCard(item: section.items[index]),
@@ -248,6 +248,7 @@ class _UserReplyCard extends StatelessWidget {
       button: true,
       label: '打开 ${item.threadTitle} 中的最近回复',
       child: WenyouPanel(
+        contentCard: true,
         onTap: () => context.push(location),
         padding: EdgeInsets.all(tokens.space16),
         child: Column(
@@ -322,7 +323,11 @@ class _ContentLoadingState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const WenyouListSkeleton(label: '正在加载公开内容', itemCount: 2);
+    return const WenyouListSkeleton(
+      label: '正在加载公开内容',
+      itemCount: 2,
+      contentCards: true,
+    );
   }
 }
 

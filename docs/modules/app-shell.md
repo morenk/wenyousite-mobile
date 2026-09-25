@@ -85,7 +85,7 @@ Android Manifest 明确关闭全量备份，Android 11 及以下和 Android 12+ 
 
 ## 10. 跨模块约束
 
-全局临时消息统一通过 `showWenyouSnackBar`，以 Foundation 面板色、细边框、16dp 圆角和浮层层级 2 显示；信息、成功和失败由调用处明确选择语义图标及色彩。正文完整换行，可操作消息把按钮放到正文下方，避免大字号挤窄正文；原有替换队列、2.5/4 秒节奏及重试/撤销行为保留。全局 Scaffold 处理键盘、安全区和底栏避让；评论 modal 内的单图限制短提示复用 `buildWenyouSnackBar` 外观，通过归属弹层的 OverlayPortal 即时显示，取实际 FlutterView 安全区和弹层位置，关闭时清除，不进入全局队列。私聊继续保留输入区额外净空；关键失败与待确认写入仍留在原操作区域，不仅靠临时消息表达。
+全局临时消息统一通过 `showWenyouSnackBar`，以 Foundation 面板色、细边框、12dp 面板圆角和浮层层级 2 显示；信息、成功和失败由调用处明确选择语义图标及色彩。正文完整换行，可操作消息把按钮放到正文下方，避免大字号挤窄正文；原有替换队列、2.5/4 秒节奏及重试/撤销行为保留。全局 Scaffold 处理键盘、安全区和底栏避让；评论 modal 内的单图限制短提示复用 `buildWenyouSnackBar` 外观，通过归属弹层的 OverlayPortal 即时显示，取实际 FlutterView 安全区和弹层位置，关闭时清除，不进入全局队列。私聊继续保留输入区额外净空；关键失败与待确认写入仍留在原操作区域，不仅靠临时消息表达。
 
 Android 的 Debug、Profile 和 Release 均仅支持 `arm64-v8a`，使用 ARM64 设备开发和验收。所有构建保持单 APK，原包名、签名、构建号和站内更新比较规则不变；正文与品牌文字使用系统字体。正式构建与上传入口在本地校验 ABI、引擎和字体条目，拒绝混入其他架构、缺失引擎或包含已移除 UI 字体的制品。构建验证和真机检查见[全构建 ARM64 验证](../architecture/all-builds-arm64-acceptance.md)。
 
@@ -131,6 +131,8 @@ Android 的 Debug、Profile 和 Release 均仅支持 `arm64-v8a`，使用 ARM64 
 当前已完成构建策略门禁、全局亮色/黑夜外观、推荐更新忽略、Android RainS3 在线下载、双层完整性/身份校验与系统安装器、iOS TestFlight 外跳、本地一键发布入口；后台常驻与横幅提醒为候选／待负责人验收。Debug 构建使用独立 `site.wenyou.app.debug` 包名，Profile 性能构建使用 `site.wenyou.app.profile`，两者都避免占用正式更新链；完整门禁与发布入口均会核对线上契约、后端 revision 和 Markdown 版本。自动测试以伪 APK 固定下载与缓存状态机，Android 原生包解析、系统覆盖和后台尽力轮询仍需用 Android 8+ 真机完成最终验收；iOS 构建与上传必须在配置签名的 macOS 上执行。后台 30 秒节拍依赖当前 Flutter 进程与系统调度，留在最近任务不代表 Dart isolate 会持续运行；Doze、厂商省电、网络中断或进程终止都可能延迟/停止检查，不承诺实时送达。V1 不申请豁免、不做 App Links、FCM、WebSocket 或开机恢复。Profile 基线只覆盖固定离线关键交互，不能替代全部真实业务路径的人工手感验收。原生启动层在 Flutter 首帧前仍是静态白色。
 
 ## 13. 最近审查的契约版本和后端提交
+
+2026-09-25 来源更新复核：公网 Backend `124fb4e8aa395440f7a2156de98b642ec87f7583`，较上次来源 `0bc9c45e213fa4dcbde8a3bcf2c466dc88ceb256` 仅有管理员邀请邮件本机链接修复；契约、移动端指南、OpenAPI 版本和生成客户端内容不变，本模块接口行为不变。
 
 2026-09-25 发布前来源复核：已部署 Backend `0bc9c45e213fa4dcbde8a3bcf2c466dc88ceb256`、OpenAPI `5.26.0-dev.20260922.3`；与前一来源的契约和生成客户端一致，本次只更新精确来源，不改变本模块接口行为。
 

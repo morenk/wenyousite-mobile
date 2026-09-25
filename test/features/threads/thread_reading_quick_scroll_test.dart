@@ -136,12 +136,13 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('快翻取消迟到深链，不被旧目标重新拉回', (tester) async {
+  testWidgets('目标聚焦加载期间不显示普通讨论快翻入口', (tester) async {
     final pending = Completer<ThreadPostTargetModel>();
     await tester.pumpWidget(
       threadDetailPageTestDetailApp(
         ThreadDetailPageTestFakeThreadDetailRepository(
           mainFloors: floors,
+          sideFloors: [threadDetailPageTestTargetFloor],
           postTargetFuture: pending.future,
         ),
         targetPostId: 'floor-target',
@@ -149,15 +150,7 @@ void main() {
     );
     await tester.pump();
     await tester.pump();
-    await tester.tap(find.byKey(const Key('reading-quick-scroll-toggle')));
-    await tester.pumpAndSettle();
-    final quick = tester
-        .widget<ReadingQuickScrollAction>(find.byType(ReadingQuickScrollAction))
-        .controller;
-    quick.beginDrag(0.2);
-    quick.endDrag(0.2);
-    await tester.pumpAndSettle();
-    final offset = quick.scrollController.offset;
+    expect(find.byKey(const Key('reading-quick-scroll-toggle')), findsNothing);
     pending.complete(
       ThreadPostTargetModel(
         requestedPostId: 'floor-target',
@@ -167,7 +160,10 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(quick.scrollController.offset, closeTo(offset, 1));
-    expect(find.text('支线正文'), findsNothing);
+    expect(find.text('目标楼层内容'), findsOneWidget);
+    final quickToggle = find.byKey(const Key('reading-quick-scroll-toggle'));
+    expect(quickToggle, findsOneWidget);
+    expect(tester.widget<IconButton>(quickToggle).onPressed, isNotNull);
+    expect(find.byKey(const Key('discussion-target-cover')), findsNothing);
   });
 }

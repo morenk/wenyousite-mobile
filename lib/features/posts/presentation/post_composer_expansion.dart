@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_composer_draft.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
 import 'package:wenyousite_mobile/features/posts/presentation/post_composer_sheet.dart';
@@ -46,6 +47,7 @@ class ExpandablePostComposerState extends State<ExpandablePostComposer> {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.wenyouTokens;
     final keyboard = MediaQuery.viewInsetsOf(context).bottom;
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -80,8 +82,8 @@ class ExpandablePostComposerState extends State<ExpandablePostComposer> {
                   height: sheetHeight,
                   width: double.infinity,
                   child: ClipRRect(
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(20),
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(tokens.radiusPanel),
                     ),
                     child: Material(
                       color: Theme.of(context).scaffoldBackgroundColor,

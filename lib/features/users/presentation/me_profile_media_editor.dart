@@ -449,7 +449,7 @@ class _CoverEditTarget extends StatelessWidget {
       excludeSemantics: true,
       child: Material(
         color: tokens.panel,
-        borderRadius: BorderRadius.circular(tokens.radius12),
+        borderRadius: BorderRadius.circular(tokens.radiusCompact),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           key: const Key('me-profile-cover-change'),

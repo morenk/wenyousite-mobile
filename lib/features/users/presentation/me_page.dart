@@ -7,6 +7,7 @@ import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/application/appearance_preference.dart';
+import 'package:wenyousite_mobile/core/application/background_execution.dart';
 import 'package:wenyousite_mobile/core/application/session_logout_controller.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
@@ -367,11 +368,16 @@ class _MeProfileSaveBar extends StatelessWidget {
   }
 }
 
-class MeSettingsPage extends StatelessWidget {
+class MeSettingsPage extends ConsumerWidget {
   const MeSettingsPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final backgroundReminderSupported = ref.watch(
+      backgroundExecutionGatewayProvider.select(
+        (gateway) => gateway.isSupported,
+      ),
+    );
     final page = Scaffold(
       backgroundColor: wenyouPersonalPageBackground(context),
       appBar: AppBar(
@@ -380,11 +386,12 @@ class MeSettingsPage extends StatelessWidget {
       ),
       body: WenyouSettingsBody(
         children: [
-          const WenyouSettingsGroup(
+          WenyouSettingsGroup(
             title: '偏好与提醒',
             children: [
-              _AppearanceSettingsPanel(),
-              BackgroundReminderSettingsPanel(embedded: true),
+              const _AppearanceSettingsPanel(),
+              if (backgroundReminderSupported)
+                const BackgroundReminderSettingsPanel(embedded: true),
             ],
           ),
           const _AccountSecurityPanel(disabled: false),

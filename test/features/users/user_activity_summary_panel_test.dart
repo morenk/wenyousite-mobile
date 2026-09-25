@@ -11,81 +11,100 @@ import '../../support/deterministic_test_fonts.dart';
 void main() {
   setUpAll(loadDeterministicTestFonts);
 
-  testWidgets('创作概览保留单层卡片并使用紧凑二乘二统计', (tester) async {
-    tester.view.devicePixelRatio = 1;
-    tester.view.physicalSize = const Size(360, 260);
-    addTearDown(tester.view.resetDevicePixelRatio);
-    addTearDown(tester.view.resetPhysicalSize);
+  for (final themeCase in [
+    (
+      name: '亮色',
+      theme: AppTheme.light,
+      golden: 'user_activity_summary_compact_360.png',
+    ),
+    (
+      name: '黑夜',
+      theme: AppTheme.dark,
+      golden: 'user_activity_summary_compact_360_dark.png',
+    ),
+  ]) {
+    testWidgets('创作概览在${themeCase.name}模式保留 10dp 单层卡片与紧凑二乘二统计', (tester) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(360, 260);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.view.resetPhysicalSize);
 
-    await tester.pumpWidget(
-      MaterialApp(
-        theme: AppTheme.light,
-        home: Scaffold(
-          body: ListView(
-            padding: const EdgeInsets.all(12),
-            children: const [
-              UserActivitySummaryPanel(
-                key: Key('activity-summary'),
-                state: PublicUserState(
-                  activityPhase: PublicUserActivityPhase.ready,
-                  activitySummary: PublicUserActivitySummary(
-                    momentCount: 12000,
-                    createdThreadCount: 7,
-                    playedThreadCount: null,
-                    replyCount: 36,
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: themeCase.theme,
+          home: Scaffold(
+            body: ListView(
+              padding: const EdgeInsets.all(12),
+              children: const [
+                UserActivitySummaryPanel(
+                  key: Key('activity-summary'),
+                  state: PublicUserState(
+                    activityPhase: PublicUserActivityPhase.ready,
+                    activitySummary: PublicUserActivitySummary(
+                      momentCount: 12000,
+                      createdThreadCount: 7,
+                      playedThreadCount: null,
+                      replyCount: 36,
+                    ),
                   ),
+                  onRetry: _noop,
                 ),
-                onRetry: _noop,
-              ),
-            ],
+              ],
+            ),
           ),
         ),
-      ),
-    );
-    await tester.pump();
+      );
+      await tester.pump();
 
-    expect(find.byType(Card), findsOneWidget);
-    expect(find.text('短内容'), findsNothing);
-    expect(find.text('担任楼主'), findsNothing);
-    expect(find.text('玩家身份'), findsNothing);
-    expect(find.text('楼层讨论'), findsNothing);
-    expect(find.text('未公开'), findsOneWidget);
-    expect(
-      tester.getCenter(find.text('发布动态')).dy,
-      closeTo(tester.getCenter(find.text('创建主题')).dy, 3),
-    );
-    expect(
-      tester.getCenter(find.text('参与主题')).dy,
-      closeTo(tester.getCenter(find.text('累计回复')).dy, 6),
-    );
-    expect(
-      tester.getCenter(find.text('参与主题')).dy,
-      greaterThan(tester.getCenter(find.text('发布动态')).dy),
-    );
-    final panelCenter = tester.getCenter(
-      find.byKey(const Key('activity-summary')),
-    );
-    final firstColumnCenter =
-        (tester.getCenter(find.text('发布动态')).dx +
-            tester.getCenter(find.text('创建主题')).dx) /
-        2;
-    final secondColumnCenter =
-        (tester.getCenter(find.text('参与主题')).dx +
-            tester.getCenter(find.text('累计回复')).dx) /
-        2;
-    expect(firstColumnCenter, greaterThan(panelCenter.dx + 8));
-    expect(firstColumnCenter, lessThan(panelCenter.dx + 24));
-    expect(secondColumnCenter, closeTo(firstColumnCenter, 6));
-    expect(
-      tester.getSize(find.byKey(const Key('activity-summary'))).height,
-      lessThan(180),
-    );
+      expect(find.byType(Card), findsOneWidget);
+      expect(
+        (tester.widget<Card>(find.byType(Card)).shape!
+                as RoundedRectangleBorder)
+            .borderRadius,
+        BorderRadius.circular(10),
+      );
+      expect(find.text('短内容'), findsNothing);
+      expect(find.text('担任楼主'), findsNothing);
+      expect(find.text('玩家身份'), findsNothing);
+      expect(find.text('楼层讨论'), findsNothing);
+      expect(find.text('未公开'), findsOneWidget);
+      expect(
+        tester.getCenter(find.text('发布动态')).dy,
+        closeTo(tester.getCenter(find.text('创建主题')).dy, 3),
+      );
+      expect(
+        tester.getCenter(find.text('参与主题')).dy,
+        closeTo(tester.getCenter(find.text('累计回复')).dy, 6),
+      );
+      expect(
+        tester.getCenter(find.text('参与主题')).dy,
+        greaterThan(tester.getCenter(find.text('发布动态')).dy),
+      );
+      final panelCenter = tester.getCenter(
+        find.byKey(const Key('activity-summary')),
+      );
+      final firstColumnCenter =
+          (tester.getCenter(find.text('发布动态')).dx +
+              tester.getCenter(find.text('创建主题')).dx) /
+          2;
+      final secondColumnCenter =
+          (tester.getCenter(find.text('参与主题')).dx +
+              tester.getCenter(find.text('累计回复')).dx) /
+          2;
+      expect(firstColumnCenter, greaterThan(panelCenter.dx + 8));
+      expect(firstColumnCenter, lessThan(panelCenter.dx + 24));
+      expect(secondColumnCenter, closeTo(firstColumnCenter, 6));
+      expect(
+        tester.getSize(find.byKey(const Key('activity-summary'))).height,
+        lessThan(180),
+      );
 
-    await expectLater(
-      find.byKey(const Key('activity-summary')),
-      matchesGoldenFile('goldens/user_activity_summary_compact_360.png'),
-    );
-  });
+      await expectLater(
+        find.byKey(const Key('activity-summary')),
+        matchesGoldenFile('goldens/${themeCase.golden}'),
+      );
+    });
+  }
 
   testWidgets('创作概览的可见统计可点击且未公开项保持只读', (tester) async {
     final opened = <String>[];

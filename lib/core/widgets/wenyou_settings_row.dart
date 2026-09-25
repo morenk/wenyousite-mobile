@@ -37,7 +37,9 @@ class WenyouSettingsLink extends StatelessWidget {
       enabled: enabled,
       contentPadding: contentPadding,
       minTileHeight: tokens.minimumTouchTarget + tokens.space8,
-      titleTextStyle: Theme.of(context).textTheme.wenyouRowTitle,
+      titleTextStyle: Theme.of(
+        context,
+      ).textTheme.wenyouRowTitle.copyWith(fontWeight: FontWeight.w400),
       leading: icon == null
           ? null
           : WenyouIcon(icon!, color: color ?? tokens.mutedText),
@@ -46,9 +48,10 @@ class WenyouSettingsLink extends StatelessWidget {
           Expanded(
             child: Text(
               title,
-              style: Theme.of(
-                context,
-              ).textTheme.wenyouRowTitle.copyWith(color: color),
+              style: Theme.of(context).textTheme.wenyouRowTitle.copyWith(
+                color: color,
+                fontWeight: FontWeight.w400,
+              ),
             ),
           ),
           if (value != null) ...[
@@ -99,12 +102,19 @@ class WenyouSettingsToggle extends StatelessWidget {
     final toggle = SwitchListTile(
       key: toggleKey,
       title: showHelpButton
-          ? Text(title, style: Theme.of(context).textTheme.wenyouRowTitle)
+          ? Text(
+              title,
+              style: Theme.of(
+                context,
+              ).textTheme.wenyouRowTitle.copyWith(fontWeight: FontWeight.w400),
+            )
           : Tooltip(
               message: help,
               child: Text(
                 title,
-                style: Theme.of(context).textTheme.wenyouRowTitle,
+                style: Theme.of(context).textTheme.wenyouRowTitle.copyWith(
+                  fontWeight: FontWeight.w400,
+                ),
               ),
             ),
       secondary: icon == null

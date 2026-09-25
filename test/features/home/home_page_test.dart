@@ -294,11 +294,23 @@ void main() {
       ),
       findsOneWidget,
     );
-    final firstCard = find.byKey(const Key('home-thread-card-thread-1'));
-    final secondCard = find.byKey(const Key('home-thread-card-thread-2'));
+    final firstCard = find.ancestor(
+      of: find.byKey(const Key('home-thread-card-thread-1')),
+      matching: find.byType(Card),
+    );
+    final secondCard = find.ancestor(
+      of: find.byKey(const Key('home-thread-card-thread-2')),
+      matching: find.byType(Card),
+    );
     expect(
       tester.getTopLeft(secondCard).dy - tester.getBottomLeft(firstCard).dy,
-      greaterThanOrEqualTo(12),
+      closeTo(WenyouCollectionContract.cardGap, 0.1),
+    );
+    final shape =
+        tester.widget<Card>(firstCard).shape! as RoundedRectangleBorder;
+    expect(
+      shape.borderRadius,
+      BorderRadius.circular(WenyouFoundationMobile.radiusCard),
     );
     expect(find.text('第二段接力'), findsOneWidget);
   });

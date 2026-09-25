@@ -1,6 +1,10 @@
 # 个人区视觉收敛候选验收
 
-日期：2026-09-25。状态：微调候选已安装 Debug 调试会话，待负责人目视验收；按负责人要求跳过全量测试，完整门禁未完成。
+日期：2026-09-26。状态：负责人已同意合并到 `dev` 并清理任务分支；此前 Debug 候选已安装，未记录逐页目视结论。按负责人要求跳过全量测试。
+
+## 合并前整合
+
+候选最初基于 `796e5afa7407fb76e3b1011093b192d5572518da`，后与 `origin/dev` 的 `444ef40149adc746271c188400c21d971e664eeb` 整合。保留内容卡任务的 Foundation `v7.1.2`、10dp 内容卡圆角、8dp 浏览卡间距、外观页“省流量”入口，以及后台提醒仅在设备支持时展示；个人资料头按本候选使用无描边单层卡片、隐藏空简介与脱敏邮箱。当前固定 Backend 来源随 `dev` 更新为 `124fb4e8aa395440f7a2156de98b642ec87f7583`，OpenAPI 仍为 `5.26.0-dev.20260922.3`。本次整合不改变 HTTP API 或存储。
 
 ## 范围与事实源
 
@@ -25,9 +29,16 @@
 
 负责人对已安装页面提出三处微调后，六个直接受影响测试文件（`me_page_test.dart`、`user_profile_header_test.dart`、`public_user_page_test.dart`、`background_reminder_settings_panel_test.dart`、`appearance_settings_page_test.dart`、`diagnostic_settings_page_test.dart`）共 97 项通过，受影响 Golden 已更新。`flutter attach -d 4b9c39b5` 等待约 80 秒未发现现有 Dart VM Service，因此原先已安装的 APK 无法热重载；随后按负责人授权执行 `flutter run -d 4b9c39b5`，编译、安装和同步均成功，并取得 Dart VM Service。再次发送 `r` 热重载成功；显示 0 个库变化，因为新源码已随 `flutter run` 编译安装。调试会话保持运行。
 
-当前调试 APK 为 `D:\codex-worktrees\a4e2\wenyousite-mobile\build\app\outputs\flutter-apk\app-debug.apk`，大小 `149811316` 字节，SHA-256 `3E9063AD159C94CA40324223853DAEB271DD07BA53E3EA2DC8DFE76AF21A717C`；从 APK 本身读取包名 `site.wenyou.app.debug`、应用名“温油站 Debug”、版本 `0.8.0-dev.1-debug`、构建号 `96`。设备该包更新时间为 `2026-09-25 14:51:27`，设备内 `base.apk` 的 SHA-256 与本地完全一致。本轮未重新运行完整门禁或 `candidate:apk`；构建与安装、自动测试和 Golden 不代替负责人目视验收。
+上一轮已安装调试 APK 大小 `149811316` 字节，SHA-256 `3E9063AD159C94CA40324223853DAEB271DD07BA53E3EA2DC8DFE76AF21A717C`；当时从 APK 本身读取包名 `site.wenyou.app.debug`、应用名“温油站 Debug”、版本 `0.8.0-dev.1-debug`、构建号 `96`。设备该包更新时间为 `2026-09-25 14:51:27`，设备内 `base.apk` 的 SHA-256 与当时本地包一致。整合 `dev` 后重新构建的包见下文，尚未安装；构建与安装、自动测试和 Golden 不代替负责人目视验收。
 
 账号设置、资料编辑和共用资料头新增 320dp／2 倍字号、400dp、600dp 浅色及黑夜 Golden；既有 360dp Golden 随布局更新。已检查代表性图片的面板、页底、窄屏换行与宽屏内容约束。Widget／Golden 不代替真机视觉验收。
+
+### 2026-09-26 整合检查
+
+- `flutter analyze --no-pub` 在整合代码后零问题；后续设置行显式使用语义字阶常规字重，`architecture:check` 再次通过，直接相关 Widget／Golden 与 Debug 构建通过。
+- `docs:check` 通过 21 个模块，`api:validate` 无问题。个人区相关 10 个测试文件共 114 项在 Golden 更新后再次以只读对比模式通过；包含浅色／黑夜、320／360／400／600dp、两倍字号、设置入口和资料头。代表性浅色账号设置、黑夜外观、窄屏资料头与资料编辑 Golden 已人工查看。
+- `flutter build apk --debug --target-platform android-arm64 --no-pub` 成功，整合后 Debug APK 大小 `149828828` 字节，SHA-256 `E24DE9BE428BD89B3AEBD4AFAD53C854E7CBA2DFA3FC65F7FABF4ACEFFA6E801`。该包仅作候选校验，未安装、上传或正式发布。
+- 按负责人要求未运行全量 Flutter 测试；未记录整合后 APK 的真机目视结果。
 
 ## 负责人真机复验
 
@@ -39,6 +50,6 @@
 
 本任务通过 `flutter run` 在负责人连接的设备上启动了 Debug 会话，并核对包名、更新时间和设备内 APK 哈希；未代替负责人逐页目视复验。自动检查、Golden、构建和安装均不能代替负责人对上述页面的验收，未回复不视为通过。
 
-## 跨任务合并提示
+## 跨任务整合结果
 
-内容卡 PR [#59](https://github.com/morenk/wenyousite-mobile/pull/59) 的最新已核对提交为 `4fad473cff2b954c25130f49ccae852ac1d96f75`，与本分支同时触及 `user_profile_header.dart`、`user_activity_summary_panel.dart`、`public_user_page.dart`、Foundation 版本记录及用户模块文档。建议先合入 #59，再合入本候选时人工整合：保留 Foundation 10dp 内容卡圆角、8dp 卡片间距，以及本候选资料头无外框／多余分隔、空简介和概览标题处理。此提示不授权本任务合并任何分支。
+内容卡 PR [#59](https://github.com/morenk/wenyousite-mobile/pull/59) 已先合入 `dev`，本任务随后整合其 Foundation `v7.1.2`、10dp 内容卡圆角和 8dp 浏览卡间距。个人资料头保留无描边单层表面，空简介和脱敏邮箱不显示，概览标题不重复；外观页保留新加入的“省流量”入口。

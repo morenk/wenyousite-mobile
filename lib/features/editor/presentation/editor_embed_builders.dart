@@ -233,7 +233,7 @@ class _ImageEmbedBuilder extends EmbedBuilder {
       image: true,
       label: label,
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(context.wenyouTokens.radius12),
+        borderRadius: BorderRadius.circular(context.wenyouTokens.radiusCompact),
         child: ConstrainedBox(
           constraints: const BoxConstraints(minHeight: 120, maxHeight: 320),
           child: WenyouCachedImage(

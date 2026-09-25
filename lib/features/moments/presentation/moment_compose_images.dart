@@ -208,7 +208,7 @@ class _PendingThumbnailState extends State<MomentPendingImageThumbnail> {
         child: Padding(
           padding: EdgeInsets.only(right: tokens.space8),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(tokens.radius12),
+            borderRadius: BorderRadius.circular(tokens.radiusCompact),
             child: Stack(
               fit: StackFit.expand,
               children: [
@@ -283,13 +283,13 @@ class _AddImageTile extends StatelessWidget {
       child: Material(
         color: tokens.softPanel,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(tokens.radius12),
+          borderRadius: BorderRadius.circular(tokens.radiusCompact),
           side: BorderSide(color: tokens.border),
         ),
         child: InkWell(
           key: const Key('moment-compose-add-image'),
           onTap: onPressed,
-          borderRadius: BorderRadius.circular(tokens.radius12),
+          borderRadius: BorderRadius.circular(tokens.radiusCompact),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -356,7 +356,9 @@ class _ComposeThumbnail extends StatelessWidget {
                     Material(
                       color: tokens.softPanel,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(tokens.radius12),
+                        borderRadius: BorderRadius.circular(
+                          tokens.radiusCompact,
+                        ),
                         side: BorderSide(
                           color: isCover
                               ? tokens.brandForeground

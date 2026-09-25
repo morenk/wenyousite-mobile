@@ -557,7 +557,7 @@ class WenyouDropdownFilter<T> extends StatelessWidget {
           border: quiet
               ? null
               : Border.all(color: isOpen ? tokens.focus : tokens.input),
-          borderRadius: BorderRadius.circular(tokens.radius16),
+          borderRadius: BorderRadius.circular(tokens.radiusPanel),
         ),
         child: Row(
           mainAxisSize: quiet ? MainAxisSize.min : MainAxisSize.max,

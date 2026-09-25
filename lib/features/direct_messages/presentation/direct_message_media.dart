@@ -30,7 +30,7 @@ class DirectMessagePendingImage extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
     return ClipRRect(
-      borderRadius: BorderRadius.circular(tokens.radius12),
+      borderRadius: BorderRadius.circular(tokens.radiusCompact),
       child: ConstrainedBox(
         constraints: const BoxConstraints(
           minWidth: 72,
@@ -76,7 +76,7 @@ class DirectMessageOptimisticMediaPlaceholder extends StatelessWidget {
       child: DecoratedBox(
         decoration: BoxDecoration(
           color: tokens.onBrandSurface.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(tokens.radius12),
+          borderRadius: BorderRadius.circular(tokens.radiusCompact),
         ),
         child: WenyouIcon(
           isSticker
@@ -111,9 +111,9 @@ class DirectMessageImage extends StatelessWidget {
       label: media.isSticker ? '私聊表情，点按查看大图' : '私聊图片，点按查看大图',
       child: InkWell(
         onTap: () => _showImage(context),
-        borderRadius: BorderRadius.circular(tokens.radius12),
+        borderRadius: BorderRadius.circular(tokens.radiusCompact),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(tokens.radius12),
+          borderRadius: BorderRadius.circular(tokens.radiusCompact),
           child: ConstrainedBox(
             constraints: BoxConstraints(
               maxWidth: maxDimension,

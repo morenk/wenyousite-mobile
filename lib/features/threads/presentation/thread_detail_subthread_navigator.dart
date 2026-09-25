@@ -75,7 +75,7 @@ class ThreadSubthreadNavigator extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: tokens.panel,
                     border: Border.all(color: tokens.border),
-                    borderRadius: BorderRadius.circular(tokens.radius16),
+                    borderRadius: BorderRadius.circular(tokens.radiusControl),
                   ),
                   child: Row(
                     children: [

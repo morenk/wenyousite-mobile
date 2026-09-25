@@ -56,6 +56,14 @@ void main() {
       isTrue,
     );
     expect(find.byType(WenyouSettingsTypography), findsOneWidget);
+    expect(find.byType(WenyouPanel), findsNWidgets(2));
+    expect(find.text('显示模式'), findsOneWidget);
+    expect(find.text('浏览'), findsOneWidget);
+    expect(find.byKey(const Key('cover-data-saver')), findsOneWidget);
+    expect(
+      tester.widget<Text>(find.text('跟随系统')).style?.fontWeight,
+      FontWeight.w400,
+    );
 
     await tester.tap(find.byKey(const Key('appearance-option-dark')));
     await tester.pump();

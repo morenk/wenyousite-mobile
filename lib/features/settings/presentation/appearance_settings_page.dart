@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/application/appearance_preference.dart';
 import 'package:wenyousite_mobile/core/application/data_saver_preference.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_selection_menu.dart';
@@ -35,31 +36,29 @@ class AppearanceSettingsPage extends ConsumerWidget {
                   ? null
                   : () => unawaited(controller.retry()),
             ),
-          WenyouSettingsGroup(
-            title: '显示模式',
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              for (
-                var index = 0;
-                index < AppearancePreference.values.length;
-                index++
-              )
-                WenyouSelectionTile(
-                  key: Key(
-                    'appearance-option-${AppearancePreference.values[index].name}',
-                  ),
-                  label: AppearancePreference.values[index].label,
-                  leading: WenyouIcon(AppearancePreference.values[index].icon),
-                  selected:
-                      state.preference == AppearancePreference.values[index],
-                  onTap: state.isSaving
-                      ? null
-                      : () => unawaited(
-                          controller.select(AppearancePreference.values[index]),
-                        ),
-                ),
+              WenyouSettingsGroup(
+                title: '显示模式',
+                children: [
+                  for (final preference in AppearancePreference.values)
+                    WenyouSelectionTile(
+                      key: Key('appearance-option-${preference.name}'),
+                      label: preference.label,
+                      leading: WenyouIcon(preference.icon),
+                      emphasizeSelected: false,
+                      selected: state.preference == preference,
+                      onTap: state.isSaving
+                          ? null
+                          : () => unawaited(controller.select(preference)),
+                    ),
+                ],
+              ),
+              SizedBox(height: context.wenyouTokens.cardGap),
+              const _DataSaverSetting(),
             ],
           ),
-          const _DataSaverSetting(),
         ],
       ),
     );

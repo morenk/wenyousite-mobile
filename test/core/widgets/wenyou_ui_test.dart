@@ -12,6 +12,42 @@ import '../../support/foundation_icon_finder.dart';
 void main() {
   setUpAll(loadDeterministicTestFonts);
 
+  for (final dark in [false, true]) {
+    testWidgets('${dark ? '黑夜' : '亮色'}浏览卡片与普通卡片共用卡片圆角', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: dark ? AppTheme.dark : AppTheme.light,
+          home: const Scaffold(
+            body: Column(
+              children: [
+                WenyouPanel(contentCard: true, child: Text('浏览内容')),
+                WenyouPanel(child: Text('操作面板')),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      final cards = tester.widgetList<Card>(find.byType(Card)).toList();
+      final contentShape = cards[0].shape! as RoundedRectangleBorder;
+      final panelShape =
+          Theme.of(tester.element(find.text('操作面板'))).cardTheme.shape!
+              as RoundedRectangleBorder;
+      final tokens = dark ? WenyouThemeTokens.dark : WenyouThemeTokens.light;
+      expect(cards[0].color, tokens.panel);
+      expect(contentShape.side.color, tokens.border);
+      expect(
+        contentShape.borderRadius,
+        BorderRadius.circular(WenyouFoundationMobile.radiusCard),
+      );
+      expect(cards[1].shape, isNull);
+      expect(
+        panelShape.borderRadius,
+        BorderRadius.circular(WenyouFoundationMobile.radiusCard),
+      );
+    });
+  }
+
   testWidgets('纵向内容宽度只由可用空间和最大宽度决定', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(360, 240);

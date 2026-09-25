@@ -124,7 +124,7 @@ class _WenyouSelectionMenuState<T> extends State<WenyouSelectionMenu<T>> {
             // 不传 initialValue：Flutter 会据此把已选行移到锚点上，破坏下拉定位。
             position: PopupMenuPosition.under,
             offset: Offset(0, tokens.space4),
-            borderRadius: BorderRadius.circular(tokens.radius16),
+            borderRadius: BorderRadius.circular(tokens.radiusPanel),
             clipBehavior: Clip.antiAlias,
             popUpAnimationStyle: wenyouAnimationsDisabled(context)
                 ? AnimationStyle.noAnimation
@@ -273,6 +273,7 @@ class WenyouSelectionRow extends StatelessWidget {
     this.trailingLabel,
     this.leading,
     this.enabled = true,
+    this.emphasizeSelected = true,
     super.key,
   });
 
@@ -282,6 +283,7 @@ class WenyouSelectionRow extends StatelessWidget {
   final String? trailingLabel;
   final Widget? leading;
   final bool enabled;
+  final bool emphasizeSelected;
 
   @override
   Widget build(BuildContext context) {
@@ -292,7 +294,7 @@ class WenyouSelectionRow extends StatelessWidget {
       child: Ink(
         decoration: BoxDecoration(
           color: selected ? tokens.accentedBackground : null,
-          borderRadius: BorderRadius.circular(tokens.radius12),
+          borderRadius: BorderRadius.circular(tokens.radiusControl),
         ),
         child: ConstrainedBox(
           constraints: BoxConstraints(minHeight: tokens.minimumTouchTarget),
@@ -320,7 +322,7 @@ class WenyouSelectionRow extends StatelessWidget {
                               : selected
                               ? tokens.onAccentedBackground
                               : tokens.text,
-                          fontWeight: selected
+                          fontWeight: selected && emphasizeSelected
                               ? FontWeight.w600
                               : FontWeight.w400,
                         ),
@@ -362,6 +364,7 @@ class WenyouSelectionTile extends StatelessWidget {
     required this.onTap,
     this.supportingLabel,
     this.leading,
+    this.emphasizeSelected = true,
     super.key,
   });
 
@@ -370,13 +373,14 @@ class WenyouSelectionTile extends StatelessWidget {
   final VoidCallback? onTap;
   final String? supportingLabel;
   final Widget? leading;
+  final bool emphasizeSelected;
 
   @override
   Widget build(BuildContext context) => Semantics(
     button: true,
     enabled: onTap != null,
     child: InkWell(
-      borderRadius: BorderRadius.circular(context.wenyouTokens.radius12),
+      borderRadius: BorderRadius.circular(context.wenyouTokens.radiusControl),
       onTap: onTap,
       child: WenyouSelectionRow(
         label: label,
@@ -384,6 +388,7 @@ class WenyouSelectionTile extends StatelessWidget {
         enabled: onTap != null,
         supportingLabel: supportingLabel,
         leading: leading,
+        emphasizeSelected: emphasizeSelected,
       ),
     ),
   );

@@ -83,7 +83,7 @@ class WenyouMarkdownImage extends StatelessWidget {
       ),
     );
     final imageContent = ClipRRect(
-      borderRadius: BorderRadius.circular(tokens.radius12),
+      borderRadius: BorderRadius.circular(tokens.radiusCompact),
       child: isSticker
           ? SizedBox.square(dimension: 96, child: image)
           : ConstrainedBox(
@@ -126,7 +126,7 @@ class WenyouMarkdownImage extends StatelessWidget {
         onLongPress: onLongPress,
         child: InkWell(
           key: ValueKey('markdown-image-$uri'),
-          borderRadius: BorderRadius.circular(tokens.radius12),
+          borderRadius: BorderRadius.circular(tokens.radiusCompact),
           onLongPress: onLongPress,
           onTap:
               onOpen ??

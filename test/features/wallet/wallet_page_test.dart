@@ -10,7 +10,36 @@ import 'package:wenyousite_mobile/features/wallet/data/wallet_repository.dart';
 import 'package:wenyousite_mobile/features/wallet/domain/wallet_models.dart';
 import 'package:wenyousite_mobile/features/wallet/presentation/wallet_page.dart';
 
+import '../../support/deterministic_test_fonts.dart';
+
 void main() {
+  setUpAll(loadDeterministicTestFonts);
+
+  for (final themeCase in [
+    (name: 'light', mode: ThemeMode.light),
+    (name: 'dark', mode: ThemeMode.dark),
+  ]) {
+    testWidgets('360dp 我的温油${themeCase.name}圆角截图', (tester) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(360, 900);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.view.resetPhysicalSize);
+
+      await tester.pumpWidget(
+        _walletApp(
+          _WalletPageRepository(balance: '1250'),
+          themeMode: themeCase.mode,
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      await expectLater(
+        find.byType(Scaffold).first,
+        matchesGoldenFile('goldens/wallet_360_${themeCase.name}.png'),
+      );
+    });
+  }
+
   testWidgets('千条钱包流水保持惰性布局并可到达分页入口', (tester) async {
     await tester.pumpWidget(_walletApp(_WalletPageRepository(longList: true)));
     await tester.pumpAndSettle();
@@ -122,11 +151,17 @@ void main() {
   });
 }
 
-Widget _walletApp(WalletRepository repository, {double textScale = 1}) {
+Widget _walletApp(
+  WalletRepository repository, {
+  double textScale = 1,
+  ThemeMode themeMode = ThemeMode.light,
+}) {
   return ProviderScope(
     overrides: [walletRepositoryProvider.overrideWithValue(repository)],
     child: MaterialApp(
       theme: AppTheme.light,
+      darkTheme: AppTheme.dark,
+      themeMode: themeMode,
       builder: (context, child) => MediaQuery(
         data: MediaQuery.of(
           context,
@@ -139,10 +174,15 @@ Widget _walletApp(WalletRepository repository, {double textScale = 1}) {
 }
 
 class _WalletPageRepository extends Fake implements WalletRepository {
-  _WalletPageRepository({this.failSummaryOnce = false, this.longList = false});
+  _WalletPageRepository({
+    this.failSummaryOnce = false,
+    this.longList = false,
+    this.balance = '9007199254740993',
+  });
 
   final bool failSummaryOnce;
   final bool longList;
+  final String balance;
   var summaryCalls = 0;
 
   @override
@@ -154,8 +194,8 @@ class _WalletPageRepository extends Fake implements WalletRepository {
         requestId: 'wallet-request-id',
       );
     }
-    return const WalletSummary(
-      balance: '9007199254740993',
+    return WalletSummary(
+      balance: balance,
       receivedTipTotal: '120',
       receivedTipCount: 4,
     );

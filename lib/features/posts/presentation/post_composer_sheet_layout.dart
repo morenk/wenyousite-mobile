@@ -39,7 +39,7 @@ class PostComposerSheetHeader extends StatelessWidget {
                 height: 4,
                 decoration: BoxDecoration(
                   color: tokens.border,
-                  borderRadius: BorderRadius.circular(2),
+                  borderRadius: BorderRadius.circular(tokens.radiusPill),
                 ),
               ),
             ),

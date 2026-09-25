@@ -110,6 +110,10 @@ void main() {
     expect(find.text('支线网络正文'), findsOneWidget);
     expect(find.text('网络深链目标楼层'), findsOneWidget);
     expect(
+      find.byKey(const Key('thread-target-show-discussion')),
+      findsNothing,
+    );
+    expect(
       adapter.requests.map((request) => request.path),
       containsAll([
         '/api/v1/threads/thread-1',

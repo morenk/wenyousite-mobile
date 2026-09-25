@@ -275,7 +275,7 @@ class _CurrentSessionPill extends StatelessWidget {
       ),
       decoration: BoxDecoration(
         color: tokens.brandForeground.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: BorderRadius.circular(tokens.radiusPill),
       ),
       child: Text(
         '当前终端',

@@ -91,10 +91,10 @@ class WenyouInteractionToggle extends StatelessWidget {
             : 1,
         child: Material(
           color: Colors.transparent,
-          borderRadius: BorderRadius.circular(tokens.radius12),
+          borderRadius: BorderRadius.circular(tokens.radiusControl),
           child: InkWell(
             onTap: enabled ? onPressed : null,
-            borderRadius: BorderRadius.circular(tokens.radius12),
+            borderRadius: BorderRadius.circular(tokens.radiusControl),
             overlayColor: WidgetStateProperty.resolveWith((states) {
               if (states.contains(WidgetState.pressed)) {
                 return foreground.withValues(

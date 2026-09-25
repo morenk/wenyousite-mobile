@@ -213,7 +213,7 @@ void main() {
       ),
     );
     final expectedRadius = BorderRadius.circular(
-      WenyouThemeTokens.light.radius16,
+      WenyouThemeTokens.light.radiusPanel,
     );
     expect(popup.borderRadius, expectedRadius);
     expect(

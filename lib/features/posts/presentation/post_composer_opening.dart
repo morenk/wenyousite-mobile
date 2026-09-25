@@ -230,7 +230,9 @@ class _OpeningSurface extends StatelessWidget {
       child: Material(
         key: const Key('post-composer-opening'),
         color: Theme.of(context).scaffoldBackgroundColor,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(tokens.radiusPanel),
+        ),
         clipBehavior: Clip.antiAlias,
         child: SafeArea(
           top: false,

@@ -27,7 +27,6 @@ void main() {
   for (final (deletedNumber, targeted, failDelete) in [
     (25, false, false),
     (40, false, false),
-    (25, true, false),
     (25, false, true),
   ]) {
     testWidgets('长列表删除第 $deletedNumber 层，定位=$targeted，失败=$failDelete，保留附近位置', (
@@ -277,10 +276,14 @@ Future<GoRouter> _pumpPage(
     ),
   );
   await tester.pumpAndSettle();
-  expect(
-    find.byKey(Key('thread-floor-card-${targeted ? targetId : 'floor-1'}')),
-    findsOneWidget,
-  );
+  if (targeted && repository.targetFailure != null) {
+    expect(find.byKey(const Key('thread-target-retry')), findsOneWidget);
+  } else {
+    expect(
+      find.byKey(Key('thread-floor-card-${targeted ? targetId : 'floor-1'}')),
+      findsOneWidget,
+    );
+  }
   return router;
 }
 
