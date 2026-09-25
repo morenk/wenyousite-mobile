@@ -5,14 +5,19 @@ import 'dart:io';
 import 'package:crypto/crypto.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+import 'package:wenyousite_mobile/core/config/app_environment.dart';
 import 'package:wenyousite_mobile/features/media/application/pending_media_file_store_ports.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
 
 /// 账号与编辑目标隔离；相册临时文件不能作为跨页面草稿的持久来源。
 class PrivatePendingMediaFileStore implements PendingMediaFileStore {
-  PrivatePendingMediaFileStore({this.rootDirectory});
+  PrivatePendingMediaFileStore({
+    this.rootDirectory,
+    AppEnvironment? environment,
+  }) : _environment = environment ?? AppEnvironment.fromDefines();
 
   final Directory? rootDirectory;
+  final AppEnvironment _environment;
   Future<void> _queue = Future.value();
 
   Future<T> _serialized<T>(Future<T> Function() operation) {
@@ -29,7 +34,12 @@ class PrivatePendingMediaFileStore implements PendingMediaFileStore {
     }
     final root = rootDirectory ?? await getApplicationSupportDirectory();
     return Directory(
-      p.join(root.path, 'pending-media-v1', _hash(accountId), _hash(target)),
+      p.join(
+        root.path,
+        _environment.storageName('pending-media-v1'),
+        _hash(accountId),
+        _hash(target),
+      ),
     );
   }
 

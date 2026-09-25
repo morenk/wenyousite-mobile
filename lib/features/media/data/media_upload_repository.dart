@@ -9,6 +9,7 @@ import 'package:wenyousite_mobile/core/diagnostics/network_diagnostics.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/media_display_mapper.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/core/network/preview_identity.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_ports.dart';
 import 'package:wenyousite_mobile/features/media/data/media_upload_normalizer.dart';
 import 'package:wenyousite_mobile/features/media/data/media_upload_timing.dart';
@@ -496,7 +497,13 @@ final mediaUploadDioProvider = Provider<Dio>((ref) {
       receiveTimeout: const Duration(seconds: 20),
     ),
   );
-  dio.interceptors.add(NetworkDiagnosticInterceptor());
+  dio.interceptors.addAll([
+    PreviewIdentityInterceptor(
+      ref.watch(previewIdentityVerifierProvider),
+      mediaUpload: true,
+    ),
+    NetworkDiagnosticInterceptor(),
+  ]);
   ref.onDispose(() => dio.close(force: true));
   return dio;
 });
