@@ -34,7 +34,6 @@ List<Widget> buildThreadDetailReadingSlivers(
   required ReadingQuickScrollController quickScroll,
   required GlobalKey targetKey,
   required GlobalKey itemListKey,
-  required VoidCallback onRetryTarget,
   required Future<void> Function(String) onSelectSubthread,
   required ValueChanged<PostComposerTarget> onCompose,
   required ValueChanged<ThreadFloorModel> onDeleteFloor,
@@ -58,11 +57,7 @@ List<Widget> buildThreadDetailReadingSlivers(
               target.floor.author.id == state.floorAuthorId)
       ? target
       : null;
-  final displayedFloors = threadFloorsWithTarget(
-    state.floors,
-    usableTarget,
-    state.floorOrder,
-  );
+  final displayedFloors = state.floors;
   return [
     SliverToBoxAdapter(
       child: WenyouContentFrame(
@@ -143,20 +138,6 @@ List<Widget> buildThreadDetailReadingSlivers(
               tone: WenyouStatusTone.error,
               message: actions.failure!.userMessage,
               detail: wenyouFailureDetail(actions.failure, treatAsWrite: true),
-            ),
-          ),
-        ),
-      if (targetState != null)
-        SliverToBoxAdapter(
-          child: WenyouContentFrame(
-            top: 12,
-            child: ThreadTargetPostStatus(
-              targetState: targetState,
-              expectedThreadId: threadId,
-              availableSubthreadIds: {
-                for (final subthread in detail.subthreads) subthread.id,
-              },
-              onRetry: onRetryTarget,
             ),
           ),
         ),

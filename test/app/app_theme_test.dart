@@ -12,6 +12,8 @@ void main() {
 
     expect(WenyouFoundationVersion.value, '7.1.1');
     expect(WenyouFoundationVersion.schema, 3);
+    expect(WenyouFoundationMobile.radiusCard, 10);
+    expect(WenyouCollectionContract.cardGap, 8);
     expect(WenyouEditorContract.surfaces, [
       'page',
       'expandableSheet',

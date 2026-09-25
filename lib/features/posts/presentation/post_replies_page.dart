@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -6,6 +8,7 @@ import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/core/navigation/wenyou_page_transitions.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/discussion_author_filter_restore.dart';
+import 'package:wenyousite_mobile/core/widgets/discussion_target_cover.dart';
 import 'package:wenyousite_mobile/core/widgets/reading_quick_scroll.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_discussion_scroll_policy.dart';
@@ -44,13 +47,20 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
   final _itemListKey = GlobalKey();
   final _scrollController = ScrollController();
   final _composerDrafts = <String, PostComposerDraft>{};
-  final _targetReveal = DiscussionTargetRevealCoordinator();
   final _composeObstructionKey = GlobalKey();
   late final _quickScroll = ReadingQuickScrollController(
     scrollController: _scrollController,
-    onUserNavigation: _targetReveal.releaseForUserNavigation,
+    onUserNavigation: () {
+      _navigationRevision += 1;
+      if (mounted) setState(() {});
+    },
   );
   var _openingComposer = false;
+  var _didInvalidateFocusedEntry = false;
+  var _targetAttempt = 0;
+  var _targetRevealed = false;
+  var _targetCancelled = false;
+  var _navigationRevision = 0;
   final _prefetchScheduler = DiscussionPrefetchScheduler();
   final _authorFilterRestore =
       DiscussionAuthorFilterRestoreCoordinator<PostDiscussionAuthor>(
@@ -62,10 +72,35 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
   String? get focusedReplyId => widget.focusedReplyId;
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_didInvalidateFocusedEntry || focusedReplyId == null) return;
+    _didInvalidateFocusedEntry = true;
+    ref.invalidate(
+      postDiscussionControllerProvider((
+        rootPostId: rootPostId,
+        focusedReplyId: focusedReplyId,
+      )),
+    );
+  }
+
+  @override
   void didUpdateWidget(covariant PostRepliesPage oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.focusedReplyId != widget.focusedReplyId) {
-      _targetReveal.reset();
+    if (oldWidget.focusedReplyId != widget.focusedReplyId ||
+        oldWidget.rootPostId != widget.rootPostId ||
+        oldWidget.threadId != widget.threadId) {
+      _targetAttempt += 1;
+      _targetRevealed = false;
+      _targetCancelled = false;
+      if (focusedReplyId != null) {
+        ref.invalidate(
+          postDiscussionControllerProvider((
+            rootPostId: rootPostId,
+            focusedReplyId: focusedReplyId,
+          )),
+        );
+      }
     }
   }
 
@@ -85,12 +120,16 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
     ref.listen(sessionScopeProvider, (previous, next) {
       if (previous == null || previous == next) return;
       _composerDrafts.clear();
+      _targetAttempt += 1;
+      _targetRevealed = false;
+      _targetCancelled = false;
       ref
         ..invalidate(provider)
         ..invalidate(actionsProvider)
         ..invalidate(authorsProvider);
     });
     final state = ref.watch(provider);
+    final isTargetEntry = focusedReplyId != null && !_targetCancelled;
     _quickScroll.synchronize(
       contentRevision: (state.root, state.replies),
       scope: (
@@ -101,12 +140,14 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
         ref.watch(sessionScopeProvider),
       ),
       enabled:
+          (!isTargetEntry || _targetRevealed) &&
           state.phase == PostDiscussionPhase.ready &&
           state.root?.threadId == threadId &&
           MediaQuery.viewInsetsOf(context).bottom == 0,
     );
     _prefetchScheduler.schedule(
       shouldPrefetch:
+          (!isTargetEntry || _targetRevealed) &&
           state.phase == PostDiscussionPhase.ready &&
           !state.isRefreshing &&
           !state.isPrefetchingReplies &&
@@ -139,7 +180,135 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
             state.root?.threadId == threadId
         ? state.root
         : null;
-    _revealReplyWhenReady(state);
+    final targetIndex = focusedReplyId == null
+        ? -1
+        : state.replies.indexWhere((reply) => reply.id == focusedReplyId);
+    final canLocateTarget =
+        isTargetEntry &&
+        state.phase == PostDiscussionPhase.ready &&
+        readyRoot != null &&
+        !state.isRefreshing;
+    final targetIssue =
+        isTargetEntry &&
+            !_targetRevealed &&
+            state.phase == PostDiscussionPhase.ready &&
+            state.transientFailure != null
+        ? WenyouStatusBanner(
+            tone: WenyouStatusTone.error,
+            message: state.transientFailure!.userMessage,
+            detail: wenyouFailureDetail(state.transientFailure),
+            action: TextButton(
+              onPressed: () => _retryFocusedEntry(provider),
+              child: const Text('重试定位'),
+            ),
+          )
+        : null;
+    final discussionBody = switch (state.phase) {
+      PostDiscussionPhase.loading => WenyouPageBody(
+        maxWidth: 600,
+        child: WenyouDetailSkeleton(
+          label: isTargetEntry ? '正在定位目标回复' : '正在加载楼中楼讨论',
+        ),
+      ),
+      PostDiscussionPhase.failed => PostDiscussionFailure(
+        failure: state.failure,
+        onRetry: () => ref.read(provider.notifier).load(),
+      ),
+      PostDiscussionPhase.restricted => PostDiscussionFailure(
+        failure: state.failure,
+        onRetry: null,
+      ),
+      PostDiscussionPhase.ready =>
+        readyRoot == null
+            ? const PostRouteMismatch()
+            : RefreshIndicator(
+                onRefresh: () => _refreshDiscussion(provider),
+                child: PostDiscussionList(
+                  state: state,
+                  actions: actions,
+                  viewerId: viewerId,
+                  authenticated: session.isAuthenticated,
+                  focusedReplyId: isTargetEntry ? focusedReplyId : null,
+                  targetKey: _targetKey,
+                  itemListKey: _itemListKey,
+                  scrollController: _scrollController,
+                  quickScroll: _quickScroll,
+                  canReport: threadContext?.canReport ?? false,
+                  canManageThread: threadContext?.canManageThread ?? false,
+                  discussionAuthors: discussionAuthors,
+                  onRetryAuthors: () => ref.invalidate(authorsProvider),
+                  onOrderChanged: (order) {
+                    _cancelTargetForUserFilter();
+                    _quickScroll.close();
+                    ref.read(provider.notifier).setOrder(order);
+                  },
+                  onAuthorChanged: (author) {
+                    _cancelTargetForUserFilter();
+                    _quickScroll.close();
+                    ref.read(provider.notifier).setAuthor(author);
+                  },
+                  onRetry: () =>
+                      ref.read(provider.notifier).retryTransientFailure(),
+                  timeReference: widget.timeReference,
+                  onCompose: (target) =>
+                      _compose(context, ref, provider, target),
+                  onDelete: (post, root) => _delete(
+                    context,
+                    ref,
+                    provider,
+                    actionsProvider,
+                    post,
+                    root: root,
+                  ),
+                  onTogglePin: (post) =>
+                      _togglePin(context, ref, provider, post),
+                ),
+              ),
+    };
+    final readingWithTarget =
+        isTargetEntry &&
+            state.phase != PostDiscussionPhase.failed &&
+            state.phase != PostDiscussionPhase.restricted &&
+            (readyRoot != null || state.phase == PostDiscussionPhase.loading)
+        ? DiscussionTargetCover(
+            scope: (
+              threadId,
+              rootPostId,
+              focusedReplyId,
+              ref.watch(sessionScopeProvider),
+              _targetAttempt,
+            ),
+            targetId: focusedReplyId!,
+            loadingLabel: '正在定位目标回复',
+            revealedLabel: '已定位到目标回复',
+            targetKey: _targetKey,
+            itemListKey: _itemListKey,
+            scrollController: _scrollController,
+            targetIndex: targetIndex,
+            itemCount: state.replies.length,
+            canLocate: canLocateTarget,
+            isLoadingPage: state.isPrefetchingReplies,
+            hasMore: state.hasMore,
+            navigationRevision: _navigationRevision,
+            onLoadMore: () => unawaited(
+              ref.read(provider.notifier).locateReply(focusedReplyId!),
+            ),
+            onRetry: () => _retryFocusedEntry(provider),
+            onBack: () => _goBack(context),
+            issue: targetIssue,
+            onRevealed: () {
+              if (mounted && !_targetRevealed) {
+                setState(() => _targetRevealed = true);
+              }
+            },
+            onCovered: () {
+              if (mounted && _targetRevealed) {
+                setState(() => _targetRevealed = false);
+              }
+            },
+            child: discussionBody,
+          )
+        : discussionBody;
     return PopScope<Object?>(
       canPop: routeCanPop,
       onPopInvokedWithResult: (didPop, _) {
@@ -155,153 +324,84 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
               : PostDiscussionTitle(root: readyRoot),
           actions: [
             _returnToRootAction(context),
-            ReadingQuickScrollAction(controller: _quickScroll),
+            if (!isTargetEntry || _targetRevealed)
+              ReadingQuickScrollAction(controller: _quickScroll),
           ],
         ),
         body: ReadingProgressViewport(
           controller: _quickScroll,
-          hasMore: state.hasMore,
-          loading: state.isPrefetchingReplies,
+          hasMore: (!isTargetEntry || _targetRevealed) && state.hasMore,
+          loading:
+              (!isTargetEntry || _targetRevealed) && state.isPrefetchingReplies,
           loadFailed:
+              (!isTargetEntry || _targetRevealed) &&
               state.transientFailure != null &&
               state.retryAction == PostDiscussionRetryAction.loadMore,
           onRetry: () => ref.read(provider.notifier).loadMore(),
           bottomObstructionKey: _composeObstructionKey,
-          child: switch (state.phase) {
-            PostDiscussionPhase.loading => const WenyouPageBody(
-              maxWidth: 600,
-              child: WenyouDetailSkeleton(label: '正在加载楼中楼讨论'),
-            ),
-            PostDiscussionPhase.failed => PostDiscussionFailure(
-              failure: state.failure,
-              onRetry: () => ref.read(provider.notifier).load(),
-            ),
-            PostDiscussionPhase.restricted => PostDiscussionFailure(
-              failure: state.failure,
-              onRetry: null,
-            ),
-            PostDiscussionPhase.ready =>
-              state.root?.threadId != threadId
-                  ? const PostRouteMismatch()
-                  : NotificationListener<ScrollNotification>(
-                      onNotification: _handleUserScroll,
-                      child: NotificationListener<ScrollMetricsNotification>(
-                        onNotification: _handleTargetLayoutChange,
-                        child: RefreshIndicator(
-                          onRefresh: () =>
-                              ref.read(provider.notifier).refresh(),
-                          child: PostDiscussionList(
-                            state: state,
-                            actions: actions,
-                            viewerId: viewerId,
-                            authenticated: session.isAuthenticated,
-                            focusedReplyId: focusedReplyId,
-                            targetKey: _targetKey,
-                            itemListKey: _itemListKey,
-                            scrollController: _scrollController,
-                            quickScroll: _quickScroll,
-                            canReport: threadContext?.canReport ?? false,
-                            canManageThread:
-                                threadContext?.canManageThread ?? false,
-                            discussionAuthors: discussionAuthors,
-                            onRetryAuthors: () =>
-                                ref.invalidate(authorsProvider),
-                            onOrderChanged: (order) {
-                              _quickScroll.close();
-                              ref.read(provider.notifier).setOrder(order);
-                            },
-                            onAuthorChanged: (author) {
-                              _quickScroll.close();
-                              ref.read(provider.notifier).setAuthor(author);
-                            },
-                            onRetry: () => ref
-                                .read(provider.notifier)
-                                .retryTransientFailure(),
-                            timeReference: widget.timeReference,
-                            onCompose: (target) =>
-                                _compose(context, ref, provider, target),
-                            onDelete: (post, root) => _delete(
-                              context,
-                              ref,
-                              provider,
-                              actionsProvider,
-                              post,
-                              root: root,
-                            ),
-                            onTogglePin: (post) =>
-                                _togglePin(context, ref, provider, post),
-                          ),
-                        ),
-                      ),
-                    ),
-          },
+          child: readingWithTarget,
         ),
         // 保持测量节点稳定，避免切号期间 Scaffold 同时保留新旧发表入口。
         floatingActionButton: KeyedSubtree(
           key: _composeObstructionKey,
-          child: readyRoot == null
-              ? const SizedBox.shrink()
-              : WenyouComposerAction(
-                  key: const Key('post-reply-compose'),
-                  label: session.isAuthenticated ? '发表回复…' : '登录后发表回复',
-                  icon: session.isAuthenticated
-                      ? WenyouIconIds.actionReply
-                      : WenyouIconIds.actionLogin,
-                  onPressed: session.isAuthenticated
-                      ? () => _compose(
-                          context,
-                          ref,
-                          provider,
-                          postReplyTarget(readyRoot, readyRoot),
-                        )
-                      : () => context.pushNamed(
-                          'login',
-                          queryParameters: {'returnTo': _location()},
-                        ),
-                ),
+          child: ExcludeSemantics(
+            excluding: isTargetEntry && !_targetRevealed,
+            child: IgnorePointer(
+              ignoring: isTargetEntry && !_targetRevealed,
+              child: readyRoot == null
+                  ? const SizedBox.shrink()
+                  : WenyouComposerAction(
+                      key: const Key('post-reply-compose'),
+                      label: session.isAuthenticated ? '发表回复…' : '登录后发表回复',
+                      icon: session.isAuthenticated
+                          ? WenyouIconIds.actionReply
+                          : WenyouIconIds.actionLogin,
+                      onPressed: session.isAuthenticated
+                          ? () => _compose(
+                              context,
+                              ref,
+                              provider,
+                              postReplyTarget(readyRoot, readyRoot),
+                            )
+                          : () => context.pushNamed(
+                              'login',
+                              queryParameters: {'returnTo': _location()},
+                            ),
+                    ),
+            ),
+          ),
         ),
         floatingActionButtonAnimator: FloatingActionButtonAnimator.noAnimation,
       ),
     );
   }
 
-  void _revealReplyWhenReady(PostDiscussionState state) {
-    final replyId = focusedReplyId;
-    if (replyId == null || state.phase != PostDiscussionPhase.ready) {
-      return;
+  void _retryFocusedEntry(PostDiscussionControllerProvider provider) {
+    if (!mounted) return;
+    setState(() {
+      _targetAttempt += 1;
+      _targetRevealed = false;
+      _targetCancelled = false;
+    });
+    unawaited(ref.read(provider.notifier).load());
+  }
+
+  Future<void> _refreshDiscussion(
+    PostDiscussionControllerProvider provider,
+  ) async {
+    if (focusedReplyId != null && !_targetCancelled) {
+      setState(() {
+        _targetAttempt += 1;
+        _targetRevealed = false;
+      });
     }
-    final scopeSignature =
-        '$replyId:${state.order.name}:${state.authorId ?? ''}';
-    final targetIndex = state.replies.indexWhere(
-      (reply) => reply.id == replyId,
-    );
-    final signature =
-        '$replyId:${state.order.name}:${state.authorId}:'
-        '$targetIndex:${state.replies.length}';
-    _targetReveal.schedule(
-      targetId: replyId,
-      scopeSignature: scopeSignature,
-      contentSignature: signature,
-      targetIndex: targetIndex,
-      itemCount: state.replies.length,
-      ready: targetIndex >= 0,
-      targetKey: _targetKey,
-      itemListKey: _itemListKey,
-      scrollController: _scrollController,
-      isMounted: () => mounted,
-      requestRebuild: () => setState(() {}),
-    );
+    await ref.read(provider.notifier).refresh();
   }
 
-  bool _handleTargetLayoutChange(ScrollMetricsNotification notification) {
-    return _targetReveal.handleLayoutChange(
-      isMounted: () => mounted,
-      requestRebuild: () => setState(() {}),
-    );
+  void _cancelTargetForUserFilter() {
+    if (focusedReplyId == null || _targetCancelled) return;
+    setState(() => _targetCancelled = true);
   }
-
-  bool _handleUserScroll(ScrollNotification notification) =>
-      _targetReveal.handleUserScroll(notification);
 
   void _goBack(BuildContext context) =>
       Navigator.of(context).canPop() ? context.pop() : _goToRoot(context);
@@ -356,7 +456,7 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
         if (target.kind == PostComposerKind.createReply) {
           ref.invalidate(postReplyDiscussionAuthorsProvider(rootPostId));
         }
-        await ref.read(provider.notifier).refresh();
+        await _refreshDiscussion(provider);
       }
     } finally {
       _openingComposer = false;
@@ -388,7 +488,7 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
       context.go(AppRouteLocations.thread(threadId));
     } else {
       ref.invalidate(postReplyDiscussionAuthorsProvider(rootPostId));
-      await ref.read(provider.notifier).refresh();
+      await _refreshDiscussion(provider);
     }
   }
 
@@ -408,10 +508,10 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
         post.isPinned ? '已取消楼层置顶。' : '楼层已置顶。',
         tone: WenyouSnackBarTone.success,
       );
-      await ref.read(provider.notifier).refresh();
+      await _refreshDiscussion(provider);
     } else if (ref.read(actionsProvider).failure?.httpStatus == 403) {
       ref.invalidate(postThreadContextProvider(threadId));
-      await ref.read(provider.notifier).refresh();
+      await _refreshDiscussion(provider);
     }
   }
 }

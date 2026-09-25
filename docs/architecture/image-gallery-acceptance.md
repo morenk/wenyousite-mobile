@@ -1,8 +1,14 @@
 # 全屏图片图集候选验收
 
-状态：首轮真机验收发现正文图片来源定位失败；二轮修正已通过完整门禁，Mobile PR #54 已合并到 `dev`，待负责人在正式发布候选上复验。当前尚未发布 build 96。兼容 Backend 已部署，当前不增加系统后台服务，不改变图片上传、正式 Markdown 或完成状态含义。
+状态：首轮真机验收发现正文图片来源定位失败；二轮修正已通过完整门禁，Mobile PR #54 已合并到 `dev`，build 96 已正式签名并晋级线上推荐，待负责人在真机上复验。兼容 Backend 已部署，当前不增加系统后台服务，不改变图片上传、正式 Markdown 或完成状态含义。
 
-发布预检时公网 Backend 已晋级至 `0bc9c45e213fa4dcbde8a3bcf2c466dc88ceb256`，仍为 OpenAPI `5.26.0-dev.20260922.3`。移动端按正式脚本同步了精确来源；与此前固定的 `92b030a8` 比较，契约文件与生成客户端没有内容差异。正式签名包仍须以本次新来源重新通过发布门禁。
+发布预检时公网 Backend 已晋级至 `0bc9c45e213fa4dcbde8a3bcf2c466dc88ceb256`，仍为 OpenAPI `5.26.0-dev.20260922.3`。移动端按正式脚本同步了精确来源；与此前固定的 `92b030a8` 比较，契约文件与生成客户端没有内容差异。正式签名包已以本次新来源重新通过发布门禁。
+
+## 正式发布与真机复验
+
+2026-09-25 使用仓库正式发布脚本从干净、已推送的 `dev` 提交 `acb94a46dad59f379455ea7f6fd9adee2fc47003` 构建并发布 `site.wenyou.app` `0.8.0-dev.1+96`（Android 8+ ARM64，33,479,759 字节）。`npm run check` 退出 0：Flutter 4832 项通过、1 项既有 Sentry 线上回执验收按默认配置跳过；Windows 发布工具 18 项通过，格式、静态分析、架构、文档、生产契约与 API 覆盖检查通过。正式 APK 已验签，签名证书 SHA-256 为 `4b19f9ba1890480d1e1ac72450f00027a635be57958b702ba3a8e80f2db24839`，APK SHA-256 为 `f8874b9f031728d81cd7d1bb20eb0168a9e4703ecca2a02d7a79de4cd9468a60`。
+
+下载地址：[Android 0.8.0-dev.1+96](https://wenyou-apk.cn-nb1.rains3.com/mobile/android/wenyou-0.8.0-dev.1-96.apk)。公网对象 HEAD 返回 200、`Content-Length: 33479759`、不可变缓存；发布脚本核对对象 metadata 后，线上 `/api/v1/meta` 返回 `recommendedBuild=96` 与相同 `updateUrl`。本机归档为 `D:/code/wenyousite/artifacts/mobile-image-gallery/wenyou-0.8.0-dev.1-96.apk`，同目录保留 `.sha256` 与 `.json`。后来 `dev` 合入的其他提交不属于此 APK 源码。正式发布不等于负责人真机验收；下方手势、正文指南针及定位清单仍待复验。
 
 ## 最新 `dev` 冲突整合候选
 
@@ -80,4 +86,4 @@
 
 ## 发布边界
 
-依赖 [契约同步](image-gallery-contract-sync.md) 所列后端兼容迁移与历史索引回填。按“兼容后端 → 移动端”交付；不清理旧端点，不自动合并或部署。正式环境只做匿名只读烟雾，不能用测试账号写数据后再删除来冒充隔离。
+依赖 [契约同步](image-gallery-contract-sync.md) 所列后端兼容迁移与历史索引回填。已按“兼容后端 → 移动端”顺序交付；不清理旧端点，也未晋级 `main` 或创建正式 Tag。正式环境只做匿名只读烟雾，不能用测试账号写数据后再删除来冒充隔离。
