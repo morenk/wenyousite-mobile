@@ -17,7 +17,8 @@ public static class WenyouAdbGuard {
     result.Append('\\',slashes*2); return result.Append('"').ToString();
   }
   public static int Main(string[] args) {
-    File.WriteAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"adb-guard-used"),DateTime.UtcNow.ToString("O"));
+    try { File.WriteAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"adb-guard-used"),DateTime.UtcNow.ToString("O")); }
+    catch(IOException) {} catch(UnauthorizedAccessException) {}
     foreach(var arg in args) {
       if(Regex.IsMatch(arg,@"(^|[\s;])(uninstall(?:-multiple)?|clear)([\s;]|$)",RegexOptions.IgnoreCase)) {
         Console.Error.WriteLine("Preview ADB refuses uninstall/clear; existing app data is preserved.");

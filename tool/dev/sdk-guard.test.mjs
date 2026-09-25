@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { spawnSync } from 'node:child_process';
+import { spawnSync, spawn } from 'node:child_process';
+import { createInterface } from 'node:readline';
 import { compileAdbGuard, prepareGuardedSdk } from './sdk-guard.mjs';
 
 function removeTestDirectory(directory) {
@@ -59,4 +60,24 @@ test('私有SDK视图和Flutter配置覆盖显式全局android-sdk且不修改�
     assert.equal(fs.readFileSync(path.join(appData, '.flutter_settings'), 'utf8'), settings);
     assert.equal(fs.realpathSync(path.join(guarded.view, 'platforms')), fs.realpathSync(path.join(sdk, 'platforms')));
   } finally { removeTestDirectory(directory); }
+});
+
+test('marker被独占打开时guard仍正常转发并保留退出码', { skip: process.platform !== 'win32', timeout: 20000 }, async () => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'wenyou-adb-guard-'));
+  let holder;
+  try {
+    const executable = compileAdbGuard(directory, process.execPath);
+    const marker = path.join(directory, 'adb-guard-used');
+    const literal = `'${marker.replaceAll("'", "''")}'`;
+    holder = spawn('pwsh.exe', ['-NoProfile', '-NonInteractive', '-Command', `$file=[IO.File]::Open(${literal},[IO.FileMode]::OpenOrCreate,[IO.FileAccess]::ReadWrite,[IO.FileShare]::None); try { [Console]::Out.WriteLine('READY'); [Console]::Out.Flush(); [void][Console]::In.ReadLine() } finally { $file.Dispose() }`], { windowsHide: true, stdio: ['pipe', 'pipe', 'ignore'] });
+    const lines = createInterface({ input: holder.stdout });
+    await new Promise((resolve, reject) => { lines.once('line', line => line === 'READY' ? resolve() : reject(new Error('Marker lock failed'))); holder.once('error', reject); });
+    const forwarded = spawnSync(executable, ['-e', "process.stdout.write(process.argv[1]);process.exit(19);", '--', 'kept argument'], { encoding: 'utf8', windowsHide: true, timeout: 15000 });
+    assert.equal(forwarded.status, 19);
+    assert.equal(forwarded.stdout, 'kept argument');
+    lines.close();
+  } finally {
+    if (holder) { const closed = new Promise(resolve => holder.once('close', resolve)); holder.stdin.end('\n'); await closed; }
+    removeTestDirectory(directory);
+  }
 });
