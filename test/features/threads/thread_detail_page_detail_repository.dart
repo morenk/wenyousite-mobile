@@ -382,7 +382,11 @@ Widget threadDetailPageTestDetailRouterApp(
           enableRenderDiagnostics: enableRenderDiagnostics,
           entryTarget: ThreadDetailEntryTarget.fromQuery(
             postId: state.uri.queryParameters['post'],
+            subthreadId: state.uri.queryParameters['subthread'],
           ),
+          listResume: state.extra is ThreadDetailListResume
+              ? state.extra as ThreadDetailListResume
+              : null,
         ),
       ),
       GoRoute(
@@ -474,6 +478,7 @@ class ThreadDetailPageTestFakeThreadDetailRepository
     this.loadMoreFailure,
     this.postTarget,
     this.postTargetFuture,
+    this.postTargetFutures,
     this.latestPost,
     this.latestPostFuture,
     this.latestFailure,
@@ -489,6 +494,7 @@ class ThreadDetailPageTestFakeThreadDetailRepository
   final ApiFailure? loadMoreFailure;
   final ThreadPostTargetModel? postTarget;
   final Future<ThreadPostTargetModel>? postTargetFuture;
+  final Map<String, Future<ThreadPostTargetModel>>? postTargetFutures;
   final ThreadLatestPostModel? latestPost;
   final Future<ThreadLatestPostModel>? latestPostFuture;
   final ApiFailure? latestFailure;
@@ -512,6 +518,7 @@ class ThreadDetailPageTestFakeThreadDetailRepository
   @override
   Future<ThreadPostTargetModel> fetchPostTarget(String postId) async {
     targetPostIds.add(postId);
+    if (postTargetFutures?[postId] case final future?) return future;
     if (postTargetFuture case final future?) return future;
     return postTarget!;
   }

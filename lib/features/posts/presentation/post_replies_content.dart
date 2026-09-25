@@ -282,6 +282,121 @@ class PostDiscussionList extends StatelessWidget {
   }
 }
 
+/// 精确回复入口只布局目标卡片；普通分页在离开聚焦态后再展示。
+class PostFocusedReplyView extends StatelessWidget {
+  const PostFocusedReplyView({
+    required this.state,
+    required this.actions,
+    required this.viewerId,
+    required this.authenticated,
+    required this.replyId,
+    required this.scrollController,
+    required this.canReport,
+    required this.canManageThread,
+    required this.timeReference,
+    required this.onShowDiscussion,
+    required this.onCompose,
+    required this.onDelete,
+    super.key,
+  });
+
+  final PostDiscussionState state;
+  final PostActionState actions;
+  final String? viewerId;
+  final bool authenticated;
+  final String replyId;
+  final ScrollController scrollController;
+  final bool canReport;
+  final bool canManageThread;
+  final DateTime? timeReference;
+  final VoidCallback onShowDiscussion;
+  final ValueChanged<PostComposerTarget> onCompose;
+  final void Function(PostItem post, bool root) onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    final root = state.root!;
+    final index = state.replies.indexWhere((reply) => reply.id == replyId);
+    final reply = index < 0 ? null : state.replies[index];
+    final tokens = context.wenyouTokens;
+    final floorLabel = root.floorNumber == null
+        ? null
+        : '第 ${root.floorNumber} 楼';
+    return CustomScrollView(
+      key: const Key('post-focused-reply-list'),
+      controller: scrollController,
+      physics: const AlwaysScrollableScrollPhysics(),
+      slivers: [
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(
+              wenyouHorizontalPagePadding(context),
+              tokens.space16,
+              wenyouHorizontalPagePadding(context),
+              tokens.space32,
+            ),
+            child: WenyouConstrainedWidth(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Semantics(
+                    header: true,
+                    child: Text(
+                      [
+                        ?root.threadTitle,
+                        ?root.subthreadTitle,
+                        ?floorLabel,
+                      ].join(' · '),
+                      key: const Key('post-focused-reply-context'),
+                      style: Theme.of(context).textTheme.wenyouCompactTitle,
+                    ),
+                  ),
+                  SizedBox(height: tokens.space12),
+                  if (reply == null || reply.isDeleted)
+                    const WenyouStatusBanner(message: '目标内容已不可见')
+                  else
+                    _PostCard(
+                      key: Key('post-focused-reply-$replyId'),
+                      post: reply,
+                      galleryTarget: ReadingGalleryTarget(
+                        scope: ReadingGalleryScope.postReplies,
+                        scopeId: root.id,
+                      ),
+                      focused: true,
+                      timeReference: timeReference,
+                      canEdit: reply.isAuthoredBy(viewerId),
+                      canDelete:
+                          reply.isAuthoredBy(viewerId) || canManageThread,
+                      pending: actions.pendingPostId == reply.id,
+                      reportReturnTo: canReport && !reply.isAuthoredBy(viewerId)
+                          ? AppRouteLocations.postReplies(
+                              root.threadId,
+                              root.id,
+                              postId: reply.id,
+                            )
+                          : null,
+                      onReply: authenticated
+                          ? () => onCompose(postReplyTarget(root, reply))
+                          : null,
+                      onEdit: () => onCompose(postEditTarget(reply, '编辑回复')),
+                      onDelete: () => onDelete(reply, false),
+                    ),
+                  SizedBox(height: tokens.space16),
+                  OutlinedButton(
+                    key: const Key('post-focused-show-discussion'),
+                    onPressed: onShowDiscussion,
+                    child: const Text('查看完整讨论'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _PostCard extends ConsumerWidget {
   const _PostCard({
     required this.post,

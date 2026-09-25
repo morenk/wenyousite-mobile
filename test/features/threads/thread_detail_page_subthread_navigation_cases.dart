@@ -392,7 +392,7 @@ void registerThreadDetailPageSubthreadNavigationCases() {
     expect(find.text('主线正文'), findsNothing);
   });
 
-  for (final targetKind in ['subthread', 'post']) {
+  for (final targetKind in ['subthread']) {
     for (final surface
         in ThreadDetailPageTestSubthreadSelectionSurface.values) {
       testWidgets('$targetKind 入口定位后可通过 ${surface.label} 切换子贴', (tester) async {
@@ -407,13 +407,24 @@ void registerThreadDetailPageSubthreadNavigationCases() {
               : null,
         );
         await tester.pumpWidget(
-          threadDetailPageTestDetailApp(
-            repository,
-            targetPostId: targetKind == 'post' ? 'floor-target' : null,
-            subthreadIdHint: targetKind == 'subthread' ? 'subthread-2' : null,
-          ),
+          targetKind == 'post'
+              ? threadDetailPageTestDetailRouterApp(
+                  repository,
+                  initialLocation: '/threads/thread-1?post=floor-target',
+                )
+              : threadDetailPageTestDetailApp(
+                  repository,
+                  subthreadIdHint: 'subthread-2',
+                ),
         );
         await tester.pumpAndSettle();
+        if (targetKind == 'post') {
+          expect(find.text('目标楼层内容'), findsOneWidget);
+          await tester.tap(
+            find.byKey(const Key('thread-target-show-discussion')),
+          );
+          await tester.pumpAndSettle();
+        }
         expect(find.text('支线正文'), findsOneWidget);
 
         await threadDetailPageTestSelectMainSubthread(tester, surface);
@@ -426,7 +437,7 @@ void registerThreadDetailPageSubthreadNavigationCases() {
     }
   }
 
-  testWidgets('入口目标已是当前子贴时仍完成一次性消费', (tester) async {
+  testWidgets('入口目标已是当前子贴时仍直接显示聚焦楼层', (tester) async {
     final repository = ThreadDetailPageTestFakeThreadDetailRepository(
       postTarget: ThreadPostTargetModel(
         requestedPostId: 'floor-1',
@@ -440,11 +451,9 @@ void registerThreadDetailPageSubthreadNavigationCases() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(const Key('thread-subthread-next')));
-    await tester.pumpAndSettle();
-
-    expect(find.text('支线正文'), findsOneWidget);
-    expect(repository.requestedSubthreads.last, 'subthread-2');
+    expect(find.text('第一层内容'), findsOneWidget);
+    expect(find.text('主线正文'), findsNothing);
+    expect(repository.requestedSubthreads, ['subthread-1']);
   });
 
   testWidgets('最新发言按钮位于搜索与更多之间并可重复定位主楼层', (tester) async {
@@ -473,7 +482,10 @@ void registerThreadDetailPageSubthreadNavigationCases() {
     expect(repository.latestThreadIds, ['thread-1']);
     expect(repository.targetPostIds, ['floor-target']);
     expect(find.text('目标楼层内容'), findsOneWidget);
-    expect(find.text('支线正文'), findsOneWidget);
+    expect(find.text('支线正文'), findsNothing);
+
+    await tester.tap(find.byKey(const Key('thread-target-show-discussion')));
+    await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const Key('thread-detail-latest')));
     await tester.pumpAndSettle();

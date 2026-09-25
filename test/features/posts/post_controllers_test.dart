@@ -35,6 +35,7 @@ void main() {
       'reply-1',
       'focus',
     ]);
+    expect(repository.postRequests, ['root', 'focus']);
     await controller.loadMore();
     expect(controller.state.replies.map((item) => item.id), [
       'reply-1',
@@ -50,6 +51,88 @@ void main() {
     expect(controller.state.authorId, 'author-1');
     expect(repository.replyRequests.last.authorId, 'author-1');
     expect(controller.state.replies.map((item) => item.id), ['reply-1']);
+  });
+
+  test('首屏外目标回复归属不符时不显示讨论内容', () async {
+    final repository = _FakePostRepository(
+      posts: {'root': _post('root'), 'focus': _post('focus')},
+      onReplies: ({cursor, required order, authorId}) async =>
+          CursorPage(items: [_reply('reply-1')], hasMore: false),
+    );
+    final controller = PostDiscussionController(repository, (
+      rootPostId: 'root',
+      focusedReplyId: 'focus',
+    ), autoStart: false);
+    addTearDown(controller.dispose);
+
+    await controller.load();
+
+    expect(repository.postRequests, ['root', 'focus']);
+    expect(controller.state.phase, PostDiscussionPhase.failed);
+    expect(controller.state.root, isNull);
+    expect(controller.state.replies, isEmpty);
+  });
+
+  for (final status in [403, 404]) {
+    test('首屏外目标回复返回 $status 时隐藏讨论内容', () async {
+      final repository = _FakePostRepository(
+        posts: {'root': _post('root')},
+        onFetchPost: (postId) async {
+          if (postId == 'focus') {
+            throw ApiFailure(userMessage: '当前无法查看目标回复。', httpStatus: status);
+          }
+          return _post('root');
+        },
+        onReplies: ({cursor, required order, authorId}) async =>
+            CursorPage(items: [_reply('reply-1')], hasMore: false),
+      );
+      final controller = PostDiscussionController(repository, (
+        rootPostId: 'root',
+        focusedReplyId: 'focus',
+      ), autoStart: false);
+      addTearDown(controller.dispose);
+
+      await controller.load();
+
+      expect(repository.postRequests, ['root', 'focus']);
+      expect(controller.state.phase, PostDiscussionPhase.restricted);
+      expect(controller.state.root, isNull);
+      expect(controller.state.replies, isEmpty);
+      expect(controller.state.failure?.httpStatus, status);
+    });
+  }
+
+  test('首屏外目标回复请求失败后可重新验证并打开', () async {
+    var focusRequests = 0;
+    final repository = _FakePostRepository(
+      posts: {'root': _post('root'), 'focus': _reply('focus')},
+      onFetchPost: (postId) async {
+        if (postId == 'focus' && ++focusRequests == 1) {
+          throw const ApiFailure(userMessage: '暂时不可用。', httpStatus: 503);
+        }
+        return postId == 'root' ? _post('root') : _reply('focus');
+      },
+      onReplies: ({cursor, required order, authorId}) async =>
+          CursorPage(items: [_reply('reply-1')], hasMore: false),
+    );
+    final controller = PostDiscussionController(repository, (
+      rootPostId: 'root',
+      focusedReplyId: 'focus',
+    ), autoStart: false);
+    addTearDown(controller.dispose);
+
+    await controller.load();
+    expect(controller.state.phase, PostDiscussionPhase.failed);
+    expect(controller.state.root, isNull);
+    expect(controller.state.replies, isEmpty);
+
+    await controller.load();
+    expect(repository.postRequests, ['root', 'focus', 'root', 'focus']);
+    expect(controller.state.phase, PostDiscussionPhase.ready);
+    expect(controller.state.replies.map((reply) => reply.id), [
+      'reply-1',
+      'focus',
+    ]);
   });
 
   test('独立讨论首屏完成后串行预取剩余全部文字回复', () async {
@@ -640,6 +723,7 @@ typedef _UpdateHandler =
 class _FakePostRepository implements PostRepository {
   _FakePostRepository({
     this.posts = const {},
+    this.onFetchPost,
     this.onReplies,
     this.onCreate,
     this.onUpdate,
@@ -648,6 +732,7 @@ class _FakePostRepository implements PostRepository {
   });
 
   final Map<String, PostItem> posts;
+  final Future<PostItem> Function(String postId)? onFetchPost;
   final _ReplyLoader? onReplies;
   final Future<PostItem> Function(PostCreateInput input)? onCreate;
   final _UpdateHandler? onUpdate;
@@ -661,10 +746,14 @@ class _FakePostRepository implements PostRepository {
   final List<({String subthreadId, String content, int? version})>
   bodyRequests = [];
   final List<String> removedIds = [];
+  final List<String> postRequests = [];
   final List<({String postId, bool pinned})> pinRequests = [];
 
   @override
-  Future<PostItem> fetchPost(String postId) async => posts[postId]!;
+  Future<PostItem> fetchPost(String postId) async {
+    postRequests.add(postId);
+    return await onFetchPost?.call(postId) ?? posts[postId]!;
+  }
 
   @override
   Future<PostReplyPage> fetchReplies({

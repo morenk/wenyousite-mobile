@@ -34,6 +34,7 @@ List<Widget> buildThreadDetailReadingSlivers(
   required ReadingQuickScrollController quickScroll,
   required GlobalKey targetKey,
   required GlobalKey itemListKey,
+  required GlobalKey floorListStartKey,
   required VoidCallback onRetryTarget,
   required Future<void> Function(String) onSelectSubthread,
   required ValueChanged<PostComposerTarget> onCompose,
@@ -161,6 +162,7 @@ List<Widget> buildThreadDetailReadingSlivers(
           ),
         ),
       SliverToBoxAdapter(
+        key: floorListStartKey,
         child: ThreadFloorFilters(
           state: state,
           floorCount: selected.postCount,

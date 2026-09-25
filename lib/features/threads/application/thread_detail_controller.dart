@@ -104,7 +104,8 @@ class ThreadDetailController extends StateNotifier<ThreadDetailState> {
     this._repository,
     this.threadId, {
     bool autoStart = true,
-  }) : super(const ThreadDetailState()) {
+    ThreadDetailState? initialState,
+  }) : super(initialState ?? const ThreadDetailState()) {
     if (autoStart) unawaited(loadInitial());
   }
 
@@ -512,6 +513,7 @@ class ThreadDetailController extends StateNotifier<ThreadDetailState> {
 typedef ThreadDetailControllerScope = ({
   String threadId,
   Object pageInstanceToken,
+  ThreadDetailState? initialState,
 });
 
 final threadDetailControllerProvider = StateNotifierProvider.autoDispose
@@ -524,6 +526,8 @@ final threadDetailControllerProvider = StateNotifierProvider.autoDispose
       return ThreadDetailController(
         ref.watch(threadDetailRepositoryProvider),
         scope.threadId,
+        initialState: scope.initialState,
+        autoStart: scope.initialState == null,
       );
     }, dependencies: [viewerScopeProvider, threadDetailRepositoryProvider]);
 

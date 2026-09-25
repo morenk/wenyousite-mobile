@@ -51,6 +51,7 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
     onUserNavigation: _targetReveal.releaseForUserNavigation,
   );
   var _openingComposer = false;
+  var _didInvalidateFocusedEntry = false;
   final _prefetchScheduler = DiscussionPrefetchScheduler();
   final _authorFilterRestore =
       DiscussionAuthorFilterRestoreCoordinator<PostDiscussionAuthor>(
@@ -62,10 +63,33 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
   String? get focusedReplyId => widget.focusedReplyId;
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_didInvalidateFocusedEntry || focusedReplyId == null) return;
+    _didInvalidateFocusedEntry = true;
+    ref.invalidate(
+      postDiscussionControllerProvider((
+        rootPostId: rootPostId,
+        focusedReplyId: focusedReplyId,
+      )),
+    );
+  }
+
+  @override
   void didUpdateWidget(covariant PostRepliesPage oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.focusedReplyId != widget.focusedReplyId) {
+    if (oldWidget.focusedReplyId != widget.focusedReplyId ||
+        oldWidget.rootPostId != widget.rootPostId ||
+        oldWidget.threadId != widget.threadId) {
       _targetReveal.reset();
+      if (focusedReplyId != null) {
+        ref.invalidate(
+          postDiscussionControllerProvider((
+            rootPostId: rootPostId,
+            focusedReplyId: focusedReplyId,
+          )),
+        );
+      }
     }
   }
 
@@ -101,12 +125,14 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
         ref.watch(sessionScopeProvider),
       ),
       enabled:
+          focusedReplyId == null &&
           state.phase == PostDiscussionPhase.ready &&
           state.root?.threadId == threadId &&
           MediaQuery.viewInsetsOf(context).bottom == 0,
     );
     _prefetchScheduler.schedule(
       shouldPrefetch:
+          focusedReplyId == null &&
           state.phase == PostDiscussionPhase.ready &&
           !state.isRefreshing &&
           !state.isPrefetchingReplies &&
@@ -139,7 +165,7 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
             state.root?.threadId == threadId
         ? state.root
         : null;
-    _revealReplyWhenReady(state);
+    if (focusedReplyId == null) _revealReplyWhenReady(state);
     return PopScope<Object?>(
       canPop: routeCanPop,
       onPopInvokedWithResult: (didPop, _) {
@@ -155,22 +181,25 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
               : PostDiscussionTitle(root: readyRoot),
           actions: [
             _returnToRootAction(context),
-            ReadingQuickScrollAction(controller: _quickScroll),
+            if (focusedReplyId == null)
+              ReadingQuickScrollAction(controller: _quickScroll),
           ],
         ),
         body: ReadingProgressViewport(
           controller: _quickScroll,
-          hasMore: state.hasMore,
-          loading: state.isPrefetchingReplies,
+          hasMore: focusedReplyId == null && state.hasMore,
+          loading: focusedReplyId == null && state.isPrefetchingReplies,
           loadFailed:
               state.transientFailure != null &&
               state.retryAction == PostDiscussionRetryAction.loadMore,
           onRetry: () => ref.read(provider.notifier).loadMore(),
           bottomObstructionKey: _composeObstructionKey,
           child: switch (state.phase) {
-            PostDiscussionPhase.loading => const WenyouPageBody(
+            PostDiscussionPhase.loading => WenyouPageBody(
               maxWidth: 600,
-              child: WenyouDetailSkeleton(label: '正在加载楼中楼讨论'),
+              child: WenyouDetailSkeleton(
+                label: focusedReplyId == null ? '正在加载楼中楼讨论' : '正在打开目标回复',
+              ),
             ),
             PostDiscussionPhase.failed => PostDiscussionFailure(
               failure: state.failure,
@@ -183,6 +212,31 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
             PostDiscussionPhase.ready =>
               state.root?.threadId != threadId
                   ? const PostRouteMismatch()
+                  : focusedReplyId != null
+                  ? PostFocusedReplyView(
+                      state: state,
+                      actions: actions,
+                      viewerId: viewerId,
+                      authenticated: session.isAuthenticated,
+                      replyId: focusedReplyId!,
+                      scrollController: _scrollController,
+                      canReport: threadContext?.canReport ?? false,
+                      canManageThread: threadContext?.canManageThread ?? false,
+                      timeReference: widget.timeReference,
+                      onShowDiscussion: () => context.replace(
+                        AppRouteLocations.postReplies(threadId, rootPostId),
+                      ),
+                      onCompose: (target) =>
+                          _compose(context, ref, provider, target),
+                      onDelete: (post, root) => _delete(
+                        context,
+                        ref,
+                        provider,
+                        actionsProvider,
+                        post,
+                        root: root,
+                      ),
+                    )
                   : NotificationListener<ScrollNotification>(
                       onNotification: _handleUserScroll,
                       child: NotificationListener<ScrollMetricsNotification>(

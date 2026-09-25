@@ -107,8 +107,12 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('支线网络正文'), findsOneWidget);
+    expect(find.text('支线网络正文'), findsNothing);
     expect(find.text('网络深链目标楼层'), findsOneWidget);
+    expect(
+      find.byKey(const Key('thread-target-show-discussion')),
+      findsOneWidget,
+    );
     expect(
       adapter.requests.map((request) => request.path),
       containsAll([

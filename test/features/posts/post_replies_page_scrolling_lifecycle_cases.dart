@@ -4,9 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/media/application/image_crop_ports.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
@@ -23,6 +25,70 @@ import 'post_replies_page_test_support.dart';
 
 void registerPostRepliesPageScrollingLifecycleCases() {
   setUpAll(loadDeterministicTestFonts);
+  testWidgets('目标回复慢请求只显示骨架，查看完整讨论清除坐标', (tester) async {
+    final rootGate = Completer<PostItem>();
+    final repository = PostRepliesPageTestFakePostRepository(
+      onFetchPost: (postId) => postId == 'root'
+          ? rootGate.future
+          : Future.value(
+              postRepliesPageTestReply(
+                postId,
+                '目标回复正文',
+                postRepliesPageTestOtherAuthor,
+              ),
+            ),
+    );
+    final router = GoRouter(
+      initialLocation: '/threads/thread/posts/root/replies?post=reply-other',
+      routes: [
+        GoRoute(
+          path: '/threads/:threadId/posts/:postId/replies',
+          builder: (context, state) => PostRepliesPage(
+            threadId: state.pathParameters['threadId']!,
+            rootPostId: state.pathParameters['postId']!,
+            focusedReplyId: state.uri.queryParameters['post'],
+          ),
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          memoryPendingMediaFileStoreOverride(),
+          stickersEnabledProvider.overrideWithValue(false),
+          postRepositoryProvider.overrideWithValue(repository),
+        ],
+        child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
+      ),
+    );
+    await tester.pump();
+    expect(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is WenyouDetailSkeleton && widget.label == '正在打开目标回复',
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('他人的回复'), findsNothing);
+    rootGate.complete(postRepliesPageTestRoot);
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const Key('post-focused-reply-reply-other')),
+      findsOneWidget,
+    );
+    expect(find.text('他人的回复'), findsOneWidget);
+    expect(find.text('自己的回复'), findsNothing);
+
+    await tester.tap(find.byKey(const Key('post-focused-show-discussion')));
+    await tester.pumpAndSettle();
+    expect(
+      router.routeInformationProvider.value.uri.queryParameters['post'],
+      isNull,
+    );
+    expect(find.byKey(const Key('post-replies-list')), findsOneWidget);
+    expect(find.text('自己的回复'), findsOneWidget);
+  });
   testWidgets('楼中楼末尾长回复从作者信息开头定位', (tester) async {
     await tester.pumpWidget(
       ProviderScope(
@@ -55,9 +121,12 @@ void registerPostRepliesPageScrollingLifecycleCases() {
     final target = tester.getRect(
       find.byKey(const ValueKey('target-frame-long-target')),
     );
-    final viewport = tester.getRect(find.byKey(const Key('post-replies-list')));
+    final viewport = tester.getRect(
+      find.byKey(const Key('post-focused-reply-list')),
+    );
     expect(target.height, greaterThan(viewport.height));
-    expect(target.top, closeTo(viewport.top, 1));
+    expect(target.top, greaterThan(viewport.top));
+    expect(target.top, lessThan(viewport.top + 100));
   });
   testWidgets('上传中点击编辑器外部会在关闭 Sheet 前取消任务', (tester) async {
     tester.view.devicePixelRatio = 1;
@@ -193,7 +262,7 @@ void registerPostRepliesPageScrollingLifecycleCases() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('首屏外目标回复定位后会释放用户滚动', (tester) async {
+  testWidgets('远端目标回复首帧直接呈现且不渲染前页', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(360, 640);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -233,37 +302,15 @@ void registerPostRepliesPageScrollingLifecycleCases() {
     );
     await tester.pumpAndSettle();
 
-    final targetFinder = find.byKey(const Key('post-reply-far-reply'));
+    final targetFinder = find.byKey(const Key('post-focused-reply-far-reply'));
     expect(targetFinder, findsOneWidget);
     final targetRect = tester.getRect(targetFinder);
     expect(targetRect.bottom, greaterThan(0));
     expect(targetRect.top, lessThan(640));
 
-    final scrollView = tester.widget<CustomScrollView>(
-      find.byKey(const Key('post-replies-list')),
-    );
-    final scrollController = scrollView.controller!;
-    final locatedOffset = scrollController.offset;
-    await tester.drag(
-      find.byKey(const Key('post-replies-list')),
-      const Offset(0, 240),
-    );
-    await tester.pumpAndSettle();
-    final userOffset = scrollController.offset;
-    expect(userOffset, lessThan(locatedOffset - 100));
-
-    final scrollContext = tester.element(
-      find.byKey(const Key('post-replies-list')),
-    );
-    ScrollMetricsNotification(
-      metrics: scrollController.position,
-      context: scrollContext,
-    ).dispatch(scrollContext);
-    await tester.pump();
-    await tester.pump();
-    await tester.pump();
-
-    expect(scrollController.offset, closeTo(userOffset, 1));
+    expect(find.byKey(const Key('post-reply-long-reply-1')), findsNothing);
+    await tester.pump(const Duration(milliseconds: 200));
+    expect(tester.getRect(targetFinder), targetRect);
   });
 
   testWidgets('360dp 独立讨论保持正文优先视觉基线', (tester) async {

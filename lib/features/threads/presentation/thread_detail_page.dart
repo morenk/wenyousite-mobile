@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/core/diagnostics/debug_diagnostic_console.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/discussion_author_filter_restore.dart';
@@ -10,6 +11,7 @@ import 'package:wenyousite_mobile/core/widgets/reading_quick_scroll.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_discussion_scroll_policy.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
+import 'package:wenyousite_mobile/features/media/reading_gallery.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_controllers.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_discussion_author_directory_ports.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_render_diagnostics.dart';
@@ -36,12 +38,14 @@ class ThreadDetailPage extends ConsumerStatefulWidget {
   const ThreadDetailPage({
     required this.threadId,
     this.entryTarget = const ThreadDetailEntryTarget.none(),
+    this.listResume,
     this.enableRenderDiagnostics = wenyouFieldDiagnosticsEnabled,
     super.key,
   });
 
   final String threadId;
   final ThreadDetailEntryTarget entryTarget;
+  final ThreadDetailListResume? listResume;
   final bool enableRenderDiagnostics;
 
   @override
@@ -53,15 +57,14 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
   final _subthreadScroll = ThreadDetailSubthreadScrollCoordinator();
   final _targetKey = GlobalKey();
   final _itemListKey = GlobalKey();
+  final _floorListStartKey = GlobalKey();
   final _composerDrafts = <String, PostComposerDraft>{};
   final _entryTargetCoordinator = ThreadDetailEntryTargetCoordinator();
-  final _targetReveal = DiscussionTargetRevealCoordinator();
   late final _quickScroll = ReadingQuickScrollController(
     scrollController: _subthreadScroll.controller,
     pinnedHeaderKey: _subthreadScroll.headerKey,
     onUserNavigation: () {
       _entryTargetCoordinator.cancelForUserSelection();
-      _targetReveal.releaseForUserNavigation();
     },
   );
   String? _lastOpenedReplyTargetId;
@@ -73,6 +76,23 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
       );
   final _renderDiagnostics = ThreadDetailRenderDiagnosticCoordinator();
   final _renderGeometry = ThreadDetailRenderGeometryProbe();
+  ThreadDetailListResume? _seedSource;
+  Object? _seedSessionScope;
+  ThreadDetailState? _seededState;
+  var _seedInitialized = false;
+  var _didInvalidateInitialTarget = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_didInvalidateInitialTarget) return;
+    _didInvalidateInitialTarget = true;
+    final postId = widget.entryTarget.postId;
+    if (postId != null) {
+      // 新坐标必须重新核验；Riverpod 曾缓存的结果不能先显示一帧。
+      ref.invalidate(threadPostTargetProvider(postId));
+    }
+  }
 
   @override
   void dispose() {
@@ -87,9 +107,12 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.threadId != widget.threadId ||
         oldWidget.entryTarget != widget.entryTarget) {
-      _targetReveal.reset();
       _lastOpenedReplyTargetId = null;
       _targetFilterRestore.reset();
+      final postId = widget.entryTarget.postId;
+      if (postId != null) {
+        ref.invalidate(threadPostTargetProvider(postId));
+      }
     }
   }
 
@@ -103,6 +126,9 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
       target: widget.entryTarget,
       sessionScope: sessionScope,
     );
+    final targetPostId = widget.entryTarget.postId;
+    final isPostFocus =
+        targetPostId != null && _entryTargetCoordinator.allowsTargetEffects;
     ref.listen(sessionScopeProvider, (previous, next) {
       if (previous == null || previous == next) return;
       _composerDrafts.clear();
@@ -125,6 +151,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
         sessionScope,
       ),
       enabled:
+          !isPostFocus &&
           state.phase == ThreadDetailPhase.ready &&
           !state.isLoadingFloors &&
           state.selectedSubthread != null &&
@@ -147,6 +174,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     }
     _prefetchScheduler.schedule(
       shouldPrefetch:
+          !isPostFocus &&
           state.phase == ThreadDetailPhase.ready &&
           !state.isLoadingFloors &&
           !state.isPrefetchingFloors &&
@@ -178,7 +206,6 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
       clearAuthor: () => ref.read(provider.notifier).setFloorAuthor(null),
       isMounted: () => mounted,
     );
-    final targetPostId = widget.entryTarget.postId;
     final target = targetPostId == null
         ? null
         : ref.watch(threadPostTargetProvider(targetPostId));
@@ -190,7 +217,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     final effectiveTarget = _entryTargetCoordinator.allowsTargetEffects
         ? resolvedTarget
         : null;
-    final targetExcludedByFilter = _targetFilterRestore.scheduleIfNeeded(
+    _targetFilterRestore.scheduleIfNeeded(
       state: state,
       target: effectiveTarget,
       threadId: widget.threadId,
@@ -212,9 +239,6 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
         );
       },
     );
-    if (!targetExcludedByFilter) {
-      _revealTargetWhenReady(state, effectiveTarget);
-    }
     _openReplyTargetWhenReady(state, effectiveTarget);
     final canPop = Navigator.maybeOf(context)?.canPop() ?? false;
     final scaffold = Scaffold(
@@ -225,100 +249,113 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
           key: const Key('thread-detail-back'),
           onPressed: _leaveDetail,
         ),
-        actions: buildThreadDetailAppBarActions(
-          threadId: widget.threadId,
-          state: state,
-          quickScrollAction: ReadingQuickScrollAction(controller: _quickScroll),
-          onSearch: () => context.pushNamed(
-            'thread-post-search',
-            pathParameters: {'threadId': widget.threadId},
-          ),
-          onLatestTarget: _openLatestPost,
-          onSelected: (action) => _handleThreadAction(
-            action,
-            state.detail!,
-            provider,
-            selectedSubthread: state.selectedSubthread,
-          ),
-        ),
+        actions: isPostFocus
+            ? const []
+            : buildThreadDetailAppBarActions(
+                threadId: widget.threadId,
+                state: state,
+                quickScrollAction: ReadingQuickScrollAction(
+                  controller: _quickScroll,
+                ),
+                onSearch: () => context.pushNamed(
+                  'thread-post-search',
+                  pathParameters: {'threadId': widget.threadId},
+                ),
+                onLatestTarget: _openLatestPost,
+                onSelected: (action) => _handleThreadAction(
+                  action,
+                  state.detail!,
+                  provider,
+                  selectedSubthread: state.selectedSubthread,
+                ),
+              ),
       ),
       body: ReadingProgressViewport(
         controller: _quickScroll,
-        hasMore: state.hasMore,
-        loading: state.isPrefetchingFloors,
+        hasMore: !isPostFocus && state.hasMore,
+        loading: !isPostFocus && state.isPrefetchingFloors,
         loadFailed:
             state.transientFailure != null &&
             state.retryAction == ThreadDetailRetryAction.loadMore,
         onRetry: () => ref.read(provider.notifier).loadMore(),
-        child: switch (state.phase) {
-          ThreadDetailPhase.loading => const ThreadDetailLoadingState(),
-          ThreadDetailPhase.failed => ThreadDetailFatalState(
-            failure: state.failure,
-            onRetry: () => ref.read(provider.notifier).loadInitial(),
-          ),
-          ThreadDetailPhase.ready => NotificationListener<ScrollNotification>(
-            onNotification: _onScroll,
-            child: NotificationListener<ScrollMetricsNotification>(
-              onNotification: _handleTargetLayoutChange,
-              child: RefreshIndicator(
-                onRefresh: _refreshDetail,
-                child: KeyedSubtree(
-                  key: _renderGeometry.scrollViewportKey,
-                  child: CustomScrollView(
-                    key: PageStorageKey(
-                      'thread-detail-${widget.threadId}-'
-                      '${identityHashCode(_pageInstanceToken)}',
-                    ),
-                    controller: _subthreadScroll.controller,
-                    scrollCacheExtent: discussionScrollCacheExtent,
-                    physics: ReadingQuickScrollPhysics(
-                      controller: _quickScroll,
-                      parent: const AlwaysScrollableScrollPhysics(),
-                    ),
-                    slivers: [
-                      ...buildThreadDetailReadingSlivers(
-                        context,
-                        state,
-                        provider,
-                        _entryTargetCoordinator.allowsTargetEffects
-                            ? target
-                            : null,
-                        ref: ref,
-                        threadId: widget.threadId,
-                        subthreadScroll: _subthreadScroll,
-                        renderGeometry: _renderGeometry,
-                        quickScroll: _quickScroll,
-                        targetKey: _targetKey,
-                        itemListKey: _itemListKey,
-                        onSelectSubthread: (id) =>
-                            _selectSubthreadFromUser(id, provider),
-                        onCompose: _compose,
-                        onDeleteFloor: _deleteFloor,
-                        onToggleFloorPin: _toggleFloorPin,
-                        onDiscussion: _openDiscussion,
-                        onRequireLogin: _requireLogin,
-                        onRetryTarget: () {
-                          _entryTargetCoordinator.rearmForRetry();
-                          ref.invalidate(
-                            threadPostTargetProvider(
-                              widget.entryTarget.postId!,
-                            ),
-                          );
-                        },
-                        actions: actions,
-                        discussionAuthors: discussionAuthors,
-                        authenticated: session.isAuthenticated,
-                        viewerId: viewerId,
+        child: isPostFocus
+            ? _buildPostFocus(
+                state,
+                target,
+                actions,
+                session.isAuthenticated,
+                viewerId,
+              )
+            : switch (state.phase) {
+                ThreadDetailPhase.loading => const ThreadDetailLoadingState(),
+                ThreadDetailPhase.failed => ThreadDetailFatalState(
+                  failure: state.failure,
+                  onRetry: () => ref.read(provider.notifier).loadInitial(),
+                ),
+                ThreadDetailPhase.ready => RefreshIndicator(
+                  onRefresh: _refreshDetail,
+                  child: KeyedSubtree(
+                    key: _renderGeometry.scrollViewportKey,
+                    child: CustomScrollView(
+                      key: PageStorageKey(
+                        'thread-detail-${widget.threadId}-'
+                        '${identityHashCode(_pageInstanceToken)}',
                       ),
-                    ],
+                      controller: _subthreadScroll.controller,
+                      center:
+                          widget.listResume != null &&
+                              state.detail!.subthreads.isNotEmpty
+                          ? _floorListStartKey
+                          : null,
+                      scrollCacheExtent: discussionScrollCacheExtent,
+                      physics: ReadingQuickScrollPhysics(
+                        controller: _quickScroll,
+                        parent: const AlwaysScrollableScrollPhysics(),
+                      ),
+                      slivers: [
+                        ...buildThreadDetailReadingSlivers(
+                          context,
+                          state,
+                          provider,
+                          _entryTargetCoordinator.allowsTargetEffects
+                              ? target
+                              : null,
+                          ref: ref,
+                          threadId: widget.threadId,
+                          subthreadScroll: _subthreadScroll,
+                          renderGeometry: _renderGeometry,
+                          quickScroll: _quickScroll,
+                          targetKey: _targetKey,
+                          itemListKey: _itemListKey,
+                          floorListStartKey: _floorListStartKey,
+                          onSelectSubthread: (id) =>
+                              _selectSubthreadFromUser(id, provider),
+                          onCompose: _compose,
+                          onDeleteFloor: _deleteFloor,
+                          onToggleFloorPin: _toggleFloorPin,
+                          onDiscussion: _openDiscussion,
+                          onRequireLogin: _requireLogin,
+                          onRetryTarget: () {
+                            _entryTargetCoordinator.rearmForRetry();
+                            ref.invalidate(
+                              threadPostTargetProvider(
+                                widget.entryTarget.postId!,
+                              ),
+                            );
+                          },
+                          actions: actions,
+                          discussionAuthors: discussionAuthors,
+                          authenticated: session.isAuthenticated,
+                          viewerId: viewerId,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            ),
-          ),
-        },
+              },
       ),
-      bottomNavigationBar: state.phase == ThreadDetailPhase.ready
+      bottomNavigationBar:
+          !isPostFocus && state.phase == ThreadDetailPhase.ready
           ? Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -354,15 +391,210 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
   }
 
   AutoDisposeStateNotifierProvider<ThreadDetailController, ThreadDetailState>
-  get _detailProvider => threadDetailControllerProvider((
-    threadId: widget.threadId,
-    pageInstanceToken: _pageInstanceToken,
-  ));
+  get _detailProvider {
+    final resume = widget.listResume;
+    final sessionScope = ref.read(sessionScopeProvider);
+    if (!_seedInitialized ||
+        !identical(_seedSource, resume) ||
+        _seedSessionScope != sessionScope) {
+      _seedInitialized = true;
+      _seedSource = resume;
+      _seedSessionScope = sessionScope;
+      _seededState =
+          resume != null &&
+              resume.sessionScope == sessionScope &&
+              resume.state.phase == ThreadDetailPhase.ready &&
+              resume.state.detail?.id == widget.threadId &&
+              resume.state.selectedSubthreadId ==
+                  widget.entryTarget.subthreadId &&
+              !resume.state.isLoadingFloors
+          ? resume.state.copyWith(
+              isRefreshing: false,
+              isLoadingMore: false,
+              isPrefetchingFloors: false,
+            )
+          : null;
+    }
+    return threadDetailControllerProvider((
+      threadId: widget.threadId,
+      pageInstanceToken: _pageInstanceToken,
+      initialState: _seededState,
+    ));
+  }
+
   String get _location => AppRouteLocations.thread(
     widget.threadId,
     postId: widget.entryTarget.postId,
     subthreadId: widget.entryTarget.subthreadId,
   );
+
+  Widget _buildPostFocus(
+    ThreadDetailState state,
+    AsyncValue<ThreadPostTargetModel>? targetState,
+    PostActionState actions,
+    bool authenticated,
+    String? viewerId,
+  ) {
+    if (state.phase == ThreadDetailPhase.failed) {
+      return ThreadDetailFatalState(
+        failure: state.failure,
+        onRetry: () => ref.read(_detailProvider.notifier).loadInitial(),
+      );
+    }
+    final target = resolvedThreadPostTarget(targetState);
+    final detail = state.detail;
+    final subthread = detail?.subthreadById(target?.subthreadId);
+    if (state.phase != ThreadDetailPhase.ready ||
+        targetState == null ||
+        targetState.isLoading ||
+        (target != null &&
+            target.threadId == widget.threadId &&
+            subthread != null &&
+            state.selectedSubthreadId != subthread.id)) {
+      return const WenyouContentFrame(
+        top: 16,
+        child: WenyouDetailSkeleton(label: '正在打开目标楼层'),
+      );
+    }
+    if (target == null ||
+        target.threadId != widget.threadId ||
+        subthread == null ||
+        target.requestedPostId != widget.entryTarget.postId ||
+        target.floor.isDeleted ||
+        (target.focusedReplyId == null &&
+            target.floor.id != target.requestedPostId)) {
+      return WenyouContentFrame(
+        top: 16,
+        child: target != null && target.floor.isDeleted
+            ? const WenyouStatusBanner(
+                tone: WenyouStatusTone.neutral,
+                message: '目标内容已不可见',
+              )
+            : target != null &&
+                  (target.requestedPostId != widget.entryTarget.postId ||
+                      (target.focusedReplyId == null &&
+                          target.floor.id != target.requestedPostId))
+            ? WenyouStatusBanner(
+                tone: WenyouStatusTone.error,
+                message: '目标内容定位失败，请重试。',
+                action: TextButton(
+                  onPressed: _retryEntryTarget,
+                  child: const Text('重新确认'),
+                ),
+              )
+            : ThreadTargetPostStatus(
+                targetState: targetState,
+                expectedThreadId: widget.threadId,
+                availableSubthreadIds: {
+                  for (final item in detail!.subthreads) item.id,
+                },
+                onRetry: _retryEntryTarget,
+              ),
+      );
+    }
+    if (target.focusedReplyId != null) {
+      return const WenyouContentFrame(
+        top: 16,
+        child: WenyouDetailSkeleton(label: '正在打开目标楼层'),
+      );
+    }
+    final floor = target.floor;
+    return RefreshIndicator(
+      onRefresh: _refreshDetail,
+      child: CustomScrollView(
+        key: Key('thread-target-focus-${floor.id}'),
+        controller: _subthreadScroll.controller,
+        physics: const AlwaysScrollableScrollPhysics(),
+        slivers: [
+          SliverToBoxAdapter(
+            child: WenyouContentFrame(
+              top: 16,
+              bottom: 48,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Semantics(
+                    header: true,
+                    child: Text(
+                      '${detail!.title} · ${subthread.title}',
+                      key: const Key('thread-target-context'),
+                      style: Theme.of(context).textTheme.wenyouCompactTitle,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  ThreadFloorCard(
+                    key: ValueKey('thread-focus-floor-${floor.id}'),
+                    threadId: widget.threadId,
+                    floor: floor,
+                    galleryTarget: ReadingGalleryTarget(
+                      scope: ReadingGalleryScope.subthread,
+                      scopeId: subthread.id,
+                    ),
+                    isFocused: true,
+                    canEdit: floor.author.id == viewerId,
+                    canDelete:
+                        floor.author.id == viewerId || detail.canManageThread,
+                    canPin: detail.canManageThread,
+                    pending: actions.pendingPostId == floor.id,
+                    onReply: authenticated
+                        ? () => _compose(
+                            threadDetailReplyFloorTarget(
+                              detail,
+                              subthread,
+                              floor,
+                            ),
+                          )
+                        : _requireLogin,
+                    onReplyToReply: authenticated
+                        ? (reply) => _compose(
+                            threadDetailReplyInlineTarget(
+                              detail,
+                              subthread,
+                              floor,
+                              reply,
+                            ),
+                          )
+                        : (_) => _requireLogin(),
+                    onDiscussion: () => _openDiscussion(floor),
+                    onEdit: () => _compose(
+                      threadDetailEditFloorTarget(detail, subthread, floor),
+                    ),
+                    onDelete: () => _deleteFloor(floor),
+                    onTogglePin: () => _toggleFloorPin(floor),
+                    reportReturnTo:
+                        !detail.isPrivate && floor.author.id != viewerId
+                        ? _location
+                        : null,
+                  ),
+                  const SizedBox(height: 16),
+                  OutlinedButton(
+                    key: const Key('thread-target-show-discussion'),
+                    onPressed: () => context.replace(
+                      AppRouteLocations.thread(
+                        widget.threadId,
+                        subthreadId: subthread.id,
+                      ),
+                      extra: ThreadDetailListResume(
+                        state: state,
+                        sessionScope: ref.read(sessionScopeProvider),
+                      ),
+                    ),
+                    child: const Text('查看完整讨论'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _retryEntryTarget() {
+    _entryTargetCoordinator.rearmForRetry();
+    final postId = widget.entryTarget.postId;
+    if (postId != null) ref.invalidate(threadPostTargetProvider(postId));
+  }
 
   Future<void> _refreshDetail() async {
     final targetPostId = widget.entryTarget.postId;
@@ -463,52 +695,6 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     return ref.read(provider.notifier).selectSubthread(subthreadId);
   }
 
-  void _revealTargetWhenReady(
-    ThreadDetailState state,
-    ThreadPostTargetModel? target,
-  ) {
-    if (target == null ||
-        target.focusedReplyId != null ||
-        target.threadId != widget.threadId ||
-        state.selectedSubthreadId != target.subthreadId) {
-      return;
-    }
-    final scopeSignature =
-        '${target.requestedPostId}:${state.floorOrder.name}:'
-        '${state.floorAuthorId ?? ''}:${state.selectedSubthreadId}';
-    final displayedFloors = threadFloorsWithTarget(
-      state.floors,
-      target,
-      state.floorOrder,
-    );
-    final targetIndex = displayedFloors.indexWhere(
-      (floor) => floor.id == target.floor.id,
-    );
-    final signature =
-        '${target.requestedPostId}:${state.floorOrder.name}:'
-        '${state.selectedSubthreadId}:$targetIndex:${displayedFloors.length}';
-    _targetReveal.schedule(
-      targetId: target.requestedPostId,
-      scopeSignature: scopeSignature,
-      contentSignature: signature,
-      targetIndex: targetIndex,
-      itemCount: displayedFloors.length,
-      ready: !state.isLoadingFloors,
-      targetKey: _targetKey,
-      itemListKey: _itemListKey,
-      scrollController: _subthreadScroll.controller,
-      isMounted: () => mounted,
-      requestRebuild: () => setState(() {}),
-    );
-  }
-
-  bool _handleTargetLayoutChange(ScrollMetricsNotification notification) =>
-      _targetReveal.handleLayoutChange(
-        isMounted: () => mounted,
-        requestRebuild: () => setState(() {}),
-      );
-
-  bool _onScroll(ScrollNotification e) => _targetReveal.handleUserScroll(e);
   void _openReplyTargetWhenReady(
     ThreadDetailState state,
     ThreadPostTargetModel? target,
@@ -591,7 +777,6 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
       return;
     }
     if (widget.entryTarget.postId == target.id) {
-      _targetReveal.reset();
       _targetFilterRestore.reset();
       _entryTargetCoordinator.rearmForRetry();
       ref.invalidate(threadPostTargetProvider(target.id));
