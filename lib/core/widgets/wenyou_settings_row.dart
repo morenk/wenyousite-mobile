@@ -36,8 +36,11 @@ class WenyouSettingsLink extends StatelessWidget {
     return ListTile(
       enabled: enabled,
       contentPadding: contentPadding,
+      minTileHeight: tokens.minimumTouchTarget + tokens.space8,
       titleTextStyle: Theme.of(context).textTheme.wenyouRowTitle,
-      leading: icon == null ? null : WenyouIcon(icon!, color: color),
+      leading: icon == null
+          ? null
+          : WenyouIcon(icon!, color: color ?? tokens.mutedText),
       title: Row(
         children: [
           Expanded(
@@ -78,6 +81,8 @@ class WenyouSettingsToggle extends StatelessWidget {
     required this.value,
     required this.onChanged,
     this.toggleKey,
+    this.icon,
+    this.showHelpButton = true,
     super.key,
   });
 
@@ -86,38 +91,53 @@ class WenyouSettingsToggle extends StatelessWidget {
   final bool value;
   final ValueChanged<bool>? onChanged;
   final Key? toggleKey;
+  final String? icon;
+  final bool showHelpButton;
 
   @override
-  Widget build(BuildContext context) => Row(
-    children: [
-      // 说明按钮放在 SwitchListTile 的 MergeSemantics 之外，避免读屏将
-      // “查看说明”和“切换设置”合为同一个操作。
-      Expanded(
-        child: SwitchListTile(
-          key: toggleKey,
-          title: Text(title),
-          value: value,
-          onChanged: onChanged,
-        ),
-      ),
-      IconButton(
-        tooltip: '$title说明',
-        icon: const WenyouIcon(WenyouIconIds.statusInfo),
-        onPressed: () => showDialog<void>(
-          context: context,
-          builder: (context) => AlertDialog(
-            scrollable: true,
-            title: Text(title),
-            content: Text(help),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('关闭'),
+  Widget build(BuildContext context) {
+    final toggle = SwitchListTile(
+      key: toggleKey,
+      title: showHelpButton
+          ? Text(title, style: Theme.of(context).textTheme.wenyouRowTitle)
+          : Tooltip(
+              message: help,
+              child: Text(
+                title,
+                style: Theme.of(context).textTheme.wenyouRowTitle,
               ),
-            ],
+            ),
+      secondary: icon == null
+          ? null
+          : WenyouIcon(icon!, color: context.wenyouTokens.mutedText),
+      value: value,
+      onChanged: onChanged,
+    );
+    if (!showHelpButton) return toggle;
+    return Row(
+      children: [
+        // 说明按钮放在 SwitchListTile 的 MergeSemantics 之外，避免读屏将
+        // “查看说明”和“切换设置”合为同一个操作。
+        Expanded(child: toggle),
+        IconButton(
+          tooltip: '$title说明',
+          icon: const WenyouIcon(WenyouIconIds.statusInfo),
+          onPressed: () => showDialog<void>(
+            context: context,
+            builder: (context) => AlertDialog(
+              scrollable: true,
+              title: Text(title),
+              content: Text(help),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('关闭'),
+                ),
+              ],
+            ),
           ),
         ),
-      ),
-    ],
-  );
+      ],
+    );
+  }
 }

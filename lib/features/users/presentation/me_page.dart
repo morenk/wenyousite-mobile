@@ -62,7 +62,11 @@ class _GuestMePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('我的')),
+      backgroundColor: wenyouPersonalPageBackground(context),
+      appBar: AppBar(
+        backgroundColor: wenyouPersonalPageBackground(context),
+        title: const Text('我的'),
+      ),
       body: WenyouPageBody(
         maxWidth: 600,
         bottomPadding: 112,
@@ -85,10 +89,19 @@ class _GuestMePage extends StatelessWidget {
               ),
             ),
             SizedBox(height: context.wenyouTokens.space12),
-            const _AppearanceSettingsPanel(),
-            WenyouSettingsLink(
-              title: '故障诊断',
-              onTap: () => context.pushNamed(AppRouteNames.diagnostics),
+            const WenyouSettingsGroup(
+              title: '偏好',
+              children: [_AppearanceSettingsPanel()],
+            ),
+            WenyouSettingsGroup(
+              title: '帮助',
+              children: [
+                WenyouSettingsLink(
+                  icon: WenyouIconIds.statusInfo,
+                  title: '故障诊断',
+                  onTap: () => context.pushNamed(AppRouteNames.diagnostics),
+                ),
+              ],
             ),
           ],
         ),
@@ -115,7 +128,9 @@ class _AuthenticatedMePage extends ConsumerWidget {
       },
     );
     return Scaffold(
+      backgroundColor: wenyouPersonalPageBackground(context),
       appBar: AppBar(
+        backgroundColor: wenyouPersonalPageBackground(context),
         title: const Text('我的'),
         actions: [
           IconButton(
@@ -217,7 +232,11 @@ class _MeEditPageState extends ConsumerState<MeEditPage> {
         if (!didPop) unawaited(_handlePopAttempt(result, mutationBusy));
       },
       child: Scaffold(
-        appBar: AppBar(title: const Text('编辑资料')),
+        backgroundColor: wenyouPersonalPageBackground(context),
+        appBar: AppBar(
+          backgroundColor: wenyouPersonalPageBackground(context),
+          title: const Text('编辑资料'),
+        ),
         body: switch (state.phase) {
           MeProfilePhase.loading => const _MePageList(
             children: [WenyouDetailSkeleton(label: '正在读取资料')],
@@ -354,16 +373,37 @@ class MeSettingsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final page = Scaffold(
-      appBar: AppBar(title: const Text('账号设置')),
+      backgroundColor: wenyouPersonalPageBackground(context),
+      appBar: AppBar(
+        backgroundColor: wenyouPersonalPageBackground(context),
+        title: const Text('账号设置'),
+      ),
       body: WenyouSettingsBody(
         children: [
-          const _AppearanceSettingsPanel(),
+          const WenyouSettingsGroup(
+            title: '偏好与提醒',
+            children: [
+              _AppearanceSettingsPanel(),
+              BackgroundReminderSettingsPanel(embedded: true),
+            ],
+          ),
           const _AccountSecurityPanel(disabled: false),
-          const BackgroundReminderSettingsPanel(),
-          const _LogoutPanel(),
-          WenyouSettingsLink(
-            title: '故障诊断',
-            onTap: () => context.pushNamed(AppRouteNames.diagnostics),
+          const _AccountOperationsPanel(),
+          WenyouSettingsGroup(
+            title: '帮助',
+            children: [
+              WenyouSettingsLink(
+                key: const Key('me-open-moderation-appeals'),
+                icon: WenyouIconIds.moderationDecision,
+                title: '治理决定与申诉',
+                onTap: () => context.pushNamed('moderation-appeals'),
+              ),
+              WenyouSettingsLink(
+                icon: WenyouIconIds.statusInfo,
+                title: '故障诊断',
+                onTap: () => context.pushNamed(AppRouteNames.diagnostics),
+              ),
+            ],
           ),
         ],
       ),
@@ -382,15 +422,12 @@ class _AppearanceSettingsPanel extends ConsumerWidget {
         (state) => state.preference,
       ),
     );
-    return WenyouPanel(
-      padding: EdgeInsets.zero,
-      child: WenyouSettingsLink(
-        key: const Key('open-appearance-settings'),
-        icon: preference.icon,
-        title: '外观',
-        value: preference.label,
-        onTap: () => context.pushNamed(AppRouteNames.appearance),
-      ),
+    return WenyouSettingsLink(
+      key: const Key('open-appearance-settings'),
+      icon: preference.icon,
+      title: '外观',
+      value: preference.label,
+      onTap: () => context.pushNamed(AppRouteNames.appearance),
     );
   }
 }
@@ -595,64 +632,59 @@ class _AccountSecurityPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return WenyouPanel(
-      padding: EdgeInsets.zero,
-      child: Column(
-        children: [
-          WenyouSettingsLink(
-            enabled: !disabled,
-            key: const Key('me-open-blocks'),
-            icon: WenyouIconIds.actionBlock,
-            title: '管理黑名单',
-            onTap: disabled ? null : () => context.pushNamed('me-blocks'),
-          ),
-          const Divider(height: 1),
-          WenyouSettingsLink(
-            enabled: !disabled,
-            key: const Key('me-open-login-sessions'),
-            icon: WenyouIconIds.actionDevices,
-            title: '登录终端',
-            onTap: disabled ? null : () => context.pushNamed('login-sessions'),
-          ),
-          const Divider(height: 1),
-          WenyouSettingsLink(
-            enabled: !disabled,
-            key: const Key('me-open-change-password'),
-            icon: WenyouIconIds.securityPassword,
-            title: '修改密码',
-            onTap: disabled ? null : () => context.pushNamed('change-password'),
-          ),
-          const Divider(height: 1),
-          WenyouSettingsLink(
-            enabled: !disabled,
-            key: const Key('me-open-change-email'),
-            icon: WenyouIconIds.statusMail,
-            title: '更换邮箱',
-            onTap: disabled ? null : () => context.pushNamed('change-email'),
-          ),
-          const Divider(height: 1),
-          WenyouSettingsLink(
-            enabled: !disabled,
-            key: const Key('me-open-moderation-appeals'),
-            icon: WenyouIconIds.moderationDecision,
-            title: '治理决定与申诉',
-            onTap: disabled
-                ? null
-                : () => context.pushNamed('moderation-appeals'),
-          ),
-          const Divider(height: 1),
-          WenyouSettingsLink(
-            enabled: !disabled,
-            key: const Key('me-open-delete-account'),
-            icon: WenyouIconIds.actionDelete,
-            title: '注销账号',
-            destructive: true,
-            onTap: disabled ? null : () => context.pushNamed('delete-account'),
-          ),
-        ],
-      ),
+    return WenyouSettingsGroup(
+      title: '账号',
+      children: [
+        WenyouSettingsLink(
+          enabled: !disabled,
+          key: const Key('me-open-blocks'),
+          icon: WenyouIconIds.actionBlock,
+          title: '管理黑名单',
+          onTap: disabled ? null : () => context.pushNamed('me-blocks'),
+        ),
+        WenyouSettingsLink(
+          enabled: !disabled,
+          key: const Key('me-open-login-sessions'),
+          icon: WenyouIconIds.actionDevices,
+          title: '登录终端',
+          onTap: disabled ? null : () => context.pushNamed('login-sessions'),
+        ),
+        WenyouSettingsLink(
+          enabled: !disabled,
+          key: const Key('me-open-change-password'),
+          icon: WenyouIconIds.securityPassword,
+          title: '修改密码',
+          onTap: disabled ? null : () => context.pushNamed('change-password'),
+        ),
+        WenyouSettingsLink(
+          enabled: !disabled,
+          key: const Key('me-open-change-email'),
+          icon: WenyouIconIds.statusMail,
+          title: '更换邮箱',
+          onTap: disabled ? null : () => context.pushNamed('change-email'),
+        ),
+      ],
     );
   }
+}
+
+class _AccountOperationsPanel extends StatelessWidget {
+  const _AccountOperationsPanel();
+
+  @override
+  Widget build(BuildContext context) => WenyouSettingsGroup(
+    title: '账号操作',
+    children: [
+      const _LogoutAction(),
+      WenyouSettingsLink(
+        key: const Key('me-open-delete-account'),
+        icon: WenyouIconIds.actionDelete,
+        title: '注销账号',
+        destructive: true,
+        onTap: () => context.pushNamed('delete-account'),
+      ),
+    ],
+  );
 }
 
 class _ProfileOverview extends StatelessWidget {
@@ -674,9 +706,7 @@ class _ProfileOverview extends StatelessWidget {
       avatarUrl: profile.avatarUrl,
       profileCover: profile.profileCover,
       level: profile.level,
-      bio: profile.bio?.trim().isNotEmpty == true ? profile.bio : '还没有填写个人简介。',
-      metadata:
-          '${formatWenyouDate(profile.createdAt)} 加入温油站 · ${_maskEmail(profile.email)}',
+      bio: profile.bio,
       levelProgress: profile.levelProgress,
       levelProgressLabel: profile.nextLevelExperience == null
           ? '已达到当前最高等级'
@@ -737,7 +767,7 @@ class _LogoutPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) =>
-      const WenyouPanel(child: _LogoutAction());
+      const WenyouSettingsGroup(title: '账号操作', children: [_LogoutAction()]);
 }
 
 class _LogoutAction extends ConsumerWidget {
@@ -757,23 +787,27 @@ class _LogoutAction extends ConsumerWidget {
           ),
           SizedBox(height: context.wenyouTokens.space8),
         ],
-        WenyouAsyncButton(
+        WenyouSettingsLink(
           key: const Key('logout-submit'),
-          label: logout.failure == null ? '退出当前账号' : '重试安全退出',
-          isLoading: logout.isSubmitting,
-          onPressed: logout.isSubmitting
+          title: logout.failure == null ? '退出当前账号' : '重试安全退出',
+          value: logout.isSubmitting ? '正在退出' : null,
+          onTap: logout.isSubmitting
               ? null
               : () => _confirmAndLogout(context, ref),
           icon: WenyouIconIds.actionLogout,
-          variant: WenyouAsyncButtonVariant.outlined,
         ),
         if (logout.failure != null)
-          TextButton(
-            key: const Key('logout-local-only'),
-            onPressed: logout.isSubmitting
-                ? null
-                : () => _confirmLocalLogout(context, ref),
-            child: const Text('仅清除这台设备的登录'),
+          Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: context.wenyouTokens.space16,
+            ),
+            child: TextButton(
+              key: const Key('logout-local-only'),
+              onPressed: logout.isSubmitting
+                  ? null
+                  : () => _confirmLocalLogout(context, ref),
+              child: const Text('仅清除这台设备的登录'),
+            ),
           ),
       ],
     );
@@ -821,10 +855,4 @@ class _LogoutAction extends ConsumerWidget {
       );
     }
   }
-}
-
-String _maskEmail(String email) {
-  final separator = email.indexOf('@');
-  if (separator <= 0 || separator == email.length - 1) return email;
-  return '${email[0]}***${email.substring(separator)}';
 }

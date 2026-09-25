@@ -123,6 +123,7 @@ class _MeContentTabBodyState extends ConsumerState<MeContentTabBody>
                       if (isOverview) ...[
                         UserActivitySummaryPanel(
                           key: const Key('me-activity-summary'),
+                          showTitle: false,
                           keyPrefix: 'me-activity',
                           state: state,
                           onRetry: notifier.retryActivitySummary,

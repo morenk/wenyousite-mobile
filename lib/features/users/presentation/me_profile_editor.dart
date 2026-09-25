@@ -4,6 +4,7 @@ import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_settings_body.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/users/application/avatar_controller.dart';
 import 'package:wenyousite_mobile/features/users/application/me_profile_controller.dart';
@@ -135,68 +136,86 @@ class MeProfileEditor extends ConsumerWidget {
             profile: _profile,
             mutationsDisabled: state.isSubmitting,
           ),
-          SizedBox(height: tokens.space8),
-          _UsernameRow(
-            username: _profile.username,
-            enabled: !mutationBusy,
-            onTap: () => _openUsernameEditor(context, ref, _profile.username),
+          SizedBox(height: tokens.space12),
+          WenyouSettingsGroup(
+            title: '基本资料',
+            children: [
+              _UsernameRow(
+                username: _profile.username,
+                enabled: !mutationBusy,
+                onTap: () =>
+                    _openUsernameEditor(context, ref, _profile.username),
+              ),
+              Padding(
+                padding: EdgeInsets.all(tokens.space16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      '个人简介',
+                      style: Theme.of(context).textTheme.wenyouRowTitle,
+                    ),
+                    SizedBox(height: tokens.space8),
+                    TextFormField(
+                      key: const Key('me-bio-field'),
+                      controller: draft.bioController,
+                      enabled: !state.isSubmitting,
+                      minLines: 3,
+                      maxLines: 5,
+                      maxLength: 255,
+                      decoration: InputDecoration(
+                        hintText: '介绍一下自己',
+                        alignLabelWithHint: true,
+                        counterText: '$bioLength/255',
+                        semanticCounterText: MaterialLocalizations.of(context)
+                            .remainingTextFieldCharacterCount(
+                              (255 - bioLength).clamp(0, 255),
+                            ),
+                      ),
+                      validator: (value) =>
+                          _validateBio(value, draft.currentBio),
+                      onChanged: (_) => _clearFeedback(ref),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-          SizedBox(height: tokens.space24),
-          Text('个人简介', style: Theme.of(context).textTheme.wenyouSectionTitle),
-          SizedBox(height: tokens.space8),
-          TextFormField(
-            key: const Key('me-bio-field'),
-            controller: draft.bioController,
-            enabled: !state.isSubmitting,
-            minLines: 3,
-            maxLines: 5,
-            maxLength: 255,
-            decoration: InputDecoration(
-              hintText: '介绍一下自己',
-              alignLabelWithHint: true,
-              counterText: '$bioLength/255',
-              semanticCounterText: MaterialLocalizations.of(context)
-                  .remainingTextFieldCharacterCount(
-                    (255 - bioLength).clamp(0, 255),
-                  ),
-            ),
-            validator: (value) => _validateBio(value, draft.currentBio),
-            onChanged: (_) => _clearFeedback(ref),
-          ),
-          SizedBox(height: tokens.space16),
-          const WenyouSectionHeader(title: '主页公开内容'),
-          SizedBox(height: tokens.space4),
-          _PrivacySwitch(
-            key: const Key('me-privacy-replies'),
-            title: '最近回复',
-            value: draft.showRecentReplies,
-            enabled: !state.isSubmitting,
-            onChanged: (value) {
-              _clearFeedback(ref);
-              draft.setShowRecentReplies(value);
-            },
-          ),
-          const Divider(height: 1),
-          _PrivacySwitch(
-            key: const Key('me-privacy-played'),
-            title: '参与的主题',
-            value: draft.showPlayedThreads,
-            enabled: !state.isSubmitting,
-            onChanged: (value) {
-              _clearFeedback(ref);
-              draft.setShowPlayedThreads(value);
-            },
-          ),
-          const Divider(height: 1),
-          _PrivacySwitch(
-            key: const Key('me-privacy-bookmarks'),
-            title: '收藏的主题',
-            value: draft.showBookmarks,
-            enabled: !state.isSubmitting,
-            onChanged: (value) {
-              _clearFeedback(ref);
-              draft.setShowBookmarks(value);
-            },
+          SizedBox(height: tokens.space12),
+          WenyouSettingsGroup(
+            title: '主页公开内容',
+            children: [
+              _PrivacySwitch(
+                key: const Key('me-privacy-replies'),
+                title: '最近回复',
+                value: draft.showRecentReplies,
+                enabled: !state.isSubmitting,
+                onChanged: (value) {
+                  _clearFeedback(ref);
+                  draft.setShowRecentReplies(value);
+                },
+              ),
+              _PrivacySwitch(
+                key: const Key('me-privacy-played'),
+                title: '参与的主题',
+                value: draft.showPlayedThreads,
+                enabled: !state.isSubmitting,
+                onChanged: (value) {
+                  _clearFeedback(ref);
+                  draft.setShowPlayedThreads(value);
+                },
+              ),
+              _PrivacySwitch(
+                key: const Key('me-privacy-bookmarks'),
+                title: '收藏的主题',
+                value: draft.showBookmarks,
+                enabled: !state.isSubmitting,
+                onChanged: (value) {
+                  _clearFeedback(ref);
+                  draft.setShowBookmarks(value);
+                },
+              ),
+            ],
           ),
           if (settingsFailure != null) ...[
             SizedBox(height: tokens.space12),
@@ -231,7 +250,7 @@ class _UsernameRow extends StatelessWidget {
     final tokens = context.wenyouTokens;
     return ListTile(
       key: const Key('me-username-edit'),
-      contentPadding: EdgeInsets.zero,
+      contentPadding: EdgeInsets.symmetric(horizontal: tokens.space16),
       minTileHeight: 64,
       enabled: enabled,
       titleTextStyle: Theme.of(context).textTheme.wenyouRowTitle,
@@ -284,7 +303,9 @@ class _PrivacySwitch extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SwitchListTile.adaptive(
-      contentPadding: EdgeInsets.zero,
+      contentPadding: EdgeInsets.symmetric(
+        horizontal: context.wenyouTokens.space16,
+      ),
       title: Text(title, style: Theme.of(context).textTheme.wenyouRowTitle),
       value: value,
       onChanged: enabled ? onChanged : null,

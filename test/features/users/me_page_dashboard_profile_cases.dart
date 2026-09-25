@@ -44,7 +44,8 @@ void registerMePageDashboardProfileCases() {
     await tester.pumpAndSettle();
 
     expect(find.text('温柔测试员'), findsWidgets);
-    expect(find.textContaining('o***@example.com'), findsOneWidget);
+    expect(find.textContaining('@example.com'), findsNothing);
+    expect(find.textContaining('加入温油站'), findsNothing);
     expect(
       find.descendant(
         of: find.byKey(const Key('me-profile-header')),
@@ -104,7 +105,7 @@ void registerMePageDashboardProfileCases() {
     expect(find.text('创建'), findsOneWidget);
     expect(find.text('参与'), findsOneWidget);
     expect(find.text('帖子'), findsNothing);
-    expect(find.text('创作概览'), findsOneWidget);
+    expect(find.text('创作概览'), findsNothing);
     expect(find.text('发布动态'), findsOneWidget);
     expect(find.text('创建主题'), findsOneWidget);
     expect(find.text('参与主题'), findsOneWidget);

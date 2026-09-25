@@ -36,6 +36,7 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('一起写下温柔的故事。'), findsOneWidget);
+    expect(find.textContaining('加入温油站'), findsNothing);
     expect(find.text('7'), findsOneWidget);
     expect(find.text('9'), findsOneWidget);
     expect(find.text('18 升'), findsOneWidget);
