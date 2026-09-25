@@ -15,6 +15,7 @@ class UserActivitySummaryPanel extends StatelessWidget {
     this.onCreatedThreadsPressed,
     this.onPlayedThreadsPressed,
     this.onRepliesPressed,
+    this.showTitle = true,
     super.key,
   });
 
@@ -25,6 +26,7 @@ class UserActivitySummaryPanel extends StatelessWidget {
   final VoidCallback? onCreatedThreadsPressed;
   final VoidCallback? onPlayedThreadsPressed;
   final VoidCallback? onRepliesPressed;
+  final bool showTitle;
 
   @override
   Widget build(BuildContext context) {
@@ -35,8 +37,10 @@ class UserActivitySummaryPanel extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const WenyouSectionHeader(title: '创作概览'),
-          SizedBox(height: tokens.space8),
+          if (showTitle) ...[
+            const WenyouSectionHeader(title: '创作概览'),
+            SizedBox(height: tokens.space8),
+          ],
           switch (state.activityPhase) {
             PublicUserActivityPhase.idle || PublicUserActivityPhase.loading =>
               _ActivitySummarySkeleton(key: Key('$keyPrefix-loading')),

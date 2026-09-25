@@ -273,6 +273,7 @@ class WenyouSelectionRow extends StatelessWidget {
     this.trailingLabel,
     this.leading,
     this.enabled = true,
+    this.emphasizeSelected = true,
     super.key,
   });
 
@@ -282,6 +283,7 @@ class WenyouSelectionRow extends StatelessWidget {
   final String? trailingLabel;
   final Widget? leading;
   final bool enabled;
+  final bool emphasizeSelected;
 
   @override
   Widget build(BuildContext context) {
@@ -320,7 +322,7 @@ class WenyouSelectionRow extends StatelessWidget {
                               : selected
                               ? tokens.onAccentedBackground
                               : tokens.text,
-                          fontWeight: selected
+                          fontWeight: selected && emphasizeSelected
                               ? FontWeight.w600
                               : FontWeight.w400,
                         ),
@@ -362,6 +364,7 @@ class WenyouSelectionTile extends StatelessWidget {
     required this.onTap,
     this.supportingLabel,
     this.leading,
+    this.emphasizeSelected = true,
     super.key,
   });
 
@@ -370,6 +373,7 @@ class WenyouSelectionTile extends StatelessWidget {
   final VoidCallback? onTap;
   final String? supportingLabel;
   final Widget? leading;
+  final bool emphasizeSelected;
 
   @override
   Widget build(BuildContext context) => Semantics(
@@ -384,6 +388,7 @@ class WenyouSelectionTile extends StatelessWidget {
         enabled: onTap != null,
         supportingLabel: supportingLabel,
         leading: leading,
+        emphasizeSelected: emphasizeSelected,
       ),
     ),
   );

@@ -5,7 +5,6 @@ import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_level_badge.dart';
-import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/users/domain/profile_cover_models.dart';
 
 class UserProfileStatItem {
@@ -41,7 +40,6 @@ class UserProfileHeader extends StatelessWidget {
     this.avatarUrl,
     this.profileCover,
     this.bio,
-    this.metadata,
     this.statuses = const [],
     this.levelProgress,
     this.levelProgressLabel,
@@ -54,7 +52,6 @@ class UserProfileHeader extends StatelessWidget {
   final ProfileCoverModel? profileCover;
   final int level;
   final String? bio;
-  final String? metadata;
   final List<UserProfileStatItem> stats;
   final List<UserProfileStatusItem> statuses;
   final double? levelProgress;
@@ -67,9 +64,14 @@ class UserProfileHeader extends StatelessWidget {
     final normalizedBio = bio?.trim();
     return SizedBox(
       width: double.infinity,
-      child: WenyouPanel(
-        padding: EdgeInsets.zero,
-        contentCard: true,
+      child: Card(
+        color: tokens.panel,
+        margin: EdgeInsets.zero,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(
+            WenyouFoundationMobile.radiusCard,
+          ),
+        ),
         clipBehavior: Clip.antiAlias,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -96,25 +98,6 @@ class UserProfileHeader extends StatelessWidget {
                       style: Theme.of(
                         context,
                       ).textTheme.wenyouCompactBody.copyWith(height: 1.55),
-                    ),
-                  ],
-                  if (metadata?.isNotEmpty == true) ...[
-                    SizedBox(height: tokens.space12),
-                    Row(
-                      children: [
-                        WenyouIcon(
-                          WenyouIconIds.statusMail,
-                          size: 17,
-                          color: tokens.mutedText,
-                        ),
-                        SizedBox(width: tokens.space4),
-                        Expanded(
-                          child: Text(
-                            metadata!,
-                            style: Theme.of(context).textTheme.wenyouCaption,
-                          ),
-                        ),
-                      ],
                     ),
                   ],
                   if (statuses.isNotEmpty) ...[
@@ -148,25 +131,26 @@ class UserProfileHeader extends StatelessWidget {
                 ],
               ),
             ),
-            const Divider(height: 1),
             Padding(
               padding: EdgeInsets.symmetric(horizontal: tokens.space8),
               child: Row(
                 children: [
                   for (var index = 0; index < stats.length; index++) ...[
                     Expanded(child: _ProfileStat(item: stats[index])),
-                    if (index < stats.length - 1)
-                      const SizedBox(
-                        height: 48,
-                        child: VerticalDivider(width: 1),
-                      ),
                   ],
                 ],
               ),
             ),
             if (actions != null) ...[
-              const Divider(height: 1),
-              Padding(padding: EdgeInsets.all(tokens.space12), child: actions),
+              Padding(
+                padding: EdgeInsets.fromLTRB(
+                  tokens.space12,
+                  tokens.space4,
+                  tokens.space12,
+                  tokens.space12,
+                ),
+                child: actions,
+              ),
             ],
           ],
         ),

@@ -51,6 +51,7 @@ void main() {
         (card.shape! as RoundedRectangleBorder).borderRadius,
         BorderRadius.circular(10),
       );
+      expect((card.shape! as RoundedRectangleBorder).side, BorderSide.none);
       expect(tester.takeException(), isNull);
       await expectLater(
         find.byType(UserProfileHeader),
@@ -117,6 +118,10 @@ void main() {
       expect(
         (profileCard.shape! as RoundedRectangleBorder).borderRadius,
         BorderRadius.circular(10),
+      );
+      expect(
+        (profileCard.shape! as RoundedRectangleBorder).side,
+        BorderSide.none,
       );
       expect(tester.getTopLeft(cover).dy, tester.getTopLeft(card).dy);
       expect(tester.takeException(), isNull);

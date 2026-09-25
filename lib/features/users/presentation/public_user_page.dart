@@ -318,7 +318,7 @@ class _UserProfileContent extends ConsumerWidget {
       avatarUrl: profile.avatarUrl,
       profileCover: profile.profileCover,
       level: profile.level,
-      bio: profile.bio?.trim().isNotEmpty == true ? profile.bio : '这个人还没有填写简介。',
+      bio: profile.bio,
       statuses: statuses,
       stats: [
         UserProfileStatItem(

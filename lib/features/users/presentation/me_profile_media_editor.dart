@@ -399,7 +399,7 @@ class _CoverEditTarget extends StatelessWidget {
     final variant = cover?.preferredForMobile;
     final hasCover = previewBytes != null || variant != null;
     final fallback = ColoredBox(
-      color: tokens.softPanel,
+      color: tokens.panel,
       child: Center(
         child: Padding(
           padding: EdgeInsets.all(tokens.space16),
@@ -448,7 +448,7 @@ class _CoverEditTarget extends StatelessWidget {
           : label,
       excludeSemantics: true,
       child: Material(
-        color: tokens.softPanel,
+        color: tokens.panel,
         borderRadius: BorderRadius.circular(tokens.radiusCompact),
         clipBehavior: Clip.antiAlias,
         child: InkWell(

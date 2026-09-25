@@ -66,6 +66,13 @@ void registerMePageSettingsLayoutCases() {
 
     expect(repository.fetchCalls, 0);
     expect(find.text('账号设置'), findsOneWidget);
+    expect(find.text('偏好与提醒'), findsOneWidget);
+    expect(find.text('账号'), findsOneWidget);
+    expect(find.text('账号操作'), findsOneWidget);
+    expect(find.text('帮助'), findsOneWidget);
+    final semantics = tester.ensureSemantics();
+    expect(find.bySemanticsLabel('账号操作'), findsOneWidget);
+    semantics.dispose();
     expect(
       tester
           .widgetList<ListTile>(find.byType(ListTile))
@@ -78,23 +85,69 @@ void registerMePageSettingsLayoutCases() {
     expect(find.text('不可恢复；已发布内容会匿名保留'), findsNothing);
     expect(find.byType(WenyouSettingsTypography), findsOneWidget);
     expect(find.text('登录终端'), findsOneWidget);
+    expect(
+      tester.widget<Text>(find.text('登录终端')).style?.fontWeight,
+      FontWeight.w400,
+    );
     expect(find.text('修改密码'), findsOneWidget);
     expect(find.text('更换邮箱'), findsOneWidget);
     expect(find.byKey(const Key('logout-submit')), findsOneWidget);
     expect(find.text('账号状态加载失败'), findsNothing);
-    final panels = find.byType(WenyouPanel);
-    expect(panels, findsNWidgets(3));
-    expect(
-      tester.getTopLeft(panels.at(1)).dy -
-          tester.getBottomLeft(panels.at(0)).dy,
-      8,
-    );
-    expect(
-      tester.getTopLeft(panels.at(2)).dy -
-          tester.getBottomLeft(panels.at(1)).dy,
-      8,
-    );
+    await tester.ensureVisible(find.byKey(const Key('logout-submit')));
+    await tester.tap(find.byKey(const Key('logout-submit')));
+    await tester.pumpAndSettle();
+    expect(find.text('退出当前账号？'), findsOneWidget);
+    await tester.tap(find.text('取消'));
+    await tester.pumpAndSettle();
   });
+
+  for (final width in [320.0, 360.0, 400.0, 600.0]) {
+    for (final dark in [false, true]) {
+      testWidgets('$width dp ${dark ? '黑夜' : '浅色'} 两倍字号账号设置可滚动', (
+        tester,
+      ) async {
+        tester.view.devicePixelRatio = 1;
+        tester.view.physicalSize = Size(width, 960);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        addTearDown(tester.view.resetPhysicalSize);
+        final container = await mePageTestAuthenticatedContainer(
+          MePageTestFakeMeProfileRepository(failFetchOnce: true),
+        );
+        addTearDown(container.dispose);
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: container,
+            child: MaterialApp(
+              theme: dark ? AppTheme.dark : AppTheme.light,
+              builder: (context, child) => MediaQuery(
+                data: MediaQuery.of(
+                  context,
+                ).copyWith(textScaler: const TextScaler.linear(2)),
+                child: child!,
+              ),
+              home: const MeSettingsPage(),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(
+          find.byKey(const Key('open-appearance-settings')),
+          findsOneWidget,
+        );
+        await tester.ensureVisible(find.byKey(const Key('logout-submit')));
+        await tester.pumpAndSettle();
+        await tester.ensureVisible(
+          find.byKey(const Key('me-open-delete-account')),
+        );
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        if (width == 360 && !dark) {
+          await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+          await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
+        }
+      });
+    }
+  }
 
   for (final dark in [false, true]) {
     for (final scale in [1.0, 2.0]) {
@@ -173,6 +226,60 @@ void registerMePageSettingsLayoutCases() {
       await expectLater(
         find.byKey(const Key('me-profile-edit-golden')),
         matchesGoldenFile('goldens/${visual.name}'),
+      );
+    });
+  }
+
+  for (final visual in const [
+    (width: 320.0, scale: 2.0, dark: false, suffix: '320_2x_light'),
+    (width: 320.0, scale: 2.0, dark: true, suffix: '320_2x_dark'),
+    (width: 400.0, scale: 1.0, dark: false, suffix: '400_light'),
+    (width: 400.0, scale: 1.0, dark: true, suffix: '400_dark'),
+    (width: 600.0, scale: 1.0, dark: false, suffix: '600_light'),
+    (width: 600.0, scale: 1.0, dark: true, suffix: '600_dark'),
+  ]) {
+    testWidgets('个人区宽度视觉基线 ${visual.suffix}', (tester) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = Size(visual.width, 960);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.view.resetPhysicalSize);
+      final container = await mePageTestAuthenticatedContainer(
+        MePageTestFakeMeProfileRepository(),
+      );
+      addTearDown(container.dispose);
+
+      Future<void> pumpPage(Widget page) async {
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: container,
+            child: MaterialApp(
+              theme: visual.dark ? AppTheme.dark : AppTheme.light,
+              builder: (context, child) => MediaQuery(
+                data: MediaQuery.of(
+                  context,
+                ).copyWith(textScaler: TextScaler.linear(visual.scale)),
+                child: child!,
+              ),
+              home: RepaintBoundary(
+                key: const Key('personal-visual-golden'),
+                child: page,
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+      }
+
+      await pumpPage(const MeSettingsPage());
+      await expectLater(
+        find.byKey(const Key('personal-visual-golden')),
+        matchesGoldenFile('goldens/account_settings_${visual.suffix}.png'),
+      );
+      await pumpPage(const MeEditPage());
+      await expectLater(
+        find.byKey(const Key('personal-visual-golden')),
+        matchesGoldenFile('goldens/me_profile_edit_${visual.suffix}.png'),
       );
     });
   }

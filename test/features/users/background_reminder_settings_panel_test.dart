@@ -5,9 +5,58 @@ import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/application/background_execution.dart';
 import 'package:wenyousite_mobile/core/application/background_online_reminders.dart';
 import 'package:wenyousite_mobile/core/application/background_reminder_preference.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_settings_body.dart';
 import 'package:wenyousite_mobile/features/users/presentation/background_reminder_settings_panel.dart';
 
 void main() {
+  testWidgets('320dp 两倍字号分组内的提醒和系统入口保持可用', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(320, 960);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    final container = ProviderContainer(
+      overrides: [
+        backgroundExecutionGatewayProvider.overrideWithValue(_Execution()),
+      ],
+    );
+    addTearDown(container.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          theme: AppTheme.light,
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(
+              context,
+            ).copyWith(textScaler: const TextScaler.linear(2)),
+            child: child!,
+          ),
+          home: const Scaffold(
+            body: WenyouSettingsBody(
+              children: [
+                WenyouSettingsGroup(
+                  children: [BackgroundReminderSettingsPanel(embedded: true)],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('background-reminder-toggle')), findsOneWidget);
+    expect(
+      tester.widget<Text>(find.text('后台消息提醒')).style?.fontWeight,
+      FontWeight.w400,
+    );
+    expect(find.byTooltip('后台消息提醒说明'), findsNothing);
+    await tester.ensureVisible(
+      find.byKey(const Key('background-reminder-system-settings')),
+    );
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('拒绝授权后账号设置提供手动重试，成功移除权限提示', (tester) async {
     final gateway = _Gateway();
     final container = ProviderContainer(
@@ -77,33 +126,24 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('管理消息弹窗'), findsNothing);
       final semantics = tester.ensureSemantics();
+      expect(find.byTooltip('后台消息提醒说明'), findsNothing);
       expect(
-        tester.getSemantics(find.byTooltip('后台消息提醒说明')),
-        matchesSemantics(
-          tooltip: '后台消息提醒说明',
-          isButton: true,
-          hasEnabledState: true,
-          isEnabled: true,
-          isFocusable: true,
-          hasTapAction: true,
-          hasFocusAction: true,
-        ),
+        tester
+            .getSemantics(find.byTooltip('后台常驻提醒，可能增加耗电；划掉应用后停止。'))
+            .getSemanticsData()
+            .tooltip,
+        '后台常驻提醒，可能增加耗电；划掉应用后停止。',
       );
       semantics.dispose();
       expect(find.text('后台常驻提醒，可能增加耗电；划掉应用后停止。'), findsNothing);
+      await tester.longPress(find.text('后台消息提醒'));
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(find.text('后台常驻提醒，可能增加耗电；划掉应用后停止。'), findsOneWidget);
+      await tester.pump(const Duration(seconds: 3));
       expect(
         tester.widget<SwitchListTile>(find.byType(SwitchListTile)).subtitle,
         isNull,
       );
-      await tester.tap(find.byTooltip('后台消息提醒说明'));
-      await tester.pumpAndSettle();
-      expect(find.text('后台常驻提醒，可能增加耗电；划掉应用后停止。'), findsOneWidget);
-      expect(
-        container.read(backgroundReminderPreferenceProvider).enabled,
-        isTrue,
-      );
-      await tester.tap(find.text('关闭'));
-      await tester.pumpAndSettle();
       expect(find.textContaining('系统默认提示音'), findsNothing);
       expect(find.textContaining('30 秒'), findsNothing);
       expect(
