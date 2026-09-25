@@ -310,7 +310,7 @@ class _MomentComposePageState extends ConsumerState<_MomentComposeEditor>
                   child: DecoratedBox(
                     decoration: BoxDecoration(
                       border: Border.all(color: tokens.border),
-                      borderRadius: BorderRadius.circular(tokens.radius12),
+                      borderRadius: BorderRadius.circular(tokens.radiusCompact),
                     ),
                     child: WenyouAtomicTextEditor(
                       controller: _contentController,

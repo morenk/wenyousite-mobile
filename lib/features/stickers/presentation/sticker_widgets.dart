@@ -251,7 +251,7 @@ class StickerTile extends StatelessWidget {
       label: sticker.asset.animated ? '动态收藏表情' : '收藏表情',
       child: Material(
         color: tokens.softPanel,
-        borderRadius: BorderRadius.circular(tokens.radius12),
+        borderRadius: BorderRadius.circular(tokens.radiusCompact),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: onTap,

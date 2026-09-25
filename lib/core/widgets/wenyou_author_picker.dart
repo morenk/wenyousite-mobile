@@ -165,7 +165,7 @@ class _AuthorPickerState extends State<_AuthorPicker> {
       padding: EdgeInsets.symmetric(vertical: tokens.space4 / 2),
       child: InkWell(
         key: ValueKey('discussion-author-${id ?? 'all'}'),
-        borderRadius: BorderRadius.circular(tokens.radius12),
+        borderRadius: BorderRadius.circular(tokens.radiusControl),
         onTap: () => Navigator.pop(context, WenyouAuthorSelection(id)),
         child: WenyouSelectionRow(
           label: label,

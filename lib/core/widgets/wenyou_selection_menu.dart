@@ -124,7 +124,7 @@ class _WenyouSelectionMenuState<T> extends State<WenyouSelectionMenu<T>> {
             // 不传 initialValue：Flutter 会据此把已选行移到锚点上，破坏下拉定位。
             position: PopupMenuPosition.under,
             offset: Offset(0, tokens.space4),
-            borderRadius: BorderRadius.circular(tokens.radius16),
+            borderRadius: BorderRadius.circular(tokens.radiusPanel),
             clipBehavior: Clip.antiAlias,
             popUpAnimationStyle: wenyouAnimationsDisabled(context)
                 ? AnimationStyle.noAnimation
@@ -292,7 +292,7 @@ class WenyouSelectionRow extends StatelessWidget {
       child: Ink(
         decoration: BoxDecoration(
           color: selected ? tokens.accentedBackground : null,
-          borderRadius: BorderRadius.circular(tokens.radius12),
+          borderRadius: BorderRadius.circular(tokens.radiusControl),
         ),
         child: ConstrainedBox(
           constraints: BoxConstraints(minHeight: tokens.minimumTouchTarget),
@@ -376,7 +376,7 @@ class WenyouSelectionTile extends StatelessWidget {
     button: true,
     enabled: onTap != null,
     child: InkWell(
-      borderRadius: BorderRadius.circular(context.wenyouTokens.radius12),
+      borderRadius: BorderRadius.circular(context.wenyouTokens.radiusControl),
       onTap: onTap,
       child: WenyouSelectionRow(
         label: label,

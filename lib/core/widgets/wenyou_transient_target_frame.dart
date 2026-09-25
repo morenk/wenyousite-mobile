@@ -73,7 +73,7 @@ class _WenyouTransientTargetFrameState
           border: Border.all(
             color: _visible ? tokens.brandSurface : Colors.transparent,
           ),
-          borderRadius: BorderRadius.circular(tokens.radius12),
+          borderRadius: BorderRadius.circular(tokens.radiusCompact),
         ),
         child: widget.child,
       ),

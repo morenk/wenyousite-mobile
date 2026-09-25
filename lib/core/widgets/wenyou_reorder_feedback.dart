@@ -45,7 +45,7 @@ class WenyouReorderFeedback extends StatelessWidget {
                 context,
               ).shadowColor.withValues(alpha: 0.16),
               elevation: tokens.space4 * progress,
-              borderRadius: BorderRadius.circular(tokens.radius12),
+              borderRadius: BorderRadius.circular(tokens.radiusPanel),
               child: child,
             ),
           ),

@@ -266,12 +266,12 @@ class _EditorImageCropDialogState extends State<_EditorImageCropDialog> {
               decoration: BoxDecoration(
                 color: context.wenyouTokens.softPanel,
                 borderRadius: BorderRadius.circular(
-                  context.wenyouTokens.radius12,
+                  context.wenyouTokens.radiusCompact,
                 ),
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(
-                  context.wenyouTokens.radius12,
+                  context.wenyouTokens.radiusCompact,
                 ),
                 child: Image.memory(source.previewBytes, fit: BoxFit.contain),
               ),
@@ -348,19 +348,19 @@ class _CropThumbnailTabs extends StatelessWidget {
             child: InkWell(
               key: ValueKey('image-crop-thumbnail-$index'),
               onTap: enabled ? () => onSelected(index) : null,
-              borderRadius: BorderRadius.circular(tokens.radius12),
+              borderRadius: BorderRadius.circular(tokens.radiusCompact),
               child: Container(
                 width: 64,
                 padding: const EdgeInsets.all(2),
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(tokens.radius12),
+                  borderRadius: BorderRadius.circular(tokens.radiusCompact),
                   border: Border.all(
                     color: selected ? tokens.brandForeground : tokens.border,
                     width: selected ? 2 : 1,
                   ),
                 ),
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(tokens.radius12),
+                  borderRadius: BorderRadius.circular(tokens.radiusCompact),
                   child: Image.memory(
                     sources[index].previewBytes,
                     fit: BoxFit.cover,

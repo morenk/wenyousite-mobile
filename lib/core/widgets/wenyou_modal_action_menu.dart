@@ -233,7 +233,7 @@ class _ModalActionButton<T> extends StatelessWidget {
         excludeSemantics: true,
         child: InkWell(
           onTap: enabled ? onPressed : null,
-          borderRadius: BorderRadius.circular(tokens.radius12),
+          borderRadius: BorderRadius.circular(tokens.radiusControl),
           child: Padding(
             padding: EdgeInsets.symmetric(
               horizontal: tokens.space4,

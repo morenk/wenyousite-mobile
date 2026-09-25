@@ -56,6 +56,13 @@ void main() {
       isTrue,
     );
     expect(find.byType(WenyouSettingsTypography), findsOneWidget);
+    final panels = find.byType(WenyouPanel);
+    expect(panels, findsNWidgets(2));
+    expect(
+      tester.getTopLeft(panels.at(1)).dy -
+          tester.getBottomLeft(panels.at(0)).dy,
+      8,
+    );
 
     await tester.tap(find.byKey(const Key('appearance-option-dark')));
     await tester.pump();

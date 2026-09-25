@@ -380,7 +380,7 @@ class _MomentGalleryState extends ConsumerState<MomentGallery> {
             height: stageHeight,
             child: Material(
               color: tokens.softPanel,
-              borderRadius: BorderRadius.circular(tokens.radius12),
+              borderRadius: BorderRadius.circular(tokens.radiusCompact),
               clipBehavior: Clip.antiAlias,
               child: Semantics(
                 button: true,

@@ -149,7 +149,7 @@ class _WenyouAnchoredPopoverState extends State<WenyouAnchoredPopover> {
         ),
         shape: WidgetStatePropertyAll(
           RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(tokens.radius16),
+            borderRadius: BorderRadius.circular(tokens.radiusPanel),
             side: BorderSide(color: tokens.border),
           ),
         ),
@@ -283,7 +283,7 @@ class _WenyouPopoverActionButton<T> extends StatelessWidget {
         label: action.semanticsLabel ?? action.label,
         child: InkWell(
           onTap: action.enabled && !action.loading ? onPressed : null,
-          borderRadius: BorderRadius.circular(tokens.radius12),
+          borderRadius: BorderRadius.circular(tokens.radiusControl),
           child: Padding(
             padding: EdgeInsets.symmetric(
               horizontal: tokens.space4,

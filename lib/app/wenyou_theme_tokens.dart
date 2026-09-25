@@ -41,10 +41,10 @@ class WenyouThemeTokens extends ThemeExtension<WenyouThemeTokens> {
     required this.space20,
     required this.space24,
     required this.space32,
-    required this.radius12,
+    required this.radiusCompact,
     required this.radiusCard,
-    required this.radius16,
-    required this.radius20,
+    required this.radiusControl,
+    required this.radiusPanel,
     required this.radiusPill,
     required this.cardGap,
     required this.minimumTouchTarget,
@@ -94,10 +94,10 @@ class WenyouThemeTokens extends ThemeExtension<WenyouThemeTokens> {
     space20: WenyouFoundationMobile.space20,
     space24: WenyouFoundationMobile.space24,
     space32: WenyouFoundationMobile.space32,
-    radius12: WenyouFoundationMobile.radiusCompact,
+    radiusCompact: WenyouFoundationMobile.radiusCompact,
     radiusCard: WenyouFoundationMobile.radiusCard,
-    radius16: WenyouFoundationMobile.radiusControl,
-    radius20: WenyouFoundationMobile.radiusPanel,
+    radiusControl: WenyouFoundationMobile.radiusControl,
+    radiusPanel: WenyouFoundationMobile.radiusPanel,
     radiusPill: WenyouFoundationMobile.radiusPill,
     cardGap: WenyouCollectionContract.cardGap,
     minimumTouchTarget: WenyouFoundationMobile.minimumTouchTarget,
@@ -148,10 +148,10 @@ class WenyouThemeTokens extends ThemeExtension<WenyouThemeTokens> {
     space20: WenyouFoundationMobile.space20,
     space24: WenyouFoundationMobile.space24,
     space32: WenyouFoundationMobile.space32,
-    radius12: WenyouFoundationMobile.radiusCompact,
+    radiusCompact: WenyouFoundationMobile.radiusCompact,
     radiusCard: WenyouFoundationMobile.radiusCard,
-    radius16: WenyouFoundationMobile.radiusControl,
-    radius20: WenyouFoundationMobile.radiusPanel,
+    radiusControl: WenyouFoundationMobile.radiusControl,
+    radiusPanel: WenyouFoundationMobile.radiusPanel,
     radiusPill: WenyouFoundationMobile.radiusPill,
     cardGap: WenyouCollectionContract.cardGap,
     minimumTouchTarget: WenyouFoundationMobile.minimumTouchTarget,
@@ -203,10 +203,10 @@ class WenyouThemeTokens extends ThemeExtension<WenyouThemeTokens> {
   final double space24;
   final double space32;
 
-  final double radius12;
+  final double radiusCompact;
   final double radiusCard;
-  final double radius16;
-  final double radius20;
+  final double radiusControl;
+  final double radiusPanel;
   final double radiusPill;
   final double cardGap;
   final double minimumTouchTarget;
@@ -256,10 +256,10 @@ class WenyouThemeTokens extends ThemeExtension<WenyouThemeTokens> {
     double? space20,
     double? space24,
     double? space32,
-    double? radius12,
+    double? radiusCompact,
     double? radiusCard,
-    double? radius16,
-    double? radius20,
+    double? radiusControl,
+    double? radiusPanel,
     double? radiusPill,
     double? cardGap,
     double? minimumTouchTarget,
@@ -310,10 +310,10 @@ class WenyouThemeTokens extends ThemeExtension<WenyouThemeTokens> {
       space20: space20 ?? this.space20,
       space24: space24 ?? this.space24,
       space32: space32 ?? this.space32,
-      radius12: radius12 ?? this.radius12,
+      radiusCompact: radiusCompact ?? this.radiusCompact,
       radiusCard: radiusCard ?? this.radiusCard,
-      radius16: radius16 ?? this.radius16,
-      radius20: radius20 ?? this.radius20,
+      radiusControl: radiusControl ?? this.radiusControl,
+      radiusPanel: radiusPanel ?? this.radiusPanel,
       radiusPill: radiusPill ?? this.radiusPill,
       cardGap: cardGap ?? this.cardGap,
       minimumTouchTarget: minimumTouchTarget ?? this.minimumTouchTarget,
@@ -387,10 +387,10 @@ class WenyouThemeTokens extends ThemeExtension<WenyouThemeTokens> {
       space20: _lerpDouble(space20, other.space20, t),
       space24: _lerpDouble(space24, other.space24, t),
       space32: _lerpDouble(space32, other.space32, t),
-      radius12: _lerpDouble(radius12, other.radius12, t),
+      radiusCompact: _lerpDouble(radiusCompact, other.radiusCompact, t),
       radiusCard: _lerpDouble(radiusCard, other.radiusCard, t),
-      radius16: _lerpDouble(radius16, other.radius16, t),
-      radius20: _lerpDouble(radius20, other.radius20, t),
+      radiusControl: _lerpDouble(radiusControl, other.radiusControl, t),
+      radiusPanel: _lerpDouble(radiusPanel, other.radiusPanel, t),
       radiusPill: _lerpDouble(radiusPill, other.radiusPill, t),
       cardGap: _lerpDouble(cardGap, other.cardGap, t),
       minimumTouchTarget: _lerpDouble(

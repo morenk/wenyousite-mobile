@@ -43,9 +43,9 @@ class WalletPage extends ConsumerWidget {
                           onRetry: () =>
                               ref.read(provider.notifier).retrySummary(),
                         ),
-                        SizedBox(height: context.wenyouTokens.space12),
+                        SizedBox(height: context.wenyouTokens.cardGap),
                         const DailyCheckInStatus(),
-                        SizedBox(height: context.wenyouTokens.space12),
+                        SizedBox(height: context.wenyouTokens.cardGap),
                       ],
                     ),
                   ),
@@ -392,7 +392,7 @@ class _TransactionTile extends StatelessWidget {
             type: MaterialType.transparency,
             child: InkWell(
               onTap: () => context.push(path),
-              borderRadius: BorderRadius.circular(tokens.radius12),
+              borderRadius: BorderRadius.circular(tokens.radiusControl),
               child: content,
             ),
           );

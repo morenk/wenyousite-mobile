@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
+import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 
 WenyouLevelTier? wenyouLevelTier(BuildContext context, int level) {
   return Theme.of(context).brightness == Brightness.dark
@@ -25,7 +26,9 @@ class WenyouLevelBadge extends StatelessWidget {
         decoration: BoxDecoration(
           color: tier.surface,
           border: Border.all(color: tier.border),
-          borderRadius: BorderRadius.circular(6),
+          borderRadius: BorderRadius.circular(
+            context.wenyouTokens.radiusCompact,
+          ),
         ),
         child: Align(
           widthFactor: 1,

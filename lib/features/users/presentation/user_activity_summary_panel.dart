@@ -202,7 +202,7 @@ class _ActivitySummaryItem extends StatelessWidget {
       excludeSemantics: true,
       child: InkWell(
         onTap: action,
-        borderRadius: BorderRadius.circular(tokens.radius12),
+        borderRadius: BorderRadius.circular(tokens.radiusControl),
         child: content,
       ),
     );

@@ -302,7 +302,7 @@ class _DecisionCard extends StatelessWidget {
             DecoratedBox(
               decoration: BoxDecoration(
                 color: tokens.softPanel,
-                borderRadius: BorderRadius.circular(tokens.radius12),
+                borderRadius: BorderRadius.circular(tokens.radiusCompact),
               ),
               child: Padding(
                 padding: EdgeInsets.all(tokens.space12),

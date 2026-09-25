@@ -215,7 +215,9 @@ class _StickerCollectionPageState extends ConsumerState<StickerCollectionPage> {
                         padding: EdgeInsets.zero,
                         side: BorderSide(color: tokens.border),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(tokens.radius12),
+                          borderRadius: BorderRadius.circular(
+                            tokens.radiusControl,
+                          ),
                         ),
                       ),
                       onPressed:
@@ -323,7 +325,7 @@ class _StickerCollectionPageState extends ConsumerState<StickerCollectionPage> {
             false);
     final failed = upload.failure != null || _pendingFailed;
     return ClipRRect(
-      borderRadius: BorderRadius.circular(tokens.radius12),
+      borderRadius: BorderRadius.circular(tokens.radiusCompact),
       child: Stack(
         fit: StackFit.expand,
         children: [
@@ -375,7 +377,7 @@ class _StickerCollectionPageState extends ConsumerState<StickerCollectionPage> {
   Widget _buildServerPendingTile(BuildContext context, StickerImport pending) {
     final tokens = context.wenyouTokens;
     return ClipRRect(
-      borderRadius: BorderRadius.circular(tokens.radius12),
+      borderRadius: BorderRadius.circular(tokens.radiusCompact),
       child: PendingImageOverlay(
         key: ValueKey('sticker-server-pending-${pending.id}'),
         active: false,

@@ -13,7 +13,7 @@ void main() {
   setUpAll(loadDeterministicTestFonts);
 
   for (final dark in [false, true]) {
-    testWidgets('${dark ? '黑夜' : '亮色'}浏览卡片使用共享圆角，普通面板保持原圆角', (tester) async {
+    testWidgets('${dark ? '黑夜' : '亮色'}浏览卡片与普通卡片共用卡片圆角', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
           theme: dark ? AppTheme.dark : AppTheme.light,
@@ -43,7 +43,7 @@ void main() {
       expect(cards[1].shape, isNull);
       expect(
         panelShape.borderRadius,
-        BorderRadius.circular(WenyouFoundationMobile.radiusPanel),
+        BorderRadius.circular(WenyouFoundationMobile.radiusCard),
       );
     });
   }

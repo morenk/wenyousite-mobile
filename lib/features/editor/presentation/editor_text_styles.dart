@@ -124,7 +124,7 @@ DefaultStyles wenyouEditorTextStyles(BuildContext context) {
       BoxDecoration(
         color: tokens.softPanel,
         border: Border.all(color: tokens.border),
-        borderRadius: BorderRadius.circular(tokens.radius12),
+        borderRadius: BorderRadius.circular(tokens.radiusCompact),
       ),
     ),
     inlineCode: InlineCodeStyle(

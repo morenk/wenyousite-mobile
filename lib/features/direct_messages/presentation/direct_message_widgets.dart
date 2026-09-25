@@ -703,16 +703,16 @@ class _DirectMessageBubbleState extends ConsumerState<DirectMessageBubble> {
                           ? tokens.brandSurface
                           : tokens.softPanel,
                       borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(tokens.radius16),
-                        topRight: Radius.circular(tokens.radius16),
+                        topLeft: Radius.circular(tokens.radiusCompact),
+                        topRight: Radius.circular(tokens.radiusCompact),
                         bottomLeft: Radius.circular(
                           !widget.isGroupEnd || widget.mine
-                              ? tokens.radius16
+                              ? tokens.radiusCompact
                               : tokens.space4,
                         ),
                         bottomRight: Radius.circular(
                           !widget.isGroupEnd || !widget.mine
-                              ? tokens.radius16
+                              ? tokens.radiusCompact
                               : tokens.space4,
                         ),
                       ),

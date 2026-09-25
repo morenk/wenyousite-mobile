@@ -7,6 +7,7 @@ import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/application/appearance_preference.dart';
+import 'package:wenyousite_mobile/core/application/background_execution.dart';
 import 'package:wenyousite_mobile/core/application/session_logout_controller.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
@@ -348,19 +349,34 @@ class _MeProfileSaveBar extends StatelessWidget {
   }
 }
 
-class MeSettingsPage extends StatelessWidget {
+class MeSettingsPage extends ConsumerWidget {
   const MeSettingsPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final backgroundReminderSupported = ref.watch(
+      backgroundExecutionGatewayProvider.select(
+        (gateway) => gateway.isSupported,
+      ),
+    );
     final page = Scaffold(
       appBar: AppBar(title: const Text('账号设置')),
       body: WenyouSettingsBody(
         children: [
-          const _AppearanceSettingsPanel(),
-          const _AccountSecurityPanel(disabled: false),
-          const BackgroundReminderSettingsPanel(),
-          const _LogoutPanel(),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const _AppearanceSettingsPanel(),
+              SizedBox(height: context.wenyouTokens.cardGap),
+              const _AccountSecurityPanel(disabled: false),
+              if (backgroundReminderSupported) ...[
+                SizedBox(height: context.wenyouTokens.cardGap),
+                const BackgroundReminderSettingsPanel(),
+              ],
+              SizedBox(height: context.wenyouTokens.cardGap),
+              const _LogoutPanel(),
+            ],
+          ),
           WenyouSettingsLink(
             title: '故障诊断',
             onTap: () => context.pushNamed(AppRouteNames.diagnostics),
