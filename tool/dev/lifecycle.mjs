@@ -28,3 +28,9 @@ export function requireLaunchOwnership(stateFile, token, runId) {
   if (!current || current.token !== token || current.runId !== runId || readJson(current.lockFile)?.token !== token) throw new Error('启动令牌或设备锁已变化，旧控制器不得接管。');
   return current;
 }
+
+export async function startWithLifecycleMutex(worktree, prepare, status) {
+  const result = await withLifecycleMutex(worktree, prepare);
+  // HTTP 队列里的 stop 也需要此 mutex；任何控制 RPC 都必须在锁外等待。
+  return result.reuse ? status(result.reuse) : result;
+}

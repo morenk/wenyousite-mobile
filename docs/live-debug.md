@@ -21,6 +21,7 @@ npm run dev:stop
 - 同设备 Debug 包一把独占锁，控制器绑定任务分支、绝对 Worktree、设备、runId、PID 与进程开始时间。不能从另一个 Worktree 接管。`status` 可从新终端调用；异常退出在原 Worktree 执行 `stop` 按登记恢复清理。
 - 启动、恢复与停止共享 Windows Named Mutex，持锁后重新读取归属；系统在控制进程异常退出时释放互斥。daemon 必须核对本次启动 token、runId 和 PID 后才能领取状态，迟到的旧 daemon 不能控制新批次。
 - Flutter 与自有 SSH 使用 Windows Job Object：挂起创建进程，登记 Job 后才继续运行，并绑定 daemon 的实际进程句柄。daemon、根进程或 wrapper 被强杀都会回收全部后代，覆盖子进程尚未写入状态文件的窗口；不能证明后代归属的旧状态保留设备锁，不宣称清理完成。
+- 首次安装通过任务私有 SDK 视图内的 ADB guard；共享 Android SDK 与 Flutter 配置不修改。guard 保留参数、二进制管道及退出码，拒绝 `uninstall`／`pm clear`，阻止 Flutter 覆盖安装失败后自动卸载旧包。启动前以真实 `flutter devices --machine` 核验 guard 确实被使用；不能核验或安装失败则停止，保留旧登录态和草稿。
 
 ## 网络与持久化边界
 

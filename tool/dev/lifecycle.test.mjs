@@ -5,7 +5,9 @@ import os from 'node:os';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { spawn } from 'node:child_process';
-import { withLifecycleMutex, requireLaunchOwnership } from './lifecycle.mjs';
+import http from 'node:http';
+import { withLifecycleMutex, requireLaunchOwnership, startWithLifecycleMutex } from './lifecycle.mjs';
+import { serialQueue } from './machine.mjs';
 import { readJson, writeJson, releaseLock, jobSpawn, sleep, killOwnedProcess } from './runtime.mjs';
 
 function removeTestDirectory(directory) {
@@ -129,4 +131,36 @@ test('daemon在登记子进程前被强杀时Job仍回收全部后代', { skip: 
     if (ids) for (const pid of Object.values(ids)) if (alive(pid)) process.kill(pid);
     removeTestDirectory(directory);
   }
+});
+
+test('并发start复用与HTTP stop不形成mutex与串行RPC队列循环等待', { skip: process.platform !== 'win32', timeout: 20000 }, async () => {
+  const name = `concurrent-start-stop-${randomUUID()}`;
+  const queue = serialQueue();
+  let beginStop;
+  const stopQueued = new Promise(resolve => { beginStop = resolve; });
+  let releaseStart;
+  const allowStart = new Promise(resolve => { releaseStart = resolve; });
+  let beginStart;
+  const startHeld = new Promise(resolve => { beginStart = resolve; });
+  let state = 'ready';
+  const server = http.createServer((request, response) => {
+    void queue(async () => {
+      if (request.url === '/stop') {
+        beginStop();
+        await withLifecycleMutex(name, async () => { state = 'stopped'; });
+      }
+      response.end(state);
+    });
+  });
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  const origin = `http://127.0.0.1:${server.address().port}`;
+  try {
+    const start = startWithLifecycleMutex(name, async () => { beginStart(); await allowStart; return { reuse: { id: 1 } }; }, async () => (await fetch(`${origin}/status`)).text());
+    await startHeld;
+    const stop = fetch(`${origin}/stop`);
+    await stopQueued;
+    releaseStart();
+    assert.equal(await start, 'stopped');
+    assert.equal(await (await stop).text(), 'stopped');
+  } finally { releaseStart(); server.closeAllConnections(); await new Promise(resolve => server.close(resolve)); }
 });

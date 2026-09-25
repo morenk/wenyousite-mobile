@@ -5,7 +5,8 @@ import { fileURLToPath } from 'node:url';
 import { randomBytes, timingSafeEqual } from 'node:crypto';
 import { FlutterMachine, serialQueue } from './machine.mjs';
 import { inspectSessionHealth, applyAvailability } from './health.mjs';
-import { withLifecycleMutex, requireLaunchOwnership } from './lifecycle.mjs';
+import { withLifecycleMutex, requireLaunchOwnership, startWithLifecycleMutex } from './lifecycle.mjs';
+import { prepareGuardedSdk, verifyGuardSelected } from './sdk-guard.mjs';
 import { PACKAGE, run, canonical, hash, privateDirectory, readJson, writeJson, processIdentity, sameProcess, killOwnedProcess, acquireLock, releaseLock, assertOwner, sourceEvidence, discoverDevice, findAdb, flutterCommand, ownedSpawn, jobSpawn, sleep, assertNoCompetingFlutter, installedPackageEvidence, assertDebugPackageConfiguration } from './runtime.mjs';
 import { loadDescriptor, verifyIdentity, connectPreview, removeOwnedReverse, CONTRACT_SHA } from './preview.mjs';
 
@@ -52,7 +53,7 @@ async function recoverStopped(state) {
   event('recovered-stale-controller', { runId: state.runId, device: state.device });
 }
 async function cli(action, values) {
-  if (action === 'start') return withLifecycleMutex(worktree, () => cliLocked(action, values));
+  if (action === 'start') return startWithLifecycleMutex(worktree, () => cliLocked(action, values), state => control(state, 'status'));
   if (action !== 'stop') return cliLocked(action, values);
   const current = await withLifecycleMutex(worktree, async () => {
     const state = readJson(stateFile);
@@ -97,7 +98,7 @@ async function cliLocked(action, values) {
   if (existing && sameProcess(existing)) {
     assertOwner(existing, owner);
     if (existing.runId !== descriptor.runId) throw new Error('预览批次已重置；先停止旧 Debug 会话。');
-    return existing.controlPort ? control(existing, 'status') : visible(existing);
+    return existing.controlPort ? { reuse: existing } : visible(existing);
   }
   if (existing && (!['stopped', 'failed'].includes(existing.status) || readJson(existing.lockFile)?.token === existing.token)) await recoverStopped(existing);
   assertNoCompetingFlutter(device);
@@ -206,6 +207,9 @@ async function daemon(launchToken, launchRunId) {
     })).borrowedTunnel;
     if (stopping) return;
     const command = flutterCommand();
+    const guardedSdk = prepareGuardedSdk(state.adb, directory);
+    verifyGuardSelected(command, guardedSdk, state.device);
+    state.sdkView = guardedSdk.view; save();
     const child = jobSpawn(command.file, [...command.prefix, 'run', '--machine', '--debug', '-d', state.device,
       `--dart-define=API_BASE_URL=${descriptor.backend.apiBase}`,
       `--dart-define=WENYOU_PREVIEW_SESSION=${descriptor.sessionId}`,
@@ -213,7 +217,7 @@ async function daemon(launchToken, launchRunId) {
       `--dart-define=WENYOU_PREVIEW_SNAPSHOT_AT=${descriptor.snapshot.capturedAt}`,
       `--dart-define=WENYOU_PREVIEW_SNAPSHOT_SHA=${descriptor.snapshot.sha256}`,
       `--dart-define=WENYOU_PREVIEW_MEDIA_ORIGIN=${descriptor.media.origin}`,
-    ], { cwd: worktree });
+    ], { cwd: worktree, env: guardedSdk.environment });
     state.children.push({ pid: child.pid, processStarted: processIdentity(child.pid), role: 'flutter', jobProtected: true }); save();
     machine = new FlutterMachine(child);
     machine.on('progress', progress => { state.progress = progress; save(); });
