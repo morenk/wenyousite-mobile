@@ -23,6 +23,10 @@ void registerThreadDetailPageTargetPagingCases() {
     final completer = Completer<ThreadPostTargetModel>();
     final repository = ThreadDetailPageTestFakeThreadDetailRepository(
       postTargetFuture: completer.future,
+      sideFloors: [
+        threadDetailPageTestSideFloor,
+        threadDetailPageTestTargetFloor,
+      ],
     );
     await tester.pumpWidget(
       threadDetailPageTestDetailApp(repository, targetPostId: 'floor-target'),
@@ -32,12 +36,16 @@ void registerThreadDetailPageTargetPagingCases() {
     expect(
       find.byWidgetPredicate(
         (widget) =>
-            widget is WenyouDetailSkeleton && widget.label == '正在打开目标楼层',
+            widget is WenyouDetailSkeleton && widget.label == '正在定位目标楼层',
       ),
       findsOneWidget,
     );
-    expect(find.text('主线正文'), findsNothing);
-    expect(find.byKey(const Key('thread-floor-card-floor-1')), findsNothing);
+    expect(find.text('主线正文').hitTestable(), findsNothing);
+    expect(find.byKey(const Key('discussion-target-cover')), findsOneWidget);
+    expect(
+      find.byKey(const Key('thread-floor-card-floor-1')).hitTestable(),
+      findsNothing,
+    );
 
     completer.complete(
       ThreadPostTargetModel(
@@ -51,12 +59,30 @@ void registerThreadDetailPageTargetPagingCases() {
 
     expect(repository.requestedSubthreads.last, 'subthread-2');
     expect(find.text('目标楼层内容'), findsOneWidget);
-    expect(find.text('支线正文'), findsNothing);
+    expect(find.byKey(const Key('discussion-target-cover')), findsNothing);
+    expect(
+      find.byKey(const Key('thread-target-show-discussion')),
+      findsNothing,
+    );
   });
 
   testWidgets('切换精准坐标时不展示上一个目标缓存', (tester) async {
     final secondGate = Completer<ThreadPostTargetModel>();
     final repository = ThreadDetailPageTestFakeThreadDetailRepository(
+      sideFloors: [
+        threadDetailPageTestSideFloor,
+        threadDetailPageTestTargetFloor,
+        ThreadFloorModel(
+          id: 'second-target',
+          floorNumber: 12,
+          author: threadDetailPageTestAuthor,
+          body: const ThreadBodyModel(markdown: '第二个目标楼层'),
+          createdAt: threadDetailPageTestRecentFixtureTime,
+          isDeleted: false,
+          replyCount: 0,
+          replies: const [],
+        ),
+      ],
       postTargetFutures: {
         'floor-target': Future.value(
           ThreadPostTargetModel(
@@ -100,7 +126,8 @@ void registerThreadDetailPageTargetPagingCases() {
     router.go('/threads/thread-1?post=second-target');
     await tester.pump();
     await tester.pump();
-    expect(find.text('目标楼层内容'), findsNothing);
+    expect(find.text('目标楼层内容').hitTestable(), findsNothing);
+    expect(find.byKey(const Key('discussion-target-cover')), findsOneWidget);
     expect(find.byKey(const Key('wenyou-detail-skeleton')), findsOneWidget);
     secondGate.complete(
       ThreadPostTargetModel(
@@ -121,7 +148,7 @@ void registerThreadDetailPageTargetPagingCases() {
     );
     await tester.pumpAndSettle();
     expect(find.text('第二个目标楼层'), findsOneWidget);
-    expect(find.text('目标楼层内容'), findsNothing);
+    expect(find.byKey(const Key('discussion-target-cover')), findsNothing);
     expect(repository.targetPostIds, ['floor-target', 'second-target']);
   });
 
@@ -172,7 +199,7 @@ void registerThreadDetailPageTargetPagingCases() {
     expect(repository.threadCalls, 2);
   });
 
-  testWidgets('搜索结果中的帖子会切换所属子贴并展示目标上下文', (tester) async {
+  testWidgets('搜索结果切换所属子贴并在完整楼层列表定位', (tester) async {
     final repository = ThreadDetailPageTestFakeThreadDetailRepository(
       postTarget: ThreadPostTargetModel(
         requestedPostId: 'floor-target',
@@ -187,19 +214,17 @@ void registerThreadDetailPageTargetPagingCases() {
     await tester.pumpAndSettle();
 
     expect(find.text('目标楼层内容'), findsOneWidget);
-    expect(find.textContaining('已定位到'), findsNothing);
-    expect(find.textContaining('强调底色'), findsNothing);
-    expect(find.byKey(const Key('thread-target-context')), findsOneWidget);
+    expect(find.byKey(const Key('discussion-target-cover')), findsNothing);
     expect(
       find.byKey(const Key('thread-target-show-discussion')),
-      findsOneWidget,
+      findsNothing,
     );
     expect(repository.targetPostIds, ['floor-target']);
     expect(repository.requestedSubthreads.last, 'subthread-2');
-    expect(find.byKey(const Key('thread-floor-card-floor-2')), findsNothing);
+    expect(find.byKey(const Key('thread-floor-card-floor-2')), findsWidgets);
   });
 
-  testWidgets('查看完整讨论清除坐标、保留子贴并沿用已加载楼层', (tester) async {
+  testWidgets('精准坐标揭开完整楼层列表并保留链接坐标', (tester) async {
     final repository = ThreadDetailPageTestFakeThreadDetailRepository(
       postTarget: ThreadPostTargetModel(
         requestedPostId: 'floor-target',
@@ -219,9 +244,6 @@ void registerThreadDetailPageTargetPagingCases() {
               postId: state.uri.queryParameters['post'],
               subthreadId: state.uri.queryParameters['subthread'],
             ),
-            listResume: state.extra is ThreadDetailListResume
-                ? state.extra as ThreadDetailListResume
-                : null,
           ),
         ),
       ],
@@ -241,30 +263,44 @@ void registerThreadDetailPageTargetPagingCases() {
       ),
     );
     await tester.pumpAndSettle();
-    final floorCalls = repository.requestedSubthreads.length;
-    await tester.tap(find.byKey(const Key('thread-target-show-discussion')));
-    await tester.pump();
-    await tester.pump();
-    final controls = find.byKey(const Key('thread-floor-controls'));
-    expect(controls, findsOneWidget);
-    final firstFrameTop = tester.getTopLeft(controls).dy;
-    expect(firstFrameTop, lessThan(220));
+    final target = find.byKey(const Key('thread-floor-card-floor-target'));
+    expect(target, findsOneWidget);
+    expect(find.byKey(const Key('discussion-target-cover')), findsNothing);
+    expect(
+      find.byKey(const Key('thread-target-show-discussion')),
+      findsNothing,
+    );
+    final firstFrameTop = tester.getTopLeft(target).dy;
     await tester.pump(const Duration(milliseconds: 200));
-    expect(tester.getTopLeft(controls).dy, firstFrameTop);
-    await tester.pumpAndSettle();
+    expect(tester.getTopLeft(target).dy, firstFrameTop);
     expect(
       router.routeInformationProvider.value.uri.queryParameters['post'],
-      isNull,
+      'floor-target',
     );
-    expect(
-      router.routeInformationProvider.value.uri.queryParameters['subthread'],
-      'subthread-2',
-    );
-    expect(find.byKey(const Key('thread-floors-author')), findsOneWidget);
-    expect(repository.requestedSubthreads.length, floorCalls);
+    expect(repository.requestedSubthreads.last, 'subthread-2');
   });
 
-  testWidgets('远端目标首帧直接可读且不渲染前页楼层', (tester) async {
+  testWidgets('目标揭开后普通楼层预取失败只在列表内提示', (tester) async {
+    final repository = ThreadDetailPageTestFakeThreadDetailRepository(
+      postTarget: ThreadPostTargetModel(
+        requestedPostId: 'floor-1',
+        threadId: 'thread-1',
+        subthreadId: 'subthread-1',
+        floor: threadDetailPageTestMainFloor,
+      ),
+      loadMoreFailure: const ApiFailure(userMessage: '更多楼层加载失败。'),
+    );
+    await tester.pumpWidget(
+      threadDetailPageTestDetailApp(repository, targetPostId: 'floor-1'),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('discussion-target-cover')), findsNothing);
+    expect(find.byKey(const Key('thread-floor-card-floor-1')), findsOneWidget);
+    expect(find.text('更多楼层加载失败。'), findsOneWidget);
+  });
+
+  testWidgets('远端目标通过真实 cursor 页定位并稳定揭开完整列表', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(360, 640);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -296,6 +332,7 @@ void registerThreadDetailPageTargetPagingCases() {
     );
     final repository = ThreadDetailPageTestFakeThreadDetailRepository(
       mainFloors: floors,
+      nextFloors: [targetFloor],
       postTarget: ThreadPostTargetModel(
         requestedPostId: 'far-target',
         threadId: 'thread-1',
@@ -320,10 +357,11 @@ void registerThreadDetailPageTargetPagingCases() {
     );
     await tester.pump(const Duration(milliseconds: 200));
     expect(tester.getRect(targetFinder), targetRect);
-    expect(repository.requestedSubthreads, ['subthread-1']);
+    expect(repository.requestedSubthreads, ['subthread-1', 'subthread-1']);
+    expect(repository.requestedCursors, [null, 'next-cursor']);
   });
 
-  testWidgets('发表楼层后保留已加载窗口并定位到新楼层', (tester) async {
+  testWidgets('发表楼层后重读真实列表并定位到新楼层', (tester) async {
     tester.view.physicalSize = const Size(360, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -411,13 +449,16 @@ void registerThreadDetailPageTargetPagingCases() {
       'floor-created',
     );
     expect(detailRepository.targetPostIds, ['floor-created']);
-    expect(detailRepository.requestedSubthreads, ['subthread-1']);
+    expect(detailRepository.requestedSubthreads, [
+      'subthread-1',
+      'subthread-1',
+    ]);
     expect(authorDirectory.floorCalls, 2);
     expect(find.text('刚发表的楼层'), findsOneWidget);
-    expect(find.byKey(const Key('thread-floor-card-floor-1')), findsNothing);
+    expect(find.byKey(const Key('discussion-target-cover')), findsNothing);
     expect(
       find.byKey(const Key('thread-target-show-discussion')),
-      findsOneWidget,
+      findsNothing,
     );
     expect(tester.takeException(), isNull);
   });

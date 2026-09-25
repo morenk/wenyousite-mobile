@@ -420,10 +420,6 @@ void registerThreadDetailPageSubthreadNavigationCases() {
         await tester.pumpAndSettle();
         if (targetKind == 'post') {
           expect(find.text('目标楼层内容'), findsOneWidget);
-          await tester.tap(
-            find.byKey(const Key('thread-target-show-discussion')),
-          );
-          await tester.pumpAndSettle();
         }
         expect(find.text('支线正文'), findsOneWidget);
 
@@ -482,10 +478,7 @@ void registerThreadDetailPageSubthreadNavigationCases() {
     expect(repository.latestThreadIds, ['thread-1']);
     expect(repository.targetPostIds, ['floor-target']);
     expect(find.text('目标楼层内容'), findsOneWidget);
-    expect(find.text('支线正文'), findsNothing);
-
-    await tester.tap(find.byKey(const Key('thread-target-show-discussion')));
-    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('discussion-target-cover')), findsNothing);
 
     await tester.tap(find.byKey(const Key('thread-detail-latest')));
     await tester.pumpAndSettle();

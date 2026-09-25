@@ -104,8 +104,7 @@ class ThreadDetailController extends StateNotifier<ThreadDetailState> {
     this._repository,
     this.threadId, {
     bool autoStart = true,
-    ThreadDetailState? initialState,
-  }) : super(initialState ?? const ThreadDetailState()) {
+  }) : super(const ThreadDetailState()) {
     if (autoStart) unawaited(loadInitial());
   }
 
@@ -325,10 +324,13 @@ class ThreadDetailController extends StateNotifier<ThreadDetailState> {
 
   Future<void> loadMore() => prefetchRemainingFloors();
 
+  Future<void> locateFloor(String floorId) =>
+      prefetchRemainingFloors(untilFloorId: floorId);
+
   /// Fetches all remaining text pages sequentially. The page starts this only
   /// after the first frame, while the sliver remains responsible for lazily
   /// creating image widgets inside its bounded cache neighborhood.
-  Future<void> prefetchRemainingFloors() async {
+  Future<void> prefetchRemainingFloors({String? untilFloorId}) async {
     final selectedId = state.selectedSubthreadId;
     if (state.phase != ThreadDetailPhase.ready ||
         selectedId == null ||
@@ -349,7 +351,9 @@ class ThreadDetailController extends StateNotifier<ThreadDetailState> {
     );
 
     while (_matchesFloorRequest(epoch, selectedId, order, authorId) &&
-        state.hasMore) {
+        state.hasMore &&
+        (untilFloorId == null ||
+            !state.floors.any((floor) => floor.id == untilFloorId))) {
       final cursor = state.cursor;
       if (cursor == null || !seenCursors.add(cursor)) {
         _finishFloorPrefetchFailure(
@@ -513,7 +517,6 @@ class ThreadDetailController extends StateNotifier<ThreadDetailState> {
 typedef ThreadDetailControllerScope = ({
   String threadId,
   Object pageInstanceToken,
-  ThreadDetailState? initialState,
 });
 
 final threadDetailControllerProvider = StateNotifierProvider.autoDispose
@@ -526,8 +529,6 @@ final threadDetailControllerProvider = StateNotifierProvider.autoDispose
       return ThreadDetailController(
         ref.watch(threadDetailRepositoryProvider),
         scope.threadId,
-        initialState: scope.initialState,
-        autoStart: scope.initialState == null,
       );
     }, dependencies: [viewerScopeProvider, threadDetailRepositoryProvider]);
 

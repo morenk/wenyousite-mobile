@@ -163,9 +163,6 @@ List<RouteBase> buildContentRoutes() => [
     pageBuilder: (context, state) {
       final child = ThreadDetailPage(
         threadId: state.pathParameters['threadId']!,
-        listResume: state.extra is ThreadDetailListResume
-            ? state.extra as ThreadDetailListResume
-            : null,
         entryTarget: ThreadDetailEntryTarget.fromQuery(
           postId: state.uri.queryParameters['post'],
           subthreadId: state.uri.queryParameters['subthread'],

@@ -7,6 +7,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
+import 'package:wenyousite_mobile/core/models/cursor_page.dart';
+import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/media/application/image_crop_ports.dart';
@@ -25,7 +27,7 @@ import 'post_replies_page_test_support.dart';
 
 void registerPostRepliesPageScrollingLifecycleCases() {
   setUpAll(loadDeterministicTestFonts);
-  testWidgets('目标回复慢请求只显示骨架，查看完整讨论清除坐标', (tester) async {
+  testWidgets('目标回复慢请求遮住列表，定位后揭开完整讨论', (tester) async {
     final rootGate = Completer<PostItem>();
     final repository = PostRepliesPageTestFakePostRepository(
       onFetchPost: (postId) => postId == 'root'
@@ -66,28 +68,84 @@ void registerPostRepliesPageScrollingLifecycleCases() {
     expect(
       find.byWidgetPredicate(
         (widget) =>
-            widget is WenyouDetailSkeleton && widget.label == '正在打开目标回复',
+            widget is WenyouDetailSkeleton && widget.label == '正在定位目标回复',
       ),
-      findsOneWidget,
+      findsWidgets,
     );
     expect(find.text('他人的回复'), findsNothing);
+    expect(find.byKey(const Key('discussion-target-cover')), findsOneWidget);
     rootGate.complete(postRepliesPageTestRoot);
     await tester.pumpAndSettle();
-    expect(
-      find.byKey(const Key('post-focused-reply-reply-other')),
-      findsOneWidget,
-    );
+    expect(find.byKey(const Key('post-reply-reply-other')), findsOneWidget);
     expect(find.text('他人的回复'), findsOneWidget);
-    expect(find.text('自己的回复'), findsNothing);
-
-    await tester.tap(find.byKey(const Key('post-focused-show-discussion')));
-    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('discussion-target-cover')), findsNothing);
+    expect(find.byKey(const Key('post-focused-show-discussion')), findsNothing);
     expect(
       router.routeInformationProvider.value.uri.queryParameters['post'],
-      isNull,
+      'reply-other',
     );
     expect(find.byKey(const Key('post-replies-list')), findsOneWidget);
-    expect(find.text('自己的回复'), findsOneWidget);
+  });
+
+  testWidgets('目标回复沿 cursor 加载，揭开后普通分页错误保持列表可见', (tester) async {
+    final first = postRepliesPageTestReply(
+      'first',
+      '前页回复',
+      postRepliesPageTestOtherAuthor,
+    );
+    final target = postRepliesPageTestReply(
+      'remote-target',
+      '远端目标回复',
+      postRepliesPageTestOtherAuthor,
+    );
+    final cursors = <String?>[];
+    final repository = PostRepliesPageTestFakePostRepository(
+      onFetchPost: (id) async =>
+          id == 'root' ? postRepliesPageTestRoot : target,
+      onFetchReplies:
+          ({required rootPostId, cursor, required order, authorId}) async {
+            cursors.add(cursor);
+            if (cursor == null) {
+              return CursorPage(
+                items: [first],
+                cursor: 'page-2',
+                hasMore: true,
+              );
+            }
+            if (cursor == 'page-2') {
+              return CursorPage(
+                items: [target],
+                cursor: 'page-3',
+                hasMore: true,
+              );
+            }
+            throw const ApiFailure(userMessage: '更多回复加载失败。');
+          },
+    );
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          memoryPendingMediaFileStoreOverride(),
+          stickersEnabledProvider.overrideWithValue(false),
+          postRepositoryProvider.overrideWithValue(repository),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const PostRepliesPage(
+            threadId: 'thread',
+            rootPostId: 'root',
+            focusedReplyId: 'remote-target',
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(cursors.take(2), [null, 'page-2']);
+    expect(cursors, contains('page-3'));
+    expect(find.byKey(const Key('discussion-target-cover')), findsNothing);
+    expect(find.byKey(const Key('post-reply-remote-target')), findsOneWidget);
+    expect(find.text('更多回复加载失败。'), findsOneWidget);
   });
   testWidgets('楼中楼末尾长回复从作者信息开头定位', (tester) async {
     await tester.pumpWidget(
@@ -121,11 +179,9 @@ void registerPostRepliesPageScrollingLifecycleCases() {
     final target = tester.getRect(
       find.byKey(const ValueKey('target-frame-long-target')),
     );
-    final viewport = tester.getRect(
-      find.byKey(const Key('post-focused-reply-list')),
-    );
-    expect(target.height, greaterThan(viewport.height));
-    expect(target.top, greaterThan(viewport.top));
+    final viewport = tester.getRect(find.byKey(const Key('post-replies-list')));
+    expect(find.byKey(const Key('post-reply-long-target')), findsOneWidget);
+    expect(target.top, closeTo(viewport.top, 1));
     expect(target.top, lessThan(viewport.top + 100));
   });
   testWidgets('上传中点击编辑器外部会在关闭 Sheet 前取消任务', (tester) async {
@@ -302,7 +358,7 @@ void registerPostRepliesPageScrollingLifecycleCases() {
     );
     await tester.pumpAndSettle();
 
-    final targetFinder = find.byKey(const Key('post-focused-reply-far-reply'));
+    final targetFinder = find.byKey(const ValueKey('target-frame-far-reply'));
     expect(targetFinder, findsOneWidget);
     final targetRect = tester.getRect(targetFinder);
     expect(targetRect.bottom, greaterThan(0));

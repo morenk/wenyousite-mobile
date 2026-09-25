@@ -6,13 +6,13 @@ import 'package:wenyousite_mobile/features/posts/data/post_repository.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
 
 void main() {
-  test('独立讨论保留首屏外目标回复并按筛选和 cursor 分页', () async {
+  test('独立讨论验证首屏外目标并沿真实 cursor 页定位', () async {
     final repository = _FakePostRepository(
       posts: {'root': _post('root'), 'focus': _reply('focus', minute: 2)},
       onReplies: ({cursor, required order, authorId}) async {
         if (cursor == 'next') {
           return CursorPage(
-            items: [_reply('reply-2', minute: 3)],
+            items: [_reply('reply-2', minute: 3), _reply('focus', minute: 2)],
             hasMore: false,
           );
         }
@@ -31,12 +31,9 @@ void main() {
 
     await controller.load();
 
-    expect(controller.state.replies.map((item) => item.id), [
-      'reply-1',
-      'focus',
-    ]);
+    expect(controller.state.replies.map((item) => item.id), ['reply-1']);
     expect(repository.postRequests, ['root', 'focus']);
-    await controller.loadMore();
+    await controller.locateReply('focus');
     expect(controller.state.replies.map((item) => item.id), [
       'reply-1',
       'focus',
@@ -129,10 +126,7 @@ void main() {
     await controller.load();
     expect(repository.postRequests, ['root', 'focus', 'root', 'focus']);
     expect(controller.state.phase, PostDiscussionPhase.ready);
-    expect(controller.state.replies.map((reply) => reply.id), [
-      'reply-1',
-      'focus',
-    ]);
+    expect(controller.state.replies.map((reply) => reply.id), ['reply-1']);
   });
 
   test('独立讨论首屏完成后串行预取剩余全部文字回复', () async {

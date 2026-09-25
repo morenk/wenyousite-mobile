@@ -88,6 +88,7 @@ class DiscussionTargetRevealCoordinator {
     required ScrollController scrollController,
     required bool Function() isMounted,
     required VoidCallback requestRebuild,
+    VoidCallback? onAligned,
   }) {
     if (_scopeSignature != scopeSignature) {
       reset();
@@ -127,6 +128,7 @@ class DiscussionTargetRevealCoordinator {
         _lastContentSignature = contentSignature;
         _attemptTargetId = null;
         _visitedSeeks.clear();
+        onAligned?.call();
         return;
       }
       if (!scrollController.hasClients) {
