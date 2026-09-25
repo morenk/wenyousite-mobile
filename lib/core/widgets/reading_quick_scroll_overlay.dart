@@ -218,7 +218,7 @@ class _ReadingQuickScrollOverlayState extends State<ReadingQuickScrollOverlay> {
         ? Material(
             key: const Key('reading-quick-scroll-location'),
             color: tokens.panel,
-            borderRadius: BorderRadius.circular(tokens.radius12),
+            borderRadius: BorderRadius.circular(tokens.radiusCompact),
             child: SingleChildScrollView(
               padding: EdgeInsets.all(tokens.space8),
               child: Text(
@@ -230,7 +230,7 @@ class _ReadingQuickScrollOverlayState extends State<ReadingQuickScrollOverlay> {
         : widget.hasMore
         ? Material(
             color: tokens.panel,
-            borderRadius: BorderRadius.circular(tokens.radius12),
+            borderRadius: BorderRadius.circular(tokens.radiusCompact),
             child: SingleChildScrollView(
               padding: EdgeInsets.all(tokens.space4),
               child: Text(

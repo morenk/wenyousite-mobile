@@ -306,7 +306,7 @@ class _RecommendedUpdateBanner extends StatelessWidget {
     return Material(
       elevation: 4,
       color: Colors.transparent,
-      borderRadius: BorderRadius.circular(tokens.radius12),
+      borderRadius: BorderRadius.circular(tokens.radiusCompact),
       child: WenyouStatusBanner(
         key: const Key('recommended-update-banner'),
         message: '温油站有新版本',
@@ -482,7 +482,7 @@ class _BuildTransition extends StatelessWidget {
       child: DecoratedBox(
         decoration: BoxDecoration(
           color: tokens.softPanel,
-          borderRadius: BorderRadius.circular(tokens.radius16),
+          borderRadius: BorderRadius.circular(tokens.radiusControl),
           border: Border.all(color: tokens.border),
         ),
         child: Padding(

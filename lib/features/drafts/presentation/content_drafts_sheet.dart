@@ -590,7 +590,7 @@ class _SlotNumber extends StatelessWidget {
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: occupied ? tokens.accentedBackground : tokens.softPanel,
-        borderRadius: BorderRadius.circular(tokens.radius12),
+        borderRadius: BorderRadius.circular(tokens.radiusCompact),
         border: Border.all(color: tokens.border),
       ),
       child: Text(

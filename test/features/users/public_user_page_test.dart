@@ -36,6 +36,7 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('一起写下温柔的故事。'), findsOneWidget);
+    expect(find.textContaining('加入温油站'), findsNothing);
     expect(find.text('7'), findsOneWidget);
     expect(find.text('9'), findsOneWidget);
     expect(find.text('18 升'), findsOneWidget);
@@ -44,6 +45,13 @@ void main() {
     expect(find.text('创建主题'), findsWidgets);
     expect(find.text('参与主题'), findsOneWidget);
     expect(find.text('累计回复'), findsOneWidget);
+    final profileRect = tester.getRect(
+      find.byKey(const Key('public-user-profile-header')),
+    );
+    final activityRect = tester.getRect(
+      find.byKey(const Key('public-user-activity-summary')),
+    );
+    expect(activityRect.top - profileRect.bottom, 8);
     expect(find.text('已关注'), findsOneWidget);
     expect(find.text('关注了你'), findsOneWidget);
     expect(find.bySemanticsLabel('温柔测试员 的主页背景图'), findsNothing);

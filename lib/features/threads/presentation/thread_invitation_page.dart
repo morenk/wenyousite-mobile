@@ -181,7 +181,7 @@ class _InviteFact extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         color: tokens.softPanel,
-        borderRadius: BorderRadius.circular(tokens.radius12),
+        borderRadius: BorderRadius.circular(tokens.radiusCompact),
         border: Border.all(color: tokens.border),
       ),
       child: Padding(

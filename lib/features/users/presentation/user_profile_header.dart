@@ -69,6 +69,7 @@ class UserProfileHeader extends StatelessWidget {
       width: double.infinity,
       child: WenyouPanel(
         padding: EdgeInsets.zero,
+        contentCard: true,
         clipBehavior: Clip.antiAlias,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -102,7 +103,7 @@ class UserProfileHeader extends StatelessWidget {
                     Row(
                       children: [
                         WenyouIcon(
-                          WenyouIconIds.statusCalendar,
+                          WenyouIconIds.statusMail,
                           size: 17,
                           color: tokens.mutedText,
                         ),

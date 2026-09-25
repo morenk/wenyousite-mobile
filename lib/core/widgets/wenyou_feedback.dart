@@ -85,7 +85,7 @@ class WenyouStatusBanner extends StatelessWidget {
         padding: EdgeInsets.all(tokens.space12),
         decoration: BoxDecoration(
           color: background,
-          borderRadius: BorderRadius.circular(tokens.radius12),
+          borderRadius: BorderRadius.circular(tokens.radiusCompact),
           border: Border.all(
             color: tone == WenyouStatusTone.error
                 ? scheme.error.withValues(alpha: 0.22)

@@ -427,7 +427,7 @@ class _PublishNavigationIcon extends StatelessWidget {
         height: 36,
         decoration: BoxDecoration(
           color: tokens.actionSurface,
-          borderRadius: BorderRadius.circular(tokens.radius12),
+          borderRadius: BorderRadius.circular(tokens.radiusControl),
         ),
         child: WenyouIcon(
           WenyouIconIds.actionAdd,

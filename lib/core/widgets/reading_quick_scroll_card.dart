@@ -27,7 +27,7 @@ class ReadingQuickScrollCard extends StatelessWidget {
       key: const Key('reading-quick-scroll-card'),
       color: tokens.panel,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(tokens.radius20),
+        borderRadius: BorderRadius.circular(tokens.radiusPanel),
         side: BorderSide(color: tokens.border),
       ),
       clipBehavior: Clip.antiAlias,

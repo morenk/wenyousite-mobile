@@ -10,7 +10,7 @@ void main() {
   test('移动主题完整映射 Foundation 核心 Token', () {
     const tokens = WenyouThemeTokens.light;
 
-    expect(WenyouFoundationVersion.value, '7.1.1');
+    expect(WenyouFoundationVersion.value, '7.1.2');
     expect(WenyouFoundationVersion.schema, 3);
     expect(WenyouFoundationMobile.radiusCard, 10);
     expect(WenyouCollectionContract.cardGap, 8);
@@ -63,13 +63,18 @@ void main() {
       tokens.space32,
     ], WenyouFoundationMobile.spacing);
     expect(
-      [tokens.radius12, tokens.radius16, tokens.radius20],
+      [tokens.radiusCompact, tokens.radiusControl, tokens.radiusPanel],
       [
         WenyouFoundationMobile.radiusCompact,
         WenyouFoundationMobile.radiusControl,
         WenyouFoundationMobile.radiusPanel,
       ],
     );
+    expect(tokens.radiusCard, WenyouFoundationMobile.radiusCard);
+    expect(WenyouFoundationMobile.radiusUsage['accountSection'], 'card');
+    expect(WenyouFoundationMobile.radiusUsage['button'], 'control');
+    expect(WenyouFoundationMobile.radiusUsage['dialog'], 'panel');
+    expect(tokens.cardGap, WenyouCollectionContract.cardGap);
     expect(
       tokens.minimumTouchTarget,
       WenyouFoundationMobile.minimumTouchTarget,
@@ -95,6 +100,56 @@ void main() {
       WenyouFoundationMobile.wideContainerMaxWidth,
     );
     expect(tokens.feedbackDuration, WenyouFoundationMotion.fast);
+  });
+
+  test('明暗主题按语义设置控件、卡片和浮层圆角', () {
+    for (final theme in [AppTheme.light, AppTheme.dark]) {
+      final tokens = theme.extension<WenyouThemeTokens>()!;
+      BorderRadius radius(ShapeBorder shape) =>
+          (shape as RoundedRectangleBorder).borderRadius as BorderRadius;
+
+      expect(
+        radius(theme.cardTheme.shape!),
+        BorderRadius.circular(tokens.radiusCard),
+      );
+      expect(
+        radius(theme.filledButtonTheme.style!.shape!.resolve({})!),
+        BorderRadius.circular(tokens.radiusControl),
+      );
+      expect(
+        radius(theme.outlinedButtonTheme.style!.shape!.resolve({})!),
+        BorderRadius.circular(tokens.radiusControl),
+      );
+      expect(
+        radius(theme.textButtonTheme.style!.shape!.resolve({})!),
+        BorderRadius.circular(tokens.radiusControl),
+      );
+      expect(
+        radius(theme.chipTheme.shape!),
+        BorderRadius.circular(tokens.radiusControl),
+      );
+      expect(
+        (theme.inputDecorationTheme.border! as OutlineInputBorder).borderRadius,
+        BorderRadius.circular(tokens.radiusControl),
+      );
+      expect(
+        radius(theme.dialogTheme.shape!),
+        BorderRadius.circular(tokens.radiusPanel),
+      );
+      expect(
+        radius(theme.popupMenuTheme.shape!),
+        BorderRadius.circular(tokens.radiusPanel),
+      );
+      expect(
+        radius(theme.snackBarTheme.shape!),
+        BorderRadius.circular(tokens.radiusPanel),
+      );
+      expect(
+        (theme.bottomSheetTheme.shape! as RoundedRectangleBorder).borderRadius,
+        BorderRadius.vertical(top: Radius.circular(tokens.radiusPanel)),
+      );
+      expect(tokens.minimumTouchTarget, greaterThanOrEqualTo(48));
+    }
   });
 
   test('所有可用作文字或图标前景的语义色满足普通文字 AA 对比度', () {

@@ -142,6 +142,7 @@ void main() {
       threadDetailPageTestDetailApp(
         ThreadDetailPageTestFakeThreadDetailRepository(
           mainFloors: floors,
+          sideFloors: [threadDetailPageTestTargetFloor],
           postTargetFuture: pending.future,
         ),
         targetPostId: 'floor-target',
@@ -160,7 +161,9 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('目标楼层内容'), findsOneWidget);
-    expect(find.byKey(const Key('reading-quick-scroll-toggle')), findsNothing);
-    expect(find.text('支线正文'), findsNothing);
+    final quickToggle = find.byKey(const Key('reading-quick-scroll-toggle'));
+    expect(quickToggle, findsOneWidget);
+    expect(tester.widget<IconButton>(quickToggle).onPressed, isNotNull);
+    expect(find.byKey(const Key('discussion-target-cover')), findsNothing);
   });
 }

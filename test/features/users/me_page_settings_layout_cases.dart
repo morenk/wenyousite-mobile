@@ -82,6 +82,18 @@ void registerMePageSettingsLayoutCases() {
     expect(find.text('更换邮箱'), findsOneWidget);
     expect(find.byKey(const Key('logout-submit')), findsOneWidget);
     expect(find.text('账号状态加载失败'), findsNothing);
+    final panels = find.byType(WenyouPanel);
+    expect(panels, findsNWidgets(3));
+    expect(
+      tester.getTopLeft(panels.at(1)).dy -
+          tester.getBottomLeft(panels.at(0)).dy,
+      8,
+    );
+    expect(
+      tester.getTopLeft(panels.at(2)).dy -
+          tester.getBottomLeft(panels.at(1)).dy,
+      8,
+    );
   });
 
   for (final dark in [false, true]) {

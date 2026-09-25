@@ -60,7 +60,7 @@ class BookmarkListView extends ConsumerWidget {
     return switch (state.phase) {
       BookmarkListPhase.loading => const WenyouPageBody(
         maxWidth: 600,
-        child: WenyouListSkeleton(label: '正在加载收藏内容'),
+        child: WenyouListSkeleton(label: '正在加载收藏内容', contentCards: true),
       ),
       BookmarkListPhase.failed => WenyouPageBody(
         maxWidth: 600,
@@ -276,7 +276,7 @@ class _ReadyBookmarkList extends StatelessWidget {
               )
             else
               for (var index = 0; index < state.items.length; index++) ...[
-                if (index > 0) SizedBox(height: tokens.space12),
+                if (index > 0) SizedBox(height: tokens.cardGap),
                 _CenteredContent(
                   child: _BookmarkThreadListItem(
                     item: state.items[index],

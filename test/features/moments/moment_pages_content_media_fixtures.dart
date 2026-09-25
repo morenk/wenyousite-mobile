@@ -21,7 +21,10 @@ import 'package:wenyousite_mobile/features/moments/presentation/moment_feed_page
 import '../../support/moment_test_draft_store.dart';
 import 'moment_pages_session_wallet_fixtures.dart';
 
-Widget momentPagesTestFeedApp(MomentRepository repository) {
+Widget momentPagesTestFeedApp(
+  MomentRepository repository, {
+  bool dark = false,
+}) {
   return ProviderScope(
     overrides: [
       momentRepositoryProvider.overrideWithValue(repository),
@@ -31,7 +34,7 @@ Widget momentPagesTestFeedApp(MomentRepository repository) {
       momentDraftStoreProvider.overrideWithValue(MemoryMomentDraftStore()),
     ],
     child: MaterialApp(
-      theme: AppTheme.light,
+      theme: dark ? AppTheme.dark : AppTheme.light,
       home: const RepaintBoundary(
         key: Key('moment-feed-visual'),
         child: MomentFeedPage(),

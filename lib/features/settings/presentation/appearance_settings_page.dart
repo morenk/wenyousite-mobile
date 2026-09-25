@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/application/appearance_preference.dart';
 import 'package:wenyousite_mobile/core/application/data_saver_preference.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_selection_menu.dart';
@@ -31,39 +32,46 @@ class AppearanceSettingsPage extends ConsumerWidget {
                   ? null
                   : () => unawaited(controller.retry()),
             ),
-          WenyouPanel(
-            padding: EdgeInsets.zero,
-            child: Column(
-              children: [
-                for (
-                  var index = 0;
-                  index < AppearancePreference.values.length;
-                  index++
-                ) ...[
-                  if (index > 0) const Divider(height: 1),
-                  WenyouSelectionTile(
-                    key: Key(
-                      'appearance-option-${AppearancePreference.values[index].name}',
-                    ),
-                    label: AppearancePreference.values[index].label,
-                    leading: WenyouIcon(
-                      AppearancePreference.values[index].icon,
-                    ),
-                    selected:
-                        state.preference == AppearancePreference.values[index],
-                    onTap: state.isSaving
-                        ? null
-                        : () => unawaited(
-                            controller.select(
-                              AppearancePreference.values[index],
-                            ),
-                          ),
-                  ),
-                ],
-              ],
-            ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              WenyouPanel(
+                padding: EdgeInsets.zero,
+                child: Column(
+                  children: [
+                    for (
+                      var index = 0;
+                      index < AppearancePreference.values.length;
+                      index++
+                    ) ...[
+                      if (index > 0) const Divider(height: 1),
+                      WenyouSelectionTile(
+                        key: Key(
+                          'appearance-option-${AppearancePreference.values[index].name}',
+                        ),
+                        label: AppearancePreference.values[index].label,
+                        leading: WenyouIcon(
+                          AppearancePreference.values[index].icon,
+                        ),
+                        selected:
+                            state.preference ==
+                            AppearancePreference.values[index],
+                        onTap: state.isSaving
+                            ? null
+                            : () => unawaited(
+                                controller.select(
+                                  AppearancePreference.values[index],
+                                ),
+                              ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              SizedBox(height: context.wenyouTokens.cardGap),
+              const _DataSaverSetting(),
+            ],
           ),
-          const _DataSaverSetting(),
         ],
       ),
     );

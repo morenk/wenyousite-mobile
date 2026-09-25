@@ -325,7 +325,9 @@ class _StickerReorderGridState extends State<StickerReorderGrid>
                     child: DecoratedBox(
                       decoration: BoxDecoration(
                         color: tokens.softPanel,
-                        borderRadius: BorderRadius.circular(tokens.radius12),
+                        borderRadius: BorderRadius.circular(
+                          tokens.radiusCompact,
+                        ),
                         border: Border.all(color: tokens.border),
                       ),
                     ),
@@ -492,7 +494,7 @@ class StickerGridSkeleton extends StatelessWidget {
                   WenyouSkeletonBlock(
                     width: size,
                     height: size,
-                    radius: tokens.radius12,
+                    radius: tokens.radiusCompact,
                   ),
               ],
             );

@@ -109,7 +109,7 @@ class _PublicUserPageState extends ConsumerState<PublicUserPage> {
                                             state.profile!.id,
                                   ),
                                   SizedBox(
-                                    height: context.wenyouTokens.space12,
+                                    height: context.wenyouTokens.cardGap,
                                   ),
                                   UserActivitySummaryPanel(
                                     key: const Key(
@@ -319,9 +319,6 @@ class _UserProfileContent extends ConsumerWidget {
       profileCover: profile.profileCover,
       level: profile.level,
       bio: profile.bio?.trim().isNotEmpty == true ? profile.bio : '这个人还没有填写简介。',
-      metadata: profile.createdAt == null
-          ? null
-          : '${formatWenyouDate(profile.createdAt!)} 加入温油站',
       statuses: statuses,
       stats: [
         UserProfileStatItem(

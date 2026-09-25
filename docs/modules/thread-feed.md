@@ -68,6 +68,8 @@ Foundation v7.1.0 时间呈现候选／待验收：普通内容不足 72 小时�
 
 ## 10. 跨模块约束
 
+共享主题内容卡遵循 Foundation v7.1.2 的 10dp 外框圆角与 8dp 独立卡间距；封面使用同一圆角裁切。首页、搜索、标签、收藏和个人内容入口复用该卡，不改变卡内留白、页面边距与 48dp 操作区。
+
 消费者只使用根 facade：`thread_feed_models.dart`、`thread_feed_mapping.dart`、`thread_feed_widgets.dart`、`thread_feed_catalog.dart` 和仅导出端口的 `thread_feed_catalog_ports.dart`。data 仅依赖目录端口，不反向读取目录控制器。模块不依赖 threads、social 或其他 feature，避免只读卡片建立循环。视觉完全复用 Foundation v6.9.0，无新增视觉 Token 或图标实现。
 
 ## 11. 测试场景与验收条件

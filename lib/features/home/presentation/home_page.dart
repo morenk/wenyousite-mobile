@@ -176,7 +176,9 @@ class _HomePageState extends ConsumerState<HomePage> {
             (context, index) {
               final thread = state.items[index];
               return WenyouContentFrame(
-                top: 12,
+                top: index == 0
+                    ? context.wenyouTokens.space12
+                    : context.wenyouTokens.cardGap,
                 child: HomeThreadCard(
                   key: Key('home-thread-${thread.id}'),
                   thread: thread,
@@ -247,7 +249,11 @@ class _HomeLoadingState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const WenyouListSkeleton(label: '正在加载推荐主题', itemCount: 2);
+    return const WenyouListSkeleton(
+      label: '正在加载推荐主题',
+      itemCount: 2,
+      contentCards: true,
+    );
   }
 }
 

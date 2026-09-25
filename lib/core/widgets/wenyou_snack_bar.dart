@@ -124,7 +124,7 @@ SnackBar buildWenyouSnackBar(
     backgroundColor: tokens.panel,
     elevation: WenyouOverlayContract.elevation['floating'],
     shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(tokens.radius16),
+      borderRadius: BorderRadius.circular(tokens.radiusPanel),
       side: BorderSide(color: tokens.border),
     ),
     content: Column(
