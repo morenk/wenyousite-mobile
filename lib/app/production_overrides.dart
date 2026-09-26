@@ -16,11 +16,13 @@ import 'package:wenyousite_mobile/core/platform/device_document_saver.dart';
 import 'package:wenyousite_mobile/core/platform/device_image_gallery.dart';
 import 'package:wenyousite_mobile/core/storage/shared_preferences_notification_guidance_store.dart';
 import 'package:wenyousite_mobile/features/app_shell/application/clipboard_navigation_ports.dart';
+import 'package:wenyousite_mobile/features/app_shell/application/mobile_release_ports.dart';
 import 'package:wenyousite_mobile/features/app_shell/application/mobile_update_controller.dart';
 import 'package:wenyousite_mobile/features/app_shell/application/startup_controller.dart';
 import 'package:wenyousite_mobile/features/app_shell/data/device_clipboard_navigation_gateway.dart';
 import 'package:wenyousite_mobile/features/app_shell/data/handled_clipboard_navigation_store.dart';
 import 'package:wenyousite_mobile/features/app_shell/data/meta_repository.dart';
+import 'package:wenyousite_mobile/features/app_shell/data/mobile_release_repository.dart';
 import 'package:wenyousite_mobile/features/app_shell/data/mobile_update_service.dart';
 import 'package:wenyousite_mobile/features/app_shell/data/recommended_update_dismiss_store.dart';
 import 'package:wenyousite_mobile/features/app_shell/domain/contract_info.dart';
@@ -87,6 +89,9 @@ import 'package:wenyousite_mobile/features/users/data/public_user_repository.dar
 import 'package:wenyousite_mobile/features/wallet/data/wallet_repository.dart';
 
 List<Override> productionProviderOverrides() => [
+  mobileReleaseRepositoryProvider.overrideWith(
+    (ref) => ref.watch(apiMobileReleaseRepositoryProvider),
+  ),
   readingGalleryRepositoryProvider.overrideWith(
     (ref) => ref.watch(apiReadingGalleryRepositoryProvider),
   ),

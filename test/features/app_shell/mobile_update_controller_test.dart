@@ -6,6 +6,23 @@ import 'package:wenyousite_mobile/features/app_shell/application/mobile_update_c
 import 'package:wenyousite_mobile/features/app_shell/domain/mobile_update.dart';
 
 void main() {
+  test('点击更新时目标变化或预检失败不能下载旧目标', () async {
+    final service = _PendingUpdateService();
+    final controller = MobileUpdateController(service);
+    addTearDown(controller.dispose);
+    for (final changed in [null, _update.withTargetVersion('changed')]) {
+      await controller.start(_update, refreshTarget: () async => changed);
+      expect(service.launchCalls, 0);
+      expect(controller.state.status, MobileUpdateActionStatus.failed);
+    }
+    await controller.start(
+      _update,
+      refreshTarget: () async => throw StateError('offline'),
+    );
+    expect(service.launchCalls, 0);
+    expect(controller.state.status, MobileUpdateActionStatus.failed);
+  });
+
   test('控制器映射检查、下载、校验和安装阶段', () async {
     final controller = MobileUpdateController(_StagedUpdateService());
     addTearDown(controller.dispose);

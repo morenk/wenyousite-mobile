@@ -16,6 +16,8 @@
 
 ## 3. 页面、入口和导航关系
 
+Android 更新说明候选／待负责人验收：推荐横幅显示目标版本与摘要，点击“查看更新”进入公开 `/mobile-releases/:build?version=...` 详情；强制更新页直接嵌入完整说明。设置帮助组和游客“我的”均可打开 `/mobile-releases` 历史，忽略推荐提示不会关闭该入口。iOS 与不支持的平台不展示 Android 历史入口，原 TestFlight 路径保留；安装后不自动弹出说明。
+
 个人中心的收藏夹入口位于私人工具区，仍导航到统一主题／动态收藏目录。收藏目录失败操作统一为“重试”；底部导航和发布选择器保持。
 
 启动门禁包裹 `/home`、`/moments`、`/notifications`、`/me` 四个保状态分支，底栏固定为“首页 / 动态 / 发布 / 消息 / 我的”；中央粉色“发布”是动作而非分支，`/search` 由首页和动态顶栏进入，公开 `/appearance` 由游客“我的”和登录后的账号设置进入。系统启动层只承担 Flutter 第一帧之前不可避免的过渡，Android 与 iOS 均保持纯白底色，不显示标识或文案；从 Flutter 首帧开始使用已恢复或跟随系统解析后的主题，品牌加载页、系统状态栏和导航栏同步采用当前语义色。Android 冷启动的零尺寸预热帧只保留空白，拿到有效 viewport 后才构建品牌内容。四个分支与壳容器间瞬时切换并保留状态；Android 真实业务页入栈和返回由应用主题统一提供 180ms 水平位移，不缩放或淡化当前页。门禁结合构建策略、契约兼容性与安装包实际可用性决定继续进入、推荐更新、强制更新或等待新版；Android 先用 `/meta.mobileCompatibility` 的 HTTPS 地址校验 RainS3 对象元数据，确认包名、构建、版本名、大小和 SHA-256 后才显示更新动作，下载验证后唤起系统安装器，iOS 外跳 TestFlight。任一主导航分支点击发布都会在按钮上方打开“发布主题帖 / 发布动态”两项锚点气泡，选择后进入受保护的 `/compose/thread` 或 `/compose/moment`；外部点击只关闭气泡，不触发底栏后方页面。入口统一朗读“发布内容”；游客登录或注册成功后恢复创建目标。登录用户的消息图标展示“通知未读 + 私聊未读/请求”的合计角标，进入分支与回前台时分别校准两类服务端事实；该角标使用 Foundation `destructive / onDestructive`，高 16dp、10sp 粗体等宽数字，超过 99 显示 `99+`，零值隐藏。消息中心的“通知 / 私聊”使用共享等宽内容页签，支持点按或在内容区左右滑动切换并通过规范 URL 保存栏目；横滑只作用于页面内部栏目，不切换底部主分支。
@@ -43,9 +45,14 @@ Android 后台消息提醒默认开启，可在账号设置按设备关闭，选
 ## 5. API operationId 与生成类型
 
 - `metaGetMeta` → `MetaGetMeta200Response`、`ApiMetaResponseDto`、`MobileCompatibilityDto`、`MobilePlatformCompatibilityDto`。
+- `mobileReleasesList`、`mobileReleasesDetail` → `MobileReleasesList200Response`、`MobileReleasesDetail200Response`、`PublicMobileReleaseDto`，均按公开请求策略调用，不发送登录凭据。业务 404 映射为缺失说明，其余异常保留失败状态。
 - 后台在线提醒复用 `notificationsFindAll`、`directConversationsUnread` 与按需 `directConversationsFindAll`，不新增服务端接口。
 
 ## 6. 状态模型和数据流
+
+更新说明拥有独立 repository、目标详情 FutureProvider 与历史控制器，不参与 `/meta` 启动成功或 APK HEAD 校验。说明按平台、版本名和构建号精确绑定，摘要与条目保持纯文本，不解释 HTML／Markdown。历史按构建号倒序使用不透明游标，标记精确匹配的当前安装版；详情只对重新读取 `/meta` 并通过 APK 元数据校验的目标提供安装入口，点击前再次确认目标，变化或失败即停止。说明不携带安装地址，不改变现有包名、构建、签名与 hash 校验。
+
+历史刷新期间及失败后保留已读记录和位置，续页失败保留已有页并允许重试；游标失效从首页重载，迟到响应不能覆盖刷新。无已发布记录显示“暂无版本历史”，已明确缺失的详情显示“此版本暂无更新说明”；读取失败显示“更新说明加载失败”与重试，强制门禁始终保留。说明只保存在当前页面会话，不新增持久化或后台通知。
 
 签到的已领取日期与待展示回执分别保存，按 `SessionScope` 隔离。应用级反馈宿主观察生命周期、根与分支路由、模态弹层和普通操作消息；后台或被遮挡时保留回执，页面就绪后显示“今日签到获得 N 升温油。”，首次实际显示即确认消费，未被打断时仍显示 4 秒。普通操作消息优先，已显示的签到提示被切页、模态弹层、其他操作提示或切后台打断后不再补显；尚未显示的回执继续等待可见时机。跨日丢弃旧回执，退出和切号不保留旧账号消息，补显不重新签到；组件重新挂载复用当前会话的签到状态，进程重启则以钱包状态和流水核对。
 
@@ -96,6 +103,8 @@ Android 的 Debug、Profile 和 Release 均仅支持 `arm64-v8a`，使用 ARM64 
 遵循[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)、[依赖边界与架构门禁](../architecture/dependencies.md)和[Foundation v6.9.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.9.0/docs/platforms/mobile.md)。app 组合层只连接 capability、全局外观与跨 feature 缓存失效等接口，不持有业务页面状态。亮色与黑夜只使用中央 `WenyouThemeTokens`、Foundation 语义色/等级/图标及全局 `ColorScheme`；图片内容与布局结构保持一致。原生图标与启动图只同步 Foundation 平台资产，Flutter 页面只消费 `WenyouBrandContract` 和 `WenyouBrandMark`；更新页复用中央 Token、语义图标、共享面板、状态横幅和 Foundation 最小触控目标的主按钮，以“当前构建 → 可用构建”作为版本识别元素。Android 竖屏优先；iOS 不下载 IPA，只交给 TestFlight。
 
 ## 11. 测试场景与验收条件
+
+- [ ] Android 更新说明候选：推荐摘要 → 完整说明 → 下载、强制说明失败重试、忽略后的公开历史、当前版标记、长文与大字号由负责人真机复验。自动化和候选画面记录见[更新说明验收](../architecture/mobile-release-notes-acceptance.md)。
 
 - 自动签到提示单次显示候选／待负责人验收：首次可见即消费，同会话同日被打断或重新挂载不再弹出；未显示回执仍等待前台就绪。回归与真机步骤见[候选记录](../architecture/checkin-once-acceptance.md)。
 - 扩展候选覆盖首次可见同帧替换宿主、根/分支底部弹层与对话框、迟到回调及其他一次性引导；见[提示重复排查矩阵](../architecture/transient-feedback-repeat-audit.md)。

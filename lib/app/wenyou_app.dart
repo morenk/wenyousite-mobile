@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/app_router.dart';
 import 'package:wenyousite_mobile/app/app_session_bootstrap.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
@@ -68,6 +69,14 @@ class _WenyouMaterialApp extends ConsumerWidget {
             ? Brightness.light
             : Brightness.dark;
         final app = StartupGate(
+          onViewUpdate: (update) => ref
+              .read(appRouterProvider)
+              .push<void>(
+                AppRouteLocations.mobileRelease(
+                  build: update.targetBuild,
+                  version: update.targetVersion ?? '',
+                ),
+              ),
           child: AppSessionBootstrap(
             feedbackVisibility: ref.watch(feedbackVisibilityProvider),
             child: ClipboardNavigationPrompt(

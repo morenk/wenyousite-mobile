@@ -44,7 +44,10 @@ class MobileUpdateController extends StateNotifier<MobileUpdateActionState> {
 
   final MobileUpdateService _service;
 
-  Future<void> start(MobileUpdateInfo update) async {
+  Future<void> start(
+    MobileUpdateInfo update, {
+    Future<MobileUpdateInfo?> Function()? refreshTarget,
+  }) async {
     if (state.isBusy) return;
     state = MobileUpdateActionState(
       status: update.platform == MobileClientPlatform.android
@@ -53,6 +56,17 @@ class MobileUpdateController extends StateNotifier<MobileUpdateActionState> {
       targetBuild: update.targetBuild,
     );
     try {
+      if (refreshTarget != null) {
+        final latest = await refreshTarget();
+        if (latest == null ||
+            latest.platform != update.platform ||
+            latest.targetBuild != update.targetBuild ||
+            latest.targetVersion != update.targetVersion) {
+          throw const MobileUpdateException('此版本已不可更新，请重新查看更新说明。');
+        }
+        // 下载地址只采用本次重新核验的策略，不从说明或历史记录读取。
+        update = latest;
+      }
       final result = await _service.launchUpdate(
         update,
         onStage: (stage) {

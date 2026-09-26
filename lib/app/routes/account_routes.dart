@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/core/application/bookmark_folder_catalog.dart';
+import 'package:wenyousite_mobile/features/app_shell/domain/mobile_update.dart';
 import 'package:wenyousite_mobile/features/app_shell/presentation/bookmark_folder_catalog_page.dart';
+import 'package:wenyousite_mobile/features/app_shell/presentation/mobile_release_pages.dart';
 import 'package:wenyousite_mobile/features/moderation/presentation/moderation_appeal_page.dart';
 import 'package:wenyousite_mobile/features/moments/application/moment_controllers.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
@@ -25,6 +27,21 @@ import 'package:wenyousite_mobile/features/users/presentation/public_user_page.d
 import 'package:wenyousite_mobile/features/wallet/presentation/wallet_page.dart';
 
 List<RouteBase> buildAccountRoutes(Ref ref) => [
+  GoRoute(
+    path: AppRoutePaths.mobileReleases,
+    name: AppRouteNames.mobileReleases,
+    builder: (context, state) => const MobileReleaseHistoryPage(),
+  ),
+  GoRoute(
+    path: AppRoutePaths.mobileRelease,
+    builder: (context, state) => MobileReleaseDetailPage(
+      target: (
+        platform: MobileClientPlatform.android,
+        build: int.tryParse(state.pathParameters['build'] ?? '') ?? 0,
+        version: state.uri.queryParameters['version'] ?? '',
+      ),
+    ),
+  ),
   GoRoute(
     path: AppRouteLocations.diagnostics,
     name: AppRouteNames.diagnostics,
