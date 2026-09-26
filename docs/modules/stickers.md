@@ -87,7 +87,7 @@ media application 负责相册选择、格式校验、`STICKER_SOURCE` 用途和
 
 ## 13. 最近审查的契约版本和后端提交
 
-2026-09-27 更新说明兼容契约复核：Backend `99b42dc0f7d25eeb6e49ee87441e206c77cce29a`、契约 `5.27.0-dev.20260927.1`。新增公开说明与管理类型，既有接口和 `/meta` 保持兼容；新能力由 app-shell 独立接入，不代表本模块其他行为或负责人验收变化。详见[契约同步](../architecture/mobile-release-contract-sync.md)。
+2026-09-27 更新说明兼容契约复核：Backend `72d3658d32a089fcfabdea30225d87b960033c5b`、契约 `5.27.0-dev.20260927.1`。新增公开说明与管理类型，既有接口和 `/meta` 保持兼容；新能力由 app-shell 独立接入，不代表本模块其他行为或负责人验收变化。详见[契约同步](../architecture/mobile-release-contract-sync.md)。
 
 2026-09-25 来源更新复核：公网 Backend `124fb4e8aa395440f7a2156de98b642ec87f7583`，较上次来源 `0bc9c45e213fa4dcbde8a3bcf2c466dc88ceb256` 仅有管理员邀请邮件本机链接修复；契约、移动端指南、OpenAPI 版本和生成客户端内容不变，本模块接口行为不变。
 
