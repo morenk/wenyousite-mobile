@@ -179,6 +179,42 @@ void main() {
     expect(find.text('第 12 楼 · 2 / 3'), findsOneWidget);
   });
 
+  testWidgets('点击靠后图片后异步补齐图集，首帧画面与点击锚点一致', (tester) async {
+    final repository = _Repository();
+    await _pump(tester, repository);
+    repository.operations.single.resultCompleter.complete(
+      const ReadingGalleryPage(
+        items: [
+          ReadingGalleryImage(
+            id: 'earlier',
+            sourceId: 'earlier-post',
+            sourceVersion: 1,
+            imageIndex: 0,
+            imageCount: 1,
+            url: 'https://example.test/earlier.png',
+            threadId: 'thread',
+            subthreadId: 'subthread',
+            floorNumber: 1,
+          ),
+          _image,
+        ],
+        anchorItemId: 'clicked',
+      ),
+    );
+    await tester.idle();
+    await tester.pump();
+    expect(
+      tester
+          .widget<ContentImageViewerPage>(find.byType(ContentImageViewerPage))
+          .items,
+      hasLength(2),
+    );
+    expect(tester.widget<PageView>(find.byType(PageView)).controller!.page, 1);
+    expect(find.text('第 12 楼 · 2 / 3'), findsOneWidget);
+    await tester.pumpAndSettle();
+    expect(tester.widget<PageView>(find.byType(PageView)).controller!.page, 1);
+  });
+
   testWidgets('可见性变化清除本图并取消查询，迟到结果不能恢复遮罩内容', (tester) async {
     final repository = _Repository();
     await _pump(tester, repository);

@@ -374,9 +374,6 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
             : buildThreadDetailAppBarActions(
                 threadId: widget.threadId,
                 state: state,
-                quickScrollAction: ReadingQuickScrollAction(
-                  controller: _quickScroll,
-                ),
                 onSearch: () => context.pushNamed(
                   'thread-post-search',
                   pathParameters: {'threadId': widget.threadId},
@@ -399,7 +396,6 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
             (!isPostTarget || _targetRevealed) &&
             state.transientFailure != null &&
             state.retryAction == ThreadDetailRetryAction.loadMore,
-        onRetry: () => ref.read(provider.notifier).loadMore(),
         child: readingWithTarget,
       ),
       bottomNavigationBar: state.phase == ThreadDetailPhase.ready

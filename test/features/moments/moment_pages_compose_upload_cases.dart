@@ -295,7 +295,7 @@ void registerMomentPagesComposeUploadCases() {
     );
   });
 
-  testWidgets('动态发布在单页展示图片区与正文且只保留底部主操作', (tester) async {
+  testWidgets('动态发布在单页展示图片区与正文且只保留顶栏主操作', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(360, 760);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -323,6 +323,11 @@ void registerMomentPagesComposeUploadCases() {
     final images = find.byKey(const Key('moment-compose-images'));
     final addImage = find.byKey(const Key('moment-compose-add-image'));
     final submit = find.byKey(const Key('moment-compose-submit'));
+    expect(submit, findsOneWidget);
+    expect(
+      find.ancestor(of: submit, matching: find.byType(AppBar)),
+      findsOneWidget,
+    );
     expect(tester.getSize(content).height, greaterThan(300));
     expect(
       tester.getBottomRight(images).dy,

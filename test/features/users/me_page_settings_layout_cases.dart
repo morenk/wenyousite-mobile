@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
+import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/users/presentation/me_page.dart';
+
 import '../../support/deterministic_test_fonts.dart';
 import 'me_page_test_support.dart';
 
@@ -68,6 +71,7 @@ void registerMePageSettingsLayoutCases() {
     expect(find.text('账号设置'), findsOneWidget);
     expect(find.text('偏好与提醒'), findsOneWidget);
     expect(find.text('账号'), findsOneWidget);
+    expect(find.byKey(const Key('me-open-edit-profile')), findsOneWidget);
     expect(find.text('账号操作'), findsOneWidget);
     expect(find.text('帮助'), findsOneWidget);
     final semantics = tester.ensureSemantics();
@@ -99,6 +103,45 @@ void registerMePageSettingsLayoutCases() {
     expect(find.text('退出当前账号？'), findsOneWidget);
     await tester.tap(find.text('取消'));
     await tester.pumpAndSettle();
+  });
+
+  testWidgets('设置的编辑资料列表项复用既有编辑页并可返回设置', (tester) async {
+    final container = await mePageTestAuthenticatedContainer(
+      MePageTestFakeMeProfileRepository(),
+    );
+    addTearDown(container.dispose);
+    final router = GoRouter(
+      routes: [
+        GoRoute(path: '/', builder: (_, _) => const MeSettingsPage()),
+        GoRoute(
+          path: AppRoutePaths.meEdit,
+          name: AppRouteNames.meEdit,
+          builder: (_, _) => const MeEditPage(),
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final editEntry = find.byKey(const Key('me-open-edit-profile'));
+    await tester.ensureVisible(editEntry);
+    await tester.tap(editEntry);
+    await tester.pumpAndSettle();
+    expect(
+      GoRouterState.of(tester.element(find.byType(MeEditPage))).uri.path,
+      AppRoutePaths.meEdit,
+    );
+    expect(find.byType(MeEditPage), findsOneWidget);
+    expect(find.byKey(const Key('me-bio-field')), findsOneWidget);
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.byType(MeSettingsPage), findsOneWidget);
+    expect(editEntry, findsOneWidget);
   });
 
   for (final width in [320.0, 360.0, 400.0, 600.0]) {
@@ -333,7 +376,7 @@ void registerMePageSettingsLayoutCases() {
         ),
       );
       await tester.pumpAndSettle();
-      final expectedWidth = width <= 400 ? width - 24 : width - 48;
+      final expectedWidth = width;
       expect(
         tester.getSize(find.byKey(const Key('me-profile-header'))).width,
         expectedWidth,
@@ -344,10 +387,10 @@ void registerMePageSettingsLayoutCases() {
         const ValueKey('me-content-MeContentTab.createdThreads'),
       );
       final overviewTab = find.byKey(
-        const ValueKey('me-content-MeContentTab.overview'),
+        const ValueKey('me-content-MeContentTab.createdThreads'),
       );
       final playedTab = find.byKey(
-        const ValueKey('me-content-MeContentTab.playedThreads'),
+        const ValueKey('me-content-MeContentTab.replies'),
       );
       await tester.ensureVisible(createdTab);
       await tester.pumpAndSettle();

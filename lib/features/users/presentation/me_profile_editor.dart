@@ -5,6 +5,7 @@ import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_settings_body.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_sheet.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/users/application/avatar_controller.dart';
 import 'package:wenyousite_mobile/features/users/application/me_profile_controller.dart';
@@ -352,11 +353,8 @@ Future<void> _openUsernameEditor(
   WidgetRef ref,
   String username,
 ) async {
-  final updated = await showModalBottomSheet<bool>(
+  final updated = await showWenyouSheet<bool>(
     context: context,
-    isScrollControlled: true,
-    useSafeArea: true,
-    showDragHandle: true,
     builder: (sheetContext) => _UsernameEditorSheet(username: username),
   );
   ref.read(meProfileControllerProvider.notifier).clearFeedback();
@@ -403,9 +401,7 @@ class _UsernameEditorSheetState extends ConsumerState<_UsernameEditorSheet> {
       canPop: !submitting,
       child: AnimatedPadding(
         duration: tokens.feedbackDuration,
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.viewInsetsOf(context).bottom,
-        ),
+        padding: EdgeInsets.only(bottom: 0),
         child: SingleChildScrollView(
           padding: EdgeInsets.fromLTRB(
             tokens.space16,

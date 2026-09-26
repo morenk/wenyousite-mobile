@@ -15,6 +15,7 @@ import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_compose_page.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_detail_page.dart';
 import 'package:wenyousite_mobile/features/wallet/data/wallet_repository.dart';
+
 import '../../support/deterministic_test_fonts.dart';
 import 'moment_pages_test_support.dart';
 
@@ -61,6 +62,8 @@ void registerMomentPagesFeedBookmarksCases() {
       await tester.tap(find.text('进入编辑'));
       await tester.pumpAndSettle();
       if (deleting) {
+        await tester.tap(find.byKey(const Key('moment-compose-more')));
+        await tester.pumpAndSettle();
         await tester.tap(find.byKey(const Key('moment-compose-delete')));
         await tester.pumpAndSettle();
         await tester.tap(
@@ -70,10 +73,10 @@ void registerMomentPagesFeedBookmarksCases() {
         await tester.tap(find.byKey(const Key('moment-compose-submit')));
       }
       await tester.pumpAndSettle();
-      expect(find.text('重试清理'), findsOneWidget);
+      expect(find.text('完成'), findsOneWidget);
       expect(find.text('草稿清理失败，请重试。'), findsOneWidget);
       expect(tester.takeException(), isNull);
-      await tester.tap(find.text('重试清理'));
+      await tester.tap(find.text('完成'));
       await tester.pumpAndSettle();
       expect(find.text('进入编辑'), findsOneWidget);
       expect(repository.updateCalls, deleting ? 0 : 1);
@@ -129,7 +132,7 @@ void registerMomentPagesFeedBookmarksCases() {
 
     expect(find.byKey(const Key('moment-card-moment-next')), findsOneWidget);
     expect(find.byKey(const Key('moment-feed-footer')), findsOneWidget);
-    expect(find.text('已经看到这里了'), findsOneWidget);
+    expect(find.text('已经看到这里了'), findsNothing);
     expect(tester.takeException(), isNull);
 
     scrollable.position.jumpTo(0);

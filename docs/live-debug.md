@@ -18,7 +18,7 @@ npm run dev:stop
 - 默认识别唯一已连接 ARM64 真机；多个设备时添加 `--device <序号>`。SDK 从环境变量与本机约定路径发现，Flutter 使用 SDK 内的 Dart 与 flutter_tools.snapshot。
 - `start` 幂等，同一任务与 runId 复用现有会话。首次 `flutter run --machine --debug` 编译并安装 `site.wenyou.app.debug`；普通热重载不再次安装，不更改正式包或其数据。
 - `reload` 调用 `app.restart(fullRestart: false)`；`restart` 使用 `true`。初始化、Provider 装配或全局状态变更用热重启；依赖、资源、生成代码变化先执行对应获取／生成，必要时停止再启动；原生变化重新构建。
-- 进程隐藏运行，控制地址只监听 loopback，状态目录为 `%LOCALAPPDATA%\Wenyou\live-debug`。ACL 仅当前用户与 SYSTEM 可读；控制 token 不输出到状态展示、事件或源码。不要分享私有状态文件。
+- 进程隐藏运行，控制地址只监听 loopback，状态目录为 `%LOCALAPPDATA%\Wenyou\live-debug`。ACL 仅当前用户与 SYSTEM 可读；重复启动只在所有者、完整访问规则和继承状态逐项一致时复用目录，其他情况仍重新设置严格 ACL 或停止；控制 token 不输出到状态展示、事件或源码。不要分享私有状态文件。
 - 同设备 Debug 包一把独占锁，控制器绑定任务分支、绝对 Worktree、设备、runId、PID 与进程开始时间。不能从另一个 Worktree 接管。`status` 可从新终端调用；异常退出在原 Worktree 执行 `stop` 按登记恢复清理。
 - 启动、恢复与停止共享 Windows Named Mutex，持锁后重新读取归属；系统在控制进程异常退出时释放互斥。daemon 必须核对本次启动 token、runId 和 PID 后才能领取状态，迟到的旧 daemon 不能控制新批次。
 - `dev:start` 还与治理桥接共用 `%LOCALAPPDATA%\Wenyou\preview-control\transition.lock`，避免治理检查无人使用后又有 Mobile 接入旧批次。锁不可重入，只能回收确认 PID 已退出的普通锁文件；活 PID、权限失败、坏锁和遗留 recovery 锁均保留并拒绝本次启动。start 发布初始状态与设备锁后，后台启动继续受会话登记保护。

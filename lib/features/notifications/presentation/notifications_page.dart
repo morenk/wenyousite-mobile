@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_anchored_popover.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
@@ -301,12 +302,30 @@ class _NotificationCard extends StatelessWidget {
                       key: ValueKey('notification-unread-${item.id}'),
                     ),
                   ),
-                WenyouAsyncIconButton(
-                  key: ValueKey('notification-remove-${item.id}'),
-                  label: '删除通知',
-                  isLoading: isPending,
-                  onPressed: isPending || actionsDisabled ? null : onRemove,
-                  icon: WenyouIconIds.actionDelete,
+                WenyouAnchoredActionBubble<String>(
+                  placement: WenyouPopoverPlacement.below,
+                  alignment: WenyouPopoverAlignment.end,
+                  semanticLabel: '通知操作',
+                  onSelected: (_) => onRemove(),
+                  actions: [
+                    WenyouPopoverAction(
+                      key: ValueKey('notification-remove-${item.id}'),
+                      value: 'delete',
+                      icon: WenyouIconIds.actionDelete,
+                      label: '删除',
+                      semanticsLabel: '删除通知',
+                      tone: WenyouPopoverActionTone.destructive,
+                    ),
+                  ],
+                  anchorBuilder: (context, handle) => WenyouAsyncIconButton(
+                    key: ValueKey('notification-more-${item.id}'),
+                    label: '更多通知操作',
+                    isLoading: isPending,
+                    onPressed: isPending || actionsDisabled
+                        ? null
+                        : handle.toggle,
+                    icon: WenyouIconIds.actionMore,
+                  ),
                 ),
               ],
             ),

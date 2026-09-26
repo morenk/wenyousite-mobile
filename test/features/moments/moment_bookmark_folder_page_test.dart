@@ -39,7 +39,7 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('分页加载失败'), findsNothing);
-    expect(find.text('已经到底了'), findsOneWidget);
+    expect(find.text('已经到底了'), findsNothing);
   });
 
   testWidgets('关闭管理面板不写入，取消在途不能重复操作', (tester) async {

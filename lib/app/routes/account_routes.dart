@@ -1,10 +1,14 @@
 import 'package:flutter/widgets.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/core/application/bookmark_folder_catalog.dart';
 import 'package:wenyousite_mobile/features/app_shell/presentation/bookmark_folder_catalog_page.dart';
 import 'package:wenyousite_mobile/features/moderation/presentation/moderation_appeal_page.dart';
+import 'package:wenyousite_mobile/features/moments/application/moment_controllers.dart';
+import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_bookmark_folder_page.dart';
+import 'package:wenyousite_mobile/features/moments/presentation/moment_feed_page.dart';
 import 'package:wenyousite_mobile/features/settings/presentation/appearance_settings_page.dart';
 import 'package:wenyousite_mobile/features/settings/presentation/change_email_page.dart';
 import 'package:wenyousite_mobile/features/settings/presentation/change_password_page.dart';
@@ -15,11 +19,12 @@ import 'package:wenyousite_mobile/features/social/domain/user_relation_list_mode
 import 'package:wenyousite_mobile/features/social/presentation/bookmark_list_page.dart';
 import 'package:wenyousite_mobile/features/social/presentation/user_relation_list_page.dart';
 import 'package:wenyousite_mobile/features/stickers/presentation/sticker_collection_page.dart';
+import 'package:wenyousite_mobile/features/users/presentation/me_content_dashboard.dart';
 import 'package:wenyousite_mobile/features/users/presentation/me_page.dart';
 import 'package:wenyousite_mobile/features/users/presentation/public_user_page.dart';
 import 'package:wenyousite_mobile/features/wallet/presentation/wallet_page.dart';
 
-List<RouteBase> buildAccountRoutes() => [
+List<RouteBase> buildAccountRoutes(Ref ref) => [
   GoRoute(
     path: AppRouteLocations.diagnostics,
     name: AppRouteNames.diagnostics,
@@ -38,8 +43,24 @@ List<RouteBase> buildAccountRoutes() => [
   GoRoute(
     path: AppRoutePaths.userProfile,
     name: AppRouteNames.userProfile,
-    builder: (context, state) =>
-        PublicUserPage(userId: state.pathParameters['userId']!),
+    builder: (context, state) => PublicUserPage(
+      userId: state.pathParameters['userId']!,
+      userMoments: MeUserMomentsIntegration(
+        builder: (userId) => MomentFeedList(
+          target: MomentFeedTarget.user(userId),
+          emptyTitle: '还没有发布动态',
+          emptyMessage: '',
+          pullToRefreshEnabled: false,
+        ),
+        refresh: (userId) => ref
+            .read(
+              momentFeedControllerProvider(
+                MomentFeedTarget.user(userId),
+              ).notifier,
+            )
+            .refresh(),
+      ),
+    ),
   ),
   GoRoute(
     path: AppRoutePaths.userFollowing,

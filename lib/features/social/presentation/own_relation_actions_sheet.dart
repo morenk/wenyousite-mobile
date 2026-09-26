@@ -10,6 +10,7 @@ import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/network/session_controller.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_level_badge.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_sheet.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/reports/domain/report_models.dart';
@@ -184,11 +185,7 @@ class _RelationActionsSheetState extends ConsumerState<_RelationActionsSheet> {
                           style: Theme.of(context).textTheme.wenyouBody
                               .copyWith(fontWeight: FontWeight.w500),
                         ),
-                        Text(
-                          'Lv.${item.level}',
-                          style: Theme.of(context).textTheme.wenyouCaption
-                              .copyWith(color: tokens.mutedText),
-                        ),
+                        WenyouLevelBadge(level: item.level),
                       ],
                     ),
                   ),

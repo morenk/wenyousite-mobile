@@ -14,6 +14,7 @@ import 'package:wenyousite_mobile/features/users/data/me_profile_repository.dart
 import 'package:wenyousite_mobile/features/users/data/public_user_repository.dart';
 import 'package:wenyousite_mobile/features/users/domain/me_profile_models.dart';
 import 'package:wenyousite_mobile/features/users/domain/public_user_models.dart';
+import 'package:wenyousite_mobile/features/users/presentation/me_content_dashboard.dart';
 import 'package:wenyousite_mobile/features/users/presentation/public_user_page.dart';
 
 void main() {
@@ -40,19 +41,11 @@ void main() {
     expect(find.text('7'), findsOneWidget);
     expect(find.text('9'), findsOneWidget);
     expect(find.text('18 升'), findsOneWidget);
-    expect(find.text('创作概览'), findsOneWidget);
-    expect(find.text('发布动态'), findsOneWidget);
-    expect(find.text('创建主题'), findsWidgets);
-    expect(find.text('参与主题'), findsOneWidget);
-    expect(find.text('累计回复'), findsOneWidget);
-    final profileRect = tester.getRect(
-      find.byKey(const Key('public-user-profile-header')),
-    );
-    final activityRect = tester.getRect(
-      find.byKey(const Key('public-user-activity-summary')),
-    );
-    expect(activityRect.top - profileRect.bottom, 8);
-    expect(find.text('已关注'), findsOneWidget);
+    expect(find.text('创作概览'), findsNothing);
+    expect(find.text('公开内容'), findsNothing);
+    expect(find.byKey(const Key('public-user-content-tabs')), findsOneWidget);
+    expect(find.text('主题'), findsOneWidget);
+    expect(find.text('动态'), findsOneWidget);
     expect(find.text('关注了你'), findsOneWidget);
     expect(find.bySemanticsLabel('温柔测试员 的主页背景图'), findsNothing);
     expect(
@@ -60,7 +53,18 @@ void main() {
       findsOneWidget,
     );
     final avatar = find.byKey(const ValueKey('profile-avatar-温柔测试员'));
-    expect(tester.getSemantics(avatar).label, contains('温柔测试员 的头像'));
+    expect(
+      find.descendant(
+        of: avatar,
+        matching: find.byWidgetPredicate(
+          (widget) =>
+              widget is Semantics &&
+              widget.properties.image == true &&
+              widget.properties.label == '温柔测试员 的头像',
+        ),
+      ),
+      findsOneWidget,
+    );
     final avatarRect = tester.getRect(avatar);
     expect(avatarRect.size, const Size.square(72));
     await _scrollToContent(
@@ -120,22 +124,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('user-relation-follow')), findsOneWidget);
-    expect(find.byKey(const Key('user-relation-block')), findsOneWidget);
-    expect(find.byKey(const Key('public-user-report')), findsOneWidget);
-    expect(
-      find.descendant(
-        of: find.byType(AppBar),
-        matching: find.byKey(const Key('user-relation-block')),
-      ),
-      findsOneWidget,
-    );
-    expect(
-      find.descendant(
-        of: find.byKey(const Key('public-user-profile-header')),
-        matching: find.byKey(const Key('user-relation-block')),
-      ),
-      findsNothing,
-    );
+    expect(find.byKey(const Key('user-relation-block')), findsNothing);
+    expect(find.byKey(const Key('public-user-more')), findsOneWidget);
     expect(find.text('9'), findsOneWidget);
     await tester.ensureVisible(find.byKey(const Key('user-relation-follow')));
     await tester.pumpAndSettle();
@@ -145,13 +135,17 @@ void main() {
     expect(relationRepository.unfollowCalls, 1);
     expect(find.text('8'), findsOneWidget);
 
+    await tester.tap(find.byKey(const Key('public-user-more')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('user-relation-block')));
     await tester.pumpAndSettle();
     expect(find.text('拉黑用户？'), findsOneWidget);
     await tester.tap(find.byKey(const Key('user-relation-block-confirm')));
     await tester.pumpAndSettle();
     expect(relationRepository.blockCalls, 1);
-    expect(find.byTooltip('取消拉黑'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('public-user-more')));
+    await tester.pumpAndSettle();
+    expect(find.text('取消拉黑'), findsOneWidget);
     expect(publicRepository.calls, 2);
     expect(find.text('8'), findsOneWidget);
   });
@@ -177,7 +171,7 @@ void main() {
     expect(find.byKey(const Key('user-relation-follow')), findsNothing);
     expect(find.byKey(const Key('user-relation-block')), findsNothing);
     expect(find.byKey(const Key('public-user-report')), findsNothing);
-    expect(find.byKey(const Key('public-user-edit-profile')), findsOneWidget);
+    expect(find.byKey(const Key('public-user-edit-profile')), findsNothing);
   });
 
   testWidgets('公开页不再提供本人只读预览分支', (tester) async {
@@ -200,8 +194,8 @@ void main() {
 
     expect(find.text('用户主页'), findsOneWidget);
     expect(find.text('预览公开主页'), findsNothing);
-    expect(find.byKey(const Key('public-user-edit-profile')), findsOneWidget);
-    expect(find.byKey(const Key('public-user-open-moments')), findsOneWidget);
+    expect(find.byKey(const Key('public-user-edit-profile')), findsNothing);
+    expect(find.byKey(const Key('public-user-moments-tab')), findsOneWidget);
   });
 
   testWidgets('能力开启且目标非本人时可从用户主页发起私聊', (tester) async {
@@ -238,30 +232,15 @@ void main() {
     await tester.pumpAndSettle();
 
     final profileHeader = find.byKey(const Key('public-user-profile-header'));
-    final actionKeys = [
-      const Key('user-relation-follow'),
-      const Key('public-user-open-direct-message'),
-      const Key('public-user-open-moments'),
-    ];
-    expect(
-      actionKeys.map((key) => tester.getSize(find.byKey(key)).width).toSet(),
-      hasLength(1),
-    );
-    expect(
-      find.descendant(
-        of: profileHeader,
-        matching: find.byKey(const Key('user-relation-block')),
-      ),
-      findsNothing,
-    );
-    expect(
-      find.descendant(of: profileHeader, matching: find.byType(FilledButton)),
-      findsNothing,
-    );
     expect(
       find.descendant(of: profileHeader, matching: find.byType(OutlinedButton)),
-      findsNothing,
+      findsOneWidget,
     );
+    expect(
+      find.byKey(const Key('public-user-open-direct-message')),
+      findsOneWidget,
+    );
+    expect(find.byKey(const Key('public-user-moments-tab')), findsOneWidget);
     await tester.scrollUntilVisible(
       find.byKey(const Key('public-user-open-direct-message')),
       300,
@@ -318,15 +297,20 @@ void main() {
     expect(repository.bookmarkCalls, 1);
   });
 
-  testWidgets('公开创作概览可进入用户动态与对应内容栏目', (tester) async {
+  testWidgets('内容页签可直接切换参与、回复与内嵌动态', (tester) async {
     final repository = _FakePublicUserRepository();
     final router = GoRouter(
       initialLocation: '/users/user-1',
       routes: [
         GoRoute(
           path: '/users/:userId',
-          builder: (_, state) =>
-              PublicUserPage(userId: state.pathParameters['userId']!),
+          builder: (_, state) => PublicUserPage(
+            userId: state.pathParameters['userId']!,
+            userMoments: MeUserMomentsIntegration(
+              builder: (id) => ListView(children: [Text('动态列表=$id')]),
+              refresh: (_) async {},
+            ),
+          ),
         ),
         GoRoute(
           path: '/users/:userId/moments',
@@ -347,7 +331,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final played = find.byKey(const Key('public-user-activity-played-threads'));
+    final played = find.byKey(const Key('public-user-played-tab'));
     await tester.ensureVisible(played);
     await tester.pumpAndSettle();
     await tester.tap(played);
@@ -358,7 +342,7 @@ void main() {
     );
     expect(repository.playedCalls, 1);
 
-    final replies = find.byKey(const Key('public-user-activity-replies'));
+    final replies = find.byKey(const Key('public-user-replies-tab'));
     await tester.ensureVisible(replies);
     await tester.pumpAndSettle();
     await tester.tap(replies);
@@ -366,7 +350,7 @@ void main() {
     expect(find.text('回复正文预览'), findsOneWidget);
     expect(repository.replyCalls, 1);
 
-    final moments = find.byKey(const Key('public-user-activity-moments'));
+    final moments = find.byKey(const Key('public-user-moments-tab'));
     await tester.ensureVisible(moments);
     await tester.pumpAndSettle();
     await tester.tap(moments);
@@ -379,7 +363,7 @@ void main() {
     await tester.pumpWidget(_userApp(repository));
     await tester.pumpAndSettle();
 
-    expect(find.text('创建'), findsOneWidget);
+    expect(find.text('主题'), findsOneWidget);
     expect(find.text('参与'), findsNothing);
     expect(find.text('回复'), findsNothing);
     expect(find.text('收藏'), findsNothing);
@@ -545,7 +529,7 @@ void main() {
       await tester.pumpWidget(_userApp(_FakePublicUserRepository()));
       await tester.pumpAndSettle();
 
-      final expectedWidth = width <= 400 ? width - 24 : width - 48;
+      final expectedWidth = width;
       expect(
         tester
             .getSize(find.byKey(const Key('public-user-profile-header')))
@@ -553,11 +537,17 @@ void main() {
         expectedWidth,
       );
       expect(
-        tester.getSize(find.byKey(const Key('public-user-content-area'))).width,
+        tester.getSize(find.byKey(const Key('public-user-content-tabs'))).width,
         expectedWidth,
       );
       final tabWidths = [
-        for (final tab in ['created', 'played', 'replies', 'bookmarks'])
+        for (final tab in [
+          'created',
+          'moments',
+          'played',
+          'replies',
+          'bookmarks',
+        ])
           tester.getSize(find.byKey(Key('public-user-$tab-tab'))).width,
       ];
       expect(tabWidths.toSet(), hasLength(1));
