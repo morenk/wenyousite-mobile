@@ -1,6 +1,6 @@
 # 图片查看器首帧定位验收
 
-状态：候选修正／待负责人验收。当前按 Debug 热重载反馈推进，尚无本切片的新 APK 或真机通过结论。
+状态：负责人验收通过／修复完成。2026-09-26，负责人在已核验生效的 Debug 热重载后明确回复“修复完成，合并清理分支吧”，授权合并 PR #67 及对应分支和临时工作区清理。本轮没有构建新 APK，验收对应下述运行源码。
 
 ## 原始反馈与复现
 
@@ -29,9 +29,9 @@
 - 候选检查实际可点击画面与 PageController 页码，不只检查标题；另覆盖按住横拖时前插、放大后前插保留变换、真实图集异步补齐和既有双指／双击／保存／收藏行为。
 - 三个测试文件共 21 项通过：`test/core/widgets/image_gallery_gestures_test.dart`、`test/features/media/reading_gallery_page_test.dart`、`test/core/widgets/content_image_viewer_page_test.dart`。日志 `artifacts-image-anchor-final-tests.log`。
 - 全仓 `flutter analyze --no-pub` 零问题，`docs:check` 通过。日志 `artifacts-image-anchor-full-analyze.log`。开发反馈阶段不把此前其他源码的完整门禁或 APK 哈希用于本次修改。
-- 候选源码 `eea809ba4b5b18b7367285ff2c177e973b7e9a1c` 已推送为 [Draft PR #67](https://github.com/morenk/wenyousite-mobile/pull/67)，目标 `dev`，没有合并。
-- 该提交的共享查看器补丁通过 Git diff/apply 交接到原 Debug 工作区，保留滑块及预览底色的未提交变更。首次请求热重载时现有 attach 连接断开，Android PID 仍为 `15535`；设备 `mWakefulness=Dozing`，短暂唤醒后 VM 可读，随后再次休眠。尚未把本次热重载记为成功，等待设备保持亮屏后重连验证。
-- 负责人随后要求继续应用。2026-09-26 18:37，重新 attach 并恢复原 Activity 到前台后，实际热重载 1/4574 个库；Android PID 仍为 `15535`。VM 源码核验 `_pageController.jumpToPage(target)` 已载入、旧控制器替换逻辑已移除、`keepPage: false` 已载入；运行证据为 `build/candidates/image-anchor-runtime.json`。初始 attach 的“Reloaded 0 libraries”未作为生效依据。没有重启进程或重装 APK，当前图片需关闭再打开来复验首次进入；负责人手动结果仍待确认。
+- 候选源码 `eea809ba4b5b18b7367285ff2c177e973b7e9a1c` 已推送为 [PR #67](https://github.com/morenk/wenyousite-mobile/pull/67)，目标 `dev`；最初以 Draft 交付，负责人已授权在完整门禁通过后合并。
+- 该提交的共享查看器补丁通过 Git diff/apply 交接到原 Debug 工作区，保留滑块及预览底色的未提交变更。首次请求热重载时现有 attach 连接断开，Android PID 仍为 `15535`；设备 `mWakefulness=Dozing`，短暂唤醒后 VM 可读，随后再次休眠。当时没有把热重载记为成功，后续在设备保持亮屏后重连验证。
+- 负责人随后要求继续应用。2026-09-26 18:37，重新 attach 并恢复原 Activity 到前台后，实际热重载 1/4574 个库；Android PID 仍为 `15535`。VM 源码核验 `_pageController.jumpToPage(target)` 已载入、旧控制器替换逻辑已移除、`keepPage: false` 已载入；运行证据为 `build/candidates/image-anchor-runtime.json`。初始 attach 的“Reloaded 0 libraries”未作为生效依据。没有重启进程或重装 APK，当前图片需关闭再打开来复验首次进入；当时等待负责人手动确认，后续验收结果见本文首段。
 
 ## 负责人复验
 
@@ -39,4 +39,11 @@
 2. 重新打开原链接楼层图片，确认首次就能看到正确图片。
 3. 左右切图、双击／捏合放大，加载前页时当前图片与缩放保持；普通关闭回到原阅读位置。
 
-反馈失败则保留本记录继续排查；自动测试和热重载成功不代表真机验收通过。
+负责人已明确通过原问题复验。本次完成结论来自负责人反馈，自动测试和热重载记录仅提供补充证据。
+
+## 集成验证与证据保留
+
+- 2026-09-26，在本切片 Windows 工作区执行 `npm run check -- -TestConcurrency 2`，退出码为 0，完整门禁通过。应用、测试、契约、依赖和门禁脚本均与已验收实现提交 `eea809ba4b5b18b7367285ff2c177e973b7e9a1c` 一致；后续提交仅更新验收文档。
+- 契约校验与再生成一致性、公网兼容性、全仓格式和静态分析、架构、模块文档及 API 覆盖检查通过。Flutter 全量回归 4,889 项通过，1 项跳过；跳过项为需要显式执行的 `test/core/diagnostics/diagnostic_live_receipt_test.dart` Sentry 在线收件验收。Windows 发布工具测试 47 项全部通过。
+- 完整日志为 `artifacts-image-anchor-check.log`。清理前将它与旧实现失败、候选精确回归、静态分析及实际热重载的证据另存到 `D:\code\wenyousite\artifacts\mobile-image-viewer-anchor\20260926`，由 `evidence-sha256.json` 记录文件摘要。
+- 本轮不构建或重装 APK，也不沿用旧 APK 哈希作为新实现的证据。PR #67 合并后仅清理其专用分支及工作区；原滑块工作区、其他任务和主目录未跟踪制品继续保留。
