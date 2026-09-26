@@ -6,7 +6,7 @@
 
 - 在独立 Windows Worktree `D:\codex-worktrees\a384\wenyousite-mobile`、分支 `codex/20260927-mobile-release-notes` 开发；初始基线 `8be9ffb105e1ba2cc157084e6e7d1f058ced70d0`。
 - 开始前 fetch Mobile 与 Foundation；最新正式 Foundation 为 `v7.2.1`，与 `pubspec.yaml`、锁文件一致，无依赖升级。展示补充文档以 Foundation 已提交 `d9001265030a52d5255c7cd52dc841833cc7afbb` 为参考，不消费未发布 Token。
-- 初始契约记录与公网只读 `/meta` 均为 Backend `124fb4e8aa395440f7a2156de98b642ec87f7583`、HTTP 契约 `5.26.0-dev.20260922.3`。新 API 首次固定 `99b42dc0f7d25eeb6e49ee87441e206c77cce29a`，最终连同受限发布 CLI 运维文档固定 `72d3658d32a089fcfabdea30225d87b960033c5b`、契约 `5.27.0-dev.20260927.1`。
+- 初始契约记录与公网只读 `/meta` 均为 Backend `124fb4e8aa395440f7a2156de98b642ec87f7583`、HTTP 契约 `5.26.0-dev.20260922.3`。新 API 首次固定 `99b42dc0f7d25eeb6e49ee87441e206c77cce29a`，完整门禁使用连同受限发布 CLI 运维文档固定的 `72d3658d32a089fcfabdea30225d87b960033c5b`、契约 `5.27.0-dev.20260927.1`；门禁结束后按治理最终交接同步 `9e25b4562dfd9229b0d306b5374c018c3e43f65c`。此次仅来源 revision 改变，OpenAPI、生成 SDK 与应用源码不变。
 - 不合并、不打正式 Tag、不发布、不上传正式包、不读取发布秘密、不占用其他任务的设备会话。
 
 ## 行为与风险
@@ -23,7 +23,9 @@
 
 ## 本地门禁记录
 
-最终应用源码运行 `npm run check:apk -- -ContinueAfterFailure -TestConcurrency 2`，完整日志为 `build-release-full-gate.log`。严格聚合第一次发现两个问题：公网 `/meta` 尚未部署候选契约；新 Golden 已加载固定字体，但初始化写法不符合架构门禁要求。后者仅调整测试为标准 `setUpAll(loadDeterministicTestFonts)` 并另行预热 Android 主题，架构复验通过（`build-release-architecture-final.log`），补充全量静态分析也通过（`build-release-analyze-after-test-setup.log`）。未修改应用源码或放宽门禁，不机械重跑整轮。其余步骤和 APK 最终结果将在完成后补充。
+最终应用源码运行 `npm run check:apk -- -ContinueAfterFailure -TestConcurrency 2`，完整日志为 `build-release-full-gate.log`。严格聚合第一次发现两个问题：公网 `/meta` 尚未部署候选契约；新 Golden 已加载固定字体，但初始化写法不符合架构门禁要求。后者仅调整测试为标准 `setUpAll(loadDeterministicTestFonts)` 并另行预热 Android 主题，架构复验通过（`build-release-architecture-final.log`），补充全量静态分析也通过（`build-release-analyze-after-test-setup.log`）。未修改应用源码或放宽门禁，不机械重跑整轮。最终严格聚合退出码为 1，保留上述两项原始失败。其余步骤通过：OpenAPI 校验与生成一致性、固定契约、格式、应用／SDK 分析、21 个模块文档、API 覆盖、全量 Flutter `4959 passed / 1 skipped`（原有显式 Sentry live receipt 验收）、Windows 发布及 Debug 工具 `52/52`、ARM64 Debug APK 构建。最终9e25来源同步后另行执行契约来源与模块文档定向检查，并用 Git diff 与源码摘要确认消费者字节未变，不重复整轮。
+
+本轮已检查的应用实现提交为 `e425c0785a3419d396c41d3b54ed5e8c574ef4ff`，`sourceDigest=f623265b0815ff4e6cb0843b99f55a3a16c7fb338fb4e4e7f478c17c1489aa35`。普通门禁 APK 保存于 `build/mobile-release-evidence/gate-app-debug.apk`，仅构建未安装，包名 `site.wenyou.app.debug`、显示名“温油站 Debug”、`0.8.0-dev.2-debug+97`、仅 `arm64-v8a`、109419506 字节；SHA-256 `1df0bb7a4726faf91512afd40e40cbeb7e8260398e3ccf7052ba2874ca7b4739`。后续真机使用带隔离预览配置的 Debug 会话，其安装摘要另记，不能混用。
 
 ## 合成隔离预览与发布工具
 
