@@ -66,6 +66,14 @@ Serializers _$serializers =
           ..add(AdminInviteCreatedResponseDto.serializer)
           ..add(AdminLoginChallengeDto.serializer)
           ..add(AdminLoginVerifyDto.serializer)
+          ..add(AdminMobileReleaseDto.serializer)
+          ..add(AdminMobileReleaseDtoPlatformEnum.serializer)
+          ..add(AdminMobileReleaseDtoStatusEnum.serializer)
+          ..add(AdminMobileReleasesConfirm201Response.serializer)
+          ..add(AdminMobileReleasesCreate201Response.serializer)
+          ..add(AdminMobileReleasesDetail200Response.serializer)
+          ..add(AdminMobileReleasesList200Response.serializer)
+          ..add(AdminMobileReleasesUpdate200Response.serializer)
           ..add(AdminModerationAppealsList200Response.serializer)
           ..add(AdminModerationAppealsResolve201Response.serializer)
           ..add(AdminModerationGetUser200Response.serializer)
@@ -159,6 +167,8 @@ Serializers _$serializers =
           ..add(CreateDirectMessageDto.serializer)
           ..add(CreateDraftDto.serializer)
           ..add(CreateManagedTagDto.serializer)
+          ..add(CreateMobileReleaseDto.serializer)
+          ..add(CreateMobileReleaseDtoPlatformEnum.serializer)
           ..add(CreateModerationAppealDto.serializer)
           ..add(CreateMomentBookmarkDto.serializer)
           ..add(CreateMomentBookmarkFolderDto.serializer)
@@ -289,6 +299,10 @@ Serializers _$serializers =
           ..add(MobileDeviceResponseDtoPlatformEnum.serializer)
           ..add(MobileDeviceUnregister200Response.serializer)
           ..add(MobilePlatformCompatibilityDto.serializer)
+          ..add(MobileReleaseRevisionDto.serializer)
+          ..add(MobileReleaseSnapshotDto.serializer)
+          ..add(MobileReleasesDetail200Response.serializer)
+          ..add(MobileReleasesList200Response.serializer)
           ..add(ModerateContentDto.serializer)
           ..add(ModerationAppealAppellantResponseDto.serializer)
           ..add(ModerationAppealDecisionResponseDto.serializer)
@@ -412,6 +426,8 @@ Serializers _$serializers =
           ..add(ProfileCoverResponseDto.serializer)
           ..add(ProfileCoverVariantResponseDto.serializer)
           ..add(ProgressionResponseDto.serializer)
+          ..add(PublicMobileReleaseDto.serializer)
+          ..add(PublicMobileReleaseDtoPlatformEnum.serializer)
           ..add(PublicUserResponseDto.serializer)
           ..add(PublicUserResponseDtoAccountStatusEnum.serializer)
           ..add(PublicUserResponseDtoRoleEnum.serializer)
@@ -575,6 +591,7 @@ Serializers _$serializers =
           ..add(UpdateContentTaxonomyDto.serializer)
           ..add(UpdateDraftDto.serializer)
           ..add(UpdateManagedTagDto.serializer)
+          ..add(UpdateMobileReleaseDto.serializer)
           ..add(UpdateMomentDto.serializer)
           ..add(UpdatePostDto.serializer)
           ..add(UpdateSiteSettingsDto.serializer)
@@ -713,6 +730,12 @@ Serializers _$serializers =
               const FullType(AdminHiddenContentResponseDto),
             ]),
             () => ListBuilder<AdminHiddenContentResponseDto>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [
+              const FullType(AdminMobileReleaseDto),
+            ]),
+            () => ListBuilder<AdminMobileReleaseDto>(),
           )
           ..addBuilderFactory(
             const FullType(BuiltList, const [
@@ -1056,6 +1079,12 @@ Serializers _$serializers =
           )
           ..addBuilderFactory(
             const FullType(BuiltList, const [
+              const FullType(PublicMobileReleaseDto),
+            ]),
+            () => ListBuilder<PublicMobileReleaseDto>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [
               const FullType(RecentReplyResponseDto),
             ]),
             () => ListBuilder<RecentReplyResponseDto>(),
@@ -1117,6 +1146,26 @@ Serializers _$serializers =
               const FullType(SessionResponseDto),
             ]),
             () => ListBuilder<SessionResponseDto>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(String)]),
+            () => ListBuilder<String>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(String)]),
+            () => ListBuilder<String>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(String)]),
+            () => ListBuilder<String>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(String)]),
+            () => ListBuilder<String>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(String)]),
+            () => ListBuilder<String>(),
           )
           ..addBuilderFactory(
             const FullType(BuiltList, const [const FullType(String)]),

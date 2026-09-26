@@ -62,6 +62,12 @@ import 'package:wenyou_api/src/model/admin_invite_acceptance_accept201_response.
 import 'package:wenyou_api/src/model/admin_invite_created_response_dto.dart';
 import 'package:wenyou_api/src/model/admin_login_challenge_dto.dart';
 import 'package:wenyou_api/src/model/admin_login_verify_dto.dart';
+import 'package:wenyou_api/src/model/admin_mobile_release_dto.dart';
+import 'package:wenyou_api/src/model/admin_mobile_releases_confirm201_response.dart';
+import 'package:wenyou_api/src/model/admin_mobile_releases_create201_response.dart';
+import 'package:wenyou_api/src/model/admin_mobile_releases_detail200_response.dart';
+import 'package:wenyou_api/src/model/admin_mobile_releases_list200_response.dart';
+import 'package:wenyou_api/src/model/admin_mobile_releases_update200_response.dart';
 import 'package:wenyou_api/src/model/admin_moderation_appeals_list200_response.dart';
 import 'package:wenyou_api/src/model/admin_moderation_appeals_resolve201_response.dart';
 import 'package:wenyou_api/src/model/admin_moderation_get_user200_response.dart';
@@ -145,6 +151,7 @@ import 'package:wenyou_api/src/model/create_direct_conversation_dto.dart';
 import 'package:wenyou_api/src/model/create_direct_message_dto.dart';
 import 'package:wenyou_api/src/model/create_draft_dto.dart';
 import 'package:wenyou_api/src/model/create_managed_tag_dto.dart';
+import 'package:wenyou_api/src/model/create_mobile_release_dto.dart';
 import 'package:wenyou_api/src/model/create_moderation_appeal_dto.dart';
 import 'package:wenyou_api/src/model/create_moment_bookmark_dto.dart';
 import 'package:wenyou_api/src/model/create_moment_bookmark_folder_dto.dart';
@@ -247,6 +254,10 @@ import 'package:wenyou_api/src/model/mobile_device_register200_response.dart';
 import 'package:wenyou_api/src/model/mobile_device_response_dto.dart';
 import 'package:wenyou_api/src/model/mobile_device_unregister200_response.dart';
 import 'package:wenyou_api/src/model/mobile_platform_compatibility_dto.dart';
+import 'package:wenyou_api/src/model/mobile_release_revision_dto.dart';
+import 'package:wenyou_api/src/model/mobile_release_snapshot_dto.dart';
+import 'package:wenyou_api/src/model/mobile_releases_detail200_response.dart';
+import 'package:wenyou_api/src/model/mobile_releases_list200_response.dart';
 import 'package:wenyou_api/src/model/moderate_content_dto.dart';
 import 'package:wenyou_api/src/model/moderation_appeal_appellant_response_dto.dart';
 import 'package:wenyou_api/src/model/moderation_appeal_decision_response_dto.dart';
@@ -338,6 +349,7 @@ import 'package:wenyou_api/src/model/private_user_response_dto.dart';
 import 'package:wenyou_api/src/model/profile_cover_response_dto.dart';
 import 'package:wenyou_api/src/model/profile_cover_variant_response_dto.dart';
 import 'package:wenyou_api/src/model/progression_response_dto.dart';
+import 'package:wenyou_api/src/model/public_mobile_release_dto.dart';
 import 'package:wenyou_api/src/model/public_user_response_dto.dart';
 import 'package:wenyou_api/src/model/recent_reply_dice_response_dto.dart';
 import 'package:wenyou_api/src/model/recent_reply_response_dto.dart';
@@ -464,6 +476,7 @@ import 'package:wenyou_api/src/model/update_admin_role_dto.dart';
 import 'package:wenyou_api/src/model/update_content_taxonomy_dto.dart';
 import 'package:wenyou_api/src/model/update_draft_dto.dart';
 import 'package:wenyou_api/src/model/update_managed_tag_dto.dart';
+import 'package:wenyou_api/src/model/update_mobile_release_dto.dart';
 import 'package:wenyou_api/src/model/update_moment_dto.dart';
 import 'package:wenyou_api/src/model/update_post_dto.dart';
 import 'package:wenyou_api/src/model/update_site_settings_dto.dart';
@@ -566,6 +579,12 @@ part 'serializers.g.dart';
   AdminInviteCreatedResponseDto,
   AdminLoginChallengeDto,
   AdminLoginVerifyDto,
+  AdminMobileReleaseDto,
+  AdminMobileReleasesConfirm201Response,
+  AdminMobileReleasesCreate201Response,
+  AdminMobileReleasesDetail200Response,
+  AdminMobileReleasesList200Response,
+  AdminMobileReleasesUpdate200Response,
   AdminModerationAppealsList200Response,
   AdminModerationAppealsResolve201Response,
   AdminModerationGetUser200Response,
@@ -649,6 +668,7 @@ part 'serializers.g.dart';
   CreateDirectMessageDto,
   CreateDraftDto,
   CreateManagedTagDto,
+  CreateMobileReleaseDto,
   CreateModerationAppealDto,
   CreateMomentBookmarkDto,
   CreateMomentBookmarkFolderDto,
@@ -751,6 +771,10 @@ part 'serializers.g.dart';
   MobileDeviceResponseDto,
   MobileDeviceUnregister200Response,
   MobilePlatformCompatibilityDto,
+  MobileReleaseRevisionDto,
+  MobileReleaseSnapshotDto,
+  MobileReleasesDetail200Response,
+  MobileReleasesList200Response,
   ModerateContentDto,
   ModerationAppealAppellantResponseDto,
   ModerationAppealDecisionResponseDto,
@@ -842,6 +866,7 @@ part 'serializers.g.dart';
   ProfileCoverResponseDto,
   ProfileCoverVariantResponseDto,
   ProgressionResponseDto,
+  PublicMobileReleaseDto,
   PublicUserResponseDto,
   RecentReplyDiceResponseDto,
   RecentReplyResponseDto,
@@ -968,6 +993,7 @@ part 'serializers.g.dart';
   UpdateContentTaxonomyDto,
   UpdateDraftDto,
   UpdateManagedTagDto,
+  UpdateMobileReleaseDto,
   UpdateMomentDto,
   UpdatePostDto,
   UpdateSiteSettingsDto,

@@ -273,6 +273,8 @@ GIF 上传插入修复（2026-09-13，负责人验收通过）：新主题正文
 
 ## 13. 最近审查的契约版本和后端提交
 
+2026-09-27 更新说明兼容契约复核：Backend `99b42dc0f7d25eeb6e49ee87441e206c77cce29a`、契约 `5.27.0-dev.20260927.1`。新增公开说明与管理类型，既有接口和 `/meta` 保持兼容；新能力由 app-shell 独立接入，不代表本模块其他行为或负责人验收变化。详见[契约同步](../architecture/mobile-release-contract-sync.md)。
+
 2026-09-27 阅读滑块收尾：Foundation 正式 `v7.2.1`（`c7729bc9e28c608c6c3a76cdc088e3c5b6a5a663`）；产品交互参数由移动端 `ReadingScrollSpec` 维护，已移除两套旧阅读契约与图标 API 消费。本轮 Backend 记录、只读镜像及公网来源均为 `124fb4e8aa395440f7a2156de98b642ec87f7583`。
 
 2026-09-26 自适应阅读候选：Foundation 固定正式 `v7.2.0`（`a6f4e2d3487ac058872a44013ffb4e7fd587d11e`）；Backend 与公网 `/meta` 仍为 `124fb4e8aa395440f7a2156de98b642ec87f7583`、OpenAPI `5.26.0-dev.20260922.3`，本次无 API、存储或网络策略变化。
