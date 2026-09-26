@@ -13,6 +13,7 @@ import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart
 import 'package:wenyousite_mobile/features/media/presentation/pending_image_overlay.dart';
 import 'package:wenyousite_mobile/features/reports/application/report_repository_ports.dart';
 import 'package:wenyousite_mobile/features/reports/domain/report_models.dart';
+
 import 'direct_conversation_page_test_support.dart';
 
 void registerDirectConversationPageSendingMediaCases() {
@@ -80,7 +81,7 @@ void registerDirectConversationPageSendingMediaCases() {
 
     await tester.tap(find.byKey(const Key('direct-conversation-archive')));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('归档会话'));
+    await tester.tap(find.text('归档'));
     await tester.pumpAndSettle();
     expect(repository.archiveValues, [true]);
     expect(find.byTooltip('更多会话操作'), findsOneWidget);

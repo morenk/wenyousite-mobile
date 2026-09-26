@@ -240,7 +240,7 @@ class _InvitationFailure extends StatelessWidget {
                   key: const Key('thread-invite-load-retry'),
                   onPressed: onRetry,
                   icon: const WenyouIcon(WenyouIconIds.actionRefresh),
-                  label: const Text('重新加载'),
+                  label: const Text('重试'),
                 ),
         ),
       ),

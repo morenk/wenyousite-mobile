@@ -38,7 +38,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     routes: [
       buildAppShellRoute(ref, feedbackVisibility: feedbackVisibility),
       ...buildContentRoutes(),
-      ...buildAccountRoutes(),
+      ...buildAccountRoutes(ref),
       ...buildAuthRoutes(),
     ],
   );

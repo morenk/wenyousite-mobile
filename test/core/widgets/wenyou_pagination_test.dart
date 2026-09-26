@@ -38,7 +38,7 @@ void main() {
     expect(find.text('加载失败'), findsOneWidget);
     expect(find.text('重试'), findsOneWidget);
     await pump(hasMore: false, loading: false);
-    expect(find.text('已经到底了'), findsOneWidget);
+    expect(find.text('已经到底了'), findsNothing);
   });
 
   testWidgets('隐藏结束提示不占空间，失败期间只允许显式重试', (tester) async {
@@ -53,7 +53,6 @@ void main() {
                   hasMore: false,
                   isLoading: loading,
                   failure: failure,
-                  showEndLabel: false,
                   onLoadMore: () => retries++,
                 ),
               ),

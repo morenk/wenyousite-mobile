@@ -1,67 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
-import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_pagination.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_time_text.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/thread_feed/thread_feed_widgets.dart';
 import 'package:wenyousite_mobile/features/users/application/public_user_controller.dart';
 import 'package:wenyousite_mobile/features/users/domain/public_user_models.dart';
-
-class PublicUserContentArea extends ConsumerWidget {
-  const PublicUserContentArea({
-    required this.userId,
-    required this.state,
-    super.key,
-  });
-
-  final String userId;
-  final PublicUserState state;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final tokens = context.wenyouTokens;
-    final notifier = ref.read(publicUserControllerProvider(userId).notifier);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        WenyouPanel(
-          padding: EdgeInsets.all(tokens.space16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const WenyouSectionHeader(title: '公开内容'),
-              SizedBox(height: tokens.space12),
-              WenyouContentTabs<PublicUserContentTab>(
-                key: const Key('public-user-content-tabs'),
-                keyPrefix: 'public-user',
-                semanticsLabel: '用户公开内容',
-                placement: WenyouTabPlacement.embedded,
-                options: [
-                  for (final tab in state.availableTabs)
-                    WenyouFilterOption(
-                      value: tab,
-                      label: tab.label,
-                      keyValue: '${tab.name}-tab',
-                    ),
-                ],
-                selected: state.activeTab,
-                onSelected: notifier.selectTab,
-              ),
-            ],
-          ),
-        ),
-        SizedBox(height: tokens.space12),
-      ],
-    );
-  }
-}
 
 class PublicUserContentSectionSliver extends StatelessWidget {
   const PublicUserContentSectionSliver({
@@ -374,7 +323,7 @@ class _ContentFailureState extends StatelessWidget {
           key: Key('public-user-${tab.name}-retry'),
           onPressed: onRetry,
           icon: const WenyouIcon(WenyouIconIds.actionRefresh),
-          label: const Text('重新加载'),
+          label: const Text('重试'),
         ),
       ),
     );

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 
 enum WenyouAsyncButtonVariant { filled, tonal, outlined, text }
@@ -45,6 +46,7 @@ class WenyouAsyncButton extends StatelessWidget {
     this.expand = false,
     this.variant = WenyouAsyncButtonVariant.filled,
     this.compact = false,
+    this.dense = false,
     this.tone = WenyouAsyncButtonTone.normal,
     super.key,
   });
@@ -60,6 +62,9 @@ class WenyouAsyncButton extends StatelessWidget {
 
   /// 工具栏仅收紧横向留白，仍保留最低触控高度与大字号换行。
   final bool compact;
+
+  /// 列表中收紧可见表面，外围仍通过 Material padding 保留完整触控区域。
+  final bool dense;
   final WenyouAsyncButtonTone tone;
 
   @override
@@ -86,14 +91,27 @@ class WenyouAsyncButton extends StatelessWidget {
           )
         : null;
     final style =
-        (compact
+        (compact || dense
                 ? ButtonStyle(
                     minimumSize: WidgetStatePropertyAll(
-                      Size(0, tokens.minimumTouchTarget),
+                      Size(
+                        0,
+                        dense ? tokens.space32 : tokens.minimumTouchTarget,
+                      ),
                     ),
                     padding: WidgetStatePropertyAll(
-                      EdgeInsets.symmetric(horizontal: tokens.space12),
+                      EdgeInsets.symmetric(
+                        horizontal: dense ? tokens.space8 : tokens.space12,
+                        vertical: dense ? tokens.space4 : 0,
+                      ),
                     ),
+                    textStyle: dense
+                        ? WidgetStatePropertyAll(
+                            Theme.of(context).textTheme.wenyouCompactBody,
+                          )
+                        : null,
+                    tapTargetSize: dense ? MaterialTapTargetSize.padded : null,
+                    visualDensity: dense ? VisualDensity.standard : null,
                   )
                 : const ButtonStyle())
             .merge(
@@ -134,7 +152,7 @@ class WenyouAsyncButton extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 if (icon != null) ...[
-                  WenyouIcon(icon!, size: compact ? 18 : 20),
+                  WenyouIcon(icon!, size: compact || dense ? 18 : 20),
                   SizedBox(width: tokens.space8),
                 ],
                 Flexible(child: Text(label, textAlign: TextAlign.center)),
@@ -174,10 +192,12 @@ class WenyouAsyncButton extends StatelessWidget {
     };
     return SizedBox(
       width: expand ? double.infinity : null,
-      child: ConstrainedBox(
-        constraints: BoxConstraints(minHeight: tokens.minimumTouchTarget),
-        child: button,
-      ),
+      child: dense
+          ? button
+          : ConstrainedBox(
+              constraints: BoxConstraints(minHeight: tokens.minimumTouchTarget),
+              child: button,
+            ),
     );
   }
 }

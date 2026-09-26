@@ -147,7 +147,7 @@ class _MomentBookmarkFolderPageState
                   key: const Key('moment-bookmark-folder-retry'),
                   onPressed: ref.read(provider.notifier).load,
                   icon: const WenyouIcon(WenyouIconIds.actionRefresh),
-                  label: const Text('重新加载'),
+                  label: const Text('重试'),
                 ),
               ),
             ),

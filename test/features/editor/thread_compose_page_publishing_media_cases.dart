@@ -56,7 +56,7 @@ void registerThreadComposePagePublishingMediaCases() {
 
     await threadComposePageTestPumpPage(tester, controller);
 
-    expect(find.text('已恢复上次未完成的本地内容。'), findsOneWidget);
+    expect(find.text('已恢复未完成的内容'), findsOneWidget);
     expect(
       tester
           .widget<TextField>(find.byKey(const Key('compose-title')))

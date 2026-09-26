@@ -62,6 +62,36 @@ TransformationController _transform(WidgetTester tester) => tester
     .transformationController!;
 
 void main() {
+  testWidgets('图集从单图补齐前序图片后画面立即保持点击图，不等待再次点按', (tester) async {
+    var images = [_items[2]];
+    late StateSetter update;
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: StatefulBuilder(
+          builder: (context, setState) {
+            update = setState;
+            return WenyouImageViewerPage(
+              items: images,
+              imageBuilder: (_, index, current) =>
+                  Center(child: Text('画面-${images[index].semanticLabel}')),
+            );
+          },
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('画面-C').hitTestable(), findsOneWidget);
+    update(() => images = _items);
+    await tester.pump();
+    expect(tester.widget<PageView>(find.byType(PageView)).controller!.page, 2);
+    expect(find.text('画面-C').hitTestable(), findsOneWidget);
+    expect(find.text('画面-A').hitTestable(), findsNothing);
+    await tester.tapAt(const Offset(400, 300));
+    await tester.pumpAndSettle();
+    expect(find.text('画面-C').hitTestable(), findsOneWidget);
+  });
+
   testWidgets('按住横拖时前页返回，当前图保持且本手势不按旧序号跳转', (tester) async {
     var images = _items.sublist(1);
     late StateSetter update;
@@ -86,6 +116,7 @@ void main() {
     await tester.pump();
     update(() => images = _items);
     await tester.pump();
+    expect(tester.widget<PageView>(find.byType(PageView)).controller!.page, 1);
     await gesture.moveBy(const Offset(-100, 0));
     await gesture.up();
     await tester.pumpAndSettle();
@@ -93,6 +124,37 @@ void main() {
     await tester.dragFrom(const Offset(500, 300), const Offset(-200, 0));
     await tester.pumpAndSettle();
     expect(find.text('C'), findsOneWidget);
+  });
+
+  testWidgets('放大后前插页保持当前图片的缩放状态与实际页位置', (tester) async {
+    var images = [_items[2]];
+    late StateSetter update;
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: StatefulBuilder(
+          builder: (context, setState) {
+            update = setState;
+            return WenyouImageViewerPage(
+              items: images,
+              imageBuilder: (_, index, current) => const SizedBox.expand(),
+            );
+          },
+        ),
+      ),
+    );
+    await tester.tapAt(const Offset(100, 220));
+    await tester.pump(const Duration(milliseconds: 70));
+    await tester.tapAt(const Offset(100, 220));
+    await tester.pumpAndSettle();
+    final transform = _transform(tester);
+    final before = transform.value.clone();
+    expect(before.getMaxScaleOnAxis(), 2);
+    update(() => images = _items);
+    await tester.pumpAndSettle();
+    expect(tester.widget<PageView>(find.byType(PageView)).controller!.page, 2);
+    expect(_transform(tester), same(transform));
+    expect(transform.value, before);
   });
 
   testWidgets('真实双指围绕中心放大，放大后拖动只平移，第二指松开不关闭', (tester) async {

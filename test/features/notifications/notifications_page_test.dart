@@ -29,6 +29,8 @@ void main() {
     addTearDown(router.dispose);
     addTearDown(container.dispose);
     await _pumpAuthenticated(tester, container, router);
+    await tester.tap(find.byKey(const Key('notification-more-only')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('notification-remove-only')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('notification-remove-confirm')));
@@ -355,6 +357,8 @@ void main() {
     await tester.pumpAndSettle();
     expect(repository.markAllCalls, 1);
 
+    await tester.tap(find.byKey(const Key('notification-more-notification-1')));
+    await tester.pumpAndSettle();
     await tester.tap(
       find.byKey(const Key('notification-remove-notification-1')),
     );

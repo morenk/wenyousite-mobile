@@ -129,7 +129,14 @@ void main() {
     await controller.load();
     await _pumpSheet(tester, controller, currentContent: '自动保存正文');
 
-    expect(find.text('已关闭'), findsOneWidget);
+    expect(
+      tester
+          .widget<Switch>(
+            find.byKey(const Key('content-drafts-auto-save-switch')),
+          )
+          .value,
+      isFalse,
+    );
     expect(
       tester
           .widget<Switch>(
@@ -147,8 +154,15 @@ void main() {
 
     expect(repository.updateVersions, isEmpty);
     expect(controller.state.autoSaveEnabled, isTrue);
-    expect(find.text('已开启'), findsOneWidget);
-    expect(find.text('已开启，编辑后自动更新到草稿位 1'), findsOneWidget);
+    expect(
+      tester
+          .widget<Switch>(
+            find.byKey(const Key('content-drafts-auto-save-switch')),
+          )
+          .value,
+      isTrue,
+    );
+    expect(find.text('等待保存修改'), findsOneWidget);
   });
 
   testWidgets('恢复最新版前明确确认，且回调只返回正文', (tester) async {

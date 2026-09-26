@@ -100,7 +100,7 @@ class _StickerCollectionPageState extends ConsumerState<StickerCollectionPage> {
                   key: const Key('stickers-retry'),
                   onPressed: notifier.load,
                   icon: const WenyouIcon(WenyouIconIds.actionRefresh),
-                  label: const Text('重新加载'),
+                  label: const Text('重试'),
                 ),
               ),
             ),

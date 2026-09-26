@@ -6,8 +6,8 @@ import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_anchored_popover.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
-import 'package:wenyousite_mobile/core/widgets/wenyou_selection_menu.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/direct_messages/application/direct_message_controllers.dart';
 import 'package:wenyousite_mobile/features/direct_messages/domain/direct_message_models.dart';
@@ -159,23 +159,31 @@ class _DirectConversationPageState extends ConsumerState<DirectConversationPage>
             ),
       actions: [
         if (canArchive)
-          PopupMenuButton<_ConversationMenuAction>(
-            icon: const WenyouIcon(WenyouIconIds.actionMore),
-            key: const Key('direct-conversation-archive'),
-            enabled: !state.isMutating && !state.isRefreshing,
-            tooltip: '更多会话操作',
+          WenyouAnchoredActionBubble<_ConversationMenuAction>(
+            placement: WenyouPopoverPlacement.below,
+            alignment: WenyouPopoverAlignment.end,
+            semanticLabel: '更多会话操作',
             onSelected: (_) => _toggleArchive(context, notifier, conversation),
-            itemBuilder: (_) => [
-              PopupMenuItem(
+            actions: [
+              WenyouPopoverAction(
                 value: _ConversationMenuAction.toggleArchive,
-                child: WenyouMenuActionLabel(
-                  icon: conversation.archivedAt == null
-                      ? WenyouIconIds.actionArchive
-                      : WenyouIconIds.actionUnarchive,
-                  label: conversation.archivedAt == null ? '归档会话' : '移回会话列表',
-                ),
+                icon: conversation.archivedAt == null
+                    ? WenyouIconIds.actionArchive
+                    : WenyouIconIds.actionUnarchive,
+                label: conversation.archivedAt == null ? '归档' : '移回',
+                semanticsLabel: conversation.archivedAt == null
+                    ? '归档会话'
+                    : '移回会话列表',
               ),
             ],
+            anchorBuilder: (context, handle) => IconButton(
+              key: const Key('direct-conversation-archive'),
+              tooltip: '更多会话操作',
+              onPressed: state.isMutating || state.isRefreshing
+                  ? null
+                  : handle.toggle,
+              icon: const WenyouIcon(WenyouIconIds.actionMore),
+            ),
           ),
       ],
     );
@@ -450,7 +458,7 @@ class _ConversationFailure extends StatelessWidget {
             key: const Key('direct-conversation-retry'),
             onPressed: onRetry,
             icon: const WenyouIcon(WenyouIconIds.actionRefresh),
-            label: const Text('重新加载'),
+            label: const Text('重试'),
           ),
         ),
       ),

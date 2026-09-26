@@ -12,12 +12,14 @@ class UserRelationActions extends ConsumerWidget {
     required this.target,
     this.additionalActions = const [],
     this.showBlockAction = true,
+    this.prominentFollow = false,
     super.key,
   });
 
   final UserRelationTarget target;
   final List<WenyouIconLabelAction> additionalActions;
   final bool showBlockAction;
+  final bool prominentFollow;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -28,43 +30,63 @@ class UserRelationActions extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        WenyouIconLabelActionBar(
-          actions: [
-            WenyouIconLabelAction(
+        if (prominentFollow)
+          WenyouPrimaryActionRow(
+            primary: WenyouAsyncButton(
               key: const Key('user-relation-follow'),
+              label: state.isFollowing ? '已关注' : '关注',
+              semanticLabel: state.isFollowing ? '已关注，点按取消关注' : '关注',
               icon: state.isFollowing
                   ? WenyouIconIds.actionUnfollow
                   : WenyouIconIds.actionFollow,
-              label: state.isFollowing ? '已关注' : '关注',
-              semanticsLabel: state.isFollowing ? '已关注，点按取消关注' : '关注',
-              selected: state.isFollowing,
+              variant: state.isFollowing
+                  ? WenyouAsyncButtonVariant.outlined
+                  : WenyouAsyncButtonVariant.filled,
+              isLoading: state.pendingAction == UserRelationAction.follow,
               onPressed: state.isPending
                   ? null
                   : () => _toggleFollow(context, notifier),
             ),
-            if (showBlockAction)
+            secondary: additionalActions,
+          )
+        else
+          WenyouIconLabelActionBar(
+            actions: [
               WenyouIconLabelAction(
-                key: const Key('user-relation-block'),
-                icon: state.isBlocked
-                    ? WenyouIconIds.actionUnlock
-                    : WenyouIconIds.actionBlock,
-                label: state.isBlocked ? '取消拉黑' : '拉黑',
-                semanticsLabel: state.isBlocked ? '取消拉黑' : '拉黑',
-                selected: state.isBlocked,
-                loading: state.pendingAction == UserRelationAction.block,
-                foregroundColor: Theme.of(context).colorScheme.error,
+                key: const Key('user-relation-follow'),
+                icon: state.isFollowing
+                    ? WenyouIconIds.actionUnfollow
+                    : WenyouIconIds.actionFollow,
+                label: state.isFollowing ? '已关注' : '关注',
+                semanticsLabel: state.isFollowing ? '已关注，点按取消关注' : '关注',
+                selected: state.isFollowing,
                 onPressed: state.isPending
                     ? null
-                    : () => _toggleUserBlock(
-                        context,
-                        notifier,
-                        target,
-                        state.isBlocked,
-                      ),
+                    : () => _toggleFollow(context, notifier),
               ),
-            ...additionalActions,
-          ],
-        ),
+              if (showBlockAction)
+                WenyouIconLabelAction(
+                  key: const Key('user-relation-block'),
+                  icon: state.isBlocked
+                      ? WenyouIconIds.actionUnlock
+                      : WenyouIconIds.actionBlock,
+                  label: state.isBlocked ? '取消拉黑' : '拉黑',
+                  semanticsLabel: state.isBlocked ? '取消拉黑' : '拉黑',
+                  selected: state.isBlocked,
+                  loading: state.pendingAction == UserRelationAction.block,
+                  foregroundColor: Theme.of(context).colorScheme.error,
+                  onPressed: state.isPending
+                      ? null
+                      : () => showWenyouUserBlockFlow(
+                          context,
+                          notifier,
+                          target,
+                          state.isBlocked,
+                        ),
+                ),
+              ...additionalActions,
+            ],
+          ),
         if (state.failure != null) ...[
           SizedBox(height: tokens.space12),
           WenyouStatusBanner(
@@ -117,7 +139,7 @@ class UserRelationBlockIconButton extends ConsumerWidget {
       isLoading: isLoading,
       onPressed: state.isPending
           ? null
-          : () => _toggleUserBlock(
+          : () => showWenyouUserBlockFlow(
               context,
               ref.read(provider.notifier),
               target,
@@ -133,7 +155,7 @@ class UserRelationBlockIconButton extends ConsumerWidget {
 String wenyouUserBlockConfirmationMessage(String username) =>
     '拉黑 $username 后，将屏蔽对方的回复与通知；已有私聊记录保留，但不能继续发送。';
 
-Future<void> _toggleUserBlock(
+Future<void> showWenyouUserBlockFlow(
   BuildContext context,
   UserRelationController notifier,
   UserRelationTarget target,

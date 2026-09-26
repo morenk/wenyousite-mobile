@@ -6,8 +6,10 @@ import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_capabilities.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
-import 'package:wenyousite_mobile/core/animation/wenyou_motion.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_anchored_popover.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_nested_scroll.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/reports/domain/report_models.dart';
 import 'package:wenyousite_mobile/features/reports/presentation/report_widgets.dart';
@@ -17,14 +19,16 @@ import 'package:wenyousite_mobile/features/social/presentation/user_relation_act
 import 'package:wenyousite_mobile/features/users/application/me_profile_controller.dart';
 import 'package:wenyousite_mobile/features/users/application/public_user_controller.dart';
 import 'package:wenyousite_mobile/features/users/domain/public_user_models.dart';
+import 'package:wenyousite_mobile/features/users/presentation/me_content_dashboard.dart';
 import 'package:wenyousite_mobile/features/users/presentation/public_user_content.dart';
-import 'package:wenyousite_mobile/features/users/presentation/user_activity_summary_panel.dart';
 import 'package:wenyousite_mobile/features/users/presentation/user_profile_header.dart';
 import 'package:wenyousite_mobile/features/wallet/domain/wallet_models.dart';
 import 'package:wenyousite_mobile/features/wallet/presentation/wallet_widgets.dart';
 
 class PublicUserPage extends ConsumerStatefulWidget {
-  const PublicUserPage({required this.userId, super.key});
+  const PublicUserPage({required this.userId, this.userMoments, super.key});
+
+  final MeUserMomentsIntegration? userMoments;
 
   final String userId;
 
@@ -33,7 +37,7 @@ class PublicUserPage extends ConsumerStatefulWidget {
 }
 
 class _PublicUserPageState extends ConsumerState<PublicUserPage> {
-  final GlobalKey _contentAreaTargetKey = GlobalKey();
+  bool _showMoments = false;
 
   @override
   Widget build(BuildContext context) {
@@ -57,16 +61,8 @@ class _PublicUserPageState extends ConsumerState<PublicUserPage> {
       appBar: AppBar(
         title: const Text('用户主页'),
         actions: [
-          if (relationTarget != null)
-            UserRelationBlockIconButton(target: relationTarget),
           if (canTip)
-            WenyouReportButton(
-              key: const Key('public-user-report'),
-              target: ReportTarget.user(state.profile!.id),
-              targetLabel: '这个用户',
-              returnTo: '/users/${state.profile!.id}',
-              iconOnly: true,
-            ),
+            _ProfileMoreActions(userId: widget.userId, target: relationTarget),
         ],
       ),
       body: switch (state.phase) {
@@ -78,120 +74,112 @@ class _PublicUserPageState extends ConsumerState<PublicUserPage> {
           onRetry: () => ref.read(provider.notifier).load(),
         ),
         PublicUserPhase.ready => RefreshIndicator(
-          onRefresh: () => ref.read(provider.notifier).load(),
-          child: CustomScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            slivers: [
-              SliverPadding(
-                padding: _pagePadding(context),
-                sliver: SliverMainAxisGroup(
-                  slivers: [
-                    SliverToBoxAdapter(
-                      child: WenyouConstrainedWidth(
-                        child: state.profile!.isDeactivated
-                            ? const WenyouPanel(
-                                child: WenyouEmptyState(
-                                  icon: WenyouIconIds.statusUserUnavailable,
-                                  title: '已注销用户',
-                                ),
-                              )
-                            : Column(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: [
-                                  _UserProfileContent(
-                                    profile: state.profile!,
-                                    canTip: canTip,
-                                    relationTarget: relationTarget,
-                                    isCurrentUser:
-                                        meState?.phase ==
-                                            MeProfilePhase.ready &&
-                                        meState!.profile!.id ==
-                                            state.profile!.id,
-                                  ),
-                                  SizedBox(
-                                    height: context.wenyouTokens.cardGap,
-                                  ),
-                                  UserActivitySummaryPanel(
-                                    key: const Key(
-                                      'public-user-activity-summary',
-                                    ),
-                                    keyPrefix: 'public-user-activity',
-                                    state: state,
-                                    onRetry: () => ref
-                                        .read(provider.notifier)
-                                        .retryActivitySummary(),
-                                    onMomentsPressed: () => context.pushNamed(
-                                      'user-moments',
-                                      pathParameters: {'userId': widget.userId},
-                                    ),
-                                    onCreatedThreadsPressed: () =>
-                                        _selectContentTab(
-                                          PublicUserContentTab.created,
-                                        ),
-                                    onPlayedThreadsPressed: () =>
-                                        _selectContentTab(
-                                          PublicUserContentTab.played,
-                                        ),
-                                    onRepliesPressed: () => _selectContentTab(
-                                      PublicUserContentTab.replies,
-                                    ),
-                                  ),
-                                  SizedBox(
-                                    height: context.wenyouTokens.space12,
-                                  ),
-                                  KeyedSubtree(
-                                    key: _contentAreaTargetKey,
-                                    child: PublicUserContentArea(
-                                      key: const Key(
-                                        'public-user-content-area',
-                                      ),
-                                      userId: widget.userId,
-                                      state: state,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                      ),
-                    ),
-                    if (!state.profile!.isDeactivated)
-                      PublicUserContentSectionSliver(
-                        tab: state.activeTab,
-                        state: state,
-                        onRetry: ref.read(provider.notifier).retryActive,
-                        onLoadMore: ref.read(provider.notifier).loadMoreActive,
-                      ),
-                  ],
+          onRefresh: () async {
+            await ref.read(provider.notifier).load();
+            if (_showMoments) await widget.userMoments?.refresh(widget.userId);
+          },
+          child: NestedScrollView(
+            key: PageStorageKey('public-user-${widget.userId}'),
+            headerSliverBuilder: (context, innerBoxIsScrolled) => [
+              SliverToBoxAdapter(
+                child: WenyouConstrainedWidth(
+                  child: state.profile!.isDeactivated
+                      ? const WenyouEmptyState(
+                          icon: WenyouIconIds.statusUserUnavailable,
+                          title: '已注销用户',
+                        )
+                      : _UserProfileContent(
+                          profile: state.profile!,
+                          canTip: canTip,
+                          relationTarget: relationTarget,
+                          isCurrentUser:
+                              meState?.phase == MeProfilePhase.ready &&
+                              meState!.profile!.id == state.profile!.id,
+                        ),
                 ),
               ),
+              if (!state.profile!.isDeactivated)
+                WenyouPinnedHeader(
+                  child: ColoredBox(
+                    color: Theme.of(context).scaffoldBackgroundColor,
+                    child: WenyouContentTabs<String>(
+                      key: const Key('public-user-content-tabs'),
+                      keyPrefix: 'public-user',
+                      semanticsLabel: '用户公开内容',
+                      placement: WenyouTabPlacement.page,
+                      options: [
+                        const WenyouFilterOption(
+                          value: 'created',
+                          label: '主题',
+                          keyValue: 'created-tab',
+                        ),
+                        const WenyouFilterOption(
+                          value: 'moments',
+                          label: '动态',
+                          keyValue: 'moments-tab',
+                        ),
+                        for (final tab in state.availableTabs.where(
+                          (tab) => tab != PublicUserContentTab.created,
+                        ))
+                          WenyouFilterOption(
+                            value: tab.name,
+                            label: tab.label,
+                            keyValue: '${tab.name}-tab',
+                          ),
+                      ],
+                      selected: _showMoments ? 'moments' : state.activeTab.name,
+                      onSelected: (value) {
+                        setState(() => _showMoments = value == 'moments');
+                        if (!_showMoments) {
+                          unawaited(
+                            ref
+                                .read(provider.notifier)
+                                .selectTab(
+                                  PublicUserContentTab.values.byName(value),
+                                ),
+                          );
+                        }
+                      },
+                    ),
+                  ),
+                ),
             ],
+            body: state.profile!.isDeactivated
+                ? const SizedBox.shrink()
+                : _showMoments
+                ? widget.userMoments?.builder(widget.userId) ??
+                      Center(
+                        child: TextButton(
+                          onPressed: () => context.pushNamed(
+                            'user-moments',
+                            pathParameters: {'userId': widget.userId},
+                          ),
+                          child: const Text('查看动态'),
+                        ),
+                      )
+                : CustomScrollView(
+                    key: PageStorageKey(
+                      'public-user-${widget.userId}-${state.activeTab.name}',
+                    ),
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    slivers: [
+                      const WenyouNestedScrollInset(),
+                      SliverPadding(
+                        padding: _pagePadding(context),
+                        sliver: PublicUserContentSectionSliver(
+                          tab: state.activeTab,
+                          state: state,
+                          onRetry: ref.read(provider.notifier).retryActive,
+                          onLoadMore: ref
+                              .read(provider.notifier)
+                              .loadMoreActive,
+                        ),
+                      ),
+                    ],
+                  ),
           ),
         ),
       },
-    );
-  }
-
-  void _selectContentTab(PublicUserContentTab tab) {
-    unawaited(
-      ref
-          .read(publicUserControllerProvider(widget.userId).notifier)
-          .selectTab(tab),
-    );
-    WidgetsBinding.instance.addPostFrameCallback((_) => _revealContentArea());
-  }
-
-  void _revealContentArea() {
-    if (!mounted) return;
-    final targetContext = _contentAreaTargetKey.currentContext;
-    if (targetContext == null) return;
-    unawaited(
-      Scrollable.ensureVisible(
-        targetContext,
-        alignment: 0,
-        duration: wenyouAnimationsDisabled(context)
-            ? Duration.zero
-            : context.wenyouTokens.feedbackDuration,
-        curve: wenyouStandardMotionCurve,
-      ),
     );
   }
 
@@ -243,7 +231,6 @@ class _UserProfileContent extends ConsumerWidget {
     final relationState = relationTarget == null
         ? null
         : ref.watch(userRelationControllerProvider(relationTarget!));
-    final isFollowing = relationState?.isFollowing ?? profile.isFollowing;
     final isBlocked = relationState?.isBlocked ?? profile.isBlocked;
     final isBlockedBy = relationState?.isBlockedBy ?? profile.isBlockedBy;
     final directMessagesEnabled = ref.watch(
@@ -279,23 +266,8 @@ class _UserProfileContent extends ConsumerWidget {
           label: '私聊',
           semanticsLabel: '发私聊',
         ),
-      WenyouIconLabelAction(
-        key: const Key('public-user-open-moments'),
-        onPressed: () => context.pushNamed(
-          'user-moments',
-          pathParameters: {'userId': profile.id},
-        ),
-        icon: WenyouIconIds.navigationMoments,
-        label: '动态',
-        semanticsLabel: '查看动态',
-      ),
     ];
     final statuses = <UserProfileStatusItem>[
-      if (isFollowing)
-        const UserProfileStatusItem(
-          icon: WenyouIconIds.statusSuccess,
-          label: '已关注',
-        ),
       if (profile.isFollowedBy)
         const UserProfileStatusItem(
           icon: WenyouIconIds.identityMembers,
@@ -348,21 +320,13 @@ class _UserProfileContent extends ConsumerWidget {
         ),
       ],
       actions: relationTarget == null
-          ? WenyouIconLabelActionBar(
-              actions: [
-                if (isCurrentUser)
-                  WenyouIconLabelAction(
-                    key: const Key('public-user-edit-profile'),
-                    onPressed: () => context.pushNamed('me-edit'),
-                    icon: WenyouIconIds.actionEdit,
-                    label: '编辑资料',
-                  ),
-                ...destinationActions,
-              ],
-            )
+          ? destinationActions.isEmpty
+                ? null
+                : WenyouIconLabelActionBar(actions: destinationActions)
           : UserRelationActions(
               target: relationTarget!,
               showBlockAction: false,
+              prominentFollow: true,
               additionalActions: destinationActions,
             ),
     );
@@ -410,9 +374,74 @@ class _UserFailureState extends StatelessWidget {
             key: const Key('public-user-retry'),
             onPressed: onRetry,
             icon: const WenyouIcon(WenyouIconIds.actionRefresh),
-            label: const Text('重新加载'),
+            label: const Text('重试'),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _ProfileMoreActions extends ConsumerWidget {
+  const _ProfileMoreActions({required this.userId, required this.target});
+  final String userId;
+  final UserRelationTarget? target;
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = target == null
+        ? null
+        : ref.watch(userRelationControllerProvider(target!));
+    return WenyouAnchoredActionBubble<String>(
+      placement: WenyouPopoverPlacement.below,
+      alignment: WenyouPopoverAlignment.end,
+      semanticLabel: '用户操作',
+      actions: [
+        if (state != null)
+          WenyouPopoverAction(
+            key: const Key('user-relation-block'),
+            value: 'block',
+            icon: state.isBlocked
+                ? WenyouIconIds.actionUnlock
+                : WenyouIconIds.actionBlock,
+            label: state.isBlocked ? '取消拉黑' : '拉黑',
+            enabled: !state.isPending,
+            loading: state.pendingAction == UserRelationAction.block,
+            tone: WenyouPopoverActionTone.destructive,
+          ),
+        const WenyouPopoverAction(
+          key: Key('public-user-report'),
+          value: 'report',
+          icon: WenyouIconIds.actionReport,
+          label: '举报',
+        ),
+      ],
+      onSelected: (action) {
+        if (action == 'block') {
+          unawaited(
+            showWenyouUserBlockFlow(
+              context,
+              ref.read(userRelationControllerProvider(target!).notifier),
+              target!,
+              state!.isBlocked,
+            ),
+          );
+        } else {
+          unawaited(
+            showWenyouReportFlow(
+              context: context,
+              ref: ref,
+              target: ReportTarget.user(userId),
+              targetLabel: '这个用户',
+              returnTo: '/users/$userId',
+            ),
+          );
+        }
+      },
+      anchorBuilder: (context, handle) => IconButton(
+        key: const Key('public-user-more'),
+        tooltip: '更多用户操作',
+        onPressed: handle.toggle,
+        icon: const WenyouIcon(WenyouIconIds.actionMore),
       ),
     );
   }

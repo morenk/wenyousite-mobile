@@ -13,6 +13,7 @@ import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_nested_scroll.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_settings_body.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
@@ -23,11 +24,11 @@ import 'package:wenyousite_mobile/features/users/application/public_user_control
 import 'package:wenyousite_mobile/features/users/domain/me_profile_models.dart';
 import 'package:wenyousite_mobile/features/users/presentation/background_reminder_settings_panel.dart';
 import 'package:wenyousite_mobile/features/users/presentation/me_content_dashboard.dart';
+import 'package:wenyousite_mobile/features/users/presentation/me_personal_tools.dart';
 import 'package:wenyousite_mobile/features/users/presentation/me_profile_editor.dart';
 import 'package:wenyousite_mobile/features/users/presentation/me_profile_refresh_boundary.dart';
-import 'package:wenyousite_mobile/features/users/presentation/user_profile_header.dart';
+import 'package:wenyousite_mobile/features/users/presentation/me_profile_summary.dart';
 import 'package:wenyousite_mobile/features/wallet/application/wallet_controllers.dart';
-import 'package:wenyousite_mobile/features/wallet/domain/wallet_models.dart';
 import 'package:wenyousite_mobile/features/wallet/presentation/wallet_widgets.dart';
 
 void _showRefreshFailure(BuildContext context, ApiFailure failure) {
@@ -143,17 +144,8 @@ class _AuthenticatedMePage extends ConsumerWidget {
         ],
       ),
       body: switch (state.phase) {
-        MeProfilePhase.loading => _MePageList(
-          children: const [
-            WenyouPanel(
-              child: WenyouEmptyState(
-                icon: WenyouIconIds.identityMember,
-                title: '正在读取本人资料',
-                action: CircularProgressIndicator(),
-              ),
-            ),
-            _LogoutPanel(),
-          ],
+        MeProfilePhase.loading => const WenyouPageBody(
+          child: WenyouDetailSkeleton(label: '正在加载个人资料'),
         ),
         MeProfilePhase.failed => _MePageList(
           children: [
@@ -167,7 +159,7 @@ class _AuthenticatedMePage extends ConsumerWidget {
                   key: const Key('me-profile-retry'),
                   onPressed: notifier.load,
                   icon: const WenyouIcon(WenyouIconIds.actionRefresh),
-                  label: const Text('重新加载'),
+                  label: const Text('重试'),
                 ),
               ),
             ),
@@ -508,11 +500,9 @@ class _MeDashboardState extends ConsumerState<_MeDashboard> {
 
   @override
   Widget build(BuildContext context) {
-    final tokens = context.wenyouTokens;
     final walletProvider = walletControllerProvider(walletSessionKey(ref));
     final walletState = ref.watch(walletProvider);
     final stickersEnabled = ref.watch(stickersEnabledProvider);
-    final horizontal = wenyouHorizontalPagePadding(context);
     ref.listen(
       meUserContentControllerProvider(
         widget.profile.id,
@@ -533,34 +523,33 @@ class _MeDashboardState extends ConsumerState<_MeDashboard> {
         controller: _outerScrollController,
         headerSliverBuilder: (context, innerBoxIsScrolled) => [
           SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(
-                horizontal,
-                tokens.space16,
-                horizontal,
-                tokens.space12,
-              ),
-              child: WenyouConstrainedWidth(
-                child: _ProfileOverview(
-                  profile: widget.profile,
-                  walletState: walletState,
-                  stickersEnabled: stickersEnabled,
-                ),
+            child: WenyouConstrainedWidth(
+              child: MeProfileSummary(
+                profile: widget.profile,
+                balance: walletState.summary?.balance,
               ),
             ),
           ),
           SliverToBoxAdapter(
-            child: WenyouContentTabs<MeContentTab>(
-              key: const Key('me-content-tabs'),
-              keyPrefix: 'me-content',
-              semanticsLabel: '我的主页内容',
-              placement: WenyouTabPlacement.page,
-              options: [
-                for (final tab in MeContentTab.values)
-                  WenyouFilterOption(value: tab, label: tab.label),
-              ],
-              selected: MeContentTab.values[_activeIndex],
-              onSelected: _selectTab,
+            child: WenyouConstrainedWidth(
+              child: MePersonalTools(stickersEnabled: stickersEnabled),
+            ),
+          ),
+          WenyouPinnedHeader(
+            child: ColoredBox(
+              color: Theme.of(context).scaffoldBackgroundColor,
+              child: WenyouContentTabs<MeContentTab>(
+                key: const Key('me-content-tabs'),
+                keyPrefix: 'me-content',
+                semanticsLabel: '我的主页内容',
+                placement: WenyouTabPlacement.page,
+                options: [
+                  for (final tab in MeContentTab.values)
+                    WenyouFilterOption(value: tab, label: tab.label),
+                ],
+                selected: MeContentTab.values[_activeIndex],
+                onSelected: _selectTab,
+              ),
             ),
           ),
         ],
@@ -608,13 +597,11 @@ class _MeDashboardState extends ConsumerState<_MeDashboard> {
       ref.read(meProfileControllerProvider.notifier).refresh(),
       _refreshWallet(walletProvider),
       switch (activeTab) {
-        MeContentTab.overview =>
-          ref
-              .read(meUserContentControllerProvider(widget.profile.id).notifier)
-              .refreshOverview(),
         MeContentTab.moments =>
           widget.userMoments?.refresh(widget.profile.id) ?? Future.value(),
-        MeContentTab.createdThreads || MeContentTab.playedThreads =>
+        MeContentTab.createdThreads ||
+        MeContentTab.playedThreads ||
+        MeContentTab.replies =>
           ref
               .read(meUserContentControllerProvider(widget.profile.id).notifier)
               .refreshActive(),
@@ -642,6 +629,15 @@ class _AccountSecurityPanel extends StatelessWidget {
     return WenyouSettingsGroup(
       title: '账号',
       children: [
+        WenyouSettingsLink(
+          enabled: !disabled,
+          key: const Key('me-open-edit-profile'),
+          icon: WenyouIconIds.actionEdit,
+          title: '编辑资料',
+          onTap: disabled
+              ? null
+              : () => context.pushNamed(AppRouteNames.meEdit),
+        ),
         WenyouSettingsLink(
           enabled: !disabled,
           key: const Key('me-open-blocks'),
@@ -692,81 +688,6 @@ class _AccountOperationsPanel extends StatelessWidget {
       ),
     ],
   );
-}
-
-class _ProfileOverview extends StatelessWidget {
-  const _ProfileOverview({
-    required this.profile,
-    required this.walletState,
-    required this.stickersEnabled,
-  });
-
-  final MeProfileModel profile;
-  final WalletState walletState;
-  final bool stickersEnabled;
-
-  @override
-  Widget build(BuildContext context) {
-    return UserProfileHeader(
-      key: const Key('me-profile-header'),
-      username: profile.username,
-      avatarUrl: profile.avatarUrl,
-      profileCover: profile.profileCover,
-      level: profile.level,
-      bio: profile.bio,
-      levelProgress: profile.levelProgress,
-      levelProgressLabel: profile.nextLevelExperience == null
-          ? '已达到当前最高等级'
-          : '${profile.experience} / ${profile.nextLevelExperience} 经验',
-      actions: WenyouIconLabelActionBar(
-        actions: [
-          WenyouIconLabelAction(
-            key: const Key('me-open-edit-profile'),
-            onPressed: () => context.pushNamed('me-edit'),
-            icon: WenyouIconIds.actionEdit,
-            label: '编辑资料',
-          ),
-          WenyouIconLabelAction(
-            key: const Key('me-open-bookmarks'),
-            onPressed: () => context.pushNamed('me-bookmarks'),
-            icon: WenyouIconIds.actionBookmark,
-            label: '收藏',
-          ),
-          if (stickersEnabled)
-            WenyouIconLabelAction(
-              key: const Key('me-open-stickers'),
-              onPressed: () => context.pushNamed('me-stickers'),
-              icon: WenyouIconIds.actionAddReaction,
-              label: '表情包',
-            ),
-        ],
-      ),
-      stats: [
-        UserProfileStatItem(
-          key: const Key('me-open-following'),
-          label: '关注',
-          value: formatWenyouCompactCount(profile.followingCount),
-          semanticValue: '${profile.followingCount}',
-          onTap: () => context.pushNamed('me-following'),
-        ),
-        UserProfileStatItem(
-          key: const Key('me-open-followers'),
-          label: '粉丝',
-          value: formatWenyouCompactCount(profile.followerCount),
-          semanticValue: '${profile.followerCount}',
-          onTap: () => context.pushNamed('me-followers'),
-        ),
-        UserProfileStatItem(
-          key: const Key('me-open-wallet'),
-          label: '温油',
-          value: walletState.summary == null
-              ? '—'
-              : '${WenyouAmount.format(walletState.summary!.balance)} 升',
-          onTap: () => context.pushNamed('wallet'),
-        ),
-      ],
-    );
-  }
 }
 
 class _LogoutPanel extends StatelessWidget {
