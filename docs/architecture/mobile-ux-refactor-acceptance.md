@@ -33,7 +33,8 @@
 - Debug 包 `site.wenyou.app.debug`，ARM64 设备 `4b9c39b5`。首次构建因设备已有 build 97、分支 build 96 而安装失败；核对包名后使用保留数据的覆盖安装，未卸载或清数据。后续复用 Flutter machine 热重载。
 - 2026-09-26 21:33 初次持续会话就绪，设备 APK SHA-256 `2c737332d89164fdb44e0d7f770903da79846fed6bbb6b5bbfac9c73b61ded08`。此哈希只对应初装包，不能代表后续热重载画面。
 - 热重载的具体源码摘要、runId、进程和包更新时间由本机私有 `events.jsonl` 记录；不提交控制 token、真实账号信息或设备私人画面。
-- 资料头空白调整时，22:32 的热重载请求超时，随后 ADB 设备列表为空，22:35 会话转为失败。此前 22:27 已加载关系列表候选；这次头像间距与经验同行改动尚未加载到设备，需设备重新连接后恢复同一批次。未将离线状态误记为热重载成功。
+- 资料头空白调整时，22:32 的热重载请求超时，随后 ADB 设备列表为空，22:35 会话转为失败。负责人重新连接手机后恢复同一批次，22:49 会话就绪；已核对实际加载源码 `c052e8b03ac30b625b6316c929f2571d023c218f`，源码摘要 `d03499b3b392609f4a617c825808b119557c6c396ba5fb46efe86407395486e2`，包含头像间距与经验同行调整。
+- 本次重建启动仍为 `site.wenyou.app.debug` / `0.8.0-dev.1+96`，设备包更新时间 `2026-09-26 22:48:27`；设备 APK 与本地构建 SHA-256 均为 `0e4fb4808896e8371f7fe546961edb746fcdaed95d058c9d0c9b8f5e32e970b1`。这是持续开发预览的重建证据，未替代正式候选门禁或负责人验收。
 
 ## 自动检查
 
@@ -47,7 +48,7 @@
 
 关系列表反馈补充：`own_relation_lists_page_test.dart` 新增按钮紧凑表面／外缘点击、已关注更多菜单、互关更多菜单 3 项精确回归。旧实现分别报告 96dp 宽度超限与两个状态找不到 `more-u`；当前连同 `test/core/widgets/wenyou_async_button_test.dart`、`test/features/social/own_relation_lists_controller_test.dart` 共 47 项通过。核对 32dp 可见高度、48dp 点击区域、回关后菜单右边界稳定、大字号与在途尺寸。受影响 4 个 Dart 文件分析零问题；另启用 `WENYOU_RELATION_SCREENSHOTS=1` 单独运行渲染用例，通过明暗主题、窄屏大字的列表及菜单图像生成，并目视复核普通亮色和两倍字号暗色列表。负责人原场景尚待复核。
 
-资料头空白反馈补充：`user_profile_header_test.dart` 的亮色／黑夜头像间距回归在旧实现下均失败（实际 32dp）；`me_page_visual_test.dart` 的普通字号经验同行回归在数值仍独占底部一行时均失败。最终实现运行 `test/features/users/user_profile_header_test.dart`、`user_profile_header_visual_test.dart`、`me_page_visual_test.dart`、`public_user_page_test.dart`、`me_page_test.dart` 共 89 项通过；断言头像至昵称 8–16dp、经验与昵称同行、签名保留至少 12dp 间隔、签名到进度条 8–12dp。3 个改动 Dart 文件分析零问题，模块文档和 diff 空白检查通过。更新并目视复核 360dp 明暗主页及 320dp 两倍字号 Golden；未生成独立 APK，真机待连接与负责人验收。
+资料头空白反馈补充：`user_profile_header_test.dart` 的亮色／黑夜头像间距回归在旧实现下均失败（实际 32dp）；`me_page_visual_test.dart` 的普通字号经验同行回归在数值仍独占底部一行时均失败。最终实现运行 `test/features/users/user_profile_header_test.dart`、`user_profile_header_visual_test.dart`、`me_page_visual_test.dart`、`public_user_page_test.dart`、`me_page_test.dart` 共 89 项通过；断言头像至昵称 8–16dp、经验与昵称同行、签名保留至少 12dp 间隔、签名到进度条 8–12dp。3 个改动 Dart 文件分析零问题，模块文档和 diff 空白检查通过。更新并目视复核 360dp 明暗主页及 320dp 两倍字号 Golden；已重建并恢复真机 Debug 会话，尚未生成经过最终门禁的独立候选，负责人验收仍待反馈。
 
 - 主页：`test/features/users/me_page_test.dart`、`me_page_visual_test.dart`、`public_user_page_test.dart`、`user_profile_header_test.dart`、`user_profile_header_visual_test.dart`。
 - 搜索与创作：`test/features/search/search_page_test.dart`、`test/features/editor/thread_compose_page_test.dart`、`test/features/moments/moment_pages_test.dart`、`moment_pending_page_test.dart`、`moment_bookmark_folder_page_test.dart`。
