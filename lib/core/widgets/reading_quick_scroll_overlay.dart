@@ -1,11 +1,12 @@
 import 'dart:math' as math;
+import 'dart:ui' show lerpDouble;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
-import 'package:wenyousite_mobile/core/widgets/reading_quick_scroll_card.dart';
 import 'package:wenyousite_mobile/core/widgets/reading_quick_scroll_controller.dart';
+import 'package:wenyousite_mobile/core/widgets/reading_scroll_spec.dart';
 
 class ReadingQuickScrollOverlay extends StatefulWidget {
   const ReadingQuickScrollOverlay({
@@ -14,7 +15,6 @@ class ReadingQuickScrollOverlay extends StatefulWidget {
     required this.hasMore,
     required this.loading,
     required this.loadFailed,
-    this.onRetry,
     this.bottomObstructionKey,
     super.key,
   });
@@ -23,24 +23,28 @@ class ReadingQuickScrollOverlay extends StatefulWidget {
   final bool hasMore;
   final bool loading;
   final bool loadFailed;
-  final VoidCallback? onRetry;
   final GlobalKey? bottomObstructionKey;
+
   @override
   State<ReadingQuickScrollOverlay> createState() =>
       _ReadingQuickScrollOverlayState();
 }
 
-class _ReadingQuickScrollOverlayState extends State<ReadingQuickScrollOverlay> {
+class _ReadingQuickScrollOverlayState extends State<ReadingQuickScrollOverlay>
+    with TickerProviderStateMixin {
   final _viewportKey = GlobalKey();
-  final _tapGroup = Object();
-  final _focus = FocusNode(debugLabel: '阅读快翻');
-  bool _cardOpen = false;
-  bool _dragActive = false;
+  final _focus = FocusNode(debugLabel: '阅读位置');
+  late final _shape = AnimationController(vsync: this);
+  late final _opacity = AnimationController(vsync: this);
+  int _resetRevision = -1;
+  bool? _expandedTarget;
+  bool? _visibleTarget;
+  bool _reducedMotion = false;
+  int? _pointer;
   double _downY = 0;
   double _downFraction = 0;
   double _travel = 0;
-  double _dragRailTop = 0;
-  double _dragRailLength = 0;
+  Rect? _frozenTrack;
   Size? _dragViewportSize;
   ReadingQuickScrollController get _controller => widget.controller;
 
@@ -56,39 +60,74 @@ class _ReadingQuickScrollOverlayState extends State<ReadingQuickScrollOverlay> {
     if (oldWidget.controller != _controller) {
       oldWidget.controller.removeListener(_changed);
       _controller.addListener(_changed);
-      _cardOpen = false;
-      _dragActive = false;
-    }
-    if (!_controller.isOpen) {
-      _cardOpen = false;
-      _dragActive = false;
+      _resetRevision = -1;
+      _pointer = null;
+      _frozenTrack = null;
     }
   }
 
   void _changed() {
     if (!mounted) return;
-    setState(() {
-      if (!_controller.isOpen) {
-        _cardOpen = false;
-        _dragActive = false;
+    if (!_controller.isDragging) {
+      _pointer = null;
+      _frozenTrack = null;
+    }
+    setState(() {});
+  }
+
+  void _syncAnimations() {
+    final reset = _resetRevision != _controller.resetRevision;
+    _resetRevision = _controller.resetRevision;
+    final expanded = _controller.isOpen;
+    final visible = _controller.isVisible;
+    if (reset || _reducedMotion) {
+      _shape.value = expanded ? 1 : 0;
+      _opacity.value = visible ? 1 : 0;
+    } else {
+      if (_expandedTarget != expanded) {
+        _animateFromCurrent(
+          _shape,
+          expanded ? 1 : 0,
+          expanded
+              ? ReadingScrollSpec.expandDurationMs
+              : ReadingScrollSpec.collapseDurationMs,
+          expanded ? Curves.easeOutCubic : Curves.easeInOutCubic,
+        );
       }
-    });
+      if (_visibleTarget != visible) {
+        _animateFromCurrent(
+          _opacity,
+          visible ? 1 : 0,
+          visible
+              ? ReadingScrollSpec.appearDurationMs
+              : ReadingScrollSpec.fadeDurationMs,
+          visible ? Curves.easeOutCubic : Curves.easeInOutCubic,
+        );
+      }
+    }
+    _expandedTarget = expanded;
+    _visibleTarget = visible;
   }
 
-  void _dismissCard() {
-    if (_cardOpen && mounted) setState(() => _cardOpen = false);
-  }
-
-  void _toggleCard() {
-    _focus.requestFocus();
-    setState(() => _cardOpen = !_cardOpen);
-  }
-
-  String? get _status {
-    if (!widget.hasMore) return null;
-    if (widget.loadFailed) return '更多内容加载失败，当前可快翻已加载内容';
-    if (widget.loading) return '正在加载更多，当前可快翻已加载内容';
-    return _controller.isFollowingEnd ? '按住末端继续快翻，松手即可停下' : '当前可快翻已加载内容';
+  void _animateFromCurrent(
+    AnimationController animation,
+    double target,
+    int fullDurationMs,
+    Curve curve,
+  ) {
+    // 中途反向只走剩余距离，显隐与形变都从当前画面接续。
+    final distance = (target - animation.value).abs();
+    if (distance == 0) {
+      animation.stop();
+      return;
+    }
+    animation.animateTo(
+      target,
+      duration: Duration(
+        milliseconds: math.max(1, (fullDurationMs * distance).round()),
+      ),
+      curve: curve,
+    );
   }
 
   Rect? _rect(GlobalKey? key) {
@@ -97,16 +136,9 @@ class _ReadingQuickScrollOverlayState extends State<ReadingQuickScrollOverlay> {
     return box.localToGlobal(Offset.zero) & box.size;
   }
 
-  void _updateDrag(double globalY) {
-    if (!_dragActive || _travel <= 0) return;
-    _controller.updateDrag(
-      (_downFraction + (globalY - _downY) / _travel).clamp(0, 1),
-    );
-  }
-
   void _cancelDrag() {
-    if (!_dragActive) return;
-    _dragActive = false;
+    _pointer = null;
+    _frozenTrack = null;
     _controller.cancelDrag();
   }
 
@@ -117,21 +149,16 @@ class _ReadingQuickScrollOverlayState extends State<ReadingQuickScrollOverlay> {
     final key = event.logicalKey;
     if (key == LogicalKeyboardKey.arrowDown ||
         key == LogicalKeyboardKey.arrowRight) {
-      _dismissCard();
       _controller.stepByViewport(1);
     } else if (key == LogicalKeyboardKey.arrowUp ||
         key == LogicalKeyboardKey.arrowLeft) {
-      _dismissCard();
       _controller.stepByViewport(-1);
     } else if (key == LogicalKeyboardKey.home ||
         key == LogicalKeyboardKey.end) {
-      _dismissCard();
       _controller.seekEdge(key == LogicalKeyboardKey.end);
-    } else if (key == LogicalKeyboardKey.enter ||
-        key == LogicalKeyboardKey.space) {
-      _toggleCard();
     } else if (key == LogicalKeyboardKey.escape) {
-      _cardOpen ? _dismissCard() : _controller.close();
+      _focus.unfocus();
+      _controller.close();
     } else {
       return KeyEventResult.ignored;
     }
@@ -139,37 +166,40 @@ class _ReadingQuickScrollOverlayState extends State<ReadingQuickScrollOverlay> {
   }
 
   @override
-  Widget build(BuildContext context) => LayoutBuilder(
-    builder: (context, constraints) => Stack(
-      key: _viewportKey,
-      fit: StackFit.expand,
-      children: [
-        NotificationListener<ScrollStartNotification>(
-          onNotification: (notification) {
-            if (notification.depth == 0 &&
-                notification.dragDetails != null &&
-                _cardOpen) {
-              WidgetsBinding.instance.addPostFrameCallback(
-                (_) => _dismissCard(),
-              );
-            }
-            return false;
-          },
-          child: widget.child,
-        ),
-        if (_controller.isOpen) ..._controls(context, constraints.biggest),
-      ],
-    ),
-  );
+  Widget build(BuildContext context) {
+    final media = MediaQuery.of(context);
+    _reducedMotion = media.disableAnimations;
+    _controller.configurePresentation(
+      active:
+          (ModalRoute.isCurrentOf(context) ?? true) &&
+          media.viewInsets.bottom == 0,
+      accessible: media.accessibleNavigation,
+    );
+    _syncAnimations();
+    return LayoutBuilder(
+      builder: (context, constraints) => Stack(
+        key: _viewportKey,
+        fit: StackFit.expand,
+        children: [
+          widget.child,
+          if (_controller.enabled && _controller.canScroll)
+            ..._controls(context, constraints.biggest),
+        ],
+      ),
+    );
+  }
 
   List<Widget> _controls(BuildContext context, Size size) {
-    if (_dragActive && _dragViewportSize != size) _cancelDrag();
+    if (_pointer != null && _dragViewportSize != size) _cancelDrag();
     final tokens = context.wenyouTokens;
-    const target = WenyouReadingQuickScrollContract.minimumTarget;
-    const gap = WenyouReadingQuickScrollContract.edgeGap;
+    const width = ReadingScrollSpec.minimumTargetWidth;
+    const height = ReadingScrollSpec.minimumTargetHeight;
+    const gap = ReadingScrollSpec.edgeGap;
     final media = MediaQuery.of(context);
-    final right =
-        math.max(media.systemGestureInsets.right, media.padding.right) + gap;
+    final right = math.max(
+      media.systemGestureInsets.right,
+      media.padding.right,
+    );
     var top = math.max(media.padding.top, media.systemGestureInsets.top) + gap;
     var bottom =
         size.height -
@@ -179,181 +209,133 @@ class _ReadingQuickScrollOverlayState extends State<ReadingQuickScrollOverlay> {
     final header = _rect(_controller.pinnedHeaderKey);
     final compose = _rect(widget.bottomObstructionKey);
     if (viewport != null) {
-      if (header != null) {
-        // 标题吸顶前后保留相同高度，避免拖动时轨道突然改变位置。
-        top = math.max(top, header.height + gap);
+      if (header != null && header.overlaps(viewport)) {
+        top = math.max(top, header.bottom - viewport.top + gap);
       }
       if (compose != null && compose.overlaps(viewport)) {
         bottom = math.min(bottom, compose.top - viewport.top - gap);
       }
     }
-    final height = bottom - top;
-    if (height < target || size.width < right + target + gap) return [];
-    final availableLength = math.min(
-      WenyouReadingQuickScrollContract.railMaxLength,
-      height,
-    );
-    // 吸顶标题可能切换密度；本次抓取沿固定轨道移动，松手后再更新几何。
-    final length = _dragActive ? _dragRailLength : availableLength;
-    final railTop = _dragActive ? _dragRailTop : top + (height - length) / 2;
-    final travel = length - target;
-    final thumbTop = railTop + travel * _controller.fraction;
+    if (bottom - top < height || size.width < right + width + gap) return [];
+    final track =
+        _frozenTrack ??
+        Rect.fromLTWH(size.width - right - width, top, width, bottom - top);
+    final travel = track.height - height;
+    final thumbTop = track.top + travel * _controller.fraction;
+    final collapsedCenterX =
+        size.width - media.padding.right - ReadingScrollSpec.collapsedWidth / 2;
+    final expandedCenterX =
+        track.right - gap - ReadingScrollSpec.expandedWidth / 2;
+    final interactive = _controller.isOpen;
     final corner = BorderRadius.circular(tokens.radiusPill);
-    final leftSpace =
-        size.width -
-        right -
-        target -
-        WenyouReadingQuickScrollContract.labelGap -
-        gap;
-    final panel = _cardOpen
-        ? ReadingQuickScrollCard(
-            controller: _controller,
-            status: _status,
-            hasMore: widget.hasMore,
-            loadFailed: widget.loadFailed,
-            onRetry: widget.onRetry,
-            onDismiss: _dismissCard,
-          )
-        : _controller.isDragging
-        ? Material(
-            key: const Key('reading-quick-scroll-location'),
-            color: tokens.panel,
-            borderRadius: BorderRadius.circular(tokens.radiusCompact),
-            child: SingleChildScrollView(
-              padding: EdgeInsets.all(tokens.space8),
-              child: Text(
-                [_controller.location, ?_status].join('\n'),
-                style: Theme.of(context).textTheme.wenyouCaption,
-              ),
-            ),
-          )
-        : widget.hasMore
-        ? Material(
-            color: tokens.panel,
-            borderRadius: BorderRadius.circular(tokens.radiusCompact),
-            child: SingleChildScrollView(
-              padding: EdgeInsets.all(tokens.space4),
-              child: Text(
-                widget.loadFailed ? '加载失败 · 已加载范围' : '已加载范围',
-                style: Theme.of(context).textTheme.wenyouCaption,
-              ),
-            ),
-          )
-        : null;
     return [
-      Positioned(
-        right: right,
-        top: railTop,
-        width: target,
-        height: length,
-        child: IgnorePointer(
-          child: ExcludeSemantics(
-            child: SizedBox(
-              key: const Key('reading-quick-scroll-rail'),
-              child: Center(
-                child: Container(
-                  width: WenyouReadingQuickScrollContract.railThickness,
-                  height: travel,
-                  decoration: BoxDecoration(
-                    borderRadius: corner,
-                    color: tokens.brandForeground.withValues(
-                      alpha: WenyouReadingQuickScrollContract.railOpacity,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
+      // 单一完整路径仅供布局和测量，不绘制轨道也不接受点按。
+      Positioned.fromRect(
+        rect: track,
+        child: const IgnorePointer(
+          child: SizedBox(key: Key('reading-quick-scroll-rail')),
         ),
       ),
       Positioned(
-        right: right,
+        left: track.left,
         top: thumbTop,
-        width: target,
-        height: target,
-        child: TapRegion(
-          groupId: _tapGroup,
-          onTapOutside: (_) => _dismissCard(),
-          child: Focus(
-            focusNode: _focus,
-            onKeyEvent: _onKey,
-            onFocusChange: (_) {
-              if (mounted) setState(() {});
-            },
-            child: Semantics(
-              key: const Key('reading-quick-scroll-slider'),
-              label: '快翻阅读位置',
-              value: _controller.location,
-              hint: '上下调整位置，点按展开首尾操作',
-              slider: true,
-              enabled: _controller.canScroll,
-              increasedValue: _controller.location,
-              decreasedValue: _controller.location,
-              onIncrease: _controller.canScroll
-                  ? () => _controller.stepByViewport(1)
-                  : null,
-              onDecrease: _controller.canScroll
-                  ? () => _controller.stepByViewport(-1)
-                  : null,
-              onTap: _toggleCard,
-              excludeSemantics: true,
-              child: GestureDetector(
+        width: width,
+        height: height,
+        child: Focus(
+          focusNode: _focus,
+          onKeyEvent: _onKey,
+          onFocusChange: _controller.setKeyboardFocus,
+          child: Semantics(
+            key: const Key('reading-quick-scroll-slider'),
+            label: '快翻阅读位置',
+            value: _controller.location,
+            hint: '上下调整阅读位置',
+            slider: true,
+            excludeSemantics: true,
+            enabled: interactive,
+            increasedValue: _controller.location,
+            decreasedValue: _controller.location,
+            onIncrease: interactive
+                ? () => _controller.stepByViewport(1)
+                : null,
+            onDecrease: interactive
+                ? () => _controller.stepByViewport(-1)
+                : null,
+            child: IgnorePointer(
+              ignoring: !interactive,
+              child: Listener(
                 behavior: HitTestBehavior.opaque,
-                onTap: _toggleCard,
-                onVerticalDragDown: _controller.canScroll && travel > 0
-                    ? (details) {
-                        _downY = details.globalPosition.dy;
-                        _downFraction = _controller.fraction;
-                        _travel = travel;
-                        _dragRailTop = railTop;
-                        _dragRailLength = length;
-                        _dragViewportSize = size;
-                      }
-                    : null,
-                onVerticalDragStart: _controller.canScroll && travel > 0
-                    ? (details) {
-                        _focus.requestFocus();
-                        _cardOpen = false;
-                        _dragActive = true;
-                        _controller.beginDrag(_downFraction);
-                        _updateDrag(details.globalPosition.dy);
-                      }
-                    : null,
-                onVerticalDragUpdate: _controller.canScroll && travel > 0
-                    ? (details) => _updateDrag(details.globalPosition.dy)
-                    : null,
-                onVerticalDragEnd: _controller.canScroll && travel > 0
-                    ? (_) {
-                        _dragActive = false;
-                        _controller.endDrag(_controller.fraction);
-                      }
-                    : null,
-                onVerticalDragCancel: _cancelDrag,
-                // 已获胜的纵向手势可能把 PointerCancel 当作 end；先取消排队输入。
-                child: Listener(
-                  behavior: HitTestBehavior.opaque,
-                  onPointerCancel: (_) => _cancelDrag(),
-                  child: Center(
-                    child: Container(
-                      width: WenyouReadingQuickScrollContract.backingWidth,
-                      height: WenyouReadingQuickScrollContract.backingHeight,
-                      decoration: BoxDecoration(
-                        color: tokens.panel.withValues(
-                          alpha:
-                              WenyouReadingQuickScrollContract.backingOpacity,
-                        ),
-                        borderRadius: corner,
-                        border: _focus.hasFocus
-                            ? Border.all(color: tokens.focus)
-                            : null,
+                onPointerDown: (event) {
+                  if (_pointer != null || travel <= 0 || !_controller.isOpen) {
+                    return;
+                  }
+                  _pointer = event.pointer;
+                  _frozenTrack = track;
+                  _dragViewportSize = size;
+                  _downY = event.position.dy;
+                  _travel = travel;
+                  _downFraction = _controller.grab();
+                },
+                onPointerMove: (event) {
+                  if (event.pointer != _pointer) return;
+                  _controller.updateDrag(
+                    (_downFraction + (event.position.dy - _downY) / _travel)
+                        .clamp(0, 1),
+                  );
+                },
+                onPointerUp: (event) {
+                  if (event.pointer != _pointer) return;
+                  _pointer = null;
+                  _frozenTrack = null;
+                  _controller.endDrag(_controller.fraction);
+                },
+                onPointerCancel: (event) {
+                  if (event.pointer == _pointer) _cancelDrag();
+                },
+                child: AnimatedBuilder(
+                  animation: Listenable.merge([_shape, _opacity]),
+                  builder: (context, _) => Opacity(
+                    opacity: _opacity.value,
+                    // 触摸区向左扩展，不能用它的中心作为细条的绘制位置。
+                    // 细态贴页面安全边缘；展开才让入手势区内侧并留出 edgeGap。
+                    child: Transform.translate(
+                      offset: Offset(
+                        lerpDouble(
+                              collapsedCenterX,
+                              expandedCenterX,
+                              _shape.value,
+                            )! -
+                            track.center.dx,
+                        0,
                       ),
-                      alignment: Alignment.center,
-                      child: Container(
-                        width: WenyouReadingQuickScrollContract.thumbWidth,
-                        height: WenyouReadingQuickScrollContract.thumbHeight,
-                        decoration: BoxDecoration(
-                          color: tokens.brandForeground,
-                          borderRadius: corner,
+                      child: Center(
+                        child: Container(
+                          width: ReadingScrollSpec.focusOutlineWidth,
+                          height: ReadingScrollSpec.focusOutlineHeight,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            borderRadius: corner,
+                            border: _focus.hasFocus
+                                ? Border.all(color: tokens.focus)
+                                : null,
+                          ),
+                          child: Container(
+                            key: const Key('reading-progress-indicator'),
+                            width: lerpDouble(
+                              ReadingScrollSpec.collapsedWidth,
+                              ReadingScrollSpec.expandedWidth,
+                              _shape.value,
+                            ),
+                            height: lerpDouble(
+                              ReadingScrollSpec.collapsedHeight,
+                              ReadingScrollSpec.expandedHeight,
+                              _shape.value,
+                            ),
+                            decoration: BoxDecoration(
+                              color: tokens.brandForeground,
+                              borderRadius: corner,
+                            ),
+                          ),
                         ),
                       ),
                     ),
@@ -364,21 +346,36 @@ class _ReadingQuickScrollOverlayState extends State<ReadingQuickScrollOverlay> {
           ),
         ),
       ),
-      if (panel != null && leftSpace > 0)
+      if (_controller.isDragging)
         Positioned(
           top: top,
           bottom: size.height - bottom,
           left: gap,
-          right: right + target + WenyouReadingQuickScrollContract.labelGap,
-          child: CustomSingleChildLayout(
-            delegate: _QuickScrollPanelLayout(thumbTop + target / 2 - top),
-            child: _cardOpen
-                ? TapRegion(
-                    groupId: _tapGroup,
-                    onTapOutside: (_) => _dismissCard(),
-                    child: panel,
-                  )
-                : IgnorePointer(child: panel),
+          right: size.width - track.left + ReadingScrollSpec.labelGap,
+          child: IgnorePointer(
+            child: CustomSingleChildLayout(
+              delegate: _LocationLayout(thumbTop + height / 2 - top),
+              child: Material(
+                key: const Key('reading-quick-scroll-location'),
+                color: tokens.panel,
+                borderRadius: BorderRadius.circular(tokens.radiusCompact),
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.all(tokens.space8),
+                  child: Text(
+                    [
+                      _controller.location,
+                      if (widget.hasMore)
+                        widget.loadFailed
+                            ? '加载失败 · 已加载范围'
+                            : widget.loading
+                            ? '正在加载 · 已加载范围'
+                            : '已加载范围',
+                    ].join('\n'),
+                    style: Theme.of(context).textTheme.wenyouCaption,
+                  ),
+                ),
+              ),
+            ),
           ),
         ),
     ];
@@ -387,25 +384,19 @@ class _ReadingQuickScrollOverlayState extends State<ReadingQuickScrollOverlay> {
   @override
   void dispose() {
     _controller.removeListener(_changed);
+    _shape.dispose();
+    _opacity.dispose();
     _focus.dispose();
     super.dispose();
   }
 }
 
-/// 先测量卡片，再贴近手指并限制在正文内；空白部分不参与命中。
-class _QuickScrollPanelLayout extends SingleChildLayoutDelegate {
-  const _QuickScrollPanelLayout(this.anchorY);
+class _LocationLayout extends SingleChildLayoutDelegate {
+  const _LocationLayout(this.anchorY);
   final double anchorY;
-
   @override
   BoxConstraints getConstraintsForChild(BoxConstraints constraints) =>
-      constraints.loosen().copyWith(
-        maxWidth: math.min(
-          constraints.maxWidth,
-          WenyouReadingQuickScrollContract.cardMaxWidth,
-        ),
-      );
-
+      constraints.loosen();
   @override
   Offset getPositionForChild(Size size, Size childSize) => Offset(
     size.width - childSize.width,
@@ -414,8 +405,7 @@ class _QuickScrollPanelLayout extends SingleChildLayoutDelegate {
       math.max(0, size.height - childSize.height),
     ),
   );
-
   @override
-  bool shouldRelayout(covariant _QuickScrollPanelLayout oldDelegate) =>
+  bool shouldRelayout(covariant _LocationLayout oldDelegate) =>
       anchorY != oldDelegate.anchorY;
 }

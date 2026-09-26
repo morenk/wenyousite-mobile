@@ -2,7 +2,7 @@
 
 温油站的 Flutter 原生客户端。正式、Debug 和 Profile APK 均仅支持 Android 8+（API 26）的 ARM64 设备，手机竖屏优先。共享 Dart 代码保持 iOS 兼容，但当前不做 iOS 验收。
 
-当前版本：`0.8.0-dev.1+96`（图集 Android 开发版，线上推荐构建号 96）；正式包源码为 `acb94a46dad59f379455ea7f6fd9adee2fc47003`，图集正文定位与真机手势仍待负责人复验。普通应用构建连接公网 API `https://wenyou.site/api/v1`；开发反馈默认使用下方的隔离预览与持续 Debug，线上自动化只读。
+当前版本：`0.8.0-dev.2+97`（自适应阅读滑块开发候选，待负责人验收）；线上推荐仍为图集开发版 build 96，正式包源码为 `acb94a46dad59f379455ea7f6fd9adee2fc47003`，图集正文定位与真机手势仍待负责人复验。普通应用构建连接公网 API `https://wenyou.site/api/v1`；开发反馈默认使用下方的隔离预览与持续 Debug，线上自动化只读。
 
 ## 技术基线
 
@@ -13,10 +13,10 @@
 - Drift：完整 Markdown 编辑快照和待确认幂等创建操作
 - Flutter Quill：仅作为内存编辑模型；后端、云草稿和本地快照始终保存服务端声明版本的完整 Markdown；客户端兼容 v3/v4/v5
 - flutter_secure_storage：Access/Refresh Token 单记录原子替换
-- wenyousite-foundation v7.2.0：跨端品牌资源、语义 Token、元素系统、图标注册表、三角色系统字体语义、移动 profile 与编辑器体验契约
+- wenyousite-foundation v7.2.1：跨端品牌资源、语义 Token、元素系统、图标注册表、三角色系统字体语义、移动 profile 与编辑器体验契约
 - WenyouThemeTokens：Foundation 常量到 Flutter ThemeExtension 的轻量适配层
 
-产品与模块事实从 [`docs/README.md`](docs/README.md) 开始阅读；共享审美以 Foundation 远端最新正式发布 Tag 为准，构建锁定当前 [`v7.2.0`](https://github.com/morenk/wenyousite-foundation/tree/v7.2.0)；每次 Foundation 相关实现前必须先检查远端发布并在落后时升级，完整协作约束见 [`AGENTS.md`](AGENTS.md)。
+产品与模块事实从 [`docs/README.md`](docs/README.md) 开始阅读；共享审美以 Foundation 远端最新正式发布 Tag 为准，构建锁定当前 [`v7.2.1`](https://github.com/morenk/wenyousite-foundation/tree/v7.2.1)；每次 Foundation 相关实现前必须先检查远端发布并在落后时升级，完整协作约束见 [`AGENTS.md`](AGENTS.md)。
 
 ## 本地环境
 
