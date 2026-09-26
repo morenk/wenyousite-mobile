@@ -1,5 +1,12 @@
 # 移动端变更记录
 
+## 2026-09-26 — 持续 Debug 与隔离开发预览候选（待负责人验收）
+
+- 新增 `dev:start/status/reload/restart/stop`，agent 自行启动并复用 Flutter machine 会话；绑定任务、Worktree、设备、PID/开始时间和 runId。样式反馈热重载、初始化热重启，独立 APK 仅在需要时构建。
+- 消费 Backend 已提交私有预览协议，保持 API/媒体同端口 SSH 与 ADB reverse；登录、API 和图片直传前核验实际资源身份，禁止错误代理、重定向和线上回退。仅清理本任务拥有的进程与端口映射。
+- Token、偏好、Drift、图片草稿、诊断和图片缓存按 runId 隔离，保留旧线上数据；页面显示预览标识，预览禁用 Sentry，Release/Profile 拒绝启用。
+- 新增 Node 控制器、身份与锁回归，Dart 网络阻断、签名 URL、Token、数据库与图片草稿隔离回归。自动验证、真实 Repository 上传与未完成的真机验证见[验收记录](architecture/live-debug-acceptance.md)；真实快照账号登录及历史图片仍待管理入口启用和验收。
+
 ## 2026-09-26 — 个人区视觉收敛合并候选
 
 - “我的”和他人主页共用资料头保留封面、头像、等级、统计和操作，减少外框与分隔；空简介提示、加入日期及本人资料头脱敏邮箱不再显示，概览页签下不重复创作标题。

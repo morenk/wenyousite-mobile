@@ -5,6 +5,7 @@ import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/config/app_environment.dart';
 import 'package:wenyousite_mobile/core/diagnostics/network_diagnostics.dart';
 import 'package:wenyousite_mobile/core/network/api_interceptors.dart';
+import 'package:wenyousite_mobile/core/network/preview_identity.dart';
 import 'package:wenyousite_mobile/core/network/session_controller.dart';
 import 'package:wenyousite_mobile/core/network/session_remote.dart';
 import 'package:wenyousite_mobile/core/storage/token_store.dart';
@@ -13,12 +14,22 @@ final appEnvironmentProvider = Provider<AppEnvironment>(
   (ref) => AppEnvironment.fromDefines(),
 );
 
+final previewIdentityVerifierProvider = Provider<PreviewIdentityVerifier>(
+  (ref) => PreviewIdentityVerifier(
+    ref.watch(appEnvironmentProvider),
+    ref.watch(previewProbeDioProvider),
+  ),
+);
+
 final secureStorageProvider = Provider<FlutterSecureStorage>(
   (ref) => const FlutterSecureStorage(),
 );
 
 final tokenStoreProvider = Provider<TokenStore>(
-  (ref) => SecureTokenStore(ref.watch(secureStorageProvider)),
+  (ref) => SecureTokenStore(
+    ref.watch(secureStorageProvider),
+    environment: ref.watch(appEnvironmentProvider),
+  ),
 );
 
 final refreshDioProvider = Provider<Dio>((ref) {
@@ -35,7 +46,10 @@ final refreshDioProvider = Provider<Dio>((ref) {
       headers: {'Accept': 'application/json'},
     ),
   );
-  dio.interceptors.add(NetworkDiagnosticInterceptor());
+  dio.interceptors.addAll([
+    PreviewIdentityInterceptor(ref.watch(previewIdentityVerifierProvider)),
+    NetworkDiagnosticInterceptor(),
+  ]);
   ref.onDispose(() => dio.close(force: true));
   return dio;
 });
@@ -78,6 +92,7 @@ final dioProvider = Provider<Dio>((ref) {
     ),
   );
   dio.interceptors.addAll([
+    PreviewIdentityInterceptor(ref.watch(previewIdentityVerifierProvider)),
     RequestContextInterceptor(
       dio,
       ref.read(sessionControllerProvider.notifier),

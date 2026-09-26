@@ -54,6 +54,8 @@ Android 账号设置新增“后台消息提醒”设备开关，默认开启；
 
 ## 8. 本地存储、缓存及失效规则
 
+开发预览按 Backend runId 隔离 Token、偏好、Drift 草稿／待确认操作、图片草稿和缓存；同名批次 reset 后使用新命名空间。原线上路径与数据保留，不向预览迁移身份或待提交操作。网络与上传先验证当前批次实际资源身份；预览仅 Debug 启用。详见 [持续 Debug](../live-debug.md)。
+
 一次性通知引导的设备布尔键为 `notifications.guidance.handled.v1`，与提醒开关及系统授权结果分离；退出、切号、重启不清除，失败跳过自动引导但保留设置入口。首次展示即记录处理，之后不因拒绝、跳过或开关切换重复打扰。
 
 后台提醒偏好由 core/application 的 Notifier 与 SharedPreferences 存储端口统一管理；键 background.reminder.enabled.v1 只含布尔值、不含账号或私信数据。退出与注销只停止本次运行并清除消息基线，不清除此设备选择。

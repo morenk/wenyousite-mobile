@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/config/app_environment.dart';
 import 'package:wenyousite_mobile/core/media/media_display.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 
@@ -193,7 +194,12 @@ class _WenyouImageViewerPageState extends State<WenyouImageViewerPage> {
     for (final index in [_index - 1, _index + 1]) {
       if (index >= 0 && index < widget.items.length) {
         precacheImage(
-          CachedNetworkImageProvider(widget.items[index].displayUrls.first),
+          CachedNetworkImageProvider(
+            widget.items[index].displayUrls.first,
+            cacheKey: AppEnvironment.fromDefines().storageName(
+              widget.items[index].displayUrls.first,
+            ),
+          ),
           context,
           onError: (Object error, StackTrace? stack) {},
         );
