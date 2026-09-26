@@ -2,7 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/animation/wenyou_motion.dart';
+import 'package:wenyousite_mobile/core/widgets/discussion_target_loading.dart';
+import 'package:wenyousite_mobile/core/widgets/discussion_target_visibility.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_discussion_scroll_policy.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 
@@ -58,22 +62,40 @@ class DiscussionTargetCover extends StatefulWidget {
   State<DiscussionTargetCover> createState() => _DiscussionTargetCoverState();
 }
 
-class _DiscussionTargetCoverState extends State<DiscussionTargetCover> {
+class _DiscussionTargetCoverState extends State<DiscussionTargetCover>
+    with SingleTickerProviderStateMixin {
   static const _settleDuration = Duration(milliseconds: 180);
   static const _slowDuration = Duration(seconds: 5);
 
   final _reveal = DiscussionTargetRevealCoordinator();
   final _pageScheduler = DiscussionPrefetchScheduler();
+  late final _transition = AnimationController(
+    vsync: this,
+    duration: WenyouFoundationMotion.standard,
+  );
+  late final _coverOpacity = _transition
+      .drive(CurveTween(curve: wenyouStandardMotionCurve))
+      .drive(Tween<double>(begin: 1, end: 0));
   Timer? _settleTimer;
   Timer? _slowTimer;
   Rect? _alignedRect;
   var _revealed = false;
+  var _revealing = false;
+  var _transitionAttempt = 0;
   var _slow = false;
 
   @override
   void initState() {
     super.initState();
     _startSlowTimer();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_revealing && wenyouAnimationsDisabled(context)) {
+      _transition.value = 1;
+    }
   }
 
   @override
@@ -97,12 +119,20 @@ class _DiscussionTargetCoverState extends State<DiscussionTargetCover> {
   void dispose() {
     _settleTimer?.cancel();
     _slowTimer?.cancel();
+    _transition.dispose();
     super.dispose();
+  }
+
+  void _cancelTransition() {
+    _transitionAttempt++;
+    _revealing = false;
+    _transition.reset();
   }
 
   void _conceal({required bool restartSlowTimer}) {
     final wasRevealed = _revealed;
     _revealed = false;
+    _cancelTransition();
     _alignedRect = null;
     _reveal.reset();
     _settleTimer?.cancel();
@@ -134,6 +164,8 @@ class _DiscussionTargetCoverState extends State<DiscussionTargetCover> {
 
   void _onAligned() {
     if (!mounted || !widget.canLocate || widget.issue != null) return;
+    // 揭开途中几何再次变化时，立即恢复不透明遮罩并重新等待稳定。
+    if (_revealing) setState(_cancelTransition);
     _alignedRect = _targetRect();
     _settleTimer?.cancel();
     _settleTimer = Timer(_settleDuration, _finishIfStable);
@@ -166,8 +198,22 @@ class _DiscussionTargetCoverState extends State<DiscussionTargetCover> {
       _settleTimer = Timer(_settleDuration, _finishIfStable);
       return;
     }
-    if (_revealed) return;
+    if (_revealed || _revealing) return;
+    final attempt = ++_transitionAttempt;
+    if (wenyouAnimationsDisabled(context)) {
+      _completeReveal(attempt);
+      return;
+    }
+    setState(() => _revealing = true);
+    _transition
+        .forward(from: 0)
+        .whenCompleteOrCancel(() => _completeReveal(attempt));
+  }
+
+  void _completeReveal(int attempt) {
+    if (!mounted || attempt != _transitionAttempt || _revealed) return;
     _slowTimer?.cancel();
+    _revealing = false;
     setState(() => _revealed = true);
     widget.onRevealed?.call();
     unawaited(
@@ -233,79 +279,67 @@ class _DiscussionTargetCoverState extends State<DiscussionTargetCover> {
       children: [
         ExcludeSemantics(
           excluding: !_revealed,
-          child: IgnorePointer(
-            ignoring: !_revealed,
-            child: NotificationListener<ScrollNotification>(
-              onNotification: _onScroll,
-              child: NotificationListener<ScrollMetricsNotification>(
-                onNotification: _onMetrics,
-                child: widget.child,
+          child: ExcludeFocus(
+            excluding: !_revealed,
+            child: IgnorePointer(
+              ignoring: !_revealed,
+              child: NotificationListener<ScrollNotification>(
+                onNotification: _onScroll,
+                child: NotificationListener<ScrollMetricsNotification>(
+                  onNotification: _onMetrics,
+                  child: DiscussionTargetVisibility(
+                    visible: _revealed,
+                    child: widget.child,
+                  ),
+                ),
               ),
             ),
           ),
         ),
         if (!_revealed)
           Positioned.fill(
-            child: ColoredBox(
-              key: const Key('discussion-target-cover'),
-              color: Theme.of(context).scaffoldBackgroundColor,
-              child: SafeArea(
-                child: SingleChildScrollView(
-                  child: WenyouContentFrame(
-                    top: tokens.space16,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (widget.issue case final issue?)
-                          issue
-                        else if (exhausted)
-                          WenyouStatusBanner(
-                            message: '目标内容已不可见',
-                            action: TextButton(
-                              key: const Key('discussion-target-retry'),
-                              onPressed: widget.onRetry,
-                              child: const Text('重新确认'),
-                            ),
-                          )
-                        else ...[
-                          Semantics(
-                            liveRegion: true,
-                            label: _slow ? '仍在定位目标内容' : widget.loadingLabel,
-                            child: const SizedBox.shrink(),
-                          ),
-                          ExcludeSemantics(
-                            child: WenyouDetailSkeleton(
-                              label: widget.loadingLabel,
-                            ),
-                          ),
-                          SizedBox(height: tokens.space16),
-                          Row(
-                            children: [
-                              const SizedBox.square(
-                                dimension: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
+            child: FadeTransition(
+              key: const Key('discussion-target-transition'),
+              opacity: _coverOpacity,
+              child: AbsorbPointer(
+                absorbing: _revealing,
+                child: ColoredBox(
+                  key: const Key('discussion-target-cover'),
+                  color: Theme.of(context).scaffoldBackgroundColor,
+                  child: SafeArea(
+                    child: SingleChildScrollView(
+                      child: WenyouContentFrame(
+                        top: tokens.space16,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (widget.issue case final issue?)
+                              issue
+                            else if (exhausted)
+                              WenyouStatusBanner(
+                                message: '目标内容已不可见',
+                                action: TextButton(
+                                  key: const Key('discussion-target-retry'),
+                                  onPressed: widget.onRetry,
+                                  child: const Text('重新确认'),
                                 ),
+                              )
+                            else
+                              DiscussionTargetLoading(
+                                label: widget.loadingLabel,
+                                slow: _slow,
                               ),
-                              SizedBox(width: tokens.space12),
-                              Text(
-                                _slow ? '仍在定位，请稍候…' : widget.loadingLabel,
-                                key: _slow
-                                    ? const Key('discussion-target-slow')
-                                    : null,
+                            if (_slow || widget.issue != null || exhausted) ...[
+                              SizedBox(height: tokens.space16),
+                              TextButton(
+                                key: const Key('discussion-target-return'),
+                                onPressed: widget.onBack,
+                                child: const Text('返回'),
                               ),
                             ],
-                          ),
-                        ],
-                        if (_slow || widget.issue != null || exhausted) ...[
-                          SizedBox(height: tokens.space16),
-                          TextButton(
-                            key: const Key('discussion-target-return'),
-                            onPressed: widget.onBack,
-                            child: const Text('返回'),
-                          ),
-                        ],
-                      ],
+                          ],
+                        ),
+                      ),
                     ),
                   ),
                 ),

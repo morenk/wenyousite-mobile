@@ -6,7 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
-import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
+import 'package:wenyousite_mobile/core/widgets/discussion_target_loading.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_discussion_author_directory_ports.dart';
 import 'package:wenyousite_mobile/features/posts/data/post_repository.dart';
 import 'package:wenyousite_mobile/features/social/data/thread_subscription_repository.dart';
@@ -36,7 +36,7 @@ void registerThreadDetailPageTargetPagingCases() {
     expect(
       find.byWidgetPredicate(
         (widget) =>
-            widget is WenyouDetailSkeleton && widget.label == '正在定位目标楼层',
+            widget is DiscussionTargetLoading && widget.label == '正在定位目标楼层',
       ),
       findsOneWidget,
     );
@@ -128,7 +128,7 @@ void registerThreadDetailPageTargetPagingCases() {
     await tester.pump();
     expect(find.text('目标楼层内容').hitTestable(), findsNothing);
     expect(find.byKey(const Key('discussion-target-cover')), findsOneWidget);
-    expect(find.byKey(const Key('wenyou-detail-skeleton')), findsOneWidget);
+    expect(find.byType(DiscussionTargetLoading), findsOneWidget);
     secondGate.complete(
       ThreadPostTargetModel(
         requestedPostId: 'second-target',

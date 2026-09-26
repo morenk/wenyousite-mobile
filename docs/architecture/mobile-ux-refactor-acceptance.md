@@ -70,6 +70,12 @@
 - 表单与面板：`test/features/threads/thread_management_page_test.dart`、`thread_export_sheet_test.dart`、`test/features/moderation/moderation_appeal_page_test.dart`、`test/features/settings/change_password_page_test.dart`、`change_email_page_test.dart`、`login_sessions_page_test.dart`、`test/features/drafts/content_drafts_sheet_test.dart`。
 - 共享与账务：`test/core/widgets/wenyou_pagination_test.dart`、`test/features/wallet/wallet_page_test.dart`。预览工具全部 29 项回归通过；首次出现临时测试程序文件占用，重跑全部工具回归通过，未放宽目录权限或卸载保护。
 
+## 2026-09-27 负责人最终验收
+
+负责人在接续的楼层跳转预览完成后明确回复“可以了，所有验收通过，开始合并清理分支吧”。本记录最终主页布局、文案、工具栏与关系按钮改动均验收通过；以最终状态为准，早期已撤回的小号编辑按钮方案不再交付。
+
+两批最终应用源码于 2026-09-27 通过 `npm run check -- -TestConcurrency 3` 完整集成门禁：Flutter 4,906 项通过、1 项显式跳过，Windows 工具 47 项通过，格式、全量静态分析、架构、文档、API 覆盖与契约检查全部通过。应用源码与负责人验收版本一致，后续仅补充测试基线与验收文档；详细提交、摘要与测试基线修正见[跳转过渡验收](target-transition-acceptance.md#最终集成验证)。按 PR #70 并入 #69、再合入 `dev` 的顺序集成，随后核验并清理任务分支及工作区。
+
 ## 真机检查
 
 1. 有封面、无封面、长昵称、长签名及两倍字号：封面与进度保留，头像与昵称靠近，经验条和数值共同占满一行，签名保留独立间距。主页没有编辑按钮，从设置“账号”首项进入原资料页并可返回；工具栏和资料区／内容标签衔接连续，收藏夹、表情包、油卡均可点按。
