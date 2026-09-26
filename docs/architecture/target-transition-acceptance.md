@@ -38,6 +38,14 @@ Backend 记录与公网 `/meta` 均为 `124fb4e8` / OpenAPI `5.26.0-dev.20260922
 
 全仓应用和生成 API 静态分析零问题；模块文档、架构、`git diff --check` 通过，契约与依赖文件无漂移。自动检查不代替负责人真机验收；最终应用源码合并前仍须执行完整集成门禁。
 
+## 持续 Debug 预览
+
+- 应用源码提交 `c16bd11e3646bf5b0ba59b9f57feba5d24c1102f`，源码摘要 `10bb44b1a9aec2927574b7beae774fe59a6ce9d7db9a42d94ebf4de8c8563fb6`。
+- `real-history-preview` / `preview_0bd5ad2bffd8b1c5743c862a`，`site.wenyou.app.debug`，版本 `0.8.0-dev.1+96`。2026-09-27 01:18:39（北京时间）热重启成功，控制器 `source` 与 `loadedSource` 的提交及摘要一致。
+- 新分支预览启动时安装 Debug 基础包；安装时间 01:14:01，设备内 APK SHA-256 为 `e2cc4989aacb0e22c349098f50335dfae339bd47257f01fe5bb4cb3075d09c4b`。热重启后的画面以上述源码摘要为准，不能仅用基础 APK 哈希代表。
+- 初次热重载请求超时，随后热重启成功；没有清除账号或草稿数据。当前会话继续保留供负责人观察，后续纯视觉反馈继续热重载。
+- [草稿 PR #70](https://github.com/morenk/wenyousite-mobile/pull/70) 接续 [主页 UX PR #69](https://github.com/morenk/wenyousite-mobile/pull/69)，未合并、未发布。
+
 ## 负责人真机检查
 
 使用 `real-history-preview` 的 `site.wenyou.app.debug`：
