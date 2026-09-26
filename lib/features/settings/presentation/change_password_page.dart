@@ -5,6 +5,7 @@ import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/application/credential_input_policy.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_password_field.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_settings_body.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/settings/application/credential_security_controllers.dart';
 
@@ -58,9 +59,10 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
     final tokens = context.wenyouTokens;
     final state = ref.watch(passwordChangeControllerProvider);
     final page = Scaffold(
+      backgroundColor: wenyouPersonalPageBackground(context),
       appBar: AppBar(title: const Text('修改密码')),
       body: WenyouPageBody(
-        maxWidth: 520,
+        maxWidth: 600,
         child: WenyouPanel(
           child: Form(
             key: _formKey,
@@ -68,10 +70,7 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const WenyouSectionHeader(
-                    title: '设置新密码',
-                    subtitle: '修改成功后，当前账号会在所有设备上退出。',
-                  ),
+                  const Text('修改成功后，当前账号会在所有设备上退出。'),
                   SizedBox(height: tokens.space24),
                   WenyouPasswordField(
                     textFieldKey: const Key('change-password-old'),

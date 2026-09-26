@@ -9,6 +9,7 @@ import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_sheet.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_management_controller.dart';
 import 'package:wenyousite_mobile/features/threads/domain/subthread_management_models.dart';
@@ -321,11 +322,8 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
   );
 
   Future<void> _openInviteLinkSheet() {
-    return showModalBottomSheet<void>(
+    return showWenyouSheet<void>(
       context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      showDragHandle: true,
       builder: (sheetContext) => SingleChildScrollView(
         padding: EdgeInsets.fromLTRB(
           sheetContext.wenyouTokens.space16,
@@ -443,11 +441,8 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
   }
 
   Future<void> _editTags() async {
-    final result = await showModalBottomSheet<List<String>>(
+    final result = await showWenyouSheet<List<String>>(
       context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      showDragHandle: true,
       builder: (_) => _ThreadTagSelectorSheet(initial: _tagNames),
     );
     if (result != null && mounted) {
@@ -628,7 +623,7 @@ class _ThreadTagSelectorSheetState extends State<_ThreadTagSelectorSheet> {
     final tokens = context.wenyouTokens;
     return AnimatedPadding(
       duration: tokens.feedbackDuration,
-      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+      padding: EdgeInsets.only(bottom: 0),
       child: SingleChildScrollView(
         padding: EdgeInsets.fromLTRB(
           tokens.space16,
@@ -767,7 +762,7 @@ class _ManagementFatalState extends StatelessWidget {
           key: const Key('thread-management-load-retry'),
           onPressed: onRetry,
           icon: const WenyouIcon(WenyouIconIds.actionRefresh),
-          label: const Text('重新加载'),
+          label: const Text('重试'),
         ),
       ),
     );

@@ -64,31 +64,58 @@ class _SearchPageState extends ConsumerState<SearchPage> {
     });
     return Scaffold(
       appBar: AppBar(title: const Text('搜索')),
-      body: RefreshIndicator(
-        onRefresh: state.hasQuery
-            ? () => Future.wait([
-                ref.read(searchControllerProvider.notifier).refreshActive(),
-                ref
-                    .read(threadCategoryCatalogControllerProvider.notifier)
-                    .refresh(),
-              ])
-            : () async {},
-        child: ListView(
-          key: const PageStorageKey('search-results-scroll'),
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: _pagePadding(context),
-          children: [
-            _SearchForm(
-              controller: _queryController,
-              focusNode: _focusNode,
-              onSubmitted: _submit,
+      body: Column(
+        children: [
+          Padding(
+            padding: EdgeInsets.fromLTRB(
+              wenyouHorizontalPagePadding(context),
+              tokens.space8,
+              wenyouHorizontalPagePadding(context),
+              tokens.space8,
             ),
-            SizedBox(height: tokens.space16),
-            _SearchTabs(state: state),
-            SizedBox(height: tokens.space16),
-            if (state.hasQuery) _ActiveSearchResults(state: state),
-          ],
-        ),
+            child: WenyouConstrainedWidth(
+              child: _SearchForm(
+                controller: _queryController,
+                focusNode: _focusNode,
+                onSubmitted: _submit,
+              ),
+            ),
+          ),
+          WenyouConstrainedWidth(child: _SearchTabs(state: state)),
+          Expanded(
+            child: RefreshIndicator(
+              onRefresh: state.hasQuery
+                  ? () => Future.wait([
+                      ref
+                          .read(searchControllerProvider.notifier)
+                          .refreshActive(),
+                      ref
+                          .read(
+                            threadCategoryCatalogControllerProvider.notifier,
+                          )
+                          .refresh(),
+                    ])
+                  : () async {},
+              child: ListView(
+                key: PageStorageKey((
+                  'search-results-scroll',
+                  state.query,
+                  state.activeTab,
+                )),
+                physics: const AlwaysScrollableScrollPhysics(),
+                keyboardDismissBehavior:
+                    ScrollViewKeyboardDismissBehavior.onDrag,
+                padding: _pagePadding(context),
+                children: [
+                  if (state.hasQuery)
+                    WenyouConstrainedWidth(
+                      child: _ActiveSearchResults(state: state),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

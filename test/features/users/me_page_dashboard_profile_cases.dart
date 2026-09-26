@@ -31,7 +31,7 @@ void registerMePageDashboardProfileCases() {
     expect(repository.fetchCalls, 0);
   });
 
-  testWidgets('本人中心展示身份摘要、内容入口并下沉编辑与设置', (tester) async {
+  testWidgets('本人中心展示身份摘要并将资料编辑保留在设置', (tester) async {
     final repository = MePageTestFakeMeProfileRepository();
     final container = await mePageTestAuthenticatedContainer(repository);
     addTearDown(container.dispose);
@@ -59,7 +59,9 @@ void registerMePageDashboardProfileCases() {
     expect(find.byKey(const Key('me-open-followers')), findsOneWidget);
     expect(find.byKey(const Key('me-open-wallet')), findsOneWidget);
     expect(find.byKey(const Key('me-open-bookmarks')), findsOneWidget);
+    expect(find.text('油卡'), findsOneWidget);
     expect(find.text('温油'), findsOneWidget);
+    expect(find.text('收到加油'), findsNothing);
     final followingWidth = tester
         .getSize(find.byKey(const Key('me-open-following')))
         .width;
@@ -67,26 +69,32 @@ void registerMePageDashboardProfileCases() {
       tester.getSize(find.byKey(const Key('me-open-followers'))).width,
       closeTo(followingWidth, 0.01),
     );
-    expect(
-      tester.getSize(find.byKey(const Key('me-open-wallet'))).width,
-      closeTo(followingWidth, 0.01),
-    );
-    final editRect = tester.getRect(
-      find.byKey(const Key('me-open-edit-profile')),
-    );
     final bookmarkRect = tester.getRect(
       find.byKey(const Key('me-open-bookmarks')),
     );
-    expect(bookmarkRect.top, editRect.top);
-    expect(bookmarkRect.height, editRect.height);
-    expect(bookmarkRect.width, closeTo(editRect.width, 0.01));
     expect(
       bookmarkRect.top,
       greaterThan(
-        tester.getRect(find.byKey(const Key('me-open-wallet'))).bottom,
+        tester.getRect(find.byKey(const Key('me-profile-header'))).bottom,
       ),
     );
-    expect(find.byKey(const Key('me-open-edit-profile')), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('me-profile-header')),
+        matching: find.byKey(const Key('me-open-bookmarks')),
+      ),
+      findsNothing,
+    );
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('me-personal-tools')),
+        matching: find.byKey(const Key('me-open-bookmarks')),
+      ),
+      findsOneWidget,
+    );
+    expect(find.byKey(const Key('me-open-edit-profile')), findsNothing);
+    expect(find.byKey(const Key('me-profile-edit')), findsNothing);
+    expect(find.text('编辑资料'), findsNothing);
     expect(find.byKey(const Key('me-open-public-profile')), findsNothing);
     expect(find.text('预览公开主页'), findsNothing);
     expect(find.byKey(const Key('me-open-settings')), findsOneWidget);
@@ -100,26 +108,26 @@ void registerMePageDashboardProfileCases() {
     expect(find.text('我的内容'), findsNothing);
     await tester.drag(find.byType(NestedScrollView), const Offset(0, -240));
     await tester.pumpAndSettle();
-    expect(find.text('概览'), findsOneWidget);
+    expect(find.text('概览'), findsNothing);
     expect(find.text('动态'), findsOneWidget);
-    expect(find.text('创建'), findsOneWidget);
+    expect(find.text('主题'), findsOneWidget);
     expect(find.text('参与'), findsOneWidget);
     expect(find.text('帖子'), findsNothing);
     expect(find.text('创作概览'), findsNothing);
-    expect(find.text('发布动态'), findsOneWidget);
-    expect(find.text('创建主题'), findsOneWidget);
-    expect(find.text('参与主题'), findsOneWidget);
-    expect(find.text('累计回复'), findsOneWidget);
-    expect(find.text('最近回复'), findsOneWidget);
+    expect(find.text('发布动态'), findsNothing);
+    expect(find.text('创建主题'), findsNothing);
+    expect(find.text('参与主题'), findsNothing);
+    expect(find.text('累计回复'), findsNothing);
+    expect(find.text('最近回复'), findsNothing);
     expect(find.text('创建的'), findsNothing);
     expect(find.text('参与的'), findsNothing);
-    expect(find.text('收藏'), findsOneWidget);
+    expect(find.text('收藏'), findsNothing);
     expect(find.text('注销账号'), findsNothing);
     expect(find.text('公开最近回复'), findsNothing);
     expect(repository.fetchCalls, 1);
   });
 
-  testWidgets('本人创作概览可切换对应内容页签并定位最近回复', (tester) async {
+  testWidgets('本人内容直接展示主题并通过吸顶页签切换', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(360, 900);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -140,32 +148,16 @@ void registerMePageDashboardProfileCases() {
     await tester.drag(find.byType(NestedScrollView), const Offset(0, -240));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(const Key('me-activity-created-threads')));
-    await tester.pumpAndSettle();
     expect(find.text('我创建的星海主题'), findsOneWidget);
     expect(publicRepository.createdCalls, 1);
-
-    await tester.tap(
-      find.byKey(const ValueKey('me-content-MeContentTab.overview')),
-    );
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('me-activity-played-threads')));
+    expect(publicRepository.activityCalls, 0);
+    await tester.tap(find.text('参与'));
     await tester.pumpAndSettle();
     expect(publicRepository.playedCalls, 1);
-
-    await tester.tap(
-      find.byKey(const ValueKey('me-content-MeContentTab.overview')),
-    );
+    await tester.tap(find.text('回复'));
     await tester.pumpAndSettle();
-    final recentReplies = find.byKey(const Key('me-recent-replies'));
-    final repliesTopBefore = tester.getTopLeft(recentReplies).dy;
-    await tester.tap(find.byKey(const Key('me-activity-replies')));
-    await tester.pumpAndSettle();
-    expect(tester.getTopLeft(recentReplies).dy, lessThan(repliesTopBefore));
-
-    await tester.ensureVisible(find.byKey(const Key('me-activity-moments')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('me-activity-moments')));
+    expect(publicRepository.replyCalls, 1);
+    await tester.tap(find.text('动态'));
     await tester.pumpAndSettle();
     expect(find.text('我的动态'), findsOneWidget);
   });
@@ -258,12 +250,12 @@ void registerMePageDashboardProfileCases() {
     expect(profileRepository.fetchCalls, initialProfileCalls + 1);
     expect(walletRepository.walletCalls, initialWalletCalls + 1);
     expect(momentRepository.userCalls, initialMomentCalls + 1);
-    expect(publicRepository.activityCalls, 1);
-    expect(publicRepository.replyCalls, 1);
+    expect(publicRepository.activityCalls, 0);
+    expect(publicRepository.replyCalls, 0);
     expect(find.byType(RefreshIndicator), findsOneWidget);
   });
 
-  testWidgets('本人中心以同级温油入口展示余额并复用主题卡片', (tester) async {
+  testWidgets('本人钱包进入个人工具区并复用主题卡片', (tester) async {
     final repository = MePageTestFakeMeProfileRepository();
     final publicRepository = MePageTestFakePublicUserRepository();
     final walletRepository = MePageTestFakeWalletRepository(balance: '41');
@@ -290,9 +282,9 @@ void registerMePageDashboardProfileCases() {
     await tester.drag(find.byType(NestedScrollView), const Offset(0, -240));
     await tester.pumpAndSettle();
 
-    expect(publicRepository.replyCalls, 1);
-    expect(publicRepository.activityCalls, 1);
-    expect(publicRepository.createdCalls, 0);
+    expect(publicRepository.replyCalls, 0);
+    expect(publicRepository.activityCalls, 0);
+    expect(publicRepository.createdCalls, 1);
 
     await tester.tap(
       find.byKey(const ValueKey('me-content-MeContentTab.createdThreads')),
@@ -336,13 +328,12 @@ void registerMePageDashboardProfileCases() {
     );
     expect(
       find.descendant(
-        of: find.byKey(const Key('me-profile-header')),
+        of: find.byKey(const Key('me-personal-tools')),
         matching: stickers,
       ),
       findsOneWidget,
     );
     final actionWidths = [
-      const Key('me-open-edit-profile'),
       const Key('me-open-bookmarks'),
       const Key('me-open-stickers'),
     ].map((key) => tester.getSize(find.byKey(key)).width).toSet();

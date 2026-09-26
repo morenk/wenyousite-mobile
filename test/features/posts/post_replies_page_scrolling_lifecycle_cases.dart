@@ -10,7 +10,7 @@ import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
-import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
+import 'package:wenyousite_mobile/core/widgets/discussion_target_loading.dart';
 import 'package:wenyousite_mobile/features/media/application/image_crop_ports.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
@@ -68,7 +68,7 @@ void registerPostRepliesPageScrollingLifecycleCases() {
     expect(
       find.byWidgetPredicate(
         (widget) =>
-            widget is WenyouDetailSkeleton && widget.label == '正在定位目标回复',
+            widget is DiscussionTargetLoading && widget.label == '正在定位目标回复',
       ),
       findsWidgets,
     );

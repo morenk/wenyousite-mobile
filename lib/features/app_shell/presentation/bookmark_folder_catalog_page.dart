@@ -202,7 +202,7 @@ class _BookmarkFolderCatalogPageState
               key: Key('bookmark-folder-catalog-retry-${_kind.name}'),
               onPressed: notifier.load,
               icon: const WenyouIcon(WenyouIconIds.actionRefresh),
-              label: const Text('重新加载'),
+              label: const Text('重试'),
             ),
           ),
         ),

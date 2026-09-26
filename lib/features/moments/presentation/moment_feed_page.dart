@@ -7,6 +7,7 @@ import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_nested_scroll.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_pagination.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/moments/application/moment_controllers.dart';
@@ -195,7 +196,10 @@ class _MomentFeedListState extends ConsumerState<MomentFeedList> {
       child: CustomScrollView(
         key: PageStorageKey('moment-feed-${widget.target.hashCode}'),
         physics: const AlwaysScrollableScrollPhysics(),
-        slivers: _slivers(context, state, provider),
+        slivers: [
+          const WenyouNestedScrollInset(),
+          ..._slivers(context, state, provider),
+        ],
       ),
     );
     return Semantics(
@@ -254,7 +258,7 @@ class _MomentFeedListState extends ConsumerState<MomentFeedList> {
                   key: const Key('moment-feed-retry'),
                   onPressed: () => ref.read(provider.notifier).loadInitial(),
                   icon: const WenyouIcon(WenyouIconIds.actionRefresh),
-                  label: const Text('重新加载'),
+                  label: const Text('重试'),
                 ),
               ),
             ),

@@ -116,7 +116,7 @@ void main() {
     await tester.pumpWidget(_walletApp(repository));
     await tester.pumpAndSettle();
 
-    expect(find.text('钱包余额加载失败'), findsOneWidget);
+    expect(find.text('温油余额加载失败'), findsOneWidget);
     expect(find.text('每日在线签到'), findsOneWidget);
     await tester.tap(find.byKey(const Key('wallet-summary-retry')));
     await tester.pumpAndSettle();
@@ -133,7 +133,7 @@ void main() {
       await tester.pumpWidget(_walletApp(_WalletPageRepository()));
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
-      expect(find.text('我的温油'), findsOneWidget);
+      expect(find.text('油卡'), findsOneWidget);
     });
   }
 

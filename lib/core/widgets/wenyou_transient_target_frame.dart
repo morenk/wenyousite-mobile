@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/animation/wenyou_motion.dart';
+import 'package:wenyousite_mobile/core/widgets/discussion_target_visibility.dart';
 
 class WenyouTransientTargetFrame extends StatefulWidget {
   const WenyouTransientTargetFrame({
@@ -26,18 +28,19 @@ class _WenyouTransientTargetFrameState
   static const _holdDuration = Duration(milliseconds: 1200);
 
   Timer? _timer;
+  String? _activeTarget;
   var _visible = false;
 
   @override
-  void initState() {
-    super.initState();
-    _activate(widget.targetId);
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _activateVisibleTarget();
   }
 
   @override
   void didUpdateWidget(covariant WenyouTransientTargetFrame oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.targetId != widget.targetId) _activate(widget.targetId);
+    if (oldWidget.targetId != widget.targetId) _activateVisibleTarget();
   }
 
   @override
@@ -46,7 +49,13 @@ class _WenyouTransientTargetFrameState
     super.dispose();
   }
 
-  void _activate(String? targetId) {
+  void _activateVisibleTarget() {
+    final targetId =
+        (DiscussionTargetVisibility.maybeOf(context)?.visible ?? true)
+        ? widget.targetId
+        : null;
+    if (_activeTarget == targetId) return;
+    _activeTarget = targetId;
     _timer?.cancel();
     _visible = targetId != null;
     if (!_visible) return;
@@ -59,16 +68,17 @@ class _WenyouTransientTargetFrameState
   Widget build(BuildContext context) {
     if (widget.targetId == null) return widget.child;
     final tokens = context.wenyouTokens;
-    final reduceMotion =
-        MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    final reduceMotion = wenyouAnimationsDisabled(context);
+    final hasCoverAnnouncement =
+        DiscussionTargetVisibility.maybeOf(context) != null;
     return Semantics(
       container: true,
-      liveRegion: true,
-      label: _visible ? widget.announcement : null,
+      liveRegion: !hasCoverAnnouncement,
+      label: _visible && !hasCoverAnnouncement ? widget.announcement : null,
       child: AnimatedContainer(
         key: ValueKey('target-frame-${widget.targetId ?? 'none'}'),
         duration: reduceMotion ? Duration.zero : WenyouFoundationMotion.slow,
-        curve: Curves.easeOut,
+        curve: wenyouStandardMotionCurve,
         decoration: BoxDecoration(
           border: Border.all(
             color: _visible ? tokens.brandSurface : Colors.transparent,

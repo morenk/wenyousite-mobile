@@ -41,6 +41,7 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
   final TextEditingController _tagsController = TextEditingController();
   late final EditorPendingImages _pendingImages;
   bool _pendingRestored = false;
+  bool _restoredNoticeShown = false;
   bool _publishing = false;
   final Object _contentDraftSessionKey = Object();
 
@@ -116,7 +117,19 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
     ref.listen(sessionScopeProvider, (previous, next) {
       if (next != _pendingImages.scope) _pendingImages.pause();
     });
+    ref.listen(threadComposeControllerProvider, (previous, next) {
+      final message = next.successMessage;
+      if (message != null && message != previous?.successMessage) {
+        showWenyouSnackBar(context, message, tone: WenyouSnackBarTone.success);
+      }
+    });
     final state = ref.watch(threadComposeControllerProvider);
+    if (state.restoredFromLocal && !_restoredNoticeShown) {
+      _restoredNoticeShown = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) showWenyouSnackBar(context, '已恢复未完成的内容');
+      });
+    }
     _scheduleDocumentSync(state);
     final locked =
         state.isSubmitting ||

@@ -448,7 +448,8 @@ void registerThreadDetailPageSubthreadNavigationCases() {
     await tester.pumpAndSettle();
 
     expect(find.text('第一层内容'), findsOneWidget);
-    expect(find.text('主线正文'), findsNothing);
+    // 正文可保留在滚动缓存中，但定位后不能占据目标阅读视口。
+    expect(find.text('主线正文').hitTestable(), findsNothing);
     expect(repository.requestedSubthreads, ['subthread-1']);
   });
 

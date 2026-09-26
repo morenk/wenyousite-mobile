@@ -6,6 +6,7 @@ import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_level_badge.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/social/application/user_relation_list_controller.dart';
 import 'package:wenyousite_mobile/features/social/domain/user_relation_list_models.dart';
@@ -49,7 +50,7 @@ class UserRelationListPage extends ConsumerWidget {
                 key: const Key('user-relation-list-retry'),
                 onPressed: notifier.load,
                 icon: const WenyouIcon(WenyouIconIds.actionRefresh),
-                label: const Text('重新加载'),
+                label: const Text('重试'),
               ),
             ),
           ),
@@ -204,12 +205,7 @@ class _RelationUserCard extends StatelessWidget {
                   style: Theme.of(context).textTheme.wenyouRowTitle,
                 ),
                 SizedBox(height: tokens.space4),
-                Text(
-                  'Lv.${item.level}',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.wenyouCaption.copyWith(color: tokens.mutedText),
-                ),
+                WenyouLevelBadge(level: item.level),
               ],
             ),
           ),

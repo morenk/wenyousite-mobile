@@ -5,8 +5,8 @@ import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/media/media_display.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_anchored_popover.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
-import 'package:wenyousite_mobile/core/widgets/wenyou_selection_menu.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_sheet.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_time_text.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
@@ -294,51 +294,13 @@ class _AutoSaveSwitch extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tokens = context.wenyouTokens;
-    final colorScheme = Theme.of(context).colorScheme;
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          value ? '已开启' : '已关闭',
-          key: const Key('content-drafts-auto-save-state'),
-          style: Theme.of(context).textTheme.wenyouCaptionEmphasis.copyWith(
-            color: enabled
-                ? (value ? tokens.brandForeground : tokens.text)
-                : tokens.mutedText,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        Switch(
-          key: const Key('content-drafts-auto-save-switch'),
-          value: value,
-          onChanged: enabled ? onChanged : null,
-          thumbColor: WidgetStateProperty.resolveWith((states) {
-            if (states.contains(WidgetState.disabled)) {
-              return tokens.mutedText;
-            }
-            return states.contains(WidgetState.selected)
-                ? colorScheme.onPrimary
-                : tokens.text;
-          }),
-          trackColor: WidgetStateProperty.resolveWith((states) {
-            if (states.contains(WidgetState.disabled)) {
-              return tokens.softPanel;
-            }
-            return states.contains(WidgetState.selected)
-                ? colorScheme.primary
-                : tokens.panel;
-          }),
-          trackOutlineColor: WidgetStateProperty.resolveWith((states) {
-            if (states.contains(WidgetState.selected)) {
-              return colorScheme.primary;
-            }
-            return states.contains(WidgetState.disabled)
-                ? tokens.border
-                : tokens.mutedText;
-          }),
-        ),
-      ],
+    return Semantics(
+      label: '自动保存到草稿位 1',
+      child: Switch(
+        key: const Key('content-drafts-auto-save-switch'),
+        value: value,
+        onChanged: enabled ? onChanged : null,
+      ),
     );
   }
 }
@@ -434,7 +396,7 @@ class _DraftSlotCard extends ConsumerWidget {
                             MarkdownContent.toPlainTextPreview(
                               item.content,
                               maxLength: 100,
-                            ).ifEmpty('仅包含格式节点的正文'),
+                            ).ifEmpty('暂无文字预览'),
                             maxLines: 3,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -443,7 +405,7 @@ class _DraftSlotCard extends ConsumerWidget {
                             value: item.updatedAt,
                             prefix: '更新于 ',
                             semanticsPrefix: '更新于 ',
-                            suffix: slot == 1 ? ' · 自动保存位置' : '',
+
                             style: Theme.of(context).textTheme.wenyouCaption
                                 .copyWith(color: tokens.mutedText),
                           ),
@@ -459,21 +421,27 @@ class _DraftSlotCard extends ConsumerWidget {
                         ),
                       )
                     else
-                      PopupMenuButton<void>(
-                        key: Key('content-draft-more-$slot'),
-                        tooltip: '草稿位 $slot 更多操作',
-                        icon: const WenyouIcon(WenyouIconIds.actionMore),
-                        itemBuilder: (context) => [
-                          PopupMenuItem<void>(
+                      WenyouAnchoredActionBubble<String>(
+                        placement: WenyouPopoverPlacement.below,
+                        alignment: WenyouPopoverAlignment.end,
+                        semanticLabel: '草稿操作',
+                        onSelected: (_) => _delete(context, ref, item),
+                        actions: [
+                          WenyouPopoverAction(
                             key: Key('content-draft-delete-$slot'),
-                            onTap: () => _delete(context, ref, item),
-                            child: const WenyouMenuActionLabel(
-                              icon: WenyouIconIds.actionDelete,
-                              label: '删除草稿',
-                              destructive: true,
-                            ),
+                            value: 'delete',
+                            icon: WenyouIconIds.actionDelete,
+                            label: '删除',
+                            semanticsLabel: '删除草稿',
+                            tone: WenyouPopoverActionTone.destructive,
                           ),
                         ],
+                        anchorBuilder: (context, handle) => IconButton(
+                          key: Key('content-draft-more-$slot'),
+                          tooltip: '草稿位 $slot 更多操作',
+                          onPressed: state.isBusy ? null : handle.toggle,
+                          icon: const WenyouIcon(WenyouIconIds.actionMore),
+                        ),
                       ),
                   ],
                 ),
@@ -626,8 +594,8 @@ class _LoadFailure extends StatelessWidget {
 
 String _autoSaveDescription(ContentDraftsState state) {
   return switch (state.autoSaveStatus) {
-    ContentDraftAutoSaveStatus.idle => '开启后，当前编辑器正文会自动更新到草稿位 1',
-    ContentDraftAutoSaveStatus.waiting => '已开启，编辑后自动更新到草稿位 1',
+    ContentDraftAutoSaveStatus.idle => '自动保存当前正文',
+    ContentDraftAutoSaveStatus.waiting => '等待保存修改',
     ContentDraftAutoSaveStatus.saving => '正在保存到云端…',
     ContentDraftAutoSaveStatus.saved => '当前正文已自动保存',
     ContentDraftAutoSaveStatus.error => '自动保存失败并已关闭，请重新开启',

@@ -166,11 +166,6 @@ class ThreadComposeStatusArea extends StatelessWidget {
     final banners = <Widget>[
       if (state.action == ThreadComposeAction.openRemoteDraft)
         const WenyouStatusBanner(message: '正在读取云端草稿…'),
-      if (state.restoredFromLocal)
-        const WenyouStatusBanner(
-          message: '已恢复上次未完成的本地内容。',
-          tone: WenyouStatusTone.accent,
-        ),
       if (state.bootstrapLoading)
         const WenyouStatusBanner(message: '正在准备发布选项…'),
       if (state.bootstrapFailure != null)
@@ -180,7 +175,7 @@ class ThreadComposeStatusArea extends StatelessWidget {
           tone: WenyouStatusTone.error,
           action: TextButton(
             onPressed: state.bootstrapLoading ? null : onRefreshBootstrap,
-            child: const Text('重新同步'),
+            child: const Text('重试'),
           ),
         ),
       if (documentIssues.isNotEmpty)
@@ -205,11 +200,6 @@ class ThreadComposeStatusArea extends StatelessWidget {
           message: state.actionFailure!.userMessage,
           detail: wenyouFailureDetail(state.actionFailure, treatAsWrite: true),
           tone: WenyouStatusTone.error,
-        ),
-      if (state.successMessage != null)
-        WenyouStatusBanner(
-          message: state.successMessage!,
-          tone: WenyouStatusTone.accent,
         ),
     ];
     if (banners.isEmpty) return const SizedBox.shrink();

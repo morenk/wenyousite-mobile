@@ -4,7 +4,6 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
@@ -182,18 +181,17 @@ class _MomentComposePageState extends ConsumerState<_MomentComposeEditor>
         appBar: AppBar(
           title: Text(editing ? '编辑动态' : '发动态'),
           actions: [
-            if (editing && state.initialDetail?.canDelete == true)
-              IconButton(
-                key: const Key('moment-compose-delete'),
-                onPressed:
-                    _waitingToPublish ||
-                        state.isSubmitting ||
-                        state.phase == MomentComposerPhase.succeeded
-                    ? null
-                    : _confirmDelete,
-                tooltip: '删除动态',
-                icon: const WenyouIcon(WenyouIconIds.actionDelete),
-              ),
+            MomentComposeActions(
+              editing: editing,
+              editable: editable,
+              canDelete: state.initialDetail?.canDelete == true,
+              waiting: _waitingToPublish,
+              submitting: state.isSubmitting,
+              succeeded: state.phase == MomentComposerPhase.succeeded,
+              awaitingConfirmation: state.awaitingConfirmation,
+              onDelete: _confirmDelete,
+              onSubmit: _submit,
+            ),
           ],
         ),
         body: switch (state.phase) {
@@ -206,17 +204,10 @@ class _MomentComposePageState extends ConsumerState<_MomentComposeEditor>
           ),
           _ => _buildEditorBody(state, uploadState, pendingImages),
         },
-        bottomNavigationBar: editable
-            ? MomentPublishBar(
-                editing: editing,
-                submitting: state.isSubmitting || _waitingToPublish,
-                pendingCount: _waitingToPublish
-                    ? _pendingImageUploads.length
-                    : 0,
-                onCancelWait: _waitingToPublish ? _cancelPublishWait : null,
-                awaitingConfirmation: state.awaitingConfirmation,
-                cleanupPending: state.phase == MomentComposerPhase.succeeded,
-                onPressed: _submit,
+        bottomNavigationBar: _waitingToPublish
+            ? MomentPublishWaitNotice(
+                pendingCount: _pendingImageUploads.length,
+                onCancelWait: _cancelPublishWait,
               )
             : null,
       ),
@@ -250,7 +241,7 @@ class _MomentComposePageState extends ConsumerState<_MomentComposeEditor>
                         ? const Key('moment-compose-pending')
                         : null,
                     message: state.awaitingConfirmation
-                        ? '请重试确认发布结果。已保留这次内容，确认前不能修改。'
+                        ? '发布结果暂时无法获取。内容已保留，请点“查看结果”后继续。'
                         : state.failure!.userMessage,
                     detail: wenyouFailureDetail(
                       state.failure,

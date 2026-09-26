@@ -68,6 +68,7 @@ test('Windows 控制目录移除继承，只授权当前用户与 SYSTEM', { ski
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'wenyou-acl-'));
   t.after(() => { assert.equal(path.dirname(dir), path.resolve(os.tmpdir())); fs.rmSync(dir, { recursive: true }); });
   privateDirectory(dir);
+  privateDirectory(dir);
   const literal = `'${dir.replaceAll("'", "''")}'`;
   const permissions = JSON.parse(run('pwsh.exe', ['-NoProfile', '-NonInteractive', '-Command', `$acl=Get-Acl -LiteralPath ${literal}; @{protected=$acl.AreAccessRulesProtected; count=@($acl.Access).Count; inherited=@($acl.Access | Where-Object IsInherited).Count} | ConvertTo-Json -Compress`]));
   assert.deepEqual(permissions, { protected: true, count: 2, inherited: 0 });

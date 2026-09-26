@@ -23,7 +23,7 @@ class WalletPage extends ConsumerWidget {
     final provider = walletControllerProvider(sessionKey);
     final state = ref.watch(provider);
     return Scaffold(
-      appBar: AppBar(title: const Text('我的温油')),
+      appBar: AppBar(title: const Text('油卡')),
       body: RefreshIndicator(
         onRefresh: () => ref.read(provider.notifier).refresh(),
         child: CustomScrollView(
@@ -92,7 +92,7 @@ class _WalletSummaryPanel extends StatelessWidget {
                 ? const _WalletLoading(label: '正在读取温油余额…')
                 : WenyouEmptyState(
                     icon: WenyouIconIds.statusOffline,
-                    title: '钱包余额加载失败',
+                    title: '温油余额加载失败',
                     message: state.summaryFailure?.userMessage ?? '请稍后重试。',
                     detail: wenyouFailureDetail(state.summaryFailure),
                     action: OutlinedButton.icon(

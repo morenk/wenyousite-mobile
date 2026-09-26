@@ -4,6 +4,7 @@ import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_settings_body.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/settings/application/login_sessions_controller.dart';
 import 'package:wenyousite_mobile/features/settings/domain/login_session_models.dart';
@@ -16,6 +17,7 @@ class LoginSessionsPage extends ConsumerWidget {
     final state = ref.watch(loginSessionsControllerProvider);
     final notifier = ref.read(loginSessionsControllerProvider.notifier);
     final page = Scaffold(
+      backgroundColor: wenyouPersonalPageBackground(context),
       appBar: AppBar(title: const Text('登录终端')),
       body: switch (state.phase) {
         LoginSessionsPhase.loading => const WenyouPageBody(
@@ -34,7 +36,7 @@ class LoginSessionsPage extends ConsumerWidget {
                 key: const Key('login-sessions-retry'),
                 onPressed: notifier.load,
                 icon: const WenyouIcon(WenyouIconIds.actionRefresh),
-                label: const Text('重新加载'),
+                label: const Text('重试'),
               ),
             ),
           ),
