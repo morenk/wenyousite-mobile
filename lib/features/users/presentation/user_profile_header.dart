@@ -64,13 +64,27 @@ class UserProfileHeader extends StatelessWidget {
     final normalizedBio = bio?.trim();
     final largeText = MediaQuery.textScalerOf(context).scale(16) > 20;
     final statsRow = UserProfileStats(items: stats);
-    final identity = Wrap(
-      crossAxisAlignment: WrapCrossAlignment.center,
-      spacing: tokens.space8,
-      runSpacing: tokens.space4,
+    final identity = OverflowBar(
+      alignment: MainAxisAlignment.spaceBetween,
+      spacing: tokens.space12,
+      overflowSpacing: tokens.space4,
       children: [
-        Text(username, style: Theme.of(context).textTheme.wenyouListTitle),
-        WenyouLevelBadge(level: level),
+        Wrap(
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: tokens.space8,
+          runSpacing: tokens.space4,
+          children: [
+            Text(username, style: Theme.of(context).textTheme.wenyouListTitle),
+            WenyouLevelBadge(level: level),
+          ],
+        ),
+        if (levelProgress != null)
+          Text(
+            levelProgressLabel ?? '等级进度',
+            style: Theme.of(
+              context,
+            ).textTheme.wenyouCaption.copyWith(color: tokens.mutedText),
+          ),
       ],
     );
     return Material(
@@ -99,11 +113,14 @@ class UserProfileHeader extends StatelessWidget {
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Transform.translate(
-                      offset: Offset(
-                        0,
-                        profileCover == null ? 0 : -tokens.space24,
-                      ),
+                    // 嵌入封面的部分不再占据正文高度，避免昵称上方留下空位。
+                    Align(
+                      alignment: Alignment.bottomCenter,
+                      widthFactor: 1,
+                      heightFactor: profileCover == null
+                          ? 1
+                          : (_ProfileAvatar.size - tokens.space24) /
+                                _ProfileAvatar.size,
                       child: _ProfileAvatar(
                         username: username,
                         avatarUrl: avatarUrl,
@@ -134,10 +151,10 @@ class UserProfileHeader extends StatelessWidget {
                   ),
                 ],
                 if (levelProgress != null) ...[
-                  SizedBox(height: tokens.space12),
-                  _ProfileLevelProgress(
+                  SizedBox(height: tokens.space8),
+                  LinearProgressIndicator(
                     value: levelProgress!,
-                    label: levelProgressLabel ?? '等级进度',
+                    semanticsLabel: '等级进度',
                   ),
                 ],
                 if (actions != null) ...[
@@ -149,30 +166,6 @@ class UserProfileHeader extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _ProfileLevelProgress extends StatelessWidget {
-  const _ProfileLevelProgress({required this.value, required this.label});
-  final double value;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = context.wenyouTokens;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text(
-          label,
-          style: Theme.of(
-            context,
-          ).textTheme.wenyouCaption.copyWith(color: tokens.mutedText),
-        ),
-        SizedBox(height: tokens.space4),
-        LinearProgressIndicator(value: value, semanticsLabel: '等级进度'),
-      ],
     );
   }
 }
@@ -216,6 +209,7 @@ class _ProfileCover extends StatelessWidget {
 class _ProfileAvatar extends StatelessWidget {
   const _ProfileAvatar({required this.username, required this.avatarUrl});
 
+  static const double size = 72;
   final String username;
   final String? avatarUrl;
 
@@ -224,8 +218,8 @@ class _ProfileAvatar extends StatelessWidget {
     final tokens = context.wenyouTokens;
     return Container(
       key: ValueKey('profile-avatar-$username'),
-      width: 72,
-      height: 72,
+      width: size,
+      height: size,
       padding: const EdgeInsets.all(3),
       decoration: BoxDecoration(
         color: tokens.panel,
@@ -266,13 +260,11 @@ class _ProfileStat extends StatelessWidget {
         key: item.key,
         onTap: item.onTap,
         child: ConstrainedBox(
-          constraints: BoxConstraints(
-            minHeight: tokens.minimumTouchTarget + 12,
-          ),
+          constraints: BoxConstraints(minHeight: tokens.minimumTouchTarget),
           child: Padding(
             padding: EdgeInsets.symmetric(
               horizontal: tokens.space4,
-              vertical: tokens.space8,
+              vertical: tokens.space4,
             ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,

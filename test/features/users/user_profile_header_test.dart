@@ -119,6 +119,16 @@ void main() {
         tester.getRect(avatar).bottom,
         greaterThan(tester.getRect(cover).bottom),
       );
+      final name = tester.getRect(find.text('温柔测试员'));
+      expect(
+        name.top - tester.getRect(avatar).bottom,
+        inInclusiveRange(8, 16),
+        reason: '头像嵌入封面的部分不应继续占用昵称上方的布局空间',
+      );
+      expect(
+        tester.getRect(find.byType(UserProfileStats)).bottom,
+        lessThanOrEqualTo(name.top),
+      );
       expect(tester.takeException(), isNull);
       await expectLater(
         header,

@@ -9,7 +9,7 @@
 ## 最终行为
 
 - 本人和公开主页保留封面、头像、昵称与简介；本人保留等级进度和明确数值。资料头采用单层表面，空简介不占位，不展示创作统计和重复概览。
-- 本人的编辑资料收纳到账号设置的“账号”分组首项，进入既有 `/me/edit`。主页移除编辑按钮并收紧对应空间；签名在昵称／等级下面独立左对齐，保留上下留白。
+- 本人的编辑资料收纳到账号设置的“账号”分组首项，进入既有 `/me/edit`。主页移除编辑按钮并收紧对应空间；头像嵌入封面的部分不再额外占位，昵称靠近头像，经验数值利用昵称行右侧空间，放不下时自然换行。签名在昵称／等级下面独立左对齐，保留间隔；完整进度条跟随签名，不再为经验数值单独保留底部一行。
 - 本人统计为关注、粉丝和温油。温油读取现有钱包余额；收藏夹、表情包、油卡单独成组。油卡仍进入原账务路由，入口下不重复余额。公开他人主页不读取私有余额，继续展示公开收到加油。
 - 本人内容为主题、动态、参与、回复，默认主题；收藏从独立工具区进入统一收藏页。公开页将动态直接纳入内容标签，参与、回复与收藏仍服从隐私投影。
 - 主页标签吸顶，内部列表预留实际标签高度；大字号不使用固定标签高度，不截断统计标签。本人已访问内容继续缓存，刷新保留页面快照。
@@ -24,6 +24,8 @@
 
 负责人在 22:16 的真实粉丝列表截图中再次指出关注按钮过大、互关行缺少右侧更多菜单。复现路径为“我的 → 粉丝”，对比回关行与互相关注行：前者按钮占据大色块，后者右侧菜单消失。预期是更紧凑的按钮且菜单始终位于行右侧。代码确认固定 96dp 宽／48dp 可见高及 `if (!following)` 条件造成对应现象；该轮继续按候选处理，待负责人复核。
 
+负责人随后在本人资料区截图指出昵称离头像过远，并圈出昵称、签名右侧的大片空白。复现路径为“我的”，使用有封面、短昵称与短签名的资料：头像绘制向上移动 24dp，但旧布局仍保留完整 72dp 高度，产生 32dp 的头像底部至昵称间隔；经验数值还单独占一行。当前移除重叠部分的空占位、收紧统计上下间距，并将经验数值放到昵称行右侧，进度条保留整宽。长昵称、大字号自动换行，签名保持独立间距。该轮为继续排查后的候选，未记录负责人通过。
+
 ## 开发预览
 
 - 使用 `real-history-preview`，runId 为 `preview_0bd5ad2bffd8b1c5743c862a`，快照时间 `2026-09-26T04:17:55Z`。
@@ -31,6 +33,7 @@
 - Debug 包 `site.wenyou.app.debug`，ARM64 设备 `4b9c39b5`。首次构建因设备已有 build 97、分支 build 96 而安装失败；核对包名后使用保留数据的覆盖安装，未卸载或清数据。后续复用 Flutter machine 热重载。
 - 2026-09-26 21:33 初次持续会话就绪，设备 APK SHA-256 `2c737332d89164fdb44e0d7f770903da79846fed6bbb6b5bbfac9c73b61ded08`。此哈希只对应初装包，不能代表后续热重载画面。
 - 热重载的具体源码摘要、runId、进程和包更新时间由本机私有 `events.jsonl` 记录；不提交控制 token、真实账号信息或设备私人画面。
+- 资料头空白调整时，22:32 的热重载请求超时，随后 ADB 设备列表为空，22:35 会话转为失败。此前 22:27 已加载关系列表候选；这次头像间距与经验同行改动尚未加载到设备，需设备重新连接后恢复同一批次。未将离线状态误记为热重载成功。
 
 ## 自动检查
 
@@ -44,6 +47,8 @@
 
 关系列表反馈补充：`own_relation_lists_page_test.dart` 新增按钮紧凑表面／外缘点击、已关注更多菜单、互关更多菜单 3 项精确回归。旧实现分别报告 96dp 宽度超限与两个状态找不到 `more-u`；当前连同 `test/core/widgets/wenyou_async_button_test.dart`、`test/features/social/own_relation_lists_controller_test.dart` 共 47 项通过。核对 32dp 可见高度、48dp 点击区域、回关后菜单右边界稳定、大字号与在途尺寸。受影响 4 个 Dart 文件分析零问题；另启用 `WENYOU_RELATION_SCREENSHOTS=1` 单独运行渲染用例，通过明暗主题、窄屏大字的列表及菜单图像生成，并目视复核普通亮色和两倍字号暗色列表。负责人原场景尚待复核。
 
+资料头空白反馈补充：`user_profile_header_test.dart` 的亮色／黑夜头像间距回归在旧实现下均失败（实际 32dp）；`me_page_visual_test.dart` 的普通字号经验同行回归在数值仍独占底部一行时均失败。最终实现运行 `test/features/users/user_profile_header_test.dart`、`user_profile_header_visual_test.dart`、`me_page_visual_test.dart`、`public_user_page_test.dart`、`me_page_test.dart` 共 89 项通过；断言头像至昵称 8–16dp、经验与昵称同行、签名保留至少 12dp 间隔、签名到进度条 8–12dp。3 个改动 Dart 文件分析零问题，模块文档和 diff 空白检查通过。更新并目视复核 360dp 明暗主页及 320dp 两倍字号 Golden；未生成独立 APK，真机待连接与负责人验收。
+
 - 主页：`test/features/users/me_page_test.dart`、`me_page_visual_test.dart`、`public_user_page_test.dart`、`user_profile_header_test.dart`、`user_profile_header_visual_test.dart`。
 - 搜索与创作：`test/features/search/search_page_test.dart`、`test/features/editor/thread_compose_page_test.dart`、`test/features/moments/moment_pages_test.dart`、`moment_pending_page_test.dart`、`moment_bookmark_folder_page_test.dart`。
 - 菜单与关系：`test/features/notifications/notifications_page_test.dart`、`test/features/direct_messages/direct_conversation_page_test.dart`、`test/features/social/own_relation_lists_page_test.dart`、`user_relation_list_page_test.dart`、`bookmark_list_page_test.dart`。
@@ -52,7 +57,7 @@
 
 ## 真机检查
 
-1. 有封面、无封面、长昵称、长签名及两倍字号：封面与进度保留，主页不展示编辑按钮；从设置“账号”首项进入原资料页并可返回，签名与头像分层，工具均可点按。
+1. 有封面、无封面、长昵称、长签名及两倍字号：封面与进度保留，头像与昵称靠近，普通字号经验数值利用昵称右侧空间，空间不足时换行，签名保留独立间距。主页不展示编辑按钮；从设置“账号”首项进入原资料页并可返回，工具均可点按。
 2. 温油显示本人当前余额，点击温油或油卡进入同一账务页；公开他人页不展示私有余额。
 3. 滚动本人／公开主页，标签吸顶时第一条内容不被遮挡；切换动态、主题、参与、回复与隐私允许的收藏，刷新后没有旧账号内容。
 4. 搜索长结果后改词或换分类；打开主题／动态创作，软键盘弹出后发布、保存和待确认操作可达。

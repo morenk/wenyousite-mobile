@@ -49,7 +49,20 @@ void main() {
       expect(find.byType(LinearProgressIndicator), findsOneWidget);
       final bio = tester.getRect(find.text('一起写故事。'));
       final name = tester.getRect(find.text('温柔测试员').first);
+      if (visual.scale == 1) {
+        final avatar = tester.getRect(
+          find.byKey(const ValueKey('profile-avatar-温柔测试员')),
+        );
+        expect(name.top - avatar.bottom, inInclusiveRange(8, 16));
+        final experience = tester.getRect(find.text('150 / 200 经验'));
+        expect(experience.center.dy, closeTo(name.center.dy, 1));
+        expect(experience.left, greaterThan(name.right + 8));
+      }
       expect(bio.top, greaterThanOrEqualTo(name.bottom + 12));
+      expect(
+        tester.getRect(find.byType(LinearProgressIndicator)).top - bio.bottom,
+        inInclusiveRange(8, 12),
+      );
       expect(find.byKey(const Key('me-open-edit-profile')), findsNothing);
       final tools = find.byKey(const Key('me-personal-tools'));
       expect(
