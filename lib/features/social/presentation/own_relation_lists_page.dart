@@ -346,7 +346,7 @@ class _OwnRelationRow extends StatelessWidget {
       builder: (context, constraints) {
         final scale = MediaQuery.textScalerOf(context).scale(1);
         // 以身份和完整操作文字所需宽度决定换行，不缩小大字或命中区。
-        final actionWidth = tokens.space24 * 4 * scale;
+        final actionWidth = tokens.space20 * 4 * scale;
         final wrap =
             constraints.maxWidth <
             actionWidth +
@@ -405,7 +405,7 @@ class _OwnRelationRow extends StatelessWidget {
                 label: label,
                 semanticLabel:
                     '${item.username}，$label${following ? '，打开关系操作' : ''}',
-                compact: true,
+                dense: true,
                 variant: following
                     ? WenyouAsyncButtonVariant.tonal
                     : WenyouAsyncButtonVariant.filled,
@@ -417,13 +417,12 @@ class _OwnRelationRow extends StatelessWidget {
                     : () => onAct(OwnRelationAction.follow),
               ),
             ),
-            if (!following)
-              IconButton(
-                key: ValueKey('more-${item.userId}'),
-                tooltip: '${item.username}的更多操作',
-                onPressed: disabled ? null : onMenu,
-                icon: const WenyouIcon(WenyouIconIds.actionMore),
-              ),
+            IconButton(
+              key: ValueKey('more-${item.userId}'),
+              tooltip: '${item.username}的更多操作',
+              onPressed: disabled ? null : onMenu,
+              icon: const WenyouIcon(WenyouIconIds.actionMore),
+            ),
           ],
         );
         return Column(

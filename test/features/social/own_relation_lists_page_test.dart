@@ -23,6 +23,61 @@ import '../../support/deterministic_test_fonts.dart';
 
 void main() {
   setUpAll(loadDeterministicTestFonts);
+  testWidgets('关注按钮表面紧凑且边缘触控仍可回关', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(390, 900);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    final repository = _Repository(following: false);
+    await tester.pumpWidget(_app(repository));
+    await tester.pumpAndSettle();
+    final button = find.byKey(const ValueKey('follow-u'));
+    expect(tester.getSize(button).width, lessThanOrEqualTo(80));
+    expect(tester.getSize(button).height, greaterThanOrEqualTo(48));
+    final surface = find.descendant(
+      of: button,
+      matching: find.byType(Material),
+    );
+    expect(tester.getSize(surface).height, lessThanOrEqualTo(32));
+    final more = find.byKey(const ValueKey('more-u'));
+    final moreRect = tester.getRect(more);
+    final rect = tester.getRect(button);
+    await tester.tapAt(Offset(rect.center.dx, rect.top + 2));
+    await tester.pumpAndSettle();
+    expect(repository.writes, ['follow']);
+    expect(find.text('互相关注'), findsOneWidget);
+    expect(more.hitTestable(), findsOneWidget);
+    expect(tester.getRect(more).right, moreRect.right);
+  });
+
+  for (final mutual in [false, true]) {
+    testWidgets('已关注与互关均保留右侧更多菜单 mutual=$mutual', (tester) async {
+      final repository = _Repository()..followedBy = mutual;
+      await tester.pumpWidget(_app(repository));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('关注 1'));
+      await tester.pumpAndSettle();
+      final more = find.byKey(const ValueKey('more-u'));
+      expect(more.hitTestable(), findsOneWidget);
+      expect(
+        tester.getRect(more).left,
+        greaterThanOrEqualTo(
+          tester.getRect(find.byKey(const ValueKey('status-u'))).right,
+        ),
+      );
+      await tester.tap(more);
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('unfollow-u')), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('removeFollower-u')),
+        mutual ? findsOneWidget : findsNothing,
+      );
+      await tester.tap(find.byKey(const Key('relation-sheet-close')));
+      await tester.pumpAndSettle();
+      expect(repository.writes, isEmpty);
+    });
+  }
+
   testWidgets('粉丝深链默认粉丝页签，主按钮回关后变浅底状态，菜单取消保留粉丝', (tester) async {
     final repository = _Repository(following: false);
     await tester.pumpWidget(_app(repository));
@@ -212,14 +267,16 @@ void main() {
       await tester.pumpWidget(_app(repository, scale: 2, dark: dark));
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
-      for (final key in ['status-u']) {
+      for (final key in ['status-u', 'more-u']) {
         final finder = find.byKey(ValueKey(key));
         expect(tester.getSize(finder).height, greaterThanOrEqualTo(48));
-        expect(
-          tester.widget<WenyouAsyncButton>(finder).variant,
-          WenyouAsyncButtonVariant.tonal,
-        );
       }
+      expect(
+        tester
+            .widget<WenyouAsyncButton>(find.byKey(const ValueKey('status-u')))
+            .variant,
+        WenyouAsyncButtonVariant.tonal,
+      );
     });
   }
 
@@ -596,7 +653,7 @@ class _Repository
 }
 
 Future<void> _openAction(WidgetTester tester, String key) async {
-  await tester.tap(find.byKey(const ValueKey('status-u')));
+  await tester.tap(find.byKey(const ValueKey('more-u')));
   await tester.pumpAndSettle();
   await tester.tap(find.byKey(ValueKey(key)));
 }

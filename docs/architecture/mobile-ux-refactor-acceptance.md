@@ -15,12 +15,14 @@
 - 主页标签吸顶，内部列表预留实际标签高度；大字号不使用固定标签高度，不截断统计标签。本人已访问内容继续缓存，刷新保留页面快照。
 - 搜索输入与分类固定，结果独立滚动；主题和动态整页创作的提交统一在右上角。待确认与成功后的本机收尾继续原流程，不重复创建。楼层／回复半屏编辑器不改提交位置。
 - 修改密码、邮箱、登录终端沿用个人区容器；标签、邀请、导出、用户名与申诉复用共享 Sheet。成员权限管理不调整。
-- 通知删除、动态删除、私聊归档、草稿删除使用统一菜单，保留原确认。已关注状态按钮直接打开关系菜单，取消重复更多按钮；等级使用共享徽章。
+- 通知删除、动态删除、私聊归档、草稿删除使用统一菜单，保留原确认。关系列表所有状态均保留右侧更多菜单，关注与回关采用紧凑可见表面并保留触控区域；已关注状态也可打开同一菜单。等级使用共享徽章。
 - 重试统一为“重试”；普通分页结束不占提示行；草稿开关状态、重复表单标题及主题恢复／成功常驻横幅精简。输入约束、权限、覆盖风险、错误和恢复路径保留。
 
 ## 负责人反馈约束
 
 负责人已指出首轮真实封面页面布局不合格，重点是编辑按钮、签名与资料区分组。随后明确要求封面、进度条必须保留，不能用删功能代替重排；当前实现已恢复并按此约束继续验证。负责人进一步指出编辑资料按钮过大，要求完全收纳到设置列表；当前按此要求复用原修改资料页。未将前两轮画面记录为验收通过。
+
+负责人在 22:16 的真实粉丝列表截图中再次指出关注按钮过大、互关行缺少右侧更多菜单。复现路径为“我的 → 粉丝”，对比回关行与互相关注行：前者按钮占据大色块，后者右侧菜单消失。预期是更紧凑的按钮且菜单始终位于行右侧。代码确认固定 96dp 宽／48dp 可见高及 `if (!following)` 条件造成对应现象；该轮继续按候选处理，待负责人复核。
 
 ## 开发预览
 
@@ -40,6 +42,8 @@
 
 当前尚未执行最终完整门禁，也未为这轮持续反馈生成独立候选 APK。依赖同步、预览工具改动和最终 UI 在正式候选前仍须按风险运行 `npm run check:apk`；原初装包不能充当最终源码的候选证据。
 
+关系列表反馈补充：`own_relation_lists_page_test.dart` 新增按钮紧凑表面／外缘点击、已关注更多菜单、互关更多菜单 3 项精确回归。旧实现分别报告 96dp 宽度超限与两个状态找不到 `more-u`；当前连同 `test/core/widgets/wenyou_async_button_test.dart`、`test/features/social/own_relation_lists_controller_test.dart` 共 47 项通过。核对 32dp 可见高度、48dp 点击区域、回关后菜单右边界稳定、大字号与在途尺寸。受影响 4 个 Dart 文件分析零问题；另启用 `WENYOU_RELATION_SCREENSHOTS=1` 单独运行渲染用例，通过明暗主题、窄屏大字的列表及菜单图像生成，并目视复核普通亮色和两倍字号暗色列表。负责人原场景尚待复核。
+
 - 主页：`test/features/users/me_page_test.dart`、`me_page_visual_test.dart`、`public_user_page_test.dart`、`user_profile_header_test.dart`、`user_profile_header_visual_test.dart`。
 - 搜索与创作：`test/features/search/search_page_test.dart`、`test/features/editor/thread_compose_page_test.dart`、`test/features/moments/moment_pages_test.dart`、`moment_pending_page_test.dart`、`moment_bookmark_folder_page_test.dart`。
 - 菜单与关系：`test/features/notifications/notifications_page_test.dart`、`test/features/direct_messages/direct_conversation_page_test.dart`、`test/features/social/own_relation_lists_page_test.dart`、`user_relation_list_page_test.dart`、`bookmark_list_page_test.dart`。
@@ -53,4 +57,5 @@
 3. 滚动本人／公开主页，标签吸顶时第一条内容不被遮挡；切换动态、主题、参与、回复与隐私允许的收藏，刷新后没有旧账号内容。
 4. 搜索长结果后改词或换分类；打开主题／动态创作，软键盘弹出后发布、保存和待确认操作可达。
 5. 通知删除、动态删除、关系管理与草稿覆盖逐一取消确认，验证不写入；普通 Sheet 在窄屏和键盘下可滚动到确认入口。
+   关系列表额外核对关注／回关按钮大小、已关注／互相关注右侧菜单及回关前后对齐；菜单中的取消关注、移除粉丝、拉黑与举报仍可达，关闭菜单不改变关系。
 6. 用户确认本批次布局后，再对最终源码运行集成门禁；需要独立安装候选时按风险使用仓库规定入口。持续热重载不等于负责人验收通过。
