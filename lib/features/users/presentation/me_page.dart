@@ -644,6 +644,15 @@ class _AccountSecurityPanel extends StatelessWidget {
       children: [
         WenyouSettingsLink(
           enabled: !disabled,
+          key: const Key('me-open-edit-profile'),
+          icon: WenyouIconIds.actionEdit,
+          title: '编辑资料',
+          onTap: disabled
+              ? null
+              : () => context.pushNamed(AppRouteNames.meEdit),
+        ),
+        WenyouSettingsLink(
+          enabled: !disabled,
           key: const Key('me-open-blocks'),
           icon: WenyouIconIds.actionBlock,
           title: '管理黑名单',

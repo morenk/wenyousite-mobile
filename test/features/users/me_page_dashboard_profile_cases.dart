@@ -69,13 +69,15 @@ void registerMePageDashboardProfileCases() {
       tester.getSize(find.byKey(const Key('me-open-followers'))).width,
       closeTo(followingWidth, 0.01),
     );
-    final editRect = tester.getRect(
-      find.byKey(const Key('me-open-edit-profile')),
-    );
     final bookmarkRect = tester.getRect(
       find.byKey(const Key('me-open-bookmarks')),
     );
-    expect(bookmarkRect.top, greaterThan(editRect.bottom));
+    expect(
+      bookmarkRect.top,
+      greaterThan(
+        tester.getRect(find.byKey(const Key('me-profile-header'))).bottom,
+      ),
+    );
     expect(
       find.descendant(
         of: find.byKey(const Key('me-profile-header')),
@@ -90,7 +92,8 @@ void registerMePageDashboardProfileCases() {
       ),
       findsOneWidget,
     );
-    expect(find.byKey(const Key('me-open-edit-profile')), findsOneWidget);
+    expect(find.byKey(const Key('me-open-edit-profile')), findsNothing);
+    expect(find.text('编辑资料'), findsNothing);
     expect(find.byKey(const Key('me-open-public-profile')), findsNothing);
     expect(find.text('预览公开主页'), findsNothing);
     expect(find.byKey(const Key('me-open-settings')), findsOneWidget);

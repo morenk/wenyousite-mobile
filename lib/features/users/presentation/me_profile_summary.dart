@@ -26,12 +26,6 @@ class MeProfileSummary extends StatelessWidget {
     levelProgressLabel: profile.nextLevelExperience == null
         ? '已达到当前最高等级'
         : '${profile.experience} / ${profile.nextLevelExperience} 经验',
-    actionsBesideAvatar: true,
-    actions: OutlinedButton(
-      key: const Key('me-open-edit-profile'),
-      onPressed: () => context.pushNamed('me-edit'),
-      child: const Text('编辑资料'),
-    ),
     stats: [
       UserProfileStatItem(
         key: const Key('me-open-following'),

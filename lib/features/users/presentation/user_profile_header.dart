@@ -44,7 +44,6 @@ class UserProfileHeader extends StatelessWidget {
     this.levelProgress,
     this.levelProgressLabel,
     this.actions,
-    this.actionsBesideAvatar = false,
     super.key,
   });
 
@@ -58,7 +57,6 @@ class UserProfileHeader extends StatelessWidget {
   final double? levelProgress;
   final String? levelProgressLabel;
   final Widget? actions;
-  final bool actionsBesideAvatar;
 
   @override
   Widget build(BuildContext context) {
@@ -112,18 +110,7 @@ class UserProfileHeader extends StatelessWidget {
                       ),
                     ),
                     SizedBox(width: tokens.space12),
-                    Expanded(
-                      child: largeText
-                          ? identity
-                          : Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                statsRow,
-                                if (actionsBesideAvatar && actions != null)
-                                  actions!,
-                              ],
-                            ),
-                    ),
+                    Expanded(child: largeText ? identity : statsRow),
                   ],
                 ),
                 if (!largeText) ...[SizedBox(height: tokens.space8), identity],
@@ -153,7 +140,7 @@ class UserProfileHeader extends StatelessWidget {
                     label: levelProgressLabel ?? '等级进度',
                   ),
                 ],
-                if (actions != null && (!actionsBesideAvatar || largeText)) ...[
+                if (actions != null) ...[
                   SizedBox(height: tokens.space8),
                   actions!,
                 ],

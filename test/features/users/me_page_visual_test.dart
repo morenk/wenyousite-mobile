@@ -50,11 +50,13 @@ void main() {
       final bio = tester.getRect(find.text('一起写故事。'));
       final name = tester.getRect(find.text('温柔测试员').first);
       expect(bio.top, greaterThanOrEqualTo(name.bottom + 12));
-      final edit = find.byKey(const Key('me-open-edit-profile'));
+      expect(find.byKey(const Key('me-open-edit-profile')), findsNothing);
       final tools = find.byKey(const Key('me-personal-tools'));
       expect(
         tester.getRect(tools).top,
-        greaterThan(tester.getRect(edit).bottom),
+        greaterThan(
+          tester.getRect(find.byKey(const Key('me-profile-header'))).bottom,
+        ),
       );
       await expectLater(
         find.byKey(const Key('me-visual')),
