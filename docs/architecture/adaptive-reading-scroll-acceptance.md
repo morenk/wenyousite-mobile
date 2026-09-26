@@ -1,6 +1,6 @@
 # 自适应阅读滑块验收
 
-状态：负责人验收通过。2026-09-27 治理协调任务传达负责人明确回复“滑块验收过了可以直接合并分支并清理”，本批贴边、无底衬、1 秒时序、灵敏度及楼中楼组底色反馈获验收。最终集成检查完成后合并 PR #66；工作区和分支暂保留供正式签名 Release 测试包构建。Profile 未实测，不宣称性能验收通过。
+状态：负责人验收通过。2026-09-27 治理协调任务传达负责人明确回复“滑块验收过了可以直接合并分支并清理”，本批贴边、无底衬、1 秒时序、灵敏度及楼中楼组底色反馈获验收。最终完整门禁已通过，按授权合并 PR #66；工作区和分支暂保留，等待治理核验主工作区同树并完成正式签名 Release 测试包归档后再清理。Profile 未实测，不宣称性能验收通过。
 
 ## 2026-09-27 反馈收尾与集成
 
@@ -11,7 +11,19 @@
 - 本轮不启动或重启真机、安装或构建 APK。正式签名 Release 测试包由治理任务在完成交接后统一构建，旧 build 97 的 APK 哈希不代表当前源码。
 ## Foundation 7.2.1 迁移
 
-本轮在只读镜像执行 `git fetch origin --tags`，确认最新正式 Tag `v7.2.1` 解析为 `c7729bc9e28c608c6c3a76cdc088e3c5b6a5a663`。阅读 CHANGELOG 和 Flutter profile 后，独立 chore 升级 `pubspec.yaml`、锁文件、版本断言及当前说明。已移除的 `WenyouReadingQuickScrollContract`、`WenyouAdaptiveReadingScrollContract` 与 `actionReadingQuickScroll` 不再被应用、测试或工具消费；颜色、圆角、字体和无障碍基础继续来自通用主题。完整门禁绑定最终应用源码另行补充。
+本轮在只读镜像执行 `git fetch origin --tags`，确认最新正式 Tag `v7.2.1` 解析为 `c7729bc9e28c608c6c3a76cdc088e3c5b6a5a663`。阅读 CHANGELOG 和 Flutter profile 后，独立 chore 升级 `pubspec.yaml`、锁文件、版本断言及当前说明。已移除的 `WenyouReadingQuickScrollContract`、`WenyouAdaptiveReadingScrollContract` 与 `actionReadingQuickScroll` 不再被应用、测试或工具消费；颜色、圆角、字体和无障碍基础继续来自通用主题。完整门禁通过，源码绑定与交接见下节。
+
+## 最终完整门禁与构建交接
+
+2026-09-27，在本 Windows Worktree 执行 `npm run check -- -TestConcurrency 2`，退出码为 0。完整门禁绑定应用源码提交 `9b6cb303dc59ec1efaf3d7563a70dc6198ec2a81`（树 `090a171df233d1802bc9cfa7a1fa367b1ca31e58`）；之后仅补充本文及 CHANGELOG，不改变应用、测试、依赖或工具。
+
+- 格式、应用与生成客户端全量静态分析、架构、21 个模块文档、API 覆盖、契约校验和客户端再生成一致性全部通过。
+- Flutter 全量回归 4,941 项通过，1 项显式跳过：`test/core/diagnostics/diagnostic_live_receipt_test.dart` 的 Sentry 在线收件验收，本轮未开启真实接收测试。
+- Windows 发布工具测试 47 项全部通过。完整日志在上述独立证据目录 `final-check.log`，文件摘要与合并交接记录另存 `evidence-sha256.json`、`handoff.json`。
+- 图片查看器、个人主页及讨论目标过渡的应用源码与已合并 `origin/dev` 一致；本任务相对 `dev` 未改动开发工具，不纳入 PR #68 或旧 Tab 全宽筛选行。
+- 负责人已明确验收滑块及本批反馈并授权合并 `dev`。Profile 帧时间未实测；自动测试与 Golden 不作为性能验收。
+- 本轮版本仍为 `0.8.0-dev.2+97`。治理任务将在主工作区 `dev` fast-forward 后核验与本任务最终源码树一致，复用同应用源码的完整门禁，以 build-only 入口构建正式签名 Release 测试包。当前不构建、不安装、不上传、不发布、不打应用 Tag。
+- 本任务工作区和分支保留，等待治理完成构建与制品归档后再清理。旧 `99aa8672` 的 Debug APK 已另存独立证据目录 `historical-build97-debug.apk`，SHA-256 为 `00534DEADAFD879394BF69F4F42A9B2AA66C61472CBC3EC05DDA5529D5CAFC9A`；它仅为历史候选，不代表最终源码。
 
 ## 2026-09-26 真机反馈批次（历史记录）
 
