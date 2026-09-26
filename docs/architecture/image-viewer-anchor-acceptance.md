@@ -31,6 +31,7 @@
 - 全仓 `flutter analyze --no-pub` 零问题，`docs:check` 通过。日志 `artifacts-image-anchor-full-analyze.log`。开发反馈阶段不把此前其他源码的完整门禁或 APK 哈希用于本次修改。
 - 候选源码 `eea809ba4b5b18b7367285ff2c177e973b7e9a1c` 已推送为 [Draft PR #67](https://github.com/morenk/wenyousite-mobile/pull/67)，目标 `dev`，没有合并。
 - 该提交的共享查看器补丁通过 Git diff/apply 交接到原 Debug 工作区，保留滑块及预览底色的未提交变更。首次请求热重载时现有 attach 连接断开，Android PID 仍为 `15535`；设备 `mWakefulness=Dozing`，短暂唤醒后 VM 可读，随后再次休眠。尚未把本次热重载记为成功，等待设备保持亮屏后重连验证。
+- 负责人随后要求继续应用。2026-09-26 18:37，重新 attach 并恢复原 Activity 到前台后，实际热重载 1/4574 个库；Android PID 仍为 `15535`。VM 源码核验 `_pageController.jumpToPage(target)` 已载入、旧控制器替换逻辑已移除、`keepPage: false` 已载入；运行证据为 `build/candidates/image-anchor-runtime.json`。初始 attach 的“Reloaded 0 libraries”未作为生效依据。没有重启进程或重装 APK，当前图片需关闭再打开来复验首次进入；负责人手动结果仍待确认。
 
 ## 负责人复验
 
