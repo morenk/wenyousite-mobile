@@ -1,6 +1,6 @@
 import 'dart:math' as math;
 
-/// 只接收主阅读列表的手指位移；阈值由调用方传入共享契约。
+/// 只接收主阅读列表的手指位移；阈值由调用方传入移动端统一配置。
 class ReadingScrollVelocityTracker {
   ReadingScrollVelocityTracker({
     required this.window,
@@ -15,12 +15,34 @@ class ReadingScrollVelocityTracker {
        assert(viewportVelocityFactor > 0);
 
   final Duration window;
-  final Duration minimumDuration;
-  final double minimumDistance;
-  final double minimumVelocity;
-  final double viewportVelocityFactor;
+  Duration minimumDuration;
+  double minimumDistance;
+  double minimumVelocity;
+  double viewportVelocityFactor;
   final _samples = <({Duration at, double pixels})>[];
   double _direction = 0;
+
+  void updateThresholds({
+    required Duration minimumDuration,
+    required double minimumDistance,
+    required double minimumVelocity,
+    required double viewportVelocityFactor,
+  }) {
+    assert(window >= minimumDuration && minimumDuration > Duration.zero);
+    assert(minimumDistance > 0 && minimumVelocity > 0);
+    assert(viewportVelocityFactor > 0);
+    if (this.minimumDuration == minimumDuration &&
+        this.minimumDistance == minimumDistance &&
+        this.minimumVelocity == minimumVelocity &&
+        this.viewportVelocityFactor == viewportVelocityFactor) {
+      return;
+    }
+    this.minimumDuration = minimumDuration;
+    this.minimumDistance = minimumDistance;
+    this.minimumVelocity = minimumVelocity;
+    this.viewportVelocityFactor = viewportVelocityFactor;
+    reset();
+  }
 
   void reset() {
     _samples.clear();

@@ -22,8 +22,8 @@ void main() {
     await tester.pumpAndSettle();
     expect(tester.getRect(find.byKey(const Key('reading-body'))), before);
     expect(
-      tester.getCenter(find.byKey(const Key('reading-progress-indicator'))),
-      center,
+      tester.getCenter(find.byKey(const Key('reading-progress-indicator'))).dy,
+      center.dy,
     );
     expect(state.scroll.offset, 240);
     expect(state.navigationCount, 0);
@@ -443,7 +443,7 @@ void main() {
       await tester.pumpAndSettle();
       final thumb = find.byKey(const Key('reading-quick-scroll-slider'));
       final rect = tester.getRect(thumb);
-      expect(rect.right, lessThanOrEqualTo(320 - 24 - 8));
+      expect(rect.right, lessThanOrEqualTo(320 - 24));
       expect(rect.size, const Size(48, 64));
       state.quick.beginDrag(0.4);
       await tester.pumpAndSettle();

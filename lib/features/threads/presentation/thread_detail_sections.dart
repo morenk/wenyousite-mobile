@@ -586,7 +586,6 @@ class _FloorInlineReplyPreview extends StatelessWidget {
     final visibleReplies = replies.take(_previewLimit).toList(growable: false);
     final replyCards = <Widget>[
       for (var index = 0; index < visibleReplies.length; index++) ...[
-        if (index > 0) Divider(height: 1, color: tokens.border),
         _FloorInlineReplyCard(
           floorId: floorId,
           reply: visibleReplies[index],

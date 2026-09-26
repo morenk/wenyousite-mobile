@@ -3,10 +3,10 @@ import 'dart:ui' show lerpDouble;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/reading_quick_scroll_controller.dart';
+import 'package:wenyousite_mobile/core/widgets/reading_scroll_spec.dart';
 
 class ReadingQuickScrollOverlay extends StatefulWidget {
   const ReadingQuickScrollOverlay({
@@ -85,31 +85,49 @@ class _ReadingQuickScrollOverlayState extends State<ReadingQuickScrollOverlay>
       _opacity.value = visible ? 1 : 0;
     } else {
       if (_expandedTarget != expanded) {
-        _shape.animateTo(
+        _animateFromCurrent(
+          _shape,
           expanded ? 1 : 0,
-          duration: Duration(
-            milliseconds: expanded
-                ? WenyouAdaptiveReadingScrollContract.expandDurationMs
-                : WenyouAdaptiveReadingScrollContract.collapseDurationMs,
-          ),
-          curve: expanded ? Curves.easeOutCubic : Curves.easeInOutCubic,
+          expanded
+              ? ReadingScrollSpec.expandDurationMs
+              : ReadingScrollSpec.collapseDurationMs,
+          expanded ? Curves.easeOutCubic : Curves.easeInOutCubic,
         );
       }
       if (_visibleTarget != visible) {
-        if (visible) {
-          _opacity.value = 1;
-        } else {
-          _opacity.animateTo(
-            0,
-            duration: const Duration(
-              milliseconds: WenyouAdaptiveReadingScrollContract.fadeDurationMs,
-            ),
-          );
-        }
+        _animateFromCurrent(
+          _opacity,
+          visible ? 1 : 0,
+          visible
+              ? ReadingScrollSpec.appearDurationMs
+              : ReadingScrollSpec.fadeDurationMs,
+          visible ? Curves.easeOutCubic : Curves.easeInOutCubic,
+        );
       }
     }
     _expandedTarget = expanded;
     _visibleTarget = visible;
+  }
+
+  void _animateFromCurrent(
+    AnimationController animation,
+    double target,
+    int fullDurationMs,
+    Curve curve,
+  ) {
+    // 中途反向只走剩余距离，显隐与形变都从当前画面接续。
+    final distance = (target - animation.value).abs();
+    if (distance == 0) {
+      animation.stop();
+      return;
+    }
+    animation.animateTo(
+      target,
+      duration: Duration(
+        milliseconds: math.max(1, (fullDurationMs * distance).round()),
+      ),
+      curve: curve,
+    );
   }
 
   Rect? _rect(GlobalKey? key) {
@@ -174,12 +192,14 @@ class _ReadingQuickScrollOverlayState extends State<ReadingQuickScrollOverlay>
   List<Widget> _controls(BuildContext context, Size size) {
     if (_pointer != null && _dragViewportSize != size) _cancelDrag();
     final tokens = context.wenyouTokens;
-    const width = WenyouAdaptiveReadingScrollContract.minimumTargetWidth;
-    const height = WenyouAdaptiveReadingScrollContract.minimumTargetHeight;
-    const gap = WenyouAdaptiveReadingScrollContract.edgeGap;
+    const width = ReadingScrollSpec.minimumTargetWidth;
+    const height = ReadingScrollSpec.minimumTargetHeight;
+    const gap = ReadingScrollSpec.edgeGap;
     final media = MediaQuery.of(context);
-    final right =
-        math.max(media.systemGestureInsets.right, media.padding.right) + gap;
+    final right = math.max(
+      media.systemGestureInsets.right,
+      media.padding.right,
+    );
     var top = math.max(media.padding.top, media.systemGestureInsets.top) + gap;
     var bottom =
         size.height -
@@ -202,6 +222,10 @@ class _ReadingQuickScrollOverlayState extends State<ReadingQuickScrollOverlay>
         Rect.fromLTWH(size.width - right - width, top, width, bottom - top);
     final travel = track.height - height;
     final thumbTop = track.top + travel * _controller.fraction;
+    final collapsedCenterX =
+        size.width - media.padding.right - ReadingScrollSpec.collapsedWidth / 2;
+    final expandedCenterX =
+        track.right - gap - ReadingScrollSpec.expandedWidth / 2;
     final interactive = _controller.isOpen;
     final corner = BorderRadius.circular(tokens.radiusPill);
     return [
@@ -272,40 +296,45 @@ class _ReadingQuickScrollOverlayState extends State<ReadingQuickScrollOverlay>
                   animation: Listenable.merge([_shape, _opacity]),
                   builder: (context, _) => Opacity(
                     opacity: _opacity.value,
-                    child: Center(
-                      child: Container(
-                        width: WenyouAdaptiveReadingScrollContract
-                            .expandedBackingWidth,
-                        height: WenyouAdaptiveReadingScrollContract
-                            .expandedBackingHeight,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          borderRadius: corner,
-                          color: tokens.panel.withValues(
-                            alpha:
-                                WenyouAdaptiveReadingScrollContract
-                                    .expandedBackingOpacity *
-                                _shape.value,
-                          ),
-                          border: _focus.hasFocus
-                              ? Border.all(color: tokens.focus)
-                              : null,
-                        ),
+                    // 触摸区向左扩展，不能用它的中心作为细条的绘制位置。
+                    // 细态贴页面安全边缘；展开才让入手势区内侧并留出 edgeGap。
+                    child: Transform.translate(
+                      offset: Offset(
+                        lerpDouble(
+                              collapsedCenterX,
+                              expandedCenterX,
+                              _shape.value,
+                            )! -
+                            track.center.dx,
+                        0,
+                      ),
+                      child: Center(
                         child: Container(
-                          key: const Key('reading-progress-indicator'),
-                          width: lerpDouble(
-                            WenyouAdaptiveReadingScrollContract.collapsedWidth,
-                            WenyouAdaptiveReadingScrollContract.expandedWidth,
-                            _shape.value,
-                          ),
-                          height: lerpDouble(
-                            WenyouAdaptiveReadingScrollContract.collapsedHeight,
-                            WenyouAdaptiveReadingScrollContract.expandedHeight,
-                            _shape.value,
-                          ),
+                          width: ReadingScrollSpec.focusOutlineWidth,
+                          height: ReadingScrollSpec.focusOutlineHeight,
+                          alignment: Alignment.center,
                           decoration: BoxDecoration(
-                            color: tokens.brandForeground,
                             borderRadius: corner,
+                            border: _focus.hasFocus
+                                ? Border.all(color: tokens.focus)
+                                : null,
+                          ),
+                          child: Container(
+                            key: const Key('reading-progress-indicator'),
+                            width: lerpDouble(
+                              ReadingScrollSpec.collapsedWidth,
+                              ReadingScrollSpec.expandedWidth,
+                              _shape.value,
+                            ),
+                            height: lerpDouble(
+                              ReadingScrollSpec.collapsedHeight,
+                              ReadingScrollSpec.expandedHeight,
+                              _shape.value,
+                            ),
+                            decoration: BoxDecoration(
+                              color: tokens.brandForeground,
+                              borderRadius: corner,
+                            ),
                           ),
                         ),
                       ),
@@ -322,10 +351,7 @@ class _ReadingQuickScrollOverlayState extends State<ReadingQuickScrollOverlay>
           top: top,
           bottom: size.height - bottom,
           left: gap,
-          right:
-              size.width -
-              track.left +
-              WenyouAdaptiveReadingScrollContract.labelGap,
+          right: size.width - track.left + ReadingScrollSpec.labelGap,
           child: IgnorePointer(
             child: CustomSingleChildLayout(
               delegate: _LocationLayout(thumbTop + height / 2 - top),

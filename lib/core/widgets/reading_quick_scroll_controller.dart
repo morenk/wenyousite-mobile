@@ -1,7 +1,7 @@
 import 'package:flutter/gestures.dart' show PointerDeviceKind;
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
-import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/core/widgets/reading_scroll_spec.dart';
 import 'package:wenyousite_mobile/core/widgets/reading_scroll_velocity_tracker.dart';
 import 'package:wenyousite_mobile/core/widgets/reading_scroll_visibility.dart';
 
@@ -32,30 +32,26 @@ class ReadingQuickScrollController extends ChangeNotifier {
   bool _fingerScrolling = false;
   double _samplePosition = 0;
   final _velocity = ReadingScrollVelocityTracker(
-    window: const Duration(
-      milliseconds: WenyouAdaptiveReadingScrollContract.sampleWindowMs,
-    ),
+    window: const Duration(milliseconds: ReadingScrollSpec.sampleWindowMs),
     minimumDuration: const Duration(
-      milliseconds: WenyouAdaptiveReadingScrollContract.minimumSampleDurationMs,
+      milliseconds: ReadingScrollSpec.minimumSampleDurationMs,
     ),
-    minimumDistance:
-        WenyouAdaptiveReadingScrollContract.minimumSameDirectionDistance,
-    minimumVelocity: WenyouAdaptiveReadingScrollContract.minimumAverageVelocity,
-    viewportVelocityFactor:
-        WenyouAdaptiveReadingScrollContract.minimumViewportVelocityFactor,
+    minimumDistance: ReadingScrollSpec.minimumSameDirectionDistance,
+    minimumVelocity: ReadingScrollSpec.minimumAverageVelocity,
+    viewportVelocityFactor: ReadingScrollSpec.minimumViewportVelocityFactor,
   );
   final _visibility = ReadingScrollVisibility(
     expandedHold: const Duration(
-      milliseconds: WenyouAdaptiveReadingScrollContract.expandedHoldMs,
+      milliseconds: ReadingScrollSpec.expandedHoldMs,
     ),
     collapseDuration: const Duration(
-      milliseconds: WenyouAdaptiveReadingScrollContract.collapseDurationMs,
+      milliseconds: ReadingScrollSpec.collapseDurationMs,
     ),
     collapsedHold: const Duration(
-      milliseconds: WenyouAdaptiveReadingScrollContract.collapsedHoldMs,
+      milliseconds: ReadingScrollSpec.collapsedHoldMs,
     ),
     slowReadHold: const Duration(
-      milliseconds: WenyouAdaptiveReadingScrollContract.slowReadHoldMs,
+      milliseconds: ReadingScrollSpec.slowReadHoldMs,
     ),
   );
   bool _dragging = false;
@@ -104,14 +100,28 @@ class ReadingQuickScrollController extends ChangeNotifier {
     _contentRevision = contentRevision;
     _scope = scope;
     _enabled = enabled;
+    // 热重载后同步已有采样器，避免当前页面继续沿用旧门槛。
+    _velocity.updateThresholds(
+      minimumDuration: const Duration(
+        milliseconds: ReadingScrollSpec.minimumSampleDurationMs,
+      ),
+      minimumDistance: ReadingScrollSpec.minimumSameDirectionDistance,
+      minimumVelocity: ReadingScrollSpec.minimumAverageVelocity,
+      viewportVelocityFactor: ReadingScrollSpec.minimumViewportVelocityFactor,
+    );
     _configureVisibility();
     scheduleSnapshot();
   }
 
-  void _configureVisibility() => _visibility.configure(
-    enabled: enabled && canScroll,
-    accessible: _accessible,
-  );
+  void _configureVisibility() {
+    _visibility.updateExpandedHold(
+      const Duration(milliseconds: ReadingScrollSpec.expandedHoldMs),
+    );
+    _visibility.configure(
+      enabled: enabled && canScroll,
+      accessible: _accessible,
+    );
+  }
 
   void configurePresentation({required bool active, required bool accessible}) {
     if (_presentationActive == active && _accessible == accessible) return;

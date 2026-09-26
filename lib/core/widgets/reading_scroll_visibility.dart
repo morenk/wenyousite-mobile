@@ -11,7 +11,7 @@ class ReadingScrollVisibility extends ChangeNotifier {
     required this.slowReadHold,
   });
 
-  final Duration expandedHold;
+  Duration expandedHold;
   final Duration collapseDuration;
   final Duration collapsedHold;
   final Duration slowReadHold;
@@ -29,6 +29,12 @@ class ReadingScrollVisibility extends ChangeNotifier {
   bool get expanded => _enabled && _expanded;
   int get resetRevision => _resetRevision;
   bool get _held => _scrolling || _pressed || _focused || _accessible;
+
+  void updateExpandedHold(Duration duration) {
+    if (expandedHold == duration) return;
+    expandedHold = duration;
+    _waitForIdle();
+  }
 
   void configure({required bool enabled, required bool accessible}) {
     if (_enabled == enabled && _accessible == accessible) return;

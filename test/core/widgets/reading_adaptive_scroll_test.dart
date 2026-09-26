@@ -28,6 +28,104 @@ void main() {
     return gesture;
   }
 
+  for (final direction in [-1.0, 1.0]) {
+    testWidgets('64ms 明确短快滑唤醒，方向 $direction', (tester) async {
+      final state = await mountReadingScroll(tester);
+      state.scroll.jumpTo(1000);
+      await tester.pumpAndSettle();
+      final gesture = await tester.startGesture(const Offset(100, 500));
+      for (var step = 1; step <= 4; step++) {
+        await gesture.moveBy(
+          Offset(0, 20 * direction),
+          timeStamp: Duration(milliseconds: step * 16),
+        );
+        await tester.pump(const Duration(milliseconds: 16));
+      }
+      expect(state.quick.isOpen, isTrue);
+      await gesture.up(timeStamp: const Duration(milliseconds: 65));
+      await tester.pumpAndSettle();
+    });
+  }
+
+  testWidgets('稍轻的同向快滑可以唤醒', (tester) async {
+    final state = await mountReadingScroll(tester);
+    final gesture = await swipe(tester, dy: -14, stepMs: 20);
+    expect(state.quick.isOpen, isTrue);
+    await gesture.up();
+    await tester.pumpAndSettle();
+  });
+
+  for (final inset in [0.0, 24.0]) {
+    testWidgets('细条贴右边缘，展开向左让位且命中区避开手势区 $inset', (tester) async {
+      final state = await mountReadingScroll(
+        tester,
+        gestureInsets: EdgeInsets.only(right: inset),
+      );
+      state.scroll.jumpTo(700);
+      await tester.pumpAndSettle();
+      final edge = tester.getRect(find.byKey(const Key('reading-body'))).right;
+      final thin = tester.getRect(indicator);
+      expect(thin.right, edge);
+      expect(thin.size, const Size(2, 24));
+      final builds = state.buildCount;
+      state.quick.setKeyboardFocus(true);
+      await tester.pump();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 90));
+      final expanding = tester.getRect(indicator);
+      expect(expanding.right, inExclusiveRange(edge - inset - 8, edge));
+      expect(expanding.center.dy, thin.center.dy);
+      await tester.pump(const Duration(milliseconds: 90));
+      final expanded = tester.getRect(indicator);
+      expect(expanded.right, edge - inset - 8);
+      expect(expanded.center.dy, thin.center.dy);
+      expect(tester.getRect(slider).right, edge - inset);
+      expect(tester.getSize(slider), const Size(48, 64));
+      expect(state.buildCount, builds);
+    });
+  }
+
+  testWidgets('仅绘制滑块本体，淡出中再次滚动从当前透明度衔接', (tester) async {
+    final state = await mountReadingScroll(tester);
+    state.scroll.jumpTo(700);
+    await tester.pumpAndSettle();
+    double opacity() => tester
+        .widget<Opacity>(
+          find.ancestor(of: indicator, matching: find.byType(Opacity)).first,
+        )
+        .opacity;
+    final filled = tester
+        .widgetList<Container>(
+          find.descendant(of: slider, matching: find.byType(Container)),
+        )
+        .where((container) {
+          final decoration = container.decoration;
+          return decoration is BoxDecoration &&
+              decoration.color != null &&
+              decoration.color!.a > 0;
+        });
+    expect(filled, hasLength(1));
+    await tester.pump(const Duration(milliseconds: 1500));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 90));
+    final fading = opacity();
+    expect(fading, inExclusiveRange(0, 1));
+    state.scroll.jumpTo(800);
+    await tester.pump();
+    await tester.pump();
+    expect(opacity(), closeTo(fading, 0.001));
+    await tester.pump(const Duration(milliseconds: 180));
+    expect(opacity(), 1);
+    await tester.pump(const Duration(milliseconds: 1500));
+    await tester.pump();
+    expect(opacity(), 1);
+    state.scroll.jumpTo(900);
+    await tester.pump();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 180));
+    expect(opacity(), 1);
+  });
+
   testWidgets('一次真实快滑唤醒，原手势继续正文，下一次抓取停惯性且不跳位', (tester) async {
     final state = await mountReadingScroll(tester);
     final gesture = await swipe(tester);
@@ -118,7 +216,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
     await gesture.up(timeStamp: const Duration(milliseconds: 440));
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 1499));
+    await tester.pump(const Duration(milliseconds: 999));
     expect(state.quick.isOpen, isTrue);
     await tester.pump(const Duration(milliseconds: 1));
     await tester.pump();

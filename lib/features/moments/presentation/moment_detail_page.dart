@@ -801,8 +801,6 @@ class _MomentRootCommentPanel extends StatelessWidget {
                           : returnTo,
                     ),
                   ),
-                  if (index + 1 < replies.length)
-                    Divider(height: 1, color: tokens.border),
                 ],
               ],
             ),
