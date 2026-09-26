@@ -65,7 +65,7 @@ class WenyouImageViewerPage extends StatefulWidget {
 }
 
 class _WenyouImageViewerPageState extends State<WenyouImageViewerPage> {
-  late PageController _pageController;
+  late final PageController _pageController;
   late int _index;
   var _zoomed = false;
   final _pointers = <int>{};
@@ -152,7 +152,7 @@ class _WenyouImageViewerPageState extends State<WenyouImageViewerPage> {
   void initState() {
     super.initState();
     _index = widget.initialIndex;
-    _pageController = PageController(initialPage: _index);
+    _pageController = PageController(initialPage: _index, keepPage: false);
   }
 
   @override
@@ -170,16 +170,14 @@ class _WenyouImageViewerPageState extends State<WenyouImageViewerPage> {
         : widget.items.indexWhere((item) => item.id == id);
     final target = next >= 0 ? next : widget.initialIndex;
     if (target != _index) {
-      final oldController = _pageController;
-      _pageController = PageController(initialPage: target);
       _index = target;
       if (_pointers.isNotEmpty) {
         _multiplePointers = true;
         _gestureStartIndex = target;
       }
-      WidgetsBinding.instance.addPostFrameCallback(
-        (_) => oldController.dispose(),
-      );
+      // 更换控制器仍会接管旧 ScrollPosition，initialPage 不会重新生效。
+      // 按图片身份同步现有位置，让本帧画面与标题、后续手势使用同一页。
+      _pageController.jumpToPage(target);
     }
     _prefetchNeighbors();
   }
