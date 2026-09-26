@@ -7,6 +7,7 @@ import { FlutterMachine, serialQueue } from './machine.mjs';
 import { inspectSessionHealth, applyAvailability } from './health.mjs';
 import { withLifecycleMutex, requireLaunchOwnership, startWithLifecycleMutex } from './lifecycle.mjs';
 import { prepareGuardedSdk, verifyGuardSelected } from './sdk-guard.mjs';
+import { withTransitionLock } from './transition-lock.mjs';
 import { PACKAGE, run, canonical, hash, privateDirectory, readJson, writeJson, processIdentity, sameProcess, killOwnedProcess, acquireLock, releaseLock, assertOwner, sourceEvidence, discoverDevice, findAdb, flutterCommand, ownedSpawn, jobSpawn, sleep, assertNoCompetingFlutter, installedPackageEvidence, assertDebugPackageConfiguration } from './runtime.mjs';
 import { loadDescriptor, verifyIdentity, connectPreview, removeOwnedReverse, CONTRACT_SHA } from './preview.mjs';
 
@@ -53,7 +54,7 @@ async function recoverStopped(state) {
   event('recovered-stale-controller', { runId: state.runId, device: state.device });
 }
 async function cli(action, values) {
-  if (action === 'start') return startWithLifecycleMutex(worktree, () => cliLocked(action, values), state => control(state, 'status'));
+  if (action === 'start') return withTransitionLock(() => startWithLifecycleMutex(worktree, () => cliLocked(action, values), state => control(state, 'status')));
   if (action !== 'stop') return cliLocked(action, values);
   const current = await withLifecycleMutex(worktree, async () => {
     const state = readJson(stateFile);
