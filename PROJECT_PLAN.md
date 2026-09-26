@@ -13,7 +13,7 @@
 - 客户端：线上已推荐 `0.8.0-dev.1+96` Android 图集开发版，正式签名包源码为 `acb94a46dad59f379455ea7f6fd9adee2fc47003`；此前 `0.7.1+95` GIF 修复已获负责人真机验收。各类 APK 仅支持 Android 8+ ARM64，正文、标题和品牌文字继承平台系统字体，KaTeX、等宽呈现与 Material Icons 等功能依赖保留。正式包名 `site.wenyou.app`，Debug 包名 `site.wenyou.app.debug`，真机性能包名 `site.wenyou.app.profile`。图集正文定位与真机手势仍待负责人在 build 96 复验。
 - 后端契约：`5.26.0-dev.20260922.3`，当前已部署来源 `0bc9c45e213fa4dcbde8a3bcf2c466dc88ceb256`；本轮与前一来源的契约文件和生成客户端无差异。客户端已同步图集查询、本人关系列表管理和仅供管理端使用的内容整理接口。图集连续浏览与本人关系管理候选已进入 `dev`，图集正文定位、权限和真机手势仍待负责人复验。
 - 正文契约：公网当前激活 Markdown v5；客户端兼容 `{3, 4, 5}`，独占一行的普通图片可使用左、中、右块对齐；站内引用契约：`wenyousite-internal-reference` v1。
-- 视觉依赖：Foundation `v7.2.0`；作为通用主题和语义资产依赖；负责人已明确阅读滑块为移动端独有能力，交互参数与状态机归移动端维护；系统字体迁移候选待 Android 8、较新 Android 与两种厂商字体真机验收。
+- 视觉依赖：Foundation `v7.2.1`；作为通用主题和语义资产依赖；负责人已明确阅读滑块为移动端独有能力，交互参数与状态机归移动端维护；系统字体迁移候选待 Android 8、较新 Android 与两种厂商字体真机验收。
 - 表情网格及共享排序动画：2026-09-11 负责人真机验收通过并授权合并；表情管理采用五列紧凑网格、长按排序与静默乐观保存，子贴排序复用抬起／落下反馈。未取得 Profile 帧时间采样，见[验收记录](docs/architecture/sticker-grid-acceptance.md)。
 - 空正文选择 H2/H3：2026-09-09 负责人在覆盖安装的 Debug 包 `1c7fb8a6` 上验收通过，原问题修复完成，见[空标题验收](docs/architecture/editor-empty-heading-acceptance.md)。
 - 引用长文本溢出：2026-09-09 负责人在 Debug 包 `562a7954` 上验收通过；按实际行内内容高度排版，保留既有分页和删除调整。源码与验收记录见 [引用溢出验收](docs/architecture/quote-text-overflow-acceptance.md)。

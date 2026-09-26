@@ -7,8 +7,12 @@
 - 原工作区 HEAD 为 `488b4c391c85f06550ea77b1d44e0383506e877d`。整合前已备份 tracked 二进制补丁和未跟踪 `reading_scroll_spec.dart`，目录为 `D:\code\wenyousite\artifacts\mobile-adaptive-reading-scroll\20260927-025217`；补丁 SHA-256 为 `DDCA92578F8ADDAB7747F974148156929FD0EF5B2F9C443B5D6BDB234E26FBC0`，其他文件摘要见该目录 `sha256.json`。
 - 本轮直接回归覆盖速度采样、显隐时序、共享交互与几何、楼中楼组样式及三个实际页面：`reading_scroll_velocity_tracker_test.dart`、`reading_scroll_visibility_test.dart`、`reading_adaptive_scroll_test.dart`、`reading_quick_scroll_test.dart`、`wenyou_discussion_reply_card_test.dart`、`thread_reading_quick_scroll_test.dart`、`post_reading_quick_scroll_test.dart`、`moment_reading_quick_scroll_test.dart`、`moment_comment_target_page_test.dart`，共 75 项通过，日志 `feedback-regression.log`。
 - 已核验移动端记录、Backend 只读镜像 `origin/dev` 与公网 `/meta` 的来源均为 `124fb4e8aa395440f7a2156de98b642ec87f7583`，API 为 `5.26.0-dev.20260922.3`，公网 Markdown v5。只执行线上只读核验。
-- 本批只纳入滑块与楼中楼组底色及最新 `origin/dev`；旧 Tab 全宽筛选行和 PR #68 不在范围内。集成保留已合并的图片定位、个人主页与目标过渡。依赖迁移和最终完整门禁另行记录。
+- 本批只纳入滑块与楼中楼组底色及最新 `origin/dev`；旧 Tab 全宽筛选行和 PR #68 不在范围内。集成保留已合并的图片定位、个人主页与目标过渡。已以合并提交 `2ca241db` 整合 `origin/dev=9a595a8857a0451e038b0c6c82e2f3b0ecbaacf9`；主题详情 84 项回归通过，冲突 Golden 按完整界面重新生成并复核。
 - 本轮不启动或重启真机、安装或构建 APK。正式签名 Release 测试包由治理任务在完成交接后统一构建，旧 build 97 的 APK 哈希不代表当前源码。
+## Foundation 7.2.1 迁移
+
+本轮在只读镜像执行 `git fetch origin --tags`，确认最新正式 Tag `v7.2.1` 解析为 `c7729bc9e28c608c6c3a76cdc088e3c5b6a5a663`。阅读 CHANGELOG 和 Flutter profile 后，独立 chore 升级 `pubspec.yaml`、锁文件、版本断言及当前说明。已移除的 `WenyouReadingQuickScrollContract`、`WenyouAdaptiveReadingScrollContract` 与 `actionReadingQuickScroll` 不再被应用、测试或工具消费；颜色、圆角、字体和无障碍基础继续来自通用主题。完整门禁绑定最终应用源码另行补充。
+
 ## 2026-09-26 真机反馈批次（历史记录）
 
 - 负责人要求直接 ADB 覆盖安装，明确免去额外核验；`adb install -r` 返回 `Success`，目标为下方记录的 build 97 Debug APK。
