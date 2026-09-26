@@ -1,5 +1,10 @@
 # 移动端变更记录
 
+## 2026-09-26 — Foundation 自适应阅读契约依赖同步
+
+- 以独立 `chore` 固定正式 Foundation `v7.2.0`（`a6f4e2d3487ac058872a44013ffb4e7fd587d11e`），同步锁文件。新增自适应阅读契约，完整保留 v7.1.2 的旧快翻接口与数值；本提交不改变页面交互。
+- 新滑块接入与三个阅读页的候选验收另行记录；无后端 API、存储或网络策略变更。
+
 ## 2026-09-26 — 持续 Debug 与隔离开发预览候选（待负责人验收）
 
 - 新增 `dev:start/status/reload/restart/stop`，agent 自行启动并复用 Flutter machine 会话；绑定任务、Worktree、设备、PID/开始时间和 runId。样式反馈热重载、初始化热重启，独立 APK 仅在需要时构建。
