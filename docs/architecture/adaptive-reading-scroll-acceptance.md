@@ -14,6 +14,7 @@
 
 - Windows 工作区：`D:\codex-worktrees\adaptive-reading-scroll\wenyousite-mobile`。
 - 任务分支：`codex/20260926-adaptive-reading-scroll`；基线 `9108c6e57744999ae9c2de61e1c2290c8d1aea37`。
+- 移动端候选源码提交：`99aa86728f94a280cc853770e5f81d12119207a3`；[PR #66](https://github.com/morenk/wenyousite-mobile/pull/66) 已推送为 Draft，目标 `dev`，待负责人验收。后续仅补充本条追溯记录，应用源码与已验证 APK 一致。
 - 基线 Foundation v7.1.2；本轮 fetch 正式 Tag 后，以独立 `chore`（`7115dc3b`）固定 v7.2.0 及锁文件，主题和原生品牌清单版本断言同步。品牌资产 SHA-256 全部保持，旧快翻 API 完整兼容。
 - [Foundation PR #20](https://github.com/morenk/wenyousite-foundation/pull/20) 已合并；[v7.2.0 Release](https://github.com/morenk/wenyousite-foundation/releases/tag/v7.2.0) 为正式非预发布版本，合并与 Tag peeled SHA 均为 `a6f4e2d3487ac058872a44013ffb4e7fd587d11e`。schemaVersion 保持 3，新能力独立位于 `experiences.adaptiveReadingScroll.mobile`。VPS 生成、完整门禁、包检查及 GitHub quality 通过；远端任务分支、临时 Worktree 已核验清理。
 - 后端记录与 2026-09-26 公网 `/meta` 一致：`5.26.0-dev.20260922.3`、`124fb4e8aa395440f7a2156de98b642ec87f7583`。本需求不修改 API、分页策略或持久化。
