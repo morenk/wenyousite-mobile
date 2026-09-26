@@ -37,6 +37,15 @@ test('身份探测逐一核验 backend/media 且禁止重定向', async () => {
   await verifyIdentity(value, async (url, options) => { assert.equal(options.redirect, 'manual'); const role = url === value.backend.identityUrl ? 'backend' : 'media'; visited.push(role); return identityResponse(value, role); });
   assert.deepEqual(visited, ['backend', 'media']);
 });
+test('v1消费者兼容单活动批次的固定入口且保留旧安全端口描述', () => {
+  const value = descriptor();
+  for (const [role, port] of Object.entries({ backend: 14311, media: 14312, web: 14310 })) {
+    const origin = `http://127.0.0.1:${port}`;
+    value[role] = { port, origin, ...(role !== 'web' ? { identityUrl: `${origin}/__preview/identity` } : {}), ...(role === 'backend' ? { apiBase: `${origin}/api/v1` } : {}) };
+  }
+  assert.equal(validateDescriptor(value).backend.port, 14311);
+  assert.equal(validateDescriptor(descriptor()).backend.port, 23080);
+});
 test('实际资源、快照、角色、响应头或重定向不符 fail closed', async () => {
   const value = descriptor();
   for (const change of [{ runId: 'other' }, { snapshotSha256: 'b'.repeat(64) }, { role: 'media' }, { resourceId: 'other' }]) await assert.rejects(verifyIdentity(value, async () => identityResponse(value, 'backend', change)));

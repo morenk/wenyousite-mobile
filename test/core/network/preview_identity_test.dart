@@ -21,6 +21,72 @@ class _Adapter implements HttpClientAdapter {
 }
 
 void main() {
+  test('固定端口切到另一个run或暂停后，旧会话不复用成功身份；原run恢复才放行', () async {
+    final environment = previewEnvironment(
+      api: 'http://127.0.0.1:14311/api/v1',
+      media: 'http://127.0.0.1:14312',
+    );
+    var currentRun = environment.previewRun;
+    var available = true;
+    var writes = 0;
+    final probe = Dio()
+      ..httpClientAdapter = _Adapter((request) {
+        if (!available) return ResponseBody.fromString('{}', 503);
+        return ResponseBody.fromString(
+          jsonEncode({
+            'version': 1,
+            'kind': 'wenyou-dev-preview',
+            'sessionId': environment.previewSession,
+            'runId': currentRun,
+            'role': request.uri.port == 14311 ? 'backend' : 'media',
+            'resourceId': currentRun,
+            'snapshotSha256': environment.previewSnapshotSha,
+          }),
+          200,
+          headers: {
+            'content-type': ['application/json'],
+            'X-Wenyou-Preview-Run': [currentRun],
+          },
+        );
+      });
+    final verifier = PreviewIdentityVerifier(environment, probe);
+    for (final media in [false, true]) {
+      final client = Dio()
+        ..httpClientAdapter = _Adapter((request) {
+          writes++;
+          if (!media) {
+            expect(
+              request.headers['X-Wenyou-Preview-Run'],
+              environment.previewRun,
+            );
+          }
+          return ResponseBody.fromString(
+            '{}',
+            200,
+            headers: {
+              'X-Wenyou-Preview-Run': [environment.previewRun],
+            },
+          );
+        });
+      client.interceptors.add(
+        PreviewIdentityInterceptor(verifier, mediaUpload: media),
+      );
+      final url =
+          '${media ? environment.previewMediaOrigin : environment.apiOrigin}/write';
+      await client.post(url);
+      final before = writes;
+      currentRun = 'preview_${'b' * 24}';
+      await expectLater(client.post(url), throwsA(isA<DioException>()));
+      expect(writes, before);
+      currentRun = environment.previewRun;
+      available = false;
+      await expectLater(client.post(url), throwsA(isA<DioException>()));
+      expect(writes, before);
+      available = true;
+      await client.post(url);
+      expect(writes, before + 1);
+    }
+  });
   test('API 写入前核验双方身份，注入 run 头并禁重定向', () async {
     final environment = previewEnvironment();
     final order = <String>[];
