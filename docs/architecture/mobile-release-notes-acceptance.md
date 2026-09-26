@@ -19,7 +19,7 @@
 
 定向测试位于 `test/features/app_shell/mobile_release_controller_test.dart`、`mobile_release_repository_test.dart`、`mobile_release_widgets_test.dart`、`mobile_update_controller_test.dart`、`mobile_update_service_test.dart` 及 `test/app_shell_test.dart`。覆盖精确身份、空态、失败重试、分页与游标失效、刷新保留、迟到结果、推荐／强制／忽略后的入口、下载目标复核与原安装链路。
 
-`test/features/app_shell/goldens/mobile_release_light_360.png` 和 `mobile_release_dark_360.png` 是 360×800 的组件候选，示例文案仅供布局检查；两倍文字及长说明通过滚动可达性测试。另保留 HTML／Markdown 字面量的纯文本断言。后续已连接唯一 ARM64 设备 `4b9c39b5`（2509FPN0BC）。2026-09-27 门禁构建结束后实际执行 `npm run dev:start -- --session D:\code\wenyousite\artifacts\mobile-release-notes-20260927\preview-consumer.json` 时，ADB 已无连接设备；受控入口拒绝启动，`dev:status=stopped`。未安装、未卸载、未清数据，未建立 Debug 会话或获取本次真机截图。先前连接状态仅证明设备曾在线，不能冒称真机或端到端完成；需设备重新连接后续验。证据 `build-release-dev-start.log`。
+`test/features/app_shell/goldens/mobile_release_light_360.png` 和 `mobile_release_dark_360.png` 是 360×800 的组件候选，示例文案仅供布局检查；两倍文字及长说明通过滚动可达性测试。另保留 HTML／Markdown 字面量的纯文本断言。后续已连接唯一 ARM64 设备 `4b9c39b5`（2509FPN0BC）。2026-09-27 门禁构建结束后实际执行 `npm run dev:start -- --session D:\code\wenyousite\artifacts\mobile-release-notes-20260927\preview-consumer.json` 时，ADB 已无连接设备；受控入口拒绝启动，`dev:status=stopped`。当时未安装、未卸载、未清数据，未建立 Debug 会话或获取真机截图。此早期拒绝记录不代表后续安装状态；重新连接后的实际结果见下文“真机开发反馈与当前会话”。证据 `build-release-dev-start.log`。
 
 ## 本地门禁记录
 
@@ -34,6 +34,29 @@
 预览 `/meta` 的 Android minimum／recommended／updateUrl 均为空；真机可验证历史及详情，不代表推荐／强制／真实下载安装链路已验收。不构造安装对象，不放宽 APK 校验，不把公网作为回退。
 
 `tool/windows/release_notes.test.mjs` 执行真实 Shell 参数解析及编排，以临时假的 SSH、npm、Flutter 与上传器覆盖：未确认／缺失／身份错误在构建前停止、skip-checks 不绕过、BuildOnly／UploadOnly 不晋级、上传后 revision 变化停止、成功传递原 revision、晋级失败非零且不自动恢复。既有上传身份、签名与摘要校验继续由 Windows 工具测试覆盖。本轮未正式签名、真实上传或晋级。JSON 构建摘要保存 `notesConfirmedRevision`；无预检的分段构建为 null。
+
+## 真机开发反馈与当前会话
+
+本节为代理实际操作证据，仍待负责人验收。2026-09-27 重新连接唯一 ARM64 设备 `4b9c39b5`（2509FPN0BC），通过 `dev:start` 借用共享隧道完成隔离预览安装；未卸载、未清数据、未修改设备全局设置，也未安装无预览配置的门禁 APK。
+
+- 已安装“温油站 Debug”：`site.wenyou.app.debug`、`0.8.0-dev.2-debug+97`，更新时间 `2026-09-27 05:44:47`。预览 APK 为 150168180 字节，设备内与本地 SHA-256 均为 `6684b3762a30a28bac5aa974d8f8a0b1d363563a897d7248a61f8a11ae36357c`。
+- 批次 `preview_705231a26b764b7cd53eed8e`、`borrowedTunnel=true`；第二次 Flutter appId 为 `7ff8b2b5-7e94-4fc1-9540-f8e5c7b1f409`，应用 PID 为 `10883`。
+- 实际加载提交 `f7852f14b3b9c53b48e13ba0b0b00108090ebc90`，sourceDigest 为 `f623265b0815ff4e6cb0843b99f55a3a16c7fb338fb4e4e7f478c17c1489aa35`，与完整门禁应用源码一致；后续仅补文档，不重复全量测试。
+- 已实际走通游客“我的 → 更新说明 → 查看更新”：历史显示当前安装版本97及“当前版本暂无更新说明”，样本100显示摘要；详情完整显示摘要和两条内容，没有下载安装入口。原始1200×2608截图确认页顶开发预览条、返回箭头和“更新说明”标题正常，没有为缩放预览误差修改代码。
+- `2026-09-26T21:46:57.105Z` 的 `dev:reload` 成功，详情页面保持，sourceDigest不变。热重载画面以该源码摘要与事件绑定，不能仅用初装APK哈希代表。
+
+当前状态与历史成功分开记录：第一轮21:39:56Z ready后，21:40:23Z报告“Flutter 应用已停止”；当时手机锁屏/Dozing，应用PID仍在、该PID crash/error日志为空。解锁后第二轮21:44:52Z ready并完成上述操作与reload；21:48:21Z再次报告failed，随后手机前台已为其他应用。只读exit-info没有PID10883的新退出记录，不能断言应用崩溃，也未证实锁屏或切后台是断连根因。当前会话为 `failed`，不能以旧ready记录声称仍可持续调试。
+
+21:50:18Z资源核验：PID10883仍存在；本任务35293/36911的ADB reverse为空，控制器登记reverse/children均为0，设备锁已释放；治理共享Backend/media身份仍通过。没有关闭共享SSH，也没有手工接管或重建reverse。手机可手动打开已安装包，但当前不具备可靠重新请求隔离API的连接条件；后续在负责人方便时由同一受控dev:start恢复。负责人正在使用手机后停止坐标操作，不抢前台、不循环启动，也未为补暗色反复要求配合。
+
+真机暗色、实际点返回箭头以及持续会话稳定性尚未补验；暗色、返回流程及大字号仍以Golden/Widget自动化证据为准。推荐、强制、真实下载安装与正式发布不属于本轮真机已验证范围。
+
+本机原始证据位于 `build/mobile-release-evidence/`：
+
+- `live-guest-me.png`：游客入口；`live-history.png`：公开历史和当前版本缺失。
+- `live-detail.png`、`live-detail-after-reload.png`：正文和热重载后的页面；后者SHA-256为 `61a5e16cbdcefc784b37fc9ca5dbf8fc7930c1eb58da8e5fa672e01e4b0b7f1d`。查看完整画面使用原始尺寸，避免缩放展示差异。
+- `live-status-final.json`：reload后的ready历史快照；`live-status-current.json`：后续failed状态；`final-resource-status.json`：最后资源核验。
+- `first-session-failed.json`、`first-session-errors.log`、`second-session-errors.log`，以及仓库根目录的 `build-release-dev-start-reconnected.log`、`build-release-dev-recover.log`、`build-release-dev-reload.log` 保留本轮诊断。原始截图和调试记录留在本机，不作为源码或公开日志上传。
 
 ## 负责人真机清单
 
