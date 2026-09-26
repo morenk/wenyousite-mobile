@@ -1,119 +1,43 @@
-import 'dart:ui' show Tristate, SemanticsAction;
+import 'dart:ui' show SemanticsAction;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:wenyousite_foundation/wenyousite_foundation.dart';
-import 'package:wenyousite_mobile/app/app_theme.dart';
-import 'package:wenyousite_mobile/core/widgets/reading_quick_scroll.dart';
 
 import '../../support/deterministic_test_fonts.dart';
+import '../../support/reading_scroll_harness.dart';
 
 void main() {
   setUpAll(loadDeterministicTestFonts);
 
-  Future<_HarnessState> mount(
-    WidgetTester tester, {
-    double width = 360,
-    double scale = 1,
-    int initialCount = 0,
-    bool dark = false,
-    EdgeInsets gestureInsets = EdgeInsets.zero,
-    double height = 800,
-  }) async {
-    tester.view.devicePixelRatio = 1;
-    tester.view.physicalSize = Size(width, height);
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
-    final key = GlobalKey<_HarnessState>();
-    await tester.pumpWidget(
-      MaterialApp(
-        theme: dark ? AppTheme.dark : AppTheme.light,
-        home: MediaQuery(
-          data: MediaQueryData(
-            size: Size(width, height),
-            textScaler: TextScaler.linear(scale),
-            systemGestureInsets: gestureInsets,
-          ),
-          child: _Harness(key: key, initialCount: initialCount),
-        ),
-      ),
-    );
+  testWidgets('统一滑块展开保留正文宽高和阅读位置，无按钮或操作卡', (tester) async {
+    final state = await mountReadingScroll(tester);
+    state.scroll.jumpTo(240);
     await tester.pumpAndSettle();
-    return key.currentState!;
-  }
-
-  testWidgets('悬浮快翻开关保留正文宽高和阅读位置', (tester) async {
-    final state = await mount(tester);
-    final semantics = tester.ensureSemantics();
-    try {
-      final toggle = find.byKey(const Key('reading-quick-scroll-toggle'));
-      expect(find.byTooltip('快翻'), findsOneWidget);
-      expect(find.text('快翻'), findsNothing);
-      expect(
-        tester
-            .widget<WenyouIcon>(
-              find.descendant(of: toggle, matching: find.byType(WenyouIcon)),
-            )
-            .semanticId,
-        WenyouIconIds.actionReadingQuickScroll,
-      );
-      expect(tester.getSize(toggle).width, greaterThanOrEqualTo(48));
-      expect(tester.getSize(toggle).height, greaterThanOrEqualTo(48));
-      expect(
-        tester
-            .getSemantics(toggle)
-            .getSemanticsData()
-            .flagsCollection
-            .isToggled,
-        Tristate.isFalse,
-      );
-      state.scroll.jumpTo(240);
-      await tester.pumpAndSettle();
-      final before = tester.getRect(find.byKey(const Key('reading-body')));
-      await tester.tap(find.byKey(const Key('reading-quick-scroll-toggle')));
-      await tester.pumpAndSettle();
-      expect(
-        tester
-            .getSemantics(toggle)
-            .getSemanticsData()
-            .flagsCollection
-            .isToggled,
-        Tristate.isTrue,
-      );
-      expect(tester.getSemantics(toggle).label, '快翻');
-      final after = tester.getRect(find.byKey(const Key('reading-body')));
-      final bar = tester.getRect(
-        find.byKey(const Key('reading-quick-scroll-rail')),
-      );
-      expect(after.width, before.width);
-      expect(after, before);
-      expect(bar.top, greaterThanOrEqualTo(after.top));
-      expect(bar.bottom, lessThanOrEqualTo(after.bottom));
-      expect(state.scroll.offset, 240);
-      expect(state.navigationCount, 1);
-      await tester.tap(find.byKey(const Key('reading-quick-scroll-slider')));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('收起'));
-      await tester.pumpAndSettle();
-      expect(
-        tester
-            .getSemantics(toggle)
-            .getSemanticsData()
-            .flagsCollection
-            .isToggled,
-        Tristate.isFalse,
-      );
-      expect(state.scroll.offset, 240);
-      expect(tester.getRect(find.byKey(const Key('reading-body'))), before);
-    } finally {
-      semantics.dispose();
-    }
+    final before = tester.getRect(find.byKey(const Key('reading-body')));
+    final center = tester.getCenter(
+      find.byKey(const Key('reading-progress-indicator')),
+    );
+    state.quick.setKeyboardFocus(true);
+    await tester.pumpAndSettle();
+    expect(tester.getRect(find.byKey(const Key('reading-body'))), before);
+    expect(
+      tester.getCenter(find.byKey(const Key('reading-progress-indicator'))),
+      center,
+    );
+    expect(state.scroll.offset, 240);
+    expect(state.navigationCount, 0);
+    expect(find.byKey(const Key('reading-quick-scroll-toggle')), findsNothing);
+    await tester.tap(find.byKey(const Key('reading-quick-scroll-slider')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('reading-quick-scroll-card')), findsNothing);
+    expect(state.taps, 0);
+    expect(state.scroll.offset, 240);
   });
 
   testWidgets('长单层内实时移动，每帧合并且分页不改变本次拖动映射', (tester) async {
-    final state = await mount(tester);
-    state.quick.toggle();
+    final state = await mountReadingScroll(tester);
+    state.quick.setKeyboardFocus(true);
     await tester.pumpAndSettle();
     final range = state.scroll.position.maxScrollExtent;
     state.quick.beginDrag(0.1);
@@ -139,10 +63,10 @@ void main() {
   });
 
   testWidgets('按住滑杆末端时持续抵达新增楼层和图片撑高后的末尾', (tester) async {
-    final state = await mount(tester);
+    final state = await mountReadingScroll(tester);
     state.setLoading();
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('reading-quick-scroll-toggle')));
+    state.quick.setKeyboardFocus(true);
     await tester.pumpAndSettle();
     final rect = tester.getRect(
       find.byKey(const Key('reading-quick-scroll-slider')),
@@ -155,7 +79,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(state.quick.isDragging, isTrue);
     expect(state.quick.fraction, 1);
-    expect(find.textContaining('正在加载更多，当前可快翻已加载内容'), findsOneWidget);
+    expect(find.textContaining('正在加载 · 已加载范围'), findsOneWidget);
     for (var page = 0; page < 3; page++) {
       state.append();
       await tester.pumpAndSettle();
@@ -175,8 +99,8 @@ void main() {
   });
 
   testWidgets('从末端往回拖用当前范围微调，离开末端后不再追随新增内容', (tester) async {
-    final state = await mount(tester);
-    state.quick.toggle();
+    final state = await mountReadingScroll(tester);
+    state.quick.setKeyboardFocus(true);
     await tester.pumpAndSettle();
     state.quick.beginDrag(1);
     await tester.pumpAndSettle();
@@ -194,8 +118,8 @@ void main() {
   });
 
   testWidgets('末端跟随后收起或切换范围，后续加载不能继续拉动页面', (tester) async {
-    final state = await mount(tester);
-    state.quick.toggle();
+    final state = await mountReadingScroll(tester);
+    state.quick.setKeyboardFocus(true);
     await tester.pumpAndSettle();
     state.quick.beginDrag(1);
     await tester.pumpAndSettle();
@@ -204,7 +128,7 @@ void main() {
     final stopped = state.scroll.offset;
     await tester.pumpAndSettle();
     expect(state.scroll.offset, closeTo(stopped, 1));
-    state.quick.toggle();
+    state.quick.setKeyboardFocus(true);
     await tester.pumpAndSettle();
     state.quick.beginDrag(1);
     await tester.pumpAndSettle();
@@ -217,8 +141,8 @@ void main() {
   });
 
   testWidgets('首次长短楼层懒布局收缩估算后，滑杆一半仍停在阅读范围中间', (tester) async {
-    final state = await mount(tester, initialCount: 80);
-    await tester.tap(find.byKey(const Key('reading-quick-scroll-toggle')));
+    final state = await mountReadingScroll(tester, initialCount: 80);
+    state.quick.setKeyboardFocus(true);
     await tester.pumpAndSettle();
     final coldRange = state.scroll.position.maxScrollExtent;
     final rect = tester.getRect(
@@ -274,8 +198,8 @@ void main() {
   });
 
   testWidgets('校正后的阅读范围在图片撑高和新页到达后失效', (tester) async {
-    final state = await mount(tester, initialCount: 80);
-    state.quick.toggle();
+    final state = await mountReadingScroll(tester, initialCount: 80);
+    state.quick.setKeyboardFocus(true);
     await tester.pumpAndSettle();
     for (var round = 0; round < 3; round++) {
       state.quick.beginDrag(0.5);
@@ -303,14 +227,14 @@ void main() {
   });
 
   testWidgets('收起或更换筛选取消排队中的快翻', (tester) async {
-    final state = await mount(tester);
-    state.quick.toggle();
+    final state = await mountReadingScroll(tester);
+    state.quick.setKeyboardFocus(true);
     await tester.pumpAndSettle();
     state.quick.beginDrag(0.6);
     state.quick.close();
     await tester.pumpAndSettle();
     expect(state.scroll.offset, 0);
-    state.quick.toggle();
+    state.quick.setKeyboardFocus(true);
     await tester.pumpAndSettle();
     state.quick.beginDrag(0.7);
     state.changeScope();
@@ -322,12 +246,12 @@ void main() {
     state.quick.seekEdge(true);
     await tester.pumpAndSettle();
     expect(state.scroll.offset, offset);
-    expect(find.byKey(const Key('reading-quick-scroll-rail')), findsNothing);
+    expect(state.quick.isOpen, isFalse);
   });
 
   testWidgets('手指仍按着滑杆时正文已移动，且不重建正文页面', (tester) async {
-    final state = await mount(tester);
-    await tester.tap(find.byKey(const Key('reading-quick-scroll-toggle')));
+    final state = await mountReadingScroll(tester);
+    state.quick.setKeyboardFocus(true);
     await tester.pumpAndSettle();
     final builds = state.buildCount;
     final rect = tester.getRect(
@@ -356,61 +280,61 @@ void main() {
     expect(state.quick.isOpen, isTrue);
   });
 
-  testWidgets('首尾按钮抵达边界，正常拖动可以中断校正', (tester) async {
-    final state = await mount(tester);
-    state.quick.toggle();
+  testWidgets('键盘首尾导航抵达边界，正文手势可中断校正', (tester) async {
+    final state = await mountReadingScroll(tester);
+    state.quick.setKeyboardFocus(true);
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('reading-quick-scroll-slider')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('reading-quick-scroll-end')));
+    state.quick.seekEdge(true);
     await tester.pumpAndSettle();
     expect(state.scroll.position.extentAfter, lessThanOrEqualTo(1));
     expect(state.quick.edgeFailed, isFalse);
-    await tester.tap(find.byKey(const Key('reading-quick-scroll-slider')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('reading-quick-scroll-start')));
+    state.quick.seekEdge(false);
     await tester.pumpAndSettle();
     expect(state.scroll.offset, 0);
-    expect(tester.takeException(), isNull);
+    state.quick.seekEdge(true);
+    state.quick.close();
+    await tester.pumpAndSettle();
+    expect(state.scroll.offset, 0);
   });
 
-  testWidgets('未读完的分页明确标注已加载范围，失败可重试', (tester) async {
-    final state = await mount(tester);
+  testWidgets('只在拖动时标注实际位置和已加载范围，不称全文末尾', (tester) async {
+    final state = await mountReadingScroll(tester);
     state.setLoading();
+    state.quick.setKeyboardFocus(true);
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('reading-quick-scroll-toggle')));
+    expect(find.textContaining('已加载范围'), findsNothing);
+    state.quick.beginDrag(0.3);
     await tester.pumpAndSettle();
-    expect(find.text('已加载范围'), findsOneWidget);
-    await tester.tap(find.byKey(const Key('reading-quick-scroll-slider')));
-    await tester.pumpAndSettle();
-    expect(find.text('正在加载更多，当前可快翻已加载内容'), findsOneWidget);
-    expect(find.text('已加载末尾'), findsOneWidget);
+    expect(find.textContaining('正在加载 · 已加载范围'), findsOneWidget);
     state.failLoading();
     await tester.pumpAndSettle();
-    expect(find.text('更多内容加载失败，当前可快翻已加载内容'), findsOneWidget);
-    await tester.tap(find.text('重试加载'));
-    expect(state.retries, 1);
+    expect(find.textContaining('加载失败 · 已加载范围'), findsOneWidget);
+    expect(find.text('全文末尾'), findsNothing);
+    state.quick.endDrag(0.3);
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const Key('reading-quick-scroll-location')),
+      findsNothing,
+    );
   });
 
-  testWidgets('细进度提示不抢占边缘正文点击', (tester) async {
-    final state = await mount(tester);
+  testWidgets('细进度提示与轨道不抢占边缘正文点击', (tester) async {
+    final state = await mountReadingScroll(tester);
     state.scroll.jumpTo(180);
-    await tester.pump();
-    await tester.tapAt(const Offset(357, 160));
+    await tester.pumpAndSettle();
+    expect(state.quick.isOpen, isFalse);
+    final indicator = find.byKey(const Key('reading-progress-indicator'));
+    expect(tester.getSize(indicator), const Size(2, 24));
+    await tester.tapAt(tester.getCenter(indicator));
     expect(state.taps, 1);
-    final scrollbar = tester.widget<RawScrollbar>(
-      find.byKey(const Key('reading-progress-indicator')),
-    );
-    expect(scrollbar.interactive, isFalse);
-    expect(scrollbar.timeToFade, const Duration(milliseconds: 1500));
   });
 
   for (final width in [320.0, 360.0, 400.0, 600.0]) {
     testWidgets('$width dp 双倍字号工具栏无溢出且提供语义调节', (tester) async {
-      await mount(tester, width: width, scale: 2);
+      final state = await mountReadingScroll(tester, width: width, scale: 2);
       final semantics = tester.ensureSemantics();
 
-      await tester.tap(find.byKey(const Key('reading-quick-scroll-toggle')));
+      state.quick.setKeyboardFocus(true);
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
       expect(find.bySemanticsLabel('快翻阅读位置'), findsOneWidget);
@@ -428,30 +352,27 @@ void main() {
     });
   }
 
-  testWidgets('局部操作卡外点击和非滑块轨道点击仍执行正文操作', (tester) async {
-    final state = await mount(tester);
-    state.quick.toggle();
+  testWidgets('展开滑块短点按被消费，轨道点击仍执行正文操作', (tester) async {
+    final state = await mountReadingScroll(tester);
+    state.quick.setKeyboardFocus(true);
     await tester.pumpAndSettle();
-    final thumb = find.byKey(const Key('reading-quick-scroll-slider'));
     final rail = tester.getRect(
       find.byKey(const Key('reading-quick-scroll-rail')),
     );
-    await tester.tap(thumb);
+    await tester.tap(find.byKey(const Key('reading-quick-scroll-slider')));
     await tester.pumpAndSettle();
-    expect(find.byKey(const Key('reading-quick-scroll-card')), findsOneWidget);
-    await tester.tapAt(Offset(30, rail.bottom + 40));
-    await tester.pumpAndSettle();
-    expect(state.taps, 1);
+    expect(state.taps, 0);
+    expect(state.scroll.offset, 0);
     expect(find.byKey(const Key('reading-quick-scroll-card')), findsNothing);
     await tester.tapAt(Offset(rail.center.dx, rail.bottom - 30));
-    expect(state.taps, 2);
+    expect(state.taps, 1);
     expect(state.scroll.offset, 0);
   });
 
   testWidgets('偏离滑块中心抓取不跳位，拖动中取消清除未绘制更新', (tester) async {
-    final state = await mount(tester);
+    final state = await mountReadingScroll(tester);
     state.scroll.jumpTo(2000);
-    state.quick.toggle();
+    state.quick.setKeyboardFocus(true);
     await tester.pumpAndSettle();
     final thumb = find.byKey(const Key('reading-quick-scroll-slider'));
     final initial = tester.getRect(thumb);
@@ -483,10 +404,12 @@ void main() {
   });
 
   testWidgets('键盘按视口调整并支持首尾与收起', (tester) async {
-    final state = await mount(tester);
-    state.quick.toggle();
+    final state = await mountReadingScroll(tester);
+    state.quick.setKeyboardFocus(true);
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('reading-quick-scroll-slider')));
+    Focus.of(
+      tester.element(find.byKey(const Key('reading-quick-scroll-slider'))),
+    ).requestFocus();
     await tester.pumpAndSettle();
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
     await tester.pumpAndSettle();
@@ -507,8 +430,8 @@ void main() {
   });
 
   for (final dark in [false, true]) {
-    testWidgets('窄屏双倍字主题 $dark 避开系统手势并保留卡片操作', (tester) async {
-      final state = await mount(
+    testWidgets('窄屏双倍字主题 $dark 避开系统手势并提供实际位置', (tester) async {
+      final state = await mountReadingScroll(
         tester,
         width: 320,
         scale: 2,
@@ -516,53 +439,58 @@ void main() {
         gestureInsets: const EdgeInsets.only(right: 24, bottom: 24),
       );
       state.setLoading();
-      state.quick.toggle();
+      state.quick.setKeyboardFocus(true);
       await tester.pumpAndSettle();
       final thumb = find.byKey(const Key('reading-quick-scroll-slider'));
       final rect = tester.getRect(thumb);
       expect(rect.right, lessThanOrEqualTo(320 - 24 - 8));
-      expect(rect.size, const Size(48, 48));
-      await tester.tap(thumb);
+      expect(rect.size, const Size(48, 64));
+      state.quick.beginDrag(0.4);
       await tester.pumpAndSettle();
-      final card = tester.getRect(
-        find.byKey(const Key('reading-quick-scroll-card')),
+      final label = tester.getRect(
+        find.byKey(const Key('reading-quick-scroll-location')),
       );
-      expect(card.left, greaterThanOrEqualTo(8));
-      expect(card.right, lessThanOrEqualTo(rect.left - 8));
-      expect(card.bottom, lessThanOrEqualTo(800 - 24 - 8));
-      expect(find.text('已加载末尾'), findsOneWidget);
+      expect(label.left, greaterThanOrEqualTo(8));
+      expect(label.right, lessThanOrEqualTo(rect.left - 8));
+      expect(label.bottom, lessThanOrEqualTo(800 - 24 - 8));
       expect(tester.takeException(), isNull);
       await expectLater(
         find.byType(Scaffold),
         matchesGoldenFile(
-          'goldens/reading_quick_scroll_card_${dark ? 'dark' : 'light'}_320.png',
+          'goldens/reading_scroll_drag_${dark ? 'dark' : 'light'}_320.png',
         ),
       );
     });
   }
 
-  testWidgets('短视口大字操作卡可内部滚动，正文滚动才关闭卡片', (tester) async {
-    final state = await mount(tester, width: 320, height: 400, scale: 2);
+  testWidgets('短视口双倍字拖动标签不溢出命中区', (tester) async {
+    final state = await mountReadingScroll(
+      tester,
+      width: 320,
+      height: 400,
+      scale: 2,
+    );
     state.failLoading();
     state.setLoading();
-    state.quick.toggle();
+    state.quick.setKeyboardFocus(true);
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('reading-quick-scroll-slider')));
+    state.quick.beginDrag(0.5);
     await tester.pumpAndSettle();
-    final card = find.byKey(const Key('reading-quick-scroll-card'));
-    await tester.drag(card, const Offset(0, -130));
-    await tester.pumpAndSettle();
-    expect(card, findsOneWidget);
+    final thumb = tester.getRect(
+      find.byKey(const Key('reading-quick-scroll-slider')),
+    );
+    final label = tester.getRect(
+      find.byKey(const Key('reading-quick-scroll-location')),
+    );
+    expect(label.right, lessThanOrEqualTo(thumb.left - 8));
+    expect(label.bottom, lessThanOrEqualTo(400));
     expect(tester.takeException(), isNull);
-    await tester.dragFrom(const Offset(300, 340), const Offset(0, -60));
-    await tester.pumpAndSettle();
-    expect(card, findsNothing);
-    expect(state.quick.isOpen, isTrue);
+    state.quick.endDrag(0.5);
   });
 
   testWidgets('移除页面取消所有后续滚动与通知', (tester) async {
-    final state = await mount(tester);
-    state.quick.toggle();
+    final state = await mountReadingScroll(tester);
+    state.quick.setKeyboardFocus(true);
     await tester.pumpAndSettle();
     state.quick.beginDrag(0.9);
     state.quick.seekEdge(true);
@@ -570,91 +498,4 @@ void main() {
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
   });
-}
-
-class _Harness extends StatefulWidget {
-  const _Harness({super.key, this.initialCount = 0});
-  final int initialCount;
-  @override
-  State<_Harness> createState() => _HarnessState();
-}
-
-class _HarnessState extends State<_Harness> {
-  final scroll = ScrollController();
-  late final quick = ReadingQuickScrollController(
-    scrollController: scroll,
-    onUserNavigation: () => navigationCount++,
-  );
-  int navigationCount = 0;
-  int buildCount = 0;
-  int taps = 0;
-  int retries = 0;
-  int scope = 0;
-  late int count = widget.initialCount;
-  double bodyHeight = 7000;
-  bool hasMore = false;
-  bool loading = false;
-  bool failed = false;
-
-  void append() => setState(() => count += 20);
-  void growBody() => setState(() => bodyHeight += 3000);
-  void changeScope() => setState(() => scope++);
-  void setLoading() => setState(() {
-    hasMore = true;
-    loading = true;
-  });
-  void failLoading() => setState(() {
-    loading = false;
-    failed = true;
-  });
-
-  @override
-  void dispose() {
-    quick.dispose();
-    scroll.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    buildCount++;
-    quick.synchronize(scope: scope, enabled: true, contentRevision: count);
-    return Scaffold(
-      appBar: AppBar(actions: [ReadingQuickScrollAction(controller: quick)]),
-      body: SizedBox.expand(
-        key: const Key('reading-body'),
-        child: ReadingProgressViewport(
-          controller: quick,
-          hasMore: hasMore,
-          loading: loading,
-          loadFailed: failed,
-          onRetry: () => retries++,
-          child: ListView(
-            controller: scroll,
-            physics: ReadingQuickScrollPhysics(controller: quick),
-            children: [
-              ReadingPositionAnchor(
-                controller: quick,
-                label: '第 128 楼附近',
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: () => taps++,
-                  child: SizedBox(
-                    height: bodyHeight,
-                    child: const Text('超长楼层正文'),
-                  ),
-                ),
-              ),
-              for (var i = 0; i < count; i++)
-                ReadingPositionAnchor(
-                  controller: quick,
-                  label: '第 ${300 + i} 楼附近',
-                  child: SizedBox(height: 80, child: Text('楼层 $i')),
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 }

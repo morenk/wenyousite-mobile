@@ -322,11 +322,7 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
           title: readyRoot == null
               ? const Text('楼中楼讨论')
               : PostDiscussionTitle(root: readyRoot),
-          actions: [
-            _returnToRootAction(context),
-            if (!isTargetEntry || _targetRevealed)
-              ReadingQuickScrollAction(controller: _quickScroll),
-          ],
+          actions: [_returnToRootAction(context)],
         ),
         body: ReadingProgressViewport(
           controller: _quickScroll,
@@ -337,7 +333,6 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
               (!isTargetEntry || _targetRevealed) &&
               state.transientFailure != null &&
               state.retryAction == PostDiscussionRetryAction.loadMore,
-          onRetry: () => ref.read(provider.notifier).loadMore(),
           bottomObstructionKey: _composeObstructionKey,
           child: readingWithTarget,
         ),
