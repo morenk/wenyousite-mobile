@@ -49,20 +49,32 @@ void main() {
       expect(find.byType(LinearProgressIndicator), findsOneWidget);
       final bio = tester.getRect(find.text('一起写故事。'));
       final name = tester.getRect(find.text('温柔测试员').first);
+      final edit = find.byKey(const Key('me-profile-edit'));
+      expect(edit, findsOneWidget);
+      final editRect = tester.getRect(edit);
+      final balance = tester.getRect(find.byKey(const Key('me-open-balance')));
+      expect(editRect.top, greaterThanOrEqualTo(balance.bottom));
+      expect(editRect.right, closeTo(balance.right, 1));
+      final experience = tester.getRect(find.text('150 / 200 经验'));
+      final progress = tester.getRect(find.byType(LinearProgressIndicator));
+      expect(progress.center.dy, closeTo(experience.center.dy, 1));
+      expect(progress.width, lessThanOrEqualTo(96));
+      expect(experience.left - progress.right, closeTo(8, 1));
+      expect(experience.top - bio.bottom, inInclusiveRange(8, 12));
       if (visual.scale == 1) {
         final avatar = tester.getRect(
           find.byKey(const ValueKey('profile-avatar-温柔测试员')),
         );
         expect(name.top - avatar.bottom, inInclusiveRange(8, 16));
-        final experience = tester.getRect(find.text('150 / 200 经验'));
-        expect(experience.center.dy, closeTo(name.center.dy, 1));
-        expect(experience.left, greaterThan(name.right + 8));
+        expect(editRect.width, lessThanOrEqualTo(88));
+        expect(editRect.height, greaterThanOrEqualTo(48));
+        final surface = tester.getRect(
+          find.descendant(of: edit, matching: find.byType(Material)),
+        );
+        expect(surface.height, 32);
+        expect(editRect.left, greaterThan(name.right));
       }
       expect(bio.top, greaterThanOrEqualTo(name.bottom + 12));
-      expect(
-        tester.getRect(find.byType(LinearProgressIndicator)).top - bio.bottom,
-        inInclusiveRange(8, 12),
-      );
       expect(find.byKey(const Key('me-open-edit-profile')), findsNothing);
       final tools = find.byKey(const Key('me-personal-tools'));
       expect(

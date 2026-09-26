@@ -105,44 +105,60 @@ void registerMePageSettingsLayoutCases() {
     await tester.pumpAndSettle();
   });
 
-  testWidgets('设置的编辑资料列表项复用既有编辑页并可返回设置', (tester) async {
-    final container = await mePageTestAuthenticatedContainer(
-      MePageTestFakeMeProfileRepository(),
-    );
-    addTearDown(container.dispose);
-    final router = GoRouter(
-      routes: [
-        GoRoute(path: '/', builder: (_, _) => const MeSettingsPage()),
-        GoRoute(
-          path: AppRoutePaths.meEdit,
-          name: AppRouteNames.meEdit,
-          builder: (_, _) => const MeEditPage(),
+  for (final fromSettings in [true, false]) {
+    testWidgets('${fromSettings ? '设置列表' : '主页小按钮'}复用既有编辑页并可返回', (
+      tester,
+    ) async {
+      final container = await mePageTestAuthenticatedContainer(
+        MePageTestFakeMeProfileRepository(),
+      );
+      addTearDown(container.dispose);
+      final router = GoRouter(
+        routes: [
+          GoRoute(
+            path: '/',
+            builder: (_, _) =>
+                fromSettings ? const MeSettingsPage() : const MePage(),
+          ),
+          GoRoute(
+            path: AppRoutePaths.meEdit,
+            name: AppRouteNames.meEdit,
+            builder: (_, _) => const MeEditPage(),
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp.router(
+            theme: AppTheme.light,
+            routerConfig: router,
+          ),
         ),
-      ],
-    );
-    addTearDown(router.dispose);
-    await tester.pumpWidget(
-      UncontrolledProviderScope(
-        container: container,
-        child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
-      ),
-    );
-    await tester.pumpAndSettle();
-    final editEntry = find.byKey(const Key('me-open-edit-profile'));
-    await tester.ensureVisible(editEntry);
-    await tester.tap(editEntry);
-    await tester.pumpAndSettle();
-    expect(
-      GoRouterState.of(tester.element(find.byType(MeEditPage))).uri.path,
-      AppRoutePaths.meEdit,
-    );
-    expect(find.byType(MeEditPage), findsOneWidget);
-    expect(find.byKey(const Key('me-bio-field')), findsOneWidget);
-    await tester.binding.handlePopRoute();
-    await tester.pumpAndSettle();
-    expect(find.byType(MeSettingsPage), findsOneWidget);
-    expect(editEntry, findsOneWidget);
-  });
+      );
+      await tester.pumpAndSettle();
+      final editEntry = find.byKey(
+        Key(fromSettings ? 'me-open-edit-profile' : 'me-profile-edit'),
+      );
+      await tester.ensureVisible(editEntry);
+      await tester.tap(editEntry);
+      await tester.pumpAndSettle();
+      expect(
+        GoRouterState.of(tester.element(find.byType(MeEditPage))).uri.path,
+        AppRoutePaths.meEdit,
+      );
+      expect(find.byType(MeEditPage), findsOneWidget);
+      expect(find.byKey(const Key('me-bio-field')), findsOneWidget);
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(
+        find.byType(fromSettings ? MeSettingsPage : MePage),
+        findsOneWidget,
+      );
+      expect(editEntry, findsOneWidget);
+    });
+  }
 
   for (final width in [320.0, 360.0, 400.0, 600.0]) {
     for (final dark in [false, true]) {
