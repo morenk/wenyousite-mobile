@@ -31,7 +31,7 @@ void registerMePageDashboardProfileCases() {
     expect(repository.fetchCalls, 0);
   });
 
-  testWidgets('本人中心展示身份摘要、紧凑编辑入口并分离私人资源', (tester) async {
+  testWidgets('本人中心展示身份摘要并将资料编辑保留在设置', (tester) async {
     final repository = MePageTestFakeMeProfileRepository();
     final container = await mePageTestAuthenticatedContainer(repository);
     addTearDown(container.dispose);
@@ -93,8 +93,8 @@ void registerMePageDashboardProfileCases() {
       findsOneWidget,
     );
     expect(find.byKey(const Key('me-open-edit-profile')), findsNothing);
-    expect(find.byKey(const Key('me-profile-edit')), findsOneWidget);
-    expect(find.text('编辑资料'), findsOneWidget);
+    expect(find.byKey(const Key('me-profile-edit')), findsNothing);
+    expect(find.text('编辑资料'), findsNothing);
     expect(find.byKey(const Key('me-open-public-profile')), findsNothing);
     expect(find.text('预览公开主页'), findsNothing);
     expect(find.byKey(const Key('me-open-settings')), findsOneWidget);

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
-import 'package:wenyousite_mobile/core/widgets/wenyou_async_button.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_level_badge.dart';
@@ -44,7 +43,6 @@ class UserProfileHeader extends StatelessWidget {
     this.statuses = const [],
     this.levelProgress,
     this.levelProgressLabel,
-    this.identityAction,
     this.actions,
     super.key,
   });
@@ -58,7 +56,6 @@ class UserProfileHeader extends StatelessWidget {
   final List<UserProfileStatusItem> statuses;
   final double? levelProgress;
   final String? levelProgressLabel;
-  final Widget? identityAction;
   final Widget? actions;
 
   @override
@@ -119,30 +116,8 @@ class UserProfileHeader extends StatelessWidget {
                     Expanded(child: largeText ? identity : statsRow),
                   ],
                 ),
-                if (!largeText)
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Padding(
-                          padding: EdgeInsets.only(top: tokens.space8),
-                          child: identity,
-                        ),
-                      ),
-                      if (identityAction != null) ...[
-                        SizedBox(width: tokens.space12),
-                        identityAction!,
-                      ],
-                    ],
-                  ),
-                if (largeText) ...[
-                  statsRow,
-                  if (identityAction != null)
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: identityAction!,
-                    ),
-                ],
+                if (!largeText) ...[SizedBox(height: tokens.space8), identity],
+                if (largeText) statsRow,
                 if (normalizedBio?.isNotEmpty == true) ...[
                   SizedBox(height: tokens.space12),
                   Text(
@@ -181,20 +156,6 @@ class UserProfileHeader extends StatelessWidget {
   }
 }
 
-class UserProfileEditButton extends StatelessWidget {
-  const UserProfileEditButton({required this.onPressed, super.key});
-
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) => WenyouAsyncButton(
-    label: '编辑资料',
-    onPressed: onPressed,
-    variant: WenyouAsyncButtonVariant.outlined,
-    dense: true,
-  );
-}
-
 class _ProfileLevelProgress extends StatelessWidget {
   const _ProfileLevelProgress({required this.value, required this.label});
 
@@ -204,28 +165,29 @@ class _ProfileLevelProgress extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
-    return Row(
-      children: [
-        Flexible(
-          child: SizedBox(
-            width: tokens.space32 * 3,
+    return LayoutBuilder(
+      builder: (context, constraints) => Row(
+        children: [
+          Expanded(
             child: LinearProgressIndicator(
               value: value,
               semanticsLabel: '等级进度',
             ),
           ),
-        ),
-        SizedBox(width: tokens.space8),
-        Flexible(
-          flex: 2,
-          child: Text(
-            label,
-            style: Theme.of(
-              context,
-            ).textTheme.wenyouCaption.copyWith(color: tokens.mutedText),
+          SizedBox(width: tokens.space8),
+          ConstrainedBox(
+            // 长数值和大字号可换行，同时为进度条保留可见空间。
+            constraints: BoxConstraints(maxWidth: constraints.maxWidth * 2 / 3),
+            child: Text(
+              label,
+              textAlign: TextAlign.end,
+              style: Theme.of(
+                context,
+              ).textTheme.wenyouCaption.copyWith(color: tokens.mutedText),
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

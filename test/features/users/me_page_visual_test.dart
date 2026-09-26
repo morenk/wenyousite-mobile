@@ -49,16 +49,14 @@ void main() {
       expect(find.byType(LinearProgressIndicator), findsOneWidget);
       final bio = tester.getRect(find.text('一起写故事。'));
       final name = tester.getRect(find.text('温柔测试员').first);
-      final edit = find.byKey(const Key('me-profile-edit'));
-      expect(edit, findsOneWidget);
-      final editRect = tester.getRect(edit);
+      expect(find.byKey(const Key('me-profile-edit')), findsNothing);
+      expect(find.text('编辑资料'), findsNothing);
       final balance = tester.getRect(find.byKey(const Key('me-open-balance')));
-      expect(editRect.top, greaterThanOrEqualTo(balance.bottom));
-      expect(editRect.right, closeTo(balance.right, 1));
       final experience = tester.getRect(find.text('150 / 200 经验'));
       final progress = tester.getRect(find.byType(LinearProgressIndicator));
       expect(progress.center.dy, closeTo(experience.center.dy, 1));
-      expect(progress.width, lessThanOrEqualTo(96));
+      expect(progress.left, closeTo(bio.left, 1));
+      expect(experience.right, closeTo(balance.right, 1));
       expect(experience.left - progress.right, closeTo(8, 1));
       expect(experience.top - bio.bottom, inInclusiveRange(8, 12));
       if (visual.scale == 1) {
@@ -66,22 +64,18 @@ void main() {
           find.byKey(const ValueKey('profile-avatar-温柔测试员')),
         );
         expect(name.top - avatar.bottom, inInclusiveRange(8, 16));
-        expect(editRect.width, lessThanOrEqualTo(88));
-        expect(editRect.height, greaterThanOrEqualTo(48));
-        final surface = tester.getRect(
-          find.descendant(of: edit, matching: find.byType(Material)),
-        );
-        expect(surface.height, 32);
-        expect(editRect.left, greaterThan(name.right));
       }
       expect(bio.top, greaterThanOrEqualTo(name.bottom + 12));
       expect(find.byKey(const Key('me-open-edit-profile')), findsNothing);
       final tools = find.byKey(const Key('me-personal-tools'));
+      final header = tester.getRect(find.byKey(const Key('me-profile-header')));
+      final toolsRect = tester.getRect(tools);
+      expect(toolsRect.left, closeTo(header.left, 1));
+      expect(toolsRect.right, closeTo(header.right, 1));
+      expect(toolsRect.top, closeTo(header.bottom, 1));
       expect(
-        tester.getRect(tools).top,
-        greaterThan(
-          tester.getRect(find.byKey(const Key('me-profile-header'))).bottom,
-        ),
+        tester.getRect(find.byKey(const Key('me-content-tabs'))).top,
+        closeTo(toolsRect.bottom, 1),
       );
       await expectLater(
         find.byKey(const Key('me-visual')),

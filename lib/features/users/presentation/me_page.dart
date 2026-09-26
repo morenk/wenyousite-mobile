@@ -500,11 +500,9 @@ class _MeDashboardState extends ConsumerState<_MeDashboard> {
 
   @override
   Widget build(BuildContext context) {
-    final tokens = context.wenyouTokens;
     final walletProvider = walletControllerProvider(walletSessionKey(ref));
     final walletState = ref.watch(walletProvider);
     final stickersEnabled = ref.watch(stickersEnabledProvider);
-    final horizontal = wenyouHorizontalPagePadding(context);
     ref.listen(
       meUserContentControllerProvider(
         widget.profile.id,
@@ -525,27 +523,16 @@ class _MeDashboardState extends ConsumerState<_MeDashboard> {
         controller: _outerScrollController,
         headerSliverBuilder: (context, innerBoxIsScrolled) => [
           SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(0, 0, 0, tokens.space8),
-              child: WenyouConstrainedWidth(
-                child: MeProfileSummary(
-                  profile: widget.profile,
-                  balance: walletState.summary?.balance,
-                ),
+            child: WenyouConstrainedWidth(
+              child: MeProfileSummary(
+                profile: widget.profile,
+                balance: walletState.summary?.balance,
               ),
             ),
           ),
           SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(
-                horizontal,
-                0,
-                horizontal,
-                tokens.space8,
-              ),
-              child: WenyouConstrainedWidth(
-                child: MePersonalTools(stickersEnabled: stickersEnabled),
-              ),
+            child: WenyouConstrainedWidth(
+              child: MePersonalTools(stickersEnabled: stickersEnabled),
             ),
           ),
           WenyouPinnedHeader(

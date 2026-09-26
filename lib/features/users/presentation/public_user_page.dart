@@ -319,12 +319,6 @@ class _UserProfileContent extends ConsumerWidget {
           value: '${WenyouAmount.format(profile.receivedTipTotal)} 升',
         ),
       ],
-      identityAction: isCurrentUser
-          ? UserProfileEditButton(
-              key: const Key('public-user-edit-profile'),
-              onPressed: () => context.pushNamed('me-edit'),
-            )
-          : null,
       actions: relationTarget == null
           ? destinationActions.isEmpty
                 ? null

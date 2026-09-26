@@ -171,7 +171,7 @@ void main() {
     expect(find.byKey(const Key('user-relation-follow')), findsNothing);
     expect(find.byKey(const Key('user-relation-block')), findsNothing);
     expect(find.byKey(const Key('public-user-report')), findsNothing);
-    expect(find.byKey(const Key('public-user-edit-profile')), findsOneWidget);
+    expect(find.byKey(const Key('public-user-edit-profile')), findsNothing);
   });
 
   testWidgets('公开页不再提供本人只读预览分支', (tester) async {
@@ -194,7 +194,7 @@ void main() {
 
     expect(find.text('用户主页'), findsOneWidget);
     expect(find.text('预览公开主页'), findsNothing);
-    expect(find.byKey(const Key('public-user-edit-profile')), findsOneWidget);
+    expect(find.byKey(const Key('public-user-edit-profile')), findsNothing);
     expect(find.byKey(const Key('public-user-moments-tab')), findsOneWidget);
   });
 
