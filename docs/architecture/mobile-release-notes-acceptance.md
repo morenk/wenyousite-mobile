@@ -19,13 +19,13 @@
 
 定向测试位于 `test/features/app_shell/mobile_release_controller_test.dart`、`mobile_release_repository_test.dart`、`mobile_release_widgets_test.dart`、`mobile_update_controller_test.dart`、`mobile_update_service_test.dart` 及 `test/app_shell_test.dart`。覆盖精确身份、空态、失败重试、分页与游标失效、刷新保留、迟到结果、推荐／强制／忽略后的入口、下载目标复核与原安装链路。
 
-`test/features/app_shell/goldens/mobile_release_light_360.png` 和 `mobile_release_dark_360.png` 是 360×800 的组件候选，示例文案仅供布局检查；两倍文字及长说明通过滚动可达性测试。另保留 HTML／Markdown 字面量的纯文本断言。后续已连接唯一 ARM64 设备 `4b9c39b5`（2509FPN0BC）。受控 Debug 启动、实际源码与画面证据将在本记录补充；在记录完成前不把 Golden 冒称真机或端到端完成。
+`test/features/app_shell/goldens/mobile_release_light_360.png` 和 `mobile_release_dark_360.png` 是 360×800 的组件候选，示例文案仅供布局检查；两倍文字及长说明通过滚动可达性测试。另保留 HTML／Markdown 字面量的纯文本断言。后续已连接唯一 ARM64 设备 `4b9c39b5`（2509FPN0BC）。2026-09-27 门禁构建结束后实际执行 `npm run dev:start -- --session D:\code\wenyousite\artifacts\mobile-release-notes-20260927\preview-consumer.json` 时，ADB 已无连接设备；受控入口拒绝启动，`dev:status=stopped`。未安装、未卸载、未清数据，未建立 Debug 会话或获取本次真机截图。先前连接状态仅证明设备曾在线，不能冒称真机或端到端完成；需设备重新连接后续验。证据 `build-release-dev-start.log`。
 
 ## 本地门禁记录
 
 最终应用源码运行 `npm run check:apk -- -ContinueAfterFailure -TestConcurrency 2`，完整日志为 `build-release-full-gate.log`。严格聚合第一次发现两个问题：公网 `/meta` 尚未部署候选契约；新 Golden 已加载固定字体，但初始化写法不符合架构门禁要求。后者仅调整测试为标准 `setUpAll(loadDeterministicTestFonts)` 并另行预热 Android 主题，架构复验通过（`build-release-architecture-final.log`），补充全量静态分析也通过（`build-release-analyze-after-test-setup.log`）。未修改应用源码或放宽门禁，不机械重跑整轮。最终严格聚合退出码为 1，保留上述两项原始失败。其余步骤通过：OpenAPI 校验与生成一致性、固定契约、格式、应用／SDK 分析、21 个模块文档、API 覆盖、全量 Flutter `4959 passed / 1 skipped`（原有显式 Sentry live receipt 验收）、Windows 发布及 Debug 工具 `52/52`、ARM64 Debug APK 构建。最终9e25来源同步后另行执行契约来源与模块文档定向检查，并用 Git diff 与源码摘要确认消费者字节未变，不重复整轮。
 
-本轮已检查的应用实现提交为 `e425c0785a3419d396c41d3b54ed5e8c574ef4ff`，`sourceDigest=f623265b0815ff4e6cb0843b99f55a3a16c7fb338fb4e4e7f478c17c1489aa35`。普通门禁 APK 保存于 `build/mobile-release-evidence/gate-app-debug.apk`，仅构建未安装，包名 `site.wenyou.app.debug`、显示名“温油站 Debug”、`0.8.0-dev.2-debug+97`、仅 `arm64-v8a`、109419506 字节；SHA-256 `1df0bb7a4726faf91512afd40e40cbeb7e8260398e3ccf7052ba2874ca7b4739`。后续真机使用带隔离预览配置的 Debug 会话，其安装摘要另记，不能混用。
+本轮已检查的应用实现提交为 `e425c0785a3419d396c41d3b54ed5e8c574ef4ff`，`sourceDigest=f623265b0815ff4e6cb0843b99f55a3a16c7fb338fb4e4e7f478c17c1489aa35`。普通门禁 APK 保存于 `build/mobile-release-evidence/gate-app-debug.apk`，仅构建未安装，包名 `site.wenyou.app.debug`、显示名“温油站 Debug”、`0.8.0-dev.2-debug+97`、仅 `arm64-v8a`、109419506 字节；SHA-256 `1df0bb7a4726faf91512afd40e40cbeb7e8260398e3ccf7052ba2874ca7b4739`。后续真机应使用带隔离预览配置的 Debug 会话，其安装摘要另记，不能混用。最终9e25来源的 `api:verify:production` 再次返回非零（`build-release-final-production-check.log`），确认公网差异持续存在。
 
 ## 合成隔离预览与发布工具
 
