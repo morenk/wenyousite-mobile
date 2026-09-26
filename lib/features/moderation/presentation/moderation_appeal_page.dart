@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_sheet.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/moderation/application/moderation_appeal_controller.dart';
 import 'package:wenyousite_mobile/features/moderation/domain/moderation_appeal_models.dart';
@@ -42,10 +43,7 @@ class _ModerationAppealPageState extends ConsumerState<ModerationAppealPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const WenyouSectionHeader(
-                title: '治理决定与申诉',
-                subtitle: '可查看近 30 天的本人治理决定；每项生效决定只能提交一次申诉。',
-              ),
+              const Text('近 30 天的治理决定；每项生效决定只能申诉一次。'),
               SizedBox(height: context.wenyouTokens.space16),
               switch (state.phase) {
                 ModerationAppealPhase.credential => _buildCredential(state),
@@ -196,7 +194,7 @@ class _FailureState extends ConsumerWidget {
               .read(moderationAppealControllerProvider.notifier)
               .retry,
           icon: const WenyouIcon(WenyouIconIds.actionRefresh),
-          label: const Text('重新加载'),
+          label: const Text('重试'),
         ),
       ),
     );
@@ -362,11 +360,8 @@ class _DecisionCard extends StatelessWidget {
     BuildContext context,
     ModerationDecision decision,
   ) async {
-    final submitted = await showModalBottomSheet<bool>(
+    final submitted = await showWenyouSheet<bool>(
       context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      useSafeArea: true,
       builder: (_) => _AppealSheet(decision: decision),
     );
     if (submitted == true && context.mounted) {
@@ -430,12 +425,12 @@ class _AppealSheetState extends ConsumerState<_AppealSheet> {
     final tokens = context.wenyouTokens;
     final state = ref.watch(moderationAppealControllerProvider);
     final submitting = state.submittingDecisionId == widget.decision.id;
-    return Padding(
+    return SingleChildScrollView(
       padding: EdgeInsets.fromLTRB(
         tokens.space16,
         0,
         tokens.space16,
-        MediaQuery.viewInsetsOf(context).bottom + tokens.space16,
+        tokens.space16,
       ),
       child: Form(
         key: _formKey,

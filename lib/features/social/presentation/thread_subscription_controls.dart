@@ -8,6 +8,7 @@ import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/network/session_controller.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_level_badge.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_sheet.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/social/application/thread_subscription_controller.dart';
@@ -289,7 +290,7 @@ class _PlayerSubscriptionSheet extends ConsumerWidget {
                   size: 40,
                 ),
                 title: Text(candidate.username),
-                subtitle: Text('Lv.${candidate.level}'),
+                subtitle: WenyouLevelBadge(level: candidate.level),
                 trailing: OutlinedButton(
                   key: ValueKey('thread-subscription-user-${candidate.userId}'),
                   onPressed: state.isPending
@@ -365,7 +366,7 @@ class _PlayerLoadFailure extends StatelessWidget {
           key: const Key('thread-subscription-candidates-retry'),
           onPressed: onRetry,
           icon: const WenyouIcon(WenyouIconIds.actionRefresh),
-          label: const Text('重新加载'),
+          label: const Text('重试'),
         ),
       ),
     );

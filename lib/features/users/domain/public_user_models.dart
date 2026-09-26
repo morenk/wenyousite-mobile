@@ -3,7 +3,7 @@ import 'package:wenyousite_mobile/features/thread_feed/thread_feed_models.dart';
 import 'package:wenyousite_mobile/features/users/domain/profile_cover_models.dart';
 
 enum PublicUserContentTab {
-  created('创建', '创建的主题'),
+  created('主题', '创建的主题'),
   played('参与', '以玩家身份参与的主题'),
   replies('回复', '最近公开回复'),
   bookmarks('收藏', '公开收藏的主题');

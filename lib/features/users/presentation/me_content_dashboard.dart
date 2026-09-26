@@ -1,16 +1,13 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
-import 'package:wenyousite_mobile/core/animation/wenyou_motion.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_nested_scroll.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/users/application/public_user_controller.dart';
 import 'package:wenyousite_mobile/features/users/domain/public_user_models.dart';
 import 'package:wenyousite_mobile/features/users/presentation/public_user_content.dart';
-import 'package:wenyousite_mobile/features/users/presentation/user_activity_summary_panel.dart';
 
 typedef MeUserMomentsBuilder = Widget Function(String userId);
 
@@ -26,18 +23,18 @@ class MeUserMomentsIntegration {
   final MeUserMomentsRefresher refresh;
 }
 
-enum MeContentTab { overview, moments, createdThreads, playedThreads }
+enum MeContentTab { createdThreads, moments, playedThreads, replies }
 
 extension MeContentTabPresentation on MeContentTab {
   String get label => switch (this) {
-    MeContentTab.overview => '概览',
+    MeContentTab.replies => '回复',
     MeContentTab.moments => '动态',
-    MeContentTab.createdThreads => '创建',
+    MeContentTab.createdThreads => '主题',
     MeContentTab.playedThreads => '参与',
   };
 
   PublicUserContentTab? get publicUserTab => switch (this) {
-    MeContentTab.overview => PublicUserContentTab.replies,
+    MeContentTab.replies => PublicUserContentTab.replies,
     MeContentTab.moments => null,
     MeContentTab.createdThreads => PublicUserContentTab.created,
     MeContentTab.playedThreads => PublicUserContentTab.played,
@@ -64,8 +61,6 @@ class MeContentTabBody extends ConsumerStatefulWidget {
 
 class _MeContentTabBodyState extends ConsumerState<MeContentTabBody>
     with AutomaticKeepAliveClientMixin {
-  final GlobalKey _recentRepliesKey = GlobalKey();
-
   @override
   bool get wantKeepAlive => true;
 
@@ -73,7 +68,7 @@ class _MeContentTabBodyState extends ConsumerState<MeContentTabBody>
   Widget build(BuildContext context) {
     super.build(context);
     return switch (widget.tab) {
-      MeContentTab.overview => _buildUserContent(
+      MeContentTab.replies => _buildUserContent(
         context,
         PublicUserContentTab.replies,
       ),
@@ -101,11 +96,11 @@ class _MeContentTabBodyState extends ConsumerState<MeContentTabBody>
     final provider = meUserContentControllerProvider(widget.userId);
     final state = ref.watch(provider);
     final notifier = ref.read(provider.notifier);
-    final isOverview = widget.tab == MeContentTab.overview;
     return CustomScrollView(
       key: PageStorageKey('me-${tab.name}-content'),
       physics: const AlwaysScrollableScrollPhysics(),
       slivers: [
+        const WenyouNestedScrollInset(),
         SliverPadding(
           padding: EdgeInsets.fromLTRB(
             wenyouHorizontalPagePadding(context),
@@ -115,40 +110,6 @@ class _MeContentTabBodyState extends ConsumerState<MeContentTabBody>
           ),
           sliver: SliverMainAxisGroup(
             slivers: [
-              SliverToBoxAdapter(
-                child: WenyouConstrainedWidth(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      if (isOverview) ...[
-                        UserActivitySummaryPanel(
-                          key: const Key('me-activity-summary'),
-                          showTitle: false,
-                          keyPrefix: 'me-activity',
-                          state: state,
-                          onRetry: notifier.retryActivitySummary,
-                          onMomentsPressed: () =>
-                              widget.onSelectTab(MeContentTab.moments),
-                          onCreatedThreadsPressed: () =>
-                              widget.onSelectTab(MeContentTab.createdThreads),
-                          onPlayedThreadsPressed: () =>
-                              widget.onSelectTab(MeContentTab.playedThreads),
-                          onRepliesPressed: _revealRecentReplies,
-                        ),
-                        SizedBox(height: context.wenyouTokens.space20),
-                        KeyedSubtree(
-                          key: _recentRepliesKey,
-                          child: const WenyouSectionHeader(
-                            key: Key('me-recent-replies'),
-                            title: '最近回复',
-                          ),
-                        ),
-                        SizedBox(height: context.wenyouTokens.space8),
-                      ],
-                    ],
-                  ),
-                ),
-              ),
               PublicUserContentSectionSliver(
                 tab: tab,
                 state: state,
@@ -160,21 +121,6 @@ class _MeContentTabBodyState extends ConsumerState<MeContentTabBody>
           ),
         ),
       ],
-    );
-  }
-
-  void _revealRecentReplies() {
-    final targetContext = _recentRepliesKey.currentContext;
-    if (targetContext == null) return;
-    unawaited(
-      Scrollable.ensureVisible(
-        targetContext,
-        alignment: 0,
-        duration: wenyouAnimationsDisabled(context)
-            ? Duration.zero
-            : context.wenyouTokens.feedbackDuration,
-        curve: wenyouStandardMotionCurve,
-      ),
     );
   }
 }

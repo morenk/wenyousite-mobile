@@ -16,7 +16,7 @@ void main() {
     (name: '亮色', theme: AppTheme.light, golden: 'profile_header_360_light.png'),
     (name: '黑夜', theme: AppTheme.dark, golden: 'profile_header_360_dark.png'),
   ]) {
-    testWidgets('个人资料在${themeCase.name}模式使用 10dp 卡片外框', (tester) async {
+    testWidgets('个人资料在${themeCase.name}模式使用单层资料表面', (tester) async {
       tester.view.devicePixelRatio = 1;
       tester.view.physicalSize = const Size(360, 800);
       addTearDown(tester.view.resetDevicePixelRatio);
@@ -44,14 +44,9 @@ void main() {
       final identity = find.byKey(const Key('profile-identity-without-cover'));
       expect(identity, findsOneWidget);
       expect(find.bySemanticsLabel('无背景用户 的主页背景图'), findsNothing);
-      expect(tester.getSize(identity).height, 92);
+      expect(tester.getSize(identity).height, lessThan(160));
       expect(find.text('无背景用户'), findsOneWidget);
-      final card = tester.widget<Card>(find.byType(Card));
-      expect(
-        (card.shape! as RoundedRectangleBorder).borderRadius,
-        BorderRadius.circular(10),
-      );
-      expect((card.shape! as RoundedRectangleBorder).side, BorderSide.none);
+      expect(find.byType(Card), findsNothing);
       expect(tester.takeException(), isNull);
       await expectLater(
         find.byType(UserProfileHeader),
@@ -64,9 +59,7 @@ void main() {
     (name: '亮色', theme: AppTheme.light, golden: 'profile_cover_360_light.png'),
     (name: '黑夜', theme: AppTheme.dark, golden: 'profile_cover_360_dark.png'),
   ]) {
-    testWidgets('个人资料背景在${themeCase.name}模式以 2 比 1 展示并裁切在 10dp 卡片内', (
-      tester,
-    ) async {
+    testWidgets('个人资料背景在${themeCase.name}模式以 2 比 1 展示并与头像重叠', (tester) async {
       tester.view.devicePixelRatio = 1;
       tester.view.physicalSize = const Size(360, 800);
       addTearDown(tester.view.resetDevicePixelRatio);
@@ -112,18 +105,30 @@ void main() {
       expect(cover, findsOneWidget);
       expect(tester.getSize(cover).width / tester.getSize(cover).height, 2);
 
-      final card = find.descendant(of: header, matching: find.byType(Card));
-      final profileCard = tester.widget<Card>(card);
-      expect(profileCard.clipBehavior, Clip.antiAlias);
       expect(
-        (profileCard.shape! as RoundedRectangleBorder).borderRadius,
-        BorderRadius.circular(10),
+        find.descendant(of: header, matching: find.byType(Card)),
+        findsNothing,
+      );
+      expect(tester.getTopLeft(cover).dy, tester.getTopLeft(header).dy);
+      final avatar = find.byKey(const ValueKey('profile-avatar-温柔测试员'));
+      expect(
+        tester.getRect(avatar).top,
+        lessThan(tester.getRect(cover).bottom),
       );
       expect(
-        (profileCard.shape! as RoundedRectangleBorder).side,
-        BorderSide.none,
+        tester.getRect(avatar).bottom,
+        greaterThan(tester.getRect(cover).bottom),
       );
-      expect(tester.getTopLeft(cover).dy, tester.getTopLeft(card).dy);
+      final name = tester.getRect(find.text('温柔测试员'));
+      expect(
+        name.top - tester.getRect(avatar).bottom,
+        inInclusiveRange(8, 16),
+        reason: '头像嵌入封面的部分不应继续占用昵称上方的布局空间',
+      );
+      expect(
+        tester.getRect(find.byType(UserProfileStats)).bottom,
+        lessThanOrEqualTo(name.top),
+      );
       expect(tester.takeException(), isNull);
       await expectLater(
         header,

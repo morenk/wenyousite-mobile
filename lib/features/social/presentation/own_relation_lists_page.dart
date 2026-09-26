@@ -8,6 +8,7 @@ import 'package:wenyousite_mobile/core/application/user_facing_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_level_badge.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/social/application/own_relation_lists_controller.dart';
 import 'package:wenyousite_mobile/features/social/domain/user_relation_list_models.dart';
@@ -267,7 +268,7 @@ class _OwnRelationListViewState extends State<_OwnRelationListView>
               tone: WenyouStatusTone.error,
               action: TextButton(
                 onPressed: widget.onRefresh,
-                child: const Text('重新加载'),
+                child: const Text('重试'),
               ),
             ),
           if (list.loaded && list.items.isEmpty)
@@ -345,7 +346,7 @@ class _OwnRelationRow extends StatelessWidget {
       builder: (context, constraints) {
         final scale = MediaQuery.textScalerOf(context).scale(1);
         // 以身份和完整操作文字所需宽度决定换行，不缩小大字或命中区。
-        final actionWidth = tokens.space24 * 4 * scale;
+        final actionWidth = tokens.space20 * 4 * scale;
         final wrap =
             constraints.maxWidth <
             actionWidth +
@@ -381,11 +382,7 @@ class _OwnRelationRow extends StatelessWidget {
                           fontWeight: FontWeight.w500,
                         ),
                       ),
-                      Text(
-                        'Lv.${item.level}',
-                        style: Theme.of(context).textTheme.wenyouCaption
-                            .copyWith(color: tokens.mutedText),
-                      ),
+                      WenyouLevelBadge(level: item.level),
                     ],
                   ),
                 ),
@@ -408,7 +405,7 @@ class _OwnRelationRow extends StatelessWidget {
                 label: label,
                 semanticLabel:
                     '${item.username}，$label${following ? '，打开关系操作' : ''}',
-                compact: true,
+                dense: true,
                 variant: following
                     ? WenyouAsyncButtonVariant.tonal
                     : WenyouAsyncButtonVariant.filled,

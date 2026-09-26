@@ -5,6 +5,57 @@ import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 
 void main() {
+  for (final scale in [1.0, 2.0]) {
+    testWidgets('紧凑表面保留外缘点击与在途尺寸 scale=$scale', (tester) async {
+      var calls = 0;
+      var loading = false;
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.light,
+          home: MediaQuery(
+            data: MediaQueryData(textScaler: TextScaler.linear(scale)),
+            child: Scaffold(
+              body: Center(
+                child: SizedBox(
+                  width: 80 * scale,
+                  child: StatefulBuilder(
+                    builder: (_, setState) => WenyouAsyncButton(
+                      label: '互相关注',
+                      dense: true,
+                      variant: WenyouAsyncButtonVariant.tonal,
+                      isLoading: loading,
+                      onPressed: () {
+                        calls++;
+                        setState(() => loading = true);
+                      },
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      final button = find.byType(WenyouAsyncButton);
+      final before = tester.getRect(button);
+      expect(before.height, greaterThanOrEqualTo(48));
+      if (scale == 1) {
+        final surface = find.descendant(
+          of: button,
+          matching: find.byType(Material),
+        );
+        expect(tester.getSize(surface).height, 32);
+      }
+      await tester.tapAt(Offset(before.center.dx, before.top + 2));
+      await tester.pump();
+      expect(calls, 1);
+      expect(tester.getRect(button), before);
+      await tester.tap(button);
+      expect(calls, 1);
+      expect(tester.takeException(), isNull);
+    });
+  }
+
   testWidgets('文字按钮可保留简短可见文字并朗读目标，加载也保留对象语义', (tester) async {
     var loading = false;
     await tester.pumpWidget(

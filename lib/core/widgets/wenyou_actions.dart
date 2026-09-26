@@ -1,6 +1,45 @@
 import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_async_button.dart';
+
+/// 主操作保留按钮层级；大字号时将次要操作另起一行，避免挤压文字。
+class WenyouPrimaryActionRow extends StatelessWidget {
+  const WenyouPrimaryActionRow({
+    required this.primary,
+    this.secondary = const [],
+    super.key,
+  });
+  final Widget primary;
+  final List<Widget> secondary;
+
+  @override
+  Widget build(BuildContext context) {
+    final gap = context.wenyouTokens.space8;
+    if (MediaQuery.textScalerOf(context).scale(16) > 20) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          primary,
+          if (secondary.isNotEmpty) ...[
+            SizedBox(height: gap),
+            Wrap(
+              alignment: WrapAlignment.end,
+              spacing: gap,
+              children: secondary,
+            ),
+          ],
+        ],
+      );
+    }
+    return Row(
+      children: [
+        Expanded(child: primary),
+        for (final action in secondary) ...[SizedBox(width: gap), action],
+      ],
+    );
+  }
+}
 
 class WenyouAsyncIconButton extends StatelessWidget {
   const WenyouAsyncIconButton({

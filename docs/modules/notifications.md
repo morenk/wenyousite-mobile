@@ -12,6 +12,8 @@
 
 ## 3. 页面、入口和导航关系
 
+每条通知的删除收进更多菜单，避免与阅读内容争抢操作层级；选择删除后仍执行原二次确认。分页结束不占一行提示，加载更多、失败重试、全部已读与分类行为保持。
+
 “消息”是底部主分支，规范路由使用 `/notifications`；“私聊”页签写入 `/notifications?section=directMessages`，旧 `/messages` 仅作兼容重定向。游客留在分支内看到登录引导并携带同一路径回跳。通知项按 `target.kind` 导航：主楼层使用 `/threads/:threadId?post=:postId`，楼中楼回复使用 `/threads/:threadId/posts/:parentPostId/replies?post=:postId`，thread 使用 `/threads/:threadId`，user 使用 `/users/:userId`，moment 使用 `/moments/:momentId`；动态评论目标附加 `?comment=:momentCommentId`，由详情重新读取权威上下文。未知类型、无目标和已删除目标只展示安全正文。
 
 Foundation v7.1.0 时间呈现候选／待验收：普通内容不足 72 小时保留相对时间，满 72 小时和未来时间显示同年短日期或跨年完整日期；读屏提供完整日期，不含时分。安全、审计、账务、预约及到期时刻保留精确时间。原始时间戳不变。普通内容时间共用一个前台分钟刷新源，恢复前台立即更新，没有消费者或进入后台时停止；不为每行创建计时器。
