@@ -28,7 +28,9 @@
 - 旧实现精确回归失败：`test/core/widgets/image_gallery_gestures_test.dart` 的“图集从单图补齐前序图片后画面立即保持点击图，不等待再次点按”，预期实际 page 为 2，旧实现为 0。日志 `artifacts-image-anchor-before.log`。
 - 候选检查实际可点击画面与 PageController 页码，不只检查标题；另覆盖按住横拖时前插、放大后前插保留变换、真实图集异步补齐和既有双指／双击／保存／收藏行为。
 - 三个测试文件共 21 项通过：`test/core/widgets/image_gallery_gestures_test.dart`、`test/features/media/reading_gallery_page_test.dart`、`test/core/widgets/content_image_viewer_page_test.dart`。日志 `artifacts-image-anchor-final-tests.log`。
-- 改动代码与测试三文件定向分析零问题，`docs:check` 通过。开发反馈阶段不把此前其他源码的完整门禁或 APK 哈希用于本次修改；热重载记录另补。
+- 全仓 `flutter analyze --no-pub` 零问题，`docs:check` 通过。日志 `artifacts-image-anchor-full-analyze.log`。开发反馈阶段不把此前其他源码的完整门禁或 APK 哈希用于本次修改。
+- 候选源码 `eea809ba4b5b18b7367285ff2c177e973b7e9a1c` 已推送为 [Draft PR #67](https://github.com/morenk/wenyousite-mobile/pull/67)，目标 `dev`，没有合并。
+- 该提交的共享查看器补丁通过 Git diff/apply 交接到原 Debug 工作区，保留滑块及预览底色的未提交变更。首次请求热重载时现有 attach 连接断开，Android PID 仍为 `15535`；设备 `mWakefulness=Dozing`，短暂唤醒后 VM 可读，随后再次休眠。尚未把本次热重载记为成功，等待设备保持亮屏后重连验证。
 
 ## 负责人复验
 
