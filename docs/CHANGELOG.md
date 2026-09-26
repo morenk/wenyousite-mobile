@@ -1,5 +1,10 @@
 # 移动端变更记录
 
+## 2026-09-26 — Foundation 7.2.0 基线同步
+
+- 固定正式 Tag `v7.2.0`（`a6f4e2d`）并更新锁文件；该版本新增可选阅读滚动控件，现有组件无破坏性迁移。本切片仅同步依赖，不调整阅读滚动功能。
+- 本次主页及全站样式整理以该版本 Token、语义图标和 Flutter profile 为准。
+
 ## 2026-09-26 — 持续 Debug 与隔离开发预览候选（待负责人验收）
 
 - 新增 `dev:start/status/reload/restart/stop`，agent 自行启动并复用 Flutter machine 会话；绑定任务、Worktree、设备、PID/开始时间和 runId。样式反馈热重载、初始化热重启，独立 APK 仅在需要时构建。
