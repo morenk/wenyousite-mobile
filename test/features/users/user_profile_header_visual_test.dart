@@ -5,6 +5,7 @@ import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/users/presentation/user_profile_header.dart';
+
 import '../../support/deterministic_test_fonts.dart';
 
 void main() {
@@ -49,21 +50,15 @@ void main() {
                       stats: const [
                         UserProfileStatItem(label: '关注', value: '7'),
                         UserProfileStatItem(label: '粉丝', value: '9'),
-                        UserProfileStatItem(label: '温油', value: '12 升'),
+                        UserProfileStatItem(label: '收到加油', value: '12 升'),
                       ],
-                      actions: WenyouIconLabelActionBar(
-                        actions: [
-                          WenyouIconLabelAction(
-                            onPressed: () {},
-                            icon: WenyouIconIds.actionEdit,
-                            label: '编辑资料',
-                          ),
-                          WenyouIconLabelAction(
-                            onPressed: () {},
-                            icon: WenyouIconIds.actionBookmark,
-                            label: '收藏',
-                          ),
-                        ],
+                      actions: Align(
+                        alignment: Alignment.centerRight,
+                        child: OutlinedButton.icon(
+                          onPressed: () {},
+                          icon: const WenyouIcon(WenyouIconIds.actionEdit),
+                          label: const Text('编辑资料'),
+                        ),
                       ),
                     ),
                   ),
@@ -110,7 +105,7 @@ void main() {
                     stats: [
                       UserProfileStatItem(label: '关注', value: '7'),
                       UserProfileStatItem(label: '粉丝', value: '9'),
-                      UserProfileStatItem(label: '温油', value: '12 升'),
+                      UserProfileStatItem(label: '收到加油', value: '12 升'),
                     ],
                   ),
                 ),

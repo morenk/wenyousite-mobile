@@ -6,6 +6,7 @@ import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/application/document_saver.dart';
 import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_sheet.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_management_repository_ports.dart';
 
@@ -13,17 +14,9 @@ Future<bool> showThreadExportSheet({
   required BuildContext context,
   required String threadId,
 }) async {
-  return await showModalBottomSheet<bool>(
+  return await showWenyouSheet<bool>(
         context: context,
-        isScrollControlled: true,
-        useSafeArea: true,
-        showDragHandle: true,
-        builder: (context) => ConstrainedBox(
-          constraints: BoxConstraints(
-            maxHeight: MediaQuery.sizeOf(context).height * .9,
-          ),
-          child: ThreadExportSheet(threadId: threadId),
-        ),
+        builder: (context) => ThreadExportSheet(threadId: threadId),
       ) ??
       false;
 }

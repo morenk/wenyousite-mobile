@@ -307,7 +307,7 @@ class _SubthreadsFatalState extends StatelessWidget {
           key: const Key('subthread-management-retry'),
           onPressed: onRetry,
           icon: const WenyouIcon(WenyouIconIds.actionRefresh),
-          label: const Text('重新加载'),
+          label: const Text('重试'),
         ),
       ),
     );

@@ -128,12 +128,12 @@ void main() {
     final repository = _Repository();
     await tester.pumpWidget(_app(repository, owner: 'me'));
     await tester.pumpAndSettle();
-    expect(find.byKey(const ValueKey('more-u')), findsOneWidget);
+    expect(find.byKey(const ValueKey('status-u')), findsOneWidget);
     expect(repository.publicOwner, isNull);
     await tester.pumpWidget(const SizedBox());
     await tester.pumpWidget(_app(repository, owner: 'someone'));
     await tester.pumpAndSettle();
-    expect(find.byKey(const ValueKey('more-u')), findsNothing);
+    expect(find.byKey(const ValueKey('status-u')), findsNothing);
     expect(repository.publicOwner, 'someone');
   });
 
@@ -261,7 +261,7 @@ void main() {
     final repository = _Repository();
     await tester.pumpWidget(_app(repository));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const ValueKey('more-u')));
+    await tester.tap(find.byKey(const ValueKey('status-u')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('relation-sheet-close')));
     await tester.pumpAndSettle();
@@ -320,7 +320,7 @@ void main() {
     final repository = _Repository();
     await tester.pumpWidget(_app(repository, directMessages: false));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const ValueKey('more-u')));
+    await tester.tap(find.byKey(const ValueKey('status-u')));
     await tester.pumpAndSettle();
     expect(find.text('私聊'), findsNothing);
     final container = ProviderScope.containerOf(
@@ -364,7 +364,7 @@ void main() {
       );
       await tester.pumpAndSettle();
       if (action == null) {
-        await tester.tap(find.byKey(const ValueKey('more-u')));
+        await tester.tap(find.byKey(const ValueKey('status-u')));
       } else {
         final context = tester.element(find.byType(UserRelationListPage));
         unawaited(
@@ -439,7 +439,7 @@ void main() {
         );
         await tester.tap(find.text('粉丝 9'));
         await tester.pumpAndSettle();
-        await tester.tap(find.byKey(const ValueKey('more-u')));
+        await tester.tap(find.byKey(const ValueKey('status-u')));
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
         await expectLater(
@@ -596,7 +596,7 @@ class _Repository
 }
 
 Future<void> _openAction(WidgetTester tester, String key) async {
-  await tester.tap(find.byKey(const ValueKey('more-u')));
+  await tester.tap(find.byKey(const ValueKey('status-u')));
   await tester.pumpAndSettle();
   await tester.tap(find.byKey(ValueKey(key)));
 }

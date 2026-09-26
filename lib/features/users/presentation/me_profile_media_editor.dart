@@ -11,6 +11,7 @@ import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_sheet.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/media/application/image_crop_ports.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
@@ -774,10 +775,8 @@ Future<T?> _showMediaActionSheet<T>({
   required String title,
   required List<_MediaSheetAction<T>> actions,
 }) {
-  return showModalBottomSheet<T>(
+  return showWenyouSheet<T>(
     context: context,
-    useSafeArea: true,
-    showDragHandle: true,
     builder: (sheetContext) {
       final tokens = sheetContext.wenyouTokens;
       return ListView(

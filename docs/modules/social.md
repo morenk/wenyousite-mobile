@@ -12,7 +12,9 @@
 
 ## 3. 页面、入口和导航关系
 
-主题点赞、收藏和订阅入口位于 `/threads/:threadId` 固定底部拇指栏，并与发表楼层形成同一可达操作区，不再占用详情题头；未收藏时先打开收藏夹选择 Sheet，已收藏时点击直接取消。玩家发言订阅仍在移动端 Bottom Sheet 中逐人切换。“我的”将“收藏”与关注、粉丝、温油置于同级入口；`/me/bookmarks` 是统一收藏页，顶部“主题 / 动态”只切换两套隔离目录，收藏夹筛选器默认选中该类型的默认夹并就地展示内容。旧 `/me/bookmarks/threads` 与 `/me/bookmarks/moments` 目录路径重定向回统一页；指定夹路径 `/me/bookmarks/threads/folders/:folderId` 与 `/me/bookmarks/moments/folders/:folderId` 继续保留，旧 `/me/bookmarks/folders/:folderId` 继续兼容主题收藏。两类目录都不提供跨收藏夹“全部”。`/me/following`、`/me/followers`、`/me/blocks` 管理关系。本人路径及收藏子路径均保留登录回跳；公开关系和内容仍从 `/users/:userId` 进入，私有收藏夹名称和分类绝不进入公开用户页。
+个人中心收藏夹从独立个人工具区进入，与编辑资料分开；公开主页保留遵循隐私设置的公开收藏标签。本人关系列表已关注状态按钮就是关系菜单入口，不重复更多按钮；未关注时保留关注／回关主操作和更多菜单。关系、订阅列表使用共享等级徽章，分页结束默认不追加占位文案，失败与继续加载仍可操作。
+
+主题点赞、收藏和订阅入口位于 `/threads/:threadId` 固定底部拇指栏，并与发表楼层形成同一可达操作区，不再占用详情题头；未收藏时先打开收藏夹选择 Sheet，已收藏时点击直接取消。玩家发言订阅仍在移动端 Bottom Sheet 中逐人切换。`/me/bookmarks` 是统一收藏页，顶部“主题 / 动态”只切换两套隔离目录，收藏夹筛选器默认选中该类型的默认夹并就地展示内容。旧 `/me/bookmarks/threads` 与 `/me/bookmarks/moments` 目录路径重定向回统一页；指定夹路径 `/me/bookmarks/threads/folders/:folderId` 与 `/me/bookmarks/moments/folders/:folderId` 继续保留，旧 `/me/bookmarks/folders/:folderId` 继续兼容主题收藏。两类目录都不提供跨收藏夹“全部”。`/me/following`、`/me/followers`、`/me/blocks` 管理关系。本人路径及收藏子路径均保留登录回跳；公开关系和内容仍从 `/users/:userId` 进入，私有收藏夹名称和分类绝不进入公开用户页。
 
 设计统一后三批候选／待负责人验收：订阅抽屉采用共享容器、响应式宽度、安全区、键盘避让和关闭入口，不再固定占屏幕 72%。玩家列表继续惰性构建，状态失败、重试、结果不明与会话切换关闭逻辑保持；打开、关闭或系统返回本身不修改订阅，只有开关或订阅动作写入。 交付及手测见[三批统一验收](../architecture/design-unification-completion.md)。
 

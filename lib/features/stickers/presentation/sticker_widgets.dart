@@ -173,7 +173,7 @@ class _StickerPickerPanelState extends ConsumerState<StickerPickerPanel> {
           onPressed: () =>
               ref.read(stickerCollectionControllerProvider.notifier).load(),
           icon: const WenyouIcon(WenyouIconIds.actionRefresh),
-          label: const Text('重新加载'),
+          label: const Text('重试'),
         ),
       );
     }

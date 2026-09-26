@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/users/presentation/me_page.dart';
+
 import '../../support/deterministic_test_fonts.dart';
 import 'me_page_test_support.dart';
 
@@ -333,7 +334,7 @@ void registerMePageSettingsLayoutCases() {
         ),
       );
       await tester.pumpAndSettle();
-      final expectedWidth = width <= 400 ? width - 24 : width - 48;
+      final expectedWidth = width;
       expect(
         tester.getSize(find.byKey(const Key('me-profile-header'))).width,
         expectedWidth,
@@ -344,10 +345,10 @@ void registerMePageSettingsLayoutCases() {
         const ValueKey('me-content-MeContentTab.createdThreads'),
       );
       final overviewTab = find.byKey(
-        const ValueKey('me-content-MeContentTab.overview'),
+        const ValueKey('me-content-MeContentTab.createdThreads'),
       );
       final playedTab = find.byKey(
-        const ValueKey('me-content-MeContentTab.playedThreads'),
+        const ValueKey('me-content-MeContentTab.replies'),
       );
       await tester.ensureVisible(createdTab);
       await tester.pumpAndSettle();

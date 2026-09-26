@@ -96,6 +96,7 @@ class PublicUserController extends StateNotifier<PublicUserState> {
     this._repository,
     this.userId, {
     this.selfContentOnly = false,
+    this.includeActivitySummary = true,
     PublicUserContentTab initialTab = PublicUserContentTab.created,
     bool autoStart = true,
   }) : super(
@@ -110,6 +111,7 @@ class PublicUserController extends StateNotifier<PublicUserState> {
   final PublicUserRepository _repository;
   final String userId;
   final bool selfContentOnly;
+  final bool includeActivitySummary;
   int _profileEpoch = 0;
   final _sectionEpochs = <PublicUserContentTab, int>{};
 
@@ -127,7 +129,7 @@ class PublicUserController extends StateNotifier<PublicUserState> {
         showAllContent: true,
       );
       await Future.wait([
-        _loadActivitySummary(epoch),
+        if (includeActivitySummary) _loadActivitySummary(epoch),
         _loadTab(previousTab, epoch),
       ]);
       return;
@@ -146,7 +148,7 @@ class PublicUserController extends StateNotifier<PublicUserState> {
       );
       if (!profile.isDeactivated) {
         await Future.wait([
-          _loadActivitySummary(epoch),
+          if (includeActivitySummary) _loadActivitySummary(epoch),
           _loadTab(activeTab, epoch),
         ]);
       }
@@ -537,6 +539,7 @@ final publicUserControllerProvider = StateNotifierProvider.autoDispose
       return PublicUserController(
         ref.watch(publicUserRepositoryProvider),
         userId,
+        includeActivitySummary: false,
       );
     }, dependencies: [viewerScopeProvider, publicUserRepositoryProvider]);
 
@@ -547,6 +550,7 @@ final meUserContentControllerProvider = StateNotifierProvider.autoDispose
         ref.watch(publicUserRepositoryProvider),
         userId,
         selfContentOnly: true,
-        initialTab: PublicUserContentTab.replies,
+        includeActivitySummary: false,
+        initialTab: PublicUserContentTab.created,
       );
     }, dependencies: [viewerScopeProvider, publicUserRepositoryProvider]);

@@ -44,6 +44,7 @@ class UserProfileHeader extends StatelessWidget {
     this.levelProgress,
     this.levelProgressLabel,
     this.actions,
+    this.actionsBesideAvatar = false,
     super.key,
   });
 
@@ -57,199 +58,134 @@ class UserProfileHeader extends StatelessWidget {
   final double? levelProgress;
   final String? levelProgressLabel;
   final Widget? actions;
+  final bool actionsBesideAvatar;
 
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
     final normalizedBio = bio?.trim();
-    return SizedBox(
-      width: double.infinity,
-      child: Card(
-        color: tokens.panel,
-        margin: EdgeInsets.zero,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(
-            WenyouFoundationMobile.radiusCard,
-          ),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _ProfileIdentity(
-              username: username,
-              avatarUrl: avatarUrl,
-              profileCover: profileCover,
-              level: level,
+    final largeText = MediaQuery.textScalerOf(context).scale(16) > 20;
+    final statsRow = UserProfileStats(items: stats);
+    final identity = Wrap(
+      crossAxisAlignment: WrapCrossAlignment.center,
+      spacing: tokens.space8,
+      runSpacing: tokens.space4,
+      children: [
+        Text(username, style: Theme.of(context).textTheme.wenyouListTitle),
+        WenyouLevelBadge(level: level),
+      ],
+    );
+    return Material(
+      color: tokens.panel,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (profileCover != null)
+            AspectRatio(
+              aspectRatio: 2,
+              child: _ProfileCover(cover: profileCover!, username: username),
             ),
-            Padding(
-              padding: EdgeInsets.fromLTRB(
-                tokens.space16,
-                tokens.space8,
-                tokens.space16,
-                tokens.space16,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  if (normalizedBio?.isNotEmpty == true) ...[
-                    Text(
-                      normalizedBio!,
-                      style: Theme.of(
-                        context,
-                      ).textTheme.wenyouCompactBody.copyWith(height: 1.55),
-                    ),
-                  ],
-                  if (statuses.isNotEmpty) ...[
-                    SizedBox(height: tokens.space12),
-                    Wrap(
-                      spacing: tokens.space8,
-                      runSpacing: tokens.space8,
-                      children: [
-                        for (final status in statuses)
-                          _ProfileBadge(icon: status.icon, label: status.label),
-                      ],
-                    ),
-                  ],
-                  if (levelProgress != null) ...[
-                    SizedBox(height: tokens.space16),
-                    if (levelProgressLabel != null) ...[
-                      Text(
-                        levelProgressLabel!,
-                        style: Theme.of(context).textTheme.wenyouCaption,
+          Padding(
+            key: profileCover == null
+                ? const Key('profile-identity-without-cover')
+                : null,
+            padding: EdgeInsets.fromLTRB(
+              tokens.space16,
+              profileCover == null ? tokens.space16 : 0,
+              tokens.space16,
+              tokens.space16,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Transform.translate(
+                      offset: Offset(
+                        0,
+                        profileCover == null ? 0 : -tokens.space24,
                       ),
-                      SizedBox(height: tokens.space8),
-                    ],
-                    Semantics(
-                      label: '等级进度 ${(levelProgress! * 100).round()}%',
-                      child: LinearProgressIndicator(
-                        value: levelProgress,
-                        color: wenyouLevelTier(context, level)?.foreground,
+                      child: _ProfileAvatar(
+                        username: username,
+                        avatarUrl: avatarUrl,
                       ),
                     ),
+                    SizedBox(width: tokens.space12),
+                    Expanded(
+                      child: largeText
+                          ? identity
+                          : Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                statsRow,
+                                if (actionsBesideAvatar && actions != null)
+                                  actions!,
+                              ],
+                            ),
+                    ),
                   ],
-                ],
-              ),
-            ),
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: tokens.space8),
-              child: Row(
-                children: [
-                  for (var index = 0; index < stats.length; index++) ...[
-                    Expanded(child: _ProfileStat(item: stats[index])),
-                  ],
-                ],
-              ),
-            ),
-            if (actions != null) ...[
-              Padding(
-                padding: EdgeInsets.fromLTRB(
-                  tokens.space12,
-                  tokens.space4,
-                  tokens.space12,
-                  tokens.space12,
                 ),
-                child: actions,
-              ),
-            ],
-          ],
-        ),
+                if (!largeText) ...[SizedBox(height: tokens.space8), identity],
+                if (largeText) statsRow,
+                if (normalizedBio?.isNotEmpty == true) ...[
+                  SizedBox(height: tokens.space12),
+                  Text(
+                    normalizedBio!,
+                    style: Theme.of(context).textTheme.wenyouCompactBody,
+                  ),
+                ],
+                if (statuses.isNotEmpty) ...[
+                  SizedBox(height: tokens.space8),
+                  Wrap(
+                    spacing: tokens.space8,
+                    runSpacing: tokens.space4,
+                    children: [
+                      for (final status in statuses)
+                        _ProfileBadge(icon: status.icon, label: status.label),
+                    ],
+                  ),
+                ],
+                if (levelProgress != null) ...[
+                  SizedBox(height: tokens.space12),
+                  _ProfileLevelProgress(
+                    value: levelProgress!,
+                    label: levelProgressLabel ?? '等级进度',
+                  ),
+                ],
+                if (actions != null && (!actionsBesideAvatar || largeText)) ...[
+                  SizedBox(height: tokens.space8),
+                  actions!,
+                ],
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
-class _ProfileIdentity extends StatelessWidget {
-  const _ProfileIdentity({
-    required this.username,
-    required this.avatarUrl,
-    required this.profileCover,
-    required this.level,
-  });
-
-  final String username;
-  final String? avatarUrl;
-  final ProfileCoverModel? profileCover;
-  final int level;
+class _ProfileLevelProgress extends StatelessWidget {
+  const _ProfileLevelProgress({required this.value, required this.label});
+  final double value;
+  final String label;
 
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
-    const avatarSize = 72.0;
-    const avatarOverlap = avatarSize / 2;
-    if (profileCover == null) {
-      return Padding(
-        key: const Key('profile-identity-without-cover'),
-        padding: EdgeInsets.fromLTRB(
-          tokens.space16,
-          tokens.space16,
-          tokens.space16,
-          tokens.space4,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          label,
+          style: Theme.of(
+            context,
+          ).textTheme.wenyouCaption.copyWith(color: tokens.mutedText),
         ),
-        child: Row(
-          children: [
-            _ProfileAvatar(username: username, avatarUrl: avatarUrl),
-            SizedBox(width: tokens.space12),
-            Expanded(
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      username,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.wenyouListTitle,
-                    ),
-                  ),
-                  SizedBox(width: tokens.space8),
-                  WenyouLevelBadge(level: level),
-                ],
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final coverHeight = constraints.maxWidth / 2;
-        return SizedBox(
-          height: coverHeight + avatarOverlap + tokens.space12,
-          child: Stack(
-            clipBehavior: Clip.none,
-            children: [
-              Positioned.fill(
-                bottom: avatarOverlap + tokens.space12,
-                child: _ProfileCover(cover: profileCover!, username: username),
-              ),
-              Positioned(
-                left: tokens.space16,
-                top: coverHeight - avatarOverlap,
-                child: _ProfileAvatar(username: username, avatarUrl: avatarUrl),
-              ),
-              Positioned(
-                top: coverHeight + tokens.space8,
-                right: tokens.space16,
-                left: tokens.space16 + avatarSize + tokens.space12,
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        username,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.wenyouListTitle,
-                      ),
-                    ),
-                    SizedBox(width: tokens.space8),
-                    WenyouLevelBadge(level: level),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        );
-      },
+        SizedBox(height: tokens.space4),
+        LinearProgressIndicator(value: value, semanticsLabel: '等级进度'),
+      ],
     );
   }
 }
@@ -314,6 +250,19 @@ class _ProfileAvatar extends StatelessWidget {
   }
 }
 
+class UserProfileStats extends StatelessWidget {
+  const UserProfileStats({required this.items, super.key});
+  final List<UserProfileStatItem> items;
+
+  @override
+  Widget build(BuildContext context) => Row(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      for (final item in items) Expanded(child: _ProfileStat(item: item)),
+    ],
+  );
+}
+
 class _ProfileStat extends StatelessWidget {
   const _ProfileStat({required this.item});
 
@@ -353,8 +302,7 @@ class _ProfileStat extends StatelessWidget {
                 SizedBox(height: tokens.space4),
                 Text(
                   item.label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.wenyouCaption,
                 ),
               ],

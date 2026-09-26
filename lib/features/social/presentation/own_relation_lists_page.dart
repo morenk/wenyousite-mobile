@@ -8,6 +8,7 @@ import 'package:wenyousite_mobile/core/application/user_facing_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_level_badge.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/social/application/own_relation_lists_controller.dart';
 import 'package:wenyousite_mobile/features/social/domain/user_relation_list_models.dart';
@@ -267,7 +268,7 @@ class _OwnRelationListViewState extends State<_OwnRelationListView>
               tone: WenyouStatusTone.error,
               action: TextButton(
                 onPressed: widget.onRefresh,
-                child: const Text('重新加载'),
+                child: const Text('重试'),
               ),
             ),
           if (list.loaded && list.items.isEmpty)
@@ -381,11 +382,7 @@ class _OwnRelationRow extends StatelessWidget {
                           fontWeight: FontWeight.w500,
                         ),
                       ),
-                      Text(
-                        'Lv.${item.level}',
-                        style: Theme.of(context).textTheme.wenyouCaption
-                            .copyWith(color: tokens.mutedText),
-                      ),
+                      WenyouLevelBadge(level: item.level),
                     ],
                   ),
                 ),
@@ -420,12 +417,13 @@ class _OwnRelationRow extends StatelessWidget {
                     : () => onAct(OwnRelationAction.follow),
               ),
             ),
-            IconButton(
-              key: ValueKey('more-${item.userId}'),
-              tooltip: '${item.username}的更多操作',
-              onPressed: disabled ? null : onMenu,
-              icon: const WenyouIcon(WenyouIconIds.actionMore),
-            ),
+            if (!following)
+              IconButton(
+                key: ValueKey('more-${item.userId}'),
+                tooltip: '${item.username}的更多操作',
+                onPressed: disabled ? null : onMenu,
+                icon: const WenyouIcon(WenyouIconIds.actionMore),
+              ),
           ],
         );
         return Column(

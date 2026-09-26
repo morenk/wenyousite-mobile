@@ -107,7 +107,7 @@ class _SubthreadEditorPageState extends ConsumerState<SubthreadEditorPage> {
                 )
                 .load(),
             icon: const WenyouIcon(WenyouIconIds.actionRefresh),
-            label: const Text('重新加载'),
+            label: const Text('重试'),
           ),
         ),
       );
