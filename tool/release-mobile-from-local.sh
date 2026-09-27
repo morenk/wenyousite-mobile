@@ -15,6 +15,7 @@ UPLOAD_ONLY=false
 ANDROID_RELEASE_APK=
 ANDROID_RELEASE_SHA256=
 ANDROID_RELEASE_MANIFEST=
+ANDROID_NOTES_REVISION=
 
 usage() {
   cat <<'EOF'
@@ -105,7 +106,7 @@ if [[ ! "$VERSION_NAME" =~ ^[0-9A-Za-z][0-9A-Za-z._-]{0,63}$ ]]; then
   echo "--version 格式不合法" >&2
   exit 2
 fi
-if [[ ! "$BUILD_NUMBER" =~ ^[1-9][0-9]*$ ]]; then
+if [[ ! "$BUILD_NUMBER" =~ ^[1-9][0-9]{0,9}$ ]] || ((BUILD_NUMBER > 2100000000)); then
   echo "--build 必须是正整数" >&2
   exit 2
 fi
@@ -135,6 +136,27 @@ if ! command -v flutter >/dev/null 2>&1; then
 fi
 
 PROJECT_DIR=$(cd -- "$PROJECT_DIR" && pwd)
+
+preflight_android_notes() {
+  local remote_command response
+  printf -v remote_command 'sudo -n %q --preflight --version %q --build %q' \
+    "$REMOTE_PROMOTE_COMMAND" "$VERSION_NAME" "$BUILD_NUMBER"
+  if ! response=$(ssh -o BatchMode=yes -o ConnectTimeout=15 "$SSH_TARGET" "$remote_command"); then
+    echo "更新说明预检失败；请确认后台文案。若上次发布中断，请由负责人执行受限 --recover 后重试。" >&2
+    return 1
+  fi
+  printf '%s' "$response" | node "$SCRIPT_DIR/release_notes_preflight.mjs" "$VERSION_NAME" "$BUILD_NUMBER"
+}
+
+# 此门禁属于直接 shell 入口，--skip-checks 不能跳过。构建-only 与上传-only 不晋级。
+if [ "$BUILD_ONLY" != true ] && [ "$UPLOAD_ONLY" != true ] && [ "$PLATFORM" != ios ]; then
+  if ! command -v node >/dev/null 2>&1; then
+    echo "更新说明预检需要 Node.js" >&2
+    exit 1
+  fi
+  ANDROID_NOTES_REVISION=$(preflight_android_notes)
+  echo "更新说明预检通过: $VERSION_NAME+$BUILD_NUMBER (revision $ANDROID_NOTES_REVISION)"
+fi
 
 if [ "$SKIP_CHECKS" != true ]; then
   (
@@ -334,6 +356,7 @@ build_android() {
   "applicationId": "site.wenyou.app",
   "versionName": "$VERSION_NAME",
   "versionCode": $BUILD_NUMBER,
+  "notesConfirmedRevision": ${ANDROID_NOTES_REVISION:-null},
   "certificateSha256": "$certificate_sha256",
   "apkSha256": "$apk_sha256",
   "apkSize": $apk_size,
@@ -358,6 +381,7 @@ publish_android() {
   local apk_size
   local apk_sha256
   local remote_command
+  local current_notes_revision
 
   build_android
   apk_path=$ANDROID_RELEASE_APK
@@ -389,14 +413,21 @@ publish_android() {
     return 0
   fi
 
-  printf -v remote_command 'sudo -n %q --version %q --build %q --url %q --size %q --sha256 %q' \
+  current_notes_revision=$(preflight_android_notes)
+  if [ "$current_notes_revision" != "$ANDROID_NOTES_REVISION" ]; then
+    echo "更新说明确认 revision 已变化，停止晋级；请重新确认发布批次。" >&2
+    return 1
+  fi
+
+  printf -v remote_command 'sudo -n %q --version %q --build %q --url %q --size %q --sha256 %q --notes-revision %q' \
     "$REMOTE_PROMOTE_COMMAND" \
     "$VERSION_NAME" \
     "$BUILD_NUMBER" \
     "$update_url" \
     "$apk_size" \
-    "$apk_sha256"
-  ssh "$SSH_TARGET" "$remote_command"
+    "$apk_sha256" \
+    "$ANDROID_NOTES_REVISION"
+  ssh -o BatchMode=yes -o ConnectTimeout=15 "$SSH_TARGET" "$remote_command"
 }
 
 publish_ios() {

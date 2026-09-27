@@ -198,6 +198,7 @@ $contractFiles = @(
   @{ Source = 'contracts/internal-reference-v1-fixtures.json'; Destination = 'internal-reference-v1-fixtures.json' },
   @{ Source = 'contracts/CHANGELOG.md'; Destination = 'CHANGELOG.md' },
   @{ Source = 'docs/mobile-client-guide.md'; Destination = 'mobile-client-guide.md' },
+  @{ Source = 'docs/mobile-release-operations.md'; Destination = 'mobile-release-operations.md' },
   @{ Source = 'docs/media-display.md'; Destination = 'media-display.md' }
 )
 

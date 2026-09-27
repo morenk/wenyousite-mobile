@@ -10,6 +10,7 @@ lib/src/api/admin_campaigns_api.dart
 lib/src/api/admin_cases_api.dart
 lib/src/api/admin_content_api.dart
 lib/src/api/admin_dashboard_api.dart
+lib/src/api/admin_mobile_releases_api.dart
 lib/src/api/admin_moderation_api.dart
 lib/src/api/admin_operations_api.dart
 lib/src/api/admin_reports_api.dart
@@ -24,6 +25,7 @@ lib/src/api/image_gallery_api.dart
 lib/src/api/media_api.dart
 lib/src/api/meta_api.dart
 lib/src/api/mobile_devices_api.dart
+lib/src/api/mobile_releases_api.dart
 lib/src/api/moderation_appeals_api.dart
 lib/src/api/moments_api.dart
 lib/src/api/notifications_api.dart
@@ -93,6 +95,12 @@ lib/src/model/admin_invite_acceptance_accept201_response.dart
 lib/src/model/admin_invite_created_response_dto.dart
 lib/src/model/admin_login_challenge_dto.dart
 lib/src/model/admin_login_verify_dto.dart
+lib/src/model/admin_mobile_release_dto.dart
+lib/src/model/admin_mobile_releases_confirm201_response.dart
+lib/src/model/admin_mobile_releases_create201_response.dart
+lib/src/model/admin_mobile_releases_detail200_response.dart
+lib/src/model/admin_mobile_releases_list200_response.dart
+lib/src/model/admin_mobile_releases_update200_response.dart
 lib/src/model/admin_moderation_appeals_list200_response.dart
 lib/src/model/admin_moderation_appeals_resolve201_response.dart
 lib/src/model/admin_moderation_get_user200_response.dart
@@ -176,6 +184,7 @@ lib/src/model/create_direct_conversation_dto.dart
 lib/src/model/create_direct_message_dto.dart
 lib/src/model/create_draft_dto.dart
 lib/src/model/create_managed_tag_dto.dart
+lib/src/model/create_mobile_release_dto.dart
 lib/src/model/create_moderation_appeal_dto.dart
 lib/src/model/create_moment_bookmark_dto.dart
 lib/src/model/create_moment_bookmark_folder_dto.dart
@@ -279,6 +288,10 @@ lib/src/model/mobile_device_register200_response.dart
 lib/src/model/mobile_device_response_dto.dart
 lib/src/model/mobile_device_unregister200_response.dart
 lib/src/model/mobile_platform_compatibility_dto.dart
+lib/src/model/mobile_release_revision_dto.dart
+lib/src/model/mobile_release_snapshot_dto.dart
+lib/src/model/mobile_releases_detail200_response.dart
+lib/src/model/mobile_releases_list200_response.dart
 lib/src/model/moderate_content_dto.dart
 lib/src/model/moderation_appeal_appellant_response_dto.dart
 lib/src/model/moderation_appeal_decision_response_dto.dart
@@ -370,6 +383,7 @@ lib/src/model/private_user_response_dto.dart
 lib/src/model/profile_cover_response_dto.dart
 lib/src/model/profile_cover_variant_response_dto.dart
 lib/src/model/progression_response_dto.dart
+lib/src/model/public_mobile_release_dto.dart
 lib/src/model/public_user_response_dto.dart
 lib/src/model/recent_reply_dice_response_dto.dart
 lib/src/model/recent_reply_response_dto.dart
@@ -496,6 +510,7 @@ lib/src/model/update_admin_role_dto.dart
 lib/src/model/update_content_taxonomy_dto.dart
 lib/src/model/update_draft_dto.dart
 lib/src/model/update_managed_tag_dto.dart
+lib/src/model/update_mobile_release_dto.dart
 lib/src/model/update_moment_dto.dart
 lib/src/model/update_post_dto.dart
 lib/src/model/update_site_settings_dto.dart

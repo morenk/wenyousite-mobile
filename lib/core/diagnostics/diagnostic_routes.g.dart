@@ -17,6 +17,7 @@ const diagnosticApiRoutes = <String, String>{
   'GET /api/v1/admin/dashboard/distributions': 'adminDashboardDistributions',
   'GET /api/v1/admin/dashboard/overview': 'adminDashboardOverview',
   'GET /api/v1/admin/dashboard/timeseries': 'adminDashboardTimeseries',
+  'GET /api/v1/admin/mobile-releases': 'adminMobileReleasesList',
   'GET /api/v1/admin/notification-campaigns': 'notificationCampaignList',
   'GET /api/v1/admin/notifications/system/history': 'adminGetHistory',
   'GET /api/v1/admin/operations/settings': 'siteOperationalSettingsGet',
@@ -36,6 +37,7 @@ const diagnosticApiRoutes = <String, String>{
   'GET /api/v1/health': 'healthCheck',
   'GET /api/v1/image-gallery': 'galleryList',
   'GET /api/v1/meta': 'metaGetMeta',
+  'GET /api/v1/mobile-releases': 'mobileReleasesList',
   'GET /api/v1/moderation/decisions/mine': 'userModerationAppealsMine',
   'GET /api/v1/moments': 'momentsList',
   'GET /api/v1/moments/bookmark-folders': 'momentsBookmarkFolders',
@@ -73,6 +75,7 @@ const diagnosticApiRoutes = <String, String>{
   'POST /api/v1/admin/auth/step-up/challenge': 'adminAuthStepUpChallenge',
   'POST /api/v1/admin/auth/step-up/verify': 'adminAuthVerifyStepUp',
   'POST /api/v1/admin/auth/verify': 'adminAuthVerify',
+  'POST /api/v1/admin/mobile-releases': 'adminMobileReleasesCreate',
   'POST /api/v1/admin/notification-campaigns': 'notificationCampaignCreate',
   'POST /api/v1/admin/notification-campaigns/preview':
       'notificationCampaignPreview',
@@ -140,6 +143,7 @@ const diagnosticApiRoutes = <String, String>{
   'DELETE /api/v1/users/me/block/{id}': 'usersFollowUnblock',
   'DELETE /api/v1/users/me/followers/{id}': 'usersFollowRemoveFollower',
   'GET /api/v1/admin/cases/{id}': 'moderationCasesGet',
+  'GET /api/v1/admin/mobile-releases/{id}': 'adminMobileReleasesDetail',
   'GET /api/v1/admin/reports/{id}': 'adminReportsFindOne',
   'GET /api/v1/admin/users/{id}': 'adminModerationGetUser',
   'GET /api/v1/direct-conversations/by-user/{userId}':
@@ -179,6 +183,7 @@ const diagnosticApiRoutes = <String, String>{
   'GET /api/v1/users/{id}/recent-replies': 'usersGetUserRecentReplies',
   'PATCH /api/v1/admin/content/thread/{id}/taxonomy':
       'adminContentUpdateTaxonomy',
+  'PATCH /api/v1/admin/mobile-releases/{id}': 'adminMobileReleasesUpdate',
   'PATCH /api/v1/admin/tags/{id}': 'adminTaxonomyUpdateTag',
   'PATCH /api/v1/admin/thread-categories/{id}': 'adminTaxonomyUpdateCategory',
   'PATCH /api/v1/admin/users/{id}/role': 'adminModerationUpdateRole',
@@ -201,6 +206,8 @@ const diagnosticApiRoutes = <String, String>{
       'adminInviteAcceptanceAccept',
   'POST /api/v1/admin/appeals/{id}/resolve': 'adminModerationAppealsResolve',
   'POST /api/v1/admin/cases/{id}/resolve': 'moderationCasesResolve',
+  'POST /api/v1/admin/mobile-releases/{id}/confirm':
+      'adminMobileReleasesConfirm',
   'POST /api/v1/admin/reports/{id}/resolve': 'adminReportsResolve',
   'POST /api/v1/admin/users/{id}/sanctions': 'adminModerationSanctionUser',
   'POST /api/v1/admin/users/{id}/sanctions/current/revoke':
@@ -230,6 +237,8 @@ const diagnosticApiRoutes = <String, String>{
   'DELETE /api/v1/moments/{id}/comments/{commentId}': 'momentsRemoveComment',
   'DELETE /api/v1/threads/{threadId}/tags/{tagId}': 'threadTagsRemove',
   'GET /api/v1/admin/content/{type}/{id}': 'adminContentDetail',
+  'GET /api/v1/mobile-releases/{platform}/{buildNumber}':
+      'mobileReleasesDetail',
   'GET /api/v1/moments/{id}/comments/{commentId}/context':
       'momentsCommentContext',
   'GET /api/v1/moments/{id}/comments/{commentId}/replies': 'momentsReplies',
