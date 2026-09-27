@@ -7,7 +7,7 @@
 - 在独立 Windows Worktree `D:\codex-worktrees\a384\wenyousite-mobile`、分支 `codex/20260927-mobile-release-notes` 开发；初始基线 `8be9ffb105e1ba2cc157084e6e7d1f058ced70d0`。
 - 开始前 fetch Mobile 与 Foundation；最新正式 Foundation 为 `v7.2.1`，与 `pubspec.yaml`、锁文件一致，无依赖升级。展示补充文档以 Foundation 已提交 `d9001265030a52d5255c7cd52dc841833cc7afbb` 为参考，不消费未发布 Token。
 - 初始契约记录与公网只读 `/meta` 均为 Backend `124fb4e8aa395440f7a2156de98b642ec87f7583`、HTTP 契约 `5.26.0-dev.20260922.3`。新 API 首次固定 `99b42dc0f7d25eeb6e49ee87441e206c77cce29a`，完整门禁使用连同受限发布 CLI 运维文档固定的 `72d3658d32a089fcfabdea30225d87b960033c5b`、契约 `5.27.0-dev.20260927.1`；门禁结束后按治理最终交接同步 `9e25b4562dfd9229b0d306b5374c018c3e43f65c`。此次仅来源 revision 改变，OpenAPI、生成 SDK 与应用源码不变。
-- 不合并、不打正式 Tag、不发布、不上传正式包、不读取发布秘密、不占用其他任务的设备会话。
+- 初始候选范围不含合并或上线；后续负责人已明确授权本目标合并与 Backend／Web 上线。Mobile 按治理顺序先整合最新 `dev`，等待 Backend 公开契约上线并通过严格来源门禁后再合并。不打正式 Tag、不发布或上传正式 APK、不读取发布秘密、不占用其他任务的设备会话。
 
 ## 行为与风险
 
@@ -57,6 +57,18 @@
 - `live-detail.png`、`live-detail-after-reload.png`：正文和热重载后的页面；后者SHA-256为 `61a5e16cbdcefc784b37fc9ca5dbf8fc7930c1eb58da8e5fa672e01e4b0b7f1d`。查看完整画面使用原始尺寸，避免缩放展示差异。
 - `live-status-final.json`：reload后的ready历史快照；`live-status-current.json`：后续failed状态；`final-resource-status.json`：最后资源核验。
 - `first-session-failed.json`、`first-session-errors.log`、`second-session-errors.log`，以及仓库根目录的 `build-release-dev-start-reconnected.log`、`build-release-dev-recover.log`、`build-release-dev-reload.log` 保留本轮诊断。原始截图和调试记录留在本机，不作为源码或公开日志上传。
+
+## 最新 dev 整合与上线前待办
+
+负责人后续明确授权本目标合并与 Backend／Web 上线，治理要求 Mobile 先正常 merge 最新 `origin/dev`，再等待 Backend 上线通知完成严格来源校验。整合基线为 `b91a27dae9e23041b5b01aa018f702606a85a991`（预览会话工具 PR #68），原候选为 `9a4ddc2cb52025d63d2ea3099097bd8c3255feed`。只有 `docs/CHANGELOG.md` 发生冲突，保留双方记录；`package.json` 自动合并后同时保留 `dev:list` 和更新说明发布工具测试入口，没有改写历史。
+
+本次整合没有改变 `lib/`、`android/`、`assets/`、`packages/`、`pubspec.yaml`、`pubspec.lock` 或 `package-lock.json`。既有应用全量测试与 APK 证据仍绑定原应用内容；开发会话工具变化导致包含 `tool/dev` 的 `sourceEvidence` 摘要变为 `ac8c2c418a27dd9b1660be936a15c524ab0ac70500c2642f00338915af27229a`。没有把历史真机截图和旧安装包改标为新摘要，也没有重新启动手机或调试会话。
+
+整合增量检查：Windows 开发／发布工具 `66/66` 通过；全仓格式检查 `1120 files / 0 changed`，应用全量静态分析零问题，架构与 21 个模块文档检查通过。实际执行 `flutter test --concurrency=2 test/core/config/preview_environment_test.dart test/core/network/preview_identity_test.dart`，共 `10/10` 通过，覆盖固定端口切批次、暂停／恢复、存储隔离与身份校验。日志为 `build-release-integration-tool-tests.log`、`build-release-integration-format.log`、`build-release-integration-analyze.log`、`build-release-integration-preview-tests.log`。本次不重复既有同应用的全量 Flutter 测试或 APK 构建。
+
+公网只读 `/meta` 本轮仍为 Backend `124fb4e8aa395440f7a2156de98b642ec87f7583`、契约 `5.26.0-dev.20260922.3`。Backend 部署后，按治理交接的实际上线 SHA 用标准同步入口核对固定契约、生成一致性和 `api:verify:production`，严格来源成功之前不合并本 PR。若仅来源元数据或文档改变，复用同应用的全量测试与 APK，补齐受影响检查；API、应用或依赖发生变化则重新执行高风险完整门禁。原聚合失败记录保留，不改写为一次全绿运行。
+
+并行工作归属已只读核验：主 checkout 位于 `b91a27da` 且干净；“检查移动端发布前状态”聊天已交付从 `8be9ffb1` 构建的正式签名 `0.8.0-dev.2+97` 测试包，不含本目标功能。旧 Tab Worktree 的未提交和未跟踪修改保留，历史内容卡与实时预览 checkout 未改动。没有覆盖其他任务的包、修改其工作区或向其发送消息。合并授权不记为负责人真机验收，也不包含 APK 发布、正式 Tag 或晋级。
 
 ## 负责人真机清单
 

@@ -19,6 +19,7 @@
     "check:apk": "pwsh -NoProfile -File tool/Check-WenyouMobile.ps1 -BuildDebugApk",
     "dev:start": "node tool/dev/session.mjs start",
     "dev:status": "node tool/dev/session.mjs status",
+    "dev:list": "node tool/dev/list.mjs",
     "dev:reload": "node tool/dev/session.mjs reload",
     "dev:restart": "node tool/dev/session.mjs restart",
     "dev:stop": "node tool/dev/session.mjs stop",
