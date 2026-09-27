@@ -1,12 +1,45 @@
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
-import { readFile } from 'node:fs/promises';
+import { execFileSync, spawnSync } from 'node:child_process';
+import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 const directory = path.dirname(fileURLToPath(import.meta.url));
 const read = (name) => readFile(path.join(directory, name), 'utf8');
+
+test('桌面入口在 PATH 无 PowerShell 时仍调用系统解释器并保留失败退出码', { skip: process.platform !== 'win32' }, async () => {
+  const root = await mkdtemp(path.join(os.tmpdir(), 'wenyou launcher '));
+  const installed = path.join(root, 'WenyouSite', 'release');
+  await mkdir(installed, { recursive: true });
+  const cases = [
+    ['Wenyou-Publish-Android.cmd', 'Publish-WenyouAndroid.ps1'],
+    ['Wenyou-Release-Setup.cmd', 'Initialize-WenyouReleaseSsh.ps1'],
+  ];
+  try {
+    for (const [launcher, script] of cases) {
+      await writeFile(path.join(root, launcher), await read(launcher));
+      // 仅运行临时标记脚本，绝不调用实际安装目录中的发布、SSH 或凭据逻辑。
+      await writeFile(path.join(installed, script), 'Write-Output "WENYOU_LAUNCHER_FIXTURE"\nexit 23\n');
+      const environment = { ...process.env };
+      for (const key of Object.keys(environment)) {
+        if (['path', 'localappdata'].includes(key.toLowerCase())) delete environment[key];
+      }
+      environment.PATH = '';
+      environment.LOCALAPPDATA = root;
+      const result = spawnSync(path.join(process.env.SystemRoot, 'System32', 'cmd.exe'), ['/d', '/c', launcher], {
+        cwd: root, env: environment, encoding: 'utf8', input: '\n', timeout: 15000,
+      });
+      if (result.error) throw result.error;
+      assert.equal(result.status, 23, `${launcher}: ${result.stdout}\n${result.stderr}`);
+      assert.match(result.stdout, /WENYOU_LAUNCHER_FIXTURE/);
+    }
+  } finally {
+    assert.ok(path.resolve(root).startsWith(path.resolve(os.tmpdir()) + path.sep));
+    await rm(root, { recursive: true, force: true });
+  }
+});
 
 test('正式 APK 校验拒绝其他 ABI、缺失引擎或字体以及重复条目', () => {
   execFileSync('pwsh', ['-NoProfile', '-File', path.join(directory, 'release_apk_fixtures.test.ps1')]);

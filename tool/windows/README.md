@@ -12,10 +12,12 @@ Debug、Profile 和 Release 均为仅含 `arm64-v8a` 的单 APK。仓库 Gradle 
 
 本目录只保存可审计的发布程序，不保存任何凭据或私钥。安装脚本把程序复制到当前用户的 `%LOCALAPPDATA%\WenyouSite\release`，并在桌面创建一次性 SSH 初始化和日常 Android 发布入口。
 
+桌面入口从 `%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe` 调用系统 Windows PowerShell，不依赖 PATH 中存在 `powershell.exe`；仍运行原有已安装脚本并保留失败退出码。不修改全局 PATH，也不更换发布通道。
+
 首次安装：
 
 ```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File tool/windows/Install-WenyouReleaseTools.ps1
+& "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -ExecutionPolicy Bypass -File tool/windows/Install-WenyouReleaseTools.ps1
 ```
 
 随后按 [`contracts/mobile-release-operations.md`](../../contracts/mobile-release-operations.md) 配置 DPAPI 凭据与 VPS 主机指纹。日常发布只允许干净且已推送的 Git 提交，版本直接读取 `pubspec.yaml`。
