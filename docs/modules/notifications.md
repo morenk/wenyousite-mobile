@@ -12,7 +12,7 @@
 
 ## 3. 页面、入口和导航关系
 
-每条通知的删除收进更多菜单，避免与阅读内容争抢操作层级；选择删除后仍执行原二次确认。分页结束不占一行提示，加载更多、失败重试、全部已读与分类行为保持。
+每条通知尾部直接显示共享删除图标按钮，不再为唯一删除操作增加更多菜单；点按后仍执行原二次确认，取消不删除、不标记已读或跳转，在途与权限禁用规则保持。分页结束不占一行提示，加载更多、失败重试、全部已读与分类行为保持。
 
 “消息”是底部主分支，规范路由使用 `/notifications`；“私聊”页签写入 `/notifications?section=directMessages`，旧 `/messages` 仅作兼容重定向。游客留在分支内看到登录引导并携带同一路径回跳。通知项按 `target.kind` 导航：主楼层使用 `/threads/:threadId?post=:postId`，楼中楼回复使用 `/threads/:threadId/posts/:parentPostId/replies?post=:postId`，thread 使用 `/threads/:threadId`，user 使用 `/users/:userId`，moment 使用 `/moments/:momentId`；动态评论目标附加 `?comment=:momentCommentId`，由详情重新读取权威上下文。未知类型、无目标和已删除目标只展示安全正文。
 
@@ -90,6 +90,8 @@ Android 通知权限关闭时只提示用户前往系统设置开启，不把权
 导航遵循[导航](../architecture/navigation.md)，目标 API 才是权威；不依赖提醒到达保证。私聊入口、角标和正文归 [direct-messages](direct-messages.md)，通知模块不读取私聊正文。仓库持续固定 mobile push v1 Schema/样例，本地系统卡片使用独立严格 v1 JSON 且当前切片不启用 FCM 运行时、设备注册或 push capability。
 
 ## 11. 测试场景与验收条件
+
+- [ ] 2026-09-27 直接删除入口候选待负责人真机验收；通知行移除单项更多菜单，保留确认、取消和原删除流程，局部回归与明暗窄屏结果见 [0.8.0 发布验收](../architecture/mobile-0.8.0-release-acceptance.md)。
 
 - [x] 系统卡片点击同步已读：冷/热点击、未加载列表、重复点击、失败重试、跨账号、旧载荷及汇总边界有针对性回归；负责人已于 2026-09-13 在最终候选确认通过，见[候选记录](../architecture/notification-read-acceptance.md)。
 

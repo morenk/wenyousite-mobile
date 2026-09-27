@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -29,8 +31,6 @@ void main() {
     addTearDown(router.dispose);
     addTearDown(container.dispose);
     await _pumpAuthenticated(tester, container, router);
-    await tester.tap(find.byKey(const Key('notification-more-only')));
-    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('notification-remove-only')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('notification-remove-confirm')));
@@ -335,6 +335,115 @@ void main() {
     expect(find.text('暂无通知'), findsOneWidget);
   });
 
+  testWidgets('通知直接删除按钮打开确认，取消不已读或跳转', (tester) async {
+    final repository = _FakeRepository(items: [_item('direct-delete')]);
+    final router = _router();
+    final container = await _authenticatedContainer(repository);
+    addTearDown(router.dispose);
+    addTearDown(container.dispose);
+    await _pumpAuthenticated(tester, container, router);
+    final remove = find.byKey(const Key('notification-remove-direct-delete'));
+    expect(remove.hitTestable(), findsOneWidget);
+    expect(find.byTooltip('删除通知'), findsOneWidget);
+    expect(find.byTooltip('更多通知操作'), findsNothing);
+    await tester.tap(remove);
+    await tester.pumpAndSettle();
+    expect(find.text('删除这条通知？'), findsOneWidget);
+    expect(repository.removedIds, isEmpty);
+    expect(repository.readIds, isEmpty);
+    expect(router.routeInformationProvider.value.uri.path, '/notifications');
+    await tester.tap(find.text('取消'));
+    await tester.pumpAndSettle();
+    expect(repository.removedIds, isEmpty);
+    expect(repository.readIds, isEmpty);
+    expect(remove.hitTestable(), findsOneWidget);
+  });
+
+  testWidgets('通知删除在途时禁用其他行删除，结算后恢复', (tester) async {
+    final removal = Completer<void>();
+    final repository = _FakeRepository(
+      items: [_item('pending'), _item('remaining')],
+    )..removeResult = removal.future;
+    final router = _router();
+    final container = await _authenticatedContainer(repository);
+    addTearDown(router.dispose);
+    addTearDown(container.dispose);
+    await _pumpAuthenticated(tester, container, router);
+    await tester.tap(find.byKey(const Key('notification-remove-pending')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('notification-remove-confirm')));
+    await tester.pumpAndSettle();
+    final remaining = find.byKey(const Key('notification-remove-remaining'));
+    IconButton button() => tester.widget<IconButton>(
+      find.descendant(of: remaining, matching: find.byType(IconButton)),
+    );
+    expect(repository.removedIds, ['pending']);
+    expect(button().onPressed, isNull);
+    expect(repository.readIds, isEmpty);
+    removal.complete();
+    await tester.pumpAndSettle();
+    expect(button().onPressed, isNotNull);
+    expect(repository.removedIds, ['pending']);
+  });
+
+  for (final dark in [false, true]) {
+    testWidgets('通知直接删除在窄屏两倍字号下可达 dark=$dark', (tester) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(320, 640);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.view.resetPhysicalSize);
+      final repository = _FakeRepository(
+        items: [
+          _item(
+            'direct-long',
+            preview: '这是一条较长的通知摘要，用于核对窄屏与大字号下正文、未读标记和删除按钮互不遮挡。',
+          ),
+          _item('direct-read', isRead: true),
+        ],
+      );
+      final container = await _authenticatedContainer(repository);
+      addTearDown(container.dispose);
+      const visualKey = Key('notification-direct-delete-visual');
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp(
+            theme: dark ? AppTheme.dark : AppTheme.light,
+            builder: (context, child) => MediaQuery(
+              data: MediaQuery.of(
+                context,
+              ).copyWith(textScaler: const TextScaler.linear(2)),
+              child: child!,
+            ),
+            home: const RepaintBoundary(
+              key: visualKey,
+              child: MessageCenterPage(),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final remove = find.byKey(const Key('notification-remove-direct-long'));
+      expect(remove.hitTestable(), findsOneWidget);
+      expect(tester.getSize(remove).shortestSide, greaterThanOrEqualTo(44));
+      expect(find.byTooltip('更多通知操作'), findsNothing);
+      expect(tester.takeException(), isNull);
+      final tone = dark ? 'dark' : 'light';
+      await expectLater(
+        find.byKey(visualKey),
+        matchesGoldenFile('goldens/notification_delete_${tone}_320_2x.png'),
+      );
+      await tester.tap(remove);
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const Key('notification-remove-confirm')).hitTestable(),
+        findsOneWidget,
+      );
+      expect(repository.removedIds, isEmpty);
+      expect(tester.takeException(), isNull);
+    });
+  }
+
   testWidgets('分类切换、全局全部已读和删除确认均可操作', (tester) async {
     final repository = _FakeRepository(
       items: [_item('notification-1', isRead: true)],
@@ -357,8 +466,6 @@ void main() {
     await tester.pumpAndSettle();
     expect(repository.markAllCalls, 1);
 
-    await tester.tap(find.byKey(const Key('notification-more-notification-1')));
-    await tester.pumpAndSettle();
     await tester.tap(
       find.byKey(const Key('notification-remove-notification-1')),
     );
@@ -478,6 +585,7 @@ class _FakeRepository implements NotificationRepository {
   final List<String> readIds = [];
   final List<String> removedIds = [];
   int markAllCalls = 0;
+  Future<void>? removeResult;
 
   @override
   Future<CursorPage<NotificationListItem>> fetchPage({
@@ -504,6 +612,7 @@ class _FakeRepository implements NotificationRepository {
   @override
   Future<void> remove(String id) async {
     removedIds.add(id);
+    await removeResult;
     if (items.any((item) => item.id == id && !item.isRead) && unreadCount > 0) {
       unreadCount--;
     }
