@@ -110,6 +110,8 @@ Android 账号设置新增“后台消息提醒”设备开关，默认开启；
 
 ## 11. 测试场景与验收条件
 
+- 2026-09-28 “我的”关注／粉丝数与列表差异：真实页面下拉、粉丝移除后返回及旧刷新迟到的消费者回归在原应用实现上验证，应用源码未变；服务端统计已注销互关对象的口径差异交 Backend 修复，原问题待负责人复验。详见[关系数量排查](../architecture/profile-follow-counts-investigation.md)。
+
 - [ ] 后台消息提醒开关、系统频道入口、常驻卡片与 30 分钟双消息横幅场景的负责人真机复验，见[候选验收记录](../architecture/background-reminders-acceptance.md)。
 
 - 个人主页动画封面旧候选曾被反馈停稳起播迟缓，后改为可见多张同时播放。负责人于2026-09-11确认应用`a0691d6`／APK `A2D24DC7…`的个人主页起播与滚动连续性符合预期并验收通过。真实 PublicUserPage 回归覆盖轻滑、分页、Tab切换和详情退出转场；精确制品、完整门禁及验收范围见[起播验收记录](../architecture/thread-cover-start-acceptance.md)。
