@@ -51,7 +51,7 @@
 
 最终自查补充 SharedPreferences 先更新缓存再报告写入失败的边界：保留待补写标记，即使下次读到相同缓存也真正重试落盘。安装记录／存储 15 项通过（`build-update-dialog-storage-retry.log`）；新增强制说明失败不解除阻断的精确 Widget 用例 1 项通过（`build-update-dialog-forced-error.log`）。此次补充未改变已查看的字号画面，不为同源视觉调整重复全量 Flutter 或 APK。
 
-最终应用源码摘要：`bf25ae0a16fafde1e637338984584c3e588dffa24fc3a6c38aeb6e31752c6888`（使用 `tool/dev/runtime.mjs::sourceEvidence`，提交号见任务分支交付）。应用全量分析、生成 SDK 分析均零问题；全仓 Dart 格式 1123 文件零变更；模块文档、架构及 API 范围审计通过（161/161，0 missing）。架构检查中发现的原始 route 字符串、提示分类与共享弹窗边界已按既有规则修正，未添加豁免或扩大行数基线。契约、生成客户端、依赖、版本与 Android／iOS 文件均无 diff。
+应用候选提交 `856850698009c6375b8e84993ff7f25ad00bb9f7`；提交后源码摘要 `1d022bdcfde494dca63652f67350fb68de28d891820d653e03d0da60ffc31be0`。提交前检查摘要 `bf25ae0a16fafde1e637338984584c3e588dffa24fc3a6c38aeb6e31752c6888` 包含已删除历史页的占位；按相同文件清单复算完全一致，应用字节未因提交变化。摘要均来自 `tool/dev/runtime.mjs::sourceEvidence`，本段后续只补充文档。应用全量分析、生成 SDK 分析均零问题；全仓 Dart 格式 1123 文件零变更；模块文档、架构及 API 范围审计通过（161/161，0 missing）。架构检查中发现的原始 route 字符串、提示分类与共享弹窗边界已按既有规则修正，未添加豁免或扩大行数基线。契约、生成客户端、依赖、版本与 Android／iOS 文件均无 diff。
 
 ## 隔离环境与真机边界
 
