@@ -18,13 +18,16 @@ class MobileReleaseContent extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(release.summary, style: Theme.of(context).textTheme.wenyouBody),
+        Text(
+          release.summary,
+          style: Theme.of(context).textTheme.wenyouCompactBody,
+        ),
         for (var index = 0; index < release.items.length; index++) ...[
           SizedBox(height: tokens.space12),
           // 纯文本不会执行 Markdown、HTML 或把任意 URL 变成安装入口。
           Text(
             '${index + 1}. ${release.items[index]}',
-            style: Theme.of(context).textTheme.wenyouBody,
+            style: Theme.of(context).textTheme.wenyouCompactBody,
           ),
         ],
       ],
@@ -33,9 +36,10 @@ class MobileReleaseContent extends StatelessWidget {
 }
 
 class MobileReleaseSection extends ConsumerWidget {
-  const MobileReleaseSection({required this.target, super.key});
+  const MobileReleaseSection({required this.target, this.onVisible, super.key});
 
   final MobileReleaseTarget target;
+  final VoidCallback? onVisible;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -55,7 +59,26 @@ class MobileReleaseSection extends ConsumerWidget {
                 child: const Text('重试'),
               ),
             )
-          : MobileReleaseContent(release: value),
+          : _VisibleRelease(release: value, onVisible: onVisible),
     );
+  }
+}
+
+class _VisibleRelease extends StatefulWidget {
+  const _VisibleRelease({required this.release, this.onVisible});
+  final MobileRelease release;
+  final VoidCallback? onVisible;
+
+  @override
+  State<_VisibleRelease> createState() => _VisibleReleaseState();
+}
+
+class _VisibleReleaseState extends State<_VisibleRelease> {
+  @override
+  Widget build(BuildContext context) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) widget.onVisible?.call();
+    });
+    return MobileReleaseContent(release: widget.release);
   }
 }

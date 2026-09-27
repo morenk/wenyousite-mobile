@@ -10,12 +10,6 @@ abstract final class AppRouteLocations {
   static const notifications = AppRoutePaths.notifications;
   static const search = AppRoutePaths.search;
   static const diagnostics = AppRoutePaths.diagnostics;
-  static const mobileReleases = AppRoutePaths.mobileReleases;
-  static String mobileRelease({required int build, required String version}) =>
-      Uri(
-        path: '$mobileReleases/$build',
-        queryParameters: {'version': version},
-      ).toString();
   static const appearance = AppRoutePaths.appearance;
   static const moderationAppeals = AppRoutePaths.moderationAppeals;
   static const composeThread = AppRoutePaths.composeThread;
@@ -106,14 +100,15 @@ abstract final class AppRouteLocations {
 }
 
 abstract final class AppRoutePaths {
+  // 仅兼容旧地址回退，不再提供说明／历史页面。
+  static const retiredMobileReleases = '/mobile-releases';
+  static const retiredMobileRelease = '/mobile-releases/:build';
   static const home = '/home';
   static const moments = '/moments';
   static const notifications = '/notifications';
   static const me = '/me';
   static const search = '/search';
   static const diagnostics = '/diagnostics';
-  static const mobileReleases = '/mobile-releases';
-  static const mobileRelease = '/mobile-releases/:build';
   static const appearance = '/appearance';
   static const moderationAppeals = '/appeals';
   static const momentBookmarks = '/moments/bookmarks';
@@ -172,7 +167,6 @@ abstract final class AppRouteNames {
   static const me = 'me';
   static const search = 'search';
   static const diagnostics = 'diagnostics';
-  static const mobileReleases = 'mobile-releases';
   static const appearance = 'appearance';
   static const moderationAppeals = 'moderation-appeals';
   static const momentBookmarks = 'moment-bookmarks';

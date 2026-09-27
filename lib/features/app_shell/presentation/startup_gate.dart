@@ -5,25 +5,26 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/navigation/wenyou_feedback_visibility.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
-import 'package:wenyousite_mobile/features/app_shell/application/mobile_release_controller.dart';
-import 'package:wenyousite_mobile/features/app_shell/application/mobile_update_controller.dart';
 import 'package:wenyousite_mobile/features/app_shell/application/startup_controller.dart';
 import 'package:wenyousite_mobile/features/app_shell/domain/mobile_update.dart';
-import 'package:wenyousite_mobile/features/app_shell/presentation/mobile_release_content.dart';
-import 'package:wenyousite_mobile/features/app_shell/presentation/mobile_update_actions.dart';
+import 'package:wenyousite_mobile/features/app_shell/presentation/mobile_update_notice_dialog.dart';
+import 'package:wenyousite_mobile/features/app_shell/presentation/mobile_update_notice_host.dart';
 
 class StartupGate extends ConsumerStatefulWidget {
   const StartupGate({
     required this.child,
     this.waitingRecheckInterval = const Duration(seconds: 60),
-    this.onViewUpdate,
+    this.navigatorKey,
+    this.feedbackVisibility,
     super.key,
   }) : assert(waitingRecheckInterval > Duration.zero);
 
   final Widget child;
   final Duration waitingRecheckInterval;
-  final Future<void> Function(MobileUpdateInfo update)? onViewUpdate;
+  final GlobalKey<NavigatorState>? navigatorKey;
+  final WenyouFeedbackVisibility? feedbackVisibility;
 
   @override
   ConsumerState<StartupGate> createState() => _StartupGateState();
@@ -37,7 +38,6 @@ class _StartupGateState extends ConsumerState<StartupGate>
   Timer? _waitingRecheckTimer;
   bool _canRevealApp = false;
   bool _isForeground = true;
-  bool _viewingUpdate = false;
 
   @override
   void initState() {
@@ -79,35 +79,16 @@ class _StartupGateState extends ConsumerState<StartupGate>
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(startupControllerProvider);
-    final updateAction = ref.watch(mobileUpdateControllerProvider);
     _syncWaitingRecheckTimer(state.status);
-    return switch (state.status) {
+    final content = switch (state.status) {
       StartupStatus.ready when !_canRevealApp => StartupCheckingPage(
         onVisible: _markBrandVisible,
       ),
-      StartupStatus.ready => _ReadyContent(
-        update: _viewingUpdate ? null : state.update,
-        action: state.update == null
-            ? const MobileUpdateActionState()
-            : _actionFor(updateAction, state.update!),
-        onUpdate: state.update == null
-            ? null
-            : () => _viewUpdate(state.update!),
-        onDismiss: state.update == null
-            ? null
-            : ref
-                  .read(startupControllerProvider.notifier)
-                  .dismissRecommendedUpdate,
-        child: widget.child,
-      ),
+      StartupStatus.ready => widget.child,
       StartupStatus.checking => StartupCheckingPage(
         onVisible: _markBrandVisible,
       ),
-      StartupStatus.updateRequired => _UpdatePage(
-        update: state.update!,
-        action: _actionFor(updateAction, state.update!),
-        onUpdate: () => _startUpdate(state.update!),
-      ),
+      StartupStatus.updateRequired => _UpdatePage(update: state.update!),
       StartupStatus.updateWaiting => _UpdateWaitingPage(
         update: state.update,
         isRechecking: state.isRechecking,
@@ -122,45 +103,17 @@ class _StartupGateState extends ConsumerState<StartupGate>
         onRetry: ref.read(startupControllerProvider.notifier).check,
       ),
     };
-  }
-
-  MobileUpdateActionState _actionFor(
-    MobileUpdateActionState action,
-    MobileUpdateInfo update,
-  ) {
-    if (action.targetBuild == null ||
-        action.targetBuild == update.targetBuild) {
-      return action;
-    }
-    return const MobileUpdateActionState();
-  }
-
-  Future<void> _startUpdate(MobileUpdateInfo update) {
-    return ref
-        .read(mobileUpdateControllerProvider.notifier)
-        .start(
-          update,
-          refreshTarget:
-              update.platform == MobileClientPlatform.android &&
-                  update.targetVersion != null
-              ? () => ref.refresh(availableMobileReleaseUpdateProvider.future)
-              : null,
-        );
-  }
-
-  Future<void> _viewUpdate(MobileUpdateInfo update) async {
-    if (update.platform != MobileClientPlatform.android) {
-      await _startUpdate(update);
-      return;
-    }
-    final onView = widget.onViewUpdate;
-    if (onView == null) return;
-    setState(() => _viewingUpdate = true);
-    try {
-      await onView(update);
-    } finally {
-      if (mounted) setState(() => _viewingUpdate = false);
-    }
+    final navigatorKey = widget.navigatorKey;
+    final visibility = widget.feedbackVisibility;
+    if (navigatorKey == null || visibility == null) return content;
+    return MobileUpdateNoticeHost(
+      enabled: state.status == StartupStatus.ready && _canRevealApp,
+      policyChecking: state.isRechecking,
+      navigatorKey: navigatorKey,
+      visibility: visibility,
+      update: state.update,
+      child: content,
+    );
   }
 
   void _syncWaitingRecheckTimer(StartupStatus status) {
@@ -263,320 +216,31 @@ class StartupCheckingPage extends StatelessWidget {
   }
 }
 
-class _ReadyContent extends StatelessWidget {
-  const _ReadyContent({
-    required this.child,
-    required this.update,
-    required this.action,
-    required this.onUpdate,
-    required this.onDismiss,
-  });
-
-  final Widget child;
-  final MobileUpdateInfo? update;
-  final MobileUpdateActionState action;
-  final Future<void> Function()? onUpdate;
-  final Future<void> Function()? onDismiss;
-
-  @override
-  Widget build(BuildContext context) {
-    final update = this.update;
-    final onUpdate = this.onUpdate;
-    final onDismiss = this.onDismiss;
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        child,
-        if (update != null && onUpdate != null && onDismiss != null)
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: SafeArea(
-              bottom: false,
-              child: Align(
-                alignment: Alignment.topCenter,
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 600),
-                  child: Padding(
-                    padding: EdgeInsets.all(context.wenyouTokens.space12),
-                    child: _RecommendedUpdateBanner(
-                      update: update,
-                      action: action,
-                      onUpdate: onUpdate,
-                      onDismiss: onDismiss,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-      ],
-    );
-  }
-}
-
-class _RecommendedUpdateBanner extends ConsumerWidget {
-  const _RecommendedUpdateBanner({
-    required this.update,
-    required this.action,
-    required this.onUpdate,
-    required this.onDismiss,
-  });
-
+class _UpdatePage extends StatelessWidget {
+  const _UpdatePage({required this.update});
   final MobileUpdateInfo update;
-  final MobileUpdateActionState action;
-  final Future<void> Function() onUpdate;
-  final Future<void> Function() onDismiss;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final tokens = context.wenyouTokens;
-    final statusMessage = mobileUpdateStatusMessage(action);
-    final release =
-        update.platform == MobileClientPlatform.android &&
-            update.targetVersion != null
-        ? ref
-              .watch(
-                mobileReleaseProvider((
+  Widget build(BuildContext context) => PopScope(
+    canPop: false,
+    child: Scaffold(
+      body: SafeArea(
+        child: MobileUpdateNoticeDialog(
+          title: '需要更新后继续',
+          update: update,
+          target:
+              update.platform == MobileClientPlatform.android &&
+                  update.targetVersion != null
+              ? (
                   platform: update.platform,
                   build: update.targetBuild,
                   version: update.targetVersion!,
-                )),
-              )
-              .valueOrNull
-        : null;
-    return Material(
-      elevation: 4,
-      color: Colors.transparent,
-      borderRadius: BorderRadius.circular(tokens.radiusCompact),
-      child: WenyouStatusBanner(
-        key: const Key('recommended-update-banner'),
-        message: '温油站有新版本',
-        detail:
-            statusMessage ??
-            '当前 ${update.currentVersion}+${update.currentBuild}，可更新到${mobileUpdateTargetLabel(update)}。',
-        tone: action.status == MobileUpdateActionStatus.failed
-            ? WenyouStatusTone.error
-            : WenyouStatusTone.accent,
-        action: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            if (release != null) ...[
-              Text(
-                release.summary,
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.wenyouCompactBody,
-              ),
-              SizedBox(height: tokens.space8),
-            ],
-            if (action.status == MobileUpdateActionStatus.downloading &&
-                update.platform == MobileClientPlatform.android) ...[
-              Semantics(
-                label: action.progress == null
-                    ? '正在下载安装包'
-                    : '安装包下载进度 ${(action.progress! * 100).round()}%',
-                child: LinearProgressIndicator(value: action.progress),
-              ),
-              SizedBox(height: tokens.space8),
-            ],
-            Wrap(
-              alignment: WrapAlignment.end,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              spacing: tokens.space8,
-              runSpacing: tokens.space4,
-              children: [
-                TextButton(
-                  key: const Key('mobile-update-dismiss'),
-                  onPressed: action.isBusy ? null : onDismiss,
-                  child: const Text('稍后再说'),
-                ),
-                WenyouAsyncButton(
-                  key: const Key('mobile-update-start'),
-                  label: update.platform == MobileClientPlatform.android
-                      ? '查看更新'
-                      : mobileUpdateButtonLabel(update, action),
-                  loadingLabel: update.platform == MobileClientPlatform.android
-                      ? mobileUpdateBusyLabel(action)
-                      : '正在打开 TestFlight',
-                  icon: update.platform == MobileClientPlatform.android
-                      ? WenyouIconIds.actionUpdate
-                      : WenyouIconIds.actionOpenExternal,
-                  isLoading: action.isBusy,
-                  onPressed: onUpdate,
-                ),
-              ],
-            ),
-          ],
+                )
+              : null,
         ),
       ),
-    );
-  }
-}
-
-class _UpdatePage extends StatelessWidget {
-  const _UpdatePage({
-    required this.update,
-    required this.action,
-    required this.onUpdate,
-  });
-
-  final MobileUpdateInfo update;
-  final MobileUpdateActionState action;
-  final Future<void> Function() onUpdate;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = context.wenyouTokens;
-    final statusMessage = mobileUpdateStatusMessage(action);
-    return Scaffold(
-      body: WenyouPageBody(
-        maxWidth: 520,
-        child: WenyouPanel(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              DecoratedBox(
-                decoration: BoxDecoration(
-                  color: tokens.accentedBackground,
-                  shape: BoxShape.circle,
-                ),
-                child: SizedBox.square(
-                  dimension: 64,
-                  child: WenyouIcon(
-                    WenyouIconIds.actionUpdate,
-                    size: 32,
-                    color: tokens.brandForeground,
-                  ),
-                ),
-              ),
-              SizedBox(height: tokens.space16),
-              Semantics(
-                header: true,
-                child: Text(
-                  '需要更新后继续',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.wenyouStatusTitle,
-                ),
-              ),
-              SizedBox(height: tokens.space8),
-              Text(
-                '当前版本已停止支持。更新后即可继续访问温油站。',
-                textAlign: TextAlign.center,
-                style: Theme.of(
-                  context,
-                ).textTheme.wenyouCompactBody.copyWith(color: tokens.mutedText),
-              ),
-              SizedBox(height: tokens.space20),
-              _BuildTransition(update: update),
-              if (update.platform == MobileClientPlatform.android &&
-                  update.targetVersion != null) ...[
-                SizedBox(height: tokens.space20),
-                MobileReleaseSection(
-                  target: (
-                    platform: update.platform,
-                    build: update.targetBuild,
-                    version: update.targetVersion!,
-                  ),
-                ),
-              ],
-              if (statusMessage != null) ...[
-                SizedBox(height: tokens.space16),
-                WenyouStatusBanner(
-                  message: statusMessage,
-                  detail: action.status == MobileUpdateActionStatus.failed
-                      ? '你可以保留在此页面并重新尝试。'
-                      : null,
-                  tone: action.status == MobileUpdateActionStatus.failed
-                      ? WenyouStatusTone.error
-                      : WenyouStatusTone.neutral,
-                ),
-              ],
-              if (action.status == MobileUpdateActionStatus.downloading &&
-                  update.platform == MobileClientPlatform.android) ...[
-                SizedBox(height: tokens.space12),
-                Semantics(
-                  label: action.progress == null
-                      ? '正在下载安装包'
-                      : '安装包下载进度 ${(action.progress! * 100).round()}%',
-                  child: LinearProgressIndicator(value: action.progress),
-                ),
-              ],
-              if (!update.canStartUpdate) ...[
-                SizedBox(height: tokens.space16),
-                const WenyouStatusBanner(
-                  message: '获取新版本下载地址失败',
-                  detail: '请稍后重新打开应用；若持续出现，请联系开发者。',
-                  tone: WenyouStatusTone.error,
-                ),
-              ],
-              SizedBox(height: tokens.space20),
-              WenyouAsyncPrimaryButton(
-                key: const Key('mobile-update-start'),
-                label: mobileUpdateButtonLabel(update, action),
-                loadingLabel: update.platform == MobileClientPlatform.android
-                    ? mobileUpdateBusyLabel(action)
-                    : '正在打开 TestFlight',
-                icon: update.platform == MobileClientPlatform.android
-                    ? WenyouIconIds.actionDownload
-                    : WenyouIconIds.actionOpenExternal,
-                isLoading: action.isBusy,
-                onPressed: update.canStartUpdate ? onUpdate : null,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _BuildTransition extends StatelessWidget {
-  const _BuildTransition({required this.update});
-
-  final MobileUpdateInfo update;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = context.wenyouTokens;
-    final textStyle = Theme.of(context).textTheme.wenyouLabel;
-    return Semantics(
-      label:
-          '当前 ${update.currentVersion}+${update.currentBuild}，可用${mobileUpdateTargetLabel(update)}',
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: tokens.softPanel,
-          borderRadius: BorderRadius.circular(tokens.radiusControl),
-          border: Border.all(color: tokens.border),
-        ),
-        child: Padding(
-          padding: EdgeInsets.symmetric(
-            horizontal: tokens.space16,
-            vertical: tokens.space12,
-          ),
-          child: Wrap(
-            alignment: WrapAlignment.center,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            spacing: tokens.space12,
-            runSpacing: tokens.space8,
-            children: [
-              Text(
-                '当前 ${update.currentVersion}+${update.currentBuild}',
-                style: textStyle,
-              ),
-              WenyouIcon(
-                WenyouIconIds.navigationForward,
-                size: 20,
-                color: tokens.brandForeground,
-              ),
-              Text('可用${mobileUpdateTargetLabel(update)}', style: textStyle),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+    ),
+  );
 }
 
 class _UpdateWaitingPage extends StatelessWidget {

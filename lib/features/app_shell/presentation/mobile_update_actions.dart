@@ -5,6 +5,7 @@ import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/app_shell/application/mobile_release_controller.dart';
 import 'package:wenyousite_mobile/features/app_shell/application/mobile_update_controller.dart';
+import 'package:wenyousite_mobile/features/app_shell/application/startup_controller.dart';
 import 'package:wenyousite_mobile/features/app_shell/domain/mobile_update.dart';
 
 class MobileUpdateActions extends ConsumerWidget {
@@ -44,15 +45,32 @@ class MobileUpdateActions extends ConsumerWidget {
           loadingLabel: mobileUpdateBusyLabel(action),
           icon: WenyouIconIds.actionDownload,
           isLoading: action.isBusy,
-          onPressed: current.isBusy && current.targetBuild != update.targetBuild
+          onPressed:
+              !update.canStartUpdate ||
+                  (current.isBusy && current.targetBuild != update.targetBuild)
               ? null
               : () => ref
                     .read(mobileUpdateControllerProvider.notifier)
                     .start(
                       update,
-                      refreshTarget: () => ref.refresh(
-                        availableMobileReleaseUpdateProvider.future,
-                      ),
+                      refreshTarget:
+                          update.platform == MobileClientPlatform.android &&
+                              update.targetVersion != null
+                          ? () async {
+                              final latest = await ref.refresh(
+                                availableMobileReleaseUpdateProvider.future,
+                              );
+                              if (latest?.targetBuild != update.targetBuild ||
+                                  latest?.targetVersion !=
+                                      update.targetVersion ||
+                                  latest?.kind != update.kind) {
+                                await ref
+                                    .read(startupControllerProvider.notifier)
+                                    .recheckForUpdate();
+                              }
+                              return latest;
+                            }
+                          : null,
                     ),
         ),
       ],

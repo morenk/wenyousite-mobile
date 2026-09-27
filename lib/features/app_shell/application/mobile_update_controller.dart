@@ -62,7 +62,7 @@ class MobileUpdateController extends StateNotifier<MobileUpdateActionState> {
             latest.platform != update.platform ||
             latest.targetBuild != update.targetBuild ||
             latest.targetVersion != update.targetVersion) {
-          throw const MobileUpdateException('此版本已不可更新，请重新查看更新说明。');
+          throw const MobileUpdateException('此版本已不可更新，请稍后重试。');
         }
         // 下载地址只采用本次重新核验的策略，不从说明或历史记录读取。
         update = latest;

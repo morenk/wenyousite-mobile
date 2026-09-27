@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -99,13 +98,6 @@ class _GuestMePage extends StatelessWidget {
             WenyouSettingsGroup(
               title: '帮助',
               children: [
-                if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android)
-                  WenyouSettingsLink(
-                    icon: WenyouIconIds.actionUpdate,
-                    title: '更新说明',
-                    onTap: () =>
-                        context.pushNamed(AppRouteNames.mobileReleases),
-                  ),
                 WenyouSettingsLink(
                   icon: WenyouIconIds.statusInfo,
                   title: '故障诊断',
@@ -399,12 +391,6 @@ class MeSettingsPage extends ConsumerWidget {
           WenyouSettingsGroup(
             title: '帮助',
             children: [
-              if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android)
-                WenyouSettingsLink(
-                  icon: WenyouIconIds.actionUpdate,
-                  title: '更新说明',
-                  onTap: () => context.pushNamed(AppRouteNames.mobileReleases),
-                ),
               WenyouSettingsLink(
                 key: const Key('me-open-moderation-appeals'),
                 icon: WenyouIconIds.moderationDecision,

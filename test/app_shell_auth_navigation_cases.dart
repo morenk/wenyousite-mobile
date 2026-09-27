@@ -8,6 +8,7 @@ import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/network/session_controller.dart';
 import 'package:wenyousite_mobile/features/app_shell/application/mobile_update_controller.dart';
+import 'package:wenyousite_mobile/features/app_shell/application/mobile_update_notice_ports.dart';
 import 'package:wenyousite_mobile/features/app_shell/application/startup_controller.dart';
 import 'package:wenyousite_mobile/features/app_shell/domain/mobile_update.dart';
 import 'package:wenyousite_mobile/features/auth/data/auth_repository.dart';
@@ -16,6 +17,7 @@ import 'package:wenyousite_mobile/features/notifications/data/notification_repos
 import 'package:wenyousite_mobile/features/users/data/me_profile_repository.dart';
 import 'package:wenyousite_mobile/features/wallet/data/wallet_repository.dart';
 import 'app_shell_test_support.dart';
+import 'features/app_shell/mobile_update_notice_test_support.dart';
 
 void registerAppShellAuthNavigationCases() {
   testWidgets('当前版本仍可用而推荐安装包未就绪时直接进入应用', (tester) async {
@@ -26,6 +28,9 @@ void registerAppShellAuthNavigationCases() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          mobileUpdateNoticeStoreProvider.overrideWithValue(
+            MemoryNoticeStore(),
+          ),
           metaRepositoryProvider.overrideWithValue(
             AppShellTestFixedMetaRepository(
               contractVersion: '5.0.0',
@@ -61,6 +66,9 @@ void registerAppShellAuthNavigationCases() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          mobileUpdateNoticeStoreProvider.overrideWithValue(
+            MemoryNoticeStore(),
+          ),
           metaRepositoryProvider.overrideWithValue(
             AppShellTestFixedMetaRepository(
               contractVersion: '5.0.0-dev.test',
@@ -96,6 +104,9 @@ void registerAppShellAuthNavigationCases() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          mobileUpdateNoticeStoreProvider.overrideWithValue(
+            MemoryNoticeStore(),
+          ),
           metaRepositoryProvider.overrideWithValue(
             AppShellTestCompatibleMetaRepository(),
           ),
@@ -154,6 +165,9 @@ void registerAppShellAuthNavigationCases() {
     testWidgets('游客打开 $protectedLocation 先登录并保留原目标', (tester) async {
       final container = ProviderContainer(
         overrides: [
+          mobileUpdateNoticeStoreProvider.overrideWithValue(
+            MemoryNoticeStore(),
+          ),
           metaRepositoryProvider.overrideWithValue(
             AppShellTestCompatibleMetaRepository(),
           ),
@@ -194,6 +208,9 @@ void registerAppShellAuthNavigationCases() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          mobileUpdateNoticeStoreProvider.overrideWithValue(
+            MemoryNoticeStore(),
+          ),
           metaRepositoryProvider.overrideWithValue(
             AppShellTestCompatibleMetaRepository(),
           ),
@@ -259,6 +276,9 @@ void registerAppShellAuthNavigationCases() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          mobileUpdateNoticeStoreProvider.overrideWithValue(
+            MemoryNoticeStore(),
+          ),
           metaRepositoryProvider.overrideWithValue(
             AppShellTestCompatibleMetaRepository(),
           ),
@@ -317,6 +337,9 @@ void registerAppShellAuthNavigationCases() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          mobileUpdateNoticeStoreProvider.overrideWithValue(
+            MemoryNoticeStore(),
+          ),
           metaRepositoryProvider.overrideWithValue(
             AppShellTestCompatibleMetaRepository(),
           ),
@@ -364,6 +387,7 @@ void registerAppShellAuthNavigationCases() {
   testWidgets('会话被撤销时进入登录页并可继续游客浏览', (tester) async {
     final container = ProviderContainer(
       overrides: [
+        mobileUpdateNoticeStoreProvider.overrideWithValue(MemoryNoticeStore()),
         metaRepositoryProvider.overrideWithValue(
           AppShellTestCompatibleMetaRepository(),
         ),
@@ -412,6 +436,9 @@ void registerAppShellAuthNavigationCases() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
+            mobileUpdateNoticeStoreProvider.overrideWithValue(
+              MemoryNoticeStore(),
+            ),
             metaRepositoryProvider.overrideWithValue(
               AppShellTestRetryMetaRepository(),
             ),
@@ -435,6 +462,9 @@ void registerAppShellAuthNavigationCases() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
+            mobileUpdateNoticeStoreProvider.overrideWithValue(
+              MemoryNoticeStore(),
+            ),
             metaRepositoryProvider.overrideWithValue(
               AppShellTestCompatibleMetaRepository(),
             ),
