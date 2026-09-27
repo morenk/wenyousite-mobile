@@ -1,6 +1,6 @@
 # Android 更新说明候选验收
 
-状态：候选验证中／待负责人验收。组件与自动测试不替代真机、真实 API 或正式发布验收。
+状态：已获合并授权；Backend 已部署且严格来源检查通过，负责人真机待验项仍保留。组件与自动测试不替代真机或正式发布验收。
 
 ## 范围与事实源
 
@@ -58,7 +58,7 @@
 - `live-status-final.json`：reload后的ready历史快照；`live-status-current.json`：后续failed状态；`final-resource-status.json`：最后资源核验。
 - `first-session-failed.json`、`first-session-errors.log`、`second-session-errors.log`，以及仓库根目录的 `build-release-dev-start-reconnected.log`、`build-release-dev-recover.log`、`build-release-dev-reload.log` 保留本轮诊断。原始截图和调试记录留在本机，不作为源码或公开日志上传。
 
-## 最新 dev 整合与上线前待办
+## 最新 dev 整合与已部署来源复核
 
 负责人后续明确授权本目标合并与 Backend／Web 上线，治理要求 Mobile 先正常 merge 最新 `origin/dev`，再等待 Backend 上线通知完成严格来源校验。整合基线为 `b91a27dae9e23041b5b01aa018f702606a85a991`（预览会话工具 PR #68），原候选为 `9a4ddc2cb52025d63d2ea3099097bd8c3255feed`。只有 `docs/CHANGELOG.md` 发生冲突，保留双方记录；`package.json` 自动合并后同时保留 `dev:list` 和更新说明发布工具测试入口，没有改写历史。
 
@@ -66,7 +66,9 @@
 
 整合增量检查：Windows 开发／发布工具 `66/66` 通过；全仓格式检查 `1120 files / 0 changed`，应用全量静态分析零问题，架构与 21 个模块文档检查通过。实际执行 `flutter test --concurrency=2 test/core/config/preview_environment_test.dart test/core/network/preview_identity_test.dart`，共 `10/10` 通过，覆盖固定端口切批次、暂停／恢复、存储隔离与身份校验。日志为 `build-release-integration-tool-tests.log`、`build-release-integration-format.log`、`build-release-integration-analyze.log`、`build-release-integration-preview-tests.log`。本次不重复既有同应用的全量 Flutter 测试或 APK 构建。
 
-公网只读 `/meta` 本轮仍为 Backend `124fb4e8aa395440f7a2156de98b642ec87f7583`、契约 `5.26.0-dev.20260922.3`。Backend 部署后，按治理交接的实际上线 SHA 用标准同步入口核对固定契约、生成一致性和 `api:verify:production`，严格来源成功之前不合并本 PR。若仅来源元数据或文档改变，复用同应用的全量测试与 APK，补齐受影响检查；API、应用或依赖发生变化则重新执行高风险完整门禁。原聚合失败记录保留，不改写为一次全绿运行。
+上述 dev 整合时公网仍为旧 Backend `124fb4e8aa395440f7a2156de98b642ec87f7583`、契约 `5.26.0-dev.20260922.3`。后续治理确认 Backend 已部署 `1d43b85f7aa8cd1ab03f6ab34f1851462e1a0021`，本任务通过标准 Git 来源同步固定该 SHA；相对9e25仅来源元数据与运维文档变化，OpenAPI、应用和依赖不变。严格 `api:verify:production` 已退出0，确认契约 `5.27.0-dev.20260927.1`、完整 buildSha、Markdown v5 兼容及 `GET /threads` 字段；日志为 `build-release-deployed-production.log`。OpenAPI 校验与固定列表／行内契约来源检查通过，日志为 `build-release-deployed-api-validate.log` 和 `build-release-deployed-fixed-source.log`。复用同应用的全量测试与 APK，补齐受影响检查；原聚合失败记录保留，不改写为一次全绿运行。
+
+`npm run api:check` 在已部署来源上退出0，生成客户端和诊断路由没有字节变化；日志为 `build-release-deployed-api-check.log`。21个模块来源同步后，`docs:check` 与 `git diff --check` 通过（`build-release-deployed-docs.log`）。相对整合提交 `8e402bff2f459fc4efc43b13da2f9820b62cbb8a`，应用、SDK、Android、资源和锁文件均无变化；开发摘要仍为 `ac8c2c418a27dd9b1660be936a15c524ab0ac70500c2642f00338915af27229a`。至此原来源阻塞及架构失败均有通过复验，结合既有同应用完整测试、构建及本轮增量检查收敛合并门禁，不声称重新执行了一次全绿的完整聚合。
 
 并行工作归属已只读核验：主 checkout 位于 `b91a27da` 且干净；“检查移动端发布前状态”聊天已交付从 `8be9ffb1` 构建的正式签名 `0.8.0-dev.2+97` 测试包，不含本目标功能。旧 Tab Worktree 的未提交和未跟踪修改保留，历史内容卡与实时预览 checkout 未改动。没有覆盖其他任务的包、修改其工作区或向其发送消息。合并授权不记为负责人真机验收，也不包含 APK 发布、正式 Tag 或晋级。
 
