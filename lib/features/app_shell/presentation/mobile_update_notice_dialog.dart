@@ -39,6 +39,9 @@ class MobileUpdateNoticeDialog extends StatelessWidget {
       onClose: onClose,
       closeLabel: update == null ? '知道了' : '暂不更新',
       closeKey: const Key('mobile-update-dismiss'),
+      primaryAction: update == null
+          ? null
+          : SizedBox(width: 420, child: MobileUpdateActions(update: update)),
       content: SizedBox(
         width: 420,
         child: Column(
@@ -58,10 +61,7 @@ class MobileUpdateNoticeDialog extends StatelessWidget {
               SizedBox(height: tokens.space16),
               MobileReleaseSection(target: target, onVisible: onVisible),
             ],
-            if (update != null) ...[
-              SizedBox(height: tokens.space20),
-              MobileUpdateActions(update: update),
-            ],
+            if (update != null) MobileUpdateStatus(update: update),
           ],
         ),
       ),

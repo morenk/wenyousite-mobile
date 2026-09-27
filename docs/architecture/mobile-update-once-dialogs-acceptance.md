@@ -53,13 +53,21 @@
 
 应用候选提交 `856850698009c6375b8e84993ff7f25ad00bb9f7`；提交后源码摘要 `1d022bdcfde494dca63652f67350fb68de28d891820d653e03d0da60ffc31be0`。提交前检查摘要 `bf25ae0a16fafde1e637338984584c3e588dffa24fc3a6c38aeb6e31752c6888` 包含已删除历史页的占位；按相同文件清单复算完全一致，应用字节未因提交变化。摘要均来自 `tool/dev/runtime.mjs::sourceEvidence`，本段后续只补充文档。应用全量分析、生成 SDK 分析均零问题；全仓 Dart 格式 1123 文件零变更；模块文档、架构及 API 范围审计通过（161/161，0 missing）。架构检查中发现的原始 route 字符串、提示分类与共享弹窗边界已按既有规则修正，未添加豁免或扩大行数基线。契约、生成客户端、依赖、版本与 Android／iOS 文件均无 diff。
 
+## 长说明滚动反馈
+
+负责人询问长文案上下滑动后，在同一 PR #73 追加固定底部操作：共享 NoticeDialog 增加 primaryAction，下载／安装按钮与关闭固定；状态、进度和长错误留在可滚动正文内，不以压缩或限制系统字号缩放取得空间。强制弹窗仍不提供关闭，不改变更新资格及安全校验。
+
+第三批组件目录为 `D:\code\wenyousite\artifacts\mobile-release-notes-20260927\once-dialog-components-v3`，v1/v2 保留。源码摘要 `dd344c357d298cd79170e8b444eba76b17345738de7eeed331a076375384883c`；`mobile_release_widgets_test.dart` 22 项全部通过（`build-update-dialog-scroll-v3.log`）。新增推荐／强制／升级后三个 320×568、两倍字号用例均实际向下拖动至第12条，再向上回到摘要，断言底部按钮矩形位置不变且可点击；推荐和强制点击后调用原更新服务，强制系统返回仍不能放行。对应 `mobile_notice_long_{recommended,required,after}_320_2x.png` 已实际查看，未发现布局溢出；长按钮文案允许自然换行，未裁切或缩小系统文字。
+
+本批只重复上述直接受影响 Widget/Golden 和必要静态、格式／文档检查，不重跑已通过的192项或构建APK。第三批为最新应用源码候选，前两批检查仍按各自源码与范围保留，不冒充真机或负责人验收。静态检查仅发现共享主按钮插槽的 null-aware 元素风格提示，按既有规则改为等价语法后应用全量分析零问题（`build-update-dialog-scroll-v3-final-analyze.log`）；4个受影响Dart文件格式零变更、文档检查通过。此等价语法修订后的最终源码摘要为 `7c47cf812d2f127ff386a30d8abcf9bd3aaa371d3b7ad26d8ab5c48f80d72d10`，不改变已查看的v3画面与22项行为证据。
+
 ## 隔离环境与真机边界
 
 已读本任务 consumer 并再次通过 API／media 身份验证：run `preview_705231a26b764b7cd53eed8e`，API 35293、media 36911。带正确预览身份头读取已发布 Android build 97 返回 200，版本名 `0.8.0-dev.2-debug`、revision 1，摘要及两条内容明确“隔离预览样本”。该样本由 Backend 任务写入；既有 build 100 与三项 meta 更新策略保持，未晋级或上传 APK。
 
 `adb devices -l` 当前没有连接设备，历史 Debug 会话均非活动；未安装、卸载、清数据或伪造升级记录。只有设备恢复并核对实际包名／版本／安装时间后，才能启动本任务隔离 Debug 并补充 loadedSource、runId、设备、画面和负责人结果。
 
-当前真实预览推荐 build 96，而本任务 Debug 为 97；合成 build 100 没有真实已验证 APK。因此推荐和强制的真实 API→APK→系统安装全过程本轮尚未覆盖，只提供明确标记的 Widget 状态验证，不修改安全校验或伪造 APK 元数据来制造覆盖。
+再次带本批次身份头读取 `/meta` 已核验：隔离预览 Android 的 minimumSupportedBuild、recommendedBuild、updateUrl 均为 null。正式公网才推荐 build 96，而本任务 Debug 为 97；合成 build 100 没有真实已验证 APK。因此推荐和强制的真实 API→APK→系统安装全过程本轮尚未覆盖，只提供明确标记的 Widget 状态验证，不修改安全校验或伪造 APK 元数据来制造覆盖。
 
 ## 负责人手测清单
 

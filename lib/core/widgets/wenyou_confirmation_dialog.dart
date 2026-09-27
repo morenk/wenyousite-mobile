@@ -10,6 +10,7 @@ class WenyouNoticeDialog extends StatelessWidget {
   const WenyouNoticeDialog({
     required this.title,
     required this.content,
+    this.primaryAction,
     this.onClose,
     this.closeLabel = '知道了',
     this.closeKey,
@@ -18,6 +19,7 @@ class WenyouNoticeDialog extends StatelessWidget {
 
   final String title;
   final Widget content;
+  final Widget? primaryAction;
   final VoidCallback? onClose;
   final String closeLabel;
   final Key? closeKey;
@@ -30,6 +32,7 @@ class WenyouNoticeDialog extends StatelessWidget {
       title: Text(title),
       content: content,
       actions: [
+        ?primaryAction,
         if (onClose != null)
           TextButton(
             key: closeKey,

@@ -19,61 +19,78 @@ class MobileUpdateActions extends ConsumerWidget {
     final action = current.targetBuild == update.targetBuild
         ? current
         : const MobileUpdateActionState();
+    return WenyouAsyncPrimaryButton(
+      key: const Key('mobile-update-start'),
+      label: mobileUpdateButtonLabel(update, action),
+      loadingLabel: mobileUpdateBusyLabel(action),
+      icon: WenyouIconIds.actionDownload,
+      isLoading: action.isBusy,
+      onPressed:
+          !update.canStartUpdate ||
+              (current.isBusy && current.targetBuild != update.targetBuild)
+          ? null
+          : () => ref
+                .read(mobileUpdateControllerProvider.notifier)
+                .start(
+                  update,
+                  refreshTarget:
+                      update.platform == MobileClientPlatform.android &&
+                          update.targetVersion != null
+                      ? () async {
+                          final latest = await ref.refresh(
+                            availableMobileReleaseUpdateProvider.future,
+                          );
+                          if (latest?.targetBuild != update.targetBuild ||
+                              latest?.targetVersion != update.targetVersion ||
+                              latest?.kind != update.kind) {
+                            await ref
+                                .read(startupControllerProvider.notifier)
+                                .recheckForUpdate();
+                          }
+                          return latest;
+                        }
+                      : null,
+                ),
+    );
+  }
+}
+
+class MobileUpdateStatus extends ConsumerWidget {
+  const MobileUpdateStatus({required this.update, super.key});
+  final MobileUpdateInfo update;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final current = ref.watch(mobileUpdateControllerProvider);
+    final action = current.targetBuild == update.targetBuild
+        ? current
+        : const MobileUpdateActionState();
     final message = mobileUpdateStatusMessage(action);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        if (message != null) ...[
-          WenyouStatusBanner(
-            message: message,
-            tone: action.status == MobileUpdateActionStatus.failed
-                ? WenyouStatusTone.error
-                : WenyouStatusTone.neutral,
-          ),
-          SizedBox(height: context.wenyouTokens.space12),
+    if (message == null &&
+        action.status != MobileUpdateActionStatus.downloading) {
+      return const SizedBox.shrink();
+    }
+    // 长状态说明随正文滚动，固定操作区只容纳按钮，给大字号留足阅读空间。
+    return Padding(
+      padding: EdgeInsets.only(top: context.wenyouTokens.space16),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (message != null)
+            WenyouStatusBanner(
+              message: message,
+              tone: action.status == MobileUpdateActionStatus.failed
+                  ? WenyouStatusTone.error
+                  : WenyouStatusTone.neutral,
+            ),
+          if (action.status == MobileUpdateActionStatus.downloading)
+            Semantics(
+              label: '安装包下载进度 ${((action.progress ?? 0) * 100).round()}%',
+              child: LinearProgressIndicator(value: action.progress),
+            ),
         ],
-        if (action.status == MobileUpdateActionStatus.downloading) ...[
-          Semantics(
-            label: '安装包下载进度 ${((action.progress ?? 0) * 100).round()}%',
-            child: LinearProgressIndicator(value: action.progress),
-          ),
-          SizedBox(height: context.wenyouTokens.space12),
-        ],
-        WenyouAsyncPrimaryButton(
-          key: const Key('mobile-update-start'),
-          label: mobileUpdateButtonLabel(update, action),
-          loadingLabel: mobileUpdateBusyLabel(action),
-          icon: WenyouIconIds.actionDownload,
-          isLoading: action.isBusy,
-          onPressed:
-              !update.canStartUpdate ||
-                  (current.isBusy && current.targetBuild != update.targetBuild)
-              ? null
-              : () => ref
-                    .read(mobileUpdateControllerProvider.notifier)
-                    .start(
-                      update,
-                      refreshTarget:
-                          update.platform == MobileClientPlatform.android &&
-                              update.targetVersion != null
-                          ? () async {
-                              final latest = await ref.refresh(
-                                availableMobileReleaseUpdateProvider.future,
-                              );
-                              if (latest?.targetBuild != update.targetBuild ||
-                                  latest?.targetVersion !=
-                                      update.targetVersion ||
-                                  latest?.kind != update.kind) {
-                                await ref
-                                    .read(startupControllerProvider.notifier)
-                                    .recheckForUpdate();
-                              }
-                              return latest;
-                            }
-                          : null,
-                    ),
-        ),
-      ],
+      ),
     );
   }
 }

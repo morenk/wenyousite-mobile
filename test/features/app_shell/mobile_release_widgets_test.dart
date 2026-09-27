@@ -478,4 +478,90 @@ void main() {
     await _close(tester);
     expect(find.text('原来的任务'), findsOneWidget);
   });
+
+  for (final kind in ['recommended', 'required', 'after']) {
+    testWidgets('$kind 小屏两倍字号说明双向滚动，底部操作固定可达', (tester) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(320, 568);
+      addTearDown(tester.view.reset);
+      if (kind == 'after') h.pending();
+      if (kind == 'required') {
+        h.state.value = (enabled: false, checking: false, update: _forced);
+      }
+      h.repository.fetcher = (target) async => releaseFixture(
+        target: target,
+        summary: '阅读和日常使用更顺手。',
+        items: List.generate(
+          12,
+          (i) => '第${i + 1}条更新：优化长主题阅读与图片浏览，大字号下说明也可以完整查看。',
+        ),
+      );
+      await tester.pumpWidget(h.build(textScale: 2));
+      await tester.pumpAndSettle();
+      final action = find.byKey(
+        Key(kind == 'after' ? 'mobile-update-dismiss' : 'mobile-update-start'),
+      );
+      final initialAction = tester.getRect(action);
+      expect(action.hitTestable(), findsOneWidget);
+      final scrollable = find
+          .descendant(
+            of: find.byType(AlertDialog),
+            matching: find.byType(Scrollable),
+          )
+          .first;
+      final position = tester.state<ScrollableState>(scrollable).position;
+      await tester.drag(scrollable, const Offset(0, -160));
+      await tester.pumpAndSettle();
+      expect(position.pixels, greaterThan(0));
+      await tester.scrollUntilVisible(
+        find.textContaining('第12条更新'),
+        250,
+        scrollable: scrollable,
+        maxScrolls: 100,
+      );
+      await tester.pumpAndSettle();
+      expect(find.textContaining('第12条更新').hitTestable(), findsOneWidget);
+      expect(tester.getRect(action), initialAction);
+      expect(action.hitTestable(), findsOneWidget);
+      if (kind != 'required') {
+        expect(
+          find.byKey(const Key('mobile-update-dismiss')).hitTestable(),
+          findsOneWidget,
+        );
+      }
+      expect(tester.takeException(), isNull);
+      await expectLater(
+        find.byType(MaterialApp),
+        matchesGoldenFile('goldens/mobile_notice_long_${kind}_320_2x.png'),
+      );
+      final bottom = position.pixels;
+      await tester.drag(scrollable, const Offset(0, 160));
+      await tester.pumpAndSettle();
+      expect(position.pixels, lessThan(bottom));
+      await tester.scrollUntilVisible(
+        find.text('阅读和日常使用更顺手。'),
+        -250,
+        scrollable: scrollable,
+        maxScrolls: 100,
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('阅读和日常使用更顺手。').hitTestable(), findsOneWidget);
+      expect(tester.getRect(action), initialAction);
+      expect(tester.takeException(), isNull);
+      if (kind == 'after') {
+        await _close(tester);
+        expect(find.text('原来的任务'), findsOneWidget);
+      } else {
+        await tester.tap(action);
+        await tester.pumpAndSettle();
+        expect(h.service.launchCalls, 1);
+        expect(action.hitTestable(), findsOneWidget);
+        if (kind == 'required') {
+          await tester.binding.handlePopRoute();
+          expect(find.byKey(const Key('mobile-update-dismiss')), findsNothing);
+          expect(find.text('原来的任务'), findsNothing);
+        }
+      }
+    });
+  }
 }
