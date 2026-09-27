@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/app/app_router.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_reference.dart';
+import 'package:wenyousite_mobile/core/navigation/wenyou_feedback_visibility.dart';
 import 'package:wenyousite_mobile/features/app_shell/application/clipboard_navigation_ports.dart';
 
 class ClipboardNavigationPrompt extends ConsumerStatefulWidget {
@@ -29,18 +30,23 @@ class _ClipboardNavigationPromptState
   String? _lastObservedFingerprint;
   HandledClipboardNavigation? _handled;
   Future<HandledClipboardNavigation?>? _handledLoad;
+  late final WenyouFeedbackVisibility _visibility;
+  bool _waitingForVisibility = false;
 
   @override
   void initState() {
     super.initState();
     _lifecycleState = WidgetsBinding.instance.lifecycleState;
     WidgetsBinding.instance.addObserver(this);
+    _visibility = ref.read(feedbackVisibilityProvider);
+    _visibility.addListener(_retryWhenVisible);
     _readClipboardAfterFrame();
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _visibility.removeListener(_retryWhenVisible);
     super.dispose();
   }
 
@@ -62,11 +68,21 @@ class _ClipboardNavigationPromptState
     binding.scheduleFrame();
   }
 
+  void _retryWhenVisible() {
+    if (_waitingForVisibility &&
+        _visibility.ready &&
+        (_lifecycleState == null ||
+            _lifecycleState == AppLifecycleState.resumed)) {
+      _waitingForVisibility = false;
+      _readClipboardAfterFrame();
+    }
+  }
+
   @override
   Widget build(BuildContext context) => widget.child;
 
   Future<void> _scanClipboard() async {
-    if (_promptOpen) return;
+    if (!mounted || _promptOpen) return;
     final epoch = ++_readEpoch;
     final gateway = ref.read(clipboardNavigationGatewayProvider);
     final changeToken = await gateway.readChangeToken();
@@ -113,6 +129,11 @@ class _ClipboardNavigationPromptState
     }
     final navigatorContext = router.routerDelegate.navigatorKey.currentContext;
     if (navigatorContext == null || !navigatorContext.mounted) return;
+    // 更新提醒等模态占用焦点时暂缓；退场后重新读剪贴板，不叠加或丢弃复制事件。
+    if (!_visibility.ready) {
+      _waitingForVisibility = true;
+      return;
+    }
 
     _activeEntryToken = effectiveSnapshot.changeToken;
     _rememberObserved(effectiveSnapshot, fingerprint);

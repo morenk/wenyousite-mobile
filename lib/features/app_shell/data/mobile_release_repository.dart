@@ -39,33 +39,6 @@ class ApiMobileReleaseRepository implements MobileReleaseRepository {
     }
   }
 
-  @override
-  Future<MobileReleasePage> fetchPage({
-    required MobileClientPlatform platform,
-    String? cursor,
-  }) async {
-    if (platform != MobileClientPlatform.android) throw _invalid;
-    try {
-      final response = (await _api.mobileReleasesList(
-        platform: 'android',
-        cursor: cursor,
-        limit: 20,
-        extra: ApiRequestPolicy.public.extra,
-      )).data;
-      if (response == null) throw _invalid;
-      final nextCursor = response.meta.cursor;
-      if (response.meta.hasMore && (nextCursor == null || nextCursor.isEmpty)) {
-        throw _invalid;
-      }
-      return MobileReleasePage(
-        items: List.unmodifiable(response.data.map(_map)),
-        nextCursor: response.meta.hasMore ? nextCursor : null,
-      );
-    } on DioException catch (error) {
-      throw ApiFailure.fromDio(error);
-    }
-  }
-
   MobileRelease _map(PublicMobileReleaseDto dto) {
     if (dto.platform != PublicMobileReleaseDtoPlatformEnum.android ||
         !dto.buildNumber.isFinite ||

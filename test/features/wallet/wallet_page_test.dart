@@ -27,18 +27,44 @@ void main() {
 
       await tester.pumpWidget(
         _walletApp(
-          _WalletPageRepository(balance: '1250'),
+          _WalletPageRepository(
+            balance: '1250',
+            // 截图固定本地显示时间，不让 runner 时区改变文字像素。
+            // 普通业务夹具仍保留 UTC，下面单独验证转本地的页面语义。
+            transactions: [
+              _daily(createdAt: DateTime(2026, 8, 10, 9, 2)),
+              _expense(createdAt: DateTime(2026, 8, 10, 10, 3)),
+              _income(createdAt: DateTime(2026, 8, 10, 11, 4)),
+            ],
+          ),
           themeMode: themeCase.mode,
         ),
       );
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
+      for (final time in ['09:02', '10:03', '11:04']) {
+        expect(find.text('2026-08-10 $time'), findsOneWidget);
+      }
       await expectLater(
         find.byType(Scaffold).first,
         matchesGoldenFile('goldens/wallet_360_${themeCase.name}.png'),
       );
     });
   }
+
+  testWidgets('钱包流水将 UTC 时间转为本地时分', (tester) async {
+    await tester.pumpWidget(
+      _walletApp(
+        _WalletPageRepository(
+          transactions: [
+            _daily(createdAt: DateTime(2026, 8, 10, 9, 2).toUtc()),
+          ],
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('2026-08-10 09:02'), findsOneWidget);
+  });
 
   testWidgets('千条钱包流水保持惰性布局并可到达分页入口', (tester) async {
     await tester.pumpWidget(_walletApp(_WalletPageRepository(longList: true)));
@@ -178,11 +204,13 @@ class _WalletPageRepository extends Fake implements WalletRepository {
     this.failSummaryOnce = false,
     this.longList = false,
     this.balance = '9007199254740993',
+    this.transactions,
   });
 
   final bool failSummaryOnce;
   final bool longList;
   final String balance;
+  final List<WalletTransaction>? transactions;
   var summaryCalls = 0;
 
   @override
@@ -207,29 +235,32 @@ class _WalletPageRepository extends Fake implements WalletRepository {
     int limit = 20,
   }) async {
     return CursorPage(
-      items: longList
-          ? List.generate(1000, (index) => _daily(id: 'lazy-$index'))
-          : [_daily(), _expense(), _income()],
+      items:
+          transactions ??
+          (longList
+              ? List.generate(1000, (index) => _daily(id: 'lazy-$index'))
+              : [_daily(), _expense(), _income()]),
       cursor: longList ? 'opaque' : null,
       hasMore: longList,
     );
   }
 }
 
-WalletTransaction _daily({String id = 'daily'}) => WalletTransaction(
-  id: id,
-  type: WalletTransactionType.dailyCheckIn,
-  direction: WalletTransactionDirection.income,
-  amount: '3',
-  grossAmount: '3',
-  recipientAmount: '3',
-  platformAmount: '0',
-  balanceAfter: '13',
-  target: const WalletTransactionTarget(type: WalletTargetType.none),
-  createdAt: DateTime.utc(2026, 8, 10, 1, 2),
-);
+WalletTransaction _daily({String id = 'daily', DateTime? createdAt}) =>
+    WalletTransaction(
+      id: id,
+      type: WalletTransactionType.dailyCheckIn,
+      direction: WalletTransactionDirection.income,
+      amount: '3',
+      grossAmount: '3',
+      recipientAmount: '3',
+      platformAmount: '0',
+      balanceAfter: '13',
+      target: const WalletTransactionTarget(type: WalletTargetType.none),
+      createdAt: createdAt ?? DateTime.utc(2026, 8, 10, 1, 2),
+    );
 
-WalletTransaction _expense() => WalletTransaction(
+WalletTransaction _expense({DateTime? createdAt}) => WalletTransaction(
   id: 'expense',
   type: WalletTransactionType.tip,
   direction: WalletTransactionDirection.expense,
@@ -248,10 +279,10 @@ WalletTransaction _expense() => WalletTransaction(
     id: 'thread-1',
     title: '测试主题帖',
   ),
-  createdAt: DateTime.utc(2026, 8, 10, 2, 3),
+  createdAt: createdAt ?? DateTime.utc(2026, 8, 10, 2, 3),
 );
 
-WalletTransaction _income() => WalletTransaction(
+WalletTransaction _income({DateTime? createdAt}) => WalletTransaction(
   id: 'income',
   type: WalletTransactionType.tip,
   direction: WalletTransactionDirection.income,
@@ -269,5 +300,5 @@ WalletTransaction _income() => WalletTransaction(
     type: WalletTargetType.user,
     id: 'user-1',
   ),
-  createdAt: DateTime.utc(2026, 8, 10, 3, 4),
+  createdAt: createdAt ?? DateTime.utc(2026, 8, 10, 3, 4),
 );

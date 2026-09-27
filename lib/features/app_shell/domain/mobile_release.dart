@@ -31,10 +31,3 @@ class MobileRelease {
       target.build == update.targetBuild &&
       target.version == update.targetVersion;
 }
-
-class MobileReleasePage {
-  const MobileReleasePage({required this.items, this.nextCursor});
-
-  final List<MobileRelease> items;
-  final String? nextCursor;
-}

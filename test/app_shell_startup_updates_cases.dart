@@ -1,20 +1,60 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:wenyousite_mobile/app/app_router.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/app/wenyou_app.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/features/app_shell/application/mobile_release_ports.dart';
 import 'package:wenyousite_mobile/features/app_shell/application/mobile_update_controller.dart';
+import 'package:wenyousite_mobile/features/app_shell/application/mobile_update_notice_ports.dart';
 import 'package:wenyousite_mobile/features/app_shell/application/startup_controller.dart';
 import 'package:wenyousite_mobile/features/app_shell/domain/mobile_update.dart';
 import 'package:wenyousite_mobile/features/app_shell/presentation/startup_gate.dart';
 import 'package:wenyousite_mobile/features/home/data/home_repository.dart';
 import 'package:wenyousite_mobile/features/notifications/data/notification_repository.dart';
 import 'package:wenyousite_mobile/features/wallet/data/wallet_repository.dart';
+
 import 'app_shell_test_support.dart';
+import 'features/app_shell/mobile_release_test_support.dart';
+import 'features/app_shell/mobile_update_notice_test_support.dart';
 
 void registerAppShellStartupUpdatesCases() {
+  late MemoryNoticeStore noticeStore;
+  setUp(() => noticeStore = MemoryNoticeStore());
+  testWidgets('旧更新说明与历史地址安全回到我的，游客没有历史入口', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          metaRepositoryProvider.overrideWithValue(
+            AppShellTestCompatibleMetaRepository(),
+          ),
+          tokenStoreProvider.overrideWithValue(AppShellTestMemoryTokenStore()),
+          homeRepositoryProvider.overrideWithValue(
+            AppShellTestEmptyHomeRepository(),
+          ),
+        ],
+        child: const WenyouApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final container = ProviderScope.containerOf(
+      tester.element(find.byType(StartupGate)),
+    );
+    final router = container.read(appRouterProvider);
+    for (final old in [
+      '/mobile-releases',
+      '/mobile-releases/100?version=0.9.0',
+    ]) {
+      router.go(old);
+      await tester.pumpAndSettle();
+      expect(router.routeInformationProvider.value.uri.path, '/me');
+      expect(find.text('更新说明'), findsNothing);
+      expect(find.text('我的'), findsWidgets);
+    }
+  });
   testWidgets('启动品牌页在真机零尺寸预热帧只保留空白且不产生红屏', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
@@ -36,6 +76,11 @@ void registerAppShellStartupUpdatesCases() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          mobileUpdateNoticeStoreProvider.overrideWithValue(noticeStore),
+          mobileReleaseRepositoryProvider.overrideWithValue(
+            TestReleaseRepository()
+              ..onDetail = (target) async => releaseFixture(target: target),
+          ),
           metaRepositoryProvider.overrideWithValue(
             AppShellTestCompatibleMetaRepository(),
           ),
@@ -66,6 +111,11 @@ void registerAppShellStartupUpdatesCases() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          mobileUpdateNoticeStoreProvider.overrideWithValue(noticeStore),
+          mobileReleaseRepositoryProvider.overrideWithValue(
+            TestReleaseRepository()
+              ..onDetail = (target) async => releaseFixture(target: target),
+          ),
           metaRepositoryProvider.overrideWithValue(
             AppShellTestCompatibleMetaRepository(),
           ),
@@ -97,6 +147,11 @@ void registerAppShellStartupUpdatesCases() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          mobileUpdateNoticeStoreProvider.overrideWithValue(noticeStore),
+          mobileReleaseRepositoryProvider.overrideWithValue(
+            TestReleaseRepository()
+              ..onDetail = (target) async => releaseFixture(target: target),
+          ),
           metaRepositoryProvider.overrideWithValue(
             AppShellTestCompatibleMetaRepository(),
           ),
@@ -131,6 +186,11 @@ void registerAppShellStartupUpdatesCases() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          mobileUpdateNoticeStoreProvider.overrideWithValue(noticeStore),
+          mobileReleaseRepositoryProvider.overrideWithValue(
+            TestReleaseRepository()
+              ..onDetail = (target) async => releaseFixture(target: target),
+          ),
           metaRepositoryProvider.overrideWithValue(
             AppShellTestCompatibleMetaRepository(),
           ),
@@ -175,6 +235,11 @@ void registerAppShellStartupUpdatesCases() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          mobileUpdateNoticeStoreProvider.overrideWithValue(noticeStore),
+          mobileReleaseRepositoryProvider.overrideWithValue(
+            TestReleaseRepository()
+              ..onDetail = (target) async => releaseFixture(target: target),
+          ),
           metaRepositoryProvider.overrideWithValue(
             AppShellTestCompatibleMetaRepository(),
           ),
@@ -208,6 +273,11 @@ void registerAppShellStartupUpdatesCases() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          mobileUpdateNoticeStoreProvider.overrideWithValue(noticeStore),
+          mobileReleaseRepositoryProvider.overrideWithValue(
+            TestReleaseRepository()
+              ..onDetail = (target) async => releaseFixture(target: target),
+          ),
           metaRepositoryProvider.overrideWithValue(
             AppShellTestFixedMetaRepository(contractVersion: '6.0.0'),
           ),
@@ -232,6 +302,11 @@ void registerAppShellStartupUpdatesCases() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          mobileUpdateNoticeStoreProvider.overrideWithValue(noticeStore),
+          mobileReleaseRepositoryProvider.overrideWithValue(
+            TestReleaseRepository()
+              ..onDetail = (target) async => releaseFixture(target: target),
+          ),
           metaRepositoryProvider.overrideWithValue(
             AppShellTestFixedMetaRepository(
               contractVersion: '5.14.0',
@@ -252,6 +327,11 @@ void registerAppShellStartupUpdatesCases() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          mobileUpdateNoticeStoreProvider.overrideWithValue(noticeStore),
+          mobileReleaseRepositoryProvider.overrideWithValue(
+            TestReleaseRepository()
+              ..onDetail = (target) async => releaseFixture(target: target),
+          ),
           metaRepositoryProvider.overrideWithValue(
             AppShellTestFixedMetaRepository(
               contractVersion: '5.14.0',
@@ -272,6 +352,11 @@ void registerAppShellStartupUpdatesCases() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          mobileUpdateNoticeStoreProvider.overrideWithValue(noticeStore),
+          mobileReleaseRepositoryProvider.overrideWithValue(
+            TestReleaseRepository()
+              ..onDetail = (target) async => releaseFixture(target: target),
+          ),
           metaRepositoryProvider.overrideWithValue(
             AppShellTestFixedMetaRepository(
               contractVersion: '5.15.0',
@@ -296,6 +381,11 @@ void registerAppShellStartupUpdatesCases() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          mobileUpdateNoticeStoreProvider.overrideWithValue(noticeStore),
+          mobileReleaseRepositoryProvider.overrideWithValue(
+            TestReleaseRepository()
+              ..onDetail = (target) async => releaseFixture(target: target),
+          ),
           metaRepositoryProvider.overrideWithValue(repository),
           tokenStoreProvider.overrideWithValue(AppShellTestMemoryTokenStore()),
           homeRepositoryProvider.overrideWithValue(
@@ -321,6 +411,11 @@ void registerAppShellStartupUpdatesCases() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          mobileUpdateNoticeStoreProvider.overrideWithValue(noticeStore),
+          mobileReleaseRepositoryProvider.overrideWithValue(
+            TestReleaseRepository()
+              ..onDetail = (target) async => releaseFixture(target: target),
+          ),
           metaRepositoryProvider.overrideWithValue(
             AppShellTestFixedMetaRepository(
               contractVersion: '5.0.0',
@@ -346,8 +441,7 @@ void registerAppShellStartupUpdatesCases() {
     await tester.pumpAndSettle();
 
     expect(find.text('需要更新后继续'), findsOneWidget);
-    expect(find.text('当前 0.3.0+7'), findsOneWidget);
-    expect(find.text('可用构建 10'), findsOneWidget);
+    expect(find.text('更新至构建 10'), findsOneWidget);
     expect(find.byKey(const Key('mobile-update-dismiss')), findsNothing);
 
     await tester.tap(find.byKey(const Key('mobile-update-start')));
@@ -361,6 +455,11 @@ void registerAppShellStartupUpdatesCases() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          mobileUpdateNoticeStoreProvider.overrideWithValue(noticeStore),
+          mobileReleaseRepositoryProvider.overrideWithValue(
+            TestReleaseRepository()
+              ..onDetail = (target) async => releaseFixture(target: target),
+          ),
           metaRepositoryProvider.overrideWithValue(
             AppShellTestFixedMetaRepository(
               contractVersion: '5.0.0-dev.test',
@@ -371,7 +470,10 @@ void registerAppShellStartupUpdatesCases() {
             ),
           ),
           mobileUpdateServiceProvider.overrideWithValue(
-            AppShellTestFakeMobileUpdateService(build: 7),
+            AppShellTestFakeMobileUpdateService(
+              build: 7,
+              targetVersion: '0.4.0',
+            ),
           ),
           recommendedUpdateDismissStoreProvider.overrideWithValue(dismissStore),
           tokenStoreProvider.overrideWithValue(AppShellTestMemoryTokenStore()),
@@ -386,12 +488,16 @@ void registerAppShellStartupUpdatesCases() {
 
     expect(find.text('温油站有新版本'), findsOneWidget);
     expect(find.byKey(const Key('home-category-menu')), findsOneWidget);
-    expect(find.byKey(const Key('recommended-update-banner')), findsOneWidget);
+    expect(find.byKey(const Key('mobile-update-notice')), findsOneWidget);
     await tester.tap(find.byKey(const Key('mobile-update-dismiss')));
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('home-category-menu')), findsOneWidget);
-    expect(dismissStore.dismissedBuild, 10);
+    expect(
+      noticeStore.records[MobileClientPlatform.android]!.recommendedShown,
+      {10},
+    );
+    expect(dismissStore.dismissedBuild, isNull);
   });
 
   testWidgets('推荐安装包预检尚未完成时也先进入应用', (tester) async {
@@ -399,6 +505,11 @@ void registerAppShellStartupUpdatesCases() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          mobileUpdateNoticeStoreProvider.overrideWithValue(noticeStore),
+          mobileReleaseRepositoryProvider.overrideWithValue(
+            TestReleaseRepository()
+              ..onDetail = (target) async => releaseFixture(target: target),
+          ),
           metaRepositoryProvider.overrideWithValue(
             AppShellTestFixedMetaRepository(
               contractVersion: '5.0.0',
@@ -428,21 +539,26 @@ void registerAppShellStartupUpdatesCases() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('home-category-menu')), findsOneWidget);
-    expect(find.byKey(const Key('recommended-update-banner')), findsNothing);
+    expect(find.byKey(const Key('mobile-update-notice')), findsNothing);
 
     availability.complete(
       const MobileUpdateAvailability.available(targetVersion: '0.4.0'),
     );
     await tester.pumpAndSettle();
 
-    expect(find.byKey(const Key('recommended-update-banner')), findsOneWidget);
-    expect(find.textContaining('0.4.0+10'), findsOneWidget);
+    expect(find.byKey(const Key('mobile-update-notice')), findsOneWidget);
+    expect(find.textContaining('更新至 0.4.0'), findsOneWidget);
   });
 
   testWidgets('必须更新但下载地址尚未发布时等待并允许重新检查', (tester) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          mobileUpdateNoticeStoreProvider.overrideWithValue(noticeStore),
+          mobileReleaseRepositoryProvider.overrideWithValue(
+            TestReleaseRepository()
+              ..onDetail = (target) async => releaseFixture(target: target),
+          ),
           metaRepositoryProvider.overrideWithValue(
             AppShellTestFixedMetaRepository(
               contractVersion: '5.0.0',
@@ -453,7 +569,10 @@ void registerAppShellStartupUpdatesCases() {
             ),
           ),
           mobileUpdateServiceProvider.overrideWithValue(
-            AppShellTestFakeMobileUpdateService(build: 7),
+            AppShellTestFakeMobileUpdateService(
+              build: 7,
+              targetVersion: '0.4.0',
+            ),
           ),
           recommendedUpdateDismissStoreProvider.overrideWithValue(
             AppShellTestMemoryRecommendedUpdateDismissStore(),
@@ -490,6 +609,11 @@ void registerAppShellStartupUpdatesCases() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          mobileUpdateNoticeStoreProvider.overrideWithValue(noticeStore),
+          mobileReleaseRepositoryProvider.overrideWithValue(
+            TestReleaseRepository()
+              ..onDetail = (target) async => releaseFixture(target: target),
+          ),
           metaRepositoryProvider.overrideWithValue(repository),
           mobileUpdateServiceProvider.overrideWithValue(updateService),
           recommendedUpdateDismissStoreProvider.overrideWithValue(
@@ -513,7 +637,7 @@ void registerAppShellStartupUpdatesCases() {
     await tester.pumpAndSettle();
 
     expect(find.text('需要更新后继续'), findsOneWidget);
-    expect(find.text('可用0.4.0+10'), findsOneWidget);
+    expect(find.textContaining('更新至 0.4.0'), findsOneWidget);
     expect(updateService.availabilityChecks, 2);
   });
 
@@ -525,6 +649,11 @@ void registerAppShellStartupUpdatesCases() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          mobileUpdateNoticeStoreProvider.overrideWithValue(noticeStore),
+          mobileReleaseRepositoryProvider.overrideWithValue(
+            TestReleaseRepository()
+              ..onDetail = (target) async => releaseFixture(target: target),
+          ),
           metaRepositoryProvider.overrideWithValue(
             AppShellTestFixedMetaRepository(
               contractVersion: '6.0.0',

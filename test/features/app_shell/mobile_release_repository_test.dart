@@ -40,42 +40,16 @@ void main() {
     expect(release.target, releaseTarget);
   });
 
-  test('游标原样传递，空页有语义，缺少续页游标拒绝伪装完成', () async {
-    adapter.body = {
-      'code': 0,
-      'message': 'ok',
-      'data': [_dto()],
-      'meta': {'cursor': 'next+/=', 'hasMore': true},
-    };
-    final page = await repository.fetchPage(
-      platform: MobileClientPlatform.android,
-      cursor: 'opaque+/=',
-    );
-    expect(adapter.requests.single.queryParameters['cursor'], 'opaque+/=');
-    expect(adapter.requests.single.queryParameters['platform'], 'android');
-    expect(page.nextCursor, 'next+/=');
-    adapter.body = {
-      'code': 0,
-      'message': 'ok',
-      'data': [],
-      'meta': {'cursor': null, 'hasMore': false},
-    };
-    expect(
-      (await repository.fetchPage(
-        platform: MobileClientPlatform.android,
-      )).items,
-      isEmpty,
-    );
-    adapter.body = {
-      'code': 0,
-      'message': 'ok',
-      'data': [],
-      'meta': {'cursor': null, 'hasMore': true},
-    };
+  test('非Android身份不读取或复用Android说明', () async {
     await expectLater(
-      repository.fetchPage(platform: MobileClientPlatform.android),
+      repository.fetch((
+        platform: MobileClientPlatform.ios,
+        build: 100,
+        version: '0.9.0',
+      )),
       throwsA(isA<ApiFailure>()),
     );
+    expect(adapter.requests, isEmpty);
   });
 
   test('业务404为空；网络/服务失败、缺data和版本身份错配均不伪装空说明', () async {
@@ -101,25 +75,6 @@ void main() {
         throwsA(isA<ApiFailure>()),
       );
     }
-  });
-
-  test('Android以外不请求接口；无效游标保留40007交给控制器恢复', () async {
-    await expectLater(
-      repository.fetchPage(platform: MobileClientPlatform.ios),
-      throwsA(isA<ApiFailure>()),
-    );
-    expect(adapter.requests, isEmpty);
-    adapter.status = 400;
-    adapter.body = {'code': 40007, 'message': 'invalid cursor'};
-    await expectLater(
-      repository.fetchPage(
-        platform: MobileClientPlatform.android,
-        cursor: 'expired',
-      ),
-      throwsA(
-        isA<ApiFailure>().having((e) => e.businessCode, 'businessCode', 40007),
-      ),
-    );
   });
 }
 

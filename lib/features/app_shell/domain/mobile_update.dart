@@ -20,11 +20,24 @@ class InstalledAppInfo {
     required this.platform,
     required this.version,
     required this.build,
+    this.firstInstallTime,
+    this.lastUpdateTime,
   });
 
   final MobileClientPlatform platform;
   final String version;
   final int build;
+  final DateTime? firstInstallTime;
+  final DateTime? lastUpdateTime;
+
+  bool get hasReplacementEvidence {
+    final first = firstInstallTime;
+    final last = lastUpdateTime;
+    return first != null &&
+        last != null &&
+        first.millisecondsSinceEpoch > 0 &&
+        last.isAfter(first);
+  }
 }
 
 enum MobileUpdateKind { required, recommended }

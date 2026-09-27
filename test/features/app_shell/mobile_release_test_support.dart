@@ -27,23 +27,14 @@ MobileRelease releaseFixture({
 class TestReleaseRepository implements MobileReleaseRepository {
   MobileRelease? release = releaseFixture();
   int detailCalls = 0;
-  final cursors = <String?>[];
   Object? detailError;
-  Future<MobileReleasePage> Function(String? cursor)? onPage;
+  Future<MobileRelease?> Function(MobileReleaseTarget)? onDetail;
 
   @override
   Future<MobileRelease?> fetch(MobileReleaseTarget target) async {
     detailCalls++;
     if (detailError != null) throw detailError!;
+    if (onDetail != null) return onDetail!(target);
     return release;
-  }
-
-  @override
-  Future<MobileReleasePage> fetchPage({
-    required MobileClientPlatform platform,
-    String? cursor,
-  }) async {
-    cursors.add(cursor);
-    return onPage?.call(cursor) ?? MobileReleasePage(items: [releaseFixture()]);
   }
 }

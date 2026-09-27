@@ -2,7 +2,7 @@
 
 温油站的 Flutter 原生客户端。正式、Debug 和 Profile APK 均仅支持 Android 8+（API 26）的 ARM64 设备，手机竖屏优先。共享 Dart 代码保持 iOS 兼容，但当前不做 iOS 验收。
 
-当前版本：`0.8.0-dev.2+97`（自适应阅读滑块开发候选，待负责人验收）；线上推荐仍为图集开发版 build 96，正式包源码为 `acb94a46dad59f379455ea7f6fd9adee2fc47003`，图集正文定位与真机手势仍待负责人复验。普通应用构建连接公网 API `https://wenyou.site/api/v1`；开发反馈默认使用下方的隔离预览与持续 Debug，线上自动化只读。
+当前版本：`0.8.0+97`（正式版发布候选，待最终签名包真机冒烟与发布）；线上推荐仍为图集开发版 build 96，正式包源码为 `acb94a46dad59f379455ea7f6fd9adee2fc47003`，图集正文定位与真机手势仍待负责人复验。普通应用构建连接公网 API `https://wenyou.site/api/v1`；开发反馈默认使用下方的隔离预览与持续 Debug，线上自动化只读。
 
 ## 技术基线
 
@@ -85,7 +85,7 @@ npm run check
 
 调试已提交但尚未部署的契约候选时，可运行 `npm run check:apk -- -ContinueAfterFailure` 收集其余检查及候选 APK。所有原检查仍执行，任一失败最终仍返回非零并逐项汇总；这不是完整门禁通过或发布许可。默认命令仍遇错即停，发布流程不使用收集模式。
 
-GitHub Actions 当前仅支持手动触发，不随 `dev` push 自动运行，也不作为日常切片完成条件。日常切片完成后原子提交并推送 `codex/YYYYMMDD-<目标>` 任务分支；Codex 不得自行合并或发布，`dev`/`main` 的合并与正式 Tag 只在维护者明确决定时执行。
+GitHub Actions 的质量检查与 Android APK 构建已按负责人决定停用；开发、合并和发布以 Windows 本地门禁及负责人真机验收为准，不等待远端 CI。日常切片完成后原子提交并推送 `codex/YYYYMMDD-<目标>` 任务分支；Codex 不得自行合并或发布，`dev`/`main` 的合并与正式 Tag 只在维护者明确决定时执行。
 
 ## Android 私有发布
 

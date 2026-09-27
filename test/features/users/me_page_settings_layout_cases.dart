@@ -74,6 +74,7 @@ void registerMePageSettingsLayoutCases() {
     expect(find.byKey(const Key('me-open-edit-profile')), findsOneWidget);
     expect(find.text('账号操作'), findsOneWidget);
     expect(find.text('帮助'), findsOneWidget);
+    expect(find.text('更新说明'), findsNothing);
     final semantics = tester.ensureSemantics();
     expect(find.bySemanticsLabel('账号操作'), findsOneWidget);
     semantics.dispose();
