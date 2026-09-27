@@ -67,3 +67,5 @@ Backend 原隔离 run 的 Android 97 样本为 `0.8.0-debug` / revision 1，真�
 ## Windows CI 复核（2026-09-28）
 
 远端 Android 在 `flutter pub get` 读取 Foundation 中文 pubspec 时因 Windows 代码页失败；Quality 在 SDK 下载／准备阶段超时。此次仅修正临时 Windows runner 的 Dart 进程编码、SDK 下载源、作业时限，并按正式发布阶段恢复 dev/main 的自动只读复核；应用、依赖与签名包保持。真实 Pub 正反例、manifest 保留检查、工具测试及远端待复核边界见 [CI 编码验收](windows-ci-utf8-acceptance.md)。
+
+`84ee1952` 的实际远端编码配置和依赖解析均通过，Android Debug 构建成功；Quality 为 4989 通过、2 个钱包 Golden 失败、1 跳过。进程 UTC 对照精确复现每张 214px 差异，确认原截图 UTC 夹具在不同本地时区呈现不同小时。候选仅固定截图显示用的本地时间，普通 UTC 夹具及页面时间转换断言保留；UTC／CST-8 各 21 项通过，原 Golden 与应用不变。发布仍等待新提交 Quality 通过，完整原始日志、实际图片和验证边界见同一 CI 验收记录。

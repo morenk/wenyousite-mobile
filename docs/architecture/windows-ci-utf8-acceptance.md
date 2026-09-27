@@ -37,6 +37,20 @@
 
 ## 发布与剩余边界
 
-上述修正尚待治理统一核验新提交的远端 Quality 和 Android Debug run；远端完整 `flutter pub get`、`mt.exe` 与冷缓存下载仍以实际 CI 结果为准。不能用本地复验宣布远端已经恢复。
+提交 `84ee1952c6167e8cd61c54ba783822e7580fe153` 的两个自动 PR run 均已通过真实 `mt.exe` 配置与完整 `flutter pub get`。[Android 36335347895](https://github.com/morenk/wenyousite-mobile/actions/runs/36335347895) 成功，ARM64 Debug 的 Gradle 构建用时 640.1 秒；[Quality 36335347781](https://github.com/morenk/wenyousite-mobile/actions/runs/36335347781) 在全量 Flutter 测试失败：4989 通过、2 失败、1 跳过，仅钱包明暗两张 Golden 各有 214px / 0.07% 差异。此前契约、再生成、严格公网、格式、双静态分析、架构、文档和 API 覆盖均已通过；后续 Windows 工具测试未执行，不能算远端通过。两份完整日志、状态与 SHA-256 保存在上述 `ci-utf8` 目录，原失败记录不覆盖。
 
 应用提交保持 `2c0710c0b96fe6ad7537465c5d520afad5854269`，源码摘要 `f69e88ccf6805649b408f7bee7c1d356fe5fe89c4516759b877e5143cd21c92c`。已通过完整本机门禁、签名并在设备安装验收的正式 APK SHA-256 保持 `b3ebe7b5d0a0bd7d7c64963e59967e83ab3485813479bc6583b7191b5e63f245`。本次不重建、不替换已测制品，具体负责人验收及未覆盖项见 [0.8.0 发布记录](mobile-0.8.0-release-acceptance.md)。
+
+## 钱包 Golden 的时区对照与候选修正
+
+后续仅处理上述两个截图失败。原夹具使用 UTC `2026-08-10 01:02`、`02:03`、`03:04`，页面通过 Foundation `formatWenyouExactTime` 转本地；已提交基线来自 UTC+8，显示 `09:02`、`10:03`、`11:04`。起初仅将时区差异列为假设，没有据此改图或放宽比较。
+
+受控对照只给子进程设置 Windows CRT 支持的 `TZ=UTC` 或 `TZ=CST-8`，不修改用户 Windows 全局时区。探针确认同一 UTC 输入分别变为 `01:02` 与 `09:02`；每轮结束核对全局仍为 `China Standard Time`。原测试在 UTC 子进程下两项都精确复现 `214px / 0.07%` 失败，在 CST-8 下两项通过。实际查看明暗失败图及隔离差异图，差异仅为三行小时数字；此对照证实截图夹具依赖运行环境时区。
+
+候选只改 `test/features/wallet/wallet_page_test.dart`：截图注入明确的本地 `DateTime`，固定呈现原基线的 `09:02`、`10:03`、`11:04`，并逐项断言文案。普通 UTC 业务夹具继续保留；新增页面级 UTC→本地时分断言，配合既有共享时间测试独立验证业务语义。不改应用、Foundation、依赖、全局时区、CI 时区、Golden 文件或比较容差。
+
+直接验证文件为 `test/features/wallet/wallet_page_test.dart` 与 `test/core/widgets/wenyou_time_text_test.dart`，UTC 和 CST-8 子进程分别 21 项通过。为保存修后实图，在被忽略的 `build/` 临时副本加只读比较包装器：将比较器收到的实际 PNG 另存制品目录后，仍委托原比较器严格比较原基线，并禁止 update；UTC 下两张截图比较通过。明暗修后实图已查看，保留原版式，显示预期本地时间。
+
+两张修后实际 PNG 的 SHA-256 均与对应已提交基线相同。全量 `flutter analyze --no-pub --fatal-infos --fatal-warnings` 零问题（34.5 秒），格式与 21 模块文档检查通过。首次分析曾扫到诊断时放在 `build/` 的零散上游源码和临时脚本；该失败日志保留，将这些诊断文件迁出仓库到证据目录后按原规则复跑通过，未禁用分析规则或排除应用文件。
+
+证据目录为同一正式制品目录下的 `ci-wallet-goldens`：原 UTC 失败日志与 8 张反馈图、原 CST-8 通过记录、两种进程时区的候选 21 项记录、截图捕获脚本和日志、修后明暗实图、基线及制品摘要。远端完整 Quality 仍须针对新提交通过，之前 Android 成功结果单独保留；不因这个纯测试修正重建已验收 APK。

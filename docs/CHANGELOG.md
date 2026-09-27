@@ -1,5 +1,10 @@
 # 移动端变更记录
 
+## 2026-09-28 — 钱包截图时区固定（候选／待远端复核）
+
+- Quality 两张钱包 Golden 的 214px 差异已由进程级 UTC／UTC+8 对照复现：UTC 业务时间转本地后与原截图基线的小时不同。只给截图注入固定本地时间，普通 UTC 夹具与独立页面时间语义断言保留。
+- 两种进程时区下页面及共享时间测试各 21 项通过，实际明暗图严格匹配原基线；不改应用、依赖、时区配置、Golden 或容差，不重建已验收正式 APK。原 Android CI 成功和 Quality 失败记录分别保留，等待新提交完整 CI，见 [CI 验收](architecture/windows-ci-utf8-acceptance.md)。
+
 ## 2026-09-28 — 正式发布阶段 Windows CI 环境修正（待远端复核）
 
 - 临时 Windows runner 的 Dart 工具 manifest 设置 UTF-8，保留原权限、兼容字段及可执行代码段；拒绝本机 SDK、缓存目录外 SDK 和已签名工具。实际 Foundation v7.2.1 的 Pub 对照复现为 ACP1252 失败、UTF-8 成功，应用与依赖不变。
