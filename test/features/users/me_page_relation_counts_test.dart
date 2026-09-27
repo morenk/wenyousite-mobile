@@ -251,8 +251,8 @@ class _ReadyStartup extends StateNotifier<StartupState>
     : super(
         const StartupState.ready(
           ContractInfo(
-            contractVersion: '5.27.0-dev.20260927.1',
-            markdownContractVersion: 4,
+            contractVersion: '5.27.1-dev.20260928.1',
+            markdownContractVersion: 5,
           ),
         ),
       );
