@@ -10,7 +10,7 @@
 - Windows 工作区只保留 `references/wenyousite-backend` 后端只读镜像。移动端任务只允许对它执行 `git fetch`、`git show`、`git diff` 和读取契约；禁止修改源码、安装依赖、启动服务、运行迁移或部署。
 - Web、后端与 Foundation 只能在 VPS 的 `/srv/wenyousite` 工作区开发。需要修改它们时，必须转到 VPS 对应仓库，不能在 Windows 镜像代改；无 sudo 的 `wenyou-dev` 不得切换或重启服务。
 - `wenyousite-foundation` 对移动端而言是已发布依赖。开始任何 Foundation 相关实现前，必须在只读镜像执行 `git fetch origin --tags`，以远端最新正式发布 Tag 为准，并把 `pubspec.yaml` 锁定到该 Tag；若本仓库版本落后，必须先在当前切片同步依赖和迁移变更，禁止继续按旧版规范实现，也禁止直接跟随浮动分支。需要修改 Foundation 源码时必须另开独立任务并在其授权环境发布新 Tag。
-- GitHub Actions 若保留，只能使用 Windows runner 在临时 checkout 内复核质量或 Debug 构建；CI 对仓库和外部系统只读，不拥有部署、签名、制品上传或发布权限，也不能替代 Windows 本地验收。
+- 按负责人 2026-09-28 决定，停止 GitHub Actions 的质量检查和 APK 构建流程，质量依据统一为 Windows 本地门禁与负责人真机验收。不得自行恢复工作流或要求远端 CI 绿色；恢复须由负责人另行明确决定。
 
 ### 子任务默认审批方式
 
@@ -37,7 +37,7 @@ Android 的 Debug、Profile 和 Release 均仅支持 `arm64-v8a`，不再为开�
 - Flutter/Dart 基线：Flutter `3.44.8`、Dart `3.12.2`
 - 后端只读参考镜像：`..\references\wenyousite-backend`
 
-当前阶段是公网开发环境上的第一阶段快速迭代，不是正式生产发布。开发闭环以相关本地检查和真机冒烟为主，GitHub Actions 仅保留手动触发，不作为日常切片完成条件。公网联调仅只读；所有测试写入必须使用已核验的独立预览实例或一次性 E2E 环境，专用测试账号不构成例外。
+当前阶段是公网开发环境上的第一阶段快速迭代，不是正式生产发布。开发闭环使用相关本地检查和真机冒烟，GitHub Actions 已停用，不保留手动检查入口，也不作为日常或发布完成条件。公网联调仅只读；所有测试写入必须使用已核验的独立预览实例或一次性 E2E 环境，专用测试账号不构成例外。
 
 ## 2. 产品范围
 
@@ -263,7 +263,7 @@ Bug 修复必须包含能复现旧问题的回归测试，并确认旧实现失�
 
 Markdown／编辑器转换类问题的预期必须来自实际输入及独立的阅读／Web 编辑语义，不能由待测 Codec 的输出反推。除往返检查外，必须分别核对可见文字、空段、段落边界、样式和实际可编辑行／块归属，并覆盖真实页面的打开、输入、保存和重开；“编解码自洽”不能代替这些断言。
 
-GitHub Actions 的 Quality 与 Android Debug APK 工作流在第一阶段仅支持 `workflow_dispatch` 手动触发，不因 `dev` push 自动运行，也不作为日常开发阻塞条件。进入发布准备或用户明确恢复 CI 后，再启用自动触发并恢复远端绿色要求。
+GitHub Actions 的 Quality 与 Android Debug APK 工作流已按负责人 2026-09-28 决定停用并移除。开发、合并与发布均以本节要求的 Windows 本地候选／完整门禁和负责人真机验收为准，不等待或要求远端 CI；进入发布准备不自动恢复工作流。
 
 ## 9. Git、版本与交付
 

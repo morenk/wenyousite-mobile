@@ -1,5 +1,7 @@
 # Windows CI 的 Dart UTF-8 编码复核
 
+当前状态：2026-09-28 负责人明确要求不再使用 GitHub CI，以 Windows 本地门禁为准。Quality 与 Android Debug 两个远端工作流已实际设置为 `disabled_manually`，本仓移除工作流及仅供临时 runner 使用的 UTF-8 helper／探针和对应 CI 测试；本地完整门禁脚本与其失败语义测试保留。下文均为历史排查和旧源码检查证据，不再是开发、合并或发布前置条件；其他仓库 CI 未调整。
+
 ## 问题与已证实原因
 
 2026-09-28 正式 Android `0.8.0+97` 发布准备中，两次 Windows 只读 CI 未完成：
@@ -53,4 +55,6 @@
 
 两张修后实际 PNG 的 SHA-256 均与对应已提交基线相同。全量 `flutter analyze --no-pub --fatal-infos --fatal-warnings` 零问题（34.5 秒），格式与 21 模块文档检查通过。首次分析曾扫到诊断时放在 `build/` 的零散上游源码和临时脚本；该失败日志保留，将这些诊断文件迁出仓库到证据目录后按原规则复跑通过，未禁用分析规则或排除应用文件。
 
-证据目录为同一正式制品目录下的 `ci-wallet-goldens`：原 UTC 失败日志与 8 张反馈图、原 CST-8 通过记录、两种进程时区的候选 21 项记录、截图捕获脚本和日志、修后明暗实图、基线及制品摘要。远端完整 Quality 仍须针对新提交通过，之前 Android 成功结果单独保留；不因这个纯测试修正重建已验收 APK。
+证据目录为同一正式制品目录下的 `ci-wallet-goldens`：原 UTC 失败日志与 8 张反馈图、原 CST-8 通过记录、两种进程时区的候选 21 项记录、截图捕获脚本和日志、修后明暗实图、基线及制品摘要。
+
+2026-09-28 旧应用源码最终远端复核：提交 `2415d20c41db6fa33ce4b33bb4f8679ec3127cd1` 的 [Quality 36340692464](https://github.com/morenk/wenyousite-mobile/actions/runs/36340692464) 成功，Flutter 4992 项通过、1 项显式联网诊断跳过，Windows 工具 70 项通过、0 失败；[Android 36340692441](https://github.com/morenk/wenyousite-mobile/actions/runs/36340692441) 成功，Gradle 构建 507.2 秒。完整日志为该目录的 `quality-36340692464-full.log`、`android-36340692441-full.log`。编码与钱包截图前置阻塞消除，但负责人随后确认正式 97 包的安装版空说明重复弹窗；发布已冻结，以上只能代表旧应用源码，不替代[新弹窗候选](mobile-update-once-dialogs-acceptance.md)的门禁和负责人复验。
