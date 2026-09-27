@@ -15,7 +15,9 @@ import 'package:wenyou_api/src/api/admin_appeals_api.dart';
 import 'package:wenyou_api/src/api/admin_auth_api.dart';
 import 'package:wenyou_api/src/api/admin_campaigns_api.dart';
 import 'package:wenyou_api/src/api/admin_cases_api.dart';
+import 'package:wenyou_api/src/api/admin_content_api.dart';
 import 'package:wenyou_api/src/api/admin_dashboard_api.dart';
+import 'package:wenyou_api/src/api/admin_mobile_releases_api.dart';
 import 'package:wenyou_api/src/api/admin_moderation_api.dart';
 import 'package:wenyou_api/src/api/admin_operations_api.dart';
 import 'package:wenyou_api/src/api/admin_reports_api.dart';
@@ -26,9 +28,11 @@ import 'package:wenyou_api/src/api/client_moderation_api.dart';
 import 'package:wenyou_api/src/api/direct_messages_api.dart';
 import 'package:wenyou_api/src/api/drafts_api.dart';
 import 'package:wenyou_api/src/api/health_api.dart';
+import 'package:wenyou_api/src/api/image_gallery_api.dart';
 import 'package:wenyou_api/src/api/media_api.dart';
 import 'package:wenyou_api/src/api/meta_api.dart';
 import 'package:wenyou_api/src/api/mobile_devices_api.dart';
+import 'package:wenyou_api/src/api/mobile_releases_api.dart';
 import 'package:wenyou_api/src/api/moderation_appeals_api.dart';
 import 'package:wenyou_api/src/api/moments_api.dart';
 import 'package:wenyou_api/src/api/notifications_api.dart';
@@ -174,10 +178,22 @@ class WenyouApi {
     return AdminCasesApi(dio, serializers);
   }
 
+  /// Get AdminContentApi instance, base route and serializer can be overridden by a given but be careful,
+  /// by doing that all interceptors will not be executed
+  AdminContentApi getAdminContentApi() {
+    return AdminContentApi(dio, serializers);
+  }
+
   /// Get AdminDashboardApi instance, base route and serializer can be overridden by a given but be careful,
   /// by doing that all interceptors will not be executed
   AdminDashboardApi getAdminDashboardApi() {
     return AdminDashboardApi(dio, serializers);
+  }
+
+  /// Get AdminMobileReleasesApi instance, base route and serializer can be overridden by a given but be careful,
+  /// by doing that all interceptors will not be executed
+  AdminMobileReleasesApi getAdminMobileReleasesApi() {
+    return AdminMobileReleasesApi(dio, serializers);
   }
 
   /// Get AdminModerationApi instance, base route and serializer can be overridden by a given but be careful,
@@ -240,6 +256,12 @@ class WenyouApi {
     return HealthApi(dio, serializers);
   }
 
+  /// Get ImageGalleryApi instance, base route and serializer can be overridden by a given but be careful,
+  /// by doing that all interceptors will not be executed
+  ImageGalleryApi getImageGalleryApi() {
+    return ImageGalleryApi(dio, serializers);
+  }
+
   /// Get MediaApi instance, base route and serializer can be overridden by a given but be careful,
   /// by doing that all interceptors will not be executed
   MediaApi getMediaApi() {
@@ -256,6 +278,12 @@ class WenyouApi {
   /// by doing that all interceptors will not be executed
   MobileDevicesApi getMobileDevicesApi() {
     return MobileDevicesApi(dio, serializers);
+  }
+
+  /// Get MobileReleasesApi instance, base route and serializer can be overridden by a given but be careful,
+  /// by doing that all interceptors will not be executed
+  MobileReleasesApi getMobileReleasesApi() {
+    return MobileReleasesApi(dio, serializers);
   }
 
   /// Get ModerationAppealsApi instance, base route and serializer can be overridden by a given but be careful,

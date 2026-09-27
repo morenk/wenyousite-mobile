@@ -8,6 +8,7 @@ import 'package:wenyousite_mobile/core/widgets/reading_quick_scroll.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_content_item_divider.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_discussion_scroll_policy.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
+import 'package:wenyousite_mobile/features/media/reading_gallery.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_controllers.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_discussion_author_directory_ports.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_discussion_author.dart';
@@ -33,7 +34,6 @@ List<Widget> buildThreadDetailReadingSlivers(
   required ReadingQuickScrollController quickScroll,
   required GlobalKey targetKey,
   required GlobalKey itemListKey,
-  required VoidCallback onRetryTarget,
   required Future<void> Function(String) onSelectSubthread,
   required ValueChanged<PostComposerTarget> onCompose,
   required ValueChanged<ThreadFloorModel> onDeleteFloor,
@@ -57,11 +57,7 @@ List<Widget> buildThreadDetailReadingSlivers(
               target.floor.author.id == state.floorAuthorId)
       ? target
       : null;
-  final displayedFloors = threadFloorsWithTarget(
-    state.floors,
-    usableTarget,
-    state.floorOrder,
-  );
+  final displayedFloors = state.floors;
   return [
     SliverToBoxAdapter(
       child: WenyouContentFrame(
@@ -124,6 +120,10 @@ List<Widget> buildThreadDetailReadingSlivers(
                 detail,
                 selected!,
                 onEdit: onCompose,
+                galleryOrder: state.floorOrder.name == 'newest'
+                    ? ReadingGalleryOrder.newest
+                    : ReadingGalleryOrder.oldest,
+                galleryAuthorId: state.floorAuthorId,
                 diagnosticMarkdownKey: renderGeometry.markdownKey,
               ),
             ),
@@ -138,20 +138,6 @@ List<Widget> buildThreadDetailReadingSlivers(
               tone: WenyouStatusTone.error,
               message: actions.failure!.userMessage,
               detail: wenyouFailureDetail(actions.failure, treatAsWrite: true),
-            ),
-          ),
-        ),
-      if (targetState != null)
-        SliverToBoxAdapter(
-          child: WenyouContentFrame(
-            top: 12,
-            child: ThreadTargetPostStatus(
-              targetState: targetState,
-              expectedThreadId: threadId,
-              availableSubthreadIds: {
-                for (final subthread in detail.subthreads) subthread.id,
-              },
-              onRetry: onRetryTarget,
             ),
           ),
         ),
@@ -242,6 +228,14 @@ List<Widget> buildThreadDetailReadingSlivers(
                           key: ValueKey('thread-floor-${floor.id}'),
                           threadId: threadId,
                           floor: floor,
+                          galleryTarget: ReadingGalleryTarget(
+                            scope: ReadingGalleryScope.subthread,
+                            scopeId: selected.id,
+                            authorId: state.floorAuthorId,
+                            order: state.floorOrder.name == 'newest'
+                                ? ReadingGalleryOrder.newest
+                                : ReadingGalleryOrder.oldest,
+                          ),
                           isFocused: focused,
                           targetFrameKey: focused ? targetKey : null,
                           canEdit: floor.author.id == viewerId,

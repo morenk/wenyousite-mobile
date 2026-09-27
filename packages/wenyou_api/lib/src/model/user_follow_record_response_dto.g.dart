@@ -19,6 +19,10 @@ class _$UserFollowRecordResponseDto extends UserFollowRecordResponseDto {
   final PostAuthorResponseDto? following;
   @override
   final PostAuthorResponseDto? follower;
+  @override
+  final bool? viewerIsFollowing;
+  @override
+  final bool? viewerIsFollowedBy;
 
   factory _$UserFollowRecordResponseDto([
     void Function(UserFollowRecordResponseDtoBuilder)? updates,
@@ -31,6 +35,8 @@ class _$UserFollowRecordResponseDto extends UserFollowRecordResponseDto {
     required this.createdAt,
     this.following,
     this.follower,
+    this.viewerIsFollowing,
+    this.viewerIsFollowedBy,
   }) : super._();
   @override
   UserFollowRecordResponseDto rebuild(
@@ -50,7 +56,9 @@ class _$UserFollowRecordResponseDto extends UserFollowRecordResponseDto {
         followingId == other.followingId &&
         createdAt == other.createdAt &&
         following == other.following &&
-        follower == other.follower;
+        follower == other.follower &&
+        viewerIsFollowing == other.viewerIsFollowing &&
+        viewerIsFollowedBy == other.viewerIsFollowedBy;
   }
 
   @override
@@ -62,6 +70,8 @@ class _$UserFollowRecordResponseDto extends UserFollowRecordResponseDto {
     _$hash = $jc(_$hash, createdAt.hashCode);
     _$hash = $jc(_$hash, following.hashCode);
     _$hash = $jc(_$hash, follower.hashCode);
+    _$hash = $jc(_$hash, viewerIsFollowing.hashCode);
+    _$hash = $jc(_$hash, viewerIsFollowedBy.hashCode);
     _$hash = $jf(_$hash);
     return _$hash;
   }
@@ -74,7 +84,9 @@ class _$UserFollowRecordResponseDto extends UserFollowRecordResponseDto {
           ..add('followingId', followingId)
           ..add('createdAt', createdAt)
           ..add('following', following)
-          ..add('follower', follower))
+          ..add('follower', follower)
+          ..add('viewerIsFollowing', viewerIsFollowing)
+          ..add('viewerIsFollowedBy', viewerIsFollowedBy))
         .toString();
   }
 }
@@ -115,6 +127,16 @@ class UserFollowRecordResponseDtoBuilder
   set follower(PostAuthorResponseDtoBuilder? follower) =>
       _$this._follower = follower;
 
+  bool? _viewerIsFollowing;
+  bool? get viewerIsFollowing => _$this._viewerIsFollowing;
+  set viewerIsFollowing(bool? viewerIsFollowing) =>
+      _$this._viewerIsFollowing = viewerIsFollowing;
+
+  bool? _viewerIsFollowedBy;
+  bool? get viewerIsFollowedBy => _$this._viewerIsFollowedBy;
+  set viewerIsFollowedBy(bool? viewerIsFollowedBy) =>
+      _$this._viewerIsFollowedBy = viewerIsFollowedBy;
+
   UserFollowRecordResponseDtoBuilder() {
     UserFollowRecordResponseDto._defaults(this);
   }
@@ -128,6 +150,8 @@ class UserFollowRecordResponseDtoBuilder
       _createdAt = $v.createdAt;
       _following = $v.following?.toBuilder();
       _follower = $v.follower?.toBuilder();
+      _viewerIsFollowing = $v.viewerIsFollowing;
+      _viewerIsFollowedBy = $v.viewerIsFollowedBy;
       _$v = null;
     }
     return this;
@@ -174,6 +198,8 @@ class UserFollowRecordResponseDtoBuilder
             ),
             following: _following?.build(),
             follower: _follower?.build(),
+            viewerIsFollowing: viewerIsFollowing,
+            viewerIsFollowedBy: viewerIsFollowedBy,
           );
     } catch (_) {
       late String _$failedField;

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -5,12 +7,45 @@ import 'package:go_router/go_router.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/widgets/reading_quick_scroll.dart';
 import 'package:wenyousite_mobile/features/moments/application/moment_repository_ports.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_detail_comment_body.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_detail_page.dart';
 
 void main() {
+  testWidgets('手动快翻后迟到的动态深链不能拉回位置', (tester) async {
+    final pending = Completer<MomentCommentContext>();
+    await tester.pumpWidget(
+      _app(
+        _TargetRepository(contextFuture: pending.future, rootCount: 12),
+        targetCommentId: 'late-target',
+      ),
+    );
+    for (var frame = 0; frame < 5; frame++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    final quick = tester
+        .widget<ReadingProgressViewport>(find.byType(ReadingProgressViewport))
+        .controller;
+    quick.setKeyboardFocus(true);
+    await tester.pump();
+    quick.beginDrag(0.3);
+    await tester.pump();
+    await tester.pump();
+    quick.endDrag(0.3);
+    await tester.pump();
+    final stopped = quick.scrollController.offset;
+    expect(stopped, greaterThan(100));
+    final root = _root(
+      id: 'late-target',
+      content: '迟到的目标评论',
+      createdAt: DateTime.utc(2026, 8, 1),
+    );
+    pending.complete(MomentCommentContext(root: root, target: root));
+    await tester.pumpAndSettle();
+    expect(quick.scrollController.offset, closeTo(stopped, 1));
+  });
   for (final isReply in [false, true]) {
     testWidgets('动态${isReply ? '楼中楼' : '主评论'}长内容定位保留作者开头', (tester) async {
       final content = List.filled(80, '较长的评论正文，开头不能滚出阅读区。').join('\n');
@@ -283,9 +318,15 @@ Widget _app(_TargetRepository repository, {String? targetCommentId}) {
 }
 
 class _TargetRepository extends Fake implements MomentRepository {
-  _TargetRepository({this.context, this.contextError, this.rootCount = 1});
+  _TargetRepository({
+    this.context,
+    this.contextFuture,
+    this.contextError,
+    this.rootCount = 1,
+  });
 
   final MomentCommentContext? context;
+  final Future<MomentCommentContext>? contextFuture;
   final Object? contextError;
   final int rootCount;
   var contextCalls = 0;
@@ -345,7 +386,7 @@ class _TargetRepository extends Fake implements MomentRepository {
     }
     final error = contextError;
     if (error != null) throw error;
-    return context!;
+    return contextFuture ?? context!;
   }
 
   @override

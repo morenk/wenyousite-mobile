@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "contractVersion": "5.22.0-dev.20260912.2",
+  "contractVersion": "5.27.0-dev.20260927.1",
   "counts": {
-    "total": 216,
-    "v1": 103,
-    "deferred": 62,
-    "notApplicable": 50,
+    "total": 232,
+    "v1": 107,
+    "deferred": 66,
+    "notApplicable": 58,
     "infrastructure": 1
   },
   "operations": [
@@ -283,6 +283,14 @@
       "status": "planned"
     },
     {
+      "operationId": "usersFollowRemoveFollower",
+      "method": "DELETE",
+      "path": "/api/v1/users/me/followers/{id}",
+      "module": "users",
+      "disposition": "v1",
+      "status": "planned"
+    },
+    {
       "operationId": "usersFollowFollowing",
       "method": "GET",
       "path": "/api/v1/users/following",
@@ -422,6 +430,22 @@
       "operationId": "bookmarksCreateFolder",
       "method": "POST",
       "path": "/api/v1/bookmarks/folders",
+      "module": "social",
+      "disposition": "deferred",
+      "status": "deferred"
+    },
+    {
+      "operationId": "bookmarksRenameFolder",
+      "method": "PATCH",
+      "path": "/api/v1/bookmarks/folders/{id}",
+      "module": "social",
+      "disposition": "deferred",
+      "status": "deferred"
+    },
+    {
+      "operationId": "bookmarksDeleteFolder",
+      "method": "DELETE",
+      "path": "/api/v1/bookmarks/folders/{id}",
       "module": "social",
       "disposition": "deferred",
       "status": "deferred"
@@ -750,6 +774,22 @@
       "operationId": "momentsCreateBookmarkFolder",
       "method": "POST",
       "path": "/api/v1/moments/bookmark-folders",
+      "module": "moments",
+      "disposition": "deferred",
+      "status": "deferred"
+    },
+    {
+      "operationId": "momentsRenameBookmarkFolder",
+      "method": "PATCH",
+      "path": "/api/v1/moments/bookmark-folders/{id}",
+      "module": "moments",
+      "disposition": "deferred",
+      "status": "deferred"
+    },
+    {
+      "operationId": "momentsDeleteBookmarkFolder",
+      "method": "DELETE",
+      "path": "/api/v1/moments/bookmark-folders/{id}",
       "module": "moments",
       "disposition": "deferred",
       "status": "deferred"
@@ -1379,6 +1419,30 @@
       "status": "not_applicable"
     },
     {
+      "operationId": "adminContentList",
+      "method": "GET",
+      "path": "/api/v1/admin/content",
+      "module": "admin",
+      "disposition": "not_applicable",
+      "status": "not_applicable"
+    },
+    {
+      "operationId": "adminContentDetail",
+      "method": "GET",
+      "path": "/api/v1/admin/content/{type}/{id}",
+      "module": "admin",
+      "disposition": "not_applicable",
+      "status": "not_applicable"
+    },
+    {
+      "operationId": "adminContentUpdateTaxonomy",
+      "method": "PATCH",
+      "path": "/api/v1/admin/content/thread/{id}/taxonomy",
+      "module": "admin",
+      "disposition": "not_applicable",
+      "status": "not_applicable"
+    },
+    {
       "operationId": "adminModerationListUsers",
       "method": "GET",
       "path": "/api/v1/admin/users",
@@ -1719,6 +1783,62 @@
       ]
     },
     {
+      "operationId": "mobileReleasesList",
+      "method": "GET",
+      "path": "/api/v1/mobile-releases",
+      "module": "app-shell",
+      "disposition": "v1",
+      "status": "planned"
+    },
+    {
+      "operationId": "mobileReleasesDetail",
+      "method": "GET",
+      "path": "/api/v1/mobile-releases/{platform}/{buildNumber}",
+      "module": "app-shell",
+      "disposition": "v1",
+      "status": "planned"
+    },
+    {
+      "operationId": "adminMobileReleasesList",
+      "method": "GET",
+      "path": "/api/v1/admin/mobile-releases",
+      "module": "admin",
+      "disposition": "not_applicable",
+      "status": "not_applicable"
+    },
+    {
+      "operationId": "adminMobileReleasesCreate",
+      "method": "POST",
+      "path": "/api/v1/admin/mobile-releases",
+      "module": "admin",
+      "disposition": "not_applicable",
+      "status": "not_applicable"
+    },
+    {
+      "operationId": "adminMobileReleasesDetail",
+      "method": "GET",
+      "path": "/api/v1/admin/mobile-releases/{id}",
+      "module": "admin",
+      "disposition": "not_applicable",
+      "status": "not_applicable"
+    },
+    {
+      "operationId": "adminMobileReleasesUpdate",
+      "method": "PATCH",
+      "path": "/api/v1/admin/mobile-releases/{id}",
+      "module": "admin",
+      "disposition": "not_applicable",
+      "status": "not_applicable"
+    },
+    {
+      "operationId": "adminMobileReleasesConfirm",
+      "method": "POST",
+      "path": "/api/v1/admin/mobile-releases/{id}/confirm",
+      "module": "admin",
+      "disposition": "not_applicable",
+      "status": "not_applicable"
+    },
+    {
       "operationId": "economyGetWallet",
       "method": "GET",
       "path": "/api/v1/wallet",
@@ -1765,6 +1885,14 @@
       "module": "economy",
       "disposition": "deferred",
       "status": "deferred"
+    },
+    {
+      "operationId": "galleryList",
+      "method": "GET",
+      "path": "/api/v1/image-gallery",
+      "module": "image-gallery",
+      "disposition": "v1",
+      "status": "planned"
     }
   ]
 }

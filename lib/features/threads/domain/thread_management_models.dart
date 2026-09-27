@@ -129,7 +129,7 @@ class ThreadManagementDraft {
   String? validate(ThreadManagementSnapshot snapshot) {
     final normalizedTitle = title.trim();
     if (normalizedTitle.isEmpty) return '请输入主题标题';
-    if (normalizedTitle.length > 100) return '标题不能超过 100 个字符';
+    if (normalizedTitle.runes.length > 100) return '标题不能超过 100 个字符';
     if (categorySlug == null) return '请选择主题分区';
     if (normalizedTagNames.length > 5) return '最多添加 5 个标签。';
     final tagPattern = RegExp(r'^[A-Za-z0-9_\u4e00-\u9fff#]+$');

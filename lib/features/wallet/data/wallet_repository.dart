@@ -23,10 +23,10 @@ class ApiWalletRepository implements WalletRepository {
     try {
       final dto = (await _api.economyGetWallet()).data?.data;
       if (dto == null) {
-        throw const ApiFailure(userMessage: '温油钱包加载失败，请稍后重试。');
+        throw const ApiFailure(userMessage: '温油余额加载失败，请稍后重试。');
       }
       return WalletSummary(
-        balance: _amount(dto.balance, '钱包余额'),
+        balance: _amount(dto.balance, '温油余额'),
         receivedTipTotal: _amount(dto.receivedTipTotal, '累计收到加油'),
         receivedTipCount: _nonNegativeInteger(dto.receivedTipCount, '收到加油次数'),
       );

@@ -103,8 +103,81 @@ void main() {
     ).fetchPage()).items.single;
 
     expect(item.kind, NotificationKind.unknown);
+    expect(item.target.state, NotificationTargetState.contentDeleted);
     expect(item.target.deletedHint, '该内容已删除');
     expect(item.target.canOpen, isFalse);
+    expect(item.isRead, isTrue);
+  });
+
+  test('目标状态区分已删评论、动态、未知内容、注销用户与普通无目标通知', () async {
+    final cases =
+        <
+          ({
+            NotificationTargetResponseDtoStateEnum state,
+            String? momentId,
+            String? momentCommentId,
+            String? expectedHint,
+            NotificationTargetState expectedState,
+          })
+        >[
+          (
+            state: NotificationTargetResponseDtoStateEnum.CONTENT_DELETED,
+            momentId: 'moment-1',
+            momentCommentId: 'comment-1',
+            expectedHint: '该评论已删除',
+            expectedState: NotificationTargetState.contentDeleted,
+          ),
+          (
+            state: NotificationTargetResponseDtoStateEnum.CONTENT_DELETED,
+            momentId: 'moment-1',
+            momentCommentId: null,
+            expectedHint: '该动态已删除',
+            expectedState: NotificationTargetState.contentDeleted,
+          ),
+          (
+            state: NotificationTargetResponseDtoStateEnum.CONTENT_DELETED,
+            momentId: null,
+            momentCommentId: null,
+            expectedHint: '该内容已删除或不可访问',
+            expectedState: NotificationTargetState.contentDeleted,
+          ),
+          (
+            state: NotificationTargetResponseDtoStateEnum.USER_DEACTIVATED,
+            momentId: null,
+            momentCommentId: null,
+            expectedHint: '该用户已注销',
+            expectedState: NotificationTargetState.userDeactivated,
+          ),
+          (
+            state: NotificationTargetResponseDtoStateEnum.NO_TARGET,
+            momentId: null,
+            momentCommentId: null,
+            expectedHint: null,
+            expectedState: NotificationTargetState.noTarget,
+          ),
+        ];
+
+    for (final testCase in cases) {
+      final api = _MockNotificationsApi();
+      when(() => api.notificationsFindAll(cursor: null, type: null)).thenAnswer(
+        (_) async => _targetStateResponse(
+          testCase.state,
+          momentId: testCase.momentId,
+          momentCommentId: testCase.momentCommentId,
+        ),
+      );
+
+      final item = (await ApiNotificationRepository(
+        api,
+      ).fetchPage()).items.single;
+      expect(item.target.state, testCase.expectedState);
+      expect(item.target.deletedHint, testCase.expectedHint);
+      expect(item.target.canOpen, isFalse);
+      expect(
+        item.isRead,
+        testCase.state != NotificationTargetResponseDtoStateEnum.NO_TARGET,
+      );
+    }
   });
 
   test('未读数与三种写操作完整调用生成客户端', () async {
@@ -203,10 +276,14 @@ Response<NotificationsFindAll200Response> _listResponse({
               )
               ..target.update(
                 (target) => target
-                  ..kind = NotificationTargetResponseDtoKindEnum.post
-                  ..state = NotificationTargetResponseDtoStateEnum.ACTIVE
-                  ..threadId = 'thread-1'
-                  ..postId = 'post-7',
+                  ..kind = deleted
+                      ? NotificationTargetResponseDtoKindEnum.none
+                      : NotificationTargetResponseDtoKindEnum.post
+                  ..state = deleted
+                      ? NotificationTargetResponseDtoStateEnum.CONTENT_DELETED
+                      : NotificationTargetResponseDtoStateEnum.ACTIVE
+                  ..threadId = deleted ? null : 'thread-1'
+                  ..postId = deleted ? null : 'post-7',
               )
               ..post.update(
                 (post) => post
@@ -224,6 +301,41 @@ Response<NotificationsFindAll200Response> _listResponse({
                   ..id = 'actor-1'
                   ..username = '骰子猫'
                   ..level = 4,
+              ),
+          ),
+        ),
+    ),
+  );
+}
+
+Response<NotificationsFindAll200Response> _targetStateResponse(
+  NotificationTargetResponseDtoStateEnum state, {
+  String? momentId,
+  String? momentCommentId,
+}) {
+  return Response(
+    requestOptions: RequestOptions(path: '/api/v1/notifications'),
+    data: NotificationsFindAll200Response(
+      (response) => response
+        ..code = ApiSuccessEnvelopeCodeEnum.number0
+        ..message = 'ok'
+        ..meta.update((meta) => meta..hasMore = false)
+        ..data.add(
+          NotificationResponseDto(
+            (notification) => notification
+              ..id = 'state-notification'
+              ..userId = 'user-1'
+              ..type = NotificationResponseDtoTypeEnum.system
+              ..content = '历史通知'
+              ..eventKey = 'state-notification'
+              ..isRead = false
+              ..createdAt = DateTime.utc(2026, 9, 23)
+              ..momentId = momentId
+              ..momentCommentId = momentCommentId
+              ..target.update(
+                (target) => target
+                  ..kind = NotificationTargetResponseDtoKindEnum.none
+                  ..state = state,
               ),
           ),
         ),

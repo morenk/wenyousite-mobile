@@ -1,66 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
-import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_pagination.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_time_text.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/thread_feed/thread_feed_widgets.dart';
 import 'package:wenyousite_mobile/features/users/application/public_user_controller.dart';
 import 'package:wenyousite_mobile/features/users/domain/public_user_models.dart';
-
-class PublicUserContentArea extends ConsumerWidget {
-  const PublicUserContentArea({
-    required this.userId,
-    required this.state,
-    super.key,
-  });
-
-  final String userId;
-  final PublicUserState state;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final tokens = context.wenyouTokens;
-    final notifier = ref.read(publicUserControllerProvider(userId).notifier);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        WenyouPanel(
-          padding: EdgeInsets.all(tokens.space16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const WenyouSectionHeader(title: '公开内容'),
-              SizedBox(height: tokens.space12),
-              WenyouContentTabs<PublicUserContentTab>(
-                key: const Key('public-user-content-tabs'),
-                keyPrefix: 'public-user',
-                semanticsLabel: '用户公开内容',
-                placement: WenyouTabPlacement.embedded,
-                options: [
-                  for (final tab in state.availableTabs)
-                    WenyouFilterOption(
-                      value: tab,
-                      label: tab.label,
-                      keyValue: '${tab.name}-tab',
-                    ),
-                ],
-                selected: state.activeTab,
-                onSelected: notifier.selectTab,
-              ),
-            ],
-          ),
-        ),
-        SizedBox(height: tokens.space12),
-      ],
-    );
-  }
-}
 
 class PublicUserContentSectionSliver extends StatelessWidget {
   const PublicUserContentSectionSliver({
@@ -150,7 +100,7 @@ class _ThreadSection extends StatelessWidget {
       slivers: [
         SliverList.separated(
           itemCount: section.items.length,
-          separatorBuilder: (_, _) => SizedBox(height: tokens.space12),
+          separatorBuilder: (_, _) => SizedBox(height: tokens.cardGap),
           itemBuilder: (context, index) {
             final item = section.items[index];
             return WenyouConstrainedWidth(
@@ -172,34 +122,14 @@ class _ThreadSection extends StatelessWidget {
           },
         ),
         _contentBox(
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              if (section.failure != null) ...[
-                SizedBox(height: tokens.space12),
-                _ContentInlineFailure(
-                  failure: section.failure!,
-                  onRetry: onLoadMore,
-                ),
-              ],
-              if (section.hasMore && section.failure == null) ...[
-                SizedBox(height: tokens.space12),
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    key: Key('public-user-${tab.name}-load-more'),
-                    onPressed: section.isLoadingMore ? null : onLoadMore,
-                    icon: section.isLoadingMore
-                        ? const SizedBox.square(
-                            dimension: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const WenyouIcon(WenyouIconIds.navigationExpand),
-                    label: Text(section.isLoadingMore ? '正在加载' : '加载更多'),
-                  ),
-                ),
-              ],
-            ],
+          WenyouPaginationFooter(
+            hasMore: section.hasMore,
+            isLoading: section.isLoadingMore,
+            failure: section.failure,
+            onLoadMore: onLoadMore,
+            showEndLabel: false,
+            retryLabel: '重试加载更多',
+            loadMoreKey: Key('public-user-${tab.name}-load-more'),
           ),
         ),
       ],
@@ -242,7 +172,7 @@ class _ReplySection extends StatelessWidget {
     final tokens = context.wenyouTokens;
     return SliverList.separated(
       itemCount: section.items.length,
-      separatorBuilder: (_, _) => SizedBox(height: tokens.space12),
+      separatorBuilder: (_, _) => SizedBox(height: tokens.cardGap),
       itemBuilder: (context, index) => WenyouConstrainedWidth(
         key: ValueKey(section.items[index].id),
         child: _UserReplyCard(item: section.items[index]),
@@ -267,6 +197,7 @@ class _UserReplyCard extends StatelessWidget {
       button: true,
       label: '打开 ${item.threadTitle} 中的最近回复',
       child: WenyouPanel(
+        contentCard: true,
         onTap: () => context.push(location),
         padding: EdgeInsets.all(tokens.space16),
         child: Column(
@@ -293,9 +224,10 @@ class _UserReplyCard extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             ),
             SizedBox(height: tokens.space8),
-            Text(
-              '${item.subthreadTitle} · '
-              '${DateFormat('yyyy-MM-dd HH:mm').format(item.createdAt)}',
+            WenyouTimeText(
+              value: item.createdAt,
+              prefix: '${item.subthreadTitle} · ',
+              semanticsPrefix: '${item.subthreadTitle}，发布时间：',
               style: Theme.of(context).textTheme.wenyouCaption,
             ),
           ],
@@ -340,7 +272,11 @@ class _ContentLoadingState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const WenyouListSkeleton(label: '正在加载公开内容', itemCount: 2);
+    return const WenyouListSkeleton(
+      label: '正在加载公开内容',
+      itemCount: 2,
+      contentCards: true,
+    );
   }
 }
 
@@ -387,29 +323,8 @@ class _ContentFailureState extends StatelessWidget {
           key: Key('public-user-${tab.name}-retry'),
           onPressed: onRetry,
           icon: const WenyouIcon(WenyouIconIds.actionRefresh),
-          label: const Text('重新加载'),
+          label: const Text('重试'),
         ),
-      ),
-    );
-  }
-}
-
-class _ContentInlineFailure extends StatelessWidget {
-  const _ContentInlineFailure({required this.failure, required this.onRetry});
-
-  final ApiFailure failure;
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    return WenyouStatusBanner(
-      tone: WenyouStatusTone.error,
-      message: failure.userMessage,
-      detail: wenyouFailureDetail(failure),
-      action: TextButton.icon(
-        onPressed: onRetry,
-        icon: const WenyouIcon(WenyouIconIds.actionRefresh, size: 18),
-        label: const Text('重试加载更多'),
       ),
     );
   }

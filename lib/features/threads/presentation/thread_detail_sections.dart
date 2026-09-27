@@ -16,10 +16,12 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_discussion_reply_card.dart
 import 'package:wenyousite_mobile/core/widgets/wenyou_level_badge.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_markdown.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_overflow_content.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_pagination.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_time_text.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_transient_target_frame.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/editor/editor.dart';
+import 'package:wenyousite_mobile/features/media/reading_gallery.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
 import 'package:wenyousite_mobile/features/reports/domain/report_models.dart';
 import 'package:wenyousite_mobile/features/reports/presentation/report_widgets.dart';
@@ -76,7 +78,7 @@ class ThreadDetailFatalState extends StatelessWidget {
                     key: const Key('thread-detail-retry'),
                     onPressed: onRetry,
                     icon: const WenyouIcon(WenyouIconIds.actionRefresh),
-                    label: const Text('重新加载'),
+                    label: const Text('重试'),
                   ),
           ),
         ),
@@ -118,6 +120,8 @@ class ThreadSubthreadBody extends ConsumerWidget {
     required this.onEdit,
     this.pending = false,
     this.diagnosticMarkdownKey,
+    this.galleryOrder = ReadingGalleryOrder.oldest,
+    this.galleryAuthorId,
     super.key,
   });
 
@@ -125,6 +129,8 @@ class ThreadSubthreadBody extends ConsumerWidget {
   final ThreadSubthreadModel subthread;
   final bool pending;
   final GlobalKey? diagnosticMarkdownKey;
+  final ReadingGalleryOrder galleryOrder;
+  final String? galleryAuthorId;
   final ValueChanged<PostComposerTarget> onEdit;
   bool get canManage => detail.canManageThread;
 
@@ -176,6 +182,13 @@ class ThreadSubthreadBody extends ConsumerWidget {
             StickerPostMarkdown(
               key: Key('thread-body-${subthread.id}'),
               postId: body.postId!,
+              postVersion: body.version ?? 1,
+              galleryTarget: ReadingGalleryTarget(
+                scope: ReadingGalleryScope.subthread,
+                scopeId: subthread.id,
+                order: galleryOrder,
+                authorId: galleryAuthorId,
+              ),
               data: body.markdown,
               mediaDisplays: body.mediaDisplays,
               diceLabels: threadDiceLabels(body.diceRolls),
@@ -360,10 +373,12 @@ class ThreadFloorCard extends ConsumerWidget {
     this.reportReturnTo,
     this.isFocused = false,
     this.targetFrameKey,
+    this.galleryTarget,
     super.key,
   });
 
   final String threadId;
+  final ReadingGalleryTarget? galleryTarget;
   final ThreadFloorModel floor;
   final bool isFocused;
   final GlobalKey? targetFrameKey;
@@ -473,6 +488,8 @@ class ThreadFloorCard extends ConsumerWidget {
                   else
                     StickerPostMarkdown(
                       postId: floor.id,
+                      postVersion: floor.version,
+                      galleryTarget: galleryTarget,
                       data: floor.body.markdown,
                       mediaDisplays: floor.body.mediaDisplays,
                       diceLabels: threadDiceLabels(floor.body.diceRolls),
@@ -569,7 +586,6 @@ class _FloorInlineReplyPreview extends StatelessWidget {
     final visibleReplies = replies.take(_previewLimit).toList(growable: false);
     final replyCards = <Widget>[
       for (var index = 0; index < visibleReplies.length; index++) ...[
-        if (index > 0) Divider(height: 1, color: tokens.border),
         _FloorInlineReplyCard(
           floorId: floorId,
           reply: visibleReplies[index],
@@ -653,6 +669,11 @@ class _FloorInlineReplyCard extends StatelessWidget {
           else
             StickerPostMarkdown(
               postId: reply.id,
+              postVersion: reply.version,
+              galleryTarget: ReadingGalleryTarget(
+                scope: ReadingGalleryScope.postReplies,
+                scopeId: floorId,
+              ),
               data: reply.body.markdown,
               mediaDisplays: reply.body.mediaDisplays,
               diceLabels: threadDiceLabels(reply.body.diceRolls),
@@ -681,42 +702,29 @@ class ThreadFloorsFooter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tokens = context.wenyouTokens;
     if (state.isLoadingFloors || state.floors.isEmpty) {
       return const SizedBox.shrink();
     }
-    if (state.transientFailure != null &&
-        state.retryAction == ThreadDetailRetryAction.loadMore) {
-      return ThreadDetailTransientFailure(
-        failure: state.transientFailure!,
-        onRetry: onLoadMore,
-      );
+    final paginationFailure =
+        state.retryAction == ThreadDetailRetryAction.loadMore
+        ? state.transientFailure
+        : null;
+    if (state.hasMore &&
+        state.transientFailure != null &&
+        paginationFailure == null) {
+      return const SizedBox.shrink();
     }
-    if (!state.hasMore) {
-      return Padding(
-        padding: EdgeInsets.symmetric(vertical: tokens.space12),
-        child: Text(
-          '已经读完这个子贴的全部楼层',
-          textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.wenyouCaption,
-        ),
-      );
-    }
-    if (state.transientFailure != null) return const SizedBox.shrink();
-    return Padding(
-      key: const Key('thread-floors-loading-more'),
-      padding: EdgeInsets.symmetric(vertical: tokens.space12),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const SizedBox.square(
-            dimension: 18,
-            child: CircularProgressIndicator(strokeWidth: 2),
-          ),
-          SizedBox(width: tokens.space8),
-          const Text('正在加载楼层'),
-        ],
-      ),
+    return WenyouPaginationFooter(
+      key: state.hasMore && paginationFailure == null
+          ? const Key('thread-floors-loading-more')
+          : null,
+      hasMore: state.hasMore,
+      isLoading: state.hasMore && paginationFailure == null,
+      failure: paginationFailure,
+      onLoadMore: onLoadMore,
+      retryKey: const Key('thread-detail-transient-retry'),
+      loadingLabel: '正在加载楼层',
+      endLabel: '已经读完这个子贴的全部楼层',
     );
   }
 }

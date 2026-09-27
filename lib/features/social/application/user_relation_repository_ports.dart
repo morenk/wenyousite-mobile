@@ -15,6 +15,10 @@ abstract interface class UserRelationProjectionReader {
   Future<UserRelationProjection> fetchRelation(String userId);
 }
 
+abstract interface class FollowerRemovalRepository {
+  Future<void> removeFollower(String userId);
+}
+
 final userRelationRepositoryProvider = Provider<UserRelationRepository>((ref) {
   return const _UnboundUserRelationRepository();
 });

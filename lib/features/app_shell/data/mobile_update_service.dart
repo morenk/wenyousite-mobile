@@ -5,6 +5,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -30,7 +31,9 @@ abstract interface class MobileUpdatePlatformBridge {
 
 class MethodChannelMobileUpdatePlatformBridge
     implements MobileUpdatePlatformBridge {
-  const MethodChannelMobileUpdatePlatformBridge();
+  const MethodChannelMobileUpdatePlatformBridge({this.packageInfoReader});
+
+  final Future<PackageInfo> Function()? packageInfoReader;
 
   static const _installerChannel = MethodChannel('site.wenyou.app/app_update');
 
@@ -46,7 +49,27 @@ class MethodChannelMobileUpdatePlatformBridge
     if (version is! String || version.isEmpty || build == null || build < 1) {
       throw const MobileUpdateException('无法识别当前应用构建号。');
     }
-    return InstalledAppInfo(platform: platform, version: version, build: build);
+    DateTime? firstInstallTime;
+    DateTime? lastUpdateTime;
+    if (platform == MobileClientPlatform.android) {
+      try {
+        final package = await (packageInfoReader ?? PackageInfo.fromPlatform)();
+        if (package.version == version &&
+            int.tryParse(package.buildNumber) == build) {
+          firstInstallTime = package.installTime;
+          lastUpdateTime = package.updateTime;
+        }
+      } on Object {
+        // 安装时间只辅助首次迁移；不可用时建立保守基线，不阻止原更新门禁。
+      }
+    }
+    return InstalledAppInfo(
+      platform: platform,
+      version: version,
+      build: build,
+      firstInstallTime: firstInstallTime,
+      lastUpdateTime: lastUpdateTime,
+    );
   }
 
   @override

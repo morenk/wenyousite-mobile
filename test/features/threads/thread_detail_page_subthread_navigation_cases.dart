@@ -1,12 +1,15 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_selection_menu.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_overview.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_subthread_navigator.dart';
+
 import '../../support/deterministic_test_fonts.dart';
 import 'thread_detail_page_test_support.dart';
 
@@ -22,43 +25,19 @@ void registerThreadDetailPageSubthreadNavigationCases() {
     await tester.pumpAndSettle();
     await tester.tap(menu);
     await tester.pumpAndSettle();
-    expect(find.text('主题目录'), findsOneWidget);
+    expect(find.text('主题目录'), findsNothing);
     expect(find.text('共 2 个子贴'), findsOneWidget);
     expect(find.text('8 楼'), findsWidgets);
     expect(find.text('4 楼'), findsOneWidget);
+    expect(find.byType(BottomSheet), findsNothing);
+    final selectedRow = find.descendant(
+      of: find.byKey(const Key('thread-subthread-subthread-1')),
+      matching: find.byType(WenyouSelectionRow),
+    );
+    expect(tester.widget<WenyouSelectionRow>(selectedRow).selected, isTrue);
     expect(
-      tester
-          .widget<ListView>(find.byKey(const Key('thread-subthread-directory')))
-          .scrollDirection,
-      Axis.vertical,
-    );
-    expect(
-      find.byKey(const Key('thread-subthread-subthread-1')),
-      findsOneWidget,
-    );
-    final directoryDivider = find.byKey(
-      const Key('thread-subthread-directory-divider-0'),
-    );
-    expect(directoryDivider, findsOneWidget);
-    expect(tester.widget<Divider>(directoryDivider).height, 1);
-    final selectedDirectoryRow = find.byKey(
-      const Key('thread-subthread-subthread-1'),
-    );
-    final selectedTile = tester.widget<ListTile>(selectedDirectoryRow);
-    expect(selectedTile.selected, isTrue);
-    expect(
-      (selectedTile.shape! as RoundedRectangleBorder).borderRadius,
-      BorderRadius.zero,
-    );
-    expect(selectedTile.selectedTileColor, isNotNull);
-    expect(
-      tester.getSize(selectedDirectoryRow).width,
-      closeTo(
-        tester
-            .getSize(find.byKey(const Key('thread-subthread-directory')))
-            .width,
-        0.1,
-      ),
+      tester.getTopLeft(selectedRow).dy,
+      greaterThan(tester.getBottomLeft(menu).dy),
     );
     final subthread = find.byKey(const Key('thread-subthread-subthread-2'));
     expect(subthread, findsOneWidget);
@@ -93,7 +72,82 @@ void registerThreadDetailPageSubthreadNavigationCases() {
     expect(repository.requestedSubthreads.last, 'subthread-2');
   });
 
-  testWidgets('360dp 子贴目录使用分隔列表与整行选中高亮', (tester) async {
+  for (final dark in [false, true]) {
+    testWidgets('子贴长目录右侧常显滚动条并可滚动选择末项 $dark', (tester) async {
+      tester.view.physicalSize = const Size(360, 800);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      String? selected;
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: dark ? AppTheme.dark : AppTheme.light,
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(
+              context,
+            ).copyWith(textScaler: TextScaler.linear(dark ? 2 : 1)),
+            child: child!,
+          ),
+          home: Scaffold(
+            body: SafeArea(
+              child: ThreadSubthreadNavigator(
+                subthreads: [
+                  for (var i = 0; i < 24; i++)
+                    ThreadSubthreadModel(
+                      id: 'chapter-$i',
+                      title: '第 ${i + 1} 幕：星海旅途',
+                      sortOrder: i,
+                      postCount: i + 1,
+                      postingPolicyLabel: '所有玩家',
+                    ),
+                ],
+                selectedSubthreadId: 'chapter-0',
+                onSelected: (value) => selected = value,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.byKey(const Key('thread-subthread-menu')));
+      await tester.pumpAndSettle();
+      final scrollbarFinder = find.byType(Scrollbar);
+      expect(scrollbarFinder, findsOneWidget);
+      final scrollbar = tester.widget<Scrollbar>(scrollbarFinder);
+      expect(scrollbar.thumbVisibility, isTrue);
+      expect(scrollbar.scrollbarOrientation, ScrollbarOrientation.right);
+      expect(scrollbar.controller!.position.maxScrollExtent, greaterThan(0));
+      await tester.pump(const Duration(seconds: 3));
+      await expectLater(
+        find.byType(Overlay).first,
+        matchesGoldenFile(
+          'goldens/thread_subthread_scrollbar_${dark ? 'dark_2x' : 'light'}.png',
+        ),
+      );
+      await tester.drag(
+        find.descendant(
+          of: scrollbarFinder,
+          matching: find.byType(SingleChildScrollView),
+        ),
+        const Offset(0, -280),
+      );
+      await tester.pumpAndSettle();
+      expect(scrollbar.controller!.offset, greaterThan(0));
+      final last = find.byKey(const Key('thread-subthread-chapter-23'));
+      await tester.ensureVisible(last);
+      await tester.pumpAndSettle();
+      await tester.tap(last);
+      await tester.pumpAndSettle();
+      expect(selected, 'chapter-23');
+      expect(find.byType(Scrollbar), findsNothing);
+      await tester.tap(find.byKey(const Key('thread-subthread-menu')));
+      await tester.pumpAndSettle();
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  testWidgets('360dp 子贴目录使用锚点菜单与轻量选中高亮', (tester) async {
     tester.view.physicalSize = const Size(360, 800);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -105,8 +159,16 @@ void registerThreadDetailPageSubthreadNavigationCases() {
       ),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('thread-subthread-menu')));
+    final menu = find.byKey(const Key('thread-subthread-menu'));
+    final capsule = find.byKey(const Key('thread-subthread-menu-capsule'));
+    final title = find.descendant(of: capsule, matching: find.byType(Text));
+    expect(tester.widget<Text>(title).textAlign, TextAlign.center);
+    expect(tester.getCenter(title).dx, closeTo(tester.getCenter(menu).dx, 0.1));
+    final closedDecoration = tester.widget<Container>(capsule).decoration;
+    await tester.tap(menu);
     await tester.pumpAndSettle();
+    expect(tester.widget<Container>(capsule).decoration, closedDecoration);
+    expect(find.text('主题目录'), findsNothing);
 
     await expectLater(
       find.byType(Overlay).first,
@@ -330,7 +392,7 @@ void registerThreadDetailPageSubthreadNavigationCases() {
     expect(find.text('主线正文'), findsNothing);
   });
 
-  for (final targetKind in ['subthread', 'post']) {
+  for (final targetKind in ['subthread']) {
     for (final surface
         in ThreadDetailPageTestSubthreadSelectionSurface.values) {
       testWidgets('$targetKind 入口定位后可通过 ${surface.label} 切换子贴', (tester) async {
@@ -345,13 +407,20 @@ void registerThreadDetailPageSubthreadNavigationCases() {
               : null,
         );
         await tester.pumpWidget(
-          threadDetailPageTestDetailApp(
-            repository,
-            targetPostId: targetKind == 'post' ? 'floor-target' : null,
-            subthreadIdHint: targetKind == 'subthread' ? 'subthread-2' : null,
-          ),
+          targetKind == 'post'
+              ? threadDetailPageTestDetailRouterApp(
+                  repository,
+                  initialLocation: '/threads/thread-1?post=floor-target',
+                )
+              : threadDetailPageTestDetailApp(
+                  repository,
+                  subthreadIdHint: 'subthread-2',
+                ),
         );
         await tester.pumpAndSettle();
+        if (targetKind == 'post') {
+          expect(find.text('目标楼层内容'), findsOneWidget);
+        }
         expect(find.text('支线正文'), findsOneWidget);
 
         await threadDetailPageTestSelectMainSubthread(tester, surface);
@@ -364,7 +433,7 @@ void registerThreadDetailPageSubthreadNavigationCases() {
     }
   }
 
-  testWidgets('入口目标已是当前子贴时仍完成一次性消费', (tester) async {
+  testWidgets('入口目标已是当前子贴时仍直接显示聚焦楼层', (tester) async {
     final repository = ThreadDetailPageTestFakeThreadDetailRepository(
       postTarget: ThreadPostTargetModel(
         requestedPostId: 'floor-1',
@@ -378,11 +447,10 @@ void registerThreadDetailPageSubthreadNavigationCases() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(const Key('thread-subthread-next')));
-    await tester.pumpAndSettle();
-
-    expect(find.text('支线正文'), findsOneWidget);
-    expect(repository.requestedSubthreads.last, 'subthread-2');
+    expect(find.text('第一层内容'), findsOneWidget);
+    // 正文可保留在滚动缓存中，但定位后不能占据目标阅读视口。
+    expect(find.text('主线正文').hitTestable(), findsNothing);
+    expect(repository.requestedSubthreads, ['subthread-1']);
   });
 
   testWidgets('最新发言按钮位于搜索与更多之间并可重复定位主楼层', (tester) async {
@@ -411,7 +479,7 @@ void registerThreadDetailPageSubthreadNavigationCases() {
     expect(repository.latestThreadIds, ['thread-1']);
     expect(repository.targetPostIds, ['floor-target']);
     expect(find.text('目标楼层内容'), findsOneWidget);
-    expect(find.text('支线正文'), findsOneWidget);
+    expect(find.byKey(const Key('discussion-target-cover')), findsNothing);
 
     await tester.tap(find.byKey(const Key('thread-detail-latest')));
     await tester.pumpAndSettle();

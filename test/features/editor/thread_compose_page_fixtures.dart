@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:typed_data';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,6 +11,8 @@ import 'package:wenyousite_mobile/app/app_capabilities.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/models/editor_models.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/core/network/session_controller.dart';
 import 'package:wenyousite_mobile/features/drafts/application/content_drafts_controller.dart';
 import 'package:wenyousite_mobile/features/drafts/data/content_draft_repository.dart';
 import 'package:wenyousite_mobile/features/drafts/domain/content_draft_models.dart';
@@ -25,7 +29,10 @@ import 'package:wenyousite_mobile/features/threads/application/thread_compose_co
 import 'package:wenyousite_mobile/features/threads/data/thread_compose_repository.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_compose_models.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_compose_page.dart';
+
+import '../../support/button_finder.dart';
 import '../../support/fake_image_crop_processor.dart';
+import '../../support/memory_pending_media_file_store.dart';
 
 Future<ThreadComposeController> threadComposePageTestReadyController(
   ThreadComposePageTestMemorySnapshotStore store, {
@@ -60,6 +67,11 @@ Future<void> threadComposePageTestPumpPage(
   ThreadComposePageTestComposeStickerRepository? stickerRepository,
   bool markdownAlignment = false,
   bool withThreadRoute = false,
+  MemoryPendingMediaFileStore? pendingMediaStore,
+  SessionScope accountScope = const SessionScope(
+    accountId: 'user-one',
+    generation: 1,
+  ),
 }) async {
   late final Widget app;
   if (stickerRepository == null && !withThreadRoute) {
@@ -99,6 +111,11 @@ Future<void> threadComposePageTestPumpPage(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        sessionScopeProvider.overrideWithValue(accountScope),
+        if (pendingMediaStore != null)
+          pendingMediaFileStoreProvider.overrideWithValue(pendingMediaStore)
+        else
+          memoryPendingMediaFileStoreOverride(),
         appCapabilitiesProvider.overrideWithValue(
           AppCapabilities(markdownAlignment: markdownAlignment),
         ),
@@ -140,7 +157,9 @@ Future<void> threadComposePageTestConfirmImageCrop(WidgetTester tester) async {
   await tester.pumpAndSettle();
   expect(find.byKey(const Key('editor-image-crop-dialog')), findsOneWidget);
   tester
-      .widget<FilledButton>(find.byKey(const Key('image-crop-confirm')))
+      .widget<FilledButton>(
+        findButtonControl(find.byKey(const Key('image-crop-confirm'))),
+      )
       .onPressed!();
   await tester.pump();
   await tester.pump(const Duration(milliseconds: 400));
@@ -408,7 +427,11 @@ class ThreadComposePageTestFakePicker implements EditorImagePicker {
     return MediaUploadInput(
       filename: 'editor.png',
       declaredContentType: 'image/png',
-      bytes: Uint8List.fromList(const [137, 80, 78, 71]),
+      bytes: Uint8List.fromList(
+        base64Decode(
+          'iVBORw0KGgoAAAANSUhEUgAAAAIAAAABCAYAAAD0In+KAAAAFElEQVR42mP8z8Dwn4GBgYGJAQoAHgQCAWc8uS8AAAAASUVORK5CYII=',
+        ),
+      ),
     );
   }
 }
@@ -492,4 +515,61 @@ class ThreadComposePageTestLateCompletingMediaUploadOperation
 
   void complete(UploadedEditorImage image) =>
       threadComposePageTestCompleter.complete(image);
+
+  void fail(Object error) =>
+      threadComposePageTestCompleter.completeError(error);
+}
+
+class ThreadComposePageTestControlledMediaGateway
+    implements MediaUploadGateway, ResumableMediaUploadGateway {
+  final operations =
+      <ThreadComposePageTestLateCompletingMediaUploadOperation>[];
+  final resumed = <PendingMediaUpload>[];
+  int starts = 0;
+  void Function(MediaUploadProgress)? _progress;
+  ThreadComposePageTestLateCompletingMediaUploadOperation get current =>
+      operations.last;
+
+  @override
+  MediaUploadOperation<UploadedEditorImage> startImageUpload(
+    MediaUploadInput input, {
+    void Function(MediaUploadProgress progress)? onProgress,
+  }) {
+    starts++;
+    _progress = onProgress;
+    final operation = ThreadComposePageTestLateCompletingMediaUploadOperation();
+    operations.add(operation);
+    onProgress?.call(
+      const MediaUploadProgress(
+        stage: MediaUploadStage.uploading,
+        sentBytes: 5,
+        totalBytes: 10,
+      ),
+    );
+    return operation;
+  }
+
+  @override
+  MediaUploadOperation<UploadedEditorImage> resumeImageProcessing(
+    PendingMediaUpload upload, {
+    void Function(MediaUploadProgress progress)? onProgress,
+  }) {
+    resumed.add(upload);
+    _progress = onProgress;
+    final operation = ThreadComposePageTestLateCompletingMediaUploadOperation();
+    operations.add(operation);
+    onProgress?.call(
+      MediaUploadProgress(
+        stage: MediaUploadStage.processing,
+        pendingUpload: upload,
+      ),
+    );
+    return operation;
+  }
+
+  void progress(MediaUploadProgress progress) => _progress?.call(progress);
+  void complete({
+    String mediaId = 'media-one',
+    String url = 'https://cdn.example.com/editor.png',
+  }) => current.complete(UploadedEditorImage(mediaId: mediaId, url: url));
 }

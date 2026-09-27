@@ -108,8 +108,6 @@ class WenyouInlineCodeSurface extends StatelessWidget {
           color: tokens.text,
           backgroundColor: Colors.transparent,
           fontFamily: 'monospace',
-          fontWeight: FontWeight.w400,
-          decoration: TextDecoration.none,
         ),
       ),
     );

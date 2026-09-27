@@ -14,6 +14,7 @@ import 'package:wenyousite_mobile/features/posts/application/post_controllers.da
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
 import 'package:wenyousite_mobile/features/posts/presentation/post_composer_sheet.dart';
 import 'package:wenyousite_mobile/features/posts/presentation/post_replies_page.dart';
+
 import 'post_replies_page_test_support.dart';
 
 void registerPostRepliesPageLoadingWritesCases() {
@@ -530,7 +531,17 @@ void registerPostRepliesPageLoadingWritesCases() {
       find.byKey(const Key('post-card-action-reply-own-delete')),
     );
     await postRepliesPageTestPumpUi(tester);
-    await tester.tap(find.widgetWithText(FilledButton, '删除'));
+    final deleteButton = find.widgetWithText(FilledButton, '删除');
+    expect(
+      tester
+          .widget<FilledButton>(deleteButton)
+          .style
+          ?.backgroundColor
+          ?.resolve({}),
+      Theme.of(tester.element(deleteButton)).colorScheme.error,
+      reason: '不可逆删除必须明确使用危险操作色',
+    );
+    await tester.tap(deleteButton);
     await postRepliesPageTestPumpUi(tester);
 
     expect(repository.removedIds, isEmpty);

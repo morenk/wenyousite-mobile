@@ -1,8 +1,8 @@
 # 温油站移动端
 
-温油站的 Flutter 原生客户端。正式 APK 仅支持 Android 8+（API 26）的 ARM64 设备，手机竖屏优先；Debug/Profile 保留 ARM32、ARM64、x86_64 以供开发。共享 Dart 代码保持 iOS 兼容，但当前不做 iOS 验收。
+温油站的 Flutter 原生客户端。正式、Debug 和 Profile APK 均仅支持 Android 8+（API 26）的 ARM64 设备，手机竖屏优先。共享 Dart 代码保持 iOS 兼容，但当前不做 iOS 验收。
 
-当前版本：`0.7.0+94`（Android 正式发布）。默认连接公网开发 API `https://wenyou.site/api/v1`，请只使用专用测试账号。
+当前版本：`0.8.0+97`（正式版发布候选，待最终签名包真机冒烟与发布）；线上推荐仍为图集开发版 build 96，正式包源码为 `acb94a46dad59f379455ea7f6fd9adee2fc47003`，图集正文定位与真机手势仍待负责人复验。普通应用构建连接公网 API `https://wenyou.site/api/v1`；开发反馈默认使用下方的隔离预览与持续 Debug，线上自动化只读。
 
 ## 技术基线
 
@@ -13,10 +13,10 @@
 - Drift：完整 Markdown 编辑快照和待确认幂等创建操作
 - Flutter Quill：仅作为内存编辑模型；后端、云草稿和本地快照始终保存服务端声明版本的完整 Markdown；客户端兼容 v3/v4/v5
 - flutter_secure_storage：Access/Refresh Token 单记录原子替换
-- wenyousite-foundation v7.0.0：跨端品牌资源、语义 Token、元素系统、图标注册表、三角色系统字体语义、移动 profile 与编辑器体验契约
+- wenyousite-foundation v7.2.1：跨端品牌资源、语义 Token、元素系统、图标注册表、三角色系统字体语义、移动 profile 与编辑器体验契约
 - WenyouThemeTokens：Foundation 常量到 Flutter ThemeExtension 的轻量适配层
 
-产品与模块事实从 [`docs/README.md`](docs/README.md) 开始阅读；共享审美以 Foundation 远端最新正式发布 Tag 为准，构建锁定当前 [`v7.0.0`](https://github.com/morenk/wenyousite-foundation/tree/v7.0.0)；每次 Foundation 相关实现前必须先检查远端发布并在落后时升级，完整协作约束见 [`AGENTS.md`](AGENTS.md)。
+产品与模块事实从 [`docs/README.md`](docs/README.md) 开始阅读；共享审美以 Foundation 远端最新正式发布 Tag 为准，构建锁定当前 [`v7.2.1`](https://github.com/morenk/wenyousite-foundation/tree/v7.2.1)；每次 Foundation 相关实现前必须先检查远端发布并在落后时升级，完整协作约束见 [`AGENTS.md`](AGENTS.md)。
 
 ## 本地环境
 
@@ -37,13 +37,19 @@ flutter pub get
 npm ci
 ```
 
-移动端默认连接部署在 VPS 的公网开发 API，不在 Windows 启动后端。只有已经显式建立“Windows `127.0.0.1:3000` → VPS `127.0.0.1:3000`”SSH 隧道时，Android 模拟器才使用：
+默认开发反馈使用隔离预览与持续 Debug。Agent 在任务 Worktree 内执行：
 
-```bash
-flutter run --dart-define=API_BASE_URL=http://10.0.2.2:3000/api/v1
+```powershell
+npm run dev:start -- --session C:\private\preview-consumer.json
+npm run dev:status
+npm run dev:reload
+npm run dev:restart
+npm run dev:stop
 ```
 
-不传 `API_BASE_URL` 时连接公网开发 API。Windows 只保留 `..\references\wenyousite-backend` 后端只读镜像供契约同步；不得在移动端任务中修改它、安装依赖、启动服务、迁移或部署。Web 与 Foundation 不在 Windows 保留工作副本。
+第一次启动会编译并安装 `site.wenyou.app.debug`；后续颜色、间距与布局修改执行热重载，保留当前页面。初始化变化热重启，依赖／资源／原生变化按需重启或构建。无需每轮 APK、安装或全量门禁。多设备显式传 `--device`。描述来自 Backend 已提交的私有开发协议，实际身份不符立即停止，没有线上默认值。完整使用、故障恢复与验收记录见 [持续 Debug 开发](docs/live-debug.md)。
+
+原有普通应用构建仍默认使用公网 API；线上自动化只读，写入仅使用隔离预览。Windows 的 Backend 只读镜像只允许 fetch/show/diff 或契约同步，不在 Windows 修改或运行 Backend。
 
 ## 契约同步
 
@@ -53,17 +59,21 @@ flutter run --dart-define=API_BASE_URL=http://10.0.2.2:3000/api/v1
 pwsh -NoProfile -File tool/sync_backend_contract.ps1
 npm run api:validate
 npm run api:generate
+dart run tool/generate_diagnostic_routes.dart
+dart format lib/core/diagnostics/diagnostic_routes.g.dart
 ```
 
-生成代码禁止手改。契约变化必须使用独立 `chore` 切片，并同步受影响模块文档与 [`docs/CHANGELOG.md`](docs/CHANGELOG.md)。
+生成代码禁止手改。诊断端点表仅保留静态路由与 operationId，自动测试核对它与固定 OpenAPI 一致。契约变化必须使用独立 `chore` 切片，并同步受影响模块文档与 [`docs/CHANGELOG.md`](docs/CHANGELOG.md)。
 
 ## 质量门禁
 
-第一阶段以快速本地迭代为主：普通低、中风险切片需要真机候选时，显式传入相关测试，由快速入口完成全量静态分析、针对性测试和 Debug APK 构建：
+第一阶段以快速本地迭代为主：普通低、中风险切片通过相关测试与静态分析后可在持续 Debug 会话验收；需要脱离会话的独立 APK 时，快速入口完成静态分析、针对性测试和构建：
 
 ```bash
 npm run candidate:apk -- test/features/example/example_test.dart -TestConcurrency 2
 ```
+
+可以在 `-TestConcurrency` 前依次传入多个 `test/` 内的测试文件或目录，每条路径会作为独立参数传给 Flutter；包含空格的路径需要单独加引号。候选脚本的 Windows 回归会核对实际参数数组，避免把多个测试路径拼成一个文件名。
 
 该入口不会运行全量 Flutter 测试或安装 APK。候选经负责人验收后、合并前运行一次完整本地门禁；认证、契约、网络、上传、持久化、幂等、注销、依赖和 Android 原生配置等高风险候选直接运行 `npm run check:apk`。不需要构建 APK 的阶段验收使用：
 
@@ -75,7 +85,7 @@ npm run check
 
 调试已提交但尚未部署的契约候选时，可运行 `npm run check:apk -- -ContinueAfterFailure` 收集其余检查及候选 APK。所有原检查仍执行，任一失败最终仍返回非零并逐项汇总；这不是完整门禁通过或发布许可。默认命令仍遇错即停，发布流程不使用收集模式。
 
-GitHub Actions 当前仅支持手动触发，不随 `dev` push 自动运行，也不作为日常切片完成条件。日常切片完成后原子提交并推送 `codex/YYYYMMDD-<目标>` 任务分支；Codex 不得自行合并或发布，`dev`/`main` 的合并与正式 Tag 只在维护者明确决定时执行。
+GitHub Actions 的质量检查与 Android APK 构建已按负责人决定停用；开发、合并和发布以 Windows 本地门禁及负责人真机验收为准，不等待远端 CI。日常切片完成后原子提交并推送 `codex/YYYYMMDD-<目标>` 任务分支；Codex 不得自行合并或发布，`dev`/`main` 的合并与正式 Tag 只在维护者明确决定时执行。
 
 ## Android 私有发布
 

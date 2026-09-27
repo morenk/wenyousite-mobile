@@ -39,3 +39,7 @@ feature 内保持 `presentation → application → domain`，data 在应用边�
 架构门禁与 `flutter analyze`、完整测试、API 覆盖和文档门禁共同运行。allowlist 变化必须说明移除或保留债务的理由，不能静默扩大。
 
 检查入口 `tool/check_architecture.dart` 只编排规则；文件枚举、AST 依赖图、分层检查、展示检查和债务解析位于 `tool/architecture/` 的显式库。大型 Widget 测试保留原 `_test.dart` 注册入口，按完整行为场景拆分 case 库并复用 fixture 库，Golden 路径和字体初始化不变。门禁自身的回归覆盖同数量换边、多层/循环/条件导出、字符串伪 import、新增未暂存文件和手写 part，防止后续绕过。
+
+## 图片上传协调依赖
+
+本轮经依赖图审查新增单向 `editor -> media`：正文编辑会话消费媒体上传 application 端口、领域输入以及 `media_ui.dart` 导出的本机预览组件，媒体不反向依赖编辑器。私有文件适配器只依赖 `pending_media_file_store_ports.dart`，由应用组合根绑定。删除三个已消失的跨 feature 横幅内部导入债务；没有增加循环依赖、内部层导入债务或超限文件豁免。

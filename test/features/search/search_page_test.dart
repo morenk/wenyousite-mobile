@@ -16,6 +16,38 @@ import 'package:wenyousite_mobile/features/thread_feed/thread_feed_models.dart';
 import '../../support/fake_thread_category_catalog.dart';
 
 void main() {
+  testWidgets('长列表滚动后查询输入和分类保持可操作', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(360, 700);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    final repository = _FakeSearchRepository(threadCount: 20);
+    await tester.pumpWidget(_searchApp(repository));
+    await tester.enterText(find.byKey(const Key('search-query-input')), '星海');
+    await tester.tap(find.byKey(const Key('search-submit')));
+    await tester.pumpAndSettle();
+    final queryRect = tester.getRect(
+      find.byKey(const Key('search-query-input')),
+    );
+    final tabsRect = tester.getRect(find.byKey(const Key('search-tabs')));
+    await tester.drag(find.byType(ListView), const Offset(0, -650));
+    await tester.pumpAndSettle();
+    expect(
+      tester.getRect(find.byKey(const Key('search-query-input'))),
+      queryRect,
+    );
+    expect(tester.getRect(find.byKey(const Key('search-tabs'))), tabsRect);
+    expect(
+      find.byKey(const Key('search-query-input')).hitTestable(),
+      findsOneWidget,
+    );
+    await tester.tap(find.text('用户'));
+    await tester.pumpAndSettle();
+    expect(find.text('温柔测试员'), findsOneWidget);
+    expect(repository.userCalls, 1);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('搜索页按动态、主题帖、楼层内容和用户四个页签惰性展示结果', (tester) async {
     final repository = _FakeSearchRepository();
     await tester.pumpWidget(_searchApp(repository));
@@ -252,9 +284,13 @@ Widget _searchApp(
 }
 
 class _FakeSearchRepository implements SearchRepository {
-  _FakeSearchRepository({this.failFirstThreadRequest = false});
+  _FakeSearchRepository({
+    this.failFirstThreadRequest = false,
+    this.threadCount = 1,
+  });
 
   final bool failFirstThreadRequest;
+  final int threadCount;
   int threadCalls = 0;
   int overviewCalls = 0;
   int momentCalls = 0;
@@ -292,7 +328,7 @@ class _FakeSearchRepository implements SearchRepository {
         requestId: 'search-request-id',
       );
     }
-    return [_threadResult()];
+    return [for (var i = 1; i <= threadCount; i++) _threadResult(id: i)];
   }
 
   @override
@@ -324,9 +360,9 @@ class _FakeSearchRepository implements SearchRepository {
   }
 }
 
-SearchThreadResult _threadResult() {
+SearchThreadResult _threadResult({int id = 1}) {
   return SearchThreadResult(
-    id: 'thread-1',
+    id: 'thread-$id',
     title: '星海旅团',
     categorySlug: 'DEDUCTION',
     status: ThreadFeedStatus.recruiting,

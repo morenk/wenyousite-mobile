@@ -148,7 +148,7 @@ void registerThreadComposePageLayoutDraftsCases() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('content-drafts-list')), findsOneWidget);
-    expect(find.text('只保存当前正文 · 已用 1/5'), findsOneWidget);
+    expect(find.text('已用 1/5'), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('content-drafts-auto-save-switch')));
     await tester.pumpAndSettle();

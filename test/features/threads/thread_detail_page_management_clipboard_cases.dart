@@ -13,6 +13,7 @@ import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.d
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_page.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_target_utils.dart';
 import '../../support/deterministic_test_fonts.dart';
+import '../../support/memory_pending_media_file_store.dart';
 import 'thread_detail_page_test_support.dart';
 
 void registerThreadDetailPageManagementClipboardCases() {
@@ -51,6 +52,7 @@ void registerThreadDetailPageManagementClipboardCases() {
     final postRepository = ThreadDetailPageTestCreatingPostRepository();
     final container = ProviderContainer(
       overrides: [
+        memoryPendingMediaFileStoreOverride(),
         stickersEnabledProvider.overrideWithValue(false),
         tokenStoreProvider.overrideWithValue(
           ThreadDetailPageTestMemoryTokenStore(),
@@ -140,6 +142,7 @@ void registerThreadDetailPageManagementClipboardCases() {
     final postRepository = ThreadDetailPageTestFakePostRepository();
     final container = ProviderContainer(
       overrides: [
+        memoryPendingMediaFileStoreOverride(),
         tokenStoreProvider.overrideWithValue(
           ThreadDetailPageTestMemoryTokenStore(),
         ),
@@ -285,6 +288,7 @@ void registerThreadDetailPageManagementClipboardCases() {
       addTearDown(tester.view.resetPhysicalSize);
       final container = ProviderContainer(
         overrides: [
+          memoryPendingMediaFileStoreOverride(),
           tokenStoreProvider.overrideWithValue(
             ThreadDetailPageTestMemoryTokenStore(),
           ),
@@ -341,6 +345,7 @@ void registerThreadDetailPageManagementClipboardCases() {
     addTearDown(tester.view.resetPhysicalSize);
     final container = ProviderContainer(
       overrides: [
+        memoryPendingMediaFileStoreOverride(),
         tokenStoreProvider.overrideWithValue(
           ThreadDetailPageTestMemoryTokenStore(),
         ),
@@ -402,6 +407,7 @@ void registerThreadDetailPageManagementClipboardCases() {
     );
     final container = ProviderContainer(
       overrides: [
+        memoryPendingMediaFileStoreOverride(),
         tokenStoreProvider.overrideWithValue(
           ThreadDetailPageTestMemoryTokenStore(),
         ),

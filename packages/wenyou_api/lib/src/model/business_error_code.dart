@@ -270,6 +270,9 @@ class BusinessErrorCode extends EnumClass {
   @BuiltValueEnumConst(wireNumber: 40923)
   static const BusinessErrorCode ADMIN_INVITE_CONFLICT = _$ADMIN_INVITE_CONFLICT;
   /// 稳定业务错误码；名称和值来源于 ErrorCode
+  @BuiltValueEnumConst(wireNumber: 40926)
+  static const BusinessErrorCode IMAGE_GALLERY_NOT_READY = _$IMAGE_GALLERY_NOT_READY;
+  /// 稳定业务错误码；名称和值来源于 ErrorCode
   @BuiltValueEnumConst(wireNumber: 40924)
   static const BusinessErrorCode REGISTRATION_PAUSED = _$REGISTRATION_PAUSED;
   /// 稳定业务错误码；名称和值来源于 ErrorCode

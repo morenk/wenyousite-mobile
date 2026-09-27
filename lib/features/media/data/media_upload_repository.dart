@@ -9,6 +9,7 @@ import 'package:wenyousite_mobile/core/diagnostics/network_diagnostics.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/media_display_mapper.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/core/network/preview_identity.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_ports.dart';
 import 'package:wenyousite_mobile/features/media/data/media_upload_normalizer.dart';
 import 'package:wenyousite_mobile/features/media/data/media_upload_timing.dart';
@@ -17,6 +18,13 @@ import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart
 import 'package:wenyousite_mobile/features/media/domain/media_upload_normalizer.dart';
 
 typedef MediaUploadDelay = Future<void> Function(Duration duration);
+
+const _mediaProcessingFailure = ApiFailure(
+  source: FailureSource.service,
+  reason: FailureReason.validation,
+  recoveryAction: FailureRecoveryAction.retry,
+  diagnosticCode: 'media_processing_failed',
+);
 
 abstract interface class MediaUploadRepository {
   Future<UploadedEditorImage> uploadImage(
@@ -41,7 +49,9 @@ class ApiMediaUploadRepository
     MediaUploadDelay? delay,
     int maxPollAttempts = 30,
     this.timing = const MediaUploadTiming(),
+    MediaUploadWorkCoordinator? workCoordinator,
   }) : _delay = delay ?? Future<void>.delayed,
+       workCoordinator = workCoordinator ?? MediaUploadWorkCoordinator(),
        _maxPollAttempts = maxPollAttempts < 1 ? 1 : maxPollAttempts;
 
   static const maxImageBytes = maxMediaImageBytes;
@@ -62,6 +72,7 @@ class ApiMediaUploadRepository
   final MediaUploadDelay _delay;
   final int _maxPollAttempts;
   final MediaUploadTiming timing;
+  final MediaUploadWorkCoordinator workCoordinator;
 
   @override
   Future<UploadedEditorImage> uploadImage(
@@ -150,34 +161,52 @@ class ApiMediaUploadRepository
       }
 
       _throwIfCancelled(cancelToken);
+      final pendingConfirmation = PendingMediaUpload(
+        mediaId: upload.mediaId,
+        purpose: input.purpose,
+        needsConfirmation: true,
+      );
       onProgress?.call(
         MediaUploadProgress(
           stage: MediaUploadStage.confirming,
           sentBytes: size,
           totalBytes: size,
+          pendingUpload: pendingConfirmation,
         ),
       );
       final confirmEnvelope = await timing.measure(
         purpose: input.purpose,
         stage: MediaUploadTimingStage.confirmUpload,
         inputBytes: size,
-        operation: () => _api.mediaConfirmUpload(
-          confirmUploadDto: ConfirmUploadDto(
-            (builder) => builder.mediaId = upload.mediaId,
-          ),
-          cancelToken: cancelToken,
-        ),
+        operation: () => _api
+            .mediaConfirmUpload(
+              confirmUploadDto: ConfirmUploadDto(
+                (builder) => builder.mediaId = upload.mediaId,
+              ),
+              cancelToken: cancelToken,
+            )
+            .catchError((Object error) {
+              if (cancelToken?.isCancelled == true) throw error;
+              throw MediaProcessingLookupFailure(
+                pendingConfirmation,
+                error is DioException ? ApiFailure.fromDio(error) : error,
+              );
+            }),
       );
       final confirmation = confirmEnvelope.data?.data;
       if (confirmation == null) {
-        throw const ApiFailure(userMessage: '图片上传失败，请重试。');
+        throw MediaProcessingLookupFailure(
+          pendingConfirmation,
+          const ApiFailure(userMessage: '图片上传失败，请重试。'),
+        );
       }
       final confirmed = confirmation.media;
+      _validateUploadIdentity(confirmed, upload.mediaId, input.purpose);
       if (confirmed.status == MediaResponseDtoStatusEnum.COMPLETED) {
         return _completedImage(confirmed, input.purpose);
       }
       if (confirmed.status == MediaResponseDtoStatusEnum.FAILED) {
-        throw const ApiFailure(userMessage: '图片处理失败，请重新选择后上传。');
+        throw _mediaProcessingFailure;
       }
 
       onProgress?.call(
@@ -185,6 +214,10 @@ class ApiMediaUploadRepository
           stage: MediaUploadStage.processing,
           sentBytes: size,
           totalBytes: size,
+          pendingUpload: PendingMediaUpload(
+            mediaId: upload.mediaId,
+            purpose: input.purpose,
+          ),
         ),
       );
       return timing.measure(
@@ -215,8 +248,11 @@ class ApiMediaUploadRepository
     final pending = PendingMediaUpload(mediaId: mediaId, purpose: purpose);
     await _wait(const Duration(milliseconds: 500), cancelToken);
     for (var attempt = 0; attempt < _maxPollAttempts; attempt++) {
-      final statusEnvelope = await _api
-          .mediaGetMedia(id: mediaId, cancelToken: cancelToken)
+      final statusEnvelope = await workCoordinator
+          .query(() {
+            _throwIfCancelled(cancelToken);
+            return _api.mediaGetMedia(id: mediaId, cancelToken: cancelToken);
+          })
           .catchError((Object error) {
             if (cancelToken?.isCancelled == true) throw error;
             throw MediaProcessingLookupFailure(
@@ -242,7 +278,7 @@ class ApiMediaUploadRepository
         return _completedImage(media, purpose);
       }
       if (media.status == MediaResponseDtoStatusEnum.FAILED) {
-        throw const ApiFailure(userMessage: '图片处理失败，请重新选择后上传。');
+        throw _mediaProcessingFailure;
       }
       if (attempt + 1 < _maxPollAttempts) {
         await _wait(const Duration(seconds: 1), cancelToken);
@@ -255,11 +291,61 @@ class ApiMediaUploadRepository
   Future<UploadedEditorImage> resumeImageProcessing(
     PendingMediaUpload upload, {
     CancelToken? cancelToken,
-  }) => _waitForCompletedUpload(
-    mediaId: upload.mediaId,
-    purpose: upload.purpose,
-    cancelToken: cancelToken,
-  );
+  }) async {
+    if (upload.needsConfirmation) {
+      MediaResponseDto? media;
+      try {
+        final existing = await workCoordinator.query(() {
+          _throwIfCancelled(cancelToken);
+          return _api.mediaGetMedia(
+            id: upload.mediaId,
+            cancelToken: cancelToken,
+          );
+        });
+        media = existing.data?.data;
+        if (media == null || media.id != upload.mediaId) {
+          throw const ApiFailure.invalidResponse(
+            diagnosticCode: 'media_query_identity_mismatch',
+          );
+        }
+        if (media.status == MediaResponseDtoStatusEnum.UPLOADING) {
+          final result = await workCoordinator.transfer(() {
+            _throwIfCancelled(cancelToken);
+            return _api.mediaConfirmUpload(
+              confirmUploadDto: ConfirmUploadDto(
+                (builder) => builder.mediaId = upload.mediaId,
+              ),
+              cancelToken: cancelToken,
+            );
+          });
+          media = result.data?.data.media;
+        }
+        if (media == null) {
+          throw const ApiFailure.invalidResponse(
+            diagnosticCode: 'media_confirmation_missing_data',
+          );
+        }
+      } on Object catch (error) {
+        if (cancelToken?.isCancelled == true) rethrow;
+        throw MediaProcessingLookupFailure(
+          upload,
+          error is DioException ? ApiFailure.fromDio(error) : error,
+        );
+      }
+      _validateUploadIdentity(media, upload.mediaId, upload.purpose);
+      if (media.status == MediaResponseDtoStatusEnum.COMPLETED) {
+        return _completedImage(media, upload.purpose);
+      }
+      if (media.status == MediaResponseDtoStatusEnum.FAILED) {
+        throw _mediaProcessingFailure;
+      }
+    }
+    return _waitForCompletedUpload(
+      mediaId: upload.mediaId,
+      purpose: upload.purpose,
+      cancelToken: cancelToken,
+    );
+  }
 
   String? _contentTypeFor(MediaUploadInput input) {
     final declared = input.declaredContentType?.toLowerCase().trim();
@@ -272,6 +358,23 @@ class ApiMediaUploadRepository
       return null;
     }
     return detected;
+  }
+
+  void _validateUploadIdentity(
+    MediaResponseDto media,
+    String mediaId,
+    MediaUploadPurpose purpose,
+  ) {
+    if (media.id != mediaId) {
+      throw const ApiFailure.invalidResponse(
+        diagnosticCode: 'media_confirmation_identity_mismatch',
+      );
+    }
+    if (!_matchesPurpose(media.purpose, purpose)) {
+      throw const ApiFailure.invalidResponse(
+        diagnosticCode: 'media_confirmation_purpose_mismatch',
+      );
+    }
   }
 
   CreateUploadUrlDtoContentTypeEnum _contentTypeEnum(String value) {
@@ -394,7 +497,13 @@ final mediaUploadDioProvider = Provider<Dio>((ref) {
       receiveTimeout: const Duration(seconds: 20),
     ),
   );
-  dio.interceptors.add(NetworkDiagnosticInterceptor());
+  dio.interceptors.addAll([
+    PreviewIdentityInterceptor(
+      ref.watch(previewIdentityVerifierProvider),
+      mediaUpload: true,
+    ),
+    NetworkDiagnosticInterceptor(),
+  ]);
   ref.onDispose(() => dio.close(force: true));
   return dio;
 });
@@ -404,6 +513,7 @@ final mediaUploadRepositoryProvider = Provider<MediaUploadRepository>((ref) {
     ref.watch(wenyouApiProvider).getMediaApi(),
     ref.watch(mediaUploadDioProvider),
     timing: ref.watch(mediaUploadTimingProvider),
+    workCoordinator: ref.watch(mediaUploadWorkCoordinatorProvider),
   );
 });
 
@@ -428,7 +538,10 @@ class RepositoryMediaUploadGateway
   }) {
     final cancelToken = CancelToken();
     onProgress?.call(
-      const MediaUploadProgress(stage: MediaUploadStage.processing),
+      MediaUploadProgress(
+        stage: MediaUploadStage.processing,
+        pendingUpload: upload,
+      ),
     );
     final repository = _repository;
     return _DioMediaUploadOperation(
@@ -509,10 +622,13 @@ class RepositoryMediaUploadGateway
       inputBytes: input.bytes.length,
       operation: () async {
         onProgress?.call(
-          const MediaUploadProgress(stage: MediaUploadStage.preparing),
+          const MediaUploadProgress(stage: MediaUploadStage.queued),
         );
         final normalized = await workCoordinator.prepare(() {
           _throwIfUploadCanceled(cancelToken);
+          onProgress?.call(
+            const MediaUploadProgress(stage: MediaUploadStage.preparing),
+          );
           return normalizer.normalize(input);
         });
         if (cancelToken.isCancelled) {
@@ -521,14 +637,24 @@ class RepositoryMediaUploadGateway
             cause: cancelToken.cancelError,
           );
         }
+        onProgress?.call(
+          const MediaUploadProgress(stage: MediaUploadStage.queued),
+        );
+        final transferred = Completer<void>();
         return workCoordinator.transfer(() {
           _throwIfUploadCanceled(cancelToken);
           return _repository.uploadImage(
             normalized,
             cancelToken: cancelToken,
-            onProgress: onProgress,
+            onProgress: (progress) {
+              if (progress.stage == MediaUploadStage.processing &&
+                  !transferred.isCompleted) {
+                transferred.complete();
+              }
+              onProgress?.call(progress);
+            },
           );
-        });
+        }, releaseWhen: transferred.future);
       },
     );
   }

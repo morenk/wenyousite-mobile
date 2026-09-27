@@ -135,7 +135,11 @@ class MarkdownDeltaCodec {
         if (line.sourceSeparator)
           MarkdownDeltaLineMetadata.sourceSeparatorAttribute: true,
         if (line.paragraphBoundaryAfter) MarkdownParagraphBoundaries.key: 1,
-        if (MarkdownContent.hasWhitespaceGuards(line.source))
+        // 旧兼容源码的转义行可能保留少量原始缩进，重开后仍沿用原
+        // 空白保护；新规范输入已用前置实体，不会命中此来源分支。
+        if (MarkdownContent.hasWhitespaceGuards(line.source) ||
+            (line.source.startsWith(' ') &&
+                MarkdownContent.hasCanonicalLiteralEncoding(line.source)))
           MarkdownDeltaLineMetadata.guardedWhitespaceKey: true,
         if (MarkdownContent.hasLeadingWhitespaceGuard(line.source))
           MarkdownDeltaLineMetadata.guardedLeadingWhitespaceKey: true,
@@ -524,7 +528,12 @@ class MarkdownDeltaCodec {
             lineHasLiteralText || attributes?[literalTextAttribute] == true;
       }
       if (!isLineBreak) break;
-      inline.flush();
+      inline.flush(
+        preserveSourceWhitespace:
+            attributes?[MarkdownDeltaLineMetadata.guardedWhitespaceKey] ==
+                true ||
+            attributes?[literalLineAttribute] == true,
+      );
       final encodedLine = MarkdownDeltaBlockEncoder.encode(
         line.toString(),
         attributes,

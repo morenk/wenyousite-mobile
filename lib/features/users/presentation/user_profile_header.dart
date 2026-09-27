@@ -5,7 +5,6 @@ import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_level_badge.dart';
-import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/users/domain/profile_cover_models.dart';
 
 class UserProfileStatItem {
@@ -41,7 +40,6 @@ class UserProfileHeader extends StatelessWidget {
     this.avatarUrl,
     this.profileCover,
     this.bio,
-    this.metadata,
     this.statuses = const [],
     this.levelProgress,
     this.levelProgressLabel,
@@ -54,7 +52,6 @@ class UserProfileHeader extends StatelessWidget {
   final ProfileCoverModel? profileCover;
   final int level;
   final String? bio;
-  final String? metadata;
   final List<UserProfileStatItem> stats;
   final List<UserProfileStatusItem> statuses;
   final double? levelProgress;
@@ -65,206 +62,132 @@ class UserProfileHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
     final normalizedBio = bio?.trim();
-    return SizedBox(
-      width: double.infinity,
-      child: WenyouPanel(
-        padding: EdgeInsets.zero,
-        clipBehavior: Clip.antiAlias,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _ProfileIdentity(
-              username: username,
-              avatarUrl: avatarUrl,
-              profileCover: profileCover,
-              level: level,
+    final largeText = MediaQuery.textScalerOf(context).scale(16) > 20;
+    final statsRow = UserProfileStats(items: stats);
+    final identity = Wrap(
+      crossAxisAlignment: WrapCrossAlignment.center,
+      spacing: tokens.space8,
+      runSpacing: tokens.space4,
+      children: [
+        Text(username, style: Theme.of(context).textTheme.wenyouListTitle),
+        WenyouLevelBadge(level: level),
+      ],
+    );
+    return Material(
+      color: tokens.panel,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (profileCover != null)
+            AspectRatio(
+              aspectRatio: 2,
+              child: _ProfileCover(cover: profileCover!, username: username),
             ),
-            Padding(
-              padding: EdgeInsets.fromLTRB(
-                tokens.space16,
-                tokens.space8,
-                tokens.space16,
-                tokens.space16,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  if (normalizedBio?.isNotEmpty == true) ...[
-                    Text(
-                      normalizedBio!,
-                      style: Theme.of(
-                        context,
-                      ).textTheme.wenyouCompactBody.copyWith(height: 1.55),
-                    ),
-                  ],
-                  if (metadata?.isNotEmpty == true) ...[
-                    SizedBox(height: tokens.space12),
-                    Row(
-                      children: [
-                        WenyouIcon(
-                          WenyouIconIds.statusCalendar,
-                          size: 17,
-                          color: tokens.mutedText,
-                        ),
-                        SizedBox(width: tokens.space4),
-                        Expanded(
-                          child: Text(
-                            metadata!,
-                            style: Theme.of(context).textTheme.wenyouCaption,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                  if (statuses.isNotEmpty) ...[
-                    SizedBox(height: tokens.space12),
-                    Wrap(
-                      spacing: tokens.space8,
-                      runSpacing: tokens.space8,
-                      children: [
-                        for (final status in statuses)
-                          _ProfileBadge(icon: status.icon, label: status.label),
-                      ],
-                    ),
-                  ],
-                  if (levelProgress != null) ...[
-                    SizedBox(height: tokens.space16),
-                    if (levelProgressLabel != null) ...[
-                      Text(
-                        levelProgressLabel!,
-                        style: Theme.of(context).textTheme.wenyouCaption,
+          Padding(
+            key: profileCover == null
+                ? const Key('profile-identity-without-cover')
+                : null,
+            padding: EdgeInsets.fromLTRB(
+              tokens.space16,
+              profileCover == null ? tokens.space16 : 0,
+              tokens.space16,
+              tokens.space16,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 嵌入封面的部分不再占据正文高度，避免昵称上方留下空位。
+                    Align(
+                      alignment: Alignment.bottomCenter,
+                      widthFactor: 1,
+                      heightFactor: profileCover == null
+                          ? 1
+                          : (_ProfileAvatar.size - tokens.space24) /
+                                _ProfileAvatar.size,
+                      child: _ProfileAvatar(
+                        username: username,
+                        avatarUrl: avatarUrl,
                       ),
-                      SizedBox(height: tokens.space8),
+                    ),
+                    SizedBox(width: tokens.space12),
+                    Expanded(child: largeText ? identity : statsRow),
+                  ],
+                ),
+                if (!largeText) ...[SizedBox(height: tokens.space8), identity],
+                if (largeText) statsRow,
+                if (normalizedBio?.isNotEmpty == true) ...[
+                  SizedBox(height: tokens.space12),
+                  Text(
+                    normalizedBio!,
+                    style: Theme.of(context).textTheme.wenyouCompactBody,
+                  ),
+                ],
+                if (statuses.isNotEmpty) ...[
+                  SizedBox(height: tokens.space8),
+                  Wrap(
+                    spacing: tokens.space8,
+                    runSpacing: tokens.space4,
+                    children: [
+                      for (final status in statuses)
+                        _ProfileBadge(icon: status.icon, label: status.label),
                     ],
-                    Semantics(
-                      label: '等级进度 ${(levelProgress! * 100).round()}%',
-                      child: LinearProgressIndicator(
-                        value: levelProgress,
-                        color: wenyouLevelTier(context, level)?.foreground,
-                      ),
-                    ),
-                  ],
+                  ),
                 ],
-              ),
-            ),
-            const Divider(height: 1),
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: tokens.space8),
-              child: Row(
-                children: [
-                  for (var index = 0; index < stats.length; index++) ...[
-                    Expanded(child: _ProfileStat(item: stats[index])),
-                    if (index < stats.length - 1)
-                      const SizedBox(
-                        height: 48,
-                        child: VerticalDivider(width: 1),
-                      ),
-                  ],
+                if (levelProgress != null) ...[
+                  SizedBox(height: tokens.space8),
+                  _ProfileLevelProgress(
+                    value: levelProgress!,
+                    label: levelProgressLabel ?? '等级进度',
+                  ),
                 ],
-              ),
+                if (actions != null) ...[
+                  SizedBox(height: tokens.space8),
+                  actions!,
+                ],
+              ],
             ),
-            if (actions != null) ...[
-              const Divider(height: 1),
-              Padding(padding: EdgeInsets.all(tokens.space12), child: actions),
-            ],
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 }
 
-class _ProfileIdentity extends StatelessWidget {
-  const _ProfileIdentity({
-    required this.username,
-    required this.avatarUrl,
-    required this.profileCover,
-    required this.level,
-  });
+class _ProfileLevelProgress extends StatelessWidget {
+  const _ProfileLevelProgress({required this.value, required this.label});
 
-  final String username;
-  final String? avatarUrl;
-  final ProfileCoverModel? profileCover;
-  final int level;
+  final double value;
+  final String label;
 
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
-    const avatarSize = 72.0;
-    const avatarOverlap = avatarSize / 2;
-    if (profileCover == null) {
-      return Padding(
-        key: const Key('profile-identity-without-cover'),
-        padding: EdgeInsets.fromLTRB(
-          tokens.space16,
-          tokens.space16,
-          tokens.space16,
-          tokens.space4,
-        ),
-        child: Row(
-          children: [
-            _ProfileAvatar(username: username, avatarUrl: avatarUrl),
-            SizedBox(width: tokens.space12),
-            Expanded(
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      username,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.wenyouListTitle,
-                    ),
-                  ),
-                  SizedBox(width: tokens.space8),
-                  WenyouLevelBadge(level: level),
-                ],
-              ),
-            ),
-          ],
-        ),
-      );
-    }
     return LayoutBuilder(
-      builder: (context, constraints) {
-        final coverHeight = constraints.maxWidth / 2;
-        return SizedBox(
-          height: coverHeight + avatarOverlap + tokens.space12,
-          child: Stack(
-            clipBehavior: Clip.none,
-            children: [
-              Positioned.fill(
-                bottom: avatarOverlap + tokens.space12,
-                child: _ProfileCover(cover: profileCover!, username: username),
-              ),
-              Positioned(
-                left: tokens.space16,
-                top: coverHeight - avatarOverlap,
-                child: _ProfileAvatar(username: username, avatarUrl: avatarUrl),
-              ),
-              Positioned(
-                top: coverHeight + tokens.space8,
-                right: tokens.space16,
-                left: tokens.space16 + avatarSize + tokens.space12,
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        username,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.wenyouListTitle,
-                      ),
-                    ),
-                    SizedBox(width: tokens.space8),
-                    WenyouLevelBadge(level: level),
-                  ],
-                ),
-              ),
-            ],
+      builder: (context, constraints) => Row(
+        children: [
+          Expanded(
+            child: LinearProgressIndicator(
+              value: value,
+              semanticsLabel: '等级进度',
+            ),
           ),
-        );
-      },
+          SizedBox(width: tokens.space8),
+          ConstrainedBox(
+            // 长数值和大字号可换行，同时为进度条保留可见空间。
+            constraints: BoxConstraints(maxWidth: constraints.maxWidth * 2 / 3),
+            child: Text(
+              label,
+              textAlign: TextAlign.end,
+              style: Theme.of(
+                context,
+              ).textTheme.wenyouCaption.copyWith(color: tokens.mutedText),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -308,6 +231,7 @@ class _ProfileCover extends StatelessWidget {
 class _ProfileAvatar extends StatelessWidget {
   const _ProfileAvatar({required this.username, required this.avatarUrl});
 
+  static const double size = 72;
   final String username;
   final String? avatarUrl;
 
@@ -316,8 +240,8 @@ class _ProfileAvatar extends StatelessWidget {
     final tokens = context.wenyouTokens;
     return Container(
       key: ValueKey('profile-avatar-$username'),
-      width: 72,
-      height: 72,
+      width: size,
+      height: size,
       padding: const EdgeInsets.all(3),
       decoration: BoxDecoration(
         color: tokens.panel,
@@ -327,6 +251,19 @@ class _ProfileAvatar extends StatelessWidget {
       child: WenyouAvatar(username: username, avatarUrl: avatarUrl, size: 66),
     );
   }
+}
+
+class UserProfileStats extends StatelessWidget {
+  const UserProfileStats({required this.items, super.key});
+  final List<UserProfileStatItem> items;
+
+  @override
+  Widget build(BuildContext context) => Row(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      for (final item in items) Expanded(child: _ProfileStat(item: item)),
+    ],
+  );
 }
 
 class _ProfileStat extends StatelessWidget {
@@ -345,13 +282,11 @@ class _ProfileStat extends StatelessWidget {
         key: item.key,
         onTap: item.onTap,
         child: ConstrainedBox(
-          constraints: BoxConstraints(
-            minHeight: tokens.minimumTouchTarget + 12,
-          ),
+          constraints: BoxConstraints(minHeight: tokens.minimumTouchTarget),
           child: Padding(
             padding: EdgeInsets.symmetric(
               horizontal: tokens.space4,
-              vertical: tokens.space8,
+              vertical: tokens.space4,
             ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -368,8 +303,7 @@ class _ProfileStat extends StatelessWidget {
                 SizedBox(height: tokens.space4),
                 Text(
                   item.label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.wenyouCaption,
                 ),
               ],

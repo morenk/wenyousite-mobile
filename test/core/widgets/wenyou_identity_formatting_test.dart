@@ -29,7 +29,7 @@ void main() {
     expect(find.byKey(const Key('avatar-initial')), findsOneWidget);
   });
 
-  testWidgets('短时间可见文本同时暴露完整时间 Semantics', (tester) async {
+  testWidgets('短时间可见文本同时暴露完整日期 Semantics', (tester) async {
     final value = DateTime(2026, 8, 19, 9, 5);
     final now = DateTime(2026, 8, 19, 10, 5);
     await tester.pumpWidget(
@@ -46,6 +46,6 @@ void main() {
     );
 
     expect(find.text('1 小时前'), findsOneWidget);
-    expect(find.bySemanticsLabel('发布时间：2026-08-19 09:05'), findsOneWidget);
+    expect(find.bySemanticsLabel('发布时间：2026-08-19'), findsOneWidget);
   });
 }

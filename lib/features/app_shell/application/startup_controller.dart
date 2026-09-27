@@ -24,8 +24,16 @@ class StartupState {
 
   const StartupState.checking() : this._(StartupStatus.checking);
 
-  const StartupState.ready(ContractInfo contract, {MobileUpdateInfo? update})
-    : this._(StartupStatus.ready, contract: contract, update: update);
+  const StartupState.ready(
+    ContractInfo contract, {
+    MobileUpdateInfo? update,
+    bool isRechecking = false,
+  }) : this._(
+         StartupStatus.ready,
+         contract: contract,
+         update: update,
+         isRechecking: isRechecking,
+       );
 
   const StartupState.updateRequired(
     ContractInfo contract,
@@ -125,6 +133,13 @@ class StartupController extends StateNotifier<StartupState> {
     final previous = state;
     _recommendationEpoch += 1;
     _recheckInFlight = true;
+    if (previous.status == StartupStatus.ready && previous.contract != null) {
+      state = StartupState.ready(
+        previous.contract!,
+        update: previous.update,
+        isRechecking: true,
+      );
+    }
     if (previous.status == StartupStatus.updateWaiting &&
         previous.contract != null) {
       state = StartupState.updateWaiting(
@@ -159,6 +174,9 @@ class StartupController extends StateNotifier<StartupState> {
       // 从后台返回时静默检查；短暂断网不能把正在使用的用户踢出应用。
     } finally {
       _recheckInFlight = false;
+      if (state.status == StartupStatus.ready && state.isRechecking) {
+        state = previous;
+      }
     }
   }
 

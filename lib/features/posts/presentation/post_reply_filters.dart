@@ -52,6 +52,7 @@ class PostReplyFilters extends StatelessWidget {
             id: author.userId,
             label: author.username,
             supportingLabel: author.role.label,
+            avatarUrl: author.avatarUrl,
           ),
       ],
       authorsLoading: authorsLoading,

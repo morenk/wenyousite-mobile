@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
+import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 
 const _maximumDiagnosticEntries = 40;
 const _maximumStackLines = 120;
@@ -158,14 +159,18 @@ class _WenyouDebugDiagnosticOverlayState
             child: SafeArea(
               child: Material(
                 color: const Color(0xE6222228),
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(
+                  context.wenyouTokens.radiusCompact,
+                ),
                 child: InkWell(
                   key: const Key('debug-diagnostic-open'),
                   onTap: () {
                     _captureWindowMetrics();
                     setState(() => _isOpen = true);
                   },
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(
+                    context.wenyouTokens.radiusCompact,
+                  ),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 10,
@@ -273,7 +278,9 @@ class _DiagnosticPanel extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: Colors.white,
                     border: Border.all(color: const Color(0xFFD7D7DC)),
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(
+                      context.wenyouTokens.radiusCompact,
+                    ),
                   ),
                   child: AnimatedBuilder(
                     animation: DebugDiagnosticBuffer.instance,

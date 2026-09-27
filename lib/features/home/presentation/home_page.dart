@@ -176,7 +176,9 @@ class _HomePageState extends ConsumerState<HomePage> {
             (context, index) {
               final thread = state.items[index];
               return WenyouContentFrame(
-                top: 12,
+                top: index == 0
+                    ? context.wenyouTokens.space12
+                    : context.wenyouTokens.cardGap,
                 child: HomeThreadCard(
                   key: Key('home-thread-${thread.id}'),
                   thread: thread,
@@ -247,7 +249,11 @@ class _HomeLoadingState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const WenyouListSkeleton(label: '正在加载推荐主题', itemCount: 2);
+    return const WenyouListSkeleton(
+      label: '正在加载推荐主题',
+      itemCount: 2,
+      contentCards: true,
+    );
   }
 }
 
@@ -269,7 +275,7 @@ class _HomeErrorState extends StatelessWidget {
           key: const Key('home-retry'),
           onPressed: onRetry,
           icon: const WenyouIcon(WenyouIconIds.actionRefresh),
-          label: const Text('重新加载'),
+          label: const Text('重试'),
         ),
       ),
     );
@@ -350,11 +356,11 @@ class _HomeQueryFilters extends StatelessWidget {
       top: tokens.space8,
       child: Row(
         children: [
-          Expanded(
+          Flexible(
             child: WenyouDropdownFilter<HomeFeedSort>(
               key: const Key('home-sort-menu'),
               tooltip: '选择主题排序',
-              icon: WenyouIconIds.actionSort,
+              appearance: WenyouDropdownFilterAppearance.quiet,
               options: [
                 for (final value in HomeFeedSort.values)
                   WenyouFilterOption(value: value, label: value.label),
@@ -364,11 +370,11 @@ class _HomeQueryFilters extends StatelessWidget {
             ),
           ),
           SizedBox(width: tokens.space8),
-          Expanded(
+          Flexible(
             child: WenyouDropdownFilter<HomeThreadStatusFilter>(
               key: const Key('home-status-menu'),
               tooltip: '选择主题状态',
-              icon: WenyouIconIds.actionFilter,
+              appearance: WenyouDropdownFilterAppearance.quiet,
               options: [
                 for (final value in HomeThreadStatusFilter.values)
                   WenyouFilterOption(value: value, label: value.label),

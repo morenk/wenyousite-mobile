@@ -8,6 +8,7 @@ import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_pagination.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_widgets.dart';
@@ -63,31 +64,58 @@ class _SearchPageState extends ConsumerState<SearchPage> {
     });
     return Scaffold(
       appBar: AppBar(title: const Text('搜索')),
-      body: RefreshIndicator(
-        onRefresh: state.hasQuery
-            ? () => Future.wait([
-                ref.read(searchControllerProvider.notifier).refreshActive(),
-                ref
-                    .read(threadCategoryCatalogControllerProvider.notifier)
-                    .refresh(),
-              ])
-            : () async {},
-        child: ListView(
-          key: const PageStorageKey('search-results-scroll'),
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: _pagePadding(context),
-          children: [
-            _SearchForm(
-              controller: _queryController,
-              focusNode: _focusNode,
-              onSubmitted: _submit,
+      body: Column(
+        children: [
+          Padding(
+            padding: EdgeInsets.fromLTRB(
+              wenyouHorizontalPagePadding(context),
+              tokens.space8,
+              wenyouHorizontalPagePadding(context),
+              tokens.space8,
             ),
-            SizedBox(height: tokens.space16),
-            _SearchTabs(state: state),
-            SizedBox(height: tokens.space16),
-            if (state.hasQuery) _ActiveSearchResults(state: state),
-          ],
-        ),
+            child: WenyouConstrainedWidth(
+              child: _SearchForm(
+                controller: _queryController,
+                focusNode: _focusNode,
+                onSubmitted: _submit,
+              ),
+            ),
+          ),
+          WenyouConstrainedWidth(child: _SearchTabs(state: state)),
+          Expanded(
+            child: RefreshIndicator(
+              onRefresh: state.hasQuery
+                  ? () => Future.wait([
+                      ref
+                          .read(searchControllerProvider.notifier)
+                          .refreshActive(),
+                      ref
+                          .read(
+                            threadCategoryCatalogControllerProvider.notifier,
+                          )
+                          .refresh(),
+                    ])
+                  : () async {},
+              child: ListView(
+                key: PageStorageKey((
+                  'search-results-scroll',
+                  state.query,
+                  state.activeTab,
+                )),
+                physics: const AlwaysScrollableScrollPhysics(),
+                keyboardDismissBehavior:
+                    ScrollViewKeyboardDismissBehavior.onDrag,
+                padding: _pagePadding(context),
+                children: [
+                  if (state.hasQuery)
+                    WenyouConstrainedWidth(
+                      child: _ActiveSearchResults(state: state),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -332,7 +360,7 @@ class _OverviewGroup extends StatelessWidget {
         ),
         SizedBox(height: tokens.space8),
         for (var index = 0; index < children.length; index++) ...[
-          if (index > 0) SizedBox(height: tokens.space12),
+          if (index > 0) SizedBox(height: tokens.cardGap),
           children[index],
         ],
       ],
@@ -360,38 +388,20 @@ class _MomentSectionBody extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         for (var index = 0; index < state.items.length; index++) ...[
-          if (index > 0) SizedBox(height: tokens.space12),
+          if (index > 0) SizedBox(height: tokens.cardGap),
           _MomentResultCard(item: state.items[index]),
         ],
-        if (state.failure != null) ...[
-          SizedBox(height: tokens.space12),
-          _SearchInlineError(
-            failure: state.failure!,
-            onRetry: () =>
-                ref.read(searchControllerProvider.notifier).loadMoreMoments(),
-          ),
-        ],
-        if (state.hasMore && state.failure == null) ...[
-          SizedBox(height: tokens.space12),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              key: const Key('search-moments-load-more'),
-              onPressed: state.isLoadingMore
-                  ? null
-                  : () => ref
-                        .read(searchControllerProvider.notifier)
-                        .loadMoreMoments(),
-              icon: state.isLoadingMore
-                  ? const SizedBox.square(
-                      dimension: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const WenyouIcon(WenyouIconIds.navigationExpand),
-              label: Text(state.isLoadingMore ? '正在加载' : '加载更多动态'),
-            ),
-          ),
-        ],
+        WenyouPaginationFooter(
+          hasMore: state.hasMore,
+          isLoading: state.isLoadingMore,
+          failure: state.failure,
+          onLoadMore: () =>
+              ref.read(searchControllerProvider.notifier).loadMoreMoments(),
+          showEndLabel: false,
+          loadMoreLabel: '加载更多动态',
+          retryLabel: '重试加载更多',
+          loadMoreKey: const Key('search-moments-load-more'),
+        ),
       ],
     );
   }
@@ -452,7 +462,7 @@ class _SectionBody<T> extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           for (var index = 0; index < state.items.length; index++) ...[
-            if (index > 0) SizedBox(height: tokens.space12),
+            if (index > 0) SizedBox(height: tokens.cardGap),
             itemBuilder(context, state.items[index]),
           ],
         ],
@@ -488,38 +498,20 @@ class _PostSectionBody extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         for (var index = 0; index < state.items.length; index++) ...[
-          if (index > 0) SizedBox(height: tokens.space12),
+          if (index > 0) SizedBox(height: tokens.cardGap),
           _PostResultCard(item: state.items[index]),
         ],
-        if (state.failure != null) ...[
-          SizedBox(height: tokens.space12),
-          _SearchInlineError(
-            failure: state.failure!,
-            onRetry: () =>
-                ref.read(searchControllerProvider.notifier).loadMorePosts(),
-          ),
-        ],
-        if (state.hasMore && state.failure == null) ...[
-          SizedBox(height: tokens.space12),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              key: const Key('search-posts-load-more'),
-              onPressed: state.isLoadingMore
-                  ? null
-                  : () => ref
-                        .read(searchControllerProvider.notifier)
-                        .loadMorePosts(),
-              icon: state.isLoadingMore
-                  ? const SizedBox.square(
-                      dimension: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const WenyouIcon(WenyouIconIds.navigationExpand),
-              label: Text(state.isLoadingMore ? '正在加载' : '加载更多正文'),
-            ),
-          ),
-        ],
+        WenyouPaginationFooter(
+          hasMore: state.hasMore,
+          isLoading: state.isLoadingMore,
+          failure: state.failure,
+          onLoadMore: () =>
+              ref.read(searchControllerProvider.notifier).loadMorePosts(),
+          showEndLabel: false,
+          loadMoreLabel: '加载更多正文',
+          retryLabel: '重试加载更多',
+          loadMoreKey: const Key('search-posts-load-more'),
+        ),
       ],
     );
   }
@@ -562,6 +554,7 @@ class _UserResultCard extends StatelessWidget {
       label: '打开用户 ${item.username}',
       child: WenyouPanel(
         key: Key('search-user-${item.id}'),
+        contentCard: true,
         onTap: () => context.pushNamed(
           'user-profile',
           pathParameters: {'userId': item.id},
@@ -614,6 +607,7 @@ class _PostResultCard extends StatelessWidget {
       label: '打开 ${item.threadTitle} 中的匹配正文',
       child: WenyouPanel(
         key: Key('search-post-${item.id}'),
+        contentCard: true,
         onTap: () => context.push(location),
         padding: EdgeInsets.all(tokens.space16),
         child: Column(
@@ -666,7 +660,11 @@ class _SearchLoadingState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const WenyouListSkeleton(label: '正在搜索', itemCount: 2);
+    return const WenyouListSkeleton(
+      label: '正在搜索',
+      itemCount: 2,
+      contentCards: true,
+    );
   }
 }
 
@@ -690,27 +688,6 @@ class _SearchErrorState extends StatelessWidget {
           icon: const WenyouIcon(WenyouIconIds.actionRefresh),
           label: const Text('重试'),
         ),
-      ),
-    );
-  }
-}
-
-class _SearchInlineError extends StatelessWidget {
-  const _SearchInlineError({required this.failure, required this.onRetry});
-
-  final ApiFailure failure;
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    return WenyouStatusBanner(
-      tone: WenyouStatusTone.error,
-      message: failure.userMessage,
-      detail: wenyouFailureDetail(failure),
-      action: TextButton.icon(
-        onPressed: onRetry,
-        icon: const WenyouIcon(WenyouIconIds.actionRefresh, size: 18),
-        label: const Text('重试加载更多'),
       ),
     );
   }

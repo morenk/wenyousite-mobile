@@ -16,6 +16,10 @@ class _$AdminDashboardPeriodMetricsDto extends AdminDashboardPeriodMetricsDto {
   @override
   final num newPosts;
   @override
+  final num newMoments;
+  @override
+  final num newMomentComments;
+  @override
   final num reportsReceived;
   @override
   final num reportsHandled;
@@ -29,6 +33,8 @@ class _$AdminDashboardPeriodMetricsDto extends AdminDashboardPeriodMetricsDto {
     required this.newUsers,
     required this.publishedThreads,
     required this.newPosts,
+    required this.newMoments,
+    required this.newMomentComments,
     required this.reportsReceived,
     required this.reportsHandled,
   }) : super._();
@@ -49,6 +55,8 @@ class _$AdminDashboardPeriodMetricsDto extends AdminDashboardPeriodMetricsDto {
         newUsers == other.newUsers &&
         publishedThreads == other.publishedThreads &&
         newPosts == other.newPosts &&
+        newMoments == other.newMoments &&
+        newMomentComments == other.newMomentComments &&
         reportsReceived == other.reportsReceived &&
         reportsHandled == other.reportsHandled;
   }
@@ -60,6 +68,8 @@ class _$AdminDashboardPeriodMetricsDto extends AdminDashboardPeriodMetricsDto {
     _$hash = $jc(_$hash, newUsers.hashCode);
     _$hash = $jc(_$hash, publishedThreads.hashCode);
     _$hash = $jc(_$hash, newPosts.hashCode);
+    _$hash = $jc(_$hash, newMoments.hashCode);
+    _$hash = $jc(_$hash, newMomentComments.hashCode);
     _$hash = $jc(_$hash, reportsReceived.hashCode);
     _$hash = $jc(_$hash, reportsHandled.hashCode);
     _$hash = $jf(_$hash);
@@ -73,6 +83,8 @@ class _$AdminDashboardPeriodMetricsDto extends AdminDashboardPeriodMetricsDto {
           ..add('newUsers', newUsers)
           ..add('publishedThreads', publishedThreads)
           ..add('newPosts', newPosts)
+          ..add('newMoments', newMoments)
+          ..add('newMomentComments', newMomentComments)
           ..add('reportsReceived', reportsReceived)
           ..add('reportsHandled', reportsHandled))
         .toString();
@@ -104,6 +116,15 @@ class AdminDashboardPeriodMetricsDtoBuilder
   num? get newPosts => _$this._newPosts;
   set newPosts(num? newPosts) => _$this._newPosts = newPosts;
 
+  num? _newMoments;
+  num? get newMoments => _$this._newMoments;
+  set newMoments(num? newMoments) => _$this._newMoments = newMoments;
+
+  num? _newMomentComments;
+  num? get newMomentComments => _$this._newMomentComments;
+  set newMomentComments(num? newMomentComments) =>
+      _$this._newMomentComments = newMomentComments;
+
   num? _reportsReceived;
   num? get reportsReceived => _$this._reportsReceived;
   set reportsReceived(num? reportsReceived) =>
@@ -125,6 +146,8 @@ class AdminDashboardPeriodMetricsDtoBuilder
       _newUsers = $v.newUsers;
       _publishedThreads = $v.publishedThreads;
       _newPosts = $v.newPosts;
+      _newMoments = $v.newMoments;
+      _newMomentComments = $v.newMomentComments;
       _reportsReceived = $v.reportsReceived;
       _reportsHandled = $v.reportsHandled;
       _$v = null;
@@ -168,6 +191,16 @@ class AdminDashboardPeriodMetricsDtoBuilder
             newPosts,
             r'AdminDashboardPeriodMetricsDto',
             'newPosts',
+          ),
+          newMoments: BuiltValueNullFieldError.checkNotNull(
+            newMoments,
+            r'AdminDashboardPeriodMetricsDto',
+            'newMoments',
+          ),
+          newMomentComments: BuiltValueNullFieldError.checkNotNull(
+            newMomentComments,
+            r'AdminDashboardPeriodMetricsDto',
+            'newMomentComments',
           ),
           reportsReceived: BuiltValueNullFieldError.checkNotNull(
             reportsReceived,

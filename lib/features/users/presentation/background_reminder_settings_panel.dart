@@ -3,13 +3,17 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/application/background_execution.dart';
 import 'package:wenyousite_mobile/core/application/background_online_reminders.dart';
 import 'package:wenyousite_mobile/core/application/background_reminder_preference.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_settings_body.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 
 class BackgroundReminderSettingsPanel extends ConsumerWidget {
-  const BackgroundReminderSettingsPanel({super.key});
+  const BackgroundReminderSettingsPanel({this.embedded = false, super.key});
+
+  final bool embedded;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -24,57 +28,66 @@ class BackgroundReminderSettingsPanel extends ConsumerWidget {
             ? online.failureMessage ??
                   (online.permissionDenied ? '消息通知未开启。' : null)
             : null);
-    return WenyouPanel(
-      padding: EdgeInsets.zero,
-      child: Column(
-        children: [
-          SwitchListTile(
-            key: const Key('background-reminder-toggle'),
-            title: const Text('后台消息提醒'),
-            subtitle: const Text('后台常驻提醒，可能增加耗电；划掉应用后停止。'),
-            value: preference.enabled,
-            onChanged: preference.isSaving
+    final content = Column(
+      children: [
+        WenyouSettingsToggle(
+          toggleKey: const Key('background-reminder-toggle'),
+          title: '后台消息提醒',
+          icon: WenyouIconIds.statusInfo,
+          help: '后台常驻提醒，可能增加耗电；划掉应用后停止。',
+          showHelpButton: false,
+          value: preference.enabled,
+          onChanged: preference.isSaving
+              ? null
+              : (enabled) => unawaited(controller.select(enabled)),
+        ),
+        if (preference.failureMessage != null)
+          WenyouSettingsFailure(
+            key: const Key('background-reminder-failure'),
+            message: preference.failureMessage!,
+            retryKey: const Key('background-reminder-retry'),
+            onRetry: preference.isSaving
                 ? null
-                : (enabled) => unawaited(controller.select(enabled)),
+                : preference.failedValue != null
+                ? controller.retrySave
+                : controller.retryRead,
+          )
+        else if (problem != null)
+          WenyouStatusBanner(
+            message: problem,
+            tone: online.failureMessage != null
+                ? WenyouStatusTone.error
+                : WenyouStatusTone.neutral,
           ),
-          if (problem != null)
-            ListTile(
-              title: Text(problem),
-              trailing: preference.readFailed
-                  ? TextButton(
-                      onPressed: preference.isSaving
-                          ? null
-                          : controller.retryRead,
-                      child: const Text('重试'),
-                    )
-                  : null,
-            ),
-          if (online.permissionDenied)
-            ListTile(
-              title: const Text('允许消息通知'),
-              subtitle: const Text('也可在系统设置中开启。'),
-              trailing: TextButton(
-                onPressed: online.isLoading
-                    ? null
-                    : () => unawaited(
-                        ref
-                            .read(backgroundOnlineControllerProvider.notifier)
-                            .requestPermissionFromUser(),
-                      ),
-                child: const Text('申请权限'),
-              ),
-            ),
-          const Divider(height: 1),
+        if (online.permissionDenied)
           ListTile(
-            key: const Key('background-reminder-system-settings'),
-            title: const Text('系统消息通知设置'),
-            subtitle: const Text('管理消息弹窗'),
-            trailing: const WenyouIcon(WenyouIconIds.navigationNext),
-            onTap: () => unawaited(_openSettings(context, execution)),
+            title: const Text('允许消息通知'),
+            trailing: TextButton(
+              onPressed: online.isLoading
+                  ? null
+                  : () => unawaited(
+                      ref
+                          .read(backgroundOnlineControllerProvider.notifier)
+                          .requestPermissionFromUser(),
+                    ),
+              child: const Text('申请权限'),
+            ),
           ),
-        ],
-      ),
+        Divider(
+          height: 1,
+          indent: context.wenyouTokens.space16,
+          endIndent: context.wenyouTokens.space16,
+        ),
+        WenyouSettingsLink(
+          key: const Key('background-reminder-system-settings'),
+          icon: WenyouIconIds.actionSettings,
+          title: '系统消息通知设置',
+          onTap: () => unawaited(_openSettings(context, execution)),
+        ),
+      ],
     );
+    if (embedded) return content;
+    return WenyouPanel(padding: EdgeInsets.zero, child: content);
   }
 
   Future<void> _openSettings(

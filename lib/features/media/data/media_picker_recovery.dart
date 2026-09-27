@@ -20,9 +20,11 @@ Future<RecoveredMediaSelectionResult> recoverLostEditorMediaSelection({
   }
   try {
     final purpose = await contextStore.read();
+    // 其他环境的系统 picker 暂存不能被当前环境消费。
+    if (purpose == null) return const RecoveredMediaSelectionResult();
     final response = await (retrieve ?? ImagePicker().retrieveLostData)();
     await contextStore.clear();
-    if (response.isEmpty || purpose == null) {
+    if (response.isEmpty) {
       return const RecoveredMediaSelectionResult();
     }
     final files =

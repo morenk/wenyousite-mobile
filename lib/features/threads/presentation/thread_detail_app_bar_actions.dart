@@ -17,7 +17,6 @@ List<Widget> buildThreadDetailAppBarActions({
   required String threadId,
   required ThreadDetailState state,
   required VoidCallback onSearch,
-  Widget? quickScrollAction,
   required ValueChanged<ThreadLatestPostModel> onLatestTarget,
   required ValueChanged<ThreadDetailAppBarAction> onSelected,
 }) {
@@ -35,7 +34,6 @@ List<Widget> buildThreadDetailAppBarActions({
       available: (detail?.postCount ?? 0) > 0 || state.floors.isNotEmpty,
       onTarget: onLatestTarget,
     ),
-    ?quickScrollAction,
     if (detail != null &&
         (!detail.isCurrentUserOwner || detail.canManageThread))
       WenyouAnchoredActionBubble<ThreadDetailAppBarAction>(

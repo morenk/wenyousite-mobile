@@ -58,7 +58,7 @@ void registerDirectConversationPageScrollingInputCases() {
       find.byKey(const Key('direct-message-pending-local-image')),
       findsOneWidget,
     );
-    expect(find.bySemanticsLabel('消息发送中'), findsOneWidget);
+    expect(find.bySemanticsLabel(RegExp('图片消息发送中')), findsOneWidget);
     expect(
       find.byKey(const Key('direct-message-composer-upload-failure')),
       findsNothing,

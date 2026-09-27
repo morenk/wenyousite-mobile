@@ -76,6 +76,12 @@ void main() {
           await tester.pumpAndSettle();
           expect(find.byKey(const ValueKey('row-0')), findsOneWidget);
           expect(find.byKey(const ValueKey('row-999')), findsNothing);
+          if (replies) {
+            expect(
+              find.bySemanticsLabel(RegExp('子贴，发布时间：2026-09-07')),
+              findsWidgets,
+            );
+          }
           if (!replies) {
             expect(find.byType(ThreadFeedCard).evaluate().length, lessThan(15));
           }

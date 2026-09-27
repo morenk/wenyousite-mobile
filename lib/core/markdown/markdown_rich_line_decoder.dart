@@ -5,6 +5,7 @@ import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_editable_block_syntax.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_inline_boundary.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_inline_code_source.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_inline_compatibility_syntax.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_reference.dart';
 
 class MarkdownRichLine {
@@ -129,7 +130,10 @@ class MarkdownRichLineDecoder {
 
     final spans = <MarkdownRichSpan>[];
     final nodes = md.Document(
-      inlineSyntaxes: [MarkdownInlineCodeSource.syntax()],
+      inlineSyntaxes: [
+        MarkdownInlineCodeSource.syntax(),
+        ...MarkdownInlineCompatibilitySyntax.create(),
+      ],
       extensionSet: md.ExtensionSet.gitHubFlavored,
       encodeHtml: false,
     ).parseInline(inlineSource);
@@ -140,8 +144,7 @@ class MarkdownRichLineDecoder {
     );
   }
 
-  /// Keeps reader semantics when valid Markdown nesting cannot be represented
-  /// losslessly by the editor's mutually exclusive inline attributes.
+  /// 将阅读中接受的块写法映射为可编辑结构，保留组合行内属性。
   static MarkdownRichLine? decodeEditable(String source) {
     return _editable(decode(source));
   }
@@ -164,11 +167,6 @@ class MarkdownRichLineDecoder {
       final attributes = Map<String, dynamic>.from(
         span.attributes ?? const <String, dynamic>{},
       );
-      if (attributes['code'] == true) {
-        attributes.removeWhere(
-          (key, _) => const {'bold', 'italic', 'strike', 'link'}.contains(key),
-        );
-      }
       _appendEditableText(spans, span.text, attributes);
     }
     return MarkdownRichLine(

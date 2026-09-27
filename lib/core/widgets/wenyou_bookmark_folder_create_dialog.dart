@@ -56,7 +56,7 @@ Future<BookmarkFolderItem?> showWenyouBookmarkFolderCreateDialog({
                   validator: (value) {
                     final normalized = value?.trim() ?? '';
                     if (normalized.isEmpty) return '请输入收藏夹名称。';
-                    if (normalized.length > 24) return '名称不能超过 24 个字符。';
+                    if (normalized.runes.length > 24) return '名称不能超过 24 个字符。';
                     return null;
                   },
                 ),

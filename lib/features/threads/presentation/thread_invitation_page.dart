@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
@@ -113,9 +112,7 @@ class _InvitationReady extends ConsumerWidget {
                   contentPadding: EdgeInsets.zero,
                   leading: WenyouAvatar(username: preview.ownerName, size: 40),
                   title: Text('楼主 ${preview.ownerName}'),
-                  subtitle: Text(
-                    '${DateFormat('yyyy-MM-dd').format(preview.createdAt.toLocal())} 创建',
-                  ),
+                  subtitle: Text('${formatWenyouDate(preview.createdAt)} 创建'),
                   trailing: const WenyouIcon(WenyouIconIds.navigationNext),
                   onTap: () =>
                       context.push(AppRouteLocations.user(preview.ownerId)),
@@ -184,7 +181,7 @@ class _InviteFact extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         color: tokens.softPanel,
-        borderRadius: BorderRadius.circular(tokens.radius12),
+        borderRadius: BorderRadius.circular(tokens.radiusCompact),
         border: Border.all(color: tokens.border),
       ),
       child: Padding(
@@ -243,7 +240,7 @@ class _InvitationFailure extends StatelessWidget {
                   key: const Key('thread-invite-load-retry'),
                   onPressed: onRetry,
                   icon: const WenyouIcon(WenyouIconIds.actionRefresh),
-                  label: const Text('重新加载'),
+                  label: const Text('重试'),
                 ),
         ),
       ),

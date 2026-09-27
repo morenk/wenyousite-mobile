@@ -42,7 +42,11 @@ class MomentDetailInteractionBar extends StatelessWidget {
               selected: card.viewerLiked,
               kind: WenyouInteractionKind.like,
               pending: pendingAction == MomentInteractionAction.like,
-              onPressed: pendingAction == null ? onLike : null,
+              onPressed:
+                  pendingAction == null &&
+                      (card.canInteract || card.viewerLiked)
+                  ? onLike
+                  : null,
             ),
           ),
           Expanded(
@@ -68,7 +72,7 @@ class MomentDetailInteractionBar extends StatelessWidget {
               icon: WenyouIconIds.metricComments,
               value: formatWenyouCompactCount(card.commentCount),
               semanticLabel: '发表评论，${card.commentCount} 条评论',
-              onPressed: onComment,
+              onPressed: card.canInteract ? onComment : null,
             ),
           ),
           Expanded(
@@ -81,7 +85,7 @@ class MomentDetailInteractionBar extends StatelessWidget {
               semanticLabel: onTip == null
                   ? '累计获得 $exactTipTotal 升加油'
                   : '为${card.author.username}加油，累计 $exactTipTotal 升',
-              onPressed: onTip,
+              onPressed: card.canInteract ? onTip : null,
             ),
           ),
         ],
@@ -177,10 +181,10 @@ class _DetailAction extends StatelessWidget {
       excludeSemantics: true,
       child: Material(
         color: Colors.transparent,
-        borderRadius: BorderRadius.circular(tokens.radius12),
+        borderRadius: BorderRadius.circular(tokens.radiusControl),
         child: InkWell(
           onTap: onPressed,
-          borderRadius: BorderRadius.circular(tokens.radius12),
+          borderRadius: BorderRadius.circular(tokens.radiusControl),
           overlayColor: WidgetStateProperty.resolveWith((states) {
             if (states.contains(WidgetState.pressed)) {
               return tokens.mutedText.withValues(

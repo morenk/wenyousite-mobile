@@ -26,11 +26,22 @@ void main() {
     );
     expect(
       formatWenyouRelativeTime(DateTime(2026, 8, 1, 9, 30), now: now),
-      '08-01 09:30',
+      '08-01',
     );
     expect(
       formatWenyouRelativeTime(DateTime(2025, 12, 31), now: now),
-      '2025-12-31 00:00',
+      '2025-12-31',
+    );
+    expect(
+      formatWenyouRelativeTime(
+        now.subtract(const Duration(hours: 72)),
+        now: now,
+      ),
+      '08-09',
+    );
+    expect(
+      formatWenyouRelativeTime(now.add(const Duration(hours: 1)), now: now),
+      '08-12',
     );
   });
 }

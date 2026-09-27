@@ -151,6 +151,7 @@ class MomentFeedController extends StateNotifier<MomentFeedState> {
     if (state.pendingMomentActions.containsKey(card.id)) return false;
     final before = state.items.where((item) => item.id == card.id).firstOrNull;
     if (before == null) return false;
+    if (!bookmark && !before.viewerLiked && !before.canInteract) return false;
     if (bookmark &&
         !before.viewerBookmarked &&
         (!before.canInteract || folderId == null || folderId.trim().isEmpty)) {
@@ -570,6 +571,7 @@ class MomentDetailController extends StateNotifier<MomentDetailState> {
     final detail = state.detail;
     if (detail == null || state.pendingMomentAction != null) return false;
     final card = detail.card;
+    if (!bookmark && !card.viewerLiked && !card.canInteract) return false;
     if (bookmark &&
         !card.viewerBookmarked &&
         (!card.canInteract || folderId == null || folderId.trim().isEmpty)) {
@@ -624,6 +626,12 @@ class MomentDetailController extends StateNotifier<MomentDetailState> {
 
   Future<MomentComment?> sendComment(MomentCommentInput input) async {
     if (state.isSendingComment) return null;
+    if (state.detail?.card.canInteract != true) {
+      state = state.copyWith(
+        transientFailure: const ApiFailure(userMessage: '这条动态暂时无法评论。'),
+      );
+      return null;
+    }
     MomentCommentInput normalized;
     try {
       normalized = input.normalized();

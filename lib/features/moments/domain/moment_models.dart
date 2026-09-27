@@ -365,10 +365,10 @@ class MomentDraftInput {
   MomentDraftInput normalized() {
     final safeTitle = title.trim();
     final safeContent = content.trim();
-    if (safeTitle.length < 2 || safeTitle.length > 40) {
+    if (safeTitle.runes.length < 2 || safeTitle.runes.length > 40) {
       throw const DomainValidationException('动态标题需要 2～40 个字符。');
     }
-    if (safeContent.length > 1000) {
+    if (safeContent.runes.length > 1000) {
       throw const DomainValidationException('动态正文不能超过 1000 个字符。');
     }
     final ids = mediaIds.map((id) => id.trim()).toList(growable: false);
@@ -409,7 +409,7 @@ class MomentCommentInput {
     final media = mediaId?.trim();
     final sticker = stickerAssetId?.trim();
     final replyTo = replyToCommentId?.trim();
-    if ((text?.length ?? 0) > 500) {
+    if ((text?.runes.length ?? 0) > 500) {
       throw const DomainValidationException('评论不能超过 500 个字符。');
     }
     if (media != null &&

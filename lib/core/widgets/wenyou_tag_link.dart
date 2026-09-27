@@ -84,7 +84,7 @@ class WenyouTagLink extends StatelessWidget {
           ),
           shape: WidgetStatePropertyAll(
             RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(tokens.radius12),
+              borderRadius: BorderRadius.circular(tokens.radiusControl),
             ),
           ),
           tapTargetSize: MaterialTapTargetSize.shrinkWrap,

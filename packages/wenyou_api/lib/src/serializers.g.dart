@@ -33,8 +33,17 @@ Serializers _$serializers =
           ..add(AdminCapabilityResponseDtoRoleEnum.serializer)
           ..add(AdminChallengeResponseDto.serializer)
           ..add(AdminChallengeVerifyDto.serializer)
+          ..add(AdminContentDetail200Response.serializer)
+          ..add(AdminContentDetailResponseDto.serializer)
+          ..add(AdminContentDetailResponseDtoTypeEnum.serializer)
+          ..add(AdminContentList200Response.serializer)
+          ..add(AdminContentMediaDto.serializer)
           ..add(AdminContentModerationResponseDto.serializer)
           ..add(AdminContentModerationResponseDtoTargetTypeEnum.serializer)
+          ..add(AdminContentResponseDto.serializer)
+          ..add(AdminContentResponseDtoTypeEnum.serializer)
+          ..add(AdminContentTagDto.serializer)
+          ..add(AdminContentUpdateTaxonomy200Response.serializer)
           ..add(AdminDashboardActivityMetricsDto.serializer)
           ..add(AdminDashboardCategoryDistributionItemDto.serializer)
           ..add(AdminDashboardDistributionItemDto.serializer)
@@ -56,6 +65,15 @@ Serializers _$serializers =
           ..add(AdminInviteAcceptanceAccept201Response.serializer)
           ..add(AdminInviteCreatedResponseDto.serializer)
           ..add(AdminLoginChallengeDto.serializer)
+          ..add(AdminLoginVerifyDto.serializer)
+          ..add(AdminMobileReleaseDto.serializer)
+          ..add(AdminMobileReleaseDtoPlatformEnum.serializer)
+          ..add(AdminMobileReleaseDtoStatusEnum.serializer)
+          ..add(AdminMobileReleasesConfirm201Response.serializer)
+          ..add(AdminMobileReleasesCreate201Response.serializer)
+          ..add(AdminMobileReleasesDetail200Response.serializer)
+          ..add(AdminMobileReleasesList200Response.serializer)
+          ..add(AdminMobileReleasesUpdate200Response.serializer)
           ..add(AdminModerationAppealsList200Response.serializer)
           ..add(AdminModerationAppealsResolve201Response.serializer)
           ..add(AdminModerationGetUser200Response.serializer)
@@ -79,6 +97,7 @@ Serializers _$serializers =
           ..add(AdminReportsResolve200Response.serializer)
           ..add(AdminSearchUsers200Response.serializer)
           ..add(AdminSendSystemNotification201Response.serializer)
+          ..add(AdminSessionInfoDto.serializer)
           ..add(AdminSessionResponseDto.serializer)
           ..add(AdminStepUpResponseDto.serializer)
           ..add(AdminSystemNotificationHistoryItemDto.serializer)
@@ -89,6 +108,10 @@ Serializers _$serializers =
           ..add(AdminTaxonomyListTags200Response.serializer)
           ..add(AdminTaxonomyUpdateCategory200Response.serializer)
           ..add(AdminTaxonomyUpdateTag200Response.serializer)
+          ..add(AdminUserContentCountsDto.serializer)
+          ..add(AdminUserDetailResponseDto.serializer)
+          ..add(AdminUserDetailResponseDtoModerationStatusEnum.serializer)
+          ..add(AdminUserDetailResponseDtoRoleEnum.serializer)
           ..add(AdminUserModerationResponseDto.serializer)
           ..add(AdminUserModerationResponseDtoModerationStatusEnum.serializer)
           ..add(AdminUserModerationResponseDtoRoleEnum.serializer)
@@ -124,10 +147,12 @@ Serializers _$serializers =
           ..add(BookmarkThreadResponseDtoVisibilityEnum.serializer)
           ..add(BookmarksCreate201Response.serializer)
           ..add(BookmarksCreateFolder201Response.serializer)
+          ..add(BookmarksDeleteFolder200Response.serializer)
           ..add(BookmarksFindAll200Response.serializer)
           ..add(BookmarksFindFolders200Response.serializer)
           ..add(BookmarksMove200Response.serializer)
           ..add(BookmarksRemove200Response.serializer)
+          ..add(BookmarksRenameFolder200Response.serializer)
           ..add(BusinessErrorCode.serializer)
           ..add(ChangeEmailRequestDto.serializer)
           ..add(ChangeEmailVerifyDto.serializer)
@@ -142,6 +167,8 @@ Serializers _$serializers =
           ..add(CreateDirectMessageDto.serializer)
           ..add(CreateDraftDto.serializer)
           ..add(CreateManagedTagDto.serializer)
+          ..add(CreateMobileReleaseDto.serializer)
+          ..add(CreateMobileReleaseDtoPlatformEnum.serializer)
           ..add(CreateModerationAppealDto.serializer)
           ..add(CreateMomentBookmarkDto.serializer)
           ..add(CreateMomentBookmarkFolderDto.serializer)
@@ -170,6 +197,7 @@ Serializers _$serializers =
           ..add(CurrentUserResponseDtoRoleEnum.serializer)
           ..add(DailyCheckInResponseDto.serializer)
           ..add(DailyCheckInResponseDtoRewardAmountEnum.serializer)
+          ..add(DeleteBookmarkFolderResponseDto.serializer)
           ..add(DeleteDraftResponseDto.serializer)
           ..add(DiceRollResponseDto.serializer)
           ..add(DirectConversationLookupResponseDto.serializer)
@@ -222,6 +250,9 @@ Serializers _$serializers =
           ..add(FloorResponseDto.serializer)
           ..add(FloorResponseDtoKindEnum.serializer)
           ..add(ForgotPasswordDto.serializer)
+          ..add(GalleryImageDto.serializer)
+          ..add(GalleryList200Response.serializer)
+          ..add(GalleryPageDto.serializer)
           ..add(HandleDirectRequestDto.serializer)
           ..add(HandleDirectRequestDtoActionEnum.serializer)
           ..add(HealthCheck200Response.serializer)
@@ -268,6 +299,10 @@ Serializers _$serializers =
           ..add(MobileDeviceResponseDtoPlatformEnum.serializer)
           ..add(MobileDeviceUnregister200Response.serializer)
           ..add(MobilePlatformCompatibilityDto.serializer)
+          ..add(MobileReleaseRevisionDto.serializer)
+          ..add(MobileReleaseSnapshotDto.serializer)
+          ..add(MobileReleasesDetail200Response.serializer)
+          ..add(MobileReleasesList200Response.serializer)
           ..add(ModerateContentDto.serializer)
           ..add(ModerationAppealAppellantResponseDto.serializer)
           ..add(ModerationAppealDecisionResponseDto.serializer)
@@ -314,12 +349,14 @@ Serializers _$serializers =
           ..add(MomentsCreate201Response.serializer)
           ..add(MomentsCreateBookmarkFolder201Response.serializer)
           ..add(MomentsCreateComment201Response.serializer)
+          ..add(MomentsDeleteBookmarkFolder200Response.serializer)
           ..add(MomentsDetail200Response.serializer)
           ..add(MomentsLike201Response.serializer)
           ..add(MomentsList200Response.serializer)
           ..add(MomentsMoveBookmark200Response.serializer)
           ..add(MomentsRemove200Response.serializer)
           ..add(MomentsRemoveComment200Response.serializer)
+          ..add(MomentsRenameBookmarkFolder200Response.serializer)
           ..add(MomentsReplies200Response.serializer)
           ..add(MomentsUnbookmark200Response.serializer)
           ..add(MomentsUnlike200Response.serializer)
@@ -389,6 +426,8 @@ Serializers _$serializers =
           ..add(ProfileCoverResponseDto.serializer)
           ..add(ProfileCoverVariantResponseDto.serializer)
           ..add(ProgressionResponseDto.serializer)
+          ..add(PublicMobileReleaseDto.serializer)
+          ..add(PublicMobileReleaseDtoPlatformEnum.serializer)
           ..add(PublicUserResponseDto.serializer)
           ..add(PublicUserResponseDtoAccountStatusEnum.serializer)
           ..add(PublicUserResponseDtoRoleEnum.serializer)
@@ -400,6 +439,8 @@ Serializers _$serializers =
           ..add(RegisterCodeResponseDto.serializer)
           ..add(RegisterMobileDeviceDto.serializer)
           ..add(RegisterMobileDeviceDtoPlatformEnum.serializer)
+          ..add(RenameBookmarkFolderDto.serializer)
+          ..add(RenameMomentBookmarkFolderDto.serializer)
           ..add(ReorderStickersDto.serializer)
           ..add(ReorderSubthreadsDto.serializer)
           ..add(ReorderedSubthreadResponseDto.serializer)
@@ -547,8 +588,10 @@ Serializers _$serializers =
           ..add(UnreadNotificationCountResponseDto.serializer)
           ..add(UpdateAdminRoleDto.serializer)
           ..add(UpdateAdminRoleDtoRoleEnum.serializer)
+          ..add(UpdateContentTaxonomyDto.serializer)
           ..add(UpdateDraftDto.serializer)
           ..add(UpdateManagedTagDto.serializer)
+          ..add(UpdateMobileReleaseDto.serializer)
           ..add(UpdateMomentDto.serializer)
           ..add(UpdatePostDto.serializer)
           ..add(UpdateSiteSettingsDto.serializer)
@@ -578,6 +621,7 @@ Serializers _$serializers =
           ..add(UsersFollowFollow200Response.serializer)
           ..add(UsersFollowFollowers200Response.serializer)
           ..add(UsersFollowFollowing200Response.serializer)
+          ..add(UsersFollowRemoveFollower200Response.serializer)
           ..add(UsersFollowUnblock200Response.serializer)
           ..add(UsersFollowUnfollow200Response.serializer)
           ..add(UsersFollowUserFollowers200Response.serializer)
@@ -605,6 +649,40 @@ Serializers _$serializers =
           ..add(WalletTransactionResponseDtoTypeEnum.serializer)
           ..add(WalletTransactionTargetResponseDto.serializer)
           ..add(WalletTransactionTargetResponseDtoTypeEnum.serializer)
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [
+              const FullType(AdminAuditLogResponseDto),
+            ]),
+            () => ListBuilder<AdminAuditLogResponseDto>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [
+              const FullType(AdminContentResponseDto),
+            ]),
+            () => ListBuilder<AdminContentResponseDto>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [
+              const FullType(AdminContentTagDto),
+            ]),
+            () => ListBuilder<AdminContentTagDto>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [
+              const FullType(AdminContentTagDto),
+            ]),
+            () => ListBuilder<AdminContentTagDto>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(String)]),
+            () => ListBuilder<String>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [
+              const FullType(AdminContentMediaDto),
+            ]),
+            () => ListBuilder<AdminContentMediaDto>(),
+          )
           ..addBuilderFactory(
             const FullType(BuiltList, const [
               const FullType(AdminAuditLogResponseDto),
@@ -652,6 +730,12 @@ Serializers _$serializers =
               const FullType(AdminHiddenContentResponseDto),
             ]),
             () => ListBuilder<AdminHiddenContentResponseDto>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [
+              const FullType(AdminMobileReleaseDto),
+            ]),
+            () => ListBuilder<AdminMobileReleaseDto>(),
           )
           ..addBuilderFactory(
             const FullType(BuiltList, const [
@@ -768,6 +852,10 @@ Serializers _$serializers =
           ..addBuilderFactory(
             const FullType(BuiltList, const [const FullType(FloorResponseDto)]),
             () => ListBuilder<FloorResponseDto>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(GalleryImageDto)]),
+            () => ListBuilder<GalleryImageDto>(),
           )
           ..addBuilderFactory(
             const FullType(BuiltList, const [
@@ -991,6 +1079,12 @@ Serializers _$serializers =
           )
           ..addBuilderFactory(
             const FullType(BuiltList, const [
+              const FullType(PublicMobileReleaseDto),
+            ]),
+            () => ListBuilder<PublicMobileReleaseDto>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [
               const FullType(RecentReplyResponseDto),
             ]),
             () => ListBuilder<RecentReplyResponseDto>(),
@@ -1052,6 +1146,30 @@ Serializers _$serializers =
               const FullType(SessionResponseDto),
             ]),
             () => ListBuilder<SessionResponseDto>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(String)]),
+            () => ListBuilder<String>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(String)]),
+            () => ListBuilder<String>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(String)]),
+            () => ListBuilder<String>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(String)]),
+            () => ListBuilder<String>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(String)]),
+            () => ListBuilder<String>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(String)]),
+            () => ListBuilder<String>(),
           )
           ..addBuilderFactory(
             const FullType(BuiltList, const [const FullType(String)]),
@@ -1320,13 +1438,6 @@ Serializers _$serializers =
               ]),
             ]),
             () => MapBuilder<String, BuiltMap<String, JsonObject?>>(),
-          )
-          ..addBuilderFactory(
-            const FullType(BuiltMap, const [
-              const FullType(String),
-              const FullType.nullable(JsonObject),
-            ]),
-            () => MapBuilder<String, JsonObject?>(),
           )
           ..addBuilderFactory(
             const FullType(BuiltMap, const [

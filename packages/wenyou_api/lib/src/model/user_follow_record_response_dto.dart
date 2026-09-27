@@ -18,6 +18,8 @@ part 'user_follow_record_response_dto.g.dart';
 /// * [createdAt]
 /// * [following]
 /// * [follower]
+/// * [viewerIsFollowing] - 仅本人列表返回：当前查看者是否关注该行用户；他人列表及匿名请求省略。
+/// * [viewerIsFollowedBy] - 仅本人列表返回：该行用户是否关注当前查看者；他人列表及匿名请求省略。
 @BuiltValue()
 abstract class UserFollowRecordResponseDto implements Built<UserFollowRecordResponseDto, UserFollowRecordResponseDtoBuilder> {
   @BuiltValueField(wireName: r'id')
@@ -37,6 +39,14 @@ abstract class UserFollowRecordResponseDto implements Built<UserFollowRecordResp
 
   @BuiltValueField(wireName: r'follower')
   PostAuthorResponseDto? get follower;
+
+  /// 仅本人列表返回：当前查看者是否关注该行用户；他人列表及匿名请求省略。
+  @BuiltValueField(wireName: r'viewerIsFollowing')
+  bool? get viewerIsFollowing;
+
+  /// 仅本人列表返回：该行用户是否关注当前查看者；他人列表及匿名请求省略。
+  @BuiltValueField(wireName: r'viewerIsFollowedBy')
+  bool? get viewerIsFollowedBy;
 
   UserFollowRecordResponseDto._();
 
@@ -93,6 +103,20 @@ class _$UserFollowRecordResponseDtoSerializer implements PrimitiveSerializer<Use
       yield serializers.serialize(
         object.follower,
         specifiedType: const FullType(PostAuthorResponseDto),
+      );
+    }
+    if (object.viewerIsFollowing != null) {
+      yield r'viewerIsFollowing';
+      yield serializers.serialize(
+        object.viewerIsFollowing,
+        specifiedType: const FullType(bool),
+      );
+    }
+    if (object.viewerIsFollowedBy != null) {
+      yield r'viewerIsFollowedBy';
+      yield serializers.serialize(
+        object.viewerIsFollowedBy,
+        specifiedType: const FullType(bool),
       );
     }
   }
@@ -159,6 +183,20 @@ class _$UserFollowRecordResponseDtoSerializer implements PrimitiveSerializer<Use
             specifiedType: const FullType(PostAuthorResponseDto),
           ) as PostAuthorResponseDto;
           result.follower.replace(valueDes);
+          break;
+        case r'viewerIsFollowing':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(bool),
+          ) as bool;
+          result.viewerIsFollowing = valueDes;
+          break;
+        case r'viewerIsFollowedBy':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(bool),
+          ) as bool;
+          result.viewerIsFollowedBy = valueDes;
           break;
         default:
           unhandled.add(key);

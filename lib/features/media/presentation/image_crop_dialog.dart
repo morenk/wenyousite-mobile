@@ -5,6 +5,7 @@ import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_async_button.dart';
 import 'package:wenyousite_mobile/features/media/application/image_crop_ports.dart';
 import 'package:wenyousite_mobile/features/media/application/profile_cover_image_ports.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
@@ -387,16 +388,13 @@ class ImageCropDialogFrame extends StatelessWidget {
                       child: const Text('取消'),
                     ),
                     SizedBox(width: tokens.space8),
-                    FilledButton.icon(
+                    WenyouAsyncButton(
                       key: const Key('image-crop-confirm'),
+                      label: '确认取景',
+                      isLoading: processing,
                       onPressed: processing ? null : onSave,
-                      icon: processing
-                          ? const SizedBox.square(
-                              dimension: 16,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const WenyouIcon(WenyouIconIds.actionConfirm),
-                      label: Text(processing ? '正在生成…' : '确认取景'),
+                      loadingLabel: '正在生成…',
+                      icon: WenyouIconIds.actionConfirm,
                     ),
                   ],
                 ),

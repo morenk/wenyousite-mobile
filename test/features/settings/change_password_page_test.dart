@@ -101,7 +101,8 @@ void main() {
       await _pumpPage(tester, _FakeRepository());
 
       expect(tester.takeException(), isNull);
-      expect(find.text('设置新密码'), findsOneWidget);
+      expect(find.text('设置新密码'), findsNothing);
+      expect(find.text('修改成功后，当前账号会在所有设备上退出。'), findsOneWidget);
     });
   }
 }

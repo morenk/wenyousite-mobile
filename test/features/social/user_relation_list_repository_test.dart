@@ -6,6 +6,33 @@ import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/social/data/user_relation_list_repository.dart';
 
 void main() {
+  test('本人列表保留双向投影，旧字段缺失仍为未知且不逐行请求主页', () async {
+    final api = _MockUsersApi();
+    when(() => api.usersFollowFollowers()).thenAnswer(
+      (_) async => _currentFollowersResponse([
+        _followRecord(
+          follower: _author(id: 'mutual', username: '互关'),
+          viewerFollowing: true,
+          viewerFollowedBy: true,
+        ),
+        _followRecord(
+          follower: _author(id: 'fan', username: '粉丝'),
+          viewerFollowing: false,
+          viewerFollowedBy: true,
+        ),
+        _followRecord(
+          follower: _author(id: 'legacy', username: '旧响应'),
+        ),
+      ]),
+    );
+    final items = await ApiUserRelationListRepository(api).fetchFollowers();
+    expect(items[0].viewerIsFollowing, true);
+    expect(items[0].viewerIsFollowedBy, true);
+    expect(items[1].viewerIsFollowing, false);
+    expect(items[2].viewerIsFollowing, isNull);
+    expect(items[2].viewerIsFollowedBy, isNull);
+    verifyNever(() => api.usersGetUser(id: any(named: 'id')));
+  });
   test('指定用户关注列表只映射 following 并过滤缺失投影', () async {
     final api = _MockUsersApi();
     when(() => api.usersFollowUserFollowing(id: 'user-1')).thenAnswer(
@@ -147,12 +174,16 @@ PostAuthorResponseDto _author({
 UserFollowRecordResponseDto _followRecord({
   PostAuthorResponseDto? following,
   PostAuthorResponseDto? follower,
+  bool? viewerFollowing,
+  bool? viewerFollowedBy,
 }) {
   return UserFollowRecordResponseDto((record) {
     record
       ..id = 'follow-${following?.id ?? follower?.id}'
       ..followerId = follower?.id ?? 'follower-id'
       ..followingId = following?.id ?? 'following-id'
+      ..viewerIsFollowing = viewerFollowing
+      ..viewerIsFollowedBy = viewerFollowedBy
       ..createdAt = DateTime.utc(2026, 8, 10);
     if (following != null) record.following.replace(following);
     if (follower != null) record.follower.replace(follower);

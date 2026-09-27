@@ -56,7 +56,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(repository.requests, hasLength(1));
     expect(find.byKey(const Key('moment-compose-pending')), findsOneWidget);
-    expect(find.text('重试确认'), findsOneWidget);
+    expect(find.text('查看结果'), findsOneWidget);
     expect(
       tester
           .widget<TextField>(
@@ -93,8 +93,8 @@ void main() {
           ?.text,
       '原始标题',
     );
-    expect(find.text('重试确认'), findsOneWidget);
-    await tester.tap(find.text('重试确认'));
+    expect(find.text('查看结果'), findsOneWidget);
+    await tester.tap(find.text('查看结果'));
     await tester.pumpAndSettle();
     expect(repository.requests, hasLength(2));
     expect(repository.requests.last, repository.requests.first);

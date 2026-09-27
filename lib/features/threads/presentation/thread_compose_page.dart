@@ -11,12 +11,11 @@ import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_anchored_popover.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/drafts/application/content_drafts_controller.dart';
 import 'package:wenyousite_mobile/features/drafts/presentation/content_drafts_sheet.dart';
 import 'package:wenyousite_mobile/features/editor/editor.dart';
-import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
-import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
 import 'package:wenyousite_mobile/features/media/presentation/editor_image_crop_dialog.dart';
 import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
 import 'package:wenyousite_mobile/features/stickers/presentation/sticker_widgets.dart';
@@ -40,7 +39,10 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
       WenyouEditorToolbarController();
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _tagsController = TextEditingController();
-  final Object _uploadTaskId = Object();
+  late final EditorPendingImages _pendingImages;
+  bool _pendingRestored = false;
+  bool _restoredNoticeShown = false;
+  bool _publishing = false;
   final Object _contentDraftSessionKey = Object();
 
   bool _applyingInputs = false;
@@ -48,8 +50,7 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
   bool _preparingPop = false;
   ThreadComposeMetadataPanel? _metadataPanel;
   int _scheduledDocumentRevision = -1;
-  bool get _uploading =>
-      ref.read(mediaUploadTaskControllerProvider(_uploadTaskId)).isBusy;
+  bool get _uploading => _pendingImages.hasPending;
 
   @override
   void initState() {
@@ -71,6 +72,11 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
             .updateAutoSaveContent(markdown);
       },
     )..addListener(_onEditorSessionChanged);
+    _pendingImages = EditorPendingImages(
+      ref: ref,
+      editor: _editorSession,
+      target: 'thread:new',
+    )..addListener(_onPendingImagesChanged);
     _titleController.addListener(_onTitleChanged);
     _tagsController.addListener(_onTagsChanged);
   }
@@ -80,13 +86,19 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
     if (state == AppLifecycleState.inactive ||
         state == AppLifecycleState.paused ||
         state == AppLifecycleState.detached) {
+      _pendingImages.pause();
       unawaited(_flushSnapshot());
+    } else if (state == AppLifecycleState.resumed) {
+      _pendingImages.resume();
     }
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _pendingImages
+      ..removeListener(_onPendingImagesChanged)
+      ..dispose();
     _editorSession
       ..removeListener(_onEditorSessionChanged)
       ..dispose();
@@ -102,13 +114,28 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(sessionScopeProvider, (previous, next) {
+      if (next != _pendingImages.scope) _pendingImages.pause();
+    });
+    ref.listen(threadComposeControllerProvider, (previous, next) {
+      final message = next.successMessage;
+      if (message != null && message != previous?.successMessage) {
+        showWenyouSnackBar(context, message, tone: WenyouSnackBarTone.success);
+      }
+    });
     final state = ref.watch(threadComposeControllerProvider);
-    final uploadState = ref.watch(
-      mediaUploadTaskControllerProvider(_uploadTaskId),
-    );
+    if (state.restoredFromLocal && !_restoredNoticeShown) {
+      _restoredNoticeShown = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) showWenyouSnackBar(context, '已恢复未完成的内容');
+      });
+    }
     _scheduleDocumentSync(state);
-    final locked = state.isSubmitting || uploadState.isBusy;
-    final tokens = context.wenyouTokens;
+    final locked =
+        state.isSubmitting ||
+        _publishing ||
+        _pendingImages.restoring ||
+        !_pendingImages.isCurrent;
     _editorSession.readOnly = locked;
 
     return PopScope<Object?>(
@@ -149,7 +176,7 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
                 anchorBuilder: (context, handle) => IconButton(
                   key: const Key('compose-remote-drafts'),
                   tooltip: state.remoteDraft == null ? '云端草稿' : '云端草稿 · 当前已同步',
-                  onPressed: locked ? null : handle.toggle,
+                  onPressed: locked || _uploading ? null : handle.toggle,
                   icon: Badge(
                     isLabelVisible: state.remoteDraft != null,
                     child: const WenyouIcon(WenyouIconIds.statusCloud),
@@ -158,32 +185,19 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
               ),
             if (state.phase == ThreadComposePhase.ready ||
                 state.phase == ThreadComposePhase.published)
-              FilledButton.icon(
+              WenyouAsyncButton(
                 key: const Key('compose-publish'),
-                style: FilledButton.styleFrom(
-                  minimumSize: Size(0, tokens.minimumTouchTarget),
-                  padding: EdgeInsets.symmetric(horizontal: tokens.space12),
-                  backgroundColor: tokens.actionSurface,
-                  foregroundColor: tokens.onActionSurface,
-                  disabledBackgroundColor: tokens.border,
-                  disabledForegroundColor: tokens.mutedText,
-                ),
+                label: _publishing ? '正在发布…' : '发布',
+                compact: true,
+                icon: WenyouIconIds.actionSend,
+                isLoading:
+                    _publishing || state.action == ThreadComposeAction.publish,
                 onPressed:
                     !locked &&
                         _editorSession.codecFailure == null &&
-                        state.canPublish
+                        (state.canPublish || _pendingImages.hasPending)
                     ? _publish
                     : null,
-                icon: state.action == ThreadComposeAction.publish
-                    ? SizedBox.square(
-                        dimension: 18,
-                        child: CircularProgressIndicator(
-                          color: tokens.onActionSurface,
-                          strokeWidth: 2,
-                        ),
-                      )
-                    : const WenyouIcon(WenyouIconIds.actionSend, size: 18),
-                label: const Text('发布'),
               ),
           ],
         ),
@@ -196,8 +210,8 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
             onRetry: () =>
                 ref.read(threadComposeControllerProvider.notifier).load(),
           ),
-          ThreadComposePhase.ready || ThreadComposePhase.published =>
-            _buildEditor(context, state, uploadState, locked),
+          ThreadComposePhase.ready ||
+          ThreadComposePhase.published => _buildEditor(context, state, locked),
         },
       ),
     );
@@ -206,7 +220,6 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
   Widget _buildEditor(
     BuildContext context,
     ThreadComposeState state,
-    MediaUploadTaskState uploadState,
     bool locked,
   ) {
     final tokens = context.wenyouTokens;
@@ -222,14 +235,12 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              EditorPublishWaiting(images: _pendingImages),
               ThreadComposeStatusArea(
                 state: state,
                 documentIssues: _editorSession.issues,
                 codecFailure: _editorSession.codecFailure,
                 operationFailure: _editorSession.operationFailure?.message,
-                uploadState: uploadState,
-                onCancelUpload: _cancelUpload,
-                onRetryUpload: _retryImageUpload,
                 onRefreshBootstrap: () => ref
                     .read(threadComposeControllerProvider.notifier)
                     .refreshBootstrap(),
@@ -313,6 +324,7 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
                               wenyouEditorLeadingBlockBuilder(context),
                           embedBuilders: wenyouEditorEmbedBuilders(
                             mediaDisplays: _editorSession.mediaDisplays,
+                            pendingImages: _pendingImages,
                           ),
                           customShortcuts: _editorSession.clipboardShortcuts,
                           customActions: _editorSession.clipboardActions,
@@ -353,11 +365,15 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
                     ? _insertSticker
                     : null,
                 onSaveDraft: _openContentDrafts,
-                draftStatusLabel: ref
-                    .watch(
-                      contentDraftsControllerProvider(_contentDraftSessionKey),
-                    )
-                    .autoSaveToolbarLabel,
+                draftStatusLabel: _uploading
+                    ? _pendingImages.localSaveLabel
+                    : ref
+                          .watch(
+                            contentDraftsControllerProvider(
+                              _contentDraftSessionKey,
+                            ),
+                          )
+                          .autoSaveToolbarLabel,
                 characterCount: _editorSession.characterCount,
                 characterLimit: 10000,
                 toolbarController: _toolbarController,
@@ -445,6 +461,14 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
     );
   }
 
+  void _onPendingImagesChanged() {
+    if (!mounted) return;
+    ref
+        .read(contentDraftsControllerProvider(_contentDraftSessionKey).notifier)
+        .pauseForLocalAttachments(_pendingImages.hasPending);
+    setState(() {});
+  }
+
   void _onEditorSessionChanged() {
     if (mounted) setState(() {});
   }
@@ -477,6 +501,10 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
     } finally {
       _applyingInputs = false;
     }
+    if (!_pendingRestored) {
+      _pendingRestored = true;
+      unawaited(_pendingImages.restore());
+    }
     if (mounted) setState(() {});
   }
 
@@ -495,36 +523,17 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
   }
 
   Future<void> _insertImage() async {
-    await _runImageUpload(retry: false);
-  }
-
-  Future<void> _retryImageUpload() async {
-    await _runImageUpload(retry: true);
-  }
-
-  Future<void> _runImageUpload({required bool retry}) async {
-    if (_uploading) return;
-    final controller = ref.read(
-      mediaUploadTaskControllerProvider(_uploadTaskId).notifier,
-    );
-    final uploaded = retry
-        ? await controller.retryUpload()
-        : await pickCropAndUploadEditorImage(
-            context,
-            ref,
-            uploadTaskId: _uploadTaskId,
-            title: '裁剪正文图片',
-          );
-    if (!mounted || _preparingPop || uploaded == null) return;
-    _insertBlockImage(uploaded);
-  }
-
-  void _insertBlockImage(UploadedEditorImage image) {
-    // 上传完成回调先于下一帧 build；用当前状态解除上传锁，避免丢弃图片。
-    // 仍保留发布中及 RichEditorSession 对不支持原文的只读保护。
-    _editorSession.readOnly =
-        ref.read(threadComposeControllerProvider).isSubmitting || _uploading;
-    _editorSession.insertBlockImage(url: image.url, display: image.display);
+    final scope = ref.read(sessionScopeProvider);
+    final inputs = await pickAndCropEditorImages(context, ref, title: '裁剪正文图片');
+    if (!mounted ||
+        _preparingPop ||
+        ref.read(sessionScopeProvider) != scope ||
+        inputs == null) {
+      return;
+    }
+    for (final input in inputs) {
+      _pendingImages.add(input);
+    }
   }
 
   Future<void> _insertSticker(TextSelection selection) async {
@@ -536,12 +545,6 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
       url: sticker.asset.url,
       display: sticker.asset.display,
     );
-  }
-
-  void _cancelUpload() {
-    ref
-        .read(mediaUploadTaskControllerProvider(_uploadTaskId).notifier)
-        .cancel();
   }
 
   Future<void> _saveThreadDraft() async {
@@ -577,25 +580,23 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
     final latest = ref.read(threadComposeControllerProvider);
     if (latest.remoteDraft?.id != selected.id &&
         hasMeaningfulThreadComposeContent(latest)) {
-      final confirmed = await showDialog<bool>(
+      final confirmed = await showWenyouConfirmationDialog(
         context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('切换云端草稿？'),
-          content: const Text('打开后会用所选云端草稿替换当前内容。若要保留当前修改，请先取消并保存到云端。'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('先不切换'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text('确认切换'),
-            ),
-          ],
-        ),
+        title: '切换云端草稿？',
+        message: '打开后会用所选云端草稿替换当前内容。若要保留当前修改，请先取消并保存到云端。',
+        confirmLabel: '确认切换',
+        cancelLabel: '先不切换',
+        tone: WenyouConfirmationTone.destructive,
       );
       if (confirmed != true || !mounted) return;
     }
+    final cleared = await _pendingImages.clear(published: false);
+    if (!mounted) return;
+    if (!cleared) {
+      showWenyouSnackBar(context, _pendingImages.saveFailure!);
+      return;
+    }
+    _pendingImages.startNewDraft();
     await ref
         .read(threadComposeControllerProvider.notifier)
         .openRemoteDraft(selected.id);
@@ -633,19 +634,44 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
   }
 
   Future<void> _publish() async {
-    if (_uploading || !await _editorSession.flush()) return;
-    if (!mounted) return;
-    final threadId = await ref
-        .read(threadComposeControllerProvider.notifier)
-        .publish();
-    if (mounted && threadId != null) {
-      ref.invalidate(remoteThreadDraftsControllerProvider);
-      context.go(AppRouteLocations.thread(threadId));
+    if (_publishing || ref.read(threadComposeControllerProvider).isSubmitting) {
+      return;
+    }
+    setState(() => _publishing = true);
+    _editorSession.readOnly = true;
+    try {
+      final readiness = _pendingImages.waitForReady();
+      final intent = _pendingImages.publishGeneration;
+      final ready = await readiness;
+      if (!mounted) return;
+      if (!ready) {
+        if (await _pendingImages.revealFirstFailure() && mounted) {
+          showWenyouSnackBar(context, '先处理未完成的图片');
+        }
+        return;
+      }
+      if (!await _editorSession.flush() || !mounted) return;
+      if (!_pendingImages.isPublishIntentCurrent(intent)) return;
+      _pendingImages.finishWaiting();
+      final threadId = await ref
+          .read(threadComposeControllerProvider.notifier)
+          .publish();
+      if (mounted && threadId != null) {
+        final cleaned = await _pendingImages.clear();
+        if (!mounted) return;
+        if (!cleaned) showWenyouSnackBar(context, _pendingImages.saveFailure!);
+        ref.invalidate(remoteThreadDraftsControllerProvider);
+        context.go(AppRouteLocations.thread(threadId));
+      }
+    } finally {
+      _pendingImages.finishWaiting();
+      if (mounted) setState(() => _publishing = false);
     }
   }
 
   Future<void> _flushSnapshot() async {
     if (!await _editorSession.flush()) return;
+    await _pendingImages.save();
     await _saveCurrentSnapshot();
   }
 
@@ -660,15 +686,24 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
   }
 
   Future<void> _saveBeforePop(Object? result) async {
-    if (_allowPop || _preparingPop) return;
+    if (_allowPop ||
+        _preparingPop ||
+        ref.read(threadComposeControllerProvider).isSubmitting) {
+      return;
+    }
     _preparingPop = true;
-    ref
-        .read(mediaUploadTaskControllerProvider(_uploadTaskId).notifier)
-        .cancel();
+    _pendingImages.pause();
     // 编码失败保留当前编辑；旧快照的成功状态不能证明本次内容已保存。
     if (!_editorSession.canCloseProtectedSource &&
         !await _editorSession.flush()) {
       _preparingPop = false;
+      _pendingImages.resume();
+      return;
+    }
+    final pendingSaved = await _pendingImages.save();
+    if (!pendingSaved) {
+      _preparingPop = false;
+      _pendingImages.resume();
       return;
     }
     await _saveCurrentSnapshot();
@@ -676,25 +711,17 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
     final latest = ref.read(threadComposeControllerProvider);
     if (latest.phase == ThreadComposePhase.ready &&
         latest.localSnapshotStatus == LocalSnapshotStatus.failed) {
-      final leaveAnyway = await showDialog<bool>(
+      final leaveAnyway = await showWenyouConfirmationDialog(
         context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('本地内容尚未保存'),
-          content: const Text('现在退出可能丢失刚才的修改。建议留下并检查设备存储后重试。'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('留下'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text('仍然退出'),
-            ),
-          ],
-        ),
+        title: '本地内容尚未保存',
+        message: '现在退出可能丢失刚才的修改。建议留下并检查设备存储后重试。',
+        confirmLabel: '仍然退出',
+        cancelLabel: '留下',
+        tone: WenyouConfirmationTone.destructive,
       );
       if (leaveAnyway != true || !mounted) {
         _preparingPop = false;
+        _pendingImages.resume();
         return;
       }
     }

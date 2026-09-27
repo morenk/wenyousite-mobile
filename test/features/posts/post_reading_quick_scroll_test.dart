@@ -36,7 +36,23 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('reading-quick-scroll-toggle')));
+    await tester.timedDrag(
+      find.byType(CustomScrollView),
+      const Offset(0, -180),
+      const Duration(milliseconds: 140),
+    );
+
+    await tester.pumpAndSettle();
+
+    final autoController = tester
+        .widget<ReadingProgressViewport>(find.byType(ReadingProgressViewport))
+        .controller;
+
+    expect(autoController.isOpen, isTrue);
+
+    autoController.setKeyboardFocus(true);
+
+    autoController.seekEdge(false);
     await tester.pumpAndSettle();
     final bar = tester.getRect(
       find.byKey(const Key('reading-quick-scroll-rail')),
@@ -48,11 +64,11 @@ void main() {
       matchesGoldenFile('goldens/post_quick_scroll_360.png'),
     );
     final quick = tester
-        .widget<ReadingQuickScrollAction>(find.byType(ReadingQuickScrollAction))
+        .widget<ReadingProgressViewport>(find.byType(ReadingProgressViewport))
         .controller;
     await tester.tap(find.byKey(const Key('reading-quick-scroll-slider')));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('reading-quick-scroll-end')));
+    quick.seekEdge(true);
     await tester.pumpAndSettle();
     expect(quick.scrollController.position.extentAfter, lessThanOrEqualTo(1));
     expect(quick.edgeFailed, isFalse);
@@ -60,7 +76,7 @@ void main() {
     expect(quick.location, isNot(contains('第 60')));
     await tester.tap(find.byKey(const Key('post-reply-compose')));
     await tester.pumpAndSettle();
-    expect(find.byKey(const Key('reading-quick-scroll-rail')), findsNothing);
+    expect(quick.isOpen, isFalse);
     expect(find.byKey(const Key('post-composer-sheet')), findsOneWidget);
     expect(tester.takeException(), isNull);
   });

@@ -226,3 +226,33 @@ Content-Type: application/json
 消费已提交的主贴发言权限 OpenAPI（版本以 [契约变更记录](../contracts/CHANGELOG.md) 为准）；聚合保存字段及并发语义见 [API 契约](api-contract.md#主贴发言权限的聚合保存)。从默认子贴回填真实权限，楼主与协作者在发布后现有设置页统一保存。沿用相邻招募状态、可见范围的布局与控件，不新增独立卡片、专用弹窗或保存按钮；说明为“仅影响主贴下的发言，子贴权限单独设置。”
 
 消费者须覆盖修改检测、取消/离开提醒、重复提交、失败保留输入、409 冲突和成功后的版本/能力刷新；旧客户端省略字段不会重置权限，其他子贴不受影响。后端兼容版本先于客户端上线，不以服务端检查替代各端完整页面 UI 验收。
+
+### 行内代码叠加样式契约
+
+Windows 消费 [行内组合 v1](modules/markdown-content.md#行内组合-v1) 的 fixture/schema，保留旧 v7 测试。行内代码与粗体、斜体、删除线、安全链接允许组合，选区正向/反向及样式应用顺序不得改变结果；底部工具栏和系统 action 均须采用相同策略。代码中的实体、星号、空格与反引号保持字面内容。使用已提交后端 SHA 固定输入，不更新 HTTP SDK 或 Foundation Tag；通过组合矩阵、真实编辑、阅读、保存重开和安全保存回归后交付。
+
+### 自定义收藏夹管理
+
+同步 `5.23.0-dev.20260913.1` 的精确后端 Git 契约提交并重新生成客户端类型。主题帖使用 `PATCH/DELETE /bookmarks/folders/{id}`；动态使用 `PATCH/DELETE /moments/bookmark-folders/{id}`，ID 必须来自各自目录。PATCH 传 `{ name }`（trim 后 1–24 字），消费对应收藏夹 DTO；DELETE 消费 `DeleteBookmarkFolderResponseDto` 的 `deletedFolderId` 与 `destinationFolderId`，收藏仍保留。
+
+默认夹不显示重命名/删除入口，服务器同时强制 409；删除前说明收藏将移入默认夹。成功后刷新同类型目录、列表和选择器，删除当前目录时切换到返回的默认夹，清除失效选择；重命名后刷新名称。400 展示名称校验，409 展示冲突并刷新后允许重试，404 刷新目录恢复选择。测试两类型、默认夹保护、重名/越权、空夹与非空夹删除、失败后保留原状态；不要按名称合并目录或取消收藏。本次保留旧客户端协议，无弃用清理；Foundation 沿用既有控件与反馈契约，无需发布新版本。详见[后端契约](api-contract.md#自定义收藏夹重命名与删除)。
+
+Flutter 代码、类型生成和设备回归仅在 Windows 执行；本后端 PR 不声称移动端检查已通过。
+
+## 本人关系列表管理
+
+同步 5.25.0-dev.20260922.1 对应已提交 OpenAPI 并重新生成客户端。本人关注列表提供取消关注；本人粉丝列表根据 viewerIsFollowing 提供回关或取消关注，并提供移除粉丝。关系方向、权限、缺字段兼容和接口见 [本人关注与粉丝管理](api-contract.md#本人关注与粉丝管理)。他人列表保持浏览行为。
+
+仅移除粉丝二次确认；同一行写入期间禁用所有关系按钮。确认成功后移出对应列表并失效本人和对方资料、列表及计数；粉丝列表取消关注保留原行。超时先读回核对，不能自行重放删除。切换账号丢弃旧响应；回关、取消关注、移除粉丝统一复用 Foundation 的细描边操作按钮。
+
+## 全屏图片连续浏览
+
+兼容契约 5.26.0-dev.20260922.3 新增 [图片图集查询](image-gallery.md)。Mobile 先显示点击图片，再接入双向分页；Web 保留原查看交互，新增契约只同步类型与夹具。共享位置测试见 `contracts/gallery-image-occurrences.json`，重复 URL 按位置保留，贴纸仅按 title 前缀排除。权限丢失 404 必须清除对应缓存图，40900 重新打开会话，40926 保留当前图片并提示稍后再试。
+
+## Android 更新说明与历史
+
+本节新增接口兼容现有 `/meta`，版本策略仍完全由 `/meta.mobileCompatibility.android` 决定。推荐横幅可以读目标 build 的 summary，“查看更新”展示完整 items 和现有下载操作；强制页展示完整说明。历史页使用 `GET /mobile-releases?platform=android` 的不透明游标，按构建号倒序；以实际安装 build 标记当前版本，下载/更新操作只对 `/meta` 的实际可更新目标开放，不从历史猜测更新策略。
+
+公开 DTO：`platform, versionName, buildNumber, summary, items, revision, publishedAt`。详情路径 `GET /mobile-releases/android/{buildNumber}`。未发布/不存在都是 404，空历史显示空态，读取失败可以重试但不阻断启动或破坏强制升级流程。说明是纯文本，禁止 Markdown/HTML 渲染；没有升级后的自动弹窗。不得从 Git 提交自动拼接缺失说明。
+
+管理接口和精确长度、错误码见 [API 契约](api-contract.md#android-版本说明兼容增量)。发布工具的受限说明预检与确认 revision 绑定见 [发布运维](mobile-release-operations.md)，构建-only 不要求后台说明，真实晋级必须以最终受限通道契约校验。本次不新增 iOS 发布或 FCM 消息。

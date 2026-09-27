@@ -8,6 +8,20 @@ import 'package:wenyousite_mobile/features/media/data/media_picker_recovery.dart
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
 
 void main() {
+  test('没有本环境上下文时不消费另一个环境的系统图片', () async {
+    var retrieved = false;
+    final result = await recoverLostEditorMediaSelection(
+      isAndroid: true,
+      contextStore: _MemoryRecoveryContextStore(null),
+      retrieve: () async {
+        retrieved = true;
+        return LostDataResponse.empty();
+      },
+    );
+    expect(retrieved, isFalse);
+    expect(result.selections, isEmpty);
+  });
+
   test('恢复上下文读取失败不阻塞启动也不消费系统图片', () async {
     var retrieved = false;
     final result = await recoverLostEditorMediaSelection(

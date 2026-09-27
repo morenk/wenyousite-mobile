@@ -60,7 +60,9 @@ class _FoundationVisualFixture extends StatelessWidget {
                       height: 40,
                       decoration: BoxDecoration(
                         color: color,
-                        borderRadius: BorderRadius.circular(tokens.radius12),
+                        borderRadius: BorderRadius.circular(
+                          tokens.radiusCompact,
+                        ),
                       ),
                     ),
                     if (color != tokens.border) SizedBox(width: tokens.space16),
@@ -73,7 +75,7 @@ class _FoundationVisualFixture extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: tokens.panel,
                     border: Border.all(color: tokens.border),
-                    borderRadius: BorderRadius.circular(tokens.radius20),
+                    borderRadius: BorderRadius.circular(tokens.radiusPanel),
                   ),
                   child: Padding(
                     padding: EdgeInsets.all(tokens.space12),

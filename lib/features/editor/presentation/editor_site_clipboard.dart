@@ -442,14 +442,10 @@ class _ClipboardInlineBuilder {
     }
 
     final nested = switch (tag) {
-      'b' ||
-      'strong' when attributes['code'] != true => {...attributes, 'bold': true},
-      'i' ||
-      'em' when attributes['code'] != true => {...attributes, 'italic': true},
-      's' ||
-      'strike' ||
-      'del' when attributes['code'] != true => {...attributes, 'strike': true},
-      'code' => const <String, dynamic>{'code': true},
+      'b' || 'strong' => {...attributes, 'bold': true},
+      'i' || 'em' => {...attributes, 'italic': true},
+      's' || 'strike' || 'del' => {...attributes, 'strike': true},
+      'code' => {...attributes, 'code': true},
       _ => attributes,
     };
     for (final child in node.nodes) {
@@ -494,7 +490,6 @@ class _ClipboardInlineBuilder {
 
     final uri = Uri.tryParse(href);
     final canLink =
-        attributes['code'] != true &&
         uri != null &&
         uri.hasScheme &&
         MarkdownContent.isSafeLink(uri) &&

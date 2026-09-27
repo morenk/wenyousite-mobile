@@ -14,6 +14,7 @@ import 'package:wenyousite_mobile/features/threads/domain/subthread_management_m
 import 'package:wenyousite_mobile/features/threads/presentation/subthread_editor_page.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/subthread_management_page.dart';
 
+import '../../support/button_finder.dart';
 import '../../support/deterministic_test_fonts.dart';
 
 void main() {
@@ -164,7 +165,9 @@ void main() {
     );
     expect(
       tester
-          .widget<IconButton>(find.byKey(const Key('subthread-editor-save')))
+          .widget<IconButton>(
+            findButtonControl(find.byKey(const Key('subthread-editor-save'))),
+          )
           .onPressed,
       isNotNull,
     );

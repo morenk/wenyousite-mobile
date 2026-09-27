@@ -192,22 +192,6 @@ class ThreadTargetFilterRestoreCoordinator {
   }
 }
 
-List<ThreadFloorModel> threadFloorsWithTarget(
-  List<ThreadFloorModel> floors,
-  ThreadPostTargetModel? target,
-  ThreadFloorOrder order,
-) {
-  if (target == null) return floors;
-  final index = floors.indexWhere((floor) => floor.id == target.floor.id);
-  final merged = index == -1
-      ? [...floors, target.floor]
-      : [
-          for (var floorIndex = 0; floorIndex < floors.length; floorIndex++)
-            floorIndex == index ? target.floor : floors[floorIndex],
-        ];
-  return sortThreadFloors(merged, order);
-}
-
 PostItem threadFloorAsPost(
   ThreadDetailModel detail,
   ThreadSubthreadModel subthread,

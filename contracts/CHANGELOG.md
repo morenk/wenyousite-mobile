@@ -1,5 +1,47 @@
 # API 合同变更
 
+## 5.27.0-dev.20260927.1
+
+- 新增公开已发布历史/详情，以及后台草稿、revision 编辑、SUPER_ADMIN 确认接口；纯文本 summary/items，OpenAPI 为机器事实源。
+- 保留 `/meta` 既有字段；兼容新增端点提升 MINOR 版本；尚未发布说明不公开。API 冲突使用 40900，非法游标 40007。
+- 受限发布通道新增只读 `--preflight`、晋级必填 `--notes-revision` 与中断恢复 `--recover`；配置/数据库/TSV 失败补偿，同 build 重试仍校验说明。
+- 新增不可变审计分类 MOBILE_RELEASE_UPDATED/MOBILE_RELEASE；移动 coverage 的公开接口为 planned，后台接口不适用移动端，不冒称客户端已实现。
+
+
+## 5.26.0-dev.20260922.3
+
+- 兼容新增 OptionalAuth 图集读取 `GET /image-gallery`，五种阅读范围、点击锚点、双向签名游标与 source 定位。详见 [图片图集](../docs/image-gallery.md)。
+- 新增 40926 IMAGE_GALLERY_NOT_READY，历史索引未就绪不能伪装完整图集；既有 CONFLICT 表示图片锚点或会话正文已改变。
+- 新增正文图片位置索引及有界回填工具，原媒体账本、Markdown、上传与 COMPLETED 语义不变。
+
+## 5.25.0-dev.20260922.2
+
+- 管理登录 verify 新增可选布尔 rememberDevice，省略保持原短会话；独立登录 DTO 不改变 step-up 输入。
+- 记住设备固定七天有效并跳过短空闲限制，Cookie 与 expiresAt 一致、不滑动续期；短会话及旧会话仍保持原空闲/绝对期限。AdminSession 新列默认 false，迁移不延长旧会话。
+- verify/session 既有字段保留，idleMinutes 表示有效策略（短会话默认30、记住设备10080）；管理认证、CSRF、单会话撤销和十分钟高风险确认不变。并发验证串行消费挑战并替换会话。
+
+
+## 5.25.0-dev.20260922.1
+
+- 兼容新增 DELETE /users/me/followers/{id}：需写权限，仅解除对方关注本人，幂等且不发通知，保留反向关注和重新关注能力。
+- UserFollowRecordResponseDto 新增可选 viewerIsFollowing / viewerIsFollowedBy；仅本人列表（含公开路径 id 为本人）返回当前查看者两个方向的关系。匿名和他人列表省略，消费者缺字段时视为未知。
+- 关注、取消关注、移除粉丝使用相同有序用户锁；列表批量查询互关状态并排除软删除账号，无数据库迁移或旧接口删除。
+
+## 5.24.0-dev.20260920.1
+
+- 兼容新增管理内容列表、详情和主题帖分类标签整理接口，operationId 为 `adminContentList`、`adminContentDetail`、`adminContentUpdateTaxonomy`；旧隐藏列表及管理字段保留。
+- 新检索仅包含已发布公开内容及管理员隐藏项，排除草稿、私密、作者删除及其子项；绑定媒体经同一可见性策略授权后投影。post 列表/计数仅 FLOOR，精确详情兼容可见 BODY 定位。
+- taxonomy 请求省略保持原值、分类不能清空、标签最多 5 个；停用项只允许保留/移除。版本冲突返回 409/40002；更新、版本及新增 THREAD_TAXONOMY_UPDATED 审计同事务，包含兼容枚举 migration。
+- 用户详情增加 bio、level、lastActiveDate、contentCounts，用户列表增加精确 id；看板增加 newMoments/newMomentComments，保留旧指标口径。
+- Backend 兼容版本先行，Web 按精确提交同步；Mobile 的三个管理接口明确标为 not_applicable，仅同步契约快照。Foundation 不发布新包版本或 Token。
+
+## 5.23.0-dev.20260913.1
+
+- 兼容新增主题帖与动态自定义收藏夹 PATCH/DELETE 管理接口，operationId 为 `bookmarksRenameFolder`、`bookmarksDeleteFolder`、`momentsRenameBookmarkFolder`、`momentsDeleteBookmarkFolder`。PATCH 返回对应现有收藏夹 DTO；DELETE 返回 `DeleteBookmarkFolderResponseDto`。
+- 名称 trim 后为 1–24 个字符，同类型目录内唯一；默认夹禁止修改/删除（409），不存在或越权统一 404。删除在单事务补建默认夹、迁移该类型全部收藏并删除目录；包含不可见记录，不取消收藏或改变收藏时间/总数，并发或外键冲突回滚并返回可重试 409。
+- 无 Prisma migration、无弃用清理；保留旧目录映射与 `momentBookmarkCount` 兼容字段。新动态管理接口仅接受动态目录的真实 ID。
+- Web 与 Windows Flutter 从本版本精确 Git 提交同步 OpenAPI，再分别实现目录管理和缓存刷新；后端先行兼容发布。Foundation 已审查：沿用现有菜单、表单、确认反馈与语义 Token，HTTP 业务契约由后端维护，无需修改 Foundation。
+
 ## 5.22.0-dev.20260912.2
 
 - 补齐提及、通知、邀请、用户搜索头像摘要的 `avatarDisplay` 及搜索正文 `mediaDisplays`，字段语义与完整 WebP 展示协议一致。
@@ -451,3 +493,9 @@
 ## 2.1.0-dev.20260806
 
 - 向后兼容新增一对一私聊。
+
+## 行内组合测试契约 v1
+
+- 新增独立 32 种 marks / 1,024 个有序邻接组合语义 fixture 与 schema，保留 v7 原有 48 条操作。
+- 允许行内代码外层组合粗体、斜体、删除线与链接，覆盖边界、字面定界符、实体、空格与反向选择。
+- API/OpenAPI、Markdown v5 编号和 Foundation Token 均无变化，不生成新 SDK。

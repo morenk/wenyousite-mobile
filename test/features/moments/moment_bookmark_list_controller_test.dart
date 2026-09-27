@@ -83,6 +83,7 @@ void main() {
 
     expect(await controller.move(card, 'folder-next'), isFalse);
     expect(controller.state.transientFailure?.userMessage, contains('无法移动'));
+    expect(controller.state.loadMoreFailure, isNull);
     repository.pages[null] = const CursorPage(items: [], hasMore: false);
     expect(await controller.remove(card), isTrue);
 
@@ -160,6 +161,14 @@ class _FakeRepository implements MomentBookmarkRepository {
 
   @override
   Future<BookmarkFolderItem> createFolder(String name) =>
+      throw UnimplementedError();
+
+  @override
+  Future<BookmarkFolderItem> renameFolder(String folderId, String name) =>
+      throw UnimplementedError();
+
+  @override
+  Future<BookmarkFolderDeleteResult> deleteFolder(String folderId) =>
       throw UnimplementedError();
 
   @override

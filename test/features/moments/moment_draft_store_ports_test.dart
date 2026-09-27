@@ -3,6 +3,46 @@ import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart
 import 'package:wenyousite_mobile/features/moments/application/moment_draft_store_ports.dart';
 
 void main() {
+  test('待完成图片保留稳定顺序、封面、私有路径与已上传身份', () {
+    final draft = MomentLocalDraft(
+      title: '本机图片',
+      content: '正文',
+      images: const [],
+      imageOrder: const ['local-1'],
+      coverMediaId: 'local-1',
+      updatedAt: DateTime.utc(2026),
+      pendingImages: [
+        MomentPendingDraftImage(
+          id: 'local-1',
+          input: MediaUploadInput.fromPickedSource(
+            const PickedMediaSource.file(
+              filename: 'photo.png',
+              path: '/private/missing-photo.png',
+              length: 512,
+              purpose: MediaUploadPurpose.moment,
+            ),
+          ),
+          pending: const PendingMediaUpload(
+            mediaId: 'server-1',
+            purpose: MediaUploadPurpose.moment,
+          ),
+        ),
+      ],
+    );
+    final restored = MomentLocalDraft.fromJson(draft.toJson())!;
+    expect(restored.imageOrder, ['local-1']);
+    expect(restored.coverMediaId, 'local-1');
+    expect(
+      restored.pendingImages.single.input.sourcePath,
+      '/private/missing-photo.png',
+    );
+    expect(restored.pendingImages.single.pending?.mediaId, 'server-1');
+    expect(
+      restored.withPersistence('request').pendingImages.single.id,
+      'local-1',
+    );
+  });
+
   test('动态草稿完整保存图片派生地址和动画标记', () {
     final draft = MomentLocalDraft(
       title: '晚风',

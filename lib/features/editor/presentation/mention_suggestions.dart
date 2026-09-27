@@ -351,7 +351,7 @@ class _MentionPanel extends StatelessWidget {
           ).colorScheme.shadow.withValues(alpha: 0.14),
           shape: RoundedRectangleBorder(
             side: BorderSide(color: tokens.border),
-            borderRadius: BorderRadius.circular(tokens.radius12),
+            borderRadius: BorderRadius.circular(tokens.radiusPanel),
           ),
           clipBehavior: Clip.antiAlias,
           child: Padding(

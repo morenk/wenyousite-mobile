@@ -7,7 +7,9 @@ import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_sheet.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_management_controller.dart';
 import 'package:wenyousite_mobile/features/threads/domain/subthread_management_models.dart';
@@ -320,11 +322,8 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
   );
 
   Future<void> _openInviteLinkSheet() {
-    return showModalBottomSheet<void>(
+    return showWenyouSheet<void>(
       context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      showDragHandle: true,
       builder: (sheetContext) => SingleChildScrollView(
         padding: EdgeInsets.fromLTRB(
           sheetContext.wenyouTokens.space16,
@@ -430,32 +429,20 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
     final failure = ref
         .read(threadManagementControllerProvider(widget.threadId))
         .failure;
-    return showDialog<bool>(
+    return showWenyouConfirmationDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('修改还没有保存'),
-        content: Text(failure?.userMessage ?? '请检查当前内容后重试，或者放弃修改并离开。'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('继续编辑'),
-          ),
-          FilledButton(
-            key: const Key('thread-management-discard-confirm'),
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('放弃并离开'),
-          ),
-        ],
-      ),
+      title: '修改还没有保存',
+      message: failure?.userMessage ?? '请检查当前内容后重试，或者放弃修改并离开。',
+      confirmLabel: '放弃并离开',
+      cancelLabel: '继续编辑',
+      confirmKey: const Key('thread-management-discard-confirm'),
+      tone: WenyouConfirmationTone.destructive,
     );
   }
 
   Future<void> _editTags() async {
-    final result = await showModalBottomSheet<List<String>>(
+    final result = await showWenyouSheet<List<String>>(
       context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      showDragHandle: true,
       builder: (_) => _ThreadTagSelectorSheet(initial: _tagNames),
     );
     if (result != null && mounted) {
@@ -516,27 +503,14 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
     final state = ref.read(threadManagementControllerProvider(widget.threadId));
     final thread = state.bootstrap?.thread;
     if (thread == null || !thread.isOwner) return;
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showWenyouConfirmationDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('确认删除这个主题？'),
-        content: const Text('主题、子贴和全部内容会永久删除，且无法恢复。'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('取消'),
-          ),
-          FilledButton(
-            key: const Key('thread-management-delete-confirm'),
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(dialogContext).colorScheme.error,
-              foregroundColor: Theme.of(dialogContext).colorScheme.onError,
-            ),
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('确认删除'),
-          ),
-        ],
-      ),
+      title: '确认删除这个主题？',
+      message: '主题、子贴和全部内容会永久删除，且无法恢复。',
+      confirmLabel: '确认删除',
+      cancelLabel: '取消',
+      confirmKey: const Key('thread-management-delete-confirm'),
+      tone: WenyouConfirmationTone.destructive,
     );
     if (confirmed != true || !mounted) return;
     final succeeded = await ref
@@ -649,7 +623,7 @@ class _ThreadTagSelectorSheetState extends State<_ThreadTagSelectorSheet> {
     final tokens = context.wenyouTokens;
     return AnimatedPadding(
       duration: tokens.feedbackDuration,
-      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+      padding: EdgeInsets.only(bottom: 0),
       child: SingleChildScrollView(
         padding: EdgeInsets.fromLTRB(
           tokens.space16,
@@ -788,7 +762,7 @@ class _ManagementFatalState extends StatelessWidget {
           key: const Key('thread-management-load-retry'),
           onPressed: onRetry,
           icon: const WenyouIcon(WenyouIconIds.actionRefresh),
-          label: const Text('重新加载'),
+          label: const Text('重试'),
         ),
       ),
     );

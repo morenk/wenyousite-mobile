@@ -4,10 +4,13 @@ import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_level_badge.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/social/application/user_relation_list_controller.dart';
 import 'package:wenyousite_mobile/features/social/domain/user_relation_list_models.dart';
+import 'package:wenyousite_mobile/features/social/presentation/own_relation_lists_page.dart';
 
 class UserRelationListPage extends ConsumerWidget {
   const UserRelationListPage({required this.target, super.key});
@@ -16,6 +19,15 @@ class UserRelationListPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final scope = ref.watch(sessionScopeProvider);
+    if (target.kind != UserRelationListKind.blocks &&
+        scope.accountId != null &&
+        (target.isCurrentUser || target.userId == scope.accountId)) {
+      return OwnRelationListsPage(
+        key: ValueKey(scope),
+        initialKind: target.kind,
+      );
+    }
     final provider = userRelationListControllerProvider(target);
     final state = ref.watch(provider);
     final notifier = ref.read(provider.notifier);
@@ -38,7 +50,7 @@ class UserRelationListPage extends ConsumerWidget {
                 key: const Key('user-relation-list-retry'),
                 onPressed: notifier.load,
                 icon: const WenyouIcon(WenyouIconIds.actionRefresh),
-                label: const Text('重新加载'),
+                label: const Text('重试'),
               ),
             ),
           ),
@@ -193,26 +205,18 @@ class _RelationUserCard extends StatelessWidget {
                   style: Theme.of(context).textTheme.wenyouRowTitle,
                 ),
                 SizedBox(height: tokens.space4),
-                Text(
-                  'Lv.${item.level}',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.wenyouCaption.copyWith(color: tokens.mutedText),
-                ),
+                WenyouLevelBadge(level: item.level),
               ],
             ),
           ),
           if (showUnblock) ...[
             SizedBox(width: tokens.space8),
-            OutlinedButton(
+            WenyouAsyncButton(
               key: ValueKey('unblock-${item.userId}'),
+              label: '取消拉黑',
+              isLoading: isPending,
               onPressed: isPending || disableUnblock ? null : onUnblock,
-              child: isPending
-                  ? const SizedBox.square(
-                      dimension: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Text('取消拉黑'),
+              variant: WenyouAsyncButtonVariant.outlined,
             ),
           ],
         ],

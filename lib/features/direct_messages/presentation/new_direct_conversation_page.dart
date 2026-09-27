@@ -238,7 +238,7 @@ class _TargetFailure extends StatelessWidget {
             key: const Key('direct-message-new-retry'),
             onPressed: onRetry,
             icon: const WenyouIcon(WenyouIconIds.actionRefresh),
-            label: const Text('重新加载'),
+            label: const Text('重试'),
           ),
         ),
       ),

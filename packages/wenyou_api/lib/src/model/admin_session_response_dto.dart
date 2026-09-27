@@ -3,6 +3,7 @@
 //
 
 // ignore_for_file: unused_element
+import 'package:wenyou_api/src/model/admin_session_info_dto.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:built_value/json_object.dart';
 import 'package:built_value/built_value.dart';
@@ -19,7 +20,7 @@ part 'admin_session_response_dto.g.dart';
 @BuiltValue()
 abstract class AdminSessionResponseDto implements Built<AdminSessionResponseDto, AdminSessionResponseDtoBuilder> {
   @BuiltValueField(wireName: r'session')
-  BuiltMap<String, JsonObject?> get session;
+  AdminSessionInfoDto get session;
 
   @BuiltValueField(wireName: r'user')
   BuiltMap<String, JsonObject?> get user;
@@ -53,7 +54,7 @@ class _$AdminSessionResponseDtoSerializer implements PrimitiveSerializer<AdminSe
     yield r'session';
     yield serializers.serialize(
       object.session,
-      specifiedType: const FullType(BuiltMap, [FullType(String), FullType.nullable(JsonObject)]),
+      specifiedType: const FullType(AdminSessionInfoDto),
     );
     yield r'user';
     yield serializers.serialize(
@@ -91,8 +92,8 @@ class _$AdminSessionResponseDtoSerializer implements PrimitiveSerializer<AdminSe
         case r'session':
           final valueDes = serializers.deserialize(
             value,
-            specifiedType: const FullType(BuiltMap, [FullType(String), FullType.nullable(JsonObject)]),
-          ) as BuiltMap<String, JsonObject?>;
+            specifiedType: const FullType(AdminSessionInfoDto),
+          ) as AdminSessionInfoDto;
           result.session.replace(valueDes);
           break;
         case r'user':

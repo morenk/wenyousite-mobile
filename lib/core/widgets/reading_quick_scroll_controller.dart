@@ -1,5 +1,9 @@
+import 'package:flutter/gestures.dart' show PointerDeviceKind;
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
+import 'package:wenyousite_mobile/core/widgets/reading_scroll_spec.dart';
+import 'package:wenyousite_mobile/core/widgets/reading_scroll_velocity_tracker.dart';
+import 'package:wenyousite_mobile/core/widgets/reading_scroll_visibility.dart';
 
 /// 页面持有，滚动控制器的生命周期仍归页面；不保存跨页面阅读进度。
 class ReadingQuickScrollController extends ChangeNotifier {
@@ -9,6 +13,7 @@ class ReadingQuickScrollController extends ChangeNotifier {
     this.pinnedHeaderKey,
   }) {
     scrollController.addListener(_onScroll);
+    _visibility.addListener(scheduleSnapshot);
   }
 
   final ScrollController scrollController;
@@ -21,9 +26,36 @@ class ReadingQuickScrollController extends ChangeNotifier {
   bool _disposed = false;
   bool _snapshotScheduled = false;
   bool _moveScheduled = false;
-  bool _open = false;
   bool _enabled = false;
+  bool _presentationActive = true;
+  bool _accessible = false;
+  bool _fingerScrolling = false;
+  double _samplePosition = 0;
+  final _velocity = ReadingScrollVelocityTracker(
+    window: const Duration(milliseconds: ReadingScrollSpec.sampleWindowMs),
+    minimumDuration: const Duration(
+      milliseconds: ReadingScrollSpec.minimumSampleDurationMs,
+    ),
+    minimumDistance: ReadingScrollSpec.minimumSameDirectionDistance,
+    minimumVelocity: ReadingScrollSpec.minimumAverageVelocity,
+    viewportVelocityFactor: ReadingScrollSpec.minimumViewportVelocityFactor,
+  );
+  final _visibility = ReadingScrollVisibility(
+    expandedHold: const Duration(
+      milliseconds: ReadingScrollSpec.expandedHoldMs,
+    ),
+    collapseDuration: const Duration(
+      milliseconds: ReadingScrollSpec.collapseDurationMs,
+    ),
+    collapsedHold: const Duration(
+      milliseconds: ReadingScrollSpec.collapsedHoldMs,
+    ),
+    slowReadHold: const Duration(
+      milliseconds: ReadingScrollSpec.slowReadHoldMs,
+    ),
+  );
   bool _dragging = false;
+  bool _dragHasInput = false;
   bool _followingEnd = false;
   double _fraction = 0;
   double _dragMin = 0;
@@ -33,14 +65,17 @@ class ReadingQuickScrollController extends ChangeNotifier {
   String _location = '阅读位置';
   bool? _failedEdge;
 
-  bool get isOpen => _open;
-  bool get enabled => _enabled;
+  bool get isOpen => _visibility.expanded;
+  bool get isVisible => _visibility.visible;
+  int get resetRevision => _visibility.resetRevision;
+  bool get enabled => _enabled && _presentationActive;
   bool get isDragging => _dragging;
   bool get isFollowingEnd => _dragging && _followingEnd;
   double get fraction => _fraction;
   String get location => _location;
   bool get edgeFailed => _failedEdge != null;
   bool get canScroll =>
+      !_disposed &&
       scrollController.hasClients &&
       scrollController.position.hasContentDimensions &&
       scrollController.position.maxScrollExtent >
@@ -54,7 +89,9 @@ class ReadingQuickScrollController extends ChangeNotifier {
   }) {
     if (_scope != scope || !enabled) {
       _cancelMovement();
-      _open = false;
+      _velocity.reset();
+      _fingerScrolling = false;
+      _visibility.reset();
       _location = '阅读位置';
       _fraction = 0;
       _measuredMax = null;
@@ -63,48 +100,93 @@ class ReadingQuickScrollController extends ChangeNotifier {
     _contentRevision = contentRevision;
     _scope = scope;
     _enabled = enabled;
+    // 热重载后同步已有采样器，避免当前页面继续沿用旧门槛。
+    _velocity.updateThresholds(
+      minimumDuration: const Duration(
+        milliseconds: ReadingScrollSpec.minimumSampleDurationMs,
+      ),
+      minimumDistance: ReadingScrollSpec.minimumSameDirectionDistance,
+      minimumVelocity: ReadingScrollSpec.minimumAverageVelocity,
+      viewportVelocityFactor: ReadingScrollSpec.minimumViewportVelocityFactor,
+    );
+    _configureVisibility();
     scheduleSnapshot();
   }
 
-  void toggle() {
-    if (!_enabled) return;
-    // 显式导航后解除旧目标的自动对齐，悬浮控件不改变阅读视口。
-    onUserNavigation();
-    _cancelMovement();
-    _open = !_open;
-    notifyListeners();
-    scheduleSnapshot();
+  void _configureVisibility() {
+    _visibility.updateExpandedHold(
+      const Duration(milliseconds: ReadingScrollSpec.expandedHoldMs),
+    );
+    _visibility.configure(
+      enabled: enabled && canScroll,
+      accessible: _accessible,
+    );
+  }
+
+  void configurePresentation({required bool active, required bool accessible}) {
+    if (_presentationActive == active && _accessible == accessible) return;
+    _presentationActive = active;
+    _accessible = accessible;
+    if (!active) close();
+    _configureVisibility();
+  }
+
+  void setKeyboardFocus(bool focused) {
+    if (!_disposed) _visibility.setFocused(focused);
   }
 
   void close() {
+    if (_disposed) return;
     _cancelMovement();
-    if (!_open) return;
-    _open = false;
-    notifyListeners();
+    _fingerScrolling = false;
+    _velocity.reset();
+    _visibility.reset();
+    scheduleSnapshot();
   }
 
   void _cancelMovement() {
     _epoch++;
     _pendingOffset = null;
     _dragging = false;
+    _dragHasInput = false;
     _followingEnd = false;
     _failedEdge = null;
+    _visibility.setPressed(false);
   }
 
-  void beginDrag(double value) {
-    if (!_enabled || !_open || !canScroll) return;
+  /// 在按下这一刻读取真实位置；不沿用上一帧仍在惯性移动的快照。
+  double grab() {
+    if (!enabled || !isOpen || !canScroll) return _fraction;
+    final p = scrollController.position;
+    final range = _readingMax(p) - p.minScrollExtent;
+    final value = range <= 0
+        ? 0.0
+        : ((p.pixels - p.minScrollExtent) / range).clamp(0.0, 1.0);
+    beginDrag(value, applyInput: false);
+    return value;
+  }
+
+  void beginDrag(double value, {bool applyInput = true}) {
+    if (!enabled || !isOpen || !canScroll) return;
     _cancelMovement();
     onUserNavigation();
     final p = scrollController.position;
+    scrollController.jumpTo(p.pixels);
+    _fingerScrolling = false;
+    _velocity.reset();
+    _visibility.setScrolling(false);
+    _visibility.setPressed(true);
     _dragMin = p.minScrollExtent;
     _dragMax = _readingMax(p);
     _dragging = true;
-    updateDrag(value);
+    _fraction = value.clamp(0, 1);
+    if (applyInput) updateDrag(value);
+    scheduleSnapshot();
   }
 
   void updateDrag(double value) {
-    if (!_dragging) beginDrag(value);
     if (!_dragging) return;
+    _dragHasInput = true;
     if (_followingEnd) {
       // 离开末端时以刚抵达的范围继续微调，避免退回开始拖动时的旧范围。
       final p = scrollController.position;
@@ -169,9 +251,11 @@ class ReadingQuickScrollController extends ChangeNotifier {
 
   void endDrag(double value) {
     if (!_dragging) return;
-    updateDrag(value);
+    if (_dragHasInput) updateDrag(value);
     _dragging = false;
+    _dragHasInput = false;
     _followingEnd = false;
+    _visibility.setPressed(false);
     // 最后一个手指位置仍在下一帧应用，不启动惯性或后续自动跟随。
     scheduleSnapshot();
   }
@@ -184,12 +268,11 @@ class ReadingQuickScrollController extends ChangeNotifier {
   /// 触摸取消不应用尚未绘制的输入，也不能遗留末端跟随。
   void cancelDrag() {
     if (_disposed || !_dragging) return;
-    _cancelMovement();
-    scheduleSnapshot();
+    close();
   }
 
   void stepByViewport(int direction) {
-    if (!canScroll || !_enabled || !_open) return;
+    if (!canScroll || !enabled || !isOpen) return;
     final position = scrollController.position;
     final range = _readingMax(position) - position.minScrollExtent;
     if (range <= 0) return;
@@ -199,7 +282,7 @@ class ReadingQuickScrollController extends ChangeNotifier {
   }
 
   void seekEdge(bool end) {
-    if (!_enabled || !_open || !scrollController.hasClients) return;
+    if (!enabled || !isOpen || !scrollController.hasClients) return;
     _cancelMovement();
     onUserNavigation();
     final epoch = _epoch;
@@ -239,12 +322,48 @@ class ReadingQuickScrollController extends ChangeNotifier {
   }
 
   bool handleScroll(ScrollNotification notification) {
-    if (notification.depth != 0 || notification.metrics.axis != Axis.vertical) {
+    if (!enabled ||
+        notification.depth != 0 ||
+        notification.metrics.axis != Axis.vertical) {
       return false;
     }
-    if (notification is ScrollStartNotification &&
-        notification.dragDetails != null) {
-      _cancelMovement();
+    if (_dragging) return false;
+    if (notification is ScrollStartNotification) {
+      _fingerScrolling =
+          notification.dragDetails?.kind == PointerDeviceKind.touch;
+      if (_fingerScrolling) _cancelMovement();
+      _velocity.reset();
+      _samplePosition = 0;
+      _visibility.setScrolling(true);
+      final timestamp = notification.dragDetails?.sourceTimeStamp;
+      if (timestamp != null) _velocity.start(timestamp, 0);
+    } else if (notification is ScrollUpdateNotification) {
+      var fast = false;
+      final details = notification.dragDetails;
+      final delta = notification.scrollDelta;
+      if (_fingerScrolling &&
+          details != null &&
+          delta != null &&
+          delta != 0 &&
+          !notification.metrics.outOfRange) {
+        _samplePosition += delta;
+        fast = _velocity.addSample(
+          timestamp:
+              details.sourceTimeStamp ??
+              WidgetsBinding.instance.currentSystemFrameTimeStamp,
+          pixels: _samplePosition,
+          viewportDimension: notification.metrics.viewportDimension,
+        );
+      } else {
+        _velocity.reset();
+      }
+      _visibility.showScroll(fast: fast);
+    } else if (notification is OverscrollNotification) {
+      _velocity.reset();
+    } else if (notification is ScrollEndNotification) {
+      _fingerScrolling = false;
+      _velocity.reset();
+      _visibility.setScrolling(false);
     }
     return false;
   }
@@ -271,6 +390,7 @@ class ReadingQuickScrollController extends ChangeNotifier {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _snapshotScheduled = false;
       if (_disposed) return;
+      _configureVisibility();
       if (scrollController.hasClients) {
         final p = scrollController.position;
         if (p.hasContentDimensions && isFollowingEnd) {
@@ -342,6 +462,8 @@ class ReadingQuickScrollController extends ChangeNotifier {
   void dispose() {
     _disposed = true;
     _cancelMovement();
+    _visibility.removeListener(scheduleSnapshot);
+    _visibility.dispose();
     _anchors.clear();
     scrollController.removeListener(_onScroll);
     super.dispose();

@@ -158,7 +158,7 @@ class WalletController extends StateNotifier<WalletState> {
       if (!_isCurrent(epoch)) return;
       state = state.copyWith(
         isLoadingSummary: false,
-        summaryFailure: _asFailure(error, '钱包余额加载失败，请重试。'),
+        summaryFailure: _asFailure(error, '温油余额加载失败，请重试。'),
       );
     }
   }
@@ -287,7 +287,9 @@ class DailyCheckInController extends StateNotifier<DailyCheckInState> {
   }
 
   void acknowledgeReceipt(String date) {
-    if (state.pendingReceipt?.date != date) return;
+    // A visible host may disappear before its end-of-frame acknowledgement.
+    // Ignore old-account callbacks after the session-owned controller expires.
+    if (!mounted || state.pendingReceipt?.date != date) return;
     _acknowledgedDate = date;
     state = DailyCheckInState(
       phase: state.phase,

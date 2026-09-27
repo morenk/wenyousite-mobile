@@ -85,6 +85,14 @@ class DiagnosticSentrySender implements DiagnosticSender {
 
 SentryEvent diagnosticSentryEvent(DiagnosticRecord record) {
   final fields = sanitizeDiagnosticFields(record.fields);
+  final coordinates = (fields['stack'] as List<String>? ?? const <String>[])
+      .map(diagnosticCoordinate)
+      .nonNulls
+      .toList();
+  final appFrames = coordinates.where(
+    (frame) => frame.file.startsWith('package:wenyousite_mobile/'),
+  );
+  final location = appFrames.firstOrNull ?? coordinates.firstOrNull;
   final context = Contexts();
   context['diagnostic'] = record.toJson();
   return SentryEvent(
@@ -101,16 +109,34 @@ SentryEvent diagnosticSentryEvent(DiagnosticRecord record) {
     environment: 'mobile',
     message: SentryMessage('${record.operation.name}.${record.stage.name}'),
     fingerprint: [
+      'diagnostic-v2',
       record.operation.name,
       record.stage.name,
       record.source.name,
       '${fields['businessCode'] ?? fields['errorType'] ?? record.reason.name}',
+      record.reason.name,
+      if (fields['diagnosticCode'] case final String code) code,
+      if (fields['apiOperation'] case final String api) api,
+      if (fields['dioType'] case final String type) type,
+      if (location != null) '${location.file}:${location.line}',
     ],
     tags: {
       'diagnostic_id': record.id,
       'operation': record.operation.name,
       'stage': record.stage.name,
       'source': record.source.name,
+      'reason': record.reason.name,
+      'diagnostic_schema': '2',
+      for (final key in const [
+        'diagnosticCode',
+        'apiOperation',
+        'screen',
+        'dioType',
+        'stackStatus',
+        'buildMode',
+        'lifecycle',
+      ])
+        if (fields[key] case final String value) key: value,
       if (fields['requestId'] case final String id) 'request_id': id,
       if (fields['businessCode'] case final int code) 'error_code': '$code',
     },
@@ -118,19 +144,17 @@ SentryEvent diagnosticSentryEvent(DiagnosticRecord record) {
     exceptions: [
       SentryException(
         type: fields['errorType'] as String? ?? 'OperationFailure',
-        value: '${record.operation.name}.${record.stage.name}',
+        value:
+            '${record.operation.name}.${record.stage.name}'
+            '${fields['diagnosticCode'] == null ? '' : ': ${fields['diagnosticCode']}'}',
         stackTrace: SentryStackTrace(
           frames: [
-            for (final frame
-                in (fields['stack'] as List<String>? ?? const []).reversed)
+            for (final frame in coordinates.reversed)
               SentryStackFrame(
-                fileName: frame.substring(
-                  0,
-                  frame.lastIndexOf(':', frame.lastIndexOf(':') - 1),
-                ),
-                lineNo: int.tryParse(frame.split(':').reversed.elementAt(1)),
-                colNo: int.tryParse(frame.split(':').last),
-                inApp: frame.startsWith('package:wenyousite_mobile/'),
+                fileName: frame.file,
+                lineNo: frame.line,
+                colNo: frame.column,
+                inApp: frame.file.startsWith('package:wenyousite_mobile/'),
               ),
           ],
         ),

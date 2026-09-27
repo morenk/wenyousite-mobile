@@ -31,6 +31,8 @@ class UserRelationListItem {
     required this.level,
     required this.relatedAt,
     this.avatarUrl,
+    this.viewerIsFollowing,
+    this.viewerIsFollowedBy,
   });
 
   final String userId;
@@ -38,4 +40,20 @@ class UserRelationListItem {
   final String? avatarUrl;
   final int level;
   final DateTime relatedAt;
+  final bool? viewerIsFollowing;
+  final bool? viewerIsFollowedBy;
+
+  bool get hasRelationState =>
+      viewerIsFollowing != null && viewerIsFollowedBy != null;
+
+  UserRelationListItem withRelation({bool? following, bool? followedBy}) =>
+      UserRelationListItem(
+        userId: userId,
+        username: username,
+        level: level,
+        relatedAt: relatedAt,
+        avatarUrl: avatarUrl,
+        viewerIsFollowing: following ?? viewerIsFollowing,
+        viewerIsFollowedBy: followedBy ?? viewerIsFollowedBy,
+      );
 }

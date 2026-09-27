@@ -40,7 +40,7 @@ class MomentSearchMapper {
       throw const ApiFailure(userMessage: '搜索结果的动态加油数值无效，请重新搜索。');
     }
     final title = _requiredText(dto.title, '动态标题');
-    if (title.length < 2 || title.length > 40) {
+    if (title.runes.length < 2 || title.runes.length > 40) {
       throw const ApiFailure(userMessage: '搜索结果的动态标题长度无效，请重新搜索。');
     }
     return MomentCard(
@@ -58,6 +58,7 @@ class MomentSearchMapper {
       tipTotal: dto.tipTotal,
       viewerLiked: dto.viewerLiked,
       viewerBookmarked: dto.viewerBookmarked,
+      canInteract: dto.canInteract ?? true,
       createdAt: dto.createdAt,
       updatedAt: dto.updatedAt,
     );

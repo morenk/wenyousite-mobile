@@ -10,8 +10,10 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_internal_reference_text.da
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
+import 'package:wenyousite_mobile/features/media/presentation/pending_image_overlay.dart';
 import 'package:wenyousite_mobile/features/reports/application/report_repository_ports.dart';
 import 'package:wenyousite_mobile/features/reports/domain/report_models.dart';
+
 import 'direct_conversation_page_test_support.dart';
 
 void registerDirectConversationPageSendingMediaCases() {
@@ -79,7 +81,7 @@ void registerDirectConversationPageSendingMediaCases() {
 
     await tester.tap(find.byKey(const Key('direct-conversation-archive')));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('归档会话'));
+    await tester.tap(find.text('归档'));
     await tester.pumpAndSettle();
     expect(repository.archiveValues, [true]);
     expect(find.byTooltip('更多会话操作'), findsOneWidget);
@@ -376,11 +378,7 @@ void registerDirectConversationPageSendingMediaCases() {
     );
     expect(
       find.byWidgetPredicate(
-        (widget) =>
-            widget.key is ValueKey<String> &&
-            (widget.key! as ValueKey<String>).value.startsWith(
-              'direct-message-delivery-failed-',
-            ),
+        (widget) => widget is PendingImageOverlay && widget.failed,
       ),
       findsOneWidget,
     );
@@ -444,23 +442,12 @@ void registerDirectConversationPageSendingMediaCases() {
     await tester.pumpAndSettle();
 
     expect(gateway.inputs, hasLength(1));
-    final failureButton = find.byWidgetPredicate(
-      (widget) =>
-          widget.key is ValueKey<String> &&
-          (widget.key! as ValueKey<String>).value.startsWith(
-            'direct-message-delivery-failed-',
-          ),
+    final failedImage = find.byWidgetPredicate(
+      (widget) => widget is PendingImageOverlay && widget.failed,
     );
-    await tester.tap(failureButton);
+    await tester.tap(failedImage);
     await tester.pumpAndSettle();
-    final retry = find.byWidgetPredicate(
-      (widget) =>
-          widget.key is ValueKey<String> &&
-          (widget.key! as ValueKey<String>).value.startsWith(
-            'direct-message-retry-',
-          ),
-    );
-    await tester.tap(retry);
+    await tester.tap(find.text('重试发送'));
     await tester.pumpAndSettle();
 
     expect(gateway.inputs, hasLength(2));

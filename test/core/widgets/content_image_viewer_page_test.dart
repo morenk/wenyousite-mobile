@@ -11,6 +11,54 @@ import 'package:wenyousite_mobile/core/widgets/content_image_viewer_page.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_image_viewer_page.dart';
 
 void main() {
+  testWidgets('无id旧图集重建保留当前位置，旧图失败不显示到同URL另一位置', (tester) async {
+    final pending = Completer<String>();
+    late StateSetter rebuild;
+    const items = [
+      WenyouImageViewerItem(
+        url: 'https://example.test/same.png',
+        semanticLabel: '第一处',
+      ),
+      WenyouImageViewerItem(
+        url: 'https://example.test/same.png',
+        semanticLabel: '第二处',
+      ),
+    ];
+    await tester.pumpWidget(
+      ProviderScope(
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: StatefulBuilder(
+            builder: (context, setState) {
+              rebuild = setState;
+              return ContentImageViewerPage(
+                items: items,
+                onAddToStickers: (_) => pending.future,
+                imageBuilder: (_, index, current) =>
+                    const ColoredBox(color: Colors.red),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.byKey(const Key('content-image-actions')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('添加到表情收藏'));
+    await tester.pump();
+    await tester.dragFrom(const Offset(500, 300), const Offset(-220, 0));
+    await tester.pump();
+    rebuild(() {});
+    await tester.pump();
+    pending.completeError(const ApiFailure(userMessage: '第一处收藏失败'));
+    await tester.pumpAndSettle();
+    expect(find.text('2 / 2'), findsOneWidget);
+    expect(find.text('第一处收藏失败'), findsNothing);
+    await tester.dragFrom(const Offset(200, 300), const Offset(220, 0));
+    await tester.pumpAndSettle();
+    expect(find.text('第一处收藏失败'), findsOneWidget);
+  });
+
   testWidgets('原图页支持双击缩放、再次双击复位和下滑关闭', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(360, 640);

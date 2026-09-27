@@ -13,6 +13,7 @@ import 'package:wenyousite_mobile/features/media/application/image_crop_ports.da
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
 import 'package:wenyousite_mobile/features/media/data/media_upload_repository.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
+import 'package:wenyousite_mobile/features/media/media_ui.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_thread_context_ports.dart';
 import 'package:wenyousite_mobile/features/posts/data/post_repository.dart';
 import 'package:wenyousite_mobile/features/posts/presentation/post_replies_page.dart';
@@ -20,6 +21,7 @@ import 'package:wenyousite_mobile/features/stickers/application/sticker_collecti
 
 import '../../support/deterministic_test_fonts.dart';
 import '../../support/fake_image_crop_processor.dart';
+import '../../support/memory_pending_media_file_store.dart';
 import '../moments/moment_animation_fixture.dart';
 import 'post_replies_page_test_support.dart';
 
@@ -90,6 +92,7 @@ void registerPostRepliesPageComposerMediaCases() {
     final repository = PostRepliesPageTestFakePostRepository();
     final container = ProviderContainer(
       overrides: [
+        memoryPendingMediaFileStoreOverride(),
         tokenStoreProvider.overrideWithValue(
           PostRepliesPageTestMemoryTokenStore(),
         ),
@@ -158,6 +161,7 @@ void registerPostRepliesPageComposerMediaCases() {
     final repository = PostRepliesPageTestFakePostRepository();
     final container = ProviderContainer(
       overrides: [
+        memoryPendingMediaFileStoreOverride(),
         tokenStoreProvider.overrideWithValue(
           PostRepliesPageTestMemoryTokenStore(),
         ),
@@ -215,6 +219,7 @@ void registerPostRepliesPageComposerMediaCases() {
     final repository = PostRepliesPageTestFakePostRepository();
     final container = ProviderContainer(
       overrides: [
+        memoryPendingMediaFileStoreOverride(),
         tokenStoreProvider.overrideWithValue(
           PostRepliesPageTestMemoryTokenStore(),
         ),
@@ -266,6 +271,7 @@ void registerPostRepliesPageComposerMediaCases() {
     addTearDown(tester.view.resetViewInsets);
     final container = ProviderContainer(
       overrides: [
+        memoryPendingMediaFileStoreOverride(),
         tokenStoreProvider.overrideWithValue(
           PostRepliesPageTestMemoryTokenStore(),
         ),
@@ -372,6 +378,7 @@ void registerPostRepliesPageComposerMediaCases() {
         addTearDown(tester.view.resetPhysicalSize);
         final container = ProviderContainer(
           overrides: [
+            memoryPendingMediaFileStoreOverride(),
             tokenStoreProvider.overrideWithValue(
               PostRepliesPageTestMemoryTokenStore(),
             ),
@@ -449,6 +456,7 @@ void registerPostRepliesPageComposerMediaCases() {
             PostRepliesPageTestFailingThenSuccessfulMediaUploadGateway();
         final container = ProviderContainer(
           overrides: [
+            memoryPendingMediaFileStoreOverride(),
             tokenStoreProvider.overrideWithValue(
               PostRepliesPageTestMemoryTokenStore(),
             ),
@@ -493,12 +501,13 @@ void registerPostRepliesPageComposerMediaCases() {
         await postRepliesPageTestConfirmImageCrop(tester);
         await _settleEditorImage(tester);
 
-        expect(find.text('图片处理失败'), findsOneWidget);
-        expect(find.textContaining('问题编号：request-one'), findsOneWidget);
         expect(
-          find.byKey(const Key('post-composer-retry-upload')),
+          find.byWidgetPredicate(
+            (widget) => widget is PendingImageOverlay && widget.failed,
+          ),
           findsOneWidget,
         );
+        expect(find.text('重试'), findsNothing);
         var editor = tester.widget<QuillEditor>(
           find.byKey(const Key('post-composer-body')),
         );
@@ -518,7 +527,10 @@ void registerPostRepliesPageComposerMediaCases() {
           isTrue,
         );
 
-        await tester.tap(find.byKey(const Key('post-composer-retry-upload')));
+        await tester.tap(find.byType(PendingImageOverlay));
+        await tester.pumpAndSettle();
+        expect(find.text('图片未完成'), findsOneWidget);
+        await tester.tap(find.text('重试'));
         await _settleEditorImage(tester);
 
         editor = tester.widget<QuillEditor>(
@@ -528,14 +540,11 @@ void registerPostRepliesPageComposerMediaCases() {
           editor.controller.document.toDelta(),
         );
         expect(uploadGateway.inputs, hasLength(2));
-        expect(uploadGateway.inputs[1], same(uploadGateway.inputs[0]));
+        expect(uploadGateway.inputs[1].bytes, uploadGateway.inputs[0].bytes);
         const retriedImage = '![图片](https://cdn.example.com/retried-reply.png)';
         expect(markdown.replaceFirst(retriedImage, ''), contains('保留的回复正文'));
         expect(retriedImage.allMatches(markdown), hasLength(1));
-        expect(
-          find.byKey(const Key('post-composer-retry-upload')),
-          findsNothing,
-        );
+        expect(find.text('重试'), findsNothing);
         expect(fixture.requests, ['https://cdn.example.com/retried-reply.png']);
       },
       resources: {
@@ -545,6 +554,124 @@ void registerPostRepliesPageComposerMediaCases() {
       },
     );
   });
+  for (final cancelWait in [false, true]) {
+    testWidgets('回复图片后台准备仍可写，等待发布可取消：$cancelWait', (tester) async {
+      await MomentAnimationFixture.run(
+        tester,
+        (fixture) async {
+          final gateway = PostRepliesPageTestLateCompletingMediaUploadGateway();
+          final repository = PostRepliesPageTestFakePostRepository();
+          final container = ProviderContainer(
+            overrides: [
+              memoryPendingMediaFileStoreOverride(),
+              tokenStoreProvider.overrideWithValue(
+                PostRepliesPageTestMemoryTokenStore(),
+              ),
+              sessionRemoteProvider.overrideWithValue(
+                PostRepliesPageTestFakeSessionRemote(),
+              ),
+              stickersEnabledProvider.overrideWithValue(false),
+              postRepositoryProvider.overrideWithValue(repository),
+              imageCropProcessorPortProvider.overrideWithValue(
+                const _ReplyImageCropProcessor(),
+              ),
+              editorImagePickerPortProvider.overrideWithValue(
+                PostRepliesPageTestFakeEditorImagePicker(),
+              ),
+              mediaUploadGatewayPortProvider.overrideWithValue(gateway),
+            ],
+          );
+          addTearDown(container.dispose);
+          await container
+              .read(sessionControllerProvider.notifier)
+              .authenticate(postRepliesPageTestTokensFor('author-1'));
+          await tester.pumpWidget(
+            UncontrolledProviderScope(
+              container: container,
+              child: MaterialApp(
+                theme: AppTheme.light,
+                home: const PostRepliesPage(
+                  threadId: 'thread',
+                  rootPostId: 'root',
+                ),
+              ),
+            ),
+          );
+          await tester.pumpAndSettle();
+          await tester.tap(find.byKey(const Key('post-reply-compose')));
+          await tester.pumpAndSettle();
+          await tester.tap(find.byKey(const Key('editor-image')));
+          await postRepliesPageTestConfirmImageCrop(tester);
+          for (var i = 0; i < 4; i++) {
+            await tester.runAsync(
+              () => Future<void>.delayed(const Duration(milliseconds: 20)),
+            );
+            await tester.pump(const Duration(milliseconds: 100));
+          }
+          final editor = tester.widget<QuillEditor>(
+            find.byKey(const Key('post-composer-body')),
+          );
+          expect(editor.controller.readOnly, isFalse);
+          expect(
+            MarkdownDeltaCodec.encode(editor.controller.document.toDelta()),
+            contains('https://local.invalid/wenyou-pending/'),
+          );
+          final end = editor.controller.document.length - 1;
+          editor.controller.replaceText(
+            end,
+            0,
+            '继续写正文',
+            TextSelection.collapsed(offset: end + 5),
+          );
+          await tester.pump(const Duration(milliseconds: 200));
+          expect(find.textContaining('安全处理'), findsNothing);
+          await tester.tap(find.byKey(const Key('editor-submit')));
+          await tester.pump();
+          expect(find.text('还有 1 张图片未就绪'), findsNothing);
+          await tester.pump(const Duration(seconds: 3));
+          expect(find.text('还有 1 张图片未就绪'), findsOneWidget);
+          expect(editor.controller.readOnly, isTrue);
+          expect(repository.createInputs, isEmpty);
+          if (cancelWait) {
+            await tester.tap(find.text('取消发布'));
+            await tester.pump();
+            expect(editor.controller.readOnly, isFalse);
+            expect(gateway.operation.cancelled, isFalse);
+          }
+          gateway.operation.complete(
+            const UploadedEditorImage(
+              mediaId: 'ready',
+              url: 'https://cdn.example.com/ready.png',
+            ),
+          );
+          await _settleEditorImage(tester);
+          if (cancelWait) {
+            expect(repository.createInputs, isEmpty);
+            expect(find.byKey(const Key('post-composer-body')), findsOneWidget);
+            await tester.tap(find.byKey(const Key('editor-submit')));
+            await tester.pumpAndSettle();
+          }
+          expect(repository.createInputs, hasLength(1));
+          expect(repository.createInputs.single.content, contains('继续写正文'));
+          expect(
+            repository.createInputs.single.content,
+            contains('https://cdn.example.com/ready.png'),
+          );
+          expect(
+            repository.createInputs.single.content,
+            isNot(contains('local.invalid')),
+          );
+          expect(find.byKey(const Key('post-composer-sheet')), findsNothing);
+          expect(tester.takeException(), isNull);
+        },
+        resources: {
+          'https://cdn.example.com/ready.png': File(
+            'test/fixtures/animation-webp-all-surfaces/poster.png',
+          ).readAsBytesSync(),
+        },
+      );
+    });
+  }
 }
 
 Future<void> _settleEditorImage(WidgetTester tester) async {

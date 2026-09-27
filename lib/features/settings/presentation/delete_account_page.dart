@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/settings/application/account_deletion_controller.dart';
 
@@ -29,30 +30,14 @@ class _DeleteAccountPageState extends ConsumerState<DeleteAccountPage> {
   Future<void> _requestDeletion() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
     FocusScope.of(context).unfocus();
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showWenyouConfirmationDialog(
       context: context,
-      builder: (dialogContext) {
-        final scheme = Theme.of(dialogContext).colorScheme;
-        return AlertDialog(
-          title: const Text('最后确认注销账号'),
-          content: const Text('注销立即生效且无法恢复。所有登录终端都会失效，确定永久注销吗？'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext, false),
-              child: const Text('取消'),
-            ),
-            FilledButton(
-              key: const Key('delete-account-confirm'),
-              style: FilledButton.styleFrom(
-                backgroundColor: scheme.error,
-                foregroundColor: scheme.onError,
-              ),
-              onPressed: () => Navigator.pop(dialogContext, true),
-              child: const Text('永久注销'),
-            ),
-          ],
-        );
-      },
+      title: '最后确认注销账号',
+      message: '注销立即生效且无法恢复。所有登录终端都会失效，确定永久注销吗？',
+      confirmLabel: '永久注销',
+      cancelLabel: '取消',
+      confirmKey: const Key('delete-account-confirm'),
+      tone: WenyouConfirmationTone.destructive,
     );
     if (confirmed != true || !mounted) return;
     await _deleteRemotely();
@@ -86,7 +71,6 @@ class _DeleteAccountPageState extends ConsumerState<DeleteAccountPage> {
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
-    final scheme = Theme.of(context).colorScheme;
     final state = ref.watch(accountDeletionControllerProvider);
     final locked = state.isSubmitting || state.remoteDeletionConfirmed;
     final page = Scaffold(
@@ -173,20 +157,14 @@ class _DeleteAccountPageState extends ConsumerState<DeleteAccountPage> {
                       ),
                     ],
                     SizedBox(height: tokens.space24),
-                    FilledButton.icon(
+                    WenyouAsyncButton(
                       key: const Key('delete-account-submit'),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: scheme.error,
-                        foregroundColor: scheme.onError,
-                      ),
+                      label: '继续注销账号',
+                      isLoading: state.isSubmitting,
                       onPressed: locked ? null : _requestDeletion,
-                      icon: state.isSubmitting
-                          ? const SizedBox.square(
-                              dimension: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const WenyouIcon(WenyouIconIds.actionDelete),
-                      label: Text(state.isSubmitting ? '正在注销' : '继续注销账号'),
+                      loadingLabel: '正在注销',
+                      icon: WenyouIconIds.actionDelete,
+                      tone: WenyouAsyncButtonTone.destructive,
                     ),
                   ],
                 ),

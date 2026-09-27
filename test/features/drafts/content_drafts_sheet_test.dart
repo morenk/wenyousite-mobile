@@ -14,6 +14,29 @@ import '../../support/deterministic_test_fonts.dart';
 void main() {
   setUpAll(loadDeterministicTestFonts);
 
+  testWidgets('320dp 两倍字号快捷保存完整容纳文案', (tester) async {
+    tester.view.physicalSize = const Size(320, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final controller = await _readyController([]);
+    await _pumpSheet(tester, controller, currentContent: '当前正文', textScale: 2);
+    final label = find.text('保存到空闲位');
+    final element = tester.element(label);
+    final text = tester.widget<Text>(label);
+    final painter = TextPainter(
+      text: TextSpan(
+        text: text.data,
+        style: DefaultTextStyle.of(element).style.merge(text.style),
+      ),
+      textDirection: TextDirection.ltr,
+      textScaler: MediaQuery.textScalerOf(element),
+    )..layout(maxWidth: tester.getSize(label).width);
+    expect(tester.getSize(label).height, greaterThanOrEqualTo(painter.height));
+    painter.dispose();
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('云草稿恢复先传授权展示映射，正文仍保留原 URL', (tester) async {
     const source = 'https://cdn.example/original.gif';
     const display = MediaDisplay(
@@ -58,7 +81,7 @@ void main() {
 
     await _pumpSheet(tester, controller, currentContent: '当前正文');
 
-    expect(find.text('只保存当前正文 · 已用 2/5'), findsOneWidget);
+    expect(find.text('已用 2/5'), findsOneWidget);
     expect(find.byKey(const Key('content-draft-slot-1')), findsOneWidget);
     expect(find.byKey(const Key('content-draft-slot-2')), findsOneWidget);
     expect(find.text('草稿位 1'), findsOneWidget);
@@ -89,6 +112,10 @@ void main() {
     await tester.pump(const Duration(seconds: 5));
     await tester.pumpAndSettle();
     expect(find.text('正文已保存到草稿位 2。'), findsNothing);
+    await _pumpSheet(tester, controller, currentContent: '当前编辑器正文');
+    await tester.pumpAndSettle();
+    expect(find.text('正文已保存到草稿位 2。'), findsNothing);
+    expect(repository.createdSlots, [2]);
   });
 
   testWidgets('草稿位 1 已有内容时确认后开启并显示自动保存状态', (tester) async {
@@ -102,7 +129,14 @@ void main() {
     await controller.load();
     await _pumpSheet(tester, controller, currentContent: '自动保存正文');
 
-    expect(find.text('已关闭'), findsOneWidget);
+    expect(
+      tester
+          .widget<Switch>(
+            find.byKey(const Key('content-drafts-auto-save-switch')),
+          )
+          .value,
+      isFalse,
+    );
     expect(
       tester
           .widget<Switch>(
@@ -120,8 +154,15 @@ void main() {
 
     expect(repository.updateVersions, isEmpty);
     expect(controller.state.autoSaveEnabled, isTrue);
-    expect(find.text('已开启'), findsOneWidget);
-    expect(find.text('已开启，编辑后自动更新到草稿位 1'), findsOneWidget);
+    expect(
+      tester
+          .widget<Switch>(
+            find.byKey(const Key('content-drafts-auto-save-switch')),
+          )
+          .value,
+      isTrue,
+    );
+    expect(find.text('等待保存修改'), findsOneWidget);
   });
 
   testWidgets('恢复最新版前明确确认，且回调只返回正文', (tester) async {
@@ -225,6 +266,7 @@ Future<void> _pumpSheet(
   required String currentContent,
   ValueChanged<String>? onRestore,
   ValueChanged<Map<String, MediaDisplay>>? onRestoreDisplays,
+  double textScale = 1,
 }) async {
   await tester.pumpWidget(
     ProviderScope(
@@ -235,6 +277,12 @@ Future<void> _pumpSheet(
       ],
       child: MaterialApp(
         theme: AppTheme.light,
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(
+            context,
+          ).copyWith(textScaler: TextScaler.linear(textScale)),
+          child: child!,
+        ),
         home: Scaffold(
           body: ContentDraftsSheet(
             draftSessionKey: _testDraftSessionKey,

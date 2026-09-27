@@ -4,9 +4,11 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_snack_bar.dart';
 
 void main() {
   testWidgets('普通提示使用 2.5 秒并自动消失', (tester) async {
+    var visibleCount = 0;
     await _pumpLauncher(
       tester,
-      onPressed: (context) => showWenyouSnackBar(context, '操作完成'),
+      onPressed: (context) =>
+          showWenyouSnackBar(context, '操作完成', onVisible: () => visibleCount++),
     );
 
     await tester.tap(find.byKey(const Key('show-notice')));
@@ -15,6 +17,7 @@ void main() {
     final snackBar = tester.widget<SnackBar>(find.byType(SnackBar));
     expect(snackBar.duration, wenyouBriefSnackBarDuration);
     expect(snackBar.persist, isFalse);
+    expect(visibleCount, 1);
 
     await tester.pump(wenyouBriefSnackBarDuration);
     await tester.pumpAndSettle();

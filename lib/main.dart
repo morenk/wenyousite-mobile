@@ -5,6 +5,7 @@ import 'package:wenyousite_mobile/app/wenyou_app.dart';
 import 'package:wenyousite_mobile/core/application/appearance_preference.dart';
 import 'package:wenyousite_mobile/core/application/background_reminder_preference.dart';
 import 'package:wenyousite_mobile/core/application/data_saver_preference.dart';
+import 'package:wenyousite_mobile/core/config/app_environment.dart';
 import 'package:wenyousite_mobile/core/diagnostics/debug_diagnostic_console.dart';
 import 'package:wenyousite_mobile/core/diagnostics/diagnostic_bootstrap.dart';
 import 'package:wenyousite_mobile/core/storage/shared_preferences_appearance_store.dart';
@@ -16,6 +17,7 @@ import 'package:wenyousite_mobile/features/media/data/system_image_picker_config
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  AppEnvironment.fromDefines(); // 在任何存储读取与网络启动前拒绝非法预览配置。
   await initializeFailureDiagnostics();
   if (wenyouFieldDiagnosticsEnabled) installWenyouDebugDiagnostics();
   configureSystemImagePicker();

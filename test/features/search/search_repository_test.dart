@@ -3,12 +3,26 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/features/moments/data/moment_search_mapper.dart';
 import 'package:wenyousite_mobile/features/search/data/search_repository.dart';
 import 'package:wenyousite_mobile/features/thread_feed/thread_feed_models.dart';
 
 import '../../support/thread_cover_fixtures.dart';
 
 void main() {
+  test('动态搜索保留后端只读互动权限', () {
+    final dto = _momentsResponse().data!.data.single.rebuild(
+      (b) => b.canInteract = false,
+    );
+    expect(MomentSearchMapper.map(dto).canInteract, isFalse);
+  });
+  test('动态搜索接收后端合法40码点标题', () {
+    final title = '😀' * 40;
+    final dto = _momentsResponse().data!.data.single.rebuild(
+      (b) => b.title = title,
+    );
+    expect(MomentSearchMapper.map(dto).title, title);
+  });
   test('搜索仓库映射综合、动态、分类与主题内结果契约', () async {
     final api = _MockSearchApi();
     when(

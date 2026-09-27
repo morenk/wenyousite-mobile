@@ -7,7 +7,36 @@ import 'package:wenyousite_mobile/core/diagnostics/failure_diagnostics.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/settings/presentation/diagnostic_settings_page.dart';
 
+import '../../support/deterministic_test_fonts.dart';
+
 void main() {
+  setUpAll(loadDeterministicTestFonts);
+  for (final dark in [false, true]) {
+    testWidgets('诊断页共享容器 ${dark ? '黑夜' : '浅色'} 视觉基线', (tester) async {
+      final previous = FailureDiagnostics.instance;
+      FailureDiagnostics.instance = FailureDiagnostics();
+      addTearDown(() => FailureDiagnostics.instance = previous);
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(360, 800);
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(
+        ProviderScope(
+          child: MaterialApp(
+            debugShowCheckedModeBanner: false,
+            theme: dark ? AppTheme.dark : AppTheme.light,
+            home: const DiagnosticSettingsPage(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await expectLater(
+        find.byType(MaterialApp),
+        matchesGoldenFile(
+          'goldens/diagnostics_${dark ? 'dark' : 'light'}_360.png',
+        ),
+      );
+    });
+  }
   testWidgets('窄屏与两倍文字能复制、关闭发送和清除记录', (tester) async {
     final previous = FailureDiagnostics.instance;
     final diagnostics = FailureDiagnostics();
@@ -45,6 +74,17 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.byType(WenyouSettingsTypography), findsOneWidget);
+    expect(
+      tester.widget<SwitchListTile>(find.byType(SwitchListTile)).subtitle,
+      isNull,
+    );
+    await tester.tap(find.byTooltip('自动发送故障诊断说明'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('不包含正文、图片、链接和账号信息。'), findsOneWidget);
+    expect(find.textContaining('最多保留 7 天内的 50 条记录。'), findsOneWidget);
+    expect(diagnostics.automaticSending, isTrue);
+    await tester.tap(find.text('关闭'));
+    await tester.pumpAndSettle();
     await tester.scrollUntilVisible(
       find.text('复制问题详情').hitTestable(),
       200,

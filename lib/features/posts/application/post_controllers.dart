@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
 import 'package:wenyousite_mobile/core/application/visibility_cache_invalidation.dart';
+import 'package:wenyousite_mobile/core/markdown/local_image_marker.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_dice_contract.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
@@ -143,9 +144,12 @@ class PostDiscussionController extends StateNotifier<PostDiscussionState> {
 
   Future<void> loadMore() => prefetchRemainingReplies();
 
+  Future<void> locateReply(String replyId) =>
+      prefetchRemainingReplies(untilReplyId: replyId);
+
   /// Fetches all remaining reply text sequentially after the first frame. The
   /// sliver still creates image widgets lazily inside its viewport cache.
-  Future<void> prefetchRemainingReplies() async {
+  Future<void> prefetchRemainingReplies({String? untilReplyId}) async {
     if (state.phase != PostDiscussionPhase.ready ||
         state.isPrefetchingReplies ||
         !state.hasMore) {
@@ -163,7 +167,10 @@ class PostDiscussionController extends StateNotifier<PostDiscussionState> {
       retryAction: null,
     );
 
-    while (_matchesReplyRequest(epoch, order, authorId) && state.hasMore) {
+    while (_matchesReplyRequest(epoch, order, authorId) &&
+        state.hasMore &&
+        (untilReplyId == null ||
+            !state.replies.any((reply) => reply.id == untilReplyId))) {
       final cursor = state.cursor;
       if (cursor == null || !seenCursors.add(cursor)) {
         _finishReplyPrefetchFailure(
@@ -254,19 +261,23 @@ class PostDiscussionController extends StateNotifier<PostDiscussionState> {
     List<PostItem> replies,
   ) async {
     final focusedId = target.focusedReplyId;
-    if (focusedId == null || replies.any((reply) => reply.id == focusedId)) {
-      return replies;
-    }
-    final focused = await _repository.fetchPost(focusedId);
+    if (focusedId == null) return replies;
+    final firstPageIndex = replies.indexWhere((reply) => reply.id == focusedId);
+    final focused = firstPageIndex >= 0
+        ? replies[firstPageIndex]
+        : await _repository.fetchPost(focusedId);
     if (focused.parentPostId != root.id ||
         focused.threadId != root.threadId ||
         focused.subthreadId != root.subthreadId) {
       throw const ApiFailure(userMessage: '目标回复不属于当前楼中楼讨论。');
     }
+    if (focused.isDeleted) {
+      throw const ApiFailure(userMessage: '目标内容已不可见', httpStatus: 404);
+    }
     if (state.authorId != null && focused.author.id != state.authorId) {
       return replies;
     }
-    return _mergeReplies(replies, [focused], state.order);
+    return replies;
   }
 
   bool _isCurrent(int epoch) => mounted && epoch == _epoch;
@@ -533,6 +544,7 @@ class PostComposerController extends StateNotifier<PostComposerState> {
   }
 
   String? _validate(String content) {
+    if (containsLocalImageMarker(content)) return '图片尚未就绪，请等待或移除。';
     if (MarkdownDiceContract.countMarkdownNodes(content) >
         MarkdownDiceContract.maximumNodesPerPost) {
       return '当前正文最多可插入 20 个骰子，请删除一个后重试。';
@@ -544,7 +556,7 @@ class PostComposerController extends StateNotifier<PostComposerState> {
     if (!MarkdownContent.hasVisibleContent(content)) {
       return '正文和骰子不能同时为空。';
     }
-    if (content.length > 10000) return '正文超过 10000 字符，请精简后重试。';
+    if (content.runes.length > 10000) return '正文超过 10000 字符，请精简后重试。';
     return null;
   }
 

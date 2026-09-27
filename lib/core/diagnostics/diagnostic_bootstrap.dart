@@ -2,8 +2,11 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:wenyousite_mobile/core/config/app_environment.dart';
+import 'package:wenyousite_mobile/core/diagnostics/diagnostic_runtime.dart';
 import 'package:wenyousite_mobile/core/diagnostics/diagnostic_sentry_sender.dart';
 import 'package:wenyousite_mobile/core/diagnostics/failure_diagnostics.dart';
 
@@ -29,12 +32,22 @@ class FileDiagnosticStore implements DiagnosticStore {
 }
 
 Future<void> initializeFailureDiagnostics() async {
+  final environment = AppEnvironment.fromDefines();
   DiagnosticStore? store;
-  final fields = <String, Object?>{'os': Platform.operatingSystem};
+  final fields = <String, Object?>{
+    'os': Platform.operatingSystem,
+    'buildMode': kReleaseMode
+        ? 'release'
+        : kProfileMode
+        ? 'profile'
+        : 'debug',
+  };
   try {
     final directory = await getApplicationSupportDirectory();
     store = FileDiagnosticStore(
-      File('${directory.path}/failure-diagnostics-v1.json'),
+      File(
+        '${directory.path}/${environment.storageName('failure-diagnostics-v1.json')}',
+      ),
     );
   } on Object {
     // Missing/unwritable storage must not prevent the application from starting.
@@ -43,22 +56,26 @@ Future<void> initializeFailureDiagnostics() async {
     final info = await PackageInfo.fromPlatform();
     fields['appVersion'] = info.version;
     fields['build'] = info.buildNumber;
+    fields['appPackage'] = info.packageName;
   } on Object {
     // Do not guess a version when the platform cannot provide one.
   }
-  final osMatch = RegExp(
-    r'\d+(?:\.\d+)*',
-  ).firstMatch(Platform.operatingSystemVersion);
-  fields['osVersion'] = osMatch?.group(0);
-  final diagnostics = FailureDiagnostics(
-    store: store,
-    sender: DiagnosticSentrySender(
-      const String.fromEnvironment('SENTRY_DSN'),
-      enabled:
-          kReleaseMode ||
-          const bool.fromEnvironment('WENYOU_ENABLE_ERROR_REPORTING'),
-    ),
-  )..environment = sanitizeDiagnosticFields(fields);
+  if (Platform.isAndroid) fields.addAll(await loadDiagnosticAndroidRuntime());
+  final diagnostics =
+      FailureDiagnostics(
+          store: store,
+          sender: DiagnosticSentrySender(
+            const String.fromEnvironment('SENTRY_DSN'),
+            enabled:
+                !environment.isPreview &&
+                (kReleaseMode ||
+                    const bool.fromEnvironment(
+                      'WENYOU_ENABLE_ERROR_REPORTING',
+                    )),
+          ),
+        )
+        ..environment = sanitizeDiagnosticFields(fields)
+        ..lifecycle = () => WidgetsBinding.instance.lifecycleState?.name;
   FailureDiagnostics.instance = diagnostics;
   await diagnostics.initialize();
   if (store == null) {
@@ -75,6 +92,7 @@ void installFailureDiagnosticHandlers(FailureDiagnostics diagnostics) {
       details.exception,
       stackTrace: details.stack,
       operation: DiagnosticOperation.flutterError,
+      frameworkLibrary: details.library,
     );
     if (previousFlutter != null) {
       previousFlutter(details);

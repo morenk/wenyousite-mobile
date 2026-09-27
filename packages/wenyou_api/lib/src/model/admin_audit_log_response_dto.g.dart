@@ -31,6 +31,9 @@ const AdminAuditLogResponseDtoActionEnum
 _$adminAuditLogResponseDtoActionEnum_CONTENT_RESTORED =
     const AdminAuditLogResponseDtoActionEnum._('CONTENT_RESTORED');
 const AdminAuditLogResponseDtoActionEnum
+_$adminAuditLogResponseDtoActionEnum_THREAD_TAXONOMY_UPDATED =
+    const AdminAuditLogResponseDtoActionEnum._('THREAD_TAXONOMY_UPDATED');
+const AdminAuditLogResponseDtoActionEnum
 _$adminAuditLogResponseDtoActionEnum_REPORT_RESOLVED =
     const AdminAuditLogResponseDtoActionEnum._('REPORT_RESOLVED');
 const AdminAuditLogResponseDtoActionEnum
@@ -109,6 +112,9 @@ const AdminAuditLogResponseDtoActionEnum
 _$adminAuditLogResponseDtoActionEnum_SITE_SETTINGS_UPDATED =
     const AdminAuditLogResponseDtoActionEnum._('SITE_SETTINGS_UPDATED');
 const AdminAuditLogResponseDtoActionEnum
+_$adminAuditLogResponseDtoActionEnum_MOBILE_RELEASE_UPDATED =
+    const AdminAuditLogResponseDtoActionEnum._('MOBILE_RELEASE_UPDATED');
+const AdminAuditLogResponseDtoActionEnum
 _$adminAuditLogResponseDtoActionEnum_unknownDefaultOpenApi =
     const AdminAuditLogResponseDtoActionEnum._('unknownDefaultOpenApi');
 
@@ -132,6 +138,8 @@ AdminAuditLogResponseDtoActionEnum _$adminAuditLogResponseDtoActionEnumValueOf(
       return _$adminAuditLogResponseDtoActionEnum_CONTENT_HIDDEN;
     case 'CONTENT_RESTORED':
       return _$adminAuditLogResponseDtoActionEnum_CONTENT_RESTORED;
+    case 'THREAD_TAXONOMY_UPDATED':
+      return _$adminAuditLogResponseDtoActionEnum_THREAD_TAXONOMY_UPDATED;
     case 'REPORT_RESOLVED':
       return _$adminAuditLogResponseDtoActionEnum_REPORT_RESOLVED;
     case 'REPORT_DISMISSED':
@@ -180,6 +188,8 @@ AdminAuditLogResponseDtoActionEnum _$adminAuditLogResponseDtoActionEnumValueOf(
       return _$adminAuditLogResponseDtoActionEnum_TAG_MERGED;
     case 'SITE_SETTINGS_UPDATED':
       return _$adminAuditLogResponseDtoActionEnum_SITE_SETTINGS_UPDATED;
+    case 'MOBILE_RELEASE_UPDATED':
+      return _$adminAuditLogResponseDtoActionEnum_MOBILE_RELEASE_UPDATED;
     case 'unknownDefaultOpenApi':
       return _$adminAuditLogResponseDtoActionEnum_unknownDefaultOpenApi;
     default:
@@ -199,6 +209,7 @@ _$adminAuditLogResponseDtoActionEnumValues =
         _$adminAuditLogResponseDtoActionEnum_USER_SANCTION_REVOKED,
         _$adminAuditLogResponseDtoActionEnum_CONTENT_HIDDEN,
         _$adminAuditLogResponseDtoActionEnum_CONTENT_RESTORED,
+        _$adminAuditLogResponseDtoActionEnum_THREAD_TAXONOMY_UPDATED,
         _$adminAuditLogResponseDtoActionEnum_REPORT_RESOLVED,
         _$adminAuditLogResponseDtoActionEnum_REPORT_DISMISSED,
         _$adminAuditLogResponseDtoActionEnum_SYSTEM_NOTIFICATION_SENT,
@@ -223,6 +234,7 @@ _$adminAuditLogResponseDtoActionEnumValues =
         _$adminAuditLogResponseDtoActionEnum_THREAD_CATEGORY_MERGED,
         _$adminAuditLogResponseDtoActionEnum_TAG_MERGED,
         _$adminAuditLogResponseDtoActionEnum_SITE_SETTINGS_UPDATED,
+        _$adminAuditLogResponseDtoActionEnum_MOBILE_RELEASE_UPDATED,
         _$adminAuditLogResponseDtoActionEnum_unknownDefaultOpenApi,
       ],
     );
@@ -276,6 +288,9 @@ const AdminAuditLogResponseDtoTargetTypeEnum
 _$adminAuditLogResponseDtoTargetTypeEnum_SITE_SETTINGS =
     const AdminAuditLogResponseDtoTargetTypeEnum._('SITE_SETTINGS');
 const AdminAuditLogResponseDtoTargetTypeEnum
+_$adminAuditLogResponseDtoTargetTypeEnum_MOBILE_RELEASE =
+    const AdminAuditLogResponseDtoTargetTypeEnum._('MOBILE_RELEASE');
+const AdminAuditLogResponseDtoTargetTypeEnum
 _$adminAuditLogResponseDtoTargetTypeEnum_unknownDefaultOpenApi =
     const AdminAuditLogResponseDtoTargetTypeEnum._('unknownDefaultOpenApi');
 
@@ -314,6 +329,8 @@ _$adminAuditLogResponseDtoTargetTypeEnumValueOf(String name) {
       return _$adminAuditLogResponseDtoTargetTypeEnum_NOTIFICATION_CAMPAIGN;
     case 'SITE_SETTINGS':
       return _$adminAuditLogResponseDtoTargetTypeEnum_SITE_SETTINGS;
+    case 'MOBILE_RELEASE':
+      return _$adminAuditLogResponseDtoTargetTypeEnum_MOBILE_RELEASE;
     case 'unknownDefaultOpenApi':
       return _$adminAuditLogResponseDtoTargetTypeEnum_unknownDefaultOpenApi;
     default:
@@ -341,6 +358,7 @@ _$adminAuditLogResponseDtoTargetTypeEnumValues =
         _$adminAuditLogResponseDtoTargetTypeEnum_ADMIN_SESSION,
         _$adminAuditLogResponseDtoTargetTypeEnum_NOTIFICATION_CAMPAIGN,
         _$adminAuditLogResponseDtoTargetTypeEnum_SITE_SETTINGS,
+        _$adminAuditLogResponseDtoTargetTypeEnum_MOBILE_RELEASE,
         _$adminAuditLogResponseDtoTargetTypeEnum_unknownDefaultOpenApi,
       ],
     );
@@ -363,6 +381,7 @@ class _$AdminAuditLogResponseDtoActionEnumSerializer
     'USER_SANCTION_REVOKED': 'USER_SANCTION_REVOKED',
     'CONTENT_HIDDEN': 'CONTENT_HIDDEN',
     'CONTENT_RESTORED': 'CONTENT_RESTORED',
+    'THREAD_TAXONOMY_UPDATED': 'THREAD_TAXONOMY_UPDATED',
     'REPORT_RESOLVED': 'REPORT_RESOLVED',
     'REPORT_DISMISSED': 'REPORT_DISMISSED',
     'SYSTEM_NOTIFICATION_SENT': 'SYSTEM_NOTIFICATION_SENT',
@@ -387,6 +406,7 @@ class _$AdminAuditLogResponseDtoActionEnumSerializer
     'THREAD_CATEGORY_MERGED': 'THREAD_CATEGORY_MERGED',
     'TAG_MERGED': 'TAG_MERGED',
     'SITE_SETTINGS_UPDATED': 'SITE_SETTINGS_UPDATED',
+    'MOBILE_RELEASE_UPDATED': 'MOBILE_RELEASE_UPDATED',
     'unknownDefaultOpenApi': 'unknown_default_open_api',
   };
   static const Map<Object, String> _fromWire = const <Object, String>{
@@ -398,6 +418,7 @@ class _$AdminAuditLogResponseDtoActionEnumSerializer
     'USER_SANCTION_REVOKED': 'USER_SANCTION_REVOKED',
     'CONTENT_HIDDEN': 'CONTENT_HIDDEN',
     'CONTENT_RESTORED': 'CONTENT_RESTORED',
+    'THREAD_TAXONOMY_UPDATED': 'THREAD_TAXONOMY_UPDATED',
     'REPORT_RESOLVED': 'REPORT_RESOLVED',
     'REPORT_DISMISSED': 'REPORT_DISMISSED',
     'SYSTEM_NOTIFICATION_SENT': 'SYSTEM_NOTIFICATION_SENT',
@@ -422,6 +443,7 @@ class _$AdminAuditLogResponseDtoActionEnumSerializer
     'THREAD_CATEGORY_MERGED': 'THREAD_CATEGORY_MERGED',
     'TAG_MERGED': 'TAG_MERGED',
     'SITE_SETTINGS_UPDATED': 'SITE_SETTINGS_UPDATED',
+    'MOBILE_RELEASE_UPDATED': 'MOBILE_RELEASE_UPDATED',
     'unknown_default_open_api': 'unknownDefaultOpenApi',
   };
 
@@ -466,6 +488,7 @@ class _$AdminAuditLogResponseDtoTargetTypeEnumSerializer
     'ADMIN_SESSION': 'ADMIN_SESSION',
     'NOTIFICATION_CAMPAIGN': 'NOTIFICATION_CAMPAIGN',
     'SITE_SETTINGS': 'SITE_SETTINGS',
+    'MOBILE_RELEASE': 'MOBILE_RELEASE',
     'unknownDefaultOpenApi': 'unknown_default_open_api',
   };
   static const Map<Object, String> _fromWire = const <Object, String>{
@@ -485,6 +508,7 @@ class _$AdminAuditLogResponseDtoTargetTypeEnumSerializer
     'ADMIN_SESSION': 'ADMIN_SESSION',
     'NOTIFICATION_CAMPAIGN': 'NOTIFICATION_CAMPAIGN',
     'SITE_SETTINGS': 'SITE_SETTINGS',
+    'MOBILE_RELEASE': 'MOBILE_RELEASE',
     'unknown_default_open_api': 'unknownDefaultOpenApi',
   };
 

@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_pagination.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_sliver_panel.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/wallet/application/wallet_controllers.dart';
@@ -23,7 +23,7 @@ class WalletPage extends ConsumerWidget {
     final provider = walletControllerProvider(sessionKey);
     final state = ref.watch(provider);
     return Scaffold(
-      appBar: AppBar(title: const Text('我的温油')),
+      appBar: AppBar(title: const Text('油卡')),
       body: RefreshIndicator(
         onRefresh: () => ref.read(provider.notifier).refresh(),
         child: CustomScrollView(
@@ -43,9 +43,9 @@ class WalletPage extends ConsumerWidget {
                           onRetry: () =>
                               ref.read(provider.notifier).retrySummary(),
                         ),
-                        SizedBox(height: context.wenyouTokens.space12),
+                        SizedBox(height: context.wenyouTokens.cardGap),
                         const DailyCheckInStatus(),
-                        SizedBox(height: context.wenyouTokens.space12),
+                        SizedBox(height: context.wenyouTokens.cardGap),
                       ],
                     ),
                   ),
@@ -92,7 +92,7 @@ class _WalletSummaryPanel extends StatelessWidget {
                 ? const _WalletLoading(label: '正在读取温油余额…')
                 : WenyouEmptyState(
                     icon: WenyouIconIds.statusOffline,
-                    title: '钱包余额加载失败',
+                    title: '温油余额加载失败',
                     message: state.summaryFailure?.userMessage ?? '请稍后重试。',
                     detail: wenyouFailureDetail(state.summaryFailure),
                     action: OutlinedButton.icon(
@@ -290,35 +290,16 @@ class _WalletTransactionsPanel extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                if (state.loadMoreFailure != null) ...[
-                  SizedBox(height: tokens.space12),
-                  WenyouStatusBanner(
-                    tone: WenyouStatusTone.error,
-                    message: state.loadMoreFailure!.userMessage,
-                    detail: wenyouFailureDetail(state.loadMoreFailure),
-                    action: TextButton(
-                      key: const Key('wallet-load-more-retry'),
-                      onPressed: onLoadMore,
-                      child: const Text('重试加载'),
-                    ),
-                  ),
-                ],
-                if (state.hasMore) ...[
-                  SizedBox(height: tokens.space12),
-                  Center(
-                    child: OutlinedButton.icon(
-                      key: const Key('wallet-load-more'),
-                      onPressed: state.isLoadingMore ? null : onLoadMore,
-                      icon: state.isLoadingMore
-                          ? const SizedBox.square(
-                              dimension: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const WenyouIcon(WenyouIconIds.navigationExpand),
-                      label: const Text('加载更多'),
-                    ),
-                  ),
-                ],
+                WenyouPaginationFooter(
+                  hasMore: state.hasMore,
+                  isLoading: state.isLoadingMore,
+                  failure: state.loadMoreFailure,
+                  onLoadMore: onLoadMore,
+                  showEndLabel: false,
+                  retryLabel: '重试加载',
+                  loadMoreKey: const Key('wallet-load-more'),
+                  retryKey: const Key('wallet-load-more-retry'),
+                ),
               ],
             ),
           ),
@@ -361,9 +342,7 @@ class _TransactionTile extends StatelessWidget {
                 ),
                 SizedBox(height: tokens.space4),
                 Text(
-                  DateFormat(
-                    'yyyy-MM-dd HH:mm',
-                  ).format(transaction.createdAt.toLocal()),
+                  formatWenyouExactTime(transaction.createdAt),
                   style: Theme.of(
                     context,
                   ).textTheme.wenyouCaption.copyWith(color: tokens.mutedText),
@@ -413,7 +392,7 @@ class _TransactionTile extends StatelessWidget {
             type: MaterialType.transparency,
             child: InkWell(
               onTap: () => context.push(path),
-              borderRadius: BorderRadius.circular(tokens.radius12),
+              borderRadius: BorderRadius.circular(tokens.radiusControl),
               child: content,
             ),
           );

@@ -3,17 +3,18 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
-import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/application/appearance_preference.dart';
+import 'package:wenyousite_mobile/core/application/background_execution.dart';
 import 'package:wenyousite_mobile/core/application/session_logout_controller.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_nested_scroll.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_settings_body.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
 import 'package:wenyousite_mobile/features/users/application/avatar_controller.dart';
@@ -23,11 +24,11 @@ import 'package:wenyousite_mobile/features/users/application/public_user_control
 import 'package:wenyousite_mobile/features/users/domain/me_profile_models.dart';
 import 'package:wenyousite_mobile/features/users/presentation/background_reminder_settings_panel.dart';
 import 'package:wenyousite_mobile/features/users/presentation/me_content_dashboard.dart';
+import 'package:wenyousite_mobile/features/users/presentation/me_personal_tools.dart';
 import 'package:wenyousite_mobile/features/users/presentation/me_profile_editor.dart';
 import 'package:wenyousite_mobile/features/users/presentation/me_profile_refresh_boundary.dart';
-import 'package:wenyousite_mobile/features/users/presentation/user_profile_header.dart';
+import 'package:wenyousite_mobile/features/users/presentation/me_profile_summary.dart';
 import 'package:wenyousite_mobile/features/wallet/application/wallet_controllers.dart';
-import 'package:wenyousite_mobile/features/wallet/domain/wallet_models.dart';
 import 'package:wenyousite_mobile/features/wallet/presentation/wallet_widgets.dart';
 
 void _showRefreshFailure(BuildContext context, ApiFailure failure) {
@@ -63,7 +64,11 @@ class _GuestMePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('我的')),
+      backgroundColor: wenyouPersonalPageBackground(context),
+      appBar: AppBar(
+        backgroundColor: wenyouPersonalPageBackground(context),
+        title: const Text('我的'),
+      ),
       body: WenyouPageBody(
         maxWidth: 600,
         bottomPadding: 112,
@@ -86,10 +91,19 @@ class _GuestMePage extends StatelessWidget {
               ),
             ),
             SizedBox(height: context.wenyouTokens.space12),
-            const _AppearanceSettingsPanel(),
-            ListTile(
-              title: const Text('故障诊断'),
-              onTap: () => context.pushNamed(AppRouteNames.diagnostics),
+            const WenyouSettingsGroup(
+              title: '偏好',
+              children: [_AppearanceSettingsPanel()],
+            ),
+            WenyouSettingsGroup(
+              title: '帮助',
+              children: [
+                WenyouSettingsLink(
+                  icon: WenyouIconIds.statusInfo,
+                  title: '故障诊断',
+                  onTap: () => context.pushNamed(AppRouteNames.diagnostics),
+                ),
+              ],
             ),
           ],
         ),
@@ -116,7 +130,9 @@ class _AuthenticatedMePage extends ConsumerWidget {
       },
     );
     return Scaffold(
+      backgroundColor: wenyouPersonalPageBackground(context),
       appBar: AppBar(
+        backgroundColor: wenyouPersonalPageBackground(context),
         title: const Text('我的'),
         actions: [
           IconButton(
@@ -128,17 +144,8 @@ class _AuthenticatedMePage extends ConsumerWidget {
         ],
       ),
       body: switch (state.phase) {
-        MeProfilePhase.loading => _MePageList(
-          children: const [
-            WenyouPanel(
-              child: WenyouEmptyState(
-                icon: WenyouIconIds.identityMember,
-                title: '正在读取本人资料',
-                action: CircularProgressIndicator(),
-              ),
-            ),
-            _LogoutPanel(),
-          ],
+        MeProfilePhase.loading => const WenyouPageBody(
+          child: WenyouDetailSkeleton(label: '正在加载个人资料'),
         ),
         MeProfilePhase.failed => _MePageList(
           children: [
@@ -152,7 +159,7 @@ class _AuthenticatedMePage extends ConsumerWidget {
                   key: const Key('me-profile-retry'),
                   onPressed: notifier.load,
                   icon: const WenyouIcon(WenyouIconIds.actionRefresh),
-                  label: const Text('重新加载'),
+                  label: const Text('重试'),
                 ),
               ),
             ),
@@ -218,7 +225,11 @@ class _MeEditPageState extends ConsumerState<MeEditPage> {
         if (!didPop) unawaited(_handlePopAttempt(result, mutationBusy));
       },
       child: Scaffold(
-        appBar: AppBar(title: const Text('编辑资料')),
+        backgroundColor: wenyouPersonalPageBackground(context),
+        appBar: AppBar(
+          backgroundColor: wenyouPersonalPageBackground(context),
+          title: const Text('编辑资料'),
+        ),
         body: switch (state.phase) {
           MeProfilePhase.loading => const _MePageList(
             children: [WenyouDetailSkeleton(label: '正在读取资料')],
@@ -349,22 +360,49 @@ class _MeProfileSaveBar extends StatelessWidget {
   }
 }
 
-class MeSettingsPage extends StatelessWidget {
+class MeSettingsPage extends ConsumerWidget {
   const MeSettingsPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final backgroundReminderSupported = ref.watch(
+      backgroundExecutionGatewayProvider.select(
+        (gateway) => gateway.isSupported,
+      ),
+    );
     final page = Scaffold(
-      appBar: AppBar(title: const Text('账号设置')),
-      body: _MePageList(
+      backgroundColor: wenyouPersonalPageBackground(context),
+      appBar: AppBar(
+        backgroundColor: wenyouPersonalPageBackground(context),
+        title: const Text('账号设置'),
+      ),
+      body: WenyouSettingsBody(
         children: [
-          const _AppearanceSettingsPanel(),
+          WenyouSettingsGroup(
+            title: '偏好与提醒',
+            children: [
+              const _AppearanceSettingsPanel(),
+              if (backgroundReminderSupported)
+                const BackgroundReminderSettingsPanel(embedded: true),
+            ],
+          ),
           const _AccountSecurityPanel(disabled: false),
-          const BackgroundReminderSettingsPanel(),
-          const _LogoutPanel(),
-          ListTile(
-            title: const Text('故障诊断'),
-            onTap: () => context.pushNamed(AppRouteNames.diagnostics),
+          const _AccountOperationsPanel(),
+          WenyouSettingsGroup(
+            title: '帮助',
+            children: [
+              WenyouSettingsLink(
+                key: const Key('me-open-moderation-appeals'),
+                icon: WenyouIconIds.moderationDecision,
+                title: '治理决定与申诉',
+                onTap: () => context.pushNamed('moderation-appeals'),
+              ),
+              WenyouSettingsLink(
+                icon: WenyouIconIds.statusInfo,
+                title: '故障诊断',
+                onTap: () => context.pushNamed(AppRouteNames.diagnostics),
+              ),
+            ],
           ),
         ],
       ),
@@ -383,16 +421,12 @@ class _AppearanceSettingsPanel extends ConsumerWidget {
         (state) => state.preference,
       ),
     );
-    return WenyouPanel(
-      padding: EdgeInsets.zero,
-      child: ListTile(
-        key: const Key('open-appearance-settings'),
-        leading: WenyouIcon(preference.icon),
-        title: const Text('外观'),
-        subtitle: Text(preference.label),
-        trailing: const WenyouIcon(WenyouIconIds.navigationNext),
-        onTap: () => context.pushNamed(AppRouteNames.appearance),
-      ),
+    return WenyouSettingsLink(
+      key: const Key('open-appearance-settings'),
+      icon: preference.icon,
+      title: '外观',
+      value: preference.label,
+      onTap: () => context.pushNamed(AppRouteNames.appearance),
     );
   }
 }
@@ -466,11 +500,9 @@ class _MeDashboardState extends ConsumerState<_MeDashboard> {
 
   @override
   Widget build(BuildContext context) {
-    final tokens = context.wenyouTokens;
     final walletProvider = walletControllerProvider(walletSessionKey(ref));
     final walletState = ref.watch(walletProvider);
     final stickersEnabled = ref.watch(stickersEnabledProvider);
-    final horizontal = wenyouHorizontalPagePadding(context);
     ref.listen(
       meUserContentControllerProvider(
         widget.profile.id,
@@ -491,34 +523,33 @@ class _MeDashboardState extends ConsumerState<_MeDashboard> {
         controller: _outerScrollController,
         headerSliverBuilder: (context, innerBoxIsScrolled) => [
           SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(
-                horizontal,
-                tokens.space16,
-                horizontal,
-                tokens.space12,
-              ),
-              child: WenyouConstrainedWidth(
-                child: _ProfileOverview(
-                  profile: widget.profile,
-                  walletState: walletState,
-                  stickersEnabled: stickersEnabled,
-                ),
+            child: WenyouConstrainedWidth(
+              child: MeProfileSummary(
+                profile: widget.profile,
+                balance: walletState.summary?.balance,
               ),
             ),
           ),
           SliverToBoxAdapter(
-            child: WenyouContentTabs<MeContentTab>(
-              key: const Key('me-content-tabs'),
-              keyPrefix: 'me-content',
-              semanticsLabel: '我的主页内容',
-              placement: WenyouTabPlacement.page,
-              options: [
-                for (final tab in MeContentTab.values)
-                  WenyouFilterOption(value: tab, label: tab.label),
-              ],
-              selected: MeContentTab.values[_activeIndex],
-              onSelected: _selectTab,
+            child: WenyouConstrainedWidth(
+              child: MePersonalTools(stickersEnabled: stickersEnabled),
+            ),
+          ),
+          WenyouPinnedHeader(
+            child: ColoredBox(
+              color: Theme.of(context).scaffoldBackgroundColor,
+              child: WenyouContentTabs<MeContentTab>(
+                key: const Key('me-content-tabs'),
+                keyPrefix: 'me-content',
+                semanticsLabel: '我的主页内容',
+                placement: WenyouTabPlacement.page,
+                options: [
+                  for (final tab in MeContentTab.values)
+                    WenyouFilterOption(value: tab, label: tab.label),
+                ],
+                selected: MeContentTab.values[_activeIndex],
+                onSelected: _selectTab,
+              ),
             ),
           ),
         ],
@@ -566,13 +597,11 @@ class _MeDashboardState extends ConsumerState<_MeDashboard> {
       ref.read(meProfileControllerProvider.notifier).refresh(),
       _refreshWallet(walletProvider),
       switch (activeTab) {
-        MeContentTab.overview =>
-          ref
-              .read(meUserContentControllerProvider(widget.profile.id).notifier)
-              .refreshOverview(),
         MeContentTab.moments =>
           widget.userMoments?.refresh(widget.profile.id) ?? Future.value(),
-        MeContentTab.createdThreads || MeContentTab.playedThreads =>
+        MeContentTab.createdThreads ||
+        MeContentTab.playedThreads ||
+        MeContentTab.replies =>
           ref
               .read(meUserContentControllerProvider(widget.profile.id).notifier)
               .refreshActive(),
@@ -597,180 +626,76 @@ class _AccountSecurityPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return WenyouPanel(
-      padding: EdgeInsets.zero,
-      child: Column(
-        children: [
-          ListTile(
-            key: const Key('me-open-blocks'),
-            enabled: !disabled,
-            leading: const WenyouIcon(WenyouIconIds.actionBlock),
-            title: const Text('管理黑名单'),
-            trailing: const WenyouIcon(WenyouIconIds.navigationNext),
-            onTap: disabled ? null : () => context.pushNamed('me-blocks'),
-          ),
-          const Divider(height: 1),
-          ListTile(
-            key: const Key('me-open-login-sessions'),
-            enabled: !disabled,
-            leading: const WenyouIcon(WenyouIconIds.actionDevices),
-            title: const Text('登录终端'),
-            trailing: const WenyouIcon(WenyouIconIds.navigationNext),
-            onTap: disabled ? null : () => context.pushNamed('login-sessions'),
-          ),
-          const Divider(height: 1),
-          ListTile(
-            key: const Key('me-open-change-password'),
-            enabled: !disabled,
-            leading: const WenyouIcon(WenyouIconIds.securityPassword),
-            title: const Text('修改密码'),
-            subtitle: const Text('修改后所有终端需要重新登录'),
-            trailing: const WenyouIcon(WenyouIconIds.navigationNext),
-            onTap: disabled ? null : () => context.pushNamed('change-password'),
-          ),
-          const Divider(height: 1),
-          ListTile(
-            key: const Key('me-open-change-email'),
-            enabled: !disabled,
-            leading: const WenyouIcon(WenyouIconIds.statusMail),
-            title: const Text('更换邮箱'),
-            trailing: const WenyouIcon(WenyouIconIds.navigationNext),
-            onTap: disabled ? null : () => context.pushNamed('change-email'),
-          ),
-          const Divider(height: 1),
-          ListTile(
-            key: const Key('me-open-moderation-appeals'),
-            enabled: !disabled,
-            leading: const WenyouIcon(WenyouIconIds.moderationDecision),
-            title: const Text('治理决定与申诉'),
-            subtitle: const Text('查看近 30 天决定与申诉进度'),
-            trailing: const WenyouIcon(WenyouIconIds.navigationNext),
-            onTap: disabled
-                ? null
-                : () => context.pushNamed('moderation-appeals'),
-          ),
-          const Divider(height: 1),
-          ListTile(
-            key: const Key('me-open-delete-account'),
-            enabled: !disabled,
-            leading: WenyouIcon(
-              WenyouIconIds.actionDelete,
-              color: scheme.error,
-            ),
-            title: Text(
-              '注销账号',
-              style: Theme.of(
-                context,
-              ).textTheme.wenyouRowTitle.copyWith(color: scheme.error),
-            ),
-            subtitle: const Text('不可恢复；已发布内容会匿名保留'),
-            trailing: WenyouIcon(
-              WenyouIconIds.navigationNext,
-              color: scheme.error,
-            ),
-            onTap: disabled ? null : () => context.pushNamed('delete-account'),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ProfileOverview extends StatelessWidget {
-  const _ProfileOverview({
-    required this.profile,
-    required this.walletState,
-    required this.stickersEnabled,
-  });
-
-  final MeProfileModel profile;
-  final WalletState walletState;
-  final bool stickersEnabled;
-
-  @override
-  Widget build(BuildContext context) {
-    return UserProfileHeader(
-      key: const Key('me-profile-header'),
-      username: profile.username,
-      avatarUrl: profile.avatarUrl,
-      profileCover: profile.profileCover,
-      level: profile.level,
-      bio: profile.bio?.trim().isNotEmpty == true ? profile.bio : '还没有填写个人简介。',
-      metadata:
-          '${DateFormat('yyyy-MM-dd').format(profile.createdAt)} 加入温油站 · ${_maskEmail(profile.email)}',
-      levelProgress: profile.levelProgress,
-      levelProgressLabel: profile.nextLevelExperience == null
-          ? '已达到当前最高等级'
-          : '${profile.experience} / ${profile.nextLevelExperience} 经验',
-      actions: WenyouIconLabelActionBar(
-        actions: [
-          WenyouIconLabelAction(
-            key: const Key('me-open-edit-profile'),
-            onPressed: () => context.pushNamed('me-edit'),
-            icon: WenyouIconIds.actionEdit,
-            label: '编辑资料',
-          ),
-          WenyouIconLabelAction(
-            key: const Key('me-open-bookmarks'),
-            onPressed: () => context.pushNamed('me-bookmarks'),
-            icon: WenyouIconIds.actionBookmark,
-            label: '收藏',
-          ),
-          if (stickersEnabled)
-            WenyouIconLabelAction(
-              key: const Key('me-open-stickers'),
-              onPressed: () => context.pushNamed('me-stickers'),
-              icon: WenyouIconIds.actionAddReaction,
-              label: '表情包',
-            ),
-        ],
-      ),
-      stats: [
-        UserProfileStatItem(
-          key: const Key('me-open-following'),
-          label: '关注',
-          value: formatWenyouCompactCount(profile.followingCount),
-          semanticValue: '${profile.followingCount}',
-          onTap: () => context.pushNamed('me-following'),
+    return WenyouSettingsGroup(
+      title: '账号',
+      children: [
+        WenyouSettingsLink(
+          enabled: !disabled,
+          key: const Key('me-open-edit-profile'),
+          icon: WenyouIconIds.actionEdit,
+          title: '编辑资料',
+          onTap: disabled
+              ? null
+              : () => context.pushNamed(AppRouteNames.meEdit),
         ),
-        UserProfileStatItem(
-          key: const Key('me-open-followers'),
-          label: '粉丝',
-          value: formatWenyouCompactCount(profile.followerCount),
-          semanticValue: '${profile.followerCount}',
-          onTap: () => context.pushNamed('me-followers'),
+        WenyouSettingsLink(
+          enabled: !disabled,
+          key: const Key('me-open-blocks'),
+          icon: WenyouIconIds.actionBlock,
+          title: '管理黑名单',
+          onTap: disabled ? null : () => context.pushNamed('me-blocks'),
         ),
-        UserProfileStatItem(
-          key: const Key('me-open-wallet'),
-          label: '温油',
-          value: walletState.summary == null
-              ? '—'
-              : '${WenyouAmount.format(walletState.summary!.balance)} 升',
-          onTap: () => context.pushNamed('wallet'),
+        WenyouSettingsLink(
+          enabled: !disabled,
+          key: const Key('me-open-login-sessions'),
+          icon: WenyouIconIds.actionDevices,
+          title: '登录终端',
+          onTap: disabled ? null : () => context.pushNamed('login-sessions'),
+        ),
+        WenyouSettingsLink(
+          enabled: !disabled,
+          key: const Key('me-open-change-password'),
+          icon: WenyouIconIds.securityPassword,
+          title: '修改密码',
+          onTap: disabled ? null : () => context.pushNamed('change-password'),
+        ),
+        WenyouSettingsLink(
+          enabled: !disabled,
+          key: const Key('me-open-change-email'),
+          icon: WenyouIconIds.statusMail,
+          title: '更换邮箱',
+          onTap: disabled ? null : () => context.pushNamed('change-email'),
         ),
       ],
     );
   }
 }
 
+class _AccountOperationsPanel extends StatelessWidget {
+  const _AccountOperationsPanel();
+
+  @override
+  Widget build(BuildContext context) => WenyouSettingsGroup(
+    title: '账号操作',
+    children: [
+      const _LogoutAction(),
+      WenyouSettingsLink(
+        key: const Key('me-open-delete-account'),
+        icon: WenyouIconIds.actionDelete,
+        title: '注销账号',
+        destructive: true,
+        onTap: () => context.pushNamed('delete-account'),
+      ),
+    ],
+  );
+}
+
 class _LogoutPanel extends StatelessWidget {
   const _LogoutPanel();
 
   @override
-  Widget build(BuildContext context) {
-    final tokens = context.wenyouTokens;
-    return WenyouPanel(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const WenyouSectionHeader(title: '当前会话'),
-          SizedBox(height: tokens.space16),
-          const _LogoutAction(),
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) =>
+      const WenyouSettingsGroup(title: '账号操作', children: [_LogoutAction()]);
 }
 
 class _LogoutAction extends ConsumerWidget {
@@ -790,26 +715,27 @@ class _LogoutAction extends ConsumerWidget {
           ),
           SizedBox(height: context.wenyouTokens.space8),
         ],
-        OutlinedButton.icon(
+        WenyouSettingsLink(
           key: const Key('logout-submit'),
-          onPressed: logout.isSubmitting
+          title: logout.failure == null ? '退出当前账号' : '重试安全退出',
+          value: logout.isSubmitting ? '正在退出' : null,
+          onTap: logout.isSubmitting
               ? null
               : () => _confirmAndLogout(context, ref),
-          icon: logout.isSubmitting
-              ? const SizedBox.square(
-                  dimension: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const WenyouIcon(WenyouIconIds.actionLogout),
-          label: Text(logout.failure == null ? '退出当前账号' : '重试安全退出'),
+          icon: WenyouIconIds.actionLogout,
         ),
         if (logout.failure != null)
-          TextButton(
-            key: const Key('logout-local-only'),
-            onPressed: logout.isSubmitting
-                ? null
-                : () => _confirmLocalLogout(context, ref),
-            child: const Text('仅清除这台设备的登录'),
+          Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: context.wenyouTokens.space16,
+            ),
+            child: TextButton(
+              key: const Key('logout-local-only'),
+              onPressed: logout.isSubmitting
+                  ? null
+                  : () => _confirmLocalLogout(context, ref),
+              child: const Text('仅清除这台设备的登录'),
+            ),
           ),
       ],
     );
@@ -857,10 +783,4 @@ class _LogoutAction extends ConsumerWidget {
       );
     }
   }
-}
-
-String _maskEmail(String email) {
-  final separator = email.indexOf('@');
-  if (separator <= 0 || separator == email.length - 1) return email;
-  return '${email[0]}***${email.substring(separator)}';
 }

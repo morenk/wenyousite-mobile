@@ -6,6 +6,7 @@ import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/application/credential_input_policy.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_password_field.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_settings_body.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_verification_code_field.dart';
 import 'package:wenyousite_mobile/features/settings/application/credential_security_controllers.dart';
@@ -72,9 +73,10 @@ class _ChangeEmailPageState extends ConsumerState<ChangeEmailPage> {
   Widget build(BuildContext context) {
     final state = ref.watch(emailChangeControllerProvider);
     final page = Scaffold(
+      backgroundColor: wenyouPersonalPageBackground(context),
       appBar: AppBar(title: const Text('更换邮箱')),
       body: WenyouPageBody(
-        maxWidth: 520,
+        maxWidth: 600,
         child: WenyouPanel(
           child: state.step == EmailChangeStep.requestCode
               ? _buildRequestStep(context, state)
@@ -96,8 +98,6 @@ class _ChangeEmailPageState extends ConsumerState<ChangeEmailPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const WenyouSectionHeader(title: '验证新邮箱'),
-            SizedBox(height: tokens.space24),
             WenyouPasswordField(
               textFieldKey: const Key('change-email-password'),
               controller: _oldPasswordController,

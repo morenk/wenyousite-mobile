@@ -9,6 +9,7 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_content_action_menu.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_discussion_reply_card.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_internal_reference_text.dart';
+import 'package:wenyousite_mobile/features/media/reading_gallery.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_playback_image.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_widgets.dart';
@@ -24,6 +25,7 @@ class MomentCommentBody extends ConsumerWidget {
     this.onReport,
     this.reportReturnTo,
     this.compact = false,
+    this.galleryOrder = ReadingGalleryOrder.newest,
     super.key,
   });
 
@@ -34,6 +36,7 @@ class MomentCommentBody extends ConsumerWidget {
   final Future<void> Function()? onReport;
   final String? reportReturnTo;
   final bool compact;
+  final ReadingGalleryOrder galleryOrder;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -43,164 +46,219 @@ class MomentCommentBody extends ConsumerWidget {
     final authenticated = ref.watch(
       sessionControllerProvider.select((session) => session.isAuthenticated),
     );
-    Widget buildContent(VoidCallback openActions) => Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        MomentAuthorLine(
-          author: comment.author,
-          createdAt: comment.createdAt,
-          onTap: () => context.pushNamed(
-            'user-profile',
-            pathParameters: {'userId': comment.author.id},
+    Widget buildContent(VoidCallback openActions) {
+      Widget actionRegion(Widget child) => GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onLongPress: openActions,
+        child: child,
+      );
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          actionRegion(
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                MomentAuthorLine(
+                  author: comment.author,
+                  createdAt: comment.createdAt,
+                  avatarOnlyTap: true,
+                  avatarKey: Key('moment-comment-author-avatar-${comment.id}'),
+                  onTap: () => context.pushNamed(
+                    'user-profile',
+                    pathParameters: {'userId': comment.author.id},
+                  ),
+                ),
+                SizedBox(height: tokens.space8),
+              ],
+            ),
           ),
-        ),
-        SizedBox(height: tokens.space8),
-        if (comment.deleted)
-          Text(
-            '该评论已删除',
-            style: Theme.of(
-              context,
-            ).textTheme.wenyouCompactBody.copyWith(color: tokens.mutedText),
-          )
-        else ...[
-          if (comment.replyToComment != null)
-            Text(
-              '回复 @${comment.replyToComment!.author.username}',
-              style: Theme.of(
-                context,
-              ).textTheme.wenyouCaption.copyWith(color: tokens.focus),
-            ),
-          if (comment.content != null)
-            WenyouInternalReferenceText(
-              content: comment.content!,
-              style: Theme.of(context).textTheme.wenyouCompactBody,
-              selectable: true,
-              onTapText: canReply ? onReply : null,
-              onLongPressNonText: openActions,
-            ),
-          if (comment.media != null) ...[
-            SizedBox(height: tokens.space8),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: InkWell(
-                key: Key('moment-comment-image-${comment.id}'),
-                onTap: () => openMomentGallery(
+          if (comment.deleted)
+            actionRegion(
+              Text(
+                '该评论已删除',
+                style: Theme.of(
                   context,
-                  [comment.media!],
-                  0,
-                  onAddToStickers: !stickersEnabled || !authenticated
-                      ? null
-                      : (item) => ref
-                            .read(stickerCollectionControllerProvider.notifier)
-                            .importSourceForFeedback(
-                              StickerMomentCommentImageSource(
-                                momentCommentId: comment.id,
-                                mediaId: item.id! as String,
-                              ),
-                            ),
-                ),
-                onLongPress: openActions,
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    maxWidth: compact ? 180 : 240,
-                    maxHeight: compact ? 180 : 240,
-                  ),
-                  child: !comment.media!.isAnimated
-                      ? WenyouCachedImage(
-                          imageUrl: comment.media!.bestContentUrl,
-                          fallbackImageUrls: comment.media!.contentUrls
-                              .skip(1)
-                              .toList(),
-                          fit: BoxFit.contain,
-                        )
-                      : SizedBox.fromSize(
-                          size: _attachmentSize(
-                            comment.media!.width,
-                            comment.media!.height,
-                            compact ? 180 : 240,
-                          ),
-                          child: MomentPlaybackImage(
-                            previewUrls: comment.media!.playbackPreviewUrls,
-                            animationUrl: comment.media!.isAnimated
-                                ? comment.media!.playbackUrl
-                                : null,
-                            allowPlayback: true,
-                            width: double.infinity,
-                            height: double.infinity,
-                          ),
-                        ),
+                ).textTheme.wenyouCompactBody.copyWith(color: tokens.mutedText),
+              ),
+            )
+          else ...[
+            if (comment.replyToComment != null)
+              actionRegion(
+                Text(
+                  '回复 @${comment.replyToComment!.author.username}',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.wenyouCaption.copyWith(color: tokens.focus),
                 ),
               ),
-            ),
-          ],
-          if (comment.sticker != null) ...[
-            SizedBox(height: tokens.space8),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: GestureDetector(
-                onLongPress: openActions,
-                onTap: () async {
-                  final sticker = comment.sticker!;
-                  await openMomentGallery(context, [
-                    MomentMedia(
-                      id: sticker.id,
-                      url: sticker.url,
-                      display: sticker.display,
-                      thumbnailUrl: sticker.thumbnailUrl,
-                      mediumUrl: sticker.mediumUrl,
-                      animated: sticker.animated,
-                      width: sticker.width,
-                      height: sticker.height,
-                    ),
-                  ], 0);
-                },
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(
-                    maxWidth: 160,
-                    maxHeight: 160,
-                  ),
-                  child: !comment.sticker!.animated
-                      ? WenyouCachedImage(
-                          imageUrl:
-                              comment.sticker!.display?.url ??
-                              comment.sticker!.mediumUrl,
-                          fit: BoxFit.contain,
-                        )
-                      : SizedBox.fromSize(
-                          size: _attachmentSize(
-                            comment.sticker!.width,
-                            comment.sticker!.height,
-                            160,
+            if (comment.content != null)
+              WenyouInternalReferenceText(
+                content: comment.content!,
+                style: Theme.of(context).textTheme.wenyouCompactBody,
+                selectable: true,
+                onTapText: canReply ? onReply : null,
+                onLongPressNonText: openActions,
+              ),
+            if (comment.media != null)
+              actionRegion(
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    SizedBox(height: tokens.space8),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: InkWell(
+                        key: Key('moment-comment-image-${comment.id}'),
+                        onTap: () => openReadingImageGallery(
+                          context,
+                          target: ReadingGalleryTarget(
+                            scope: comment.parentCommentId == null
+                                ? ReadingGalleryScope.momentComments
+                                : ReadingGalleryScope.momentReplies,
+                            scopeId:
+                                comment.parentCommentId ?? comment.momentId,
+                            order: comment.parentCommentId == null
+                                ? galleryOrder
+                                : ReadingGalleryOrder.oldest,
                           ),
-                          child: MomentPlaybackImage(
-                            previewUrls:
-                                [
-                                      comment.sticker!.animated
-                                          ? comment.sticker!.thumbnailUrl
-                                          : comment.sticker!.mediumUrl,
-                                    ]
-                                    .where(
-                                      (url) =>
-                                          !comment.sticker!.animated ||
-                                          url != comment.sticker!.url,
+                          sourceId: comment.id,
+                          version: 1,
+                          imageIndex: 0,
+                          url: comment.media!.url,
+                          display: comment.media!.display,
+                          mediaId: comment.media!.id,
+                          animated: comment.media!.isAnimated,
+                          previewUrls: comment.media!.playbackPreviewUrls,
+                          onCollect: !stickersEnabled || !authenticated
+                              ? null
+                              : (image) => ref
+                                    .read(
+                                      stickerCollectionControllerProvider
+                                          .notifier,
                                     )
-                                    .toList(),
-                            animationUrl: comment.sticker!.animated
-                                ? comment.sticker!.display?.url ??
-                                      comment.sticker!.url
-                                : null,
-                            allowPlayback: true,
-                            width: double.infinity,
-                            height: double.infinity,
-                          ),
+                                    .importSourceForFeedback(
+                                      StickerMomentCommentImageSource(
+                                        momentCommentId: image.sourceId,
+                                        mediaId: image.mediaId!,
+                                      ),
+                                    ),
                         ),
+                        onLongPress: openActions,
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            maxWidth: compact ? 180 : 240,
+                            maxHeight: compact ? 180 : 240,
+                          ),
+                          child: !comment.media!.isAnimated
+                              ? WenyouCachedImage(
+                                  imageUrl: comment.media!.bestContentUrl,
+                                  fallbackImageUrls: comment.media!.contentUrls
+                                      .skip(1)
+                                      .toList(),
+                                  fit: BoxFit.contain,
+                                )
+                              : SizedBox.fromSize(
+                                  size: _attachmentSize(
+                                    comment.media!.width,
+                                    comment.media!.height,
+                                    compact ? 180 : 240,
+                                  ),
+                                  child: MomentPlaybackImage(
+                                    previewUrls:
+                                        comment.media!.playbackPreviewUrls,
+                                    animationUrl: comment.media!.isAnimated
+                                        ? comment.media!.playbackUrl
+                                        : null,
+                                    allowPlayback: true,
+                                    width: double.infinity,
+                                    height: double.infinity,
+                                  ),
+                                ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ),
+            if (comment.sticker != null)
+              actionRegion(
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    SizedBox(height: tokens.space8),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: GestureDetector(
+                        onLongPress: openActions,
+                        onTap: () async {
+                          final sticker = comment.sticker!;
+                          await openMomentGallery(context, [
+                            MomentMedia(
+                              id: sticker.id,
+                              url: sticker.url,
+                              display: sticker.display,
+                              thumbnailUrl: sticker.thumbnailUrl,
+                              mediumUrl: sticker.mediumUrl,
+                              animated: sticker.animated,
+                              width: sticker.width,
+                              height: sticker.height,
+                            ),
+                          ], 0);
+                        },
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(
+                            maxWidth: 160,
+                            maxHeight: 160,
+                          ),
+                          child: !comment.sticker!.animated
+                              ? WenyouCachedImage(
+                                  imageUrl:
+                                      comment.sticker!.display?.url ??
+                                      comment.sticker!.mediumUrl,
+                                  fit: BoxFit.contain,
+                                )
+                              : SizedBox.fromSize(
+                                  size: _attachmentSize(
+                                    comment.sticker!.width,
+                                    comment.sticker!.height,
+                                    160,
+                                  ),
+                                  child: MomentPlaybackImage(
+                                    previewUrls:
+                                        [
+                                              comment.sticker!.animated
+                                                  ? comment
+                                                        .sticker!
+                                                        .thumbnailUrl
+                                                  : comment.sticker!.mediumUrl,
+                                            ]
+                                            .where(
+                                              (url) =>
+                                                  !comment.sticker!.animated ||
+                                                  url != comment.sticker!.url,
+                                            )
+                                            .toList(),
+                                    animationUrl: comment.sticker!.animated
+                                        ? comment.sticker!.display?.url ??
+                                              comment.sticker!.url
+                                        : null,
+                                    allowPlayback: true,
+                                    width: double.infinity,
+                                    height: double.infinity,
+                                  ),
+                                ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
           ],
         ],
-      ],
-    );
+      );
+    }
 
     Widget buildCommentCard(VoidCallback openActions) {
       final content = buildContent(openActions);
@@ -229,11 +287,23 @@ class MomentCommentBody extends ConsumerWidget {
           excludeFromSemantics: true,
           onTap: canReply ? onReply : null,
           child: Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: tokens.space4,
-              vertical: tokens.space12,
+            padding: EdgeInsets.symmetric(horizontal: tokens.space4),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onLongPress: openActions,
+                  child: SizedBox(height: tokens.space12),
+                ),
+                content,
+                GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onLongPress: openActions,
+                  child: SizedBox(height: tokens.space12),
+                ),
+              ],
             ),
-            child: content,
           ),
         ),
       );

@@ -57,7 +57,7 @@ class _TagThreadsPageState extends ConsumerState<TagThreadsPage> {
       ),
       body: switch (state.phase) {
         TagThreadsPhase.loading => const WenyouPageBody(
-          child: WenyouListSkeleton(label: '正在加载标签主题'),
+          child: WenyouListSkeleton(label: '正在加载标签主题', contentCards: true),
         ),
         TagThreadsPhase.failed => _TagFatalState(
           failure: state.failure,
@@ -159,7 +159,9 @@ class _TagThreadsPageState extends ConsumerState<TagThreadsPage> {
           if (cursor < state.items.length) {
             final thread = state.items[cursor];
             return Padding(
-              padding: EdgeInsets.only(top: tokens.space12),
+              padding: EdgeInsets.only(
+                top: cursor == 0 ? tokens.space12 : tokens.cardGap,
+              ),
               child: WenyouConstrainedWidth(
                 child: HomeThreadCard(
                   key: Key('tag-thread-${thread.id}'),

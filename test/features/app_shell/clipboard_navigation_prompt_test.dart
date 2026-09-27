@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_mobile/app/app_router.dart';
+import 'package:wenyousite_mobile/core/navigation/wenyou_feedback_visibility.dart';
 import 'package:wenyousite_mobile/features/app_shell/application/clipboard_navigation_ports.dart';
 import 'package:wenyousite_mobile/features/app_shell/presentation/clipboard_navigation_prompt.dart';
 
@@ -130,7 +131,9 @@ Future<GoRouter> _pumpApp(
   required _FakeClipboardGateway gateway,
   _MemoryHandledClipboardStore? store,
 }) async {
+  final visibility = WenyouFeedbackVisibility();
   final router = GoRouter(
+    observers: [visibility.createObserver()],
     initialLocation: '/home',
     routes: [
       GoRoute(
@@ -151,6 +154,7 @@ Future<GoRouter> _pumpApp(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        feedbackVisibilityProvider.overrideWithValue(visibility),
         appRouterProvider.overrideWithValue(router),
         clipboardNavigationGatewayProvider.overrideWithValue(gateway),
         if (store != null)

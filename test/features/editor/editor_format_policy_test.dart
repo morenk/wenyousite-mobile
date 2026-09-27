@@ -38,7 +38,7 @@ void main() {
     }
   });
 
-  test('行内代码与强调和链接双向切换时清除冲突属性', () {
+  test('行内代码与强调和链接双向组合并独立取消', () {
     final toCode = _selectedController();
     addTearDown(toCode.dispose);
     for (final attribute in const [
@@ -56,10 +56,14 @@ void main() {
     WenyouEditorFormatPolicy.toggle(toCode, Attribute.inlineCode);
     final codeAttributes = _inlineAttributes(toCode);
     expect(codeAttributes[Attribute.inlineCode.key], true);
-    for (final key in const ['bold', 'italic', 'strike', 'link']) {
-      expect(codeAttributes, isNot(contains(key)));
+    for (final key in const ['bold', 'italic', 'strike']) {
+      expect(codeAttributes[key], true);
     }
-    expect(MarkdownDeltaCodec.encode(toCode.document.toDelta()), '`正文`');
+    expect(codeAttributes['link'], 'https://wenyou.site/help');
+    expect(
+      MarkdownDeltaCodec.encode(toCode.document.toDelta()),
+      '***[~~`正文`~~](https://wenyou.site/help)***',
+    );
 
     for (final attribute in const [
       Attribute.bold,
@@ -70,11 +74,15 @@ void main() {
       addTearDown(controller.dispose);
       WenyouEditorFormatPolicy.toggle(controller, Attribute.inlineCode);
       WenyouEditorFormatPolicy.toggle(controller, attribute);
-      expect(_inlineAttributes(controller), isNot(contains('code')));
+      expect(_inlineAttributes(controller)['code'], true);
+      expect(_inlineAttributes(controller)[attribute.key], true);
       expect(
         MarkdownDeltaCodec.encode(controller.document.toDelta()),
-        isNot(contains('`')),
+        contains('`正文`'),
       );
+      WenyouEditorFormatPolicy.toggle(controller, attribute);
+      expect(_inlineAttributes(controller)['code'], true);
+      expect(_inlineAttributes(controller), isNot(contains(attribute.key)));
     }
 
     final toLink = _selectedController();
@@ -85,10 +93,10 @@ void main() {
       selection: _bodySelection,
       url: 'https://wenyou.site/help',
     );
-    expect(_inlineAttributes(toLink), isNot(contains('code')));
+    expect(_inlineAttributes(toLink)['code'], true);
     expect(
       MarkdownDeltaCodec.encode(toLink.document.toDelta()),
-      '[正文](https://wenyou.site/help)',
+      '[`正文`](https://wenyou.site/help)',
     );
   });
 

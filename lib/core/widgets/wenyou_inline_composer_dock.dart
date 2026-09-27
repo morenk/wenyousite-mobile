@@ -52,7 +52,7 @@ class WenyouInlineComposerDock extends StatelessWidget {
                     key: dockKey,
                     decoration: BoxDecoration(
                       color: tokens.softPanel,
-                      borderRadius: BorderRadius.circular(tokens.radius20),
+                      borderRadius: BorderRadius.circular(tokens.radiusPanel),
                       border: Border.all(color: tokens.border),
                     ),
                     child: Column(

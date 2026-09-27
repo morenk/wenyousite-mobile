@@ -34,7 +34,7 @@ class ApiMomentBookmarkRepository implements MomentBookmarkRepository {
   @override
   Future<BookmarkFolderItem> createFolder(String name) async {
     final normalized = name.trim();
-    if (normalized.isEmpty || normalized.length > 24) {
+    if (normalized.isEmpty || normalized.runes.length > 24) {
       throw const ApiFailure(userMessage: '收藏夹名称需为 1–24 个字符。');
     }
     try {
@@ -52,6 +52,50 @@ class ApiMomentBookmarkRepository implements MomentBookmarkRepository {
         error,
         featureMessages: const {40900: '已有同名收藏夹，请换一个名称。'},
       );
+    }
+  }
+
+  @override
+  Future<BookmarkFolderItem> renameFolder(String folderId, String name) async {
+    final normalized = name.trim();
+    if (normalized.isEmpty || normalized.runes.length > 24) {
+      throw ArgumentError('收藏夹名称长度须为 1–24 个字符。');
+    }
+    try {
+      final envelope = (await _api.momentsRenameBookmarkFolder(
+        id: folderId,
+        renameMomentBookmarkFolderDto: RenameMomentBookmarkFolderDto(
+          (builder) => builder.name = normalized,
+        ),
+      )).data;
+      if (envelope == null) {
+        throw const ApiFailure.invalidResponse(
+          diagnosticCode: 'moment_bookmark_folder_rename_empty',
+        );
+      }
+      return _mapFolder(envelope.data);
+    } on DioException catch (error) {
+      throw ApiFailure.fromDio(
+        error,
+        featureMessages: const {40900: '名称重复或动态收藏夹已发生变化，请刷新后重试。'},
+      );
+    }
+  }
+
+  @override
+  Future<BookmarkFolderDeleteResult> deleteFolder(String folderId) async {
+    try {
+      final data = (await _api.momentsDeleteBookmarkFolder(
+        id: folderId,
+      )).data?.data;
+      if (data == null) {
+        throw const ApiFailure.invalidResponse(
+          diagnosticCode: 'moment_bookmark_folder_delete_empty',
+        );
+      }
+      return _mapDeleteFolderResult(data);
+    } on DioException catch (error) {
+      throw ApiFailure.fromDio(error);
     }
   }
 
@@ -94,6 +138,22 @@ class ApiMomentBookmarkRepository implements MomentBookmarkRepository {
       isDefault: dto.isDefault,
       bookmarkCount: dto.momentBookmarkCount.toInt(),
       createdAt: dto.createdAt,
+    );
+  }
+
+  BookmarkFolderDeleteResult _mapDeleteFolderResult(
+    DeleteBookmarkFolderResponseDto dto,
+  ) {
+    final deletedFolderId = dto.deletedFolderId.trim();
+    final destinationFolderId = dto.destinationFolderId.trim();
+    if (deletedFolderId.isEmpty || destinationFolderId.isEmpty) {
+      throw const ApiFailure.invalidResponse(
+        diagnosticCode: 'moment_bookmark_folder_delete_ids_empty',
+      );
+    }
+    return BookmarkFolderDeleteResult(
+      deletedFolderId: deletedFolderId,
+      destinationFolderId: destinationFolderId,
     );
   }
 }

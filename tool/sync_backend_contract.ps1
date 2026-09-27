@@ -113,6 +113,15 @@ if ($editorListSource.schemaVersion -ne 1 -or
 $editorListRevision = [string]$editorListSource.backendRevision
 Invoke-BackendGit @('cat-file', '-e', "$editorListRevision`:$('contracts/' + $editorListSource.file)") | Out-Null
 
+$inlineSource = Get-Content -LiteralPath (Join-Path $contractDirectory 'markdown-inline-combinations-v1-source.json') -Raw -Encoding UTF8 | ConvertFrom-Json
+if ($inlineSource.schemaVersion -ne 1 -or $inlineSource.backendRevision -notmatch '^[0-9a-f]{40}$') {
+  throw 'Invalid pinned inline combination contract source manifest.'
+}
+$inlineFiles = @('markdown-inline-combinations-v1-fixtures.json', 'markdown-inline-combinations-v1.schema.json')
+foreach ($inlineFile in $inlineFiles) {
+  if ($inlineSource.files.$inlineFile -notmatch '^[0-9a-f]{64}$') { throw 'Invalid inline contract SHA-256.' }
+}
+
 $backendContractPaths = @(Invoke-BackendGit @(
   'ls-tree',
   '-r',
@@ -161,10 +170,13 @@ $threadCategorySource = Resolve-UniqueBackendContract `
   'thread category'
 
 $contractFiles = @(
+  @{ Source = 'contracts/gallery-image-occurrences.json'; Destination = 'gallery-image-occurrences.json' },
   @{ Source = 'contracts/openapi.json'; Destination = 'openapi.json' },
   @{ Source = $markdownFixtureSource; Destination = (Split-Path -Leaf $markdownFixtureSource) },
   @{ Source = $markdownNodesSource; Destination = (Split-Path -Leaf $markdownNodesSource) },
   @{ Source = $markdownEditorSource; Destination = (Split-Path -Leaf $markdownEditorSource) },
+  @{ Source = 'contracts/markdown-inline-combinations-v1-fixtures.json'; Destination = 'markdown-inline-combinations-v1-fixtures.json' },
+  @{ Source = 'contracts/markdown-inline-combinations-v1.schema.json'; Destination = 'markdown-inline-combinations-v1.schema.json' },
   @{ Source = $editorClipboardSource; Destination = (Split-Path -Leaf $editorClipboardSource) },
   @{ Source = 'contracts/markdown-v5-image-alignment-fixtures.json'; Destination = 'markdown-v5-image-alignment-fixtures.json' },
   @{ Source = 'contracts/markdown-editor-newline-v1-fixtures.json'; Destination = 'markdown-editor-newline-v1-fixtures.json' },
@@ -186,6 +198,7 @@ $contractFiles = @(
   @{ Source = 'contracts/internal-reference-v1-fixtures.json'; Destination = 'internal-reference-v1-fixtures.json' },
   @{ Source = 'contracts/CHANGELOG.md'; Destination = 'CHANGELOG.md' },
   @{ Source = 'docs/mobile-client-guide.md'; Destination = 'mobile-client-guide.md' },
+  @{ Source = 'docs/mobile-release-operations.md'; Destination = 'mobile-release-operations.md' },
   @{ Source = 'docs/media-display.md'; Destination = 'media-display.md' }
 )
 
@@ -220,6 +233,8 @@ foreach ($contractFile in $contractFiles) {
   New-Item -ItemType Directory -Force -Path (Split-Path -Parent $destination) | Out-Null
   if ($source -eq 'contracts/markdown-editor-list-v1-fixtures.json') {
     Export-BackendBlob $source $destination $editorListRevision ([string]$editorListSource.sha256)
+  } elseif ([string]$contractFile.Destination -in $inlineFiles) {
+    Export-BackendBlob $source $destination ([string]$inlineSource.backendRevision) ([string]$inlineSource.files.($contractFile.Destination))
   } else {
     Export-BackendBlob $source $destination
   }

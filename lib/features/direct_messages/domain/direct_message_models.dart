@@ -20,7 +20,7 @@ String? validateDirectMessagePayload({
       normalizedStickerId.isEmpty) {
     return '请输入消息或选择一张图片';
   }
-  if (normalized.length > directMessageMaxLength) {
+  if (normalized.runes.length > directMessageMaxLength) {
     return '消息不能超过 1000 个字符';
   }
   if (normalizedStickerId.isNotEmpty &&

@@ -41,7 +41,7 @@ class WenyouTagChip extends StatelessWidget {
       backgroundColor: tokens.panel,
       side: BorderSide(color: tokens.border),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(tokens.radius12),
+        borderRadius: BorderRadius.circular(tokens.radiusControl),
       ),
       materialTapTargetSize: MaterialTapTargetSize.padded,
     );

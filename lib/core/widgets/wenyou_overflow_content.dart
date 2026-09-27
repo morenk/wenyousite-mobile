@@ -118,7 +118,9 @@ class WenyouOverflowAction extends StatelessWidget {
       backgroundColor: backgroundColor,
       side: BorderSide(color: tokens.border),
       padding: EdgeInsets.symmetric(horizontal: tokens.space16),
-      shape: const StadiumBorder(),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(tokens.radiusControl),
+      ),
     );
     final textStyle = TextButton.styleFrom(
       minimumSize: Size(0, tokens.minimumTouchTarget),

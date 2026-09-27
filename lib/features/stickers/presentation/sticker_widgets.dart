@@ -10,6 +10,7 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_markdown.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
+import 'package:wenyousite_mobile/features/media/reading_gallery.dart';
 import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
 import 'package:wenyousite_mobile/features/stickers/domain/sticker_models.dart';
 
@@ -105,19 +106,6 @@ class _StickerPickerPanelState extends ConsumerState<StickerPickerPanel> {
             child: _buildTabs(collection),
           ),
         ],
-        if (collection?.pendingImports.isNotEmpty ?? false)
-          Padding(
-            padding: EdgeInsets.fromLTRB(
-              tokens.space16,
-              tokens.space8,
-              tokens.space16,
-              0,
-            ),
-            child: Text(
-              '正在处理 ${collection!.pendingImports.length} 个表情…',
-              style: Theme.of(context).textTheme.wenyouCaption,
-            ),
-          ),
         SizedBox(height: widget.compact ? tokens.space8 : tokens.space12),
         Expanded(child: _buildBody(context, state, shown)),
       ],
@@ -185,7 +173,7 @@ class _StickerPickerPanelState extends ConsumerState<StickerPickerPanel> {
           onPressed: () =>
               ref.read(stickerCollectionControllerProvider.notifier).load(),
           icon: const WenyouIcon(WenyouIconIds.actionRefresh),
-          label: const Text('重新加载'),
+          label: const Text('重试'),
         ),
       );
     }
@@ -263,7 +251,7 @@ class StickerTile extends StatelessWidget {
       label: sticker.asset.animated ? '动态收藏表情' : '收藏表情',
       child: Material(
         color: tokens.softPanel,
-        borderRadius: BorderRadius.circular(tokens.radius12),
+        borderRadius: BorderRadius.circular(tokens.radiusCompact),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: onTap,
@@ -307,6 +295,8 @@ class StickerPostMarkdown extends ConsumerWidget {
   const StickerPostMarkdown({
     required this.postId,
     required this.data,
+    this.postVersion = 1,
+    this.galleryTarget,
     this.mediaDisplays = const {},
     this.diceLabels = const {},
     this.diceSemantics = const {},
@@ -322,6 +312,8 @@ class StickerPostMarkdown extends ConsumerWidget {
   });
 
   final String postId;
+  final int postVersion;
+  final ReadingGalleryTarget? galleryTarget;
   final String data;
   final Map<String, MediaDisplay> mediaDisplays;
   final Map<String, String> diceLabels;
@@ -343,6 +335,27 @@ class StickerPostMarkdown extends ConsumerWidget {
     );
     return WenyouMarkdown(
       data: data,
+      onOpenImage: galleryTarget == null
+          ? null
+          : (index, uri, alt) => openReadingImageGallery(
+              context,
+              target: galleryTarget!,
+              sourceId: postId,
+              version: postVersion,
+              imageIndex: index,
+              url: uri.toString(),
+              display: mediaDisplays[uri.toString()],
+              onCollect: !enabled || !authenticated
+                  ? null
+                  : (image) => ref
+                        .read(stickerCollectionControllerProvider.notifier)
+                        .importSourceForFeedback(
+                          StickerPostImageSource(
+                            postId: image.sourceId,
+                            imageUrl: image.url,
+                          ),
+                        ),
+            ),
       mediaDisplays: mediaDisplays,
       diceLabels: diceLabels,
       diceSemantics: diceSemantics,

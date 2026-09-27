@@ -17,6 +17,7 @@ class WenyouMarkdownImage extends StatelessWidget {
     this.alt,
     this.onAddToStickers,
     this.onLongPress,
+    this.onOpen,
     this.blockAlignment = WenyouTextAlignment.left,
   });
 
@@ -26,6 +27,7 @@ class WenyouMarkdownImage extends StatelessWidget {
   final String? alt;
   final Future<String> Function(Uri uri)? onAddToStickers;
   final VoidCallback? onLongPress;
+  final VoidCallback? onOpen;
   final WenyouTextAlignment blockAlignment;
 
   @override
@@ -81,7 +83,7 @@ class WenyouMarkdownImage extends StatelessWidget {
       ),
     );
     final imageContent = ClipRRect(
-      borderRadius: BorderRadius.circular(tokens.radius12),
+      borderRadius: BorderRadius.circular(tokens.radiusCompact),
       child: isSticker
           ? SizedBox.square(dimension: 96, child: image)
           : ConstrainedBox(
@@ -124,19 +126,21 @@ class WenyouMarkdownImage extends StatelessWidget {
         onLongPress: onLongPress,
         child: InkWell(
           key: ValueKey('markdown-image-$uri'),
-          borderRadius: BorderRadius.circular(tokens.radius12),
+          borderRadius: BorderRadius.circular(tokens.radiusCompact),
           onLongPress: onLongPress,
-          onTap: () => pushWenyouFullscreenPage<void>(
-            context: context,
-            builder: (_) => ContentImageViewerPage.single(
-              url: uri.toString(),
-              display: display,
-              alt: imageAlt,
-              onAddToStickers: onAddToStickers == null
-                  ? null
-                  : (_) => onAddToStickers!(uri),
-            ),
-          ),
+          onTap:
+              onOpen ??
+              () => pushWenyouFullscreenPage<void>(
+                context: context,
+                builder: (_) => ContentImageViewerPage.single(
+                  url: uri.toString(),
+                  display: display,
+                  alt: imageAlt,
+                  onAddToStickers: onAddToStickers == null
+                      ? null
+                      : (_) => onAddToStickers!(uri),
+                ),
+              ),
           child: imageContent,
         ),
       ),

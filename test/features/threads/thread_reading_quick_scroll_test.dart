@@ -47,14 +47,26 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(
-        tester
-            .getRect(find.byKey(const Key('reading-quick-scroll-toggle')))
-            .left,
-        greaterThanOrEqualTo(
-          tester.getRect(find.byKey(const Key('thread-detail-latest'))).right,
-        ),
+        find.byKey(const Key('reading-quick-scroll-toggle')),
+        findsNothing,
       );
-      await tester.tap(find.byKey(const Key('reading-quick-scroll-toggle')));
+      await tester.timedDrag(
+        find.byType(CustomScrollView),
+        const Offset(0, -180),
+        const Duration(milliseconds: 140),
+      );
+
+      await tester.pumpAndSettle();
+
+      final autoController = tester
+          .widget<ReadingProgressViewport>(find.byType(ReadingProgressViewport))
+          .controller;
+
+      expect(autoController.isOpen, isTrue);
+
+      autoController.setKeyboardFocus(true);
+
+      autoController.seekEdge(false);
       await tester.pumpAndSettle();
       final bar = tester.getRect(
         find.byKey(const Key('reading-quick-scroll-rail')),
@@ -69,9 +81,7 @@ void main() {
         matchesGoldenFile('goldens/thread_quick_scroll_${width.toInt()}.png'),
       );
       final quick = tester
-          .widget<ReadingQuickScrollAction>(
-            find.byType(ReadingQuickScrollAction),
-          )
+          .widget<ReadingProgressViewport>(find.byType(ReadingProgressViewport))
           .controller;
       final thumb = find.byKey(const Key('reading-quick-scroll-slider'));
       final grabbed = tester.getRect(thumb);
@@ -83,18 +93,18 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('reading-quick-scroll-slider')));
       await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const Key('reading-quick-scroll-end')));
+      quick.seekEdge(true);
       await tester.pumpAndSettle();
       expect(quick.scrollController.position.extentAfter, lessThanOrEqualTo(1));
       expect(quick.edgeFailed, isFalse);
       await tester.tap(find.byKey(const Key('reading-quick-scroll-slider')));
       await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const Key('reading-quick-scroll-start')));
+      quick.seekEdge(false);
       await tester.pumpAndSettle();
       expect(quick.scrollController.offset, 0);
       await tester.tap(find.byKey(const Key('thread-subthread-next')));
       await tester.pumpAndSettle();
-      expect(find.byKey(const Key('reading-quick-scroll-rail')), findsNothing);
+      expect(quick.isOpen, isFalse);
       expect(find.text('支线正文'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
@@ -121,10 +131,13 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('reading-quick-scroll-toggle')));
+    tester
+        .widget<ReadingProgressViewport>(find.byType(ReadingProgressViewport))
+        .controller
+        .setKeyboardFocus(true);
     await tester.pumpAndSettle();
     final quick = tester
-        .widget<ReadingQuickScrollAction>(find.byType(ReadingQuickScrollAction))
+        .widget<ReadingProgressViewport>(find.byType(ReadingProgressViewport))
         .controller;
     quick.beginDrag(0.5);
     await tester.pumpAndSettle();
@@ -136,12 +149,13 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('快翻取消迟到深链，不被旧目标重新拉回', (tester) async {
+  testWidgets('目标聚焦加载期间不显示普通讨论快翻入口', (tester) async {
     final pending = Completer<ThreadPostTargetModel>();
     await tester.pumpWidget(
       threadDetailPageTestDetailApp(
         ThreadDetailPageTestFakeThreadDetailRepository(
           mainFloors: floors,
+          sideFloors: [threadDetailPageTestTargetFloor],
           postTargetFuture: pending.future,
         ),
         targetPostId: 'floor-target',
@@ -149,15 +163,7 @@ void main() {
     );
     await tester.pump();
     await tester.pump();
-    await tester.tap(find.byKey(const Key('reading-quick-scroll-toggle')));
-    await tester.pumpAndSettle();
-    final quick = tester
-        .widget<ReadingQuickScrollAction>(find.byType(ReadingQuickScrollAction))
-        .controller;
-    quick.beginDrag(0.2);
-    quick.endDrag(0.2);
-    await tester.pumpAndSettle();
-    final offset = quick.scrollController.offset;
+    expect(find.byKey(const Key('reading-quick-scroll-toggle')), findsNothing);
     pending.complete(
       ThreadPostTargetModel(
         requestedPostId: 'floor-target',
@@ -167,7 +173,14 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(quick.scrollController.offset, closeTo(offset, 1));
-    expect(find.text('支线正文'), findsNothing);
+    expect(find.text('目标楼层内容'), findsOneWidget);
+    expect(
+      tester
+          .widget<ReadingProgressViewport>(find.byType(ReadingProgressViewport))
+          .controller
+          .enabled,
+      isTrue,
+    );
+    expect(find.byKey(const Key('discussion-target-cover')), findsNothing);
   });
 }

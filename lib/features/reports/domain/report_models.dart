@@ -78,7 +78,7 @@ class ReportInput {
         (normalizedDetails == null || normalizedDetails.isEmpty)) {
       throw const ReportInputValidationException('选择其他原因时，请填写补充说明。');
     }
-    if (normalizedDetails != null && normalizedDetails.length > 1000) {
+    if (normalizedDetails != null && normalizedDetails.runes.length > 1000) {
       throw const ReportInputValidationException('补充说明不能超过 1000 字。');
     }
     return ReportInput(

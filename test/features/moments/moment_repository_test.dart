@@ -11,6 +11,30 @@ import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
 const _requestId = '123e4567-e89b-42d3-a456-426614174000';
 
 void main() {
+  test('动态信息流接收后端合法40码点标题', () async {
+    final api = _MockMomentsApi();
+    final title = '😀' * 40;
+    when(
+      () => api.momentsList(cursor: null, limit: 20, feed: 'DISCOVER'),
+    ).thenAnswer(
+      (_) async => _response(
+        '/api/v1/moments',
+        MomentsList200Response(
+          (b) => b
+            ..code = ApiSuccessEnvelopeCodeEnum.number0
+            ..message = 'ok'
+            ..meta.update((m) => m.hasMore = false)
+            ..data.add(_cardDto().rebuild((card) => card.title = title)),
+        ),
+      ),
+    );
+    expect(
+      (await ApiMomentRepository(
+        api,
+      ).fetchFeed(mode: MomentFeedMode.discover)).items.single.title,
+      title,
+    );
+  });
   setUpAll(() {
     registerFallbackValue(_FakeCreateMomentDto());
     registerFallbackValue(_FakeUpdateMomentDto());

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_pagination.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_time_text.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/direct_messages/application/direct_message_controllers.dart';
@@ -204,35 +205,18 @@ class _DirectMessageTimelineState extends State<DirectMessageTimeline> {
           itemCount: headerCount + state.messages.length,
           itemBuilder: (context, index) {
             if (index == state.messages.length && headerCount == 1) {
-              if (state.transientFailure != null && state.hasMore) {
-                return Padding(
-                  padding: EdgeInsets.only(bottom: tokens.space12),
-                  child: WenyouStatusBanner(
-                    tone: WenyouStatusTone.error,
-                    message: state.transientFailure!.userMessage,
-                    detail: wenyouFailureDetail(state.transientFailure),
-                    action: TextButton(
-                      key: const Key('direct-conversation-load-older-retry'),
-                      onPressed: widget.onLoadOlder,
-                      child: const Text('重试加载'),
-                    ),
-                  ),
-                );
-              }
               return Padding(
                 padding: EdgeInsets.only(bottom: tokens.space12),
-                child: Center(
-                  child: TextButton.icon(
-                    key: const Key('direct-conversation-load-older'),
-                    onPressed: state.isLoadingOlder ? null : widget.onLoadOlder,
-                    icon: state.isLoadingOlder
-                        ? const SizedBox.square(
-                            dimension: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const WenyouIcon(WenyouIconIds.statusHistory),
-                    label: Text(state.isLoadingOlder ? '正在加载' : '查看更早消息'),
-                  ),
+                child: WenyouLoadMoreControl(
+                  hasMore: state.hasMore,
+                  isLoading: state.isLoadingOlder,
+                  failure: state.hasMore ? state.transientFailure : null,
+                  onLoadMore: widget.onLoadOlder,
+                  showEndLabel: false,
+                  loadMoreLabel: '查看更早消息',
+                  retryLabel: '重试加载',
+                  loadMoreKey: const Key('direct-conversation-load-older'),
+                  retryKey: const Key('direct-conversation-load-older-retry'),
                 ),
               );
             }

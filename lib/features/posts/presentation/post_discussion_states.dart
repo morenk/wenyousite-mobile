@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
-import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_pagination.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_states.dart';
 
@@ -21,36 +21,25 @@ class PostDiscussionPaginationStatus extends StatelessWidget {
     final failure = state.transientFailure;
     if (failure != null &&
         state.retryAction == PostDiscussionRetryAction.loadMore) {
-      return WenyouStatusBanner(
-        message: failure.userMessage,
-        detail: wenyouFailureDetail(failure),
-        tone: WenyouStatusTone.error,
-        action: TextButton(
-          key: const Key('post-replies-retry'),
-          onPressed: onRetry,
-          child: const Text('重试'),
-        ),
+      return WenyouLoadMoreControl(
+        hasMore: state.hasMore,
+        isLoading: state.isLoadingMore,
+        failure: failure,
+        onLoadMore: onRetry,
+        retryKey: const Key('post-replies-retry'),
+        showEndLabel: false,
       );
     }
     if (!state.hasMore || state.isRefreshing || failure != null) {
       return const SizedBox.shrink();
     }
-    return Semantics(
+    return WenyouLoadMoreControl(
       key: const Key('post-replies-loading'),
-      liveRegion: true,
-      excludeSemantics: true,
-      label: '正在加载回复',
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const SizedBox.square(
-            dimension: 20,
-            child: CircularProgressIndicator(strokeWidth: 2),
-          ),
-          SizedBox(width: context.wenyouTokens.space8),
-          const Text('正在加载回复'),
-        ],
-      ),
+      hasMore: true,
+      isLoading: true,
+      onLoadMore: onRetry,
+      loadingLabel: '正在加载回复',
+      showEndLabel: false,
     );
   }
 }

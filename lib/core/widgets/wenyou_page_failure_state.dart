@@ -10,7 +10,7 @@ class WenyouPageFailureState extends StatelessWidget {
     required this.failure,
     required this.onRetry,
     this.message,
-    this.retryLabel = '重新加载',
+    this.retryLabel = '重试',
     this.icon = WenyouIconIds.statusOffline,
     this.maxWidth,
     this.retryKey,

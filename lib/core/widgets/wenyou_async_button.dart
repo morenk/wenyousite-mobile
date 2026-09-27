@@ -1,0 +1,203 @@
+import 'package:flutter/material.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
+import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+
+enum WenyouAsyncButtonVariant { filled, tonal, outlined, text }
+
+enum WenyouAsyncButtonTone { normal, destructive }
+
+class WenyouAsyncPrimaryButton extends StatelessWidget {
+  const WenyouAsyncPrimaryButton({
+    required this.label,
+    required this.onPressed,
+    this.isLoading = false,
+    this.loadingLabel,
+    this.icon,
+    super.key,
+  });
+
+  final String label;
+  final VoidCallback? onPressed;
+  final bool isLoading;
+  final String? loadingLabel;
+  final String? icon;
+
+  @override
+  Widget build(BuildContext context) => WenyouAsyncButton(
+    label: label,
+    onPressed: onPressed,
+    isLoading: isLoading,
+    loadingLabel: loadingLabel,
+    icon: icon,
+    expand: true,
+  );
+}
+
+/// 在途状态由调用方持有；组件阻止再次激活，不接管写入、重试或权限判断。
+class WenyouAsyncButton extends StatelessWidget {
+  const WenyouAsyncButton({
+    required this.label,
+    required this.onPressed,
+    this.isLoading = false,
+    this.loadingLabel,
+    this.semanticLabel,
+    this.icon,
+    this.expand = false,
+    this.variant = WenyouAsyncButtonVariant.filled,
+    this.compact = false,
+    this.dense = false,
+    this.tone = WenyouAsyncButtonTone.normal,
+    super.key,
+  });
+
+  final String label;
+  final VoidCallback? onPressed;
+  final bool isLoading;
+  final String? loadingLabel;
+  final String? semanticLabel;
+  final String? icon;
+  final bool expand;
+  final WenyouAsyncButtonVariant variant;
+
+  /// 工具栏仅收紧横向留白，仍保留最低触控高度与大字号换行。
+  final bool compact;
+
+  /// 列表中收紧可见表面，外围仍通过 Material padding 保留完整触控区域。
+  final bool dense;
+  final WenyouAsyncButtonTone tone;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.wenyouTokens;
+    final scheme = Theme.of(context).colorScheme;
+    final destructive = tone == WenyouAsyncButtonTone.destructive;
+    final toneStyle = destructive
+        ? ButtonStyle(
+            backgroundColor: variant == WenyouAsyncButtonVariant.filled
+                ? WidgetStateProperty.resolveWith(
+                    (states) => states.contains(WidgetState.disabled)
+                        ? null
+                        : scheme.error,
+                  )
+                : null,
+            foregroundColor: WidgetStateProperty.resolveWith(
+              (states) => states.contains(WidgetState.disabled)
+                  ? null
+                  : variant == WenyouAsyncButtonVariant.filled
+                  ? scheme.onError
+                  : scheme.error,
+            ),
+          )
+        : null;
+    final style =
+        (compact || dense
+                ? ButtonStyle(
+                    minimumSize: WidgetStatePropertyAll(
+                      Size(
+                        0,
+                        dense ? tokens.space32 : tokens.minimumTouchTarget,
+                      ),
+                    ),
+                    padding: WidgetStatePropertyAll(
+                      EdgeInsets.symmetric(
+                        horizontal: dense ? tokens.space8 : tokens.space12,
+                        vertical: dense ? tokens.space4 : 0,
+                      ),
+                    ),
+                    textStyle: dense
+                        ? WidgetStatePropertyAll(
+                            Theme.of(context).textTheme.wenyouCompactBody,
+                          )
+                        : null,
+                    tapTargetSize: dense ? MaterialTapTargetSize.padded : null,
+                    visualDensity: dense ? VisualDensity.standard : null,
+                  )
+                : const ButtonStyle())
+            .merge(
+              variant == WenyouAsyncButtonVariant.tonal
+                  ? ButtonStyle(
+                      backgroundColor: WidgetStateProperty.resolveWith(
+                        (states) => states.contains(WidgetState.disabled)
+                            ? null
+                            : tokens.softPanel,
+                      ),
+                      foregroundColor: WidgetStateProperty.resolveWith(
+                        (states) => states.contains(WidgetState.disabled)
+                            ? null
+                            : destructive
+                            ? scheme.error
+                            : tokens.text,
+                      ),
+                    )
+                  : null,
+            )
+            .merge(toneStyle);
+    final child = Semantics(
+      liveRegion: isLoading,
+      label: isLoading
+          ? (loadingLabel ?? '${semanticLabel ?? label}，处理中')
+          : semanticLabel ?? label,
+      excludeSemantics: true,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // 保留正常文案的布局尺寸，避免按钮在请求开始时收缩、相邻操作跳动。
+          Visibility(
+            visible: !isLoading,
+            maintainState: true,
+            maintainAnimation: true,
+            maintainSize: true,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (icon != null) ...[
+                  WenyouIcon(icon!, size: compact || dense ? 18 : 20),
+                  SizedBox(width: tokens.space8),
+                ],
+                Flexible(child: Text(label, textAlign: TextAlign.center)),
+              ],
+            ),
+          ),
+          if (isLoading)
+            const SizedBox.square(
+              dimension: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+        ],
+      ),
+    );
+    final callback = isLoading ? null : onPressed;
+    final button = switch (variant) {
+      WenyouAsyncButtonVariant.filled => FilledButton(
+        style: style,
+        onPressed: callback,
+        child: child,
+      ),
+      WenyouAsyncButtonVariant.outlined => OutlinedButton(
+        style: style,
+        onPressed: callback,
+        child: child,
+      ),
+      WenyouAsyncButtonVariant.tonal => FilledButton.tonal(
+        style: style,
+        onPressed: callback,
+        child: child,
+      ),
+      WenyouAsyncButtonVariant.text => TextButton(
+        style: style,
+        onPressed: callback,
+        child: child,
+      ),
+    };
+    return SizedBox(
+      width: expand ? double.infinity : null,
+      child: dense
+          ? button
+          : ConstrainedBox(
+              constraints: BoxConstraints(minHeight: tokens.minimumTouchTarget),
+              child: button,
+            ),
+    );
+  }
+}

@@ -53,8 +53,7 @@ class WenyouDiscussionReplyCard extends StatelessWidget {
   }
 }
 
-/// Groups nested replies under a single visual guide instead of carding every
-/// individual reply.
+/// 用整组柔和底色和缩进表达嵌套层级，单条回复保持透明。
 class WenyouDiscussionReplyGroup extends StatelessWidget {
   const WenyouDiscussionReplyGroup({required this.child, super.key});
 
@@ -67,10 +66,14 @@ class WenyouDiscussionReplyGroup extends StatelessWidget {
       padding: EdgeInsets.only(left: tokens.space12),
       child: DecoratedBox(
         decoration: BoxDecoration(
-          border: Border(left: BorderSide(color: tokens.border, width: 2)),
+          color: tokens.softPanel,
+          borderRadius: BorderRadius.circular(tokens.radiusCard),
         ),
         child: Padding(
-          padding: EdgeInsets.only(left: tokens.space12),
+          padding: EdgeInsets.symmetric(
+            horizontal: tokens.space12,
+            vertical: tokens.space4,
+          ),
           child: child,
         ),
       ),

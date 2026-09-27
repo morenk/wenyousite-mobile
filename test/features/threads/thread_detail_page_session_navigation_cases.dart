@@ -304,8 +304,15 @@ void registerThreadDetailPageSessionNavigationCases() {
     expect(find.byKey(const Key('thread-back-home')), findsOneWidget);
   });
 
-  testWidgets('游客点赞先登录并保留主题帖子目标', (tester) async {
-    final detailRepository = ThreadDetailPageTestFakeThreadDetailRepository();
+  testWidgets('游客从目标楼层回复先登录并保留主题帖子目标', (tester) async {
+    final detailRepository = ThreadDetailPageTestFakeThreadDetailRepository(
+      postTarget: ThreadPostTargetModel(
+        requestedPostId: 'floor-target',
+        threadId: 'thread-1',
+        subthreadId: 'subthread-1',
+        floor: threadDetailPageTestTargetFloor,
+      ),
+    );
     final router = GoRouter(
       initialLocation: '/threads/thread-1?post=floor-target',
       routes: [
@@ -339,7 +346,7 @@ void registerThreadDetailPageSessionNavigationCases() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(const Key('thread-interaction-like')));
+    await tester.tap(find.byKey(const Key('thread-floor-card-floor-target')));
     await tester.pumpAndSettle();
 
     expect(

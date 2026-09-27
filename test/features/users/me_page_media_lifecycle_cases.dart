@@ -37,7 +37,7 @@ void registerMePageMediaLifecycleCases() {
     expect(find.byKey(const Key('me-avatar-local-preview')), findsOneWidget);
     media.complete(0);
     await tester.pumpAndSettle();
-    expect(find.text('头像已更新。'), findsOneWidget);
+    expect(find.text('头像已更新。'), findsNothing);
   });
 
   testWidgets('头像选图失败后主动显示错误并允许重新选择', (tester) async {
@@ -77,7 +77,7 @@ void registerMePageMediaLifecycleCases() {
     expect(tester.getRect(failure).top, lessThan(480));
   });
 
-  testWidgets('设置失败保留请求 ID，重试只调用设置端点', (tester) async {
+  testWidgets('头像设置失败点开候选图重试只调用设置端点', (tester) async {
     var failOnce = true;
     final repository = MePageTestFakeMeProfileRepository();
     final media = MePageTestFakeMediaRepository();
@@ -112,17 +112,17 @@ void registerMePageMediaLifecycleCases() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('image-crop-confirm')));
     await tester.pumpAndSettle();
-    expect(
-      find.textContaining('问题编号：avatar-widget-request-id'),
-      findsOneWidget,
-    );
-    expect(find.text('重试设置'), findsOneWidget);
-
-    await tester.tap(find.byKey(const Key('me-avatar-retry')));
+    expect(find.byKey(const Key('me-avatar-local-preview')), findsOneWidget);
+    expect(find.byKey(const Key('me-avatar-failure')), findsNothing);
+    await tester.tap(find.byKey(const Key('me-avatar-change')));
+    await tester.pumpAndSettle();
+    expect(find.text('头像未完成'), findsOneWidget);
+    expect(find.text('头像暂时无法设置。'), findsOneWidget);
+    await tester.tap(find.text('重试'));
     await tester.pumpAndSettle();
     expect(media.uploadCalls, 1);
     expect(avatar.setCalls, 2);
-    expect(find.text('头像已更新。'), findsOneWidget);
+    expect(find.text('头像已更新。'), findsNothing);
   });
 
   testWidgets('主页背景可分别调整网页端与手机端取景后再上传', (tester) async {
@@ -178,7 +178,7 @@ void registerMePageMediaLifecycleCases() {
     );
     expect(media.uploadCalls, 2);
     expect(coverRepository.setCalls, 1);
-    expect(find.text('主页背景已更新。'), findsOneWidget);
+    expect(find.text('主页背景已更新。'), findsNothing);
   });
 
   testWidgets('主页背景确认双画幅后立即预览且两份上传同时启动', (tester) async {
@@ -218,7 +218,7 @@ void registerMePageMediaLifecycleCases() {
     media.complete(0);
     media.complete(1);
     await tester.pumpAndSettle();
-    expect(find.text('主页背景已更新。'), findsOneWidget);
+    expect(find.text('主页背景已更新。'), findsNothing);
   });
 
   testWidgets('背景选图期间资料刷新替换编辑器后仍继续裁剪和上传', (tester) async {
@@ -265,7 +265,7 @@ void registerMePageMediaLifecycleCases() {
     await tester.pumpAndSettle();
     expect(media.uploadCalls, 2);
     expect(coverRepository.setCalls, 1);
-    expect(find.text('主页背景已更新。'), findsOneWidget);
+    expect(find.text('主页背景已更新。'), findsNothing);
   });
 
   testWidgets('头像选图期间资料刷新替换编辑器后仍继续裁剪和上传', (tester) async {
@@ -309,7 +309,7 @@ void registerMePageMediaLifecycleCases() {
     await tester.pumpAndSettle();
     expect(media.uploadCalls, 1);
     expect(avatar.setCalls, 1);
-    expect(find.text('头像已更新。'), findsOneWidget);
+    expect(find.text('头像已更新。'), findsNothing);
   });
 
   testWidgets('主页背景上传失败后主动显示错误并保留同图重试', (tester) async {
@@ -341,14 +341,17 @@ void registerMePageMediaLifecycleCases() {
     await tester.tap(find.byKey(const Key('image-crop-confirm')));
     await tester.pumpAndSettle();
 
-    final failure = find.byKey(const Key('me-profile-cover-failure'));
-    expect(failure, findsOneWidget);
+    expect(
+      find.byKey(const Key('me-profile-cover-local-preview')),
+      findsOneWidget,
+    );
+    expect(find.byKey(const Key('me-profile-cover-failure')), findsNothing);
+    await tester.tap(find.byKey(const Key('me-profile-cover-change')));
+    await tester.pumpAndSettle();
+    expect(find.text('主页背景未完成'), findsOneWidget);
     expect(find.text('背景图上传失败，请重试。'), findsOneWidget);
-    expect(find.textContaining('问题编号：cover-upload-request'), findsOneWidget);
-    expect(find.textContaining('问题环节：内容处理'), findsOneWidget);
-    expect(find.text('复制问题详情'), findsOneWidget);
-    expect(find.text('重试上传'), findsOneWidget);
-    expect(tester.getRect(failure).top, lessThan(640));
+    expect(find.text('重试'), findsOneWidget);
+    expect(find.text('放弃本次更换'), findsOneWidget);
   });
 
   testWidgets('主页背景选图失败后主动显示错误并允许重新选择', (tester) async {
@@ -417,7 +420,7 @@ void registerMePageMediaLifecycleCases() {
     await tester.pumpAndSettle();
 
     expect(avatar.removeCalls, 1);
-    expect(find.text('头像已移除。'), findsOneWidget);
+    expect(find.text('头像已移除。'), findsNothing);
     expect(find.bySemanticsLabel('添加头像'), findsOneWidget);
     expect(find.byKey(const Key('me-avatar-remove')), findsNothing);
   });
@@ -450,7 +453,7 @@ void registerMePageMediaLifecycleCases() {
     await tester.pumpAndSettle();
 
     expect(cover.removeCalls, 1);
-    expect(find.text('主页背景已移除。'), findsOneWidget);
+    expect(find.text('主页背景已移除。'), findsNothing);
     expect(find.bySemanticsLabel('添加主页背景'), findsOneWidget);
   });
 

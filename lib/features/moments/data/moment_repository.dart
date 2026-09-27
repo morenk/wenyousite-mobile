@@ -578,7 +578,7 @@ class ApiMomentRepository implements MomentRepository {
       _contractViolation('MOMENT_TIP_TOTAL_INVALID');
     }
     final safeTitle = _requiredText(title, '动态标题');
-    if (safeTitle.length < 2 || safeTitle.length > 40) {
+    if (safeTitle.runes.length < 2 || safeTitle.runes.length > 40) {
       _contractViolation('MOMENT_TITLE_LENGTH_INVALID');
     }
     return MomentCard(

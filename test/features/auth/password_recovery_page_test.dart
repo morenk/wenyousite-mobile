@@ -13,6 +13,8 @@ import 'package:wenyousite_mobile/features/auth/presentation/forgot_password_pag
 import 'package:wenyousite_mobile/features/auth/presentation/login_page.dart';
 import 'package:wenyousite_mobile/features/auth/presentation/reset_password_page.dart';
 
+import '../../support/button_finder.dart';
+
 void main() {
   testWidgets('从登录找回密码、保留目标并完成重置后显示重新登录提示', (tester) async {
     final repository = _FakePasswordRecoveryRepository();
@@ -48,7 +50,7 @@ void main() {
     expect(find.byKey(const Key('reset-password-edit-email')), findsOneWidget);
     expect(find.byKey(const Key('reset-password-code-sent')), findsOneWidget);
     final sendButton = tester.widget<OutlinedButton>(
-      find.byKey(const Key('reset-password-request-code')),
+      findButtonControl(find.byKey(const Key('reset-password-request-code'))),
     );
     expect(sendButton.onPressed, isNull);
 

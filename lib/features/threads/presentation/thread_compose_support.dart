@@ -6,8 +6,6 @@ import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
-import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
-import 'package:wenyousite_mobile/features/media/presentation/media_upload_status_banner.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_compose_controller.dart';
 
 enum ThreadRemoteDraftAction { save, open }
@@ -152,9 +150,6 @@ class ThreadComposeStatusArea extends StatelessWidget {
     required this.documentIssues,
     required this.codecFailure,
     required this.operationFailure,
-    required this.uploadState,
-    required this.onCancelUpload,
-    required this.onRetryUpload,
     required this.onRefreshBootstrap,
     super.key,
   });
@@ -163,9 +158,6 @@ class ThreadComposeStatusArea extends StatelessWidget {
   final List<MarkdownCodecIssue> documentIssues;
   final String? codecFailure;
   final String? operationFailure;
-  final MediaUploadTaskState uploadState;
-  final VoidCallback onCancelUpload;
-  final VoidCallback onRetryUpload;
   final VoidCallback onRefreshBootstrap;
 
   @override
@@ -174,11 +166,6 @@ class ThreadComposeStatusArea extends StatelessWidget {
     final banners = <Widget>[
       if (state.action == ThreadComposeAction.openRemoteDraft)
         const WenyouStatusBanner(message: '正在读取云端草稿…'),
-      if (state.restoredFromLocal)
-        const WenyouStatusBanner(
-          message: '已恢复上次未完成的本地内容。',
-          tone: WenyouStatusTone.accent,
-        ),
       if (state.bootstrapLoading)
         const WenyouStatusBanner(message: '正在准备发布选项…'),
       if (state.bootstrapFailure != null)
@@ -188,7 +175,7 @@ class ThreadComposeStatusArea extends StatelessWidget {
           tone: WenyouStatusTone.error,
           action: TextButton(
             onPressed: state.bootstrapLoading ? null : onRefreshBootstrap,
-            child: const Text('重新同步'),
+            child: const Text('重试'),
           ),
         ),
       if (documentIssues.isNotEmpty)
@@ -213,18 +200,6 @@ class ThreadComposeStatusArea extends StatelessWidget {
           message: state.actionFailure!.userMessage,
           detail: wenyouFailureDetail(state.actionFailure, treatAsWrite: true),
           tone: WenyouStatusTone.error,
-        ),
-      if (state.successMessage != null)
-        WenyouStatusBanner(
-          message: state.successMessage!,
-          tone: WenyouStatusTone.accent,
-        ),
-      if (uploadState.failure != null || uploadState.isBusy)
-        MediaUploadStatusBanner(
-          state: uploadState,
-          onCancel: onCancelUpload,
-          onRetry: onRetryUpload,
-          retryKey: const Key('compose-retry-upload'),
         ),
     ];
     if (banners.isEmpty) return const SizedBox.shrink();

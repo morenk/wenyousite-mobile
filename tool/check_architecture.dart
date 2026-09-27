@@ -1,5 +1,7 @@
 import 'dart:io';
+
 import 'architecture/allowlist.dart';
+import 'architecture/component_checks.dart';
 import 'architecture/dependency_checks.dart';
 import 'architecture/dependency_graph.dart';
 import 'architecture/editor_semantics_checks.dart';
@@ -104,6 +106,7 @@ List<String> collectArchitectureFailures(Directory root) {
   _checkSystemFontBoundary(applicationFiles, failures, root);
   checkSharedTabBoundary(applicationFiles, failures, root);
   checkSnackBarBoundary(applicationFiles, failures, root);
+  checkComponentBoundaries(applicationFiles, failures, root);
   checkFailurePresentationBoundary(applicationFiles, failures, root);
   checkRouteTransitionBoundary(applicationFiles, failures, root);
   _checkVersionConsistency(failures, root);

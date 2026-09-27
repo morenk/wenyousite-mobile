@@ -382,6 +382,7 @@ Widget threadDetailPageTestDetailRouterApp(
           enableRenderDiagnostics: enableRenderDiagnostics,
           entryTarget: ThreadDetailEntryTarget.fromQuery(
             postId: state.uri.queryParameters['post'],
+            subthreadId: state.uri.queryParameters['subthread'],
           ),
         ),
       ),
@@ -474,12 +475,14 @@ class ThreadDetailPageTestFakeThreadDetailRepository
     this.loadMoreFailure,
     this.postTarget,
     this.postTargetFuture,
+    this.postTargetFutures,
     this.latestPost,
     this.latestPostFuture,
     this.latestFailure,
     ThreadDetailModel? detail,
     ThreadFloorModel? mainFloor,
     List<ThreadFloorModel>? mainFloors,
+    this.sideFloors,
     this.nextFloors,
   }) : detail = detail ?? threadDetailPageTestDetail,
        mainFloors = mainFloors ?? [mainFloor ?? threadDetailPageTestMainFloor];
@@ -489,13 +492,16 @@ class ThreadDetailPageTestFakeThreadDetailRepository
   final ApiFailure? loadMoreFailure;
   final ThreadPostTargetModel? postTarget;
   final Future<ThreadPostTargetModel>? postTargetFuture;
+  final Map<String, Future<ThreadPostTargetModel>>? postTargetFutures;
   final ThreadLatestPostModel? latestPost;
   final Future<ThreadLatestPostModel>? latestPostFuture;
   final ApiFailure? latestFailure;
   final ThreadDetailModel detail;
   final List<ThreadFloorModel> mainFloors;
+  final List<ThreadFloorModel>? sideFloors;
   final List<ThreadFloorModel>? nextFloors;
   final List<String> requestedSubthreads = [];
+  final List<String?> requestedCursors = [];
   final List<ThreadFloorOrder> requestedOrders = [];
   final List<String?> requestedAuthors = [];
   final List<String> targetPostIds = [];
@@ -512,6 +518,7 @@ class ThreadDetailPageTestFakeThreadDetailRepository
   @override
   Future<ThreadPostTargetModel> fetchPostTarget(String postId) async {
     targetPostIds.add(postId);
+    if (postTargetFutures?[postId] case final future?) return future;
     if (postTargetFuture case final future?) return future;
     return postTarget!;
   }
@@ -533,6 +540,7 @@ class ThreadDetailPageTestFakeThreadDetailRepository
     String? authorId,
   }) async {
     requestedSubthreads.add(subthreadId);
+    requestedCursors.add(cursor);
     requestedOrders.add(order);
     requestedAuthors.add(authorId);
     if (cursor != null && loadMoreFailure != null) {
@@ -551,9 +559,7 @@ class ThreadDetailPageTestFakeThreadDetailRepository
       throw floorFailure!;
     }
     if (cursor == null && (loadMoreFailure != null || nextFloors != null)) {
-      final floors = subthreadId == 'subthread-1'
-          ? mainFloors
-          : [threadDetailPageTestSideFloor];
+      final floors = _firstFloors(subthreadId);
       return CursorPage(
         items: authorId == null
             ? floors
@@ -562,14 +568,27 @@ class ThreadDetailPageTestFakeThreadDetailRepository
         hasMore: true,
       );
     }
-    final floors = subthreadId == 'subthread-1'
-        ? mainFloors
-        : [threadDetailPageTestSideFloor];
+    final floors = _firstFloors(subthreadId);
     return CursorPage(
       items: authorId == null
           ? floors
           : floors.where((floor) => floor.author.id == authorId).toList(),
       hasMore: false,
     );
+  }
+
+  List<ThreadFloorModel> _firstFloors(String subthreadId) {
+    final floors = subthreadId == 'subthread-1'
+        ? mainFloors
+        : sideFloors ?? [threadDetailPageTestSideFloor];
+    final target = postTarget;
+    if (target == null ||
+        target.focusedReplyId != null ||
+        target.subthreadId != subthreadId ||
+        nextFloors?.any((floor) => floor.id == target.floor.id) == true ||
+        floors.any((floor) => floor.id == target.floor.id)) {
+      return floors;
+    }
+    return [...floors, target.floor];
   }
 }

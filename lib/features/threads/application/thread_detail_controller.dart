@@ -324,10 +324,13 @@ class ThreadDetailController extends StateNotifier<ThreadDetailState> {
 
   Future<void> loadMore() => prefetchRemainingFloors();
 
+  Future<void> locateFloor(String floorId) =>
+      prefetchRemainingFloors(untilFloorId: floorId);
+
   /// Fetches all remaining text pages sequentially. The page starts this only
   /// after the first frame, while the sliver remains responsible for lazily
   /// creating image widgets inside its bounded cache neighborhood.
-  Future<void> prefetchRemainingFloors() async {
+  Future<void> prefetchRemainingFloors({String? untilFloorId}) async {
     final selectedId = state.selectedSubthreadId;
     if (state.phase != ThreadDetailPhase.ready ||
         selectedId == null ||
@@ -348,7 +351,9 @@ class ThreadDetailController extends StateNotifier<ThreadDetailState> {
     );
 
     while (_matchesFloorRequest(epoch, selectedId, order, authorId) &&
-        state.hasMore) {
+        state.hasMore &&
+        (untilFloorId == null ||
+            !state.floors.any((floor) => floor.id == untilFloorId))) {
       final cursor = state.cursor;
       if (cursor == null || !seenCursors.add(cursor)) {
         _finishFloorPrefetchFailure(

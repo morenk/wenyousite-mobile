@@ -1,7 +1,16 @@
 {
   "schemaVersion": 1,
-  "contractVersion": "5.22.0-dev.20260912.2",
+  "contractVersion": "5.27.0-dev.20260927.1",
   "exclusions": [
+    { "operationId": "mobileReleasesList", "category": "removed_history_ui", "reason": "负责人决定只保留更新前后一次说明弹窗，移除移动端历史浏览；已部署接口和生成SDK仍保留兼容。" },
+    { "operationId": "adminMobileReleasesList", "category": "admin_product", "reason": "移动端 V1 不承载管理产品。" },
+    { "operationId": "adminMobileReleasesCreate", "category": "admin_product", "reason": "移动端 V1 不承载管理产品。" },
+    { "operationId": "adminMobileReleasesDetail", "category": "admin_product", "reason": "移动端 V1 不承载管理产品。" },
+    { "operationId": "adminMobileReleasesUpdate", "category": "admin_product", "reason": "移动端 V1 不承载管理产品。" },
+    { "operationId": "adminMobileReleasesConfirm", "category": "admin_product", "reason": "移动端 V1 不承载管理产品。" },
+    { "operationId": "adminContentList", "category": "admin_product", "reason": "移动端 V1 不承载管理产品。" },
+    { "operationId": "adminContentDetail", "category": "admin_product", "reason": "移动端 V1 不承载管理产品。" },
+    { "operationId": "adminContentUpdateTaxonomy", "category": "admin_product", "reason": "移动端 V1 不承载管理产品。" },
     { "operationId": "adminIndex", "category": "admin_product", "reason": "移动端 V1 不承载管理产品。" },
     { "operationId": "adminSendSystemNotification", "category": "admin_product", "reason": "移动端 V1 不承载管理产品。" },
     { "operationId": "adminGetHistory", "category": "admin_product", "reason": "移动端 V1 不承载管理产品。" },

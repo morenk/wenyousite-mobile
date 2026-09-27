@@ -95,6 +95,24 @@ abstract final class MarkdownInlineBoundary {
         continue;
       }
 
+      // 仅恢复已提交语料中的旧 strong 紧邻 em/code 拼写；转义和代码
+      // 保护区在上方已跳过，不把一般裸星号或未闭合语法猜测为格式。
+      if (!_isEscapedAt(source, index) && source.startsWith('**', index)) {
+        final legacy = RegExp(
+          r'\*\*([^*\\\r\n]+)\*\*\*(`+(?!`))([^\r\n]*?[^`])\2(?!`)\*(?!\*)',
+        ).matchAsPrefix(source, index);
+        if (legacy != null && (index == 0 || source[index - 1] != '*')) {
+          output.write(source.substring(unchangedStart, index));
+          output.write(
+            '**${legacy.group(1)}**_${legacy.group(2)}${legacy.group(3)}${legacy.group(2)}_',
+          );
+          index = legacy.end;
+          unchangedStart = index;
+          changed = true;
+          continue;
+        }
+      }
+
       final token = _tokenAt(source, index);
       if (token == null) {
         index += 1;
@@ -130,6 +148,7 @@ abstract final class MarkdownInlineBoundary {
       if (closingMatch.containsProtected ||
           _isEscapedAt(source, index) ||
           _isEscapedAt(source, closing) ||
+          (!moveTrailingSpace && _strictPair(source, index, closing, token)) ||
           (!moveTrailingSpace &&
               !_isRecoverable(content, previous: previous, next: next))) {
         index = nextIndex;
@@ -174,6 +193,44 @@ abstract final class MarkdownInlineBoundary {
 
   static bool _hasCandidateMarker(String source) =>
       source.contains('*') || source.contains('_') || source.contains('~~');
+
+  // 已满足 CommonMark 边界的定界符保留原拼写；把合法 _ 换成 * 会与
+  // 邻接的 ** 合并为不同的强调树。这里只修复确实不满足边界的旧内容。
+  static bool _strictPair(
+    String source,
+    int opening,
+    int closing,
+    String token,
+  ) {
+    ({bool left, bool right}) flanking(int index) {
+      final previousStart = _previousRuneStart(source, index);
+      final previous = previousStart == null
+          ? null
+          : _runeAt(source, previousStart);
+      final end = index + token.length;
+      final next = end == source.length ? null : _runeAt(source, end);
+      final previousSpace = previous == null || _isWhitespace(previous);
+      final nextSpace = next == null || _isWhitespace(next);
+      final previousPunctuation =
+          previous != null && _isPunctuationOrSymbol(previous);
+      final nextPunctuation = next != null && _isPunctuationOrSymbol(next);
+      final left =
+          !nextSpace &&
+          (!nextPunctuation || previousSpace || previousPunctuation);
+      final right =
+          !previousSpace &&
+          (!previousPunctuation || nextSpace || nextPunctuation);
+      if (token.startsWith('_')) {
+        return (
+          left: left && (!right || previousPunctuation),
+          right: right && (!left || nextPunctuation),
+        );
+      }
+      return (left: left, right: right);
+    }
+
+    return flanking(opening).left && flanking(closing).right;
+  }
 
   static String? _tokenAt(String source, int index) {
     final marker = source[index];

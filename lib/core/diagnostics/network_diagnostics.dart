@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:uuid/uuid.dart';
+import 'package:wenyousite_mobile/core/diagnostics/diagnostic_request.dart';
 import 'package:wenyousite_mobile/core/diagnostics/failure_diagnostics.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 
@@ -13,6 +14,7 @@ class NetworkDiagnosticInterceptor extends Interceptor {
 
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
+    options.extra.putIfAbsent('diagnosticWatch', () => Stopwatch()..start());
     options.extra.putIfAbsent(
       'diagnosticGeneration',
       () => _diagnostics.generation,
@@ -20,6 +22,8 @@ class NetworkDiagnosticInterceptor extends Interceptor {
     options.headers.putIfAbsent('X-Request-ID', const Uuid().v4);
     final attempt = DiagnosticAttempt.current;
     if (attempt != null) {
+      attempt.statistics['apiOperation'] = diagnosticApiOperation(options);
+      attempt.statistics['httpMethod'] = options.method.toUpperCase();
       attempt.requestId = safeDiagnosticId(options.headers['X-Request-ID']);
       attempt.httpStatus = null;
       attempt.responseReceived = false;
@@ -41,6 +45,10 @@ class NetworkDiagnosticInterceptor extends Interceptor {
   void _response(Response<Object?>? response) {
     final attempt = DiagnosticAttempt.current;
     if (attempt == null || response == null) return;
+    if (response.requestOptions.extra['diagnosticWatch']
+        case final Stopwatch watch) {
+      attempt.statistics['requestElapsedMs'] = watch.elapsedMilliseconds;
+    }
     attempt.responseReceived = true;
     attempt.apiEnvelopeReceived =
         response.data is Map && (response.data as Map)['code'] is num;

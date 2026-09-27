@@ -5,7 +5,7 @@ import 'package:wenyousite_mobile/core/media/media_display.dart';
 
 const maxMediaImageBytes = 10 * 1024 * 1024;
 
-enum MediaUploadStage { preparing, uploading, confirming, processing }
+enum MediaUploadStage { queued, preparing, uploading, confirming, processing }
 
 enum MediaUploadPurpose {
   avatar,
@@ -130,13 +130,16 @@ class MediaUploadProgress {
     required this.stage,
     this.sentBytes,
     this.totalBytes,
+    this.pendingUpload,
   });
 
   final MediaUploadStage stage;
   final int? sentBytes;
   final int? totalBytes;
+  final PendingMediaUpload? pendingUpload;
 
   double? get fraction {
+    if (stage != MediaUploadStage.uploading) return null;
     final sent = sentBytes;
     final total = totalBytes;
     if (sent == null || total == null || total <= 0) return null;
@@ -178,10 +181,36 @@ class UploadedEditorImage {
 
 /// 已确认上传的媒体仍在处理；后续只能查询这个身份，不能重复上传。
 class PendingMediaUpload {
-  const PendingMediaUpload({required this.mediaId, required this.purpose});
+  const PendingMediaUpload({
+    required this.mediaId,
+    required this.purpose,
+    this.needsConfirmation = false,
+  });
 
   final String mediaId;
   final MediaUploadPurpose purpose;
+
+  /// 对象已传完但确认响应未收到时，恢复同一身份而不是重新直传。
+  final bool needsConfirmation;
+
+  Map<String, Object?> toJson() => {
+    'mediaId': mediaId,
+    'purpose': purpose.name,
+    'needsConfirmation': needsConfirmation,
+  };
+
+  static PendingMediaUpload? fromJson(Map<String, Object?> json) {
+    final mediaId = json['mediaId'];
+    final purpose = MediaUploadPurpose.values
+        .where((value) => value.name == json['purpose'])
+        .firstOrNull;
+    if (mediaId is! String || mediaId.isEmpty || purpose == null) return null;
+    return PendingMediaUpload(
+      mediaId: mediaId,
+      purpose: purpose,
+      needsConfirmation: json['needsConfirmation'] == true,
+    );
+  }
 }
 
 class MediaProcessingPending implements Exception {

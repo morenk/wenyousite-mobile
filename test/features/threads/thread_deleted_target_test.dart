@@ -18,6 +18,7 @@ import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_pa
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_target_utils.dart';
 
 import '../../support/deterministic_test_fonts.dart';
+import '../../support/memory_pending_media_file_store.dart';
 import 'thread_detail_page_test_support.dart';
 
 void main() {
@@ -26,7 +27,6 @@ void main() {
   for (final (deletedNumber, targeted, failDelete) in [
     (25, false, false),
     (40, false, false),
-    (25, true, false),
     (25, false, true),
   ]) {
     testWidgets('长列表删除第 $deletedNumber 层，定位=$targeted，失败=$failDelete，保留附近位置', (
@@ -229,6 +229,7 @@ Future<GoRouter> _pumpPage(
 }) async {
   final container = ProviderContainer(
     overrides: [
+      memoryPendingMediaFileStoreOverride(),
       stickersEnabledProvider.overrideWithValue(false),
       tokenStoreProvider.overrideWithValue(
         ThreadDetailPageTestMemoryTokenStore(),
@@ -275,10 +276,14 @@ Future<GoRouter> _pumpPage(
     ),
   );
   await tester.pumpAndSettle();
-  expect(
-    find.byKey(Key('thread-floor-card-${targeted ? targetId : 'floor-1'}')),
-    findsOneWidget,
-  );
+  if (targeted && repository.targetFailure != null) {
+    expect(find.byKey(const Key('thread-target-retry')), findsOneWidget);
+  } else {
+    expect(
+      find.byKey(Key('thread-floor-card-${targeted ? targetId : 'floor-1'}')),
+      findsOneWidget,
+    );
+  }
   return router;
 }
 

@@ -11,6 +11,7 @@ import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart
 enum MediaUploadTaskPhase {
   idle,
   picking,
+  queued,
   preparing,
   uploading,
   confirming,
@@ -54,6 +55,7 @@ class MediaUploadTaskState {
 
   bool get isBusy => switch (phase) {
     MediaUploadTaskPhase.picking ||
+    MediaUploadTaskPhase.queued ||
     MediaUploadTaskPhase.preparing ||
     MediaUploadTaskPhase.uploading ||
     MediaUploadTaskPhase.confirming ||
@@ -63,8 +65,17 @@ class MediaUploadTaskState {
     MediaUploadTaskPhase.failed => false,
   };
 
+  bool get isActivelyWorking => switch (phase) {
+    MediaUploadTaskPhase.preparing ||
+    MediaUploadTaskPhase.uploading ||
+    MediaUploadTaskPhase.confirming ||
+    MediaUploadTaskPhase.processing => true,
+    _ => false,
+  };
+
   String get progressLabel => switch (phase) {
     MediaUploadTaskPhase.picking => '正在打开相册…',
+    MediaUploadTaskPhase.queued => '等待准备图片…',
     MediaUploadTaskPhase.preparing => '正在准备图片…',
     MediaUploadTaskPhase.uploading when progress?.fraction != null =>
       '正在上传图片 ${((progress!.fraction ?? 0) * 100).round()}%',
@@ -156,6 +167,33 @@ class MediaUploadTaskController
     return _start(input: input);
   }
 
+  /// 页面重开只恢复图片任务；发布意图由页面单独管理，不能随草稿恢复。
+  Future<UploadedEditorImage?> resumeUpload(
+    MediaUploadInput input,
+    PendingMediaUpload pending,
+  ) {
+    if (_activeFuture != null) return _activeFuture!;
+    _retryInput = input;
+    _pendingUpload = pending;
+    return _start(input: input, pending: pending);
+  }
+
+  /// 离开页面保留已知媒体身份，使本机草稿可以续查而不重复直传。
+  void pause() {
+    if (_disposed) return;
+    _runId += 1;
+    _activeFuture = null;
+    final operation = _operation;
+    _operation = null;
+    final cancelSignal = _cancelSignal;
+    _cancelSignal = null;
+    state = MediaUploadTaskState(pendingUpload: _pendingUpload);
+    if (cancelSignal != null && !cancelSignal.isCompleted) {
+      cancelSignal.complete();
+    }
+    operation?.cancel();
+  }
+
   @override
   void cancel() {
     if (!state.isBusy && _operation == null && _pendingUpload == null) return;
@@ -228,11 +266,12 @@ class MediaUploadTaskController
       _retryInput = selected;
       DiagnosticAttempt.current?.mark(DiagnosticStage.preparing);
       const preparing = MediaUploadProgress(stage: MediaUploadStage.preparing);
-      state = const MediaUploadTaskState(
+      state = MediaUploadTaskState(
         phase: MediaUploadTaskPhase.preparing,
         progress: preparing,
+        pendingUpload: pending,
       );
-      if (!selected.isMaterialized) {
+      if (pending == null && !selected.isMaterialized) {
         final materialized = await _untilCancelled(
           selected.materialize(),
           cancelSignal,
@@ -242,11 +281,18 @@ class MediaUploadTaskController
         if (!_isCurrent(runId)) return null;
         _retryInput = selected;
       }
+      state = MediaUploadTaskState(
+        phase: MediaUploadTaskPhase.queued,
+        progress: const MediaUploadProgress(stage: MediaUploadStage.queued),
+        pendingUpload: pending,
+      );
       void onProgress(MediaUploadProgress progress) {
         if (!acceptProgress || !_isCurrent(runId)) return;
+        _pendingUpload = progress.pendingUpload ?? _pendingUpload;
         state = MediaUploadTaskState(
           phase: _phaseFor(progress.stage),
           progress: progress,
+          pendingUpload: _pendingUpload,
         );
       }
 
@@ -400,6 +446,7 @@ class MediaUploadTaskController
   }
 
   MediaUploadTaskPhase _phaseFor(MediaUploadStage stage) => switch (stage) {
+    MediaUploadStage.queued => MediaUploadTaskPhase.queued,
     MediaUploadStage.preparing => MediaUploadTaskPhase.preparing,
     MediaUploadStage.uploading => MediaUploadTaskPhase.uploading,
     MediaUploadStage.confirming => MediaUploadTaskPhase.confirming,

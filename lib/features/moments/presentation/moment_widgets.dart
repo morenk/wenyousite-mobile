@@ -6,7 +6,6 @@ import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/navigation/wenyou_page_transitions.dart';
-import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/content_image_viewer_page.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
@@ -15,6 +14,7 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_interaction_toggle.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_level_badge.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_time_text.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
+import 'package:wenyousite_mobile/features/media/reading_gallery.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_playback_image.dart';
 import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
@@ -43,6 +43,7 @@ class MomentCardTile extends StatelessWidget {
     final tokens = context.wenyouTokens;
     return WenyouPanel(
       padding: EdgeInsets.zero,
+      contentCard: true,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -50,14 +51,14 @@ class MomentCardTile extends StatelessWidget {
             key: Key('moment-open-${moment.id}'),
             onTap: onTap,
             borderRadius: BorderRadius.vertical(
-              top: Radius.circular(tokens.radius20),
+              top: Radius.circular(tokens.radiusCard),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 ClipRRect(
                   borderRadius: BorderRadius.vertical(
-                    top: Radius.circular(tokens.radius20),
+                    top: Radius.circular(tokens.radiusCard),
                   ),
                   child: AspectRatio(
                     aspectRatio: 16 / 9,
@@ -205,20 +206,33 @@ class MomentAuthorLine extends StatelessWidget {
     required this.author,
     this.createdAt,
     this.onTap,
+    this.avatarOnlyTap = false,
+    this.avatarKey,
     super.key,
   });
 
   final MomentAuthor author;
   final DateTime? createdAt;
   final VoidCallback? onTap;
+  final bool avatarOnlyTap;
+  final Key? avatarKey;
 
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
+    final avatar = onTap != null && avatarOnlyTap
+        ? WenyouAvatarButton(
+            key: avatarKey,
+            username: author.username,
+            avatarUrl: author.avatarUrl,
+            visualSize: 32,
+            onTap: onTap!,
+          )
+        : MomentAvatar(key: avatarKey, author: author, size: 32);
     final content = Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        MomentAvatar(author: author, size: 32),
+        avatar,
         SizedBox(width: tokens.space8),
         Flexible(
           child: Column(
@@ -251,7 +265,7 @@ class MomentAuthorLine extends StatelessWidget {
         ),
       ],
     );
-    if (onTap == null) return content;
+    if (onTap == null || avatarOnlyTap) return content;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(tokens.radiusPill),
@@ -283,12 +297,14 @@ class MomentGallery extends ConsumerStatefulWidget {
   const MomentGallery({
     required this.momentId,
     required this.images,
+    this.version = 1,
     this.coverMedia,
     super.key,
   });
 
   final String momentId;
   final List<MomentMedia> images;
+  final int version;
   final MomentMedia? coverMedia;
 
   @override
@@ -338,11 +354,8 @@ class _MomentGalleryState extends ConsumerState<MomentGallery> {
   @override
   Widget build(BuildContext context) {
     final images = widget.images;
-    if (images.isEmpty) return const SizedBox.shrink();
     final stickersEnabled = ref.watch(stickersEnabledProvider);
-    final authenticated = ref.watch(
-      sessionControllerProvider.select((session) => session.isAuthenticated),
-    );
+    if (images.isEmpty) return const SizedBox.shrink();
     final tokens = context.wenyouTokens;
     final ratio =
         (widget.coverMedia?.aspectRatio ?? images.first.aspectRatio ?? 1)
@@ -367,7 +380,7 @@ class _MomentGalleryState extends ConsumerState<MomentGallery> {
             height: stageHeight,
             child: Material(
               color: tokens.softPanel,
-              borderRadius: BorderRadius.circular(tokens.radius12),
+              borderRadius: BorderRadius.circular(tokens.radiusCompact),
               clipBehavior: Clip.antiAlias,
               child: Semantics(
                 button: true,
@@ -376,22 +389,45 @@ class _MomentGalleryState extends ConsumerState<MomentGallery> {
                   key: const Key('moment-detail-image'),
                   behavior: HitTestBehavior.opaque,
                   excludeFromSemantics: true,
-                  onTap: () => openMomentGallery(
+                  onTap: () => openReadingImageGallery(
                     context,
-                    images,
-                    _index,
-                    onAddToStickers: !stickersEnabled || !authenticated
+                    target: ReadingGalleryTarget(
+                      scope: ReadingGalleryScope.moment,
+                      scopeId: widget.momentId,
+                    ),
+                    sourceId: widget.momentId,
+                    version: widget.version,
+                    imageIndex: _index,
+                    url: images[_index].url,
+                    display: images[_index].display,
+                    onCollect: !stickersEnabled
                         ? null
-                        : (item) => ref
+                        : (image) => ref
                               .read(
                                 stickerCollectionControllerProvider.notifier,
                               )
                               .importSourceForFeedback(
                                 StickerMomentImageSource(
-                                  momentId: widget.momentId,
-                                  mediaId: item.id! as String,
+                                  momentId: image.sourceId,
+                                  mediaId: image.mediaId!,
                                 ),
                               ),
+                    initialImages: [
+                      for (var index = 0; index < images.length; index++)
+                        ReadingGalleryImage(
+                          id: images[index].id,
+                          sourceId: widget.momentId,
+                          sourceVersion: widget.version,
+                          imageIndex: index,
+                          imageCount: images.length,
+                          url: images[index].url,
+                          display: images[index].display,
+                          mediaId: images[index].id,
+                          animated: images[index].isAnimated,
+                          previewUrls: images[index].playbackPreviewUrls,
+                          momentId: widget.momentId,
+                        ),
+                    ],
                   ),
                   child: Stack(
                     fit: StackFit.expand,

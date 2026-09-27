@@ -7,6 +7,84 @@ import 'package:wenyousite_mobile/features/app_shell/application/background_onli
 import 'package:wenyousite_mobile/features/app_shell/application/background_online_reminder_coordinator.dart';
 
 void main() {
+  test('通知展示的迟到成功不能写入新后台周期的去重记录', () async {
+    final polling = _FakePollingSession();
+    polling.pollHandler = () async => polling.alertBatch();
+    final pending = Completer<void>();
+    final gateway = _FakeGateway();
+    gateway.showHandler = () =>
+        gateway.showCalls == 1 ? pending.future : Future.value();
+    final timers = _FakeTimerFactory();
+    final coordinator = _coordinator(polling, gateway, timers);
+    addTearDown(coordinator.dispose);
+    coordinator.start(includeDirectMessages: false);
+    await _settle();
+    timers.tick();
+    await _settle();
+    expect(gateway.showCalls, 1);
+    coordinator.stop();
+    coordinator.start(includeDirectMessages: false);
+    await _settle();
+    pending.complete();
+    await _settle();
+    expect(polling.commitCalls, 0);
+    timers.tick();
+    await _settle();
+    expect(gateway.showCalls, 2);
+    expect(polling.commitCalls, 1);
+  });
+
+  for (final scenario in ['原批次重试', '内容变化', '新后台周期']) {
+    test('批次部分成功后$scenario 不误播或漏播', () async {
+      final polling = _FakePollingSession();
+      var body = '第一条';
+      polling.pollHandler = () async => BackgroundOnlinePollBatch(
+        alerts: [
+          BackgroundLocalAlert(
+            id: 1,
+            title: '温油站',
+            body: body,
+            payload: 'target-1',
+          ),
+          const BackgroundLocalAlert(
+            id: 2,
+            title: '温油站',
+            body: '第二条',
+            payload: 'target-2',
+          ),
+        ],
+        commitCallback: () {
+          polling.commitCalls++;
+          return true;
+        },
+      );
+      final gateway = _FakeGateway(failOnCall: 2);
+      final timers = _FakeTimerFactory();
+      final coordinator = _coordinator(polling, gateway, timers);
+      addTearDown(coordinator.dispose);
+      coordinator.start(includeDirectMessages: false);
+      await _settle();
+      timers.tick();
+      await _settle();
+      expect(gateway.shown, [(1, '第一条')]);
+      expect(polling.commitCalls, 0);
+      if (scenario == '内容变化') body = '第一条更新';
+      if (scenario == '新后台周期') {
+        coordinator.stop();
+        coordinator.start(includeDirectMessages: false);
+        await _settle();
+      }
+      timers.tick();
+      await _settle();
+      expect(gateway.shown, [
+        (1, '第一条'),
+        if (scenario != '原批次重试') (1, body),
+        (2, '第二条'),
+      ]);
+      expect(polling.commitCalls, 1);
+    });
+  }
+
   for (final status in [
     BackgroundExecutionStatus.stopped,
     BackgroundExecutionStatus.starting,
@@ -280,11 +358,18 @@ class _FakePollingSession implements BackgroundOnlinePollingSession {
 }
 
 class _FakeGateway implements BackgroundNotificationGateway {
-  _FakeGateway({this.canNotifyValue = true, this.showFailuresRemaining = 0});
+  _FakeGateway({
+    this.canNotifyValue = true,
+    this.showFailuresRemaining = 0,
+    this.failOnCall,
+  });
 
   bool canNotifyValue;
   int showFailuresRemaining;
   int showCalls = 0;
+  final int? failOnCall;
+  final shown = <(int, String)>[];
+  Future<void> Function()? showHandler;
 
   @override
   bool get isSupported => true;
@@ -304,10 +389,13 @@ class _FakeGateway implements BackgroundNotificationGateway {
   @override
   Future<void> showAlerts(List<BackgroundLocalAlert> alerts) async {
     showCalls++;
+    await showHandler?.call();
+    if (showCalls == failOnCall) throw StateError('second alert failed');
     if (showFailuresRemaining > 0) {
       showFailuresRemaining--;
       throw StateError('transient platform failure');
     }
+    shown.addAll(alerts.map((alert) => (alert.id, alert.body)));
   }
 
   @override

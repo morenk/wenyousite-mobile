@@ -7,6 +7,10 @@ abstract interface class BookmarkFolderCatalog {
   Future<List<BookmarkFolderItem>> fetchFolders();
 
   Future<BookmarkFolderItem> createFolder(String name);
+
+  Future<BookmarkFolderItem> renameFolder(String folderId, String name);
+
+  Future<BookmarkFolderDeleteResult> deleteFolder(String folderId);
 }
 
 final bookmarkFolderCatalogProvider =
@@ -28,7 +32,17 @@ class _UnboundBookmarkFolderCatalog implements BookmarkFolderCatalog {
   }
 
   @override
+  Future<BookmarkFolderDeleteResult> deleteFolder(String folderId) {
+    return Future.error(_error());
+  }
+
+  @override
   Future<List<BookmarkFolderItem>> fetchFolders() {
+    return Future.error(_error());
+  }
+
+  @override
+  Future<BookmarkFolderItem> renameFolder(String folderId, String name) {
     return Future.error(_error());
   }
 

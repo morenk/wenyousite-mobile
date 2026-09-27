@@ -498,13 +498,20 @@ void registerRichEditorSessionDocumentTransactionsCases() {
         '| 骰子 | 20 |\n'
         '<div>正文</div>  ';
     expect(session.controller.document.toPlainText(), '$normalized\n');
-    final expected = normalized
-        .split('\n')
-        .map(MarkdownContent.literalizeInlineText)
-        .map(MarkdownContent.protectUnsafeWhitespace)
-        .join('\n');
+    const expected =
+        r'\| 名称 \| 数值 \|'
+        '\n'
+        r'\| \-\-\- \| \-\-\-\: \|'
+        '\n'
+        r'\| 骰子 \| 20 \|'
+        '\n'
+        r'\<div\>正文\<\/div\>&#32;&#32;';
     expect(emitted.last, expected);
     expect(MarkdownContent.unsupportedLineIndexes(emitted.last), isEmpty);
+    expect(emitted.last, isNot(contains('\u2060')));
+    final reopened = MarkdownDeltaCodec.decode(emitted.last).delta;
+    expect(Document.fromDelta(reopened).toPlainText(), '$normalized\n');
+    expect(MarkdownDeltaCodec.encode(reopened), emitted.last);
   });
 
   testWidgets('普通外部粘贴没有文本时也不回落到 Quill 默认路径', (tester) async {

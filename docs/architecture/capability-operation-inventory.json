@@ -1,0 +1,3705 @@
+{
+  "backendRevision": "fc88ea09a808af9c54c1f5b971e116b3be4a471b",
+  "mobileBaseline": "c5ba66683a6ad5004878d50fb19468211b261747",
+  "contractVersion": "5.24.0-dev.20260920.1",
+  "total": 223,
+  "note": "操作存在和生成类型不是行为通过证据；具体已验证维度、偏差及待验证见capability-consistency-audit.md。",
+  "operations": [
+    {
+      "operationId": "healthCheck",
+      "method": "GET",
+      "path": "/api/v1/health",
+      "backendTags": [
+        "Health"
+      ],
+      "requestSchema": null,
+      "consumerSources": [],
+      "status": "有依据的平台差异",
+      "exclusionReason": "健康检查由部署与监控系统消费，不是移动端业务能力。",
+      "existingTestEvidence": null,
+      "applicability": "排除",
+      "verificationScope": "依据exclusionReason的V1产品范围、运维用途、废弃契约或替代接口，未扩展产品功能。"
+    },
+    {
+      "operationId": "authRequestCode",
+      "method": "POST",
+      "path": "/api/v1/auth/register/request-code",
+      "backendTags": [
+        "Auth"
+      ],
+      "requestSchema": "#/components/schemas/RequestCodeDto",
+      "consumerSources": [
+        "lib/features/auth/data/auth_repository.dart"
+      ],
+      "status": "已证实偏差",
+      "exclusionReason": null,
+      "existingTestEvidence": [
+        "test/features/auth/auth_repository_test.dart"
+      ],
+      "applicability": "适用",
+      "verificationScope": "已修复候选；已确认的具体边界和回归见capability-consistency-audit.md，不代表本接口所有输入组合或真机已验收。"
+    },
+    {
+      "operationId": "authVerifyAndComplete",
+      "method": "POST",
+      "path": "/api/v1/auth/register/verify-and-complete",
+      "backendTags": [
+        "Auth"
+      ],
+      "requestSchema": "#/components/schemas/VerifyAndCompleteDto",
+      "consumerSources": [
+        "lib/features/auth/data/auth_repository.dart"
+      ],
+      "status": "已证实偏差",
+      "exclusionReason": null,
+      "existingTestEvidence": [
+        "test/features/auth/auth_repository_test.dart"
+      ],
+      "applicability": "适用",
+      "verificationScope": "已修复候选；已确认的具体边界和回归见capability-consistency-audit.md，不代表本接口所有输入组合或真机已验收。"
+    },
+    {
+      "operationId": "authLogin",
+      "method": "POST",
+      "path": "/api/v1/auth/login",
+      "backendTags": [
+        "Auth"
+      ],
+      "requestSchema": "#/components/schemas/LoginDto",
+      "consumerSources": [
+        "lib/features/auth/data/auth_repository.dart"
+      ],
+      "status": "已证实偏差",
+      "exclusionReason": null,
+      "existingTestEvidence": [
+        "test/features/auth/auth_repository_test.dart"
+      ],
+      "applicability": "适用",
+      "verificationScope": "已修复候选；已确认的具体边界和回归见capability-consistency-audit.md，不代表本接口所有输入组合或真机已验收。"
+    },
+    {
+      "operationId": "authRefresh",
+      "method": "POST",
+      "path": "/api/v1/auth/refresh",
+      "backendTags": [
+        "Auth"
+      ],
+      "requestSchema": "#/components/schemas/RefreshDto",
+      "consumerSources": [
+        "lib/core/network/session_remote.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": [
+        "test/core/network/session_controller_test.dart",
+        "test/core/network/session_remote_test.dart"
+      ],
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "authChangePassword",
+      "method": "POST",
+      "path": "/api/v1/auth/change-password",
+      "backendTags": [
+        "Auth"
+      ],
+      "requestSchema": "#/components/schemas/ChangePasswordDto",
+      "consumerSources": [
+        "lib/features/settings/data/credential_security_repository.dart"
+      ],
+      "status": "已证实偏差",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已修复候选；已确认的具体边界和回归见capability-consistency-audit.md，不代表本接口所有输入组合或真机已验收。"
+    },
+    {
+      "operationId": "authForgotPassword",
+      "method": "POST",
+      "path": "/api/v1/auth/forgot-password",
+      "backendTags": [
+        "Auth"
+      ],
+      "requestSchema": "#/components/schemas/ForgotPasswordDto",
+      "consumerSources": [
+        "lib/features/auth/data/password_recovery_repository.dart"
+      ],
+      "status": "已证实偏差",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已修复候选；已确认的具体边界和回归见capability-consistency-audit.md，不代表本接口所有输入组合或真机已验收。"
+    },
+    {
+      "operationId": "authResetPassword",
+      "method": "POST",
+      "path": "/api/v1/auth/reset-password",
+      "backendTags": [
+        "Auth"
+      ],
+      "requestSchema": "#/components/schemas/ResetPasswordDto",
+      "consumerSources": [
+        "lib/features/auth/data/password_recovery_repository.dart"
+      ],
+      "status": "已证实偏差",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已修复候选；已确认的具体边界和回归见capability-consistency-audit.md，不代表本接口所有输入组合或真机已验收。"
+    },
+    {
+      "operationId": "authRequestChangeEmailCode",
+      "method": "POST",
+      "path": "/api/v1/auth/change-email/request-code",
+      "backendTags": [
+        "Auth"
+      ],
+      "requestSchema": "#/components/schemas/ChangeEmailRequestDto",
+      "consumerSources": [
+        "lib/features/settings/data/credential_security_repository.dart"
+      ],
+      "status": "已证实偏差",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已修复候选；已确认的具体边界和回归见capability-consistency-audit.md，不代表本接口所有输入组合或真机已验收。"
+    },
+    {
+      "operationId": "authVerifyChangeEmail",
+      "method": "POST",
+      "path": "/api/v1/auth/change-email/verify",
+      "backendTags": [
+        "Auth"
+      ],
+      "requestSchema": "#/components/schemas/ChangeEmailVerifyDto",
+      "consumerSources": [
+        "lib/features/settings/data/credential_security_repository.dart"
+      ],
+      "status": "已证实偏差",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已修复候选；已确认的具体边界和回归见capability-consistency-audit.md，不代表本接口所有输入组合或真机已验收。"
+    },
+    {
+      "operationId": "authLogout",
+      "method": "POST",
+      "path": "/api/v1/auth/logout",
+      "backendTags": [
+        "Auth"
+      ],
+      "requestSchema": "#/components/schemas/LogoutDto",
+      "consumerSources": [
+        "lib/core/network/session_remote.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": [
+        "test/features/auth/logout_controller_test.dart",
+        "test/core/network/session_remote_test.dart"
+      ],
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "authListSessions",
+      "method": "GET",
+      "path": "/api/v1/auth/sessions",
+      "backendTags": [
+        "Auth"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/settings/data/login_session_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "authRevokeSession",
+      "method": "DELETE",
+      "path": "/api/v1/auth/sessions/{id}",
+      "backendTags": [
+        "Auth"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/settings/data/login_session_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "usersSearch",
+      "method": "GET",
+      "path": "/api/v1/users/search",
+      "backendTags": [
+        "Users"
+      ],
+      "requestSchema": null,
+      "consumerSources": [],
+      "status": "有依据的平台差异",
+      "exclusionReason": "编辑器提及必须使用 usersMentionCandidates 返回的主题授权候选，普通用户搜索已有 searchSearchUsers；全站 usersSearch 会展示后端不会生成提及通知的关系外用户，移动端不再调用。",
+      "existingTestEvidence": null,
+      "applicability": "排除",
+      "verificationScope": "依据exclusionReason的V1产品范围、运维用途、废弃契约或替代接口，未扩展产品功能。"
+    },
+    {
+      "operationId": "usersMentionCandidates",
+      "method": "GET",
+      "path": "/api/v1/users/mention-candidates",
+      "backendTags": [
+        "Users"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/editor/data/mention_candidate_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "usersGetMe",
+      "method": "GET",
+      "path": "/api/v1/users/me",
+      "backendTags": [
+        "Users"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/threads/data/thread_compose_repository.dart",
+        "lib/features/users/data/me_profile_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "usersUpdateMe",
+      "method": "PATCH",
+      "path": "/api/v1/users/me",
+      "backendTags": [
+        "Users"
+      ],
+      "requestSchema": "#/components/schemas/UpdateUserDto",
+      "consumerSources": [
+        "lib/features/users/data/me_profile_repository.dart"
+      ],
+      "status": "已证实偏差",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已修复候选；已确认的具体边界和回归见capability-consistency-audit.md，不代表本接口所有输入组合或真机已验收。"
+    },
+    {
+      "operationId": "usersDeleteMe",
+      "method": "DELETE",
+      "path": "/api/v1/users/me",
+      "backendTags": [
+        "Users"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/settings/data/account_deletion_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "usersGetMyCollaboratedThreads",
+      "method": "GET",
+      "path": "/api/v1/users/me/collaborated-threads",
+      "backendTags": [
+        "Users"
+      ],
+      "requestSchema": null,
+      "consumerSources": [],
+      "status": "待验证",
+      "exclusionReason": "后端 5.9.0 新增本人协作主题分页；需与资料入口、协作者任免通知、权限撤销后的管理页退出和列表刷新作为同一切片接入。",
+      "existingTestEvidence": null,
+      "applicability": "排除",
+      "verificationScope": "已有登记但尚未接入；不因覆盖清单排除就认定为有依据的平台差异。"
+    },
+    {
+      "operationId": "usersSetAvatar",
+      "method": "PATCH",
+      "path": "/api/v1/users/me/avatar",
+      "backendTags": [
+        "Users"
+      ],
+      "requestSchema": "#/components/schemas/SetAvatarDto",
+      "consumerSources": [
+        "lib/features/users/data/avatar_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "usersRemoveAvatar",
+      "method": "DELETE",
+      "path": "/api/v1/users/me/avatar",
+      "backendTags": [
+        "Users"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/users/data/avatar_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "usersSetProfileCover",
+      "method": "PATCH",
+      "path": "/api/v1/users/me/profile-cover",
+      "backendTags": [
+        "Users"
+      ],
+      "requestSchema": "#/components/schemas/SetProfileCoverDto",
+      "consumerSources": [
+        "lib/features/users/data/profile_cover_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "usersRemoveProfileCover",
+      "method": "DELETE",
+      "path": "/api/v1/users/me/profile-cover",
+      "backendTags": [
+        "Users"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/users/data/profile_cover_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "usersGetUserBookmarks",
+      "method": "GET",
+      "path": "/api/v1/users/{id}/bookmarks",
+      "backendTags": [
+        "Users"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/users/data/public_user_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "usersGetUserMomentBookmarks",
+      "method": "GET",
+      "path": "/api/v1/users/{id}/moment-bookmarks",
+      "backendTags": [
+        "Users"
+      ],
+      "requestSchema": null,
+      "consumerSources": [],
+      "status": "待验证",
+      "exclusionReason": "后端 5.2.0 新增公开动态收藏分页；本人动态收藏目录、筛选分页与管理已接入，公开列表仍需与用户主页动态收藏分区、隐私空态和分页定位作为独立切片接入。",
+      "existingTestEvidence": null,
+      "applicability": "排除",
+      "verificationScope": "已有登记但尚未接入；不因覆盖清单排除就认定为有依据的平台差异。"
+    },
+    {
+      "operationId": "usersGetUserPlayedThreads",
+      "method": "GET",
+      "path": "/api/v1/users/{id}/played-threads",
+      "backendTags": [
+        "Users"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/users/data/public_user_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "usersGetUserCreatedThreads",
+      "method": "GET",
+      "path": "/api/v1/users/{id}/created-threads",
+      "backendTags": [
+        "Users"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/users/data/public_user_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "usersGetUserActivitySummary",
+      "method": "GET",
+      "path": "/api/v1/users/{id}/activity-summary",
+      "backendTags": [
+        "Users"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/users/data/public_user_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "usersGetUserRecentReplies",
+      "method": "GET",
+      "path": "/api/v1/users/{id}/recent-replies",
+      "backendTags": [
+        "Users"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/users/data/public_user_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "usersGetUser",
+      "method": "GET",
+      "path": "/api/v1/users/{id}",
+      "backendTags": [
+        "Users"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/social/data/user_relation_repository.dart",
+        "lib/features/users/data/public_user_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "usersFollowFollow",
+      "method": "POST",
+      "path": "/api/v1/users/follow/{id}",
+      "backendTags": [
+        "Users"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/social/data/user_relation_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "usersFollowUnfollow",
+      "method": "DELETE",
+      "path": "/api/v1/users/follow/{id}",
+      "backendTags": [
+        "Users"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/social/data/user_relation_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "usersFollowFollowing",
+      "method": "GET",
+      "path": "/api/v1/users/following",
+      "backendTags": [
+        "Users"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/social/data/user_relation_list_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "usersFollowFollowers",
+      "method": "GET",
+      "path": "/api/v1/users/followers",
+      "backendTags": [
+        "Users"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/social/data/user_relation_list_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "usersFollowUserFollowing",
+      "method": "GET",
+      "path": "/api/v1/users/{id}/following",
+      "backendTags": [
+        "Users"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/social/data/user_relation_list_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "usersFollowUserFollowers",
+      "method": "GET",
+      "path": "/api/v1/users/{id}/followers",
+      "backendTags": [
+        "Users"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/social/data/user_relation_list_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "usersFollowBlock",
+      "method": "POST",
+      "path": "/api/v1/users/me/block/{id}",
+      "backendTags": [
+        "Users"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/social/data/user_relation_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "usersFollowUnblock",
+      "method": "DELETE",
+      "path": "/api/v1/users/me/block/{id}",
+      "backendTags": [
+        "Users"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/social/data/user_relation_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "usersFollowBlocks",
+      "method": "GET",
+      "path": "/api/v1/users/me/blocks",
+      "backendTags": [
+        "Users"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/social/data/user_relation_list_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "notificationsFindAll",
+      "method": "GET",
+      "path": "/api/v1/notifications",
+      "backendTags": [
+        "Notifications"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/notifications/data/notification_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "notificationsUnreadCount",
+      "method": "GET",
+      "path": "/api/v1/notifications/unread",
+      "backendTags": [
+        "Notifications"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/notifications/data/notification_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "notificationsSetReadStatus",
+      "method": "PATCH",
+      "path": "/api/v1/notifications/{id}",
+      "backendTags": [
+        "Notifications"
+      ],
+      "requestSchema": "#/components/schemas/SetReadStatusDto",
+      "consumerSources": [
+        "lib/features/notifications/data/notification_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "notificationsRemove",
+      "method": "DELETE",
+      "path": "/api/v1/notifications/{id}",
+      "backendTags": [
+        "Notifications"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/notifications/data/notification_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "notificationsMarkAllAsRead",
+      "method": "POST",
+      "path": "/api/v1/notifications/read-all",
+      "backendTags": [
+        "Notifications"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/notifications/data/notification_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "mobileDeviceRegister",
+      "method": "PUT",
+      "path": "/api/v1/mobile/devices/current",
+      "backendTags": [
+        "Mobile Devices"
+      ],
+      "requestSchema": "#/components/schemas/RegisterMobileDeviceDto",
+      "consumerSources": [],
+      "status": "有依据的平台差异",
+      "exclusionReason": "移动端 V1 明确不启用 FCM，不能提前维护推送设备注册生命周期。",
+      "existingTestEvidence": null,
+      "applicability": "排除",
+      "verificationScope": "依据exclusionReason的V1产品范围、运维用途、废弃契约或替代接口，未扩展产品功能。"
+    },
+    {
+      "operationId": "mobileDeviceUnregister",
+      "method": "DELETE",
+      "path": "/api/v1/mobile/devices/current",
+      "backendTags": [
+        "Mobile Devices"
+      ],
+      "requestSchema": null,
+      "consumerSources": [],
+      "status": "有依据的平台差异",
+      "exclusionReason": "移动端 V1 明确不启用 FCM，不能提前维护推送设备注册生命周期。",
+      "existingTestEvidence": null,
+      "applicability": "排除",
+      "verificationScope": "依据exclusionReason的V1产品范围、运维用途、废弃契约或替代接口，未扩展产品功能。"
+    },
+    {
+      "operationId": "bookmarksFindAll",
+      "method": "GET",
+      "path": "/api/v1/bookmarks",
+      "backendTags": [
+        "Bookmarks"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/social/data/bookmark_list_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "bookmarksCreate",
+      "method": "POST",
+      "path": "/api/v1/bookmarks",
+      "backendTags": [
+        "Bookmarks"
+      ],
+      "requestSchema": "#/components/schemas/CreateBookmarkDto",
+      "consumerSources": [
+        "lib/features/social/data/thread_interaction_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "bookmarksFindFolders",
+      "method": "GET",
+      "path": "/api/v1/bookmarks/folders",
+      "backendTags": [
+        "Bookmarks"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/social/data/bookmark_list_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "bookmarksCreateFolder",
+      "method": "POST",
+      "path": "/api/v1/bookmarks/folders",
+      "backendTags": [
+        "Bookmarks"
+      ],
+      "requestSchema": "#/components/schemas/CreateBookmarkFolderDto",
+      "consumerSources": [
+        "lib/features/social/data/bookmark_list_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "bookmarksRenameFolder",
+      "method": "PATCH",
+      "path": "/api/v1/bookmarks/folders/{id}",
+      "backendTags": [
+        "Bookmarks"
+      ],
+      "requestSchema": "#/components/schemas/RenameBookmarkFolderDto",
+      "consumerSources": [
+        "lib/features/social/data/bookmark_list_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "bookmarksDeleteFolder",
+      "method": "DELETE",
+      "path": "/api/v1/bookmarks/folders/{id}",
+      "backendTags": [
+        "Bookmarks"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/social/data/bookmark_list_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "bookmarksMove",
+      "method": "PATCH",
+      "path": "/api/v1/bookmarks/{id}",
+      "backendTags": [
+        "Bookmarks"
+      ],
+      "requestSchema": "#/components/schemas/MoveBookmarkDto",
+      "consumerSources": [
+        "lib/features/social/data/bookmark_list_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "bookmarksRemove",
+      "method": "DELETE",
+      "path": "/api/v1/bookmarks/{id}",
+      "backendTags": [
+        "Bookmarks"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/social/data/bookmark_list_repository.dart",
+        "lib/features/social/data/thread_interaction_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "threadsFindDrafts",
+      "method": "GET",
+      "path": "/api/v1/threads/draft",
+      "backendTags": [
+        "Threads"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/threads/data/thread_compose_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "threadsFindAll",
+      "method": "GET",
+      "path": "/api/v1/threads",
+      "backendTags": [
+        "Threads"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/home/data/home_repository.dart",
+        "lib/features/tags/data/tag_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": [
+        "test/features/home/home_repository_test.dart",
+        "test/features/home/home_feed_controller_test.dart"
+      ],
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "threadsCreate",
+      "method": "POST",
+      "path": "/api/v1/threads",
+      "backendTags": [
+        "Threads"
+      ],
+      "requestSchema": "#/components/schemas/CreateThreadDto",
+      "consumerSources": [
+        "lib/features/threads/data/thread_compose_repository.dart"
+      ],
+      "status": "已证实偏差",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已修复候选；已确认的具体边界和回归见capability-consistency-audit.md，不代表本接口所有输入组合或真机已验收。"
+    },
+    {
+      "operationId": "threadsFindById",
+      "method": "GET",
+      "path": "/api/v1/threads/{id}",
+      "backendTags": [
+        "Threads"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/social/data/thread_interaction_repository.dart",
+        "lib/features/tags/data/tag_repository.dart",
+        "lib/features/threads/data/subthread_management_repository.dart",
+        "lib/features/threads/data/thread_compose_repository.dart",
+        "lib/features/threads/data/thread_detail_repository.dart",
+        "lib/features/threads/data/thread_management_repository.dart",
+        "lib/features/threads/data/thread_member_management_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "threadsUpdate",
+      "method": "PATCH",
+      "path": "/api/v1/threads/{id}",
+      "backendTags": [
+        "Threads"
+      ],
+      "requestSchema": "#/components/schemas/UpdateThreadDto",
+      "consumerSources": [],
+      "status": "有依据的平台差异",
+      "exclusionReason": "已有主题管理统一使用聚合保存，确保主题、默认子贴正文和标签在同一组乐观锁版本下提交；移动端不再单独调用元数据 PATCH。",
+      "existingTestEvidence": null,
+      "applicability": "排除",
+      "verificationScope": "依据exclusionReason的V1产品范围、运维用途、废弃契约或替代接口，未扩展产品功能。"
+    },
+    {
+      "operationId": "threadsRemove",
+      "method": "DELETE",
+      "path": "/api/v1/threads/{id}",
+      "backendTags": [
+        "Threads"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/threads/data/thread_compose_repository.dart",
+        "lib/features/threads/data/thread_management_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "threadsExport",
+      "method": "POST",
+      "path": "/api/v1/threads/{id}/export",
+      "backendTags": [
+        "Threads"
+      ],
+      "requestSchema": "#/components/schemas/ThreadExportDto",
+      "consumerSources": [
+        "lib/features/threads/data/thread_management_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "threadsSaveAggregate",
+      "method": "PATCH",
+      "path": "/api/v1/threads/{id}/aggregate",
+      "backendTags": [
+        "Threads"
+      ],
+      "requestSchema": "#/components/schemas/SaveThreadAggregateDto",
+      "consumerSources": [
+        "lib/features/threads/data/thread_compose_repository.dart",
+        "lib/features/threads/data/thread_management_repository.dart"
+      ],
+      "status": "已证实偏差",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已修复候选；已确认的具体边界和回归见capability-consistency-audit.md，不代表本接口所有输入组合或真机已验收。"
+    },
+    {
+      "operationId": "threadsLike",
+      "method": "POST",
+      "path": "/api/v1/threads/{id}/like",
+      "backendTags": [
+        "Threads"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/social/data/thread_interaction_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "threadsUnlike",
+      "method": "DELETE",
+      "path": "/api/v1/threads/{id}/like",
+      "backendTags": [
+        "Threads"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/social/data/thread_interaction_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "threadsCreateInviteLink",
+      "method": "POST",
+      "path": "/api/v1/threads/{id}/invite-link",
+      "backendTags": [
+        "Threads"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/threads/data/thread_invitation_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "threadsPreviewInviteLink",
+      "method": "GET",
+      "path": "/api/v1/threads/join-by-link/{token}",
+      "backendTags": [
+        "Threads"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/threads/data/thread_invitation_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "threadsJoinByInviteLink",
+      "method": "POST",
+      "path": "/api/v1/threads/join-by-link/{token}",
+      "backendTags": [
+        "Threads"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/threads/data/thread_invitation_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "threadMembersFindAll",
+      "method": "GET",
+      "path": "/api/v1/threads/{threadId}/members",
+      "backendTags": [
+        "Threads"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/social/data/thread_subscription_repository.dart",
+        "lib/features/threads/data/thread_member_management_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "threadMembersJoin",
+      "method": "POST",
+      "path": "/api/v1/threads/{threadId}/members/join",
+      "backendTags": [
+        "Threads"
+      ],
+      "requestSchema": null,
+      "consumerSources": [],
+      "status": "有依据的平台差异",
+      "exclusionReason": "该端点已废弃；公开成员由真实发帖行为建立，私密成员只通过邀请加入。",
+      "existingTestEvidence": null,
+      "applicability": "排除",
+      "verificationScope": "依据exclusionReason的V1产品范围、运维用途、废弃契约或替代接口，未扩展产品功能。"
+    },
+    {
+      "operationId": "threadMembersUpdateMember",
+      "method": "PATCH",
+      "path": "/api/v1/threads/{threadId}/members/{userId}",
+      "backendTags": [
+        "Threads"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/threads/data/thread_member_management_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "threadMembersExitMember",
+      "method": "DELETE",
+      "path": "/api/v1/threads/{threadId}/members/me",
+      "backendTags": [
+        "Threads"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/threads/data/thread_member_management_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "threadTagsFindAll",
+      "method": "GET",
+      "path": "/api/v1/threads/{threadId}/tags",
+      "backendTags": [
+        "Threads"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/tags/data/tag_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "threadTagsAdd",
+      "method": "POST",
+      "path": "/api/v1/threads/{threadId}/tags",
+      "backendTags": [
+        "Threads"
+      ],
+      "requestSchema": "#/components/schemas/AddThreadTagDto",
+      "consumerSources": [
+        "lib/features/tags/data/tag_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "threadTagsRemove",
+      "method": "DELETE",
+      "path": "/api/v1/threads/{threadId}/tags/{tagId}",
+      "backendTags": [
+        "Threads"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/tags/data/tag_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "tagsSearch",
+      "method": "GET",
+      "path": "/api/v1/tags",
+      "backendTags": [
+        "Tags"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/tags/data/tag_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "tagsCreate",
+      "method": "POST",
+      "path": "/api/v1/tags",
+      "backendTags": [
+        "Tags"
+      ],
+      "requestSchema": "#/components/schemas/CreateTagDto",
+      "consumerSources": [
+        "lib/features/tags/data/tag_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "tagsGetById",
+      "method": "GET",
+      "path": "/api/v1/tags/{id}",
+      "backendTags": [
+        "Tags"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/tags/data/tag_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "stickersGetCollection",
+      "method": "GET",
+      "path": "/api/v1/stickers",
+      "backendTags": [
+        "Stickers"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/stickers/data/sticker_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "stickersImportMedia",
+      "method": "POST",
+      "path": "/api/v1/stickers/imports/media",
+      "backendTags": [
+        "Stickers"
+      ],
+      "requestSchema": "#/components/schemas/ImportStickerMediaDto",
+      "consumerSources": [
+        "lib/features/stickers/data/sticker_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "stickersImportDirectMessage",
+      "method": "POST",
+      "path": "/api/v1/stickers/imports/direct-message",
+      "backendTags": [
+        "Stickers"
+      ],
+      "requestSchema": "#/components/schemas/ImportStickerDirectMessageDto",
+      "consumerSources": [
+        "lib/features/stickers/data/sticker_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "stickersImportPostImage",
+      "method": "POST",
+      "path": "/api/v1/stickers/imports/post-image",
+      "backendTags": [
+        "Stickers"
+      ],
+      "requestSchema": "#/components/schemas/ImportStickerPostImageDto",
+      "consumerSources": [
+        "lib/features/stickers/data/sticker_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "stickersImportMomentImage",
+      "method": "POST",
+      "path": "/api/v1/stickers/imports/moment-image",
+      "backendTags": [
+        "Stickers"
+      ],
+      "requestSchema": "#/components/schemas/ImportStickerMomentImageDto",
+      "consumerSources": [
+        "lib/features/stickers/data/sticker_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "stickersImportMomentCommentImage",
+      "method": "POST",
+      "path": "/api/v1/stickers/imports/moment-comment-image",
+      "backendTags": [
+        "Stickers"
+      ],
+      "requestSchema": "#/components/schemas/ImportStickerMomentCommentImageDto",
+      "consumerSources": [
+        "lib/features/stickers/data/sticker_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "stickersGetImport",
+      "method": "GET",
+      "path": "/api/v1/stickers/imports/{id}",
+      "backendTags": [
+        "Stickers"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/stickers/data/sticker_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "stickersReorder",
+      "method": "PUT",
+      "path": "/api/v1/stickers/reorder",
+      "backendTags": [
+        "Stickers"
+      ],
+      "requestSchema": "#/components/schemas/ReorderStickersDto",
+      "consumerSources": [
+        "lib/features/stickers/data/sticker_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "stickersRemove",
+      "method": "DELETE",
+      "path": "/api/v1/stickers/{favoriteId}",
+      "backendTags": [
+        "Stickers"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/stickers/data/sticker_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "threadCategoriesList",
+      "method": "GET",
+      "path": "/api/v1/thread-categories",
+      "backendTags": [
+        "Thread Categories"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/thread_feed/data/thread_category_catalog_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": [
+        "test/features/home/home_repository_test.dart",
+        "test/features/home/home_feed_controller_test.dart"
+      ],
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "momentsList",
+      "method": "GET",
+      "path": "/api/v1/moments",
+      "backendTags": [
+        "Moments"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/moments/data/moment_repository.dart"
+      ],
+      "status": "已证实偏差",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已修复候选；已确认的具体边界和回归见capability-consistency-audit.md，不代表本接口所有输入组合或真机已验收。"
+    },
+    {
+      "operationId": "momentsCreate",
+      "method": "POST",
+      "path": "/api/v1/moments",
+      "backendTags": [
+        "Moments"
+      ],
+      "requestSchema": "#/components/schemas/CreateMomentDto",
+      "consumerSources": [
+        "lib/features/moments/data/moment_repository.dart"
+      ],
+      "status": "已证实偏差",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已修复候选；已确认的具体边界和回归见capability-consistency-audit.md，不代表本接口所有输入组合或真机已验收。"
+    },
+    {
+      "operationId": "momentsBookmarks",
+      "method": "GET",
+      "path": "/api/v1/moments/bookmarks",
+      "backendTags": [
+        "Moments"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/moments/data/moment_repository.dart"
+      ],
+      "status": "已证实偏差",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已修复候选；已确认的具体边界和回归见capability-consistency-audit.md，不代表本接口所有输入组合或真机已验收。"
+    },
+    {
+      "operationId": "momentsBookmarkFolders",
+      "method": "GET",
+      "path": "/api/v1/moments/bookmark-folders",
+      "backendTags": [
+        "Moments"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/moments/data/moment_bookmark_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "momentsCreateBookmarkFolder",
+      "method": "POST",
+      "path": "/api/v1/moments/bookmark-folders",
+      "backendTags": [
+        "Moments"
+      ],
+      "requestSchema": "#/components/schemas/CreateMomentBookmarkFolderDto",
+      "consumerSources": [
+        "lib/features/moments/data/moment_bookmark_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "momentsRenameBookmarkFolder",
+      "method": "PATCH",
+      "path": "/api/v1/moments/bookmark-folders/{id}",
+      "backendTags": [
+        "Moments"
+      ],
+      "requestSchema": "#/components/schemas/RenameMomentBookmarkFolderDto",
+      "consumerSources": [
+        "lib/features/moments/data/moment_bookmark_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "momentsDeleteBookmarkFolder",
+      "method": "DELETE",
+      "path": "/api/v1/moments/bookmark-folders/{id}",
+      "backendTags": [
+        "Moments"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/moments/data/moment_bookmark_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "momentsDetail",
+      "method": "GET",
+      "path": "/api/v1/moments/{id}",
+      "backendTags": [
+        "Moments"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/moments/data/moment_repository.dart"
+      ],
+      "status": "已证实偏差",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已修复候选；已确认的具体边界和回归见capability-consistency-audit.md，不代表本接口所有输入组合或真机已验收。"
+    },
+    {
+      "operationId": "momentsUpdate",
+      "method": "PATCH",
+      "path": "/api/v1/moments/{id}",
+      "backendTags": [
+        "Moments"
+      ],
+      "requestSchema": "#/components/schemas/UpdateMomentDto",
+      "consumerSources": [
+        "lib/features/moments/data/moment_repository.dart"
+      ],
+      "status": "已证实偏差",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已修复候选；已确认的具体边界和回归见capability-consistency-audit.md，不代表本接口所有输入组合或真机已验收。"
+    },
+    {
+      "operationId": "momentsRemove",
+      "method": "DELETE",
+      "path": "/api/v1/moments/{id}",
+      "backendTags": [
+        "Moments"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/moments/data/moment_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "momentsLike",
+      "method": "POST",
+      "path": "/api/v1/moments/{id}/like",
+      "backendTags": [
+        "Moments"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/moments/data/moment_repository.dart"
+      ],
+      "status": "已证实偏差",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已修复候选；已确认的具体边界和回归见capability-consistency-audit.md，不代表本接口所有输入组合或真机已验收。"
+    },
+    {
+      "operationId": "momentsUnlike",
+      "method": "DELETE",
+      "path": "/api/v1/moments/{id}/like",
+      "backendTags": [
+        "Moments"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/moments/data/moment_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "momentsBookmark",
+      "method": "POST",
+      "path": "/api/v1/moments/{id}/bookmark",
+      "backendTags": [
+        "Moments"
+      ],
+      "requestSchema": "#/components/schemas/CreateMomentBookmarkDto",
+      "consumerSources": [
+        "lib/features/moments/data/moment_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "momentsMoveBookmark",
+      "method": "PATCH",
+      "path": "/api/v1/moments/{id}/bookmark",
+      "backendTags": [
+        "Moments"
+      ],
+      "requestSchema": "#/components/schemas/MoveMomentBookmarkDto",
+      "consumerSources": [
+        "lib/features/moments/data/moment_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "momentsUnbookmark",
+      "method": "DELETE",
+      "path": "/api/v1/moments/{id}/bookmark",
+      "backendTags": [
+        "Moments"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/moments/data/moment_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "momentsCommentsList",
+      "method": "GET",
+      "path": "/api/v1/moments/{id}/comments",
+      "backendTags": [
+        "Moments"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/moments/data/moment_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "momentsCreateComment",
+      "method": "POST",
+      "path": "/api/v1/moments/{id}/comments",
+      "backendTags": [
+        "Moments"
+      ],
+      "requestSchema": "#/components/schemas/CreateMomentCommentDto",
+      "consumerSources": [
+        "lib/features/moments/data/moment_repository.dart"
+      ],
+      "status": "已证实偏差",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已修复候选；已确认的具体边界和回归见capability-consistency-audit.md，不代表本接口所有输入组合或真机已验收。"
+    },
+    {
+      "operationId": "momentsCommentAuthors",
+      "method": "GET",
+      "path": "/api/v1/moments/{id}/comment-authors",
+      "backendTags": [
+        "Moments"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/moments/data/moment_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "momentsCommentContext",
+      "method": "GET",
+      "path": "/api/v1/moments/{id}/comments/{commentId}/context",
+      "backendTags": [
+        "Moments"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/moments/data/moment_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "momentsReplies",
+      "method": "GET",
+      "path": "/api/v1/moments/{id}/comments/{commentId}/replies",
+      "backendTags": [
+        "Moments"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/moments/data/moment_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "momentsRemoveComment",
+      "method": "DELETE",
+      "path": "/api/v1/moments/{id}/comments/{commentId}",
+      "backendTags": [
+        "Moments"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/moments/data/moment_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "userMomentsList",
+      "method": "GET",
+      "path": "/api/v1/users/{id}/moments",
+      "backendTags": [
+        "Moments"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/moments/data/moment_repository.dart"
+      ],
+      "status": "已证实偏差",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已修复候选；已确认的具体边界和回归见capability-consistency-audit.md，不代表本接口所有输入组合或真机已验收。"
+    },
+    {
+      "operationId": "subthreadsFindAll",
+      "method": "GET",
+      "path": "/api/v1/threads/{threadId}/subthreads",
+      "backendTags": [
+        "Subthreads"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/threads/data/subthread_management_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "subthreadsCreate",
+      "method": "POST",
+      "path": "/api/v1/threads/{threadId}/subthreads",
+      "backendTags": [
+        "Subthreads"
+      ],
+      "requestSchema": "#/components/schemas/CreateSubthreadDto",
+      "consumerSources": [
+        "lib/features/threads/data/subthread_management_repository.dart"
+      ],
+      "status": "已证实偏差",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已修复候选；已确认的具体边界和回归见capability-consistency-audit.md，不代表本接口所有输入组合或真机已验收。"
+    },
+    {
+      "operationId": "subthreadsFindById",
+      "method": "GET",
+      "path": "/api/v1/subthreads/{id}",
+      "backendTags": [
+        "Subthreads"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/threads/data/subthread_management_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "subthreadsUpdate",
+      "method": "PATCH",
+      "path": "/api/v1/subthreads/{id}",
+      "backendTags": [
+        "Subthreads"
+      ],
+      "requestSchema": "#/components/schemas/UpdateSubthreadDto",
+      "consumerSources": [
+        "lib/features/threads/data/subthread_management_repository.dart"
+      ],
+      "status": "已证实偏差",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已修复候选；已确认的具体边界和回归见capability-consistency-audit.md，不代表本接口所有输入组合或真机已验收。"
+    },
+    {
+      "operationId": "subthreadsRemove",
+      "method": "DELETE",
+      "path": "/api/v1/subthreads/{id}",
+      "backendTags": [
+        "Subthreads"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/threads/data/subthread_management_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "subthreadsReorder",
+      "method": "PUT",
+      "path": "/api/v1/threads/{threadId}/subthreads/reorder",
+      "backendTags": [
+        "Subthreads"
+      ],
+      "requestSchema": "#/components/schemas/ReorderSubthreadsDto",
+      "consumerSources": [
+        "lib/features/threads/data/subthread_management_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "postsFindLatestInThread",
+      "method": "GET",
+      "path": "/api/v1/threads/{threadId}/posts/latest",
+      "backendTags": [
+        "Posts"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/threads/data/thread_detail_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "postsFindFloors",
+      "method": "GET",
+      "path": "/api/v1/subthreads/{subthreadId}/posts",
+      "backendTags": [
+        "Posts"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/threads/data/thread_detail_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "postsCreate",
+      "method": "POST",
+      "path": "/api/v1/subthreads/{subthreadId}/posts",
+      "backendTags": [
+        "Posts"
+      ],
+      "requestSchema": "#/components/schemas/CreatePostDto",
+      "consumerSources": [
+        "lib/features/posts/data/post_repository.dart"
+      ],
+      "status": "已证实偏差",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已修复候选；已确认的具体边界和回归见capability-consistency-audit.md，不代表本接口所有输入组合或真机已验收。"
+    },
+    {
+      "operationId": "postsFindFloorAuthors",
+      "method": "GET",
+      "path": "/api/v1/subthreads/{subthreadId}/posts/authors",
+      "backendTags": [
+        "Posts"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/posts/data/post_discussion_author_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "postsFindReplies",
+      "method": "GET",
+      "path": "/api/v1/posts/{id}/replies",
+      "backendTags": [
+        "Posts"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/posts/data/post_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "postsFindReplyAuthors",
+      "method": "GET",
+      "path": "/api/v1/posts/{id}/replies/authors",
+      "backendTags": [
+        "Posts"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/posts/data/post_discussion_author_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "postsUpsertBody",
+      "method": "PUT",
+      "path": "/api/v1/subthreads/{subthreadId}/body",
+      "backendTags": [
+        "Posts"
+      ],
+      "requestSchema": "#/components/schemas/UpsertBodyDto",
+      "consumerSources": [
+        "lib/features/posts/data/post_repository.dart"
+      ],
+      "status": "已证实偏差",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已修复候选；已确认的具体边界和回归见capability-consistency-audit.md，不代表本接口所有输入组合或真机已验收。"
+    },
+    {
+      "operationId": "postsFindById",
+      "method": "GET",
+      "path": "/api/v1/posts/{id}",
+      "backendTags": [
+        "Posts"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/posts/data/post_repository.dart",
+        "lib/features/threads/data/thread_detail_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "postsUpdate",
+      "method": "PATCH",
+      "path": "/api/v1/posts/{id}",
+      "backendTags": [
+        "Posts"
+      ],
+      "requestSchema": "#/components/schemas/UpdatePostDto",
+      "consumerSources": [
+        "lib/features/posts/data/post_repository.dart"
+      ],
+      "status": "已证实偏差",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已修复候选；已确认的具体边界和回归见capability-consistency-audit.md，不代表本接口所有输入组合或真机已验收。"
+    },
+    {
+      "operationId": "postsRemove",
+      "method": "DELETE",
+      "path": "/api/v1/posts/{id}",
+      "backendTags": [
+        "Posts"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/posts/data/post_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "postsPin",
+      "method": "POST",
+      "path": "/api/v1/posts/{id}/pin",
+      "backendTags": [
+        "Posts"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/posts/data/post_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "postsUnpin",
+      "method": "DELETE",
+      "path": "/api/v1/posts/{id}/pin",
+      "backendTags": [
+        "Posts"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/posts/data/post_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "draftsFindAll",
+      "method": "GET",
+      "path": "/api/v1/drafts",
+      "backendTags": [
+        "Drafts"
+      ],
+      "requestSchema": null,
+      "consumerSources": [],
+      "status": "有依据的平台差异",
+      "exclusionReason": "正文草稿改用 draftsState 在同一服务端快照内读取草稿与槽位用量，避免两次请求产生版本漂移；不再单独读取草稿列表。",
+      "existingTestEvidence": null,
+      "applicability": "排除",
+      "verificationScope": "依据exclusionReason的V1产品范围、运维用途、废弃契约或替代接口，未扩展产品功能。"
+    },
+    {
+      "operationId": "draftsCreate",
+      "method": "POST",
+      "path": "/api/v1/drafts",
+      "backendTags": [
+        "Drafts"
+      ],
+      "requestSchema": "#/components/schemas/CreateDraftDto",
+      "consumerSources": [
+        "lib/features/drafts/data/content_draft_repository.dart"
+      ],
+      "status": "已证实偏差",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已修复候选；已确认的具体边界和回归见capability-consistency-audit.md，不代表本接口所有输入组合或真机已验收。"
+    },
+    {
+      "operationId": "draftsSlotUsage",
+      "method": "GET",
+      "path": "/api/v1/drafts/slots",
+      "backendTags": [
+        "Drafts"
+      ],
+      "requestSchema": null,
+      "consumerSources": [],
+      "status": "有依据的平台差异",
+      "exclusionReason": "正文草稿改用 draftsState 在同一服务端快照内读取草稿与槽位用量，避免两次请求产生版本漂移；不再单独读取槽位用量。",
+      "existingTestEvidence": null,
+      "applicability": "排除",
+      "verificationScope": "依据exclusionReason的V1产品范围、运维用途、废弃契约或替代接口，未扩展产品功能。"
+    },
+    {
+      "operationId": "draftsState",
+      "method": "GET",
+      "path": "/api/v1/drafts/state",
+      "backendTags": [
+        "Drafts"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/drafts/data/content_draft_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "draftsFindById",
+      "method": "GET",
+      "path": "/api/v1/drafts/{id}",
+      "backendTags": [
+        "Drafts"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/drafts/data/content_draft_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "draftsUpdate",
+      "method": "PATCH",
+      "path": "/api/v1/drafts/{id}",
+      "backendTags": [
+        "Drafts"
+      ],
+      "requestSchema": "#/components/schemas/UpdateDraftDto",
+      "consumerSources": [
+        "lib/features/drafts/data/content_draft_repository.dart"
+      ],
+      "status": "已证实偏差",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已修复候选；已确认的具体边界和回归见capability-consistency-audit.md，不代表本接口所有输入组合或真机已验收。"
+    },
+    {
+      "operationId": "draftsRemove",
+      "method": "DELETE",
+      "path": "/api/v1/drafts/{id}",
+      "backendTags": [
+        "Drafts"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/drafts/data/content_draft_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "subscriptionsFindAll",
+      "method": "GET",
+      "path": "/api/v1/subscriptions",
+      "backendTags": [
+        "Subscriptions"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/social/data/thread_subscription_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "subscriptionsCreate",
+      "method": "POST",
+      "path": "/api/v1/subscriptions",
+      "backendTags": [
+        "Subscriptions"
+      ],
+      "requestSchema": "#/components/schemas/CreateSubscriptionDto",
+      "consumerSources": [
+        "lib/features/social/data/thread_subscription_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "subscriptionsRemove",
+      "method": "DELETE",
+      "path": "/api/v1/subscriptions/{id}",
+      "backendTags": [
+        "Subscriptions"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/social/data/thread_subscription_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "reportsCreate",
+      "method": "POST",
+      "path": "/api/v1/reports",
+      "backendTags": [
+        "Reports"
+      ],
+      "requestSchema": "#/components/schemas/CreateReportDto",
+      "consumerSources": [
+        "lib/features/reports/data/report_repository.dart"
+      ],
+      "status": "已证实偏差",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已修复候选；已确认的具体边界和回归见capability-consistency-audit.md，不代表本接口所有输入组合或真机已验收。"
+    },
+    {
+      "operationId": "adminReportsFindAll",
+      "method": "GET",
+      "path": "/api/v1/admin/reports",
+      "backendTags": [
+        "Admin Reports"
+      ],
+      "requestSchema": null,
+      "consumerSources": [],
+      "status": "有依据的平台差异",
+      "exclusionReason": "移动端 V1 不承载管理产品。",
+      "existingTestEvidence": null,
+      "applicability": "排除",
+      "verificationScope": "依据exclusionReason的V1产品范围、运维用途、废弃契约或替代接口，未扩展产品功能。"
+    },
+    {
+      "operationId": "adminReportsFindOne",
+      "method": "GET",
+      "path": "/api/v1/admin/reports/{id}",
+      "backendTags": [
+        "Admin Reports"
+      ],
+      "requestSchema": null,
+      "consumerSources": [],
+      "status": "有依据的平台差异",
+      "exclusionReason": "移动端 V1 不承载管理产品。",
+      "existingTestEvidence": null,
+      "applicability": "排除",
+      "verificationScope": "依据exclusionReason的V1产品范围、运维用途、废弃契约或替代接口，未扩展产品功能。"
+    },
+    {
+      "operationId": "adminReportsResolve",
+      "method": "POST",
+      "path": "/api/v1/admin/reports/{id}/resolve",
+      "backendTags": [
+        "Admin Reports"
+      ],
+      "requestSchema": "#/components/schemas/ResolveReportDto",
+      "consumerSources": [],
+      "status": "有依据的平台差异",
+      "exclusionReason": "移动端 V1 不承载管理产品。",
+      "existingTestEvidence": null,
+      "applicability": "排除",
+      "verificationScope": "依据exclusionReason的V1产品范围、运维用途、废弃契约或替代接口，未扩展产品功能。"
+    },
+    {
+      "operationId": "adminAuthChallenge",
+      "method": "POST",
+      "path": "/api/v1/admin/auth/challenge",
+      "backendTags": [
+        "Admin Auth"
+      ],
+      "requestSchema": "#/components/schemas/AdminLoginChallengeDto",
+      "consumerSources": [],
+      "status": "有依据的平台差异",
+      "exclusionReason": "移动端 V1 不承载管理产品。",
+      "existingTestEvidence": null,
+      "applicability": "排除",
+      "verificationScope": "依据exclusionReason的V1产品范围、运维用途、废弃契约或替代接口，未扩展产品功能。"
+    },
+    {
+      "operationId": "adminAuthVerify",
+      "method": "POST",
+      "path": "/api/v1/admin/auth/verify",
+      "backendTags": [
+        "Admin Auth"
+      ],
+      "requestSchema": "#/components/schemas/AdminChallengeVerifyDto",
+      "consumerSources": [],
+      "status": "有依据的平台差异",
+      "exclusionReason": "移动端 V1 不承载管理产品。",
+      "existingTestEvidence": null,
+      "applicability": "排除",
+      "verificationScope": "依据exclusionReason的V1产品范围、运维用途、废弃契约或替代接口，未扩展产品功能。"
+    },
+    {
+      "operationId": "adminAuthSession",
+      "method": "GET",
+      "path": "/api/v1/admin/auth/session",
+      "backendTags": [
+        "Admin Auth"
+      ],
+      "requestSchema": null,
+      "consumerSources": [],
+      "status": "有依据的平台差异",
+      "exclusionReason": "移动端 V1 不承载管理产品。",
+      "existingTestEvidence": null,
+      "applicability": "排除",
+      "verificationScope": "依据exclusionReason的V1产品范围、运维用途、废弃契约或替代接口，未扩展产品功能。"
+    },
+    {
+      "operationId": "adminAuthLogout",
+      "method": "POST",
+      "path": "/api/v1/admin/auth/logout",
+      "backendTags": [
+        "Admin Auth"
+      ],
+      "requestSchema": null,
+      "consumerSources": [],
+      "status": "有依据的平台差异",
+      "exclusionReason": "移动端 V1 不承载管理产品。",
+      "existingTestEvidence": null,
+      "applicability": "排除",
+      "verificationScope": "依据exclusionReason的V1产品范围、运维用途、废弃契约或替代接口，未扩展产品功能。"
+    },
+    {
+      "operationId": "adminAuthStepUpChallenge",
+      "method": "POST",
+      "path": "/api/v1/admin/auth/step-up/challenge",
+      "backendTags": [
+        "Admin Auth"
+      ],
+      "requestSchema": null,
+      "consumerSources": [],
+      "status": "有依据的平台差异",
+      "exclusionReason": "移动端 V1 不承载管理产品。",
+      "existingTestEvidence": null,
+      "applicability": "排除",
+      "verificationScope": "依据exclusionReason的V1产品范围、运维用途、废弃契约或替代接口，未扩展产品功能。"
+    },
+    {
+      "operationId": "adminAuthVerifyStepUp",
+      "method": "POST",
+      "path": "/api/v1/admin/auth/step-up/verify",
+      "backendTags": [
+        "Admin Auth"
+      ],
+      "requestSchema": "#/components/schemas/AdminChallengeVerifyDto",
+      "consumerSources": [],
+      "status": "有依据的平台差异",
+      "exclusionReason": "移动端 V1 不承载管理产品。",
+      "existingTestEvidence": null,
+      "applicability": "排除",
+      "verificationScope": "依据exclusionReason的V1产品范围、运维用途、废弃契约或替代接口，未扩展产品功能。"
+    },
+    {
+      "operationId": "adminAccountsList",
+      "method": "GET",
+      "path": "/api/v1/admin/accounts",
+      "backendTags": [
+        "Admin Accounts"
+      ],
+      "requestSchema": null,
+      "consumerSources": [],
+      "status": "有依据的平台差异",
+      "exclusionReason": "移动端 V1 不承载管理产品。",
+      "existingTestEvidence": null,
+      "applicability": "排除",
+      "verificationScope": "依据exclusionReason的V1产品范围、运维用途、废弃契约或替代接口，未扩展产品功能。"
+    },
+    {
+      "operationId": "adminAccountsInvite",
+      "method": "POST",
+      "path": "/api/v1/admin/accounts/invites",
+      "backendTags": [
+        "Admin Accounts"
+      ],
+      "requestSchema": "#/components/schemas/CreateAdminInviteDto",
+      "consumerSources": [],
+      "status": "有依据的平台差异",
+      "exclusionReason": "移动端 V1 不承载管理产品。",
+      "existingTestEvidence": null,
+      "applicability": "排除",
+      "verificationScope": "依据exclusionReason的V1产品范围、运维用途、废弃契约或替代接口，未扩展产品功能。"
+    },
+    {
+      "operationId": "adminAccountsCancel",
+      "method": "DELETE",
+      "path": "/api/v1/admin/accounts/invites/{id}",
+      "backendTags": [
+        "Admin Accounts"
+      ],
+      "requestSchema": "#/components/schemas/AdminAccountReasonDto",
+      "consumerSources": [],
+      "status": "有依据的平台差异",
+      "exclusionReason": "移动端 V1 不承载管理产品。",
+      "existingTestEvidence": null,
+      "applicability": "排除",
+      "verificationScope": "依据exclusionReason的V1产品范围、运维用途、废弃契约或替代接口，未扩展产品功能。"
+    },
+    {
+      "operationId": "adminAccountsRevoke",
+      "method": "DELETE",
+      "path": "/api/v1/admin/accounts/{id}",
+      "backendTags": [
+        "Admin Accounts"
+      ],
+      "requestSchema": "#/components/schemas/AdminAccountReasonDto",
+      "consumerSources": [],
+      "status": "有依据的平台差异",
+      "exclusionReason": "移动端 V1 不承载管理产品。",
+      "existingTestEvidence": null,
+      "applicability": "排除",
+      "verificationScope": "依据exclusionReason的V1产品范围、运维用途、废弃契约或替代接口，未扩展产品功能。"
+    },
+    {
+      "operationId": "adminAccountsTransfer",
+      "method": "POST",
+      "path": "/api/v1/admin/accounts/transfer-super-admin",
+      "backendTags": [
+        "Admin Accounts"
+      ],
+      "requestSchema": "#/components/schemas/TransferSuperAdminDto",
+      "consumerSources": [],
+      "status": "有依据的平台差异",
+      "exclusionReason": "移动端 V1 不承载管理产品。",
+      "existingTestEvidence": null,
+      "applicability": "排除",
+      "verificationScope": "依据exclusionReason的V1产品范围、运维用途、废弃契约或替代接口，未扩展产品功能。"
+    },
+    {
+      "operationId": "adminInviteAcceptanceAccept",
+      "method": "POST",
+      "path": "/api/v1/admin-invitations/{token}/accept",
+      "backendTags": [
+        "Admin Accounts"
+      ],
+      "requestSchema": null,
+      "consumerSources": [],
+      "status": "有依据的平台差异",
+      "exclusionReason": "移动端 V1 不承载管理产品。",
+      "existingTestEvidence": null,
+      "applicability": "排除",
+      "verificationScope": "依据exclusionReason的V1产品范围、运维用途、废弃契约或替代接口，未扩展产品功能。"
+    },
+    {
+      "operationId": "moderationCasesList",
+      "method": "GET",
+      "path": "/api/v1/admin/cases",
+      "backendTags": [
+        "Admin Cases"
+      ],
+      "requestSchema": null,
+      "consumerSources": [],
+      "status": "有依据的平台差异",
+      "exclusionReason": "移动端 V1 不承载管理产品。",
+      "existingTestEvidence": null,
+      "applicability": "排除",
+      "verificationScope": "依据exclusionReason的V1产品范围、运维用途、废弃契约或替代接口，未扩展产品功能。"
+    },
+    {
+      "operationId": "moderationCasesGet",
+      "method": "GET",
+      "path": "/api/v1/admin/cases/{id}",
+      "backendTags": [
+        "Admin Cases"
+      ],
+      "requestSchema": null,
+      "consumerSources": [],
+      "status": "有依据的平台差异",
+      "exclusionReason": "移动端 V1 不承载管理产品。",
+      "existingTestEvidence": null,
+      "applicability": "排除",
+      "verificationScope": "依据exclusionReason的V1产品范围、运维用途、废弃契约或替代接口，未扩展产品功能。"
+    },
+    {
+      "operationId": "moderationCasesResolve",
+      "method": "POST",
+      "path": "/api/v1/admin/cases/{id}/resolve",
+      "backendTags": [
+        "Admin Cases"
+      ],
+      "requestSchema": "#/components/schemas/ResolveModerationCaseDto",
+      "consumerSources": [],
+      "status": "有依据的平台差异",
+      "exclusionReason": "移动端 V1 不承载管理产品。",
+      "existingTestEvidence": null,
+      "applicability": "排除",
+      "verificationScope": "依据exclusionReason的V1产品范围、运维用途、废弃契约或替代接口，未扩展产品功能。"
+    },
+    {
+      "operationId": "adminModerationAppealsList",
+      "method": "GET",
+      "path": "/api/v1/admin/appeals",
+      "backendTags": [
+        "Admin Appeals"
+      ],
+      "requestSchema": null,
+      "consumerSources": [],
+      "status": "有依据的平台差异",
+      "exclusionReason": "移动端 V1 不承载管理产品。",
+      "existingTestEvidence": null,
+      "applicability": "排除",
+      "verificationScope": "依据exclusionReason的V1产品范围、运维用途、废弃契约或替代接口，未扩展产品功能。"
+    },
+    {
+      "operationId": "adminModerationAppealsResolve",
+      "method": "POST",
+      "path": "/api/v1/admin/appeals/{id}/resolve",
+      "backendTags": [
+        "Admin Appeals"
+      ],
+      "requestSchema": "#/components/schemas/ResolveModerationAppealDto",
+      "consumerSources": [],
+      "status": "有依据的平台差异",
+      "exclusionReason": "移动端 V1 不承载管理产品。",
+      "existingTestEvidence": null,
+      "applicability": "排除",
+      "verificationScope": "依据exclusionReason的V1产品范围、运维用途、废弃契约或替代接口，未扩展产品功能。"
+    },
+    {
+      "operationId": "userModerationAppealsIssueToken",
+      "method": "POST",
+      "path": "/api/v1/moderation/appeal-token",
+      "backendTags": [
+        "Moderation Appeals"
+      ],
+      "requestSchema": "#/components/schemas/IssueAppealTokenDto",
+      "consumerSources": [
+        "lib/features/moderation/data/moderation_appeal_repository.dart"
+      ],
+      "status": "已证实偏差",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已修复候选；已确认的具体边界和回归见capability-consistency-audit.md，不代表本接口所有输入组合或真机已验收。"
+    },
+    {
+      "operationId": "userModerationAppealsMine",
+      "method": "GET",
+      "path": "/api/v1/moderation/decisions/mine",
+      "backendTags": [
+        "Moderation Appeals"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/moderation/data/moderation_appeal_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "userModerationAppealsAppeal",
+      "method": "POST",
+      "path": "/api/v1/moderation/appeals",
+      "backendTags": [
+        "Moderation Appeals"
+      ],
+      "requestSchema": "#/components/schemas/CreateModerationAppealDto",
+      "consumerSources": [
+        "lib/features/moderation/data/moderation_appeal_repository.dart"
+      ],
+      "status": "已证实偏差",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已修复候选；已确认的具体边界和回归见capability-consistency-audit.md，不代表本接口所有输入组合或真机已验收。"
+    },
+    {
+      "operationId": "siteOperationalSettingsGet",
+      "method": "GET",
+      "path": "/api/v1/admin/operations/settings",
+      "backendTags": [
+        "Admin Operations"
+      ],
+      "requestSchema": null,
+      "consumerSources": [],
+      "status": "有依据的平台差异",
+      "exclusionReason": "移动端 V1 不承载管理产品。",
+      "existingTestEvidence": null,
+      "applicability": "排除",
+      "verificationScope": "依据exclusionReason的V1产品范围、运维用途、废弃契约或替代接口，未扩展产品功能。"
+    },
+    {
+      "operationId": "siteOperationalSettingsUpdate",
+      "method": "PATCH",
+      "path": "/api/v1/admin/operations/settings",
+      "backendTags": [
+        "Admin Operations"
+      ],
+      "requestSchema": "#/components/schemas/UpdateSiteSettingsDto",
+      "consumerSources": [],
+      "status": "有依据的平台差异",
+      "exclusionReason": "移动端 V1 不承载管理产品。",
+      "existingTestEvidence": null,
+      "applicability": "排除",
+      "verificationScope": "依据exclusionReason的V1产品范围、运维用途、废弃契约或替代接口，未扩展产品功能。"
+    },
+    {
+      "operationId": "notificationCampaignList",
+      "method": "GET",
+      "path": "/api/v1/admin/notification-campaigns",
+      "backendTags": [
+        "Admin Campaigns"
+      ],
+      "requestSchema": null,
+      "consumerSources": [],
+      "status": "有依据的平台差异",
+      "exclusionReason": "移动端 V1 不承载管理产品。",
+      "existingTestEvidence": null,
+      "applicability": "排除",
+      "verificationScope": "依据exclusionReason的V1产品范围、运维用途、废弃契约或替代接口，未扩展产品功能。"
+    },
+    {
+      "operationId": "notificationCampaignCreate",
+      "method": "POST",
+      "path": "/api/v1/admin/notification-campaigns",
+      "backendTags": [
+        "Admin Campaigns"
+      ],
+      "requestSchema": "#/components/schemas/CreateNotificationCampaignDto",
+      "consumerSources": [],
+      "status": "有依据的平台差异",
+      "exclusionReason": "移动端 V1 不承载管理产品。",
+      "existingTestEvidence": null,
+      "applicability": "排除",
+      "verificationScope": "依据exclusionReason的V1产品范围、运维用途、废弃契约或替代接口，未扩展产品功能。"
+    },
+    {
+      "operationId": "notificationCampaignPreview",
+      "method": "POST",
+      "path": "/api/v1/admin/notification-campaigns/preview",
+      "backendTags": [
+        "Admin Campaigns"
+      ],
+      "requestSchema": "#/components/schemas/NotificationAudienceDto",
+      "consumerSources": [],
+      "status": "有依据的平台差异",
+      "exclusionReason": "移动端 V1 不承载管理产品。",
+      "existingTestEvidence": null,
+      "applicability": "排除",
+      "verificationScope": "依据exclusionReason的V1产品范围、运维用途、废弃契约或替代接口，未扩展产品功能。"
+    },
+    {
+      "operationId": "notificationCampaignCancel",
+      "method": "DELETE",
+      "path": "/api/v1/admin/notification-campaigns/{id}",
+      "backendTags": [
+        "Admin Campaigns"
+      ],
+      "requestSchema": null,
+      "consumerSources": [],
+      "status": "有依据的平台差异",
+      "exclusionReason": "移动端 V1 不承载管理产品。",
+      "existingTestEvidence": null,
+      "applicability": "排除",
+      "verificationScope": "依据exclusionReason的V1产品范围、运维用途、废弃契约或替代接口，未扩展产品功能。"
+    },
+    {
+      "operationId": "adminIndex",
+      "method": "GET",
+      "path": "/api/v1/admin",
+      "backendTags": [
+        "Admin"
+      ],
+      "requestSchema": null,
+      "consumerSources": [],
+      "status": "有依据的平台差异",
+      "exclusionReason": "移动端 V1 不承载管理产品。",
+      "existingTestEvidence": null,
+      "applicability": "排除",
+      "verificationScope": "依据exclusionReason的V1产品范围、运维用途、废弃契约或替代接口，未扩展产品功能。"
+    },
+    {
+      "operationId": "adminSendSystemNotification",
+      "method": "POST",
+      "path": "/api/v1/admin/notifications/system",
+      "backendTags": [
+        "Admin"
+      ],
+      "requestSchema": "#/components/schemas/SendSystemNotificationDto",
+      "consumerSources": [],
+      "status": "有依据的平台差异",
+      "exclusionReason": "移动端 V1 不承载管理产品。",
+      "existingTestEvidence": null,
+      "applicability": "排除",
+      "verificationScope": "依据exclusionReason的V1产品范围、运维用途、废弃契约或替代接口，未扩展产品功能。"
+    },
+    {
+      "operationId": "adminPreviewRecipients",
+      "method": "POST",
+      "path": "/api/v1/admin/notifications/system/preview",
+      "backendTags": [
+        "Admin"
+      ],
+      "requestSchema": "#/components/schemas/SendSystemNotificationDto",
+      "consumerSources": [],
+      "status": "有依据的平台差异",
+      "exclusionReason": "移动端 V1 不承载管理产品。",
+      "existingTestEvidence": null,
+      "applicability": "排除",
+      "verificationScope": "依据exclusionReason的V1产品范围、运维用途、废弃契约或替代接口，未扩展产品功能。"
+    },
+    {
+      "operationId": "adminGetHistory",
+      "method": "GET",
+      "path": "/api/v1/admin/notifications/system/history",
+      "backendTags": [
+        "Admin"
+      ],
+      "requestSchema": null,
+      "consumerSources": [],
+      "status": "有依据的平台差异",
+      "exclusionReason": "移动端 V1 不承载管理产品。",
+      "existingTestEvidence": null,
+      "applicability": "排除",
+      "verificationScope": "依据exclusionReason的V1产品范围、运维用途、废弃契约或替代接口，未扩展产品功能。"
+    },
+    {
+      "operationId": "adminSearchUsers",
+      "method": "GET",
+      "path": "/api/v1/admin/users/search",
+      "backendTags": [
+        "Admin"
+      ],
+      "requestSchema": null,
+      "consumerSources": [],
+      "status": "有依据的平台差异",
+      "exclusionReason": "移动端 V1 不承载管理产品。",
+      "existingTestEvidence": null,
+      "applicability": "排除",
+      "verificationScope": "依据exclusionReason的V1产品范围、运维用途、废弃契约或替代接口，未扩展产品功能。"
+    },
+    {
+      "operationId": "adminContentList",
+      "method": "GET",
+      "path": "/api/v1/admin/content",
+      "backendTags": [
+        "Admin Content"
+      ],
+      "requestSchema": null,
+      "consumerSources": [],
+      "status": "有依据的平台差异",
+      "exclusionReason": "移动端 V1 不承载管理产品。",
+      "existingTestEvidence": null,
+      "applicability": "排除",
+      "verificationScope": "依据exclusionReason的V1产品范围、运维用途、废弃契约或替代接口，未扩展产品功能。"
+    },
+    {
+      "operationId": "adminContentDetail",
+      "method": "GET",
+      "path": "/api/v1/admin/content/{type}/{id}",
+      "backendTags": [
+        "Admin Content"
+      ],
+      "requestSchema": null,
+      "consumerSources": [],
+      "status": "有依据的平台差异",
+      "exclusionReason": "移动端 V1 不承载管理产品。",
+      "existingTestEvidence": null,
+      "applicability": "排除",
+      "verificationScope": "依据exclusionReason的V1产品范围、运维用途、废弃契约或替代接口，未扩展产品功能。"
+    },
+    {
+      "operationId": "adminContentUpdateTaxonomy",
+      "method": "PATCH",
+      "path": "/api/v1/admin/content/thread/{id}/taxonomy",
+      "backendTags": [
+        "Admin Content"
+      ],
+      "requestSchema": "#/components/schemas/UpdateContentTaxonomyDto",
+      "consumerSources": [],
+      "status": "有依据的平台差异",
+      "exclusionReason": "移动端 V1 不承载管理产品。",
+      "existingTestEvidence": null,
+      "applicability": "排除",
+      "verificationScope": "依据exclusionReason的V1产品范围、运维用途、废弃契约或替代接口，未扩展产品功能。"
+    },
+    {
+      "operationId": "adminModerationListUsers",
+      "method": "GET",
+      "path": "/api/v1/admin/users",
+      "backendTags": [
+        "Admin Moderation"
+      ],
+      "requestSchema": null,
+      "consumerSources": [],
+      "status": "有依据的平台差异",
+      "exclusionReason": "移动端 V1 不承载管理产品。",
+      "existingTestEvidence": null,
+      "applicability": "排除",
+      "verificationScope": "依据exclusionReason的V1产品范围、运维用途、废弃契约或替代接口，未扩展产品功能。"
+    },
+    {
+      "operationId": "adminModerationGetUser",
+      "method": "GET",
+      "path": "/api/v1/admin/users/{id}",
+      "backendTags": [
+        "Admin Moderation"
+      ],
+      "requestSchema": null,
+      "consumerSources": [],
+      "status": "有依据的平台差异",
+      "exclusionReason": "移动端 V1 不承载管理产品。",
+      "existingTestEvidence": null,
+      "applicability": "排除",
+      "verificationScope": "依据exclusionReason的V1产品范围、运维用途、废弃契约或替代接口，未扩展产品功能。"
+    },
+    {
+      "operationId": "adminModerationSanctionUser",
+      "method": "POST",
+      "path": "/api/v1/admin/users/{id}/sanctions",
+      "backendTags": [
+        "Admin Moderation"
+      ],
+      "requestSchema": "#/components/schemas/SanctionUserDto",
+      "consumerSources": [],
+      "status": "有依据的平台差异",
+      "exclusionReason": "移动端 V1 不承载管理产品。",
+      "existingTestEvidence": null,
+      "applicability": "排除",
+      "verificationScope": "依据exclusionReason的V1产品范围、运维用途、废弃契约或替代接口，未扩展产品功能。"
+    },
+    {
+      "operationId": "adminModerationRevokeSanction",
+      "method": "POST",
+      "path": "/api/v1/admin/users/{id}/sanctions/current/revoke",
+      "backendTags": [
+        "Admin Moderation"
+      ],
+      "requestSchema": "#/components/schemas/RevokeSanctionDto",
+      "consumerSources": [],
+      "status": "有依据的平台差异",
+      "exclusionReason": "移动端 V1 不承载管理产品。",
+      "existingTestEvidence": null,
+      "applicability": "排除",
+      "verificationScope": "依据exclusionReason的V1产品范围、运维用途、废弃契约或替代接口，未扩展产品功能。"
+    },
+    {
+      "operationId": "adminModerationUpdateRole",
+      "method": "PATCH",
+      "path": "/api/v1/admin/users/{id}/role",
+      "backendTags": [
+        "Admin Moderation"
+      ],
+      "requestSchema": "#/components/schemas/UpdateAdminRoleDto",
+      "consumerSources": [],
+      "status": "有依据的平台差异",
+      "exclusionReason": "移动端 V1 不承载管理产品。",
+      "existingTestEvidence": null,
+      "applicability": "排除",
+      "verificationScope": "依据exclusionReason的V1产品范围、运维用途、废弃契约或替代接口，未扩展产品功能。"
+    },
+    {
+      "operationId": "adminModerationHideContent",
+      "method": "POST",
+      "path": "/api/v1/admin/content/{type}/{id}/hide",
+      "backendTags": [
+        "Admin Moderation"
+      ],
+      "requestSchema": "#/components/schemas/ModerateContentDto",
+      "consumerSources": [],
+      "status": "有依据的平台差异",
+      "exclusionReason": "移动端 V1 不承载管理产品。",
+      "existingTestEvidence": null,
+      "applicability": "排除",
+      "verificationScope": "依据exclusionReason的V1产品范围、运维用途、废弃契约或替代接口，未扩展产品功能。"
+    },
+    {
+      "operationId": "adminModerationListHiddenContent",
+      "method": "GET",
+      "path": "/api/v1/admin/content/hidden",
+      "backendTags": [
+        "Admin Moderation"
+      ],
+      "requestSchema": null,
+      "consumerSources": [],
+      "status": "有依据的平台差异",
+      "exclusionReason": "移动端 V1 不承载管理产品。",
+      "existingTestEvidence": null,
+      "applicability": "排除",
+      "verificationScope": "依据exclusionReason的V1产品范围、运维用途、废弃契约或替代接口，未扩展产品功能。"
+    },
+    {
+      "operationId": "adminModerationRestoreContent",
+      "method": "POST",
+      "path": "/api/v1/admin/content/{type}/{id}/restore",
+      "backendTags": [
+        "Admin Moderation"
+      ],
+      "requestSchema": "#/components/schemas/ModerateContentDto",
+      "consumerSources": [],
+      "status": "有依据的平台差异",
+      "exclusionReason": "移动端 V1 不承载管理产品。",
+      "existingTestEvidence": null,
+      "applicability": "排除",
+      "verificationScope": "依据exclusionReason的V1产品范围、运维用途、废弃契约或替代接口，未扩展产品功能。"
+    },
+    {
+      "operationId": "adminModerationListAuditLogs",
+      "method": "GET",
+      "path": "/api/v1/admin/audit-logs",
+      "backendTags": [
+        "Admin Moderation"
+      ],
+      "requestSchema": null,
+      "consumerSources": [],
+      "status": "有依据的平台差异",
+      "exclusionReason": "移动端 V1 不承载管理产品。",
+      "existingTestEvidence": null,
+      "applicability": "排除",
+      "verificationScope": "依据exclusionReason的V1产品范围、运维用途、废弃契约或替代接口，未扩展产品功能。"
+    },
+    {
+      "operationId": "adminModerationExportAuditLogs",
+      "method": "GET",
+      "path": "/api/v1/admin/audit-logs/export",
+      "backendTags": [
+        "Admin Moderation"
+      ],
+      "requestSchema": null,
+      "consumerSources": [],
+      "status": "有依据的平台差异",
+      "exclusionReason": "移动端 V1 不承载管理产品。",
+      "existingTestEvidence": null,
+      "applicability": "排除",
+      "verificationScope": "依据exclusionReason的V1产品范围、运维用途、废弃契约或替代接口，未扩展产品功能。"
+    },
+    {
+      "operationId": "clientContentModerationHide",
+      "method": "POST",
+      "path": "/api/v1/moderation/content/{type}/{id}/hide",
+      "backendTags": [
+        "Client Moderation"
+      ],
+      "requestSchema": "#/components/schemas/ModerateContentDto",
+      "consumerSources": [],
+      "status": "待验证",
+      "exclusionReason": "后端 4.9.0 新增移动端管理员直接隐藏内容；需先接入可信角色投影、内容操作入口与高风险确认切片。",
+      "existingTestEvidence": null,
+      "applicability": "排除",
+      "verificationScope": "已有登记但尚未接入；不因覆盖清单排除就认定为有依据的平台差异。"
+    },
+    {
+      "operationId": "adminDashboardOverview",
+      "method": "GET",
+      "path": "/api/v1/admin/dashboard/overview",
+      "backendTags": [
+        "Admin Dashboard"
+      ],
+      "requestSchema": null,
+      "consumerSources": [],
+      "status": "有依据的平台差异",
+      "exclusionReason": "移动端 V1 不承载管理产品。",
+      "existingTestEvidence": null,
+      "applicability": "排除",
+      "verificationScope": "依据exclusionReason的V1产品范围、运维用途、废弃契约或替代接口，未扩展产品功能。"
+    },
+    {
+      "operationId": "adminDashboardTimeseries",
+      "method": "GET",
+      "path": "/api/v1/admin/dashboard/timeseries",
+      "backendTags": [
+        "Admin Dashboard"
+      ],
+      "requestSchema": null,
+      "consumerSources": [],
+      "status": "有依据的平台差异",
+      "exclusionReason": "移动端 V1 不承载管理产品。",
+      "existingTestEvidence": null,
+      "applicability": "排除",
+      "verificationScope": "依据exclusionReason的V1产品范围、运维用途、废弃契约或替代接口，未扩展产品功能。"
+    },
+    {
+      "operationId": "adminDashboardDistributions",
+      "method": "GET",
+      "path": "/api/v1/admin/dashboard/distributions",
+      "backendTags": [
+        "Admin Dashboard"
+      ],
+      "requestSchema": null,
+      "consumerSources": [],
+      "status": "有依据的平台差异",
+      "exclusionReason": "移动端 V1 不承载管理产品。",
+      "existingTestEvidence": null,
+      "applicability": "排除",
+      "verificationScope": "依据exclusionReason的V1产品范围、运维用途、废弃契约或替代接口，未扩展产品功能。"
+    },
+    {
+      "operationId": "adminTaxonomyListCategories",
+      "method": "GET",
+      "path": "/api/v1/admin/thread-categories",
+      "backendTags": [
+        "Admin Taxonomy"
+      ],
+      "requestSchema": null,
+      "consumerSources": [],
+      "status": "有依据的平台差异",
+      "exclusionReason": "移动端 V1 不承载管理产品。",
+      "existingTestEvidence": null,
+      "applicability": "排除",
+      "verificationScope": "依据exclusionReason的V1产品范围、运维用途、废弃契约或替代接口，未扩展产品功能。"
+    },
+    {
+      "operationId": "adminTaxonomyCreateCategory",
+      "method": "POST",
+      "path": "/api/v1/admin/thread-categories",
+      "backendTags": [
+        "Admin Taxonomy"
+      ],
+      "requestSchema": "#/components/schemas/CreateThreadCategoryDto",
+      "consumerSources": [],
+      "status": "有依据的平台差异",
+      "exclusionReason": "移动端 V1 不承载管理产品。",
+      "existingTestEvidence": null,
+      "applicability": "排除",
+      "verificationScope": "依据exclusionReason的V1产品范围、运维用途、废弃契约或替代接口，未扩展产品功能。"
+    },
+    {
+      "operationId": "adminTaxonomyUpdateCategory",
+      "method": "PATCH",
+      "path": "/api/v1/admin/thread-categories/{id}",
+      "backendTags": [
+        "Admin Taxonomy"
+      ],
+      "requestSchema": "#/components/schemas/UpdateThreadCategoryDto",
+      "consumerSources": [],
+      "status": "有依据的平台差异",
+      "exclusionReason": "移动端 V1 不承载管理产品。",
+      "existingTestEvidence": null,
+      "applicability": "排除",
+      "verificationScope": "依据exclusionReason的V1产品范围、运维用途、废弃契约或替代接口，未扩展产品功能。"
+    },
+    {
+      "operationId": "adminTaxonomyListTags",
+      "method": "GET",
+      "path": "/api/v1/admin/tags",
+      "backendTags": [
+        "Admin Taxonomy"
+      ],
+      "requestSchema": null,
+      "consumerSources": [],
+      "status": "有依据的平台差异",
+      "exclusionReason": "移动端 V1 不承载管理产品。",
+      "existingTestEvidence": null,
+      "applicability": "排除",
+      "verificationScope": "依据exclusionReason的V1产品范围、运维用途、废弃契约或替代接口，未扩展产品功能。"
+    },
+    {
+      "operationId": "adminTaxonomyCreateTag",
+      "method": "POST",
+      "path": "/api/v1/admin/tags",
+      "backendTags": [
+        "Admin Taxonomy"
+      ],
+      "requestSchema": "#/components/schemas/CreateManagedTagDto",
+      "consumerSources": [],
+      "status": "有依据的平台差异",
+      "exclusionReason": "移动端 V1 不承载管理产品。",
+      "existingTestEvidence": null,
+      "applicability": "排除",
+      "verificationScope": "依据exclusionReason的V1产品范围、运维用途、废弃契约或替代接口，未扩展产品功能。"
+    },
+    {
+      "operationId": "adminTaxonomyUpdateTag",
+      "method": "PATCH",
+      "path": "/api/v1/admin/tags/{id}",
+      "backendTags": [
+        "Admin Taxonomy"
+      ],
+      "requestSchema": "#/components/schemas/UpdateManagedTagDto",
+      "consumerSources": [],
+      "status": "有依据的平台差异",
+      "exclusionReason": "移动端 V1 不承载管理产品。",
+      "existingTestEvidence": null,
+      "applicability": "排除",
+      "verificationScope": "依据exclusionReason的V1产品范围、运维用途、废弃契约或替代接口，未扩展产品功能。"
+    },
+    {
+      "operationId": "searchSearchMoments",
+      "method": "GET",
+      "path": "/api/v1/search/moments",
+      "backendTags": [
+        "Search"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/search/data/search_repository.dart"
+      ],
+      "status": "已证实偏差",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已修复候选；已确认的具体边界和回归见capability-consistency-audit.md，不代表本接口所有输入组合或真机已验收。"
+    },
+    {
+      "operationId": "searchSearchThreads",
+      "method": "GET",
+      "path": "/api/v1/search/threads",
+      "backendTags": [
+        "Search"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/search/data/search_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "searchSearchUsers",
+      "method": "GET",
+      "path": "/api/v1/search/users",
+      "backendTags": [
+        "Search"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/search/data/search_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "searchSearchPosts",
+      "method": "GET",
+      "path": "/api/v1/search/posts",
+      "backendTags": [
+        "Search"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/search/data/search_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "searchSearch",
+      "method": "GET",
+      "path": "/api/v1/search",
+      "backendTags": [
+        "Search"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/search/data/search_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "threadSearchSearchPosts",
+      "method": "GET",
+      "path": "/api/v1/threads/{threadId}/search/posts",
+      "backendTags": [
+        "Search"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/search/data/search_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "mediaGetUploadUrl",
+      "method": "POST",
+      "path": "/api/v1/media/upload-url",
+      "backendTags": [
+        "Media"
+      ],
+      "requestSchema": "#/components/schemas/CreateUploadUrlDto",
+      "consumerSources": [
+        "lib/features/media/data/media_upload_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "mediaConfirmUpload",
+      "method": "POST",
+      "path": "/api/v1/media/upload-done",
+      "backendTags": [
+        "Media"
+      ],
+      "requestSchema": "#/components/schemas/ConfirmUploadDto",
+      "consumerSources": [
+        "lib/features/media/data/media_upload_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "mediaReissueUploadUrl",
+      "method": "POST",
+      "path": "/api/v1/media/{id}/upload-url",
+      "backendTags": [
+        "Media"
+      ],
+      "requestSchema": null,
+      "consumerSources": [],
+      "status": "待验证",
+      "exclusionReason": "后端 5.4.0 新增同一 mediaId 重签上传地址；需与 MEDIA_OBJECT_MISSING 识别、同文件重传和取消恢复作为独立高风险上传切片接入。",
+      "existingTestEvidence": null,
+      "applicability": "排除",
+      "verificationScope": "已有登记但尚未接入；不因覆盖清单排除就认定为有依据的平台差异。"
+    },
+    {
+      "operationId": "mediaGetMedia",
+      "method": "GET",
+      "path": "/api/v1/media/{id}",
+      "backendTags": [
+        "Media"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/media/data/media_upload_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "directConversationsFindAll",
+      "method": "GET",
+      "path": "/api/v1/direct-conversations",
+      "backendTags": [
+        "Direct Messages"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/direct_messages/data/direct_message_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "directConversationsCreate",
+      "method": "POST",
+      "path": "/api/v1/direct-conversations",
+      "backendTags": [
+        "Direct Messages"
+      ],
+      "requestSchema": "#/components/schemas/CreateDirectConversationDto",
+      "consumerSources": [
+        "lib/features/direct_messages/data/direct_message_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "directConversationsUnread",
+      "method": "GET",
+      "path": "/api/v1/direct-conversations/unread",
+      "backendTags": [
+        "Direct Messages"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/direct_messages/data/direct_message_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "directConversationsFindByUser",
+      "method": "GET",
+      "path": "/api/v1/direct-conversations/by-user/{userId}",
+      "backendTags": [
+        "Direct Messages"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/direct_messages/data/direct_message_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "directConversationsFindById",
+      "method": "GET",
+      "path": "/api/v1/direct-conversations/{id}",
+      "backendTags": [
+        "Direct Messages"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/direct_messages/data/direct_message_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "directConversationsMessages",
+      "method": "GET",
+      "path": "/api/v1/direct-conversations/{id}/messages",
+      "backendTags": [
+        "Direct Messages"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/direct_messages/data/direct_message_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "directConversationsSend",
+      "method": "POST",
+      "path": "/api/v1/direct-conversations/{id}/messages",
+      "backendTags": [
+        "Direct Messages"
+      ],
+      "requestSchema": "#/components/schemas/CreateDirectMessageDto",
+      "consumerSources": [
+        "lib/features/direct_messages/data/direct_message_repository.dart"
+      ],
+      "status": "已证实偏差",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已修复候选；已确认的具体边界和回归见capability-consistency-audit.md，不代表本接口所有输入组合或真机已验收。"
+    },
+    {
+      "operationId": "directConversationsHandleRequest",
+      "method": "PATCH",
+      "path": "/api/v1/direct-conversations/{id}/request",
+      "backendTags": [
+        "Direct Messages"
+      ],
+      "requestSchema": "#/components/schemas/HandleDirectRequestDto",
+      "consumerSources": [
+        "lib/features/direct_messages/data/direct_message_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "directConversationsArchive",
+      "method": "PATCH",
+      "path": "/api/v1/direct-conversations/{id}/archive",
+      "backendTags": [
+        "Direct Messages"
+      ],
+      "requestSchema": "#/components/schemas/SetDirectConversationArchiveDto",
+      "consumerSources": [
+        "lib/features/direct_messages/data/direct_message_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "directConversationsMarkRead",
+      "method": "POST",
+      "path": "/api/v1/direct-conversations/{id}/read",
+      "backendTags": [
+        "Direct Messages"
+      ],
+      "requestSchema": "#/components/schemas/MarkDirectConversationReadDto",
+      "consumerSources": [
+        "lib/features/direct_messages/data/direct_message_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "directMessagesRecall",
+      "method": "DELETE",
+      "path": "/api/v1/direct-messages/{id}",
+      "backendTags": [
+        "Direct Messages"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/direct_messages/data/direct_message_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "metaGetMeta",
+      "method": "GET",
+      "path": "/api/v1/meta",
+      "backendTags": [
+        "Meta"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/app_shell/data/meta_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": [
+        "test/mobile_update_test.dart",
+        "test/app_shell_test.dart"
+      ],
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "economyGetWallet",
+      "method": "GET",
+      "path": "/api/v1/wallet",
+      "backendTags": [
+        "Wallet"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/wallet/data/wallet_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "economyCheckIn",
+      "method": "POST",
+      "path": "/api/v1/wallet/check-in",
+      "backendTags": [
+        "Wallet"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/wallet/data/wallet_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "economyTransactions",
+      "method": "GET",
+      "path": "/api/v1/wallet/transactions",
+      "backendTags": [
+        "Wallet"
+      ],
+      "requestSchema": null,
+      "consumerSources": [
+        "lib/features/wallet/data/wallet_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "economyTipThread",
+      "method": "POST",
+      "path": "/api/v1/threads/{id}/tips",
+      "backendTags": [
+        "Wallet"
+      ],
+      "requestSchema": "#/components/schemas/TipRequestDto",
+      "consumerSources": [
+        "lib/features/wallet/data/wallet_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "economyTipUser",
+      "method": "POST",
+      "path": "/api/v1/users/{id}/tips",
+      "backendTags": [
+        "Wallet"
+      ],
+      "requestSchema": "#/components/schemas/TipRequestDto",
+      "consumerSources": [
+        "lib/features/wallet/data/wallet_repository.dart"
+      ],
+      "status": "待验证",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已核对入口与分组静态规则；分组自动回归不等于本操作所有边界均已逐项验证。"
+    },
+    {
+      "operationId": "economyTipMoment",
+      "method": "POST",
+      "path": "/api/v1/moments/{id}/tips",
+      "backendTags": [
+        "Wallet"
+      ],
+      "requestSchema": "#/components/schemas/TipRequestDto",
+      "consumerSources": [
+        "lib/features/wallet/data/wallet_repository.dart"
+      ],
+      "status": "已证实偏差",
+      "exclusionReason": null,
+      "existingTestEvidence": null,
+      "applicability": "适用",
+      "verificationScope": "已修复候选；已确认的具体边界和回归见capability-consistency-audit.md，不代表本接口所有输入组合或真机已验收。"
+    }
+  ]
+}

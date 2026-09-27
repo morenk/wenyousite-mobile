@@ -1,5 +1,6 @@
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wenyousite_mobile/core/application/data_saver_preference.dart';
+import 'package:wenyousite_mobile/core/storage/environment_storage.dart';
 
 class SharedPreferencesDataSaverStore implements DataSaverPreferenceStore {
   const SharedPreferencesDataSaverStore();
@@ -9,13 +10,16 @@ class SharedPreferencesDataSaverStore implements DataSaverPreferenceStore {
   @override
   Future<bool> read() async {
     final preferences = await SharedPreferences.getInstance();
-    return preferences.getBool(storageKey) ?? false;
+    return preferences.getBool(environmentPreferenceKey(storageKey)) ?? false;
   }
 
   @override
   Future<void> write(bool enabled) async {
     final preferences = await SharedPreferences.getInstance();
-    if (!await preferences.setBool(storageKey, enabled)) {
+    if (!await preferences.setBool(
+      environmentPreferenceKey(storageKey),
+      enabled,
+    )) {
       throw StateError('Cannot save data saver preference');
     }
   }

@@ -1,0 +1,82 @@
+# 行内格式组合候选验收
+
+状态：负责人验收通过／修复完成。2026-09-19 负责人在治理任务明确回复“验收通过，请继续合并”，并在移动端任务授权“可以合并清理分支了”。验收对象为已安装并核验设备内摘要的 `9b90b0f3` 应用候选；保留下方原始输入未取得及自动检查的历史边界，不推断额外场景逐项验收结果。
+
+## 原始反馈与范围
+
+负责人反馈在移动端长按选中文字后应用斜体，格式结果异常。本任务未取得移动端原始正文、具体选区和设备操作录屏，不能断言某个构造样例就是原始根因。当前 Quill 长按菜单提供复制、剪切、粘贴、全选等操作；格式由底部工具栏应用，未发现所谓浮动菜单斜体入口。物理 Ctrl+B/I/U 维持原有禁用规则。
+
+后续明确需求是支持代码与斜体及全部可表达的粗体、斜体、删除线、代码、安全链接组合，保留字面字符，不通过取消代码规避问题。Web 已知历史样例为 `` **土地***`culti`* ``：预期“土地”粗体，`culti` 同时为代码和斜体。此历史恢复仅限明确闭合结构，转义、代码内部和其他未闭合源码保持原义。
+
+## 已证实原因及实现
+
+旧移动端工具栏会移除代码与强调/链接的其他属性，编码器也明确拒绝代码叠加；代码的编辑与阅读样式会覆盖外侧字重或删除线。候选改为独立切换 marks，保留组合样式并让代码字形继承外侧强调。
+
+编码器优先保留既有规范拼写，必要时按共享标记前缀嵌套，选择无歧义的星号/下划线边界及字符实体。每个候选拼写均经过独立 Markdown AST 的逐字文字/marks 检查，最终完整文档语义门禁继续有效。非代码空格只保留两侧共有 marks，代码内部空格、反引号、反斜杠和实体字面值保持。纯兼容源码继续交由原块级编码处理，不扩展本次行内转换的适用范围。
+
+Dart Markdown 7.3.1 对闭合代码后第一个字符实体有额外 backquote 拒绝条件，部分相邻删除线与实体组合还会触发 `openersBottom` 缓存索引残留。写入使用经过阅读校验的等价拼写；新 literal 输入的段落边界空格采用实体并保留来源，已有 guarded/literal 源码继续沿用原保护路径。读取增加局部 InlineSyntax：实体委托原解析器单独校验解码，明确完整的删除线包裹 code span 在原定界符开闭规则通过后提前消费；无嵌套双星/双波浪纯文字共用受限适配，仅在 opener 不能关闭前方格式、原开闭规则通过且独立原解析恰为单一目标标签且全部子节点为 Text 时提前消费，三连及更长定界符和嵌套仍交给原解析器，正文中的词内下划线与转义标点必须由原片段 AST 证明为纯文字；代码原子也不得抢占前方闭合符。编辑与阅读共用，不改依赖缓存，不注入格式占位字符。跨端读取以另一端实际候选导出进行独立验证。
+
+## 契约与检查记录
+
+- 独立组合语料 revision 2 固定 Backend `f3cad6799d7fdd6b484d7341b3b918970767a190`，文件摘要由 source manifest 门禁验证；依赖 [Backend PR #22](https://github.com/morenk/wenyousite-backend/pull/22)，未合并或部署。
+- 主契约固定已部署 `602f57324256f358aea27d204937f9e15644f9c7`；既有 OpenAPI/v7 不变，再生成客户端无差异。Foundation 已 fetch tags 并核对最新正式 `v7.0.0`，依赖保持。
+- `test/features/editor/editor_inline_combination_contract_test.dart`：32 种 marks、11,520 条邻接（含 0/1/2 空格及中英文外侧上下文、不同链接目标）、384 条特殊文字、15 条命名场景。
+- `test/core/markdown/markdown_inline_combination_test.dart`：独立阅读 AST、代码字面内容、共享空格样式和稳定保存。
+- `test/features/editor/editor_inline_combination_entry_test.dart`：真实长按、整词原选区、部分/反向混合选区、底部工具栏、逐字样式、取消、撤销/重做，真实主题页面输入/快照/重开/发布，以及站内结构化剪贴板、编辑/阅读实际字形。
+- 格式策略与既有阅读复制回归同步为保留代码组合。最终完整门禁及 APK 信息见下方记录。
+- 基线 `cbd46995` 上仅恢复旧编码器和格式策略，新增“真实长按原词后点击斜体”回归失败（代码属性被清除，Flutter 退出码 1）；通过字节备份和 finally 恢复候选文件后，同一回归通过。此证据确认旧策略与新组合需求冲突，不冒充未取得原文的真机复现。
+- `test/features/editor/editor_inline_combination_cross_test.dart` 默认验证外部解析反例及转义/代码/未闭合保护；传入 `--dart-define=INLINE_COMBINATION_WEB_IMPORT=<JSON绝对路径>` 时消费完整 Web 实际导出，验证阅读 AST、逐字编辑 marks、再次保存和重开。
+
+## 跨端候选检查边界
+
+Web 输入固定 [Frontend PR #26](https://github.com/morenk/wenyousite-frontend/pull/26) 的 daa5e59c9c40cdd30b7d9cb6389c3616901a015a，实际 11,904 条 JSON 的 SHA-256 为 b1b4ba04321e54399245ee7f57d08996445eed10110f694262caf2beba7467e1。首轮 38 个失败分为 21 个粗体闭合、2 个大写十六进制实体和 15 个边界空格保存问题；收紧代码原子的闭合优先级后，另记录 30 个同源的后续纯文字删除线失败。失败轮不作为通过证据；最终互读必须分别核对 incoming、saved 阅读 AST、再次解码逐字 marks 和保存幂等。
+
+2026-09-19，Mobile 应用源码 `01b363d4739efb5a01d8c2f938c29182b4f66306` 同次运行上述 contract 与 cross 两个测试文件，真实退出码 0、23 项测试全部通过；其中自产 11,904 条及 15 个命名场景通过，Web → Mobile 全部 11,904 条通过 incoming/saved 阅读 AST、两次解码的逐字 marks 和保存幂等检查。日志为工作区忽略文件 `inline-matrix-final.log`。
+
+上述 Mobile 导出为 `build/inline-combinations-mobile.json`，`producerCommit` 为上述源码提交，11,904 条且 ID 全部唯一，SHA-256 为 `ae99ae056d478fd7955ea80427aebb1d085f069627f1767a8ed1835fc513f378`。随后 Web 真实块解析发现段落前置两个空格被当作缩进消费，该轮不能作为跨端验收通过。早先 `9478cf2f` 失败轮生成的部分导出也不是有效候选。
+
+后续最小修正将新规范输入的全部段落前置空格编码为实体，既有 guarded/literal 源码继续走原兼容路径。独立阅读断言升级为整段 `parseLines`，并覆盖全部 32 种 marks 的两/三个边界空格、纯空格及代码内部空格。Dart 原生块解析本身不会复现 Web 的缩进消费，因此另断言规范输出不能以原始缩进起始；该断言在 `01b363d4` 上真实失败（退出码 1），最终语义仍需 Web 实际互读核验，不以 Dart 自洽代替。
+
+新应用源码 `0c70cc5d374970b7900267b134968ca48b513012` 的自产 11,904 条及 15 个命名场景在整段阅读 oracle 下通过，contract 文件 19 项测试、真实退出码 0，日志 `inline-export-block-final.log`。Web → Mobile 文本子集 384 条重新核验 incoming/saved 整段阅读及两次解码，cross 文件 4 项通过，日志 `inline-block-web-subset.log`；其余 Web 输入此前全量通过，前置空格修正不影响无前置空格的邻接语料。
+
+新导出仍为 `build/inline-combinations-mobile.json`，11,904 条且 ID 唯一，`producerCommit` 为 `0c70cc5d374970b7900267b134968ca48b513012`，SHA-256 为 `89ddf93f558b164f2e3c444321105a2bbeb6293fdf44239e1968ea647a48b69e`。Windows/VPS 传输后已核对同一摘要。
+
+Web 最终候选 `e3e23f02093240ea8ee1f63d657cd56998d91e58` 使用原始 importer 完整消费上述 Mobile 导出，11,904 条全部通过、真实退出码 0，未放宽预期。该 Web 候选的序列化、解析与导出源码和 `daa5e59c9c40cdd30b7d9cb6389c3616901a015a` 逐字一致，仅补充代码叠加强调的 CSS 与浏览器字形验证。因此两方向的实际候选数据互读证据均已取得；原始移动端真机问题仍待负责人复验。
+
+完整门禁随后检出既有容器源码幂等回归：列表内代码转为兼容正文后，部分带原始缩进的转义行重开时未继承历史空白来源。补充解码标记仅匹配“原始空格开头且存在 canonical literal encoding”的旧源码，保持其原保护路径。`markdown_container_code_protection_test.dart`、`markdown_inline_combination_test.dart` 与带 Web 文本子集的 cross 文件合计 15 项通过，真实退出码 0，日志 `inline-legacy-provenance.log`。两端各 11,904 条实际导出均无原始空格开头，故不进入该新分支；既有互读数据继续对应，最终完整门禁仍需在补充后的应用源码上通过。
+
+独立审查进一步提供 `&#x61;_**~~甲~~**_**a\_b**b`：后段原本应为粗体字面 `a_b`，但旧纯文字适配排除了反斜杠和下划线，退回原解析缺陷并泄露双星。新增回归在旧实现真实失败（`inline-escaped-old-red.log`）；候选允许不重叠的转义双字符与普通文字分支扫描，词内下划线和转义标点必须仍经独立原片段 AST 证明为单一目标标签且子节点全为 Text。保持精确双定界符、开闭优先级及嵌套拒绝。粗体/删除线各自的 `a\_b`、`a\*b`、`a_b` 六个变体及原负例通过；Web 文本 384 条与自产文本 384 条重新通过（日志 `inline-escaped-cross.log`、`inline-escaped-own-text.log`），无需重复未受影响的中央邻接互读。
+
+应用源码固定 `9b90b0f3a94dfe6fb11c03bb29f4482b5d53b3c2` 后，全量测试收集为 4,528 通过、1 项既有跳过、2 条旧预期失败。失败分别为工具栏仍要求加粗清除代码，以及新外部粘贴仍要求 WJ 空白保护；均与本次独立组合及不注入字符的明确需求冲突。只更新对应测试，补充各格式分别取消、实际文字、无 WJ、保存重开稳定断言；`editor_toolbar_test.dart` 与 `rich_editor_session_test.dart` 共 63 项通过（`inline-updated-legacy-expectations.log`），应用源码不变。此失败轮不作为完整门禁通过证据。
+
+## 最终 Windows 验证与安装包
+
+2026-09-19，在提交 `6c7ab7d417e3b3d653e8d3796adc52fa4c273865` 上运行 `npm run check:apk -- -TestConcurrency 4`，真实退出码 0，完整日志为工作区忽略文件 `inline-check-apk-final-candidate.log`。应用源码固定 `9b90b0f3a94dfe6fb11c03bb29f4482b5d53b3c2`；后续仅测试与验收记录，无应用、Android、依赖或生成客户端差异。
+
+- 全仓格式、应用及生成客户端全量静态分析零问题，架构、21 个模块文档、API 覆盖、契约固定来源/摘要、公网兼容和客户端再生成一致性全部通过。
+- 完整 `test/` 共 4,530 项通过，1 项既有跳过：`test/core/diagnostics/diagnostic_live_receipt_test.dart` 默认关闭的线上 Sentry 回执；18 项 Windows 工具测试通过。
+- 直接受影响路径包括 `test/core/markdown/`、`test/core/widgets/wenyou_markdown_test.dart`、`test/features/editor/`；完整入口包含新增组合、真实长按/工具栏、剪贴板、主题页面保存/重开/发布、撤销重做和字形测试。外部导入专项及红绿回归的实际文件、样本与日志见前文。
+- 同次 Debug APK 构建成功，`aapt dump badging` 确认应用为“温油站 Debug”、包名 `site.wenyou.app.debug`、`versionName=0.7.1-debug`、`versionCode=95`，最低 API 26，包含开发用 ARM32/ARM64/x86_64。
+- 已验收 APK 稳定归档：`D:\code\wenyousite\artifacts\mobile-inline-combinations-20260919\wenyou-inline-9b90b0f3-debug.apk`，183,257,418 字节；SHA-256：`fa1b0c2ab472dce3b73aaf0a37ede99a0ba69e45353997b401beb01dc3089066`。原工作区 APK、全部诊断/验收日志及双向互读 JSON 已复制到同一目录并逐文件记录 `SHA256SUMS.txt`；此目录独立于临时 Worktree。
+
+[Mobile PR #42](https://github.com/morenk/wenyousite-mobile/pull/42) 已获负责人验收与合并清理授权；按 Backend → Web → Mobile 顺序完成合并，不包含部署或发布。
+
+负责人随后明确授权“直接 adb 安装即可”。2026-09-19 已在唯一连接的 `2509FPN0BC` 真机执行 `adb install -r`，返回 `Success`。设备同时存在正式包与 Debug 包，本次安装目标已核对为 `site.wenyou.app.debug`；安装后 `versionName=0.7.1-debug`、`versionCode=95`、设备记录 `lastUpdateTime=2026-09-19 06:08:49`，设备内 `base.apk` 的 SHA-256 与上述候选完全一致。负责人应打开“温油站 Debug”复验。
+
+## 合并前集成复核
+
+2026-09-19 将最新 `origin/dev` 的 `afc11c8749bce79f6b15195df41f214909296951` 以 merge 方式整合到任务分支。双方共同修改仅为 README、相同的后端来源元数据和文档；所有实际冲突均位于 CHANGELOG 与 21 个模块来源记录，已保留双方内容。应用源码、测试、工具和依赖没有交叉修改，本次未手工修改任何应用实现。
+
+按治理任务明确的“仅 docs 冲突按 docs 门禁”要求，模块文档检查与 diff 空白检查通过；另外运行 `test/features/editor/editor_inline_combination_entry_test.dart`、`test/features/editor/editor_toolbar_test.dart`、`test/features/editor/rich_editor_session_test.dart`，77 项通过、真实退出码 0，覆盖新共享页面下的实际编辑入口、工具栏、保存重开及发布。日志 `merge-editor-integration.log` 随验收材料保存。不重复已通过的两侧全量验证，也不将原候选完整门禁宣称为本次集成后重新运行的结果。
+
+稳定归档 APK 始终绑定已验收的 `9b90b0f3`，不包含后续 dev 的组件整合，不重新安装或发布。PR 按治理任务确认的跨仓顺序合并。
+
+## 原负责人真机复验清单
+
+1. 在“温油站 Debug”对应候选中复现原始正文与原始长按操作；请保留实际字符、空格和选区，明确反馈是否仍异常。
+2. 输入 `code xyz`，仅为 `code` 应用行内代码。长按选中原词，点击底部斜体，确认同时显示等宽与斜体；再次点击只取消斜体，代码保留。
+3. 对部分代码及跨代码/普通文字的反向选区重复粗体、斜体、删除线和安全链接操作；检查选区未漂移、无星号/波浪号泄漏，撤销/重做符合原操作。
+4. 输入中文、英文、emoji、字面 `*`、反斜杠、反引号和实体文字，在代码首尾保留空格；保存草稿、关闭、重开、继续输入及发布后核对文字与样式。
+5. 使用专用测试内容完成 Web → Android → Web 及反向打开/编辑/保存，确认复制粘贴和阅读一致。无需批量删除共享数据。
+
+验收通过依据是负责人明确反馈，而非 ADB 安装或代理截图。原候选安装包与验证日志已保存，后续合并记录不改写既有失败轮和验证边界。

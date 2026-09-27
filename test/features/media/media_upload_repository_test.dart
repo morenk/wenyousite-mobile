@@ -251,11 +251,17 @@ void main() {
         ),
       ),
       throwsA(
-        isA<ApiFailure>().having(
-          (failure) => failure.userMessage,
-          'message',
-          contains('用途'),
-        ),
+        isA<ApiFailure>()
+            .having(
+              (failure) => failure.reason,
+              'reason',
+              FailureReason.contractViolation,
+            )
+            .having(
+              (failure) => failure.diagnosticCode,
+              'diagnosticCode',
+              'media_confirmation_purpose_mismatch',
+            ),
       ),
     );
   });
