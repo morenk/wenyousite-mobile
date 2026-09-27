@@ -1,20 +1,25 @@
 name: Quality
 
 on:
-  # 第一阶段快速迭代期间不自动触发；需要阶段验收时由维护者手动执行。
+  # 正式发布准备恢复集成分支的自动只读复核，仍保留手动入口。
+  push:
+    branches: [dev, main]
+  pull_request:
+    branches: [dev, main]
   workflow_dispatch:
 
 permissions:
   contents: read
 
 env:
+  # 与已提交锁文件的 hosted 来源保持一致，避免生成客户端锁文件漂移。
   PUB_HOSTED_URL: https://pub.flutter-io.cn
-  FLUTTER_STORAGE_BASE_URL: https://storage.flutter-io.cn
+  FLUTTER_STORAGE_BASE_URL: https://storage.googleapis.com
 
 jobs:
   quality:
     runs-on: windows-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v7
         with:
@@ -35,6 +40,9 @@ jobs:
           flutter-version: 3.44.8
           channel: stable
           cache: true
+
+      - name: Configure Windows Dart UTF-8 decoding
+        run: pwsh -NoProfile -File tool/ci/Set-WindowsDartUtf8.ps1
 
       - name: Install tooling
         run: |
