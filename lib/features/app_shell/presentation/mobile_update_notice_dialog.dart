@@ -12,6 +12,7 @@ class MobileUpdateNoticeDialog extends StatelessWidget {
     required this.title,
     this.target,
     this.update,
+    this.preloadedRelease,
     this.onVisible,
     this.onClose,
     super.key,
@@ -20,6 +21,7 @@ class MobileUpdateNoticeDialog extends StatelessWidget {
   final String title;
   final MobileReleaseTarget? target;
   final MobileUpdateInfo? update;
+  final MobileRelease? preloadedRelease;
   final VoidCallback? onVisible;
   final VoidCallback? onClose;
 
@@ -59,7 +61,11 @@ class MobileUpdateNoticeDialog extends StatelessWidget {
             ),
             if (target != null) ...[
               SizedBox(height: tokens.space16),
-              MobileReleaseSection(target: target, onVisible: onVisible),
+              MobileReleaseSection(
+                target: target,
+                onVisible: onVisible,
+                preloadedRelease: preloadedRelease,
+              ),
             ],
             if (update != null) MobileUpdateStatus(update: update),
           ],

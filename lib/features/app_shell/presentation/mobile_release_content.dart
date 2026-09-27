@@ -36,13 +36,23 @@ class MobileReleaseContent extends StatelessWidget {
 }
 
 class MobileReleaseSection extends ConsumerWidget {
-  const MobileReleaseSection({required this.target, this.onVisible, super.key});
+  const MobileReleaseSection({
+    required this.target,
+    this.onVisible,
+    this.preloadedRelease,
+    super.key,
+  });
 
   final MobileReleaseTarget target;
   final VoidCallback? onVisible;
+  final MobileRelease? preloadedRelease;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final preloaded = preloadedRelease;
+    if (preloaded != null && preloaded.target == target) {
+      return _VisibleRelease(release: preloaded, onVisible: onVisible);
+    }
     final release = ref.watch(mobileReleaseProvider(target));
     return release.when(
       skipLoadingOnRefresh: false,

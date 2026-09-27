@@ -201,7 +201,86 @@ void main() {
     expect(find.byType(MobileUpdateNoticeDialog), findsNothing);
   });
 
-  testWidgets('失败不记展示，本机会不循环；下次推荐顺延，再下次重试待提示', (tester) async {
+  for (final failure in ['missing', 'offline']) {
+    testWidgets('安装说明$failure时冷启动和前后台均不弹空壳，恢复后只展示一次', (tester) async {
+      h.state.value = (enabled: true, checking: false, update: null);
+      h.service.installed = InstalledAppInfo(
+        platform: _android,
+        version: '0.8.0',
+        build: 97,
+        firstInstallTime: DateTime.utc(2026, 9, 13),
+        lastUpdateTime: DateTime.utc(2026, 9, 28),
+      );
+      h.repository.fetcher = (_) async {
+        if (failure == 'offline') throw StateError('offline');
+        return null;
+      };
+      await tester.pumpWidget(h.build());
+      await tester.pumpAndSettle();
+      expect(find.byType(MobileUpdateNoticeDialog), findsNothing);
+      expect(find.text('原来的任务'), findsOneWidget);
+      expect(h.repository.targets, [_installed]);
+      expect(h.store.records[_android]!.pendingInstalledBuild, 97);
+      expect(h.store.records[_android]!.installedShown, isEmpty);
+      await _resume(tester);
+      expect(find.byType(MobileUpdateNoticeDialog), findsNothing);
+      expect(h.repository.targets, [_installed, _installed]);
+
+      // 新 ProviderScope 重建 tracker，读取磁盘等价记录而非进程内收据。
+      await tester.pumpWidget(const SizedBox());
+      await tester.pumpAndSettle();
+      await tester.pumpWidget(h.build());
+      await tester.pumpAndSettle();
+      expect(find.byType(MobileUpdateNoticeDialog), findsNothing);
+      expect(h.repository.targets.length, 3);
+      expect(h.store.records[_android]!.installedShown, isEmpty);
+
+      h.repository.fetcher = null;
+      await _resume(tester);
+      expect(find.text('已安装当前版本'), findsOneWidget);
+      expect(find.textContaining('**这是纯文本**'), findsOneWidget);
+      expect(find.text('知道了'), findsOneWidget);
+      expect(h.store.records[_android]!.installedShown, {97});
+      await _close(tester);
+      await _resume(tester);
+      await tester.pumpWidget(const SizedBox());
+      await tester.pumpAndSettle();
+      await tester.pumpWidget(h.build());
+      await tester.pumpAndSettle();
+      expect(find.byType(MobileUpdateNoticeDialog), findsNothing);
+      expect(h.repository.targets.length, 4);
+    });
+  }
+
+  testWidgets('缺失说明点过知道了后冷启动不再弹空壳', (tester) async {
+    h.state.value = (enabled: true, checking: false, update: null);
+    h.service.installed = InstalledAppInfo(
+      platform: _android,
+      version: '0.8.0',
+      build: 97,
+      firstInstallTime: DateTime.utc(2026, 9, 13),
+      lastUpdateTime: DateTime.utc(2026, 9, 28),
+    );
+    h.repository.fetcher = (_) async => null;
+    await tester.pumpWidget(h.build());
+    await tester.pumpAndSettle();
+    // 旧实现走负责人原操作：暂无说明 → 知道了 → 冷启动。
+    // 候选首次就不应出现空壳，两者都不能在下次启动重弹。
+    if (find.byType(MobileUpdateNoticeDialog).evaluate().isNotEmpty) {
+      expect(find.text('此版本暂无更新说明'), findsOneWidget);
+      await tester.tap(find.text('知道了'));
+      await tester.pumpAndSettle();
+    }
+    await tester.pumpWidget(const SizedBox());
+    await tester.pumpAndSettle();
+    await tester.pumpWidget(h.build());
+    await tester.pumpAndSettle();
+    expect(find.byType(MobileUpdateNoticeDialog), findsNothing);
+    expect(h.store.records[_android]!.pendingInstalledBuild, 97);
+    expect(h.store.records[_android]!.installedShown, isEmpty);
+  });
+
+  testWidgets('安装说明失败不弹空壳或阻挡推荐，恢复后仍能展示安装说明', (tester) async {
     h.pending();
     h.repository.fetcher = (target) async {
       if (target.build == 97) throw StateError('offline');
@@ -209,18 +288,111 @@ void main() {
     };
     await tester.pumpWidget(h.build());
     await tester.pumpAndSettle();
-    expect(find.text('更新说明加载失败'), findsOneWidget);
+    expect(find.text('更新说明加载失败'), findsNothing);
+    expect(find.text('温油站有新版本'), findsOneWidget);
     expect(h.store.records[_android]!.pendingInstalledBuild, 97);
     expect(h.store.records[_android]!.installedShown, isEmpty);
     await _close(tester);
-    expect(h.repository.targets.length, 1);
+    expect(h.repository.targets, [_installed, releaseTarget]);
     await _resume(tester);
-    expect(find.text('温油站有新版本'), findsOneWidget);
-    await _close(tester);
+    expect(find.byType(MobileUpdateNoticeDialog), findsNothing);
     h.repository.fetcher = null;
     await _resume(tester);
     expect(find.text('已更新'), findsOneWidget);
     expect(h.store.records[_android]!.installedShown, {97});
+  });
+
+  for (final interruption in ['background', 'modal', 'unmount']) {
+    testWidgets('安装说明预取期间$interruption阻止迟到弹窗，恢复后重新读取', (tester) async {
+      h.pending();
+      h.state.value = (enabled: true, checking: false, update: null);
+      final response = Completer<MobileRelease?>();
+      h.repository.fetcher = (_) => response.future;
+      await tester.pumpWidget(h.build());
+      for (var i = 0; i < 20 && h.repository.targets.isEmpty; i++) {
+        await tester.pump(const Duration(milliseconds: 10));
+      }
+      expect(h.repository.targets, [_installed]);
+      expect(find.byType(MobileUpdateNoticeDialog), findsNothing);
+      if (interruption == 'background') {
+        tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      } else if (interruption == 'modal') {
+        unawaited(
+          showDialog<void>(
+            context: h.navigator.currentContext!,
+            builder: (_) => const AlertDialog(title: Text('其他操作')),
+          ),
+        );
+      } else {
+        await tester.pumpWidget(const SizedBox());
+      }
+      await tester.pumpAndSettle();
+      response.complete(releaseFixture(target: _installed));
+      await tester.pumpAndSettle();
+      expect(find.byType(MobileUpdateNoticeDialog), findsNothing);
+      expect(h.store.records[_android]!.installedShown, isEmpty);
+      expect(h.store.records[_android]!.pendingInstalledBuild, 97);
+
+      h.repository.fetcher = null;
+      if (interruption == 'background') {
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.resumed,
+        );
+      } else if (interruption == 'modal') {
+        h.navigator.currentState!.pop();
+      } else {
+        await tester.pumpWidget(h.build());
+      }
+      await tester.pumpAndSettle();
+      expect(find.text('已更新'), findsOneWidget);
+      expect(h.store.records[_android]!.installedShown, {97});
+      expect(h.repository.targets, [_installed, _installed]);
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  testWidgets('安装说明目标不匹配不弹出或记账，下次可恢复正确说明', (tester) async {
+    h.pending();
+    h.state.value = (enabled: true, checking: false, update: null);
+    h.repository.fetcher = (_) async => releaseFixture();
+    await tester.pumpWidget(h.build());
+    await tester.pumpAndSettle();
+    expect(find.byType(MobileUpdateNoticeDialog), findsNothing);
+    expect(h.store.records[_android]!.installedShown, isEmpty);
+    expect(h.store.records[_android]!.pendingInstalledBuild, 97);
+    h.repository.fetcher = null;
+    await _resume(tester);
+    expect(find.text('已更新'), findsOneWidget);
+    expect(h.store.records[_android]!.installedShown, {97});
+  });
+
+  testWidgets('弹窗接收到其他版本预取内容时只读取并展示准确目标', (tester) async {
+    var visible = false;
+    h.repository.fetcher = (_) async =>
+        releaseFixture(target: _installed, summary: '准确版本的内容');
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          mobileReleaseRepositoryProvider.overrideWithValue(h.repository),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: Scaffold(
+            body: MobileUpdateNoticeDialog(
+              title: '已更新',
+              target: _installed,
+              preloadedRelease: releaseFixture(summary: '错误版本的内容'),
+              onVisible: () => visible = true,
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('错误版本的内容'), findsNothing);
+    expect(find.text('准确版本的内容'), findsOneWidget);
+    expect(visible, isTrue);
+    expect(h.repository.targets, [_installed]);
   });
 
   testWidgets('明确无记录可关闭重试，不视为说明已展示', (tester) async {

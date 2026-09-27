@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/navigation/wenyou_feedback_visibility.dart';
+import 'package:wenyousite_mobile/features/app_shell/application/mobile_release_controller.dart';
 import 'package:wenyousite_mobile/features/app_shell/application/mobile_update_controller.dart';
 import 'package:wenyousite_mobile/features/app_shell/application/mobile_update_notice_tracker.dart';
 import 'package:wenyousite_mobile/features/app_shell/domain/mobile_release.dart';
@@ -174,13 +175,27 @@ class _MobileUpdateNoticeHostState extends ConsumerState<MobileUpdateNoticeHost>
           target: installedTarget,
         );
         if (!_attempted.contains(attempt)) {
-          _show(
-            attempt,
-            title: tracker.isInstallationMigration(installedTarget)
-                ? '已安装当前版本'
-                : '已更新',
-          );
-          return;
+          final release = await _loadInstalledRelease(installedTarget);
+          if (!_canOpen || generation != _generation) return;
+          _attempted.add(attempt);
+          if (release != null) {
+            final current = await service.readInstalledApp();
+            if (!_canOpen || generation != _generation) return;
+            if (current.platform != installedTarget.platform ||
+                current.build != installedTarget.build ||
+                current.version != installedTarget.version) {
+              _generation++;
+              return;
+            }
+            _show(
+              attempt,
+              title: tracker.isInstallationMigration(installedTarget)
+                  ? '已安装当前版本'
+                  : '已更新',
+              preloadedRelease: release,
+            );
+            return;
+          }
         }
       }
       if (update == null || target == null) return;
@@ -201,10 +216,28 @@ class _MobileUpdateNoticeHostState extends ConsumerState<MobileUpdateNoticeHost>
     }
   }
 
+  Future<MobileRelease?> _loadInstalledRelease(
+    MobileReleaseTarget target,
+  ) async {
+    // 安装版没有下载动作；缺失或失败的空壳不能占用用户每次启动。
+    // 临时订阅只覆盖本次读取，下一前台机会重新获取，不把失败记为已读。
+    final provider = mobileReleaseProvider(target);
+    final subscription = ref.listenManual(provider, (_, _) {});
+    try {
+      return await ref.read(provider.future);
+    } on Object {
+      debugPrint('当前安装版说明暂不可用，保留待提示。');
+      return null;
+    } finally {
+      subscription.close();
+    }
+  }
+
   void _show(
     _Attempt attempt, {
     required String title,
     MobileUpdateInfo? update,
+    MobileRelease? preloadedRelease,
   }) {
     final navigator = widget.navigatorKey.currentState;
     if (navigator == null || !navigator.mounted || !_canOpen) return;
@@ -221,6 +254,7 @@ class _MobileUpdateNoticeHostState extends ConsumerState<MobileUpdateNoticeHost>
             ? attempt.target
             : null,
         update: update,
+        preloadedRelease: preloadedRelease,
         onClose: () => Navigator.of(context).pop(),
         onVisible: () {
           if (_active != attempt) return;
