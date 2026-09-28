@@ -213,6 +213,8 @@ v5 图片在写入 `postsUpdate`、`postsUpsertBody` 或创建接口前会规范
 
 ## 13. 最近审查的契约版本和后端提交
 
+2026-09-28 固定关系计数候选来源：Backend `e807a3aa0cb15a626e5601eedc93f23c72d2e6c4`／`5.27.1-dev.20260928.1`。OpenAPI 仅补充已注销账号与查看者可见性的计数说明并递增 PATCH，无字段、类型或接口变化；本模块运行时代码与既有验收状态保持。候选来源不代表已部署，详见[关系数量排查](../architecture/profile-follow-counts-investigation.md)。
+
 2026-09-27 更新说明已部署契约复核：Backend `1d43b85f7aa8cd1ab03f6ab34f1851462e1a0021`、契约 `5.27.0-dev.20260927.1`。新增公开说明与管理类型，既有接口和 `/meta` 保持兼容；新能力由 app-shell 独立接入，不代表本模块其他行为或负责人验收变化。详见[契约同步](../architecture/mobile-release-contract-sync.md)。
 
 2026-09-27 阅读滑块收尾：Foundation 正式 `v7.2.1`（`c7729bc9e28c608c6c3a76cdc088e3c5b6a5a663`）；产品交互参数由移动端 `ReadingScrollSpec` 维护，已移除两套旧阅读契约与图标 API 消费。本轮 Backend 记录、只读镜像及公网来源均为 `124fb4e8aa395440f7a2156de98b642ec87f7583`。

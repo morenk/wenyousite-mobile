@@ -11,13 +11,15 @@ part 'user_social_count_response_dto.g.dart';
 /// UserSocialCountResponseDto
 ///
 /// Properties:
-/// * [following]
-/// * [followers]
+/// * [following] - 当前查看者可见且未注销的关注账号数；与关注列表口径一致，游客资料可能命中最长五分钟缓存。
+/// * [followers] - 当前查看者可见且未注销的粉丝账号数；与粉丝列表口径一致，游客资料可能命中最长五分钟缓存。
 @BuiltValue()
 abstract class UserSocialCountResponseDto implements Built<UserSocialCountResponseDto, UserSocialCountResponseDtoBuilder> {
+  /// 当前查看者可见且未注销的关注账号数；与关注列表口径一致，游客资料可能命中最长五分钟缓存。
   @BuiltValueField(wireName: r'following')
   num get following;
 
+  /// 当前查看者可见且未注销的粉丝账号数；与粉丝列表口径一致，游客资料可能命中最长五分钟缓存。
   @BuiltValueField(wireName: r'followers')
   num get followers;
 
