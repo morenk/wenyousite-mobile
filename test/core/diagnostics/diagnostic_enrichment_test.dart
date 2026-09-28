@@ -17,6 +17,25 @@ import 'package:wenyousite_mobile/core/network/api_failure.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  test('打开编辑器拦截原因只映射固定机器码，不泄漏任意原因文本', () {
+    for (final entry in const {
+      'unsupported-markdown': 'markdown.open_unsupported_markdown',
+      'missing-feature': 'markdown.open_missing_feature',
+      'unknown-profile': 'markdown.open_unknown_profile',
+      'lossy-roundtrip': 'markdown.open_lossy_roundtrip',
+      'private-body https://private.invalid/?token=secret':
+          'markdown.open_unclassified',
+    }.entries) {
+      final details = diagnosticErrorDetails(
+        MarkdownEditingBlockedException(entry.key),
+        null,
+      );
+      expect(details['diagnosticCode'], entry.value);
+      expect(jsonEncode(details), isNot(contains('private')));
+      expect(jsonEncode(details), isNot(contains('secret')));
+    }
+  });
+
   test('已捕获 Error 未显式传栈时采用原始 throw 位置', () async {
     final diagnostics = FailureDiagnostics();
     try {

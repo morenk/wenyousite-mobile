@@ -10,6 +10,7 @@ enum DiagnosticOperation {
   postEdit,
   bodySave,
   mediaUpload,
+  editorOpen,
   editorEncode,
   authRefresh,
   authLogout,
