@@ -39,6 +39,7 @@
 
 ## 候选安装包
 
+- 应用源码候选提交：`733aee88e9fad6c75fe54ac7ab71183ddfe15dec`。随后仅追加本提交号等验收记录，应用源码与该提交一致；负责人尚未验收。
 - 绝对路径：`D:\codex-worktrees\editor-guard-diagnostics\wenyousite-mobile\build\app\outputs\flutter-apk\app-debug.apk`。
 - `applicationId=site.wenyou.app.debug`，`versionName=0.8.0-debug`，`versionCode=97`，最低 API 26，仅 `arm64-v8a`；`aapt dump badging` 已核对，`apksigner verify` 退出 0。
 - 大小：109,439,806 字节；SHA-256：`4e03573b3870c5d3eeb124f128b54d7bd45dffd4496b47f388526eb1f6973cd1`。
