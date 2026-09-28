@@ -14,6 +14,7 @@ import 'package:wenyousite_mobile/core/markdown/markdown_delta_semantics.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_dice_contract.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_editor_document.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_editor_projection.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_inline_source.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_paragraph_boundaries.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_quote_paragraphs.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_rich_line_decoder.dart';
@@ -289,29 +290,28 @@ class MarkdownDeltaCodec {
       text.clear();
     }
 
+    final inlineSource = MarkdownInlineSource.analyze(line);
+    final protectedRanges = [...inlineSource.code, ...inlineSource.metadata]
+      ..sort((a, b) => a.start.compareTo(b.start));
+    var protectedIndex = 0;
     var index = 0;
     while (index < line.length) {
+      while (protectedIndex < protectedRanges.length &&
+          protectedRanges[protectedIndex].end <= index) {
+        protectedIndex++;
+      }
+      if (protectedIndex < protectedRanges.length &&
+          protectedRanges[protectedIndex].start == index) {
+        final end = protectedRanges[protectedIndex].end;
+        text.write(line.substring(index, end));
+        index = end;
+        continue;
+      }
       if (line[index] == r'\') {
         final end = index + 2 <= line.length ? index + 2 : line.length;
         text.write(line.substring(index, end));
         index = end;
         continue;
-      }
-
-      if (line[index] == '`') {
-        var runLength = 1;
-        while (index + runLength < line.length &&
-            line[index + runLength] == '`') {
-          runLength += 1;
-        }
-        final delimiter = '`' * runLength;
-        final closing = line.indexOf(delimiter, index + runLength);
-        if (closing >= 0) {
-          final end = closing + runLength;
-          text.write(line.substring(index, end));
-          index = end;
-          continue;
-        }
       }
 
       final remaining = line.substring(index);
@@ -529,6 +529,7 @@ class MarkdownDeltaCodec {
       }
       if (!isLineBreak) break;
       inline.flush(
+        literalSource: attributes?[literalLineAttribute] == true,
         preserveSourceWhitespace:
             attributes?[MarkdownDeltaLineMetadata.guardedWhitespaceKey] ==
                 true ||

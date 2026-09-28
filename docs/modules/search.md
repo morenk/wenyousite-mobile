@@ -30,6 +30,8 @@
 
 ## 6. 状态模型和数据流
 
+摘要尖括号候选（待负责人验收）：共享正文摘要不再把任意尖括号内容当作 HTML 删除，保留普通比较符、中文尖括号、转义和实体对应的可见文字。仅移除实际有效的对齐标记；代码、转义和损坏协议的字面文字保留，避免摘要掩盖原文。详见[尖括号与标记验收](../architecture/editor-angle-text-acceptance.md)。
+
 完整展示（负责人已验收）：搜索用户头像优先 avatarDisplay；SearchPost 授权 mediaDisplays 映射保留在展示模型，既有文本摘要不新增加载图片。主题封面复用共享 display／preview 选择。见[全场景验收记录](../architecture/animation-webp-all-surfaces.md)。
 
 四个用户可见 Tab 独立保存 idle/loading/ready/failed 状态；动态和楼层内容额外保存不透明 cursor、hasMore、加载更多和局部错误。搜索仓储接口位于 `search/application`，`main.dart` 组合根绑定 API data 适配器，两个搜索控制器不直接导入 data。主题结果直接映射为 thread_feed 的共享主题卡模型，只消费 `coverImages` 的唯一安全 HTTP(S) 首图，并保留搜索端点自己的相关度排序。控制器共享 query 与请求代次，只有最新代次可写回状态。`ThreadPostSearchController(threadId)` 隔离每个主题的关键词、分页和请求代次；所有列表按稳定 ID 去重。后端综合搜索读模型继续保留兼容映射，但移动端不把它暴露为结果类型或入口。

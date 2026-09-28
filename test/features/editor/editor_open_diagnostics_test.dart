@@ -5,11 +5,11 @@ import 'package:wenyousite_mobile/core/diagnostics/diagnostic_sentry_sender.dart
 import 'package:wenyousite_mobile/core/diagnostics/failure_diagnostics.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/rich_editor_session.dart';
 
-// 来自 cmulh9bx501937qm7tan1vyxs 的精确最小片段，保留换行和转义。
-// 此用例覆盖漏报；尖括号误判及控制标记外露仍是待修复的原问题。
-const originalFragment =
+// 使用确实不支持的原始 HTML 验证拦截上报，普通尖括号另有精确回归。
+
+const unsupportedFragment =
     '[wenyousite-align-v1-center]: #\n'
-    r'*<\<Y/N \>\>*';
+    '<span>Y/N</span>';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -40,8 +40,8 @@ void main() {
     return session;
   }
 
-  test('原楼层打开即拦截时上报，并给出同一问题编号且保留原文', () async {
-    final session = open(originalFragment);
+  test('不支持的 HTML 打开即拦截时上报，并给出同一问题编号且保留原文', () async {
+    final session = open(unsupportedFragment);
     expect(session.isSourceProtected, isTrue);
     expect(session.controller.readOnly, isTrue);
     expect(session.codecFailure, '这段内容暂不支持编辑，原文已保留。');
@@ -67,16 +67,16 @@ void main() {
       expect(payload, isNot(contains('cmulh9bx501937qm7tan1vyxs')));
     }
     expect(await session.flush(), isFalse);
-    expect(session.localMarkdown, originalFragment);
+    expect(session.localMarkdown, unsupportedFragment);
     expect(session.canCloseProtectedSource, isTrue);
   });
 
   test('同会话重复加载和尝试保存被拦截原文复用记录，正常正文清除旧提示', () async {
-    final session = open(originalFragment);
+    final session = open(unsupportedFragment);
     final id = session.diagnosticId;
-    session.applyExternalMarkdown(originalFragment);
+    session.applyExternalMarkdown(unsupportedFragment);
     expect(await session.flush(), isFalse);
-    session.applyExternalMarkdown(originalFragment);
+    session.applyExternalMarkdown(unsupportedFragment);
     expect(session.diagnosticId, id);
     await diagnostics.settled;
     expect(sender.records, hasLength(1));
@@ -85,18 +85,18 @@ void main() {
     expect(session.diagnosticId, isNull);
     expect(session.codecFailure, isNull);
     expect(session.controller.readOnly, isFalse);
-    session.applyExternalMarkdown(originalFragment);
+    session.applyExternalMarkdown(unsupportedFragment);
     expect(session.diagnosticId, id);
     await diagnostics.settled;
     expect(sender.records, hasLength(1));
   });
 
   test('另一份被拦截正文和新编辑会话分别产生记录', () async {
-    final session = open(originalFragment);
+    final session = open(unsupportedFragment);
     final firstId = session.diagnosticId;
-    session.applyExternalMarkdown('$originalFragment\n\n另一份正文');
+    session.applyExternalMarkdown('$unsupportedFragment\n\n另一份正文');
     expect(session.diagnosticId, isNot(firstId));
-    final another = open(originalFragment);
+    final another = open(unsupportedFragment);
     expect(another.diagnosticId, isNot(firstId));
     await diagnostics.settled;
     expect(sender.records, hasLength(3));
@@ -123,7 +123,7 @@ void main() {
 
   test('关闭自动发送仍保留可复制的问题详情', () async {
     await diagnostics.setAutomaticSending(false);
-    final session = open(originalFragment);
+    final session = open(unsupportedFragment);
     await diagnostics.settled;
     expect(session.diagnosticId, isNotNull);
     expect(diagnostics.records.single.pending, isFalse);

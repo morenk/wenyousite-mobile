@@ -43,7 +43,7 @@ void main() {
 
     const source =
         '[wenyousite-align-v1-center]: #\n'
-        r'*<\<Y/N \>\>*';
+        '<span>Y/N</span>';
     final repository = PostRepliesPageTestFakePostRepository(
       onFetchPost: (_) async => postRepliesPageTestRootWithContent(source),
     );

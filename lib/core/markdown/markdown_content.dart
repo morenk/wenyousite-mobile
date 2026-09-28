@@ -1,7 +1,10 @@
+import 'package:markdown/markdown.dart' as md;
 import 'package:wenyousite_mobile/core/markdown/markdown_alignment.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_dice_contract.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_editable_block_syntax.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_inline_source.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_list_structure.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_source_protection.dart';
 
 class MarkdownContent {
   MarkdownContent._();
@@ -15,7 +18,6 @@ class MarkdownContent {
     caseSensitive: false,
     unicode: true,
   );
-  static final _html = RegExp(r'<[^>]*>');
   static final _emptyParagraph = RegExp(
     r'^ {0,3}<br\s*/?>[\t ]*$',
     caseSensitive: false,
@@ -62,7 +64,6 @@ class MarkdownContent {
     r'\[\[([a-z][a-z0-9_-]*):v(\d+):',
     caseSensitive: false,
   );
-  static final _htmlToken = RegExp(r'<[^>]*>');
   static final _literalPunctuation = RegExp(
     r'''[!"#$%&'()*+,\-./:;<=>?@[\\\]^_`{|}~]''',
   );
@@ -358,7 +359,9 @@ class MarkdownContent {
         affected.add(index);
       }
       if (_hasHardBreak(line) ||
-          _hasRawHtml(line) ||
+          (analysis.protection.rawHtmlLines.contains(index) &&
+              !_emptyParagraph.hasMatch(line) &&
+              !isQuotedEmptyParagraphLine(line)) ||
           _hasUnknownProtocol(line)) {
         affected.add(index);
       }
@@ -440,28 +443,8 @@ class MarkdownContent {
     return spaces >= 2 || slashes.isOdd;
   }
 
-  static bool _hasRawHtml(String line) {
-    if (_emptyParagraph.hasMatch(line) || isQuotedEmptyParagraphLine(line)) {
-      return false;
-    }
-    // 已闭合行内代码中的尖括号是可见文字，不是待执行的 HTML。
-    for (final match in _htmlToken.allMatches(_maskInlineCode(line))) {
-      if (_isEscaped(line, match.start)) continue;
-      final token = match.group(0)!;
-      if (RegExp(
-        r'^<https?://[^\s<>]+>$',
-        caseSensitive: false,
-      ).hasMatch(token)) {
-        continue;
-      }
-      return true;
-    }
-    return false;
-  }
-
   static bool _hasUnknownProtocol(String line) {
-    final masked = _maskInlineCode(line);
-    for (final match in _unknownProtocol.allMatches(masked)) {
+    for (final match in _unknownProtocol.allMatches(line)) {
       if (_isEscaped(line, match.start)) continue;
       if (match.group(1)!.toLowerCase() == 'dice' && match.group(2) == '1') {
         continue;
@@ -469,49 +452,6 @@ class MarkdownContent {
       return true;
     }
     return false;
-  }
-
-  static String _maskInlineCode(String line) {
-    final chars = List<String>.generate(
-      line.length,
-      (index) => line.substring(index, index + 1),
-    );
-    var index = 0;
-    while (index < line.length) {
-      if (line[index] != '`' || _isEscaped(line, index)) {
-        index += 1;
-        continue;
-      }
-      var length = 1;
-      while (index + length < line.length && line[index + length] == '`') {
-        length += 1;
-      }
-      var closing = -1;
-      var search = index + length;
-      while (search < line.length) {
-        final next = line.indexOf('`', search);
-        if (next < 0) break;
-        var end = next + 1;
-        while (end < line.length && line[end] == '`') {
-          end++;
-        }
-        // CommonMark 只用长度完全相同的反引号串闭合代码区。
-        if (end - next == length) {
-          closing = next;
-          break;
-        }
-        search = end;
-      }
-      if (closing < 0) {
-        index += length;
-        continue;
-      }
-      for (var cursor = index; cursor < closing + length; cursor++) {
-        chars[cursor] = ' ';
-      }
-      index = closing + length;
-    }
-    return chars.join();
   }
 
   static bool _isEscaped(String value, int index) {
@@ -532,7 +472,9 @@ class MarkdownContent {
   }
 
   static bool hasVisibleContent(String markdown) {
-    final lines = normalize(markdown).split('\n');
+    final lines = MarkdownSourceProtection.prepareForReader(
+      normalize(markdown),
+    ).split('\n');
     _Fence? fence;
     for (final rawLine in lines) {
       final line = rawLine.trim();
@@ -560,20 +502,21 @@ class MarkdownContent {
         r'&#(?:0*(?:9|32|160)|[xX]0*(?:9|20|[aA]0));',
       );
       final masked = whitespaceReference.hasMatch(line)
-          ? _maskInlineCode(line)
+          ? MarkdownInlineSource.maskProtected(line)
           : line;
-      final visible = line
-          .replaceAllMapped(whitespaceReference, (match) {
-            // 字符引用在代码或转义后是可见原文，不能误判成用户空格。
-            return masked.substring(match.start, match.end) == match.group(0) &&
-                    !_isEscaped(line, match.start)
-                ? ' '
-                : match.group(0)!;
-          })
+      final whitespaceDecoded = line.replaceAllMapped(whitespaceReference, (
+        match,
+      ) {
+        // 字符引用在代码或转义后是可见原文，不能误判成用户空格。
+        return masked.substring(match.start, match.end) == match.group(0) &&
+                !_isEscaped(line, match.start)
+            ? ' '
+            : match.group(0)!;
+      });
+      final visible = MarkdownInlineSource.stripHtml(whitespaceDecoded)
           .replaceAll(_emptyImage, '')
           .replaceAll(_emptyLink, '')
           .replaceAllMapped(_link, (match) => match.group(1) ?? '')
-          .replaceAll(_html, '')
           .replaceFirst(RegExp(r'^[#>+\-\s]+', unicode: true), '')
           .replaceFirst(RegExp(r'^\d+[.)]\s*', unicode: true), '')
           .replaceAll(RegExp(r'[*_~`]'), '')
@@ -598,8 +541,10 @@ class MarkdownContent {
 
   static String toPlainTextPreview(String markdown, {int maxLength = 180}) {
     if (maxLength <= 0) return '';
-    final visible =
-        MarkdownAlignmentContract.removeMarkerLines(normalize(markdown))
+    final projection =
+        MarkdownInlineSource.stripHtml(
+              MarkdownAlignmentContract.removeMarkerLines(normalize(markdown)),
+            )
             .replaceAllMapped(
               _previewDice,
               (match) => '[${match.group(1)!.trim()}]',
@@ -608,11 +553,14 @@ class MarkdownContent {
             .replaceAllMapped(_link, (match) => match.group(1) ?? '[链接]')
             .replaceAll(_httpAutolink, '[链接]')
             .replaceAll(_previewUrl, '[链接]')
-            .replaceAll(_html, ' ')
-            .replaceAll(RegExp(r'(^|\n)\s{0,3}(?:[#>+\-]|\d+[.)])\s*'), ' ')
-            .replaceAll(RegExp(r'[`*_~|]'), '')
-            .replaceAll(RegExp(r'\s+', unicode: true), ' ')
-            .trim();
+            .replaceAll(RegExp(r'(^|\n)\s{0,3}(?:[#>+\-]|\d+[.)])\s*'), ' ');
+    final visible = md.Document(encodeHtml: false)
+        .parseInline(projection)
+        .map((node) => node.textContent)
+        .join()
+        .replaceAll(RegExp(r'[`*_~|]'), '')
+        .replaceAll(RegExp(r'\s+', unicode: true), ' ')
+        .trim();
     final runes = visible.runes.toList(growable: false);
     if (runes.length <= maxLength) return visible;
     return '${String.fromCharCodes(runes.take(maxLength - 1))}…';

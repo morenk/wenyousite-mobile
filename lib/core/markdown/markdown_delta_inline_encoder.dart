@@ -4,6 +4,7 @@ import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_inline_boundary.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_inline_code_source.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_inline_runs.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_inline_source.dart';
 
 /// Input provenance controls escaping inside a run, never its style boundary.
 final class MarkdownDeltaInlineEncoder {
@@ -38,11 +39,26 @@ final class MarkdownDeltaInlineEncoder {
     _pieces.add((text: text, literal: attributes?[literalTextKey] == true));
   }
 
-  void flush({bool preserveSourceWhitespace = false}) {
+  void flush({
+    bool preserveSourceWhitespace = false,
+    bool literalSource = false,
+  }) {
     _finishRun();
     if (_runs.isEmpty) return;
     final normalized = MarkdownInlineRuns.normalizeEdges(_runs);
-    final legacy = MarkdownInlineBoundary.canonicalize(_legacy.toString());
+    final canonical = MarkdownInlineBoundary.canonicalize(_legacy.toString());
+    // 整行兼容源码由块编码器一次性转义，不能在这里重复转义。
+    final hasMarks = normalized.any((run) => run.marks.isNotEmpty);
+    var legacy = canonical;
+    if (!literalSource && canonical.contains('<')) {
+      legacy = hasMarks
+          ? MarkdownInlineSource.escapeHtml(canonical)
+          : MarkdownInlineSource.analyze(canonical).html.isNotEmpty
+          ? MarkdownContent.literalizeInlineText(
+              normalized.map((run) => run.text).join(),
+            )
+          : canonical;
+    }
     if (normalized.every((run) => run.marks.isEmpty)) {
       // 兼容原文和块级空白由外层编码器及最终语义门禁处理。
       // 无样式源码不能被此处行内回退猜测为用户新输入。

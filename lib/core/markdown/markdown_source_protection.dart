@@ -1,5 +1,6 @@
 import 'package:markdown/markdown.dart' as md;
 import 'package:wenyousite_mobile/core/markdown/markdown_container_quote_syntax.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_inline_source.dart';
 
 /// 保护区来自实际块和行内解析消费范围，URL/title 内的反引号不参与配对。
 final class MarkdownSourceProtection {
@@ -10,6 +11,7 @@ final class MarkdownSourceProtection {
   final Set<int> blockLines = {};
   final Set<int> indentedCodeLines = {};
   final Set<int> codeLines = {};
+  final Set<int> rawHtmlLines = {};
   final Map<int, int> multilineCodeRanges = {};
   final Map<int, String> multilineCodeSources = {};
   final _codeSpans =
@@ -70,6 +72,7 @@ final class MarkdownSourceProtection {
           md.BlockquoteSyntax() => _Quote(result),
           md.ListSyntax() => _List(result, syntax),
           md.ParagraphSyntax() => _Paragraph(result),
+          md.HeaderSyntax() => _Header(result),
           _ => syntax,
         },
     ];
@@ -169,56 +172,67 @@ final class MarkdownSourceProtection {
       content.add(lines[row].substring(prefix));
     }
     final source = content.join('\n');
-    md.Document(
-      encodeHtml: false,
-      extensionSet: md.ExtensionSet.gitHubFlavored,
-      inlineSyntaxes: [
-        _Code((offset, raw) {
-          final firstLine = '\n'.allMatches(source.substring(0, offset)).length;
-          final firstColumn =
-              offset - source.substring(0, offset).lastIndexOf('\n') - 1;
-          final parts = raw.split('\n');
-          if (parts.length > 1) {
-            final codeStart = positions[start + firstLine];
-            final codeEnd = positions[start + firstLine + parts.length - 1];
-            _codeSpans.add((
-              first: codeStart,
-              column: prefixes[firstLine] + firstColumn,
-              last: codeEnd,
-              end: prefixes[firstLine + parts.length - 1] + parts.last.length,
-              raw: raw,
-            ));
-            final previous = multilineCodeRanges.entries.lastOrNull;
-            // 同一行结束并再次开始的 code span 需要一起解析；范围外段落独立。
-            if (previous != null && previous.value >= codeStart) {
-              multilineCodeRanges[previous.key] = codeEnd;
-            } else {
-              multilineCodeRanges[codeStart] = codeEnd;
-            }
-            final rangeStart = previous != null && previous.value >= codeStart
-                ? previous.key
-                : codeStart;
-            final localStart = positions.indexOf(rangeStart) - start;
-            final localEnd = firstLine + parts.length;
-            multilineCodeSources[rangeStart] = [
-              lines[rangeStart],
-              ...content.sublist(localStart + 1, localEnd),
-            ].join('\n');
+    final inline = MarkdownInlineSource.analyze(source);
+    void visit(
+      Iterable<MarkdownSourceRange> ranges, {
+      bool code = false,
+      bool html = false,
+    }) {
+      for (final range in ranges) {
+        final offset = range.start;
+        final raw = source.substring(range.start, range.end);
+        final firstLine = '\n'.allMatches(source.substring(0, offset)).length;
+        final firstColumn =
+            offset - source.substring(0, offset).lastIndexOf('\n') - 1;
+        final parts = raw.split('\n');
+        if (code && parts.length > 1) {
+          final codeStart = positions[start + firstLine];
+          final codeEnd = positions[start + firstLine + parts.length - 1];
+          _codeSpans.add((
+            first: codeStart,
+            column: prefixes[firstLine] + firstColumn,
+            last: codeEnd,
+            end: prefixes[firstLine + parts.length - 1] + parts.last.length,
+            raw: raw,
+          ));
+          final previous = multilineCodeRanges.entries.lastOrNull;
+          // 同一行结束并再次开始的 code span 需要一起解析；范围外段落独立。
+          if (previous != null && previous.value >= codeStart) {
+            multilineCodeRanges[previous.key] = codeEnd;
+          } else {
+            multilineCodeRanges[codeStart] = codeEnd;
           }
-          for (var i = 0; i < parts.length; i++) {
-            final line = positions[start + firstLine + i];
-            final column = prefixes[firstLine + i] + (i == 0 ? firstColumn : 0);
-            final original = maskedLines[line];
-            maskedLines[line] = original.replaceRange(
-              column,
-              column + parts[i].length,
-              'x' * parts[i].length,
-            );
-            codeLines.add(line);
+          final rangeStart = previous != null && previous.value >= codeStart
+              ? previous.key
+              : codeStart;
+          final localStart = positions.indexOf(rangeStart) - start;
+          final localEnd = firstLine + parts.length;
+          multilineCodeSources[rangeStart] = [
+            lines[rangeStart],
+            ...content.sublist(localStart + 1, localEnd),
+          ].join('\n');
+        }
+        for (var i = 0; i < parts.length; i++) {
+          final line = positions[start + firstLine + i];
+          if (html) {
+            rawHtmlLines.add(line);
+            continue;
           }
-        }),
-      ],
-    ).parseInline(source);
+          final column = prefixes[firstLine + i] + (i == 0 ? firstColumn : 0);
+          final original = maskedLines[line];
+          maskedLines[line] = original.replaceRange(
+            column,
+            column + parts[i].length,
+            'x' * parts[i].length,
+          );
+          if (code) codeLines.add(line);
+        }
+      }
+    }
+
+    visit(inline.code, code: true);
+    visit(inline.metadata);
+    visit(inline.html, html: true);
   }
 }
 
@@ -314,13 +328,15 @@ class _Paragraph extends md.ParagraphSyntax {
   }
 }
 
-class _Code extends md.CodeSyntax {
-  _Code(this.onCode);
-  final void Function(int offset, String source) onCode;
+class _Header extends md.HeaderSyntax {
+  _Header(this.result);
+  final MarkdownSourceProtection result;
   @override
-  bool onMatch(md.InlineParser parser, Match match) {
-    onCode(parser.pos, match.group(0)!);
-    return super.onMatch(parser, match);
+  md.Node parse(md.BlockParser parser) {
+    final start = result.position(parser);
+    final node = super.parse(parser);
+    result.inspectInline(parser, start, result.position(parser));
+    return node;
   }
 }
 
