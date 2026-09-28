@@ -55,6 +55,7 @@ String diagnosticOperationLabel(DiagnosticOperation operation) =>
       DiagnosticOperation.postCreate => '楼层发布失败',
       DiagnosticOperation.bodySave => '正文保存失败',
       DiagnosticOperation.mediaUpload => '图片上传失败',
+      DiagnosticOperation.editorOpen => '正文无法编辑',
       DiagnosticOperation.editorEncode => '正文处理失败',
       DiagnosticOperation.apiRead => '内容加载失败',
       DiagnosticOperation.apiWrite => '操作失败',

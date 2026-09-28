@@ -20,9 +20,17 @@ Map<String, Object?> diagnosticErrorDetails(Object error, ApiFailure? failure) {
     _ => null,
   };
   return {
-    'diagnosticCode': cause is MarkdownCodecException
-        ? markdownDiagnosticCode(cause.message)
-        : failure?.diagnosticCode,
+    'diagnosticCode': switch (cause) {
+      MarkdownCodecException(:final message) => markdownDiagnosticCode(message),
+      MarkdownEditingBlockedException(:final reason) => switch (reason) {
+        'unsupported-markdown' => 'markdown.open_unsupported_markdown',
+        'missing-feature' => 'markdown.open_missing_feature',
+        'unknown-profile' => 'markdown.open_unknown_profile',
+        'lossy-roundtrip' => 'markdown.open_lossy_roundtrip',
+        _ => 'markdown.open_unclassified',
+      },
+      _ => failure?.diagnosticCode,
+    },
     if (osError != null && osError.errorCode >= 0)
       'osErrorCode': osError.errorCode,
     if (dio != null) ...{

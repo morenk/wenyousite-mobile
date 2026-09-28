@@ -121,6 +121,8 @@ class RichEditorSession extends ChangeNotifier {
   bool _dirty = false;
   bool _externallyReadOnly = false;
   String? _protectedSourceSignature;
+  ({String source, String reason, MarkdownEditingBlockedException error})?
+  _lastOpeningFailure;
   int _documentGeneration = 0;
   int _scheduledExternalRevision = -1;
   String _lastMarkdown = '';
@@ -163,6 +165,23 @@ class RichEditorSession extends ChangeNotifier {
         : _documentSignature();
     _codecFailure = compatibility.edit ? null : '这段内容暂不支持编辑，原文已保留。';
     controller.readOnly = _externallyReadOnly || isSourceProtected;
+    if (!compatibility.edit) {
+      // 同一会话重复恢复原文时复用异常身份；源码仅留在内存用于去重。
+      if (_lastOpeningFailure?.source != source ||
+          _lastOpeningFailure?.reason != compatibility.reason) {
+        _lastOpeningFailure = (
+          source: source,
+          reason: compatibility.reason,
+          error: MarkdownEditingBlockedException(compatibility.reason),
+        );
+      }
+      // 这是主动兼容性拦截，没有抛出栈；不能用当前栈伪装异常位置。
+      diagnosticId = FailureDiagnostics.instance.capture(
+        _lastOpeningFailure!.error,
+        operation: DiagnosticOperation.editorOpen,
+        stage: DiagnosticStage.decode,
+      );
+    }
   }
 
   Map<ShortcutActivator, Intent> get clipboardShortcuts => {
