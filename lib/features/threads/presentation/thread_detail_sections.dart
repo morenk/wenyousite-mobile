@@ -2,22 +2,17 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
-import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_link.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
-import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_content_action_menu.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_discussion_reply_card.dart';
-import 'package:wenyousite_mobile/core/widgets/wenyou_level_badge.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_markdown.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_overflow_content.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_pagination.dart';
-import 'package:wenyousite_mobile/core/widgets/wenyou_time_text.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_transient_target_frame.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/editor/editor.dart';
@@ -29,6 +24,7 @@ import 'package:wenyousite_mobile/features/stickers/presentation/sticker_widgets
 import 'package:wenyousite_mobile/features/threads/application/thread_detail_controller.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_dice_presentation.dart';
+import 'package:wenyousite_mobile/features/threads/presentation/thread_post_author_line.dart';
 
 class ThreadDetailLoadingState extends StatelessWidget {
   const ThreadDetailLoadingState({super.key});
@@ -438,10 +434,11 @@ class ThreadFloorCard extends ConsumerWidget {
                   Row(
                     children: [
                       Expanded(
-                        child: _AuthorLine(
+                        child: ThreadPostAuthorLine(
                           key: Key('thread-floor-author-${floor.id}'),
                           author: floor.author,
                           time: floor.createdAt,
+                          editedAt: floor.editedAt,
                           compact: true,
                           avatarKey: Key(
                             'thread-floor-author-avatar-${floor.id}',
@@ -643,9 +640,10 @@ class _FloorInlineReplyCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _AuthorLine(
+          ThreadPostAuthorLine(
             author: reply.author,
             time: reply.createdAt,
+            editedAt: reply.editedAt,
             compact: true,
             avatarKey: Key('thread-floor-reply-author-avatar-${reply.id}'),
           ),
@@ -725,66 +723,6 @@ class ThreadFloorsFooter extends StatelessWidget {
       retryKey: const Key('thread-detail-transient-retry'),
       loadingLabel: '正在加载楼层',
       endLabel: '已经读完这个子贴的全部楼层',
-    );
-  }
-}
-
-class _AuthorLine extends StatelessWidget {
-  const _AuthorLine({
-    required this.author,
-    required this.time,
-    this.compact = false,
-    this.avatarKey,
-    super.key,
-  });
-
-  final ThreadAuthorModel author;
-  final DateTime time;
-  final bool compact;
-  final Key? avatarKey;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = context.wenyouTokens;
-    final size = compact ? 32.0 : 36.0;
-    return Row(
-      children: [
-        WenyouAvatarButton(
-          key: avatarKey,
-          username: author.username,
-          avatarUrl: author.avatarUrl,
-          visualSize: size,
-          onTap: () => context.push(AppRouteLocations.user(author.id)),
-        ),
-        SizedBox(width: tokens.space8),
-        Expanded(
-          child: Row(
-            children: [
-              Flexible(
-                child: Text(
-                  author.username,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.wenyouLabel,
-                ),
-              ),
-              SizedBox(width: tokens.space4),
-              WenyouLevelBadge(level: author.level),
-              SizedBox(width: tokens.space8),
-              Flexible(
-                child: WenyouTimeText(
-                  value: time,
-                  semanticsPrefix: '发布时间：',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.wenyouUtilityCaption
-                      .copyWith(color: tokens.mutedText),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
     );
   }
 }

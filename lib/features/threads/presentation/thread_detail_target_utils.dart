@@ -210,6 +210,7 @@ PostItem threadFloorAsPost(
     content: floor.body.markdown,
     version: floor.version,
     createdAt: floor.createdAt,
+    editedAt: floor.editedAt,
     updatedAt: floor.createdAt,
     isBody: false,
     isDeleted: floor.isDeleted,

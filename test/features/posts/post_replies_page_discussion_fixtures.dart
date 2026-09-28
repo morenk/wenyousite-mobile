@@ -490,6 +490,7 @@ PostItem postRepliesPageTestReply(
   PostAuthor author, {
   int version = 1,
   bool isDeleted = false,
+  DateTime? editedAt,
 }) {
   final createdAt = DateTime.utc(
     2026,
@@ -506,6 +507,7 @@ PostItem postRepliesPageTestReply(
     version: version,
     createdAt: createdAt,
     updatedAt: createdAt,
+    editedAt: editedAt,
     isBody: false,
     isDeleted: isDeleted,
     parentPostId: 'root',

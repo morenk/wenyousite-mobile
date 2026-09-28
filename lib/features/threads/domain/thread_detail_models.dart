@@ -160,6 +160,7 @@ class ThreadReplyModel {
     required this.author,
     required this.body,
     required this.createdAt,
+    this.editedAt,
     required this.isDeleted,
     this.version = 1,
     this.replyToUsername,
@@ -169,6 +170,7 @@ class ThreadReplyModel {
   final ThreadAuthorModel author;
   final ThreadBodyModel body;
   final DateTime createdAt;
+  final DateTime? editedAt;
   final bool isDeleted;
   final int version;
   final String? replyToUsername;
@@ -181,6 +183,7 @@ class ThreadFloorModel {
     required this.author,
     required this.body,
     required this.createdAt,
+    this.editedAt,
     required this.isDeleted,
     required this.replyCount,
     required this.replies,
@@ -193,6 +196,7 @@ class ThreadFloorModel {
   final ThreadAuthorModel author;
   final ThreadBodyModel body;
   final DateTime createdAt;
+  final DateTime? editedAt;
   final bool isDeleted;
   final int replyCount;
   final List<ThreadReplyModel> replies;

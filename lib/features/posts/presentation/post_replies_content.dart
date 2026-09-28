@@ -530,7 +530,7 @@ class _PostAuthorLine extends StatelessWidget {
               ),
               SizedBox(height: tokens.space4 / 2),
               WenyouTimeText(
-                value: post.createdAt,
+                value: post.editedAt ?? post.createdAt,
                 reference: timeReference,
                 semanticsPrefix: [
                   if (root) '楼层 ${post.floorNumber ?? '-'}',
@@ -538,7 +538,7 @@ class _PostAuthorLine extends StatelessWidget {
                     '回复 ${post.replyToAuthor!.username}'
                   else if (!root)
                     '回复',
-                  '发布时间：',
+                  post.editedAt == null ? '发布时间：' : '编辑时间：',
                 ].join('，'),
                 prefix: [
                   if (root) '#${post.floorNumber ?? '-'}',
@@ -546,7 +546,7 @@ class _PostAuthorLine extends StatelessWidget {
                     '回复 @${post.replyToAuthor!.username}'
                   else if (!root)
                     '回复',
-                  '',
+                  post.editedAt == null ? '' : '编辑于',
                 ].join(' · '),
                 style: Theme.of(
                   context,
