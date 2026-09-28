@@ -103,6 +103,8 @@ class _$PostResponseDto extends PostResponseDto {
   @override
   final DateTime updatedAt;
   @override
+  final DateTime? editedAt;
+  @override
   final DateTime? pinnedAt;
   @override
   final DateTime? deletedAt;
@@ -128,6 +130,7 @@ class _$PostResponseDto extends PostResponseDto {
     required this.version,
     required this.createdAt,
     required this.updatedAt,
+    this.editedAt,
     this.pinnedAt,
     this.deletedAt,
     required this.author,
@@ -158,6 +161,7 @@ class _$PostResponseDto extends PostResponseDto {
         version == other.version &&
         createdAt == other.createdAt &&
         updatedAt == other.updatedAt &&
+        editedAt == other.editedAt &&
         pinnedAt == other.pinnedAt &&
         deletedAt == other.deletedAt &&
         author == other.author;
@@ -181,6 +185,7 @@ class _$PostResponseDto extends PostResponseDto {
     _$hash = $jc(_$hash, version.hashCode);
     _$hash = $jc(_$hash, createdAt.hashCode);
     _$hash = $jc(_$hash, updatedAt.hashCode);
+    _$hash = $jc(_$hash, editedAt.hashCode);
     _$hash = $jc(_$hash, pinnedAt.hashCode);
     _$hash = $jc(_$hash, deletedAt.hashCode);
     _$hash = $jc(_$hash, author.hashCode);
@@ -206,6 +211,7 @@ class _$PostResponseDto extends PostResponseDto {
           ..add('version', version)
           ..add('createdAt', createdAt)
           ..add('updatedAt', updatedAt)
+          ..add('editedAt', editedAt)
           ..add('pinnedAt', pinnedAt)
           ..add('deletedAt', deletedAt)
           ..add('author', author))
@@ -284,6 +290,10 @@ class PostResponseDtoBuilder
   DateTime? get updatedAt => _$this._updatedAt;
   set updatedAt(DateTime? updatedAt) => _$this._updatedAt = updatedAt;
 
+  DateTime? _editedAt;
+  DateTime? get editedAt => _$this._editedAt;
+  set editedAt(DateTime? editedAt) => _$this._editedAt = editedAt;
+
   DateTime? _pinnedAt;
   DateTime? get pinnedAt => _$this._pinnedAt;
   set pinnedAt(DateTime? pinnedAt) => _$this._pinnedAt = pinnedAt;
@@ -319,6 +329,7 @@ class PostResponseDtoBuilder
       _version = $v.version;
       _createdAt = $v.createdAt;
       _updatedAt = $v.updatedAt;
+      _editedAt = $v.editedAt;
       _pinnedAt = $v.pinnedAt;
       _deletedAt = $v.deletedAt;
       _author = $v.author.toBuilder();
@@ -397,6 +408,7 @@ class PostResponseDtoBuilder
               r'PostResponseDto',
               'updatedAt',
             ),
+            editedAt: editedAt,
             pinnedAt: pinnedAt,
             deletedAt: deletedAt,
             author: author.build(),

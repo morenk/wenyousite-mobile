@@ -149,6 +149,8 @@ Android 的 Debug、Profile 和 Release 均仅支持 `arm64-v8a`，使用 ARM64 
 
 ## 13. 最近审查的契约版本和后端提交
 
+2026-09-29 编辑时间兼容契约同步：Backend `dc62a36dcf016f58fadcf53672215bb5fa66e618`，契约 `5.28.0-dev.20260929.1`；帖子响应兼容新增可选、可空 `editedAt`，生成类型更新，现有流程与验收状态保持。楼层呈现由 threads/posts 接入；同步范围见[编辑时间契约](../architecture/post-edited-time-contract-sync.md)。
+
 本轮交互按 Foundation 文档提交 `72d4785860d96ff0e2b336bc3f0f355ff908f77e`（PR #24）实现；仅交互文档，无新 Token 或 Tag，依赖仍固定远端最新正式 `v7.2.1`。Backend 文档同步候选 `3624a5723f40358a6a637999004d0a50a63e615f` 未改 HTTP／SDK；运行契约继续使用下列已部署来源。
 
 2026-09-27 更新说明已部署契约复核：Backend `1d43b85f7aa8cd1ab03f6ab34f1851462e1a0021`、契约 `5.27.0-dev.20260927.1`。新增公开说明与管理类型，既有接口和 `/meta` 保持兼容；新能力由 app-shell 独立接入，不代表本模块其他行为或负责人验收变化。详见[契约同步](../architecture/mobile-release-contract-sync.md)。

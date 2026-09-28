@@ -1,5 +1,10 @@
 # 移动端变更记录
 
+## 2026-09-29 — 楼层编辑时间契约同步（候选／待验收）
+
+- 固定 Backend `dc62a36dcf016f58fadcf53672215bb5fa66e618` 与 API `5.28.0-dev.20260929.1`，通过标准脚本同步兼容新增的可空 `editedAt` 并重新生成客户端；未编辑、历史与缺失字段保持兼容。
+- Foundation 继续锁定正式 `v7.2.1`；本契约候选尚未部署，公网来源对齐检查与本地验证分别报告，详见[同步记录](architecture/post-edited-time-contract-sync.md)。
+
 ## 2026-09-28 — 停用 GitHub CI，以 Windows 本地门禁为准
 
 - 按负责人明确决定，远端 Quality 与 Android Debug 工作流已停用，本仓移除对应工作流和专用临时 runner 编码工具；保留历史验证记录。
