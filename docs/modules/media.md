@@ -132,6 +132,8 @@ galleryList：读取 GalleryList200Response / GalleryPageDto / GalleryImageDto�
 
 ## 13. 最近审查的契约版本和后端提交
 
+2026-10-01 邀请交互文档同步：Backend `4db0cdf2c079fc8b66545c67849053cd74945f8a`／`5.29.0-dev.20261001.1`，仅更新邀请只复制的消费者说明；OpenAPI、DTO 与生成客户端不变。threads 界面由同任务后续候选更新，其余模块行为不变。
+
 2026-10-01 私密邀请契约同步：Backend `cfe9621c39f9d9c8c7f764bf45293be43bab1af7`／`5.29.0-dev.20261001.1`，新增幂等取得当前邀请链接的 PUT。本次生成同步也携带此前兼容新增的可选 `PostBaseResponseDto.editedAt`；除后续 threads 独立消费外，不改变本模块行为或验收结论。
 
 2026-09-28 固定关系计数候选来源：Backend `e807a3aa0cb15a626e5601eedc93f23c72d2e6c4`／`5.27.1-dev.20260928.1`。OpenAPI 仅补充已注销账号与查看者可见性的计数说明并递增 PATCH，无字段、类型或接口变化；本模块运行时代码与既有验收状态保持。候选来源不代表已部署，详见[关系数量排查](../architecture/profile-follow-counts-investigation.md)。
