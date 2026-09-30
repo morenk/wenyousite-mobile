@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/navigation/navigation_link_writer.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_invitation_controller.dart';
@@ -65,7 +65,7 @@ class ThreadInviteLinkPanel extends ConsumerWidget {
             child: OutlinedButton.icon(
               key: const Key('thread-invite-link-copy'),
               onPressed: enabled && !state.isGenerating
-                  ? () => _copyLink(context, state.link!)
+                  ? () => _copyLink(context, ref, state.link!)
                   : null,
               icon: const WenyouIcon(WenyouIconIds.actionCopyAll),
               label: const Text('再次复制'),
@@ -102,16 +102,17 @@ class ThreadInviteLinkPanel extends ConsumerWidget {
         .read(threadInviteLinkControllerProvider(threadId).notifier)
         .generate();
     if (link == null || !context.mounted) return;
-    await _copyLink(context, link, generated: true);
+    await _copyLink(context, ref, link, generated: true);
   }
 
   Future<void> _copyLink(
     BuildContext context,
+    WidgetRef ref,
     ThreadInvitationLink link, {
     bool generated = false,
   }) async {
     try {
-      await Clipboard.setData(ClipboardData(text: link.url.toString()));
+      await ref.read(navigationLinkWriterProvider)(link.url.toString());
       if (!context.mounted) return;
       showWenyouSnackBar(
         context,

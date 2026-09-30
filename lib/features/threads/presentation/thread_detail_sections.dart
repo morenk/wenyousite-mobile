@@ -232,9 +232,7 @@ class ThreadSubthreadBody extends ConsumerWidget {
               ),
             );
           case PostCardAction.copyLink:
-            unawaited(
-              copyPostCardValue(context, _publicBodyLink(), '正文链接已复制。'),
-            );
+            unawaited(copyPostCardLink(context, _publicBodyLink(), '正文链接已复制。'));
           case PostCardAction.edit:
             onEdit(threadDetailBodyTarget(detail, subthread));
           case PostCardAction.togglePin ||
@@ -537,7 +535,7 @@ class ThreadFloorCard extends ConsumerWidget {
           ),
         );
       case PostCardAction.copyLink:
-        await copyPostCardValue(context, _publicLink(), '楼层链接已复制');
+        await copyPostCardLink(context, _publicLink(), '楼层链接已复制');
       case PostCardAction.togglePin:
         onTogglePin();
       case PostCardAction.edit:
