@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "contractVersion": "5.27.0-dev.20260927.1",
+  "contractVersion": "5.28.0-dev.20260929.1",
   "exclusions": [
     { "operationId": "mobileReleasesList", "category": "removed_history_ui", "reason": "负责人决定只保留更新前后一次说明弹窗，移除移动端历史浏览；已部署接口和生成SDK仍保留兼容。" },
     { "operationId": "adminMobileReleasesList", "category": "admin_product", "reason": "移动端 V1 不承载管理产品。" },
