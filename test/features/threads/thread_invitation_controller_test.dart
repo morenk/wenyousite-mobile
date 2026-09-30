@@ -7,32 +7,84 @@ import 'package:wenyousite_mobile/features/threads/data/thread_invitation_reposi
 import 'package:wenyousite_mobile/features/threads/domain/thread_invitation_models.dart';
 
 void main() {
-  test('生成新链接成功后保留可重复复制的当前链接', () async {
+  for (final failure in [
+    const ApiFailure(businessCode: 40101),
+    const ApiFailure(httpStatus: 429),
+    const ApiFailure(httpStatus: 503),
+    const ApiFailure.invalidResponse(diagnosticCode: 'TEST_INVALID_INVITE'),
+  ]) {
+    test(
+      '重置不确定失败只取回当前链接：${failure.businessCode ?? failure.httpStatus ?? failure.reason}',
+      () async {
+        final repository = _FakeInvitationRepository()..resetFailure = failure;
+        final controller = ThreadInviteLinkController('thread-1', repository);
+        addTearDown(controller.dispose);
+        final result = await controller.reset();
+        expect(repository.resetCalls, 1);
+        expect(repository.ensureCalls, 1);
+        expect(result?.resetConfirmed, isFalse);
+        expect(result?.recoveredAfterReset, isTrue);
+      },
+    );
+  }
+
+  test('明确拒绝重置不取回或重复提交', () async {
+    final repository = _FakeInvitationRepository()
+      ..resetFailure = const ApiFailure(httpStatus: 403, businessCode: 40301);
+    final controller = ThreadInviteLinkController('thread-1', repository);
+    addTearDown(controller.dispose);
+    expect(await controller.reset(), isNull);
+    expect(repository.resetCalls, 1);
+    expect(repository.ensureCalls, 0);
+    expect(controller.state.link, isNull);
+  });
+
+  test('已加入预览重新核验旧链接404时清空预览并进入失败终态', () async {
+    final repository = _FakeInvitationRepository(
+      previewValue: _preview(alreadyJoined: true),
+    );
+    final controller = ThreadInvitationAccessController(
+      'Abcd_1234-efGh56',
+      repository,
+    );
+    addTearDown(controller.dispose);
+    await _settle();
+    expect(controller.state.preview?.alreadyJoined, isTrue);
+    repository.previewFailure = const ApiFailure(
+      httpStatus: 404,
+      businessCode: 40408,
+    );
+    await controller.load();
+    expect(controller.state.phase, ThreadInvitationAccessPhase.failed);
+    expect(controller.state.preview, isNull);
+  });
+
+  test('取得链接成功后保留可手动复制的当前链接', () async {
     final repository = _FakeInvitationRepository();
     final controller = ThreadInviteLinkController('thread-1', repository);
     addTearDown(controller.dispose);
 
-    final link = await controller.generate();
+    final link = await controller.ensure();
 
-    expect(repository.generateCalls, 1);
-    expect(link?.token, 'Abcd_1234-efGh56');
-    expect(controller.state.link, same(link));
+    expect(repository.ensureCalls, 1);
+    expect(link?.link.token, 'Abcd_1234-efGh56');
+    expect(controller.state.link, same(link?.link));
     expect(controller.state.failure, isNull);
   });
 
-  test('刷新链接失败时保留上一次可见链接与请求 ID', () async {
+  test('重新取得链接失败时清空可能过期链接并保留请求 ID', () async {
     final repository = _FakeInvitationRepository();
     final controller = ThreadInviteLinkController('thread-1', repository);
     addTearDown(controller.dispose);
-    await controller.generate();
-    repository.generateFailure = const ApiFailure(
+    await controller.ensure();
+    repository.ensureFailure = const ApiFailure(
       userMessage: '生成失败',
       requestId: 'invite-request-id',
     );
 
-    expect(await controller.generate(), isNull);
+    expect(await controller.ensure(), isNull);
 
-    expect(controller.state.link?.token, 'Abcd_1234-efGh56');
+    expect(controller.state.link, isNull);
     expect(controller.state.failure?.requestId, 'invite-request-id');
   });
 
@@ -108,15 +160,25 @@ class _FakeInvitationRepository implements ThreadInvitationRepository {
   }) : previewValue = previewValue ?? _preview();
 
   final ThreadInvitationPreview previewValue;
-  ApiFailure? generateFailure;
+  ApiFailure? ensureFailure;
+  ApiFailure? resetFailure;
+  ApiFailure? previewFailure;
   ApiFailure? joinFailure;
-  int generateCalls = 0;
+  int ensureCalls = 0;
+  int resetCalls = 0;
   int joinCalls = 0;
 
   @override
-  Future<ThreadInvitationLink> generateLink(String threadId) async {
-    generateCalls += 1;
-    if (generateFailure != null) throw generateFailure!;
+  Future<ThreadInvitationLink> ensureLink(String threadId) async {
+    ensureCalls += 1;
+    if (ensureFailure != null) throw ensureFailure!;
+    return _link;
+  }
+
+  @override
+  Future<ThreadInvitationLink> resetLink(String threadId) async {
+    resetCalls += 1;
+    if (resetFailure != null) throw resetFailure!;
     return _link;
   }
 
@@ -133,7 +195,10 @@ class _FakeInvitationRepository implements ThreadInvitationRepository {
   }
 
   @override
-  Future<ThreadInvitationPreview> preview(String token) async => previewValue;
+  Future<ThreadInvitationPreview> preview(String token) async {
+    if (previewFailure != null) throw previewFailure!;
+    return previewValue;
+  }
 }
 
 class _QueuedPreviewRepository implements ThreadInvitationRepository {
@@ -148,9 +213,13 @@ class _QueuedPreviewRepository implements ThreadInvitationRepository {
   }
 
   @override
-  Future<ThreadInvitationLink> generateLink(String threadId) {
+  Future<ThreadInvitationLink> ensureLink(String threadId) {
     throw UnimplementedError();
   }
+
+  @override
+  Future<ThreadInvitationLink> resetLink(String threadId) =>
+      ensureLink(threadId);
 
   @override
   Future<ThreadInvitationJoinResult> join(String token) {

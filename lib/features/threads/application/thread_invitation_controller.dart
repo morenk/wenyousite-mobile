@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_invitation_repository_ports.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_invitation_models.dart';
 
@@ -13,24 +15,63 @@ class ThreadInviteLinkController extends StateNotifier<ThreadInviteLinkState> {
   final String _threadId;
   final ThreadInvitationRepository _repository;
 
-  Future<ThreadInvitationLink?> generate() async {
-    if (state.isGenerating) return null;
-    state = state.copyWith(isGenerating: true, failure: null);
+  Future<ThreadInviteLinkResult?> ensure() => _obtain(reset: false);
+
+  Future<ThreadInviteLinkResult?> reset() => _obtain(reset: true);
+
+  Future<ThreadInviteLinkResult?> _obtain({required bool reset}) async {
+    if (!mounted || state.isLoading) return null;
+    // 重新核对期间不保留可能已被另一设备重置的旧凭据。
+    state = const ThreadInviteLinkState(isLoading: true);
     try {
-      final link = await _repository.generateLink(_threadId);
+      final link = await (reset
+          ? _repository.resetLink(_threadId)
+          : _repository.ensureLink(_threadId));
       if (!mounted) return null;
       state = ThreadInviteLinkState(link: link);
-      return link;
-    } on ApiFailure catch (failure) {
+      return ThreadInviteLinkResult(link: link, resetConfirmed: reset);
+    } catch (error) {
       if (!mounted) return null;
-      state = state.copyWith(isGenerating: false, failure: failure);
+      final failure = mapApplicationFailure(error, '邀请链接操作失败，请稍后重试。');
+      if (reset &&
+          (failure.hasUnknownWriteOutcome ||
+              failure.isExpiredAccessToken ||
+              failure.reason == FailureReason.contractViolation)) {
+        // POST 不重放。取回当前链接只证明链接可用，不证明重置成功。
+        try {
+          final link = await _repository.ensureLink(_threadId);
+          if (!mounted) return null;
+          state = ThreadInviteLinkState(link: link);
+          return ThreadInviteLinkResult(link: link, recoveredAfterReset: true);
+        } catch (recoveryError) {
+          if (!mounted) return null;
+          state = ThreadInviteLinkState(
+            failure: mapApplicationFailure(recoveryError, '邀请链接获取失败，请稍后重试。'),
+            resetUnconfirmed: true,
+          );
+          return null;
+        }
+      }
+      state = ThreadInviteLinkState(failure: failure);
       return null;
     }
   }
 
   void clearFailure() {
-    if (!state.isGenerating) state = state.copyWith(failure: null);
+    if (mounted && !state.isLoading) state = state.copyWith(failure: null);
   }
+}
+
+class ThreadInviteLinkResult {
+  const ThreadInviteLinkResult({
+    required this.link,
+    this.resetConfirmed = false,
+    this.recoveredAfterReset = false,
+  });
+
+  final ThreadInvitationLink link;
+  final bool resetConfirmed;
+  final bool recoveredAfterReset;
 }
 
 class ThreadInvitationAccessController
@@ -96,15 +137,16 @@ class ThreadInvitationAccessController
 }
 
 final threadInviteLinkControllerProvider = StateNotifierProvider.autoDispose
-    .family<ThreadInviteLinkController, ThreadInviteLinkState, String>((
-      ref,
-      threadId,
-    ) {
-      return ThreadInviteLinkController(
-        threadId,
-        ref.watch(threadInvitationRepositoryProvider),
-      );
-    }, dependencies: [threadInvitationRepositoryProvider]);
+    .family<ThreadInviteLinkController, ThreadInviteLinkState, String>(
+      (ref, threadId) {
+        ref.watch(sessionScopeProvider);
+        return ThreadInviteLinkController(
+          threadId,
+          ref.watch(threadInvitationRepositoryProvider),
+        );
+      },
+      dependencies: [threadInvitationRepositoryProvider, sessionScopeProvider],
+    );
 
 final threadInvitationAccessControllerProvider = StateNotifierProvider
     .autoDispose

@@ -145,7 +145,7 @@ void main() {
     expect(find.text('当前账号没有管理这个主题的权限。'), findsOneWidget);
     expect(find.byKey(const Key('thread-management-save')), findsNothing);
     expect(find.byKey(const Key('thread-management-title')), findsNothing);
-    expect(find.byKey(const Key('thread-invite-link-generate')), findsNothing);
+    expect(find.byKey(const Key('thread-invite-link-copy')), findsNothing);
     expect(find.byKey(const Key('thread-management-delete')), findsNothing);
     expect(repository.lastDraft, isNull);
     expect(repository.removeCalls, 0);
@@ -496,16 +496,13 @@ void main() {
     final entry = find.byKey(const Key('thread-management-invite'));
     expect(entry, findsOneWidget);
     expect(find.text('生成或复制邀请链接'), findsNothing);
-    expect(find.byKey(const Key('thread-invite-link-generate')), findsNothing);
+    expect(find.byKey(const Key('thread-invite-link-copy')), findsNothing);
 
     await tester.ensureVisible(entry);
     await tester.tap(entry);
     await tester.pumpAndSettle();
 
-    expect(
-      find.byKey(const Key('thread-invite-link-generate')),
-      findsOneWidget,
-    );
+    expect(find.byKey(const Key('thread-invite-link-copy')), findsOneWidget);
   });
 
   testWidgets('楼主删除经过二次确认后返回首页', (tester) async {

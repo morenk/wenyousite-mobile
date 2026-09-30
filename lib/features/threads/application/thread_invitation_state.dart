@@ -3,26 +3,29 @@ import 'package:wenyousite_mobile/features/threads/domain/thread_invitation_mode
 
 class ThreadInviteLinkState {
   const ThreadInviteLinkState({
-    this.isGenerating = false,
+    this.isLoading = false,
     this.link,
     this.failure,
+    this.resetUnconfirmed = false,
   });
 
-  final bool isGenerating;
+  final bool isLoading;
   final ThreadInvitationLink? link;
   final ApiFailure? failure;
+  final bool resetUnconfirmed;
 
   ThreadInviteLinkState copyWith({
-    bool? isGenerating,
+    bool? isLoading,
     Object? link = _unset,
     Object? failure = _unset,
   }) {
     return ThreadInviteLinkState(
-      isGenerating: isGenerating ?? this.isGenerating,
+      isLoading: isLoading ?? this.isLoading,
       link: identical(link, _unset) ? this.link : link as ThreadInvitationLink?,
       failure: identical(failure, _unset)
           ? this.failure
           : failure as ApiFailure?,
+      resetUnconfirmed: resetUnconfirmed,
     );
   }
 }
