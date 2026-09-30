@@ -34,6 +34,7 @@ part 'post_detail_response_dto.g.dart';
 /// * [version] - 乐观锁版本
 /// * [createdAt]
 /// * [updatedAt]
+/// * [editedAt] - 最后一次成功保存且规范化正文实际改变的服务端时间；历史与未编辑帖子为 null
 /// * [pinnedAt] - 主楼层置顶到当前子贴的时间；正文和楼中楼回复为 null
 /// * [deletedAt]
 /// * [author]
@@ -93,6 +94,10 @@ abstract class PostDetailResponseDto implements Built<PostDetailResponseDto, Pos
 
   @BuiltValueField(wireName: r'updatedAt')
   DateTime get updatedAt;
+
+  /// 最后一次成功保存且规范化正文实际改变的服务端时间；历史与未编辑帖子为 null
+  @BuiltValueField(wireName: r'editedAt')
+  DateTime? get editedAt;
 
   /// 主楼层置顶到当前子贴的时间；正文和楼中楼回复为 null
   @BuiltValueField(wireName: r'pinnedAt')
@@ -216,6 +221,13 @@ class _$PostDetailResponseDtoSerializer implements PrimitiveSerializer<PostDetai
       object.updatedAt,
       specifiedType: const FullType(DateTime),
     );
+    if (object.editedAt != null) {
+      yield r'editedAt';
+      yield serializers.serialize(
+        object.editedAt,
+        specifiedType: const FullType.nullable(DateTime),
+      );
+    }
     if (object.pinnedAt != null) {
       yield r'pinnedAt';
       yield serializers.serialize(
@@ -384,6 +396,14 @@ class _$PostDetailResponseDtoSerializer implements PrimitiveSerializer<PostDetai
             specifiedType: const FullType(DateTime),
           ) as DateTime;
           result.updatedAt = valueDes;
+          break;
+        case r'editedAt':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(DateTime),
+          ) as DateTime?;
+          if (valueDes == null) continue;
+          result.editedAt = valueDes;
           break;
         case r'pinnedAt':
           final valueDes = serializers.deserialize(
