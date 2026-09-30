@@ -65,21 +65,12 @@ class WenyouEditorMoreTray extends StatelessWidget {
     final entries = <Widget>[
       if (showAlignment)
         _button(
-          key: const Key('editor-align-left'),
-          icon: WenyouIconIds.editorAlignLeft,
-          label: '左对齐',
-          selected: alignmentSelection.alignment == WenyouTextAlignment.left,
-          buttonEnabled: alignmentSelection.canApply,
-          onPressed: () => onAlignmentChanged(WenyouTextAlignment.left),
-        ),
-      if (showAlignment)
-        _button(
           key: const Key('editor-align-center'),
           icon: WenyouIconIds.editorAlignCenter,
           label: '居中',
           selected: alignmentSelection.alignment == WenyouTextAlignment.center,
           buttonEnabled: alignmentSelection.canApply,
-          onPressed: () => onAlignmentChanged(WenyouTextAlignment.center),
+          onPressed: () => _toggleAlignment(WenyouTextAlignment.center),
         ),
       if (showAlignment)
         _button(
@@ -88,7 +79,7 @@ class WenyouEditorMoreTray extends StatelessWidget {
           label: '右对齐',
           selected: alignmentSelection.alignment == WenyouTextAlignment.right,
           buttonEnabled: alignmentSelection.canApply,
-          onPressed: () => onAlignmentChanged(WenyouTextAlignment.right),
+          onPressed: () => _toggleAlignment(WenyouTextAlignment.right),
         ),
       if (showLink)
         _button(icon: WenyouIconIds.editorLink, label: '链接', onPressed: onLink),
@@ -197,6 +188,14 @@ class WenyouEditorMoreTray extends StatelessWidget {
           },
         ),
       ),
+    );
+  }
+
+  void _toggleAlignment(WenyouTextAlignment alignment) {
+    onAlignmentChanged(
+      alignmentSelection.alignment == alignment
+          ? WenyouTextAlignment.left
+          : alignment,
     );
   }
 

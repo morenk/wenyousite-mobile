@@ -153,6 +153,8 @@ Android 账号设置新增“后台消息提醒”设备开关，默认开启；
 
 ## 13. 最近审查的契约版本和后端提交
 
+本次兼容契约审查：5.28.0-dev.20260929.1，Backend 21acf512285f2a21aaa831f960211780de73aafc。仅新增可选 nullable editedAt；本模块行为与原验收状态保持。
+
 2026-09-28 关系计数候选：固定 Backend `e807a3aa0cb15a626e5601eedc93f23c72d2e6c4`／`5.27.1-dev.20260928.1`，资料计数排除已注销账号并与查看者可见列表一致，游客缓存最长五分钟。字段与类型不变，Mobile 继续消费原资料刷新链路；仅同步契约、生成说明和消费者测试，不代表 Backend 已部署或负责人已验收。见[关系数量排查](../architecture/profile-follow-counts-investigation.md)。
 
 2026-09-27 更新说明已部署契约复核：Backend `1d43b85f7aa8cd1ab03f6ab34f1851462e1a0021`、契约 `5.27.0-dev.20260927.1`。新增公开说明与管理类型，既有接口和 `/meta` 保持兼容；新能力由 app-shell 独立接入，不代表本模块其他行为或负责人验收变化。详见[契约同步](../architecture/mobile-release-contract-sync.md)。
