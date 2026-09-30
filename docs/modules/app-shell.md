@@ -149,6 +149,8 @@ Android 的 Debug、Profile 和 Release 均仅支持 `arm64-v8a`，使用 ARM64 
 
 ## 13. 最近审查的契约版本和后端提交
 
+本次兼容契约审查：5.28.0-dev.20260929.1，Backend 21acf512285f2a21aaa831f960211780de73aafc。仅新增可选 nullable editedAt；本模块行为与原验收状态保持。
+
 2026-09-28 固定关系计数候选来源：Backend `e807a3aa0cb15a626e5601eedc93f23c72d2e6c4`／`5.27.1-dev.20260928.1`。OpenAPI 仅补充已注销账号与查看者可见性的计数说明并递增 PATCH，无字段、类型或接口变化；本模块运行时代码与既有验收状态保持。候选来源不代表已部署，详见[关系数量排查](../architecture/profile-follow-counts-investigation.md)。
 
 本轮交互按 Foundation 文档提交 `72d4785860d96ff0e2b336bc3f0f355ff908f77e`（PR #24）实现；仅交互文档，无新 Token 或 Tag，依赖仍固定远端最新正式 `v7.2.1`。Backend 文档同步候选 `3624a5723f40358a6a637999004d0a50a63e615f` 未改 HTTP／SDK；运行契约继续使用下列已部署来源。
