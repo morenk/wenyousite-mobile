@@ -1,8 +1,18 @@
 # 站内超链接候选验收
 
-状态：候选／待负责人验收。治理任务 `01a0f31a-4eb8-7801-91c7-e39c854be53b`，Windows 独立分支 `codex/20261001-mobile-hyperlink`，基线 `84d0a0d80eb60dc07503c6a5ed7bf5eb5b4f74f3`。
+状态：负责人真机验收通过／原问题修复完成；尚未合并。治理任务 `01a0f31a-4eb8-7801-91c7-e39c854be53b`，Windows 独立分支 `codex/20261001-mobile-hyperlink`，基线 `84d0a0d80eb60dc07503c6a5ed7bf5eb5b4f74f3`。
 
-2026-10-01 负责人查看明暗候选截图后确认“符合，按这个方向交付候选”。该确认接受视觉方向，原问题的设备操作与保存仍待复验。
+2026-10-01 负责人先确认明暗候选截图方向，随后在下述 Debug 包上明确反馈“这两项功能我真人测试通过了”，覆盖本项站内超链接修复及独立 PR #79 的排版与选中态调整。
+
+## 真机验收通过
+
+- 验收日期：2026-10-01；设备：Xiaomi 2509FPN0BC，Android API 36。
+- 应用：`site.wenyou.app.debug`，`0.8.0-debug` / build `97`，ARM64；安装更新时间为北京时间 02:35:34，设备内 APK 哈希与交付包一致。
+- 组合源码：`7465c324ceb1a2ea834c8925934104a8ba1a0ab8`，包含本 PR 的 `2da944875f73863521bd3c6b9e7af3ba594d5c90` 与 PR #79 的 `6d7ccf96e5d29a0f44e133b923ce679637852fbd`，兼容契约 chore 只引入一次。
+- APK SHA-256：`40E2B21BE2B128BEAC39FA54EAA5C603EC3EE1B909620038D2495B6CCC1011EA`。
+- 组合候选的格式、应用及生成 API 全量静态分析通过，以下六个文件共 109 项定向测试通过：`editor_link_insertion_test.dart`、`post_hyperlink_edit_test.dart`、`editor_alignment_toggle_test.dart`、`editor_toolbar_buttons_test.dart`、`editor_toolbar_test.dart`、`post_replies_page_test.dart`（分别位于 `test/features/editor/` 与 `test/features/posts/`）。`candidate:apk` 构建成功。
+- 按负责人明确指示，完整门禁在全量 Flutter 测试之前中断，不宣称全量通过。合并前仍需验证最终集成源码；本次验收不包含合并、部署或正式发布授权。
+- 负责人另报的“应用内复制链接后返回前台仍提示跳转”由独立任务处理，不改变本项已确认的验收结果。
 
 ## 原始反馈与复现边界
 
@@ -25,10 +35,10 @@
 - 直接相关回归：`test/features/editor/editor_toolbar_test.dart`、`editor_format_policy_test.dart`、`editor_selection_history_test.dart`、`editor_clipboard_test.dart`、`editor_embed_builders_test.dart`、`editor_wysiwyg_parity_test.dart`，以及 `test/core/markdown/markdown_delta_codec_test.dart`、`markdown_delta_semantic_safety_test.dart`。
 - 上述 10 个测试文件合计 207 项通过，包含 20 项新增回归和明暗 Golden 比较；应用全量静态分析零问题，全仓 1134 个 Dart 文件格式零变更，架构、21 模块文档、`git diff --check` 通过。独立兼容契约的生成 DTO 全量静态分析、4 项可选字段兼容测试、固定来源与公网只读验证、API 覆盖 161/161 通过。
 
-## 负责人复验与未覆盖状态
+## 首轮候选阶段记录与复验步骤
 
-当前 ADB 无连接设备，`dev:list` 无可复用活动会话；未创建 Debug 会话、未构建或安装新 APK、未进行业务写入 E2E。原始 release 包上的故障不能用 Golden 或 Widget 断言替代验收。设备接入后按 `docs/live-debug.md` 自动准备本任务的已核验隔离预览，使用 `site.wenyou.app.debug`，记录源码摘要和 runId。
+首轮截图交付时 ADB 无连接设备，`dev:list` 无可复用活动会话，尚未构建或安装 APK。后续按负责人要求生成并安装上述独立 Debug 包，默认 API 为现有站点，不是隔离预览；代理未自动启动、登录或执行线上业务写入。Golden 与 Widget 断言没有代替负责人随后的明确真机验收。
 
-在原主题详情打开编辑器，选择“你好”或空光标打开“更多 → 链接”，输入原站内楼层 URL；应立即呈现传送门，保存后阅读与再次编辑保持相同文字和目标。再检查普通外链仍有下划线且可保存，撤销／重做、前后正文、真正空行保持。负责人明确通过前保持候选状态；未授权合并、部署或清理分支。
+交付的复验步骤为：在原主题详情打开编辑器，选择“你好”或空光标打开“更多 → 链接”，输入原站内楼层 URL；应立即呈现传送门，保存后阅读与再次编辑保持相同文字和目标。再检查普通外链仍有下划线且可保存，撤销／重做、前后正文、真正空行保持。负责人已明确本项功能真机通过；未授权合并、部署或清理分支。
 
-候选阶段检查与集成门禁分开：本次未运行全量 Flutter 测试或 APK 构建；负责人原场景验收通过后，合并前对最终源码执行仓库完整门禁。
+候选阶段检查与集成门禁分开：已完成定向验证与 APK 构建，尚未运行全量 Flutter 测试；合并前对最终源码执行仓库完整门禁。
