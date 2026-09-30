@@ -36,9 +36,22 @@
 - `test/features/threads/thread_invitation_controls_test.dart`
 - `test/core/widgets/wenyou_content_action_menu_test.dart`
 
-覆盖空剪贴板、立即切出／不可读、反复恢复、重建容器模拟重启、外部同文新事件、无 timestamp 收据升级、实际页面入口、邀请两种复制、复制和存储失败、迟到读写和弹窗、后台扫描守卫、模态避让及准确路由。方法通道 mock 仅证明 Dart 参数与返回处理，不冒充原生系统验证。Android 编译与设备行为另由最终 Debug 候选记录。
+覆盖空剪贴板、立即切出／不可读、反复恢复、重建容器模拟重启、外部同文新事件、无 timestamp 收据升级、实际页面入口、邀请两种复制、复制和存储失败、迟到读写和弹窗、后台扫描守卫、模态避让及准确路由。方法通道 mock 仅证明 Dart 参数与返回处理，不冒充原生系统验证；Android 构建证据见下方，设备行为仍待负责人复验。
 
-按负责人本次明确要求，候选前不运行全量 Flutter 测试或 `npm run check` / `check:apk`；虽涉及原生与持久化，仍以本次用户明确批准的节奏执行：定向回归、静态分析和必要 Debug 构建，真机通过后、合并前再运行完整门禁。应用／生成客户端分析和 APK 由治理任务在保留已验收编辑器功能的组合 Worktree 集中执行，不在此重复构建。
+按负责人本次明确要求，候选前不运行全量 Flutter 测试或 `npm run check` / `check:apk`；虽涉及原生与持久化，仍以本次用户明确批准的节奏执行：定向回归、静态分析和必要 Debug 构建，真机通过后、合并前再运行完整门禁。应用／生成客户端分析和 APK 已由治理任务在保留已验收编辑器功能的组合 Worktree 集中执行，本分支不重复构建。
+
+## 组合 Debug 候选
+
+2026-10-01 北京时间 03:13:03，组合提交 `0ae9ee32726788cea3056412ea709e3b8fef3c56` 的 `candidate:apk` 成功完成。该源码保留负责人已验收的 PR #78／#79，另加入本次 `e6427e36` 和导入排序修正 `1aa4facd`。editor 与 core/markdown 相对原验收组合 `7465c324` 零差异；组合与独立 PR #81 的应用源码仅三个既有 editor 文件不同。此前功能验收另由 `a30161d0`／`d2e72226` 记录，不代表本次剪贴板问题已验收。
+
+- 12 个显式测试文件共 76 项通过：上述九个文件，另加 `test/features/editor/editor_link_insertion_test.dart`、`editor_alignment_toggle_test.dart`、`editor_toolbar_buttons_test.dart`。
+- 应用与生成 API 客户端全量静态分析零问题；全仓 1144 个文件格式零变更；Android Debug 构建成功，构建阶段 63.6 秒。
+- 源码摘要 `a8675b98ab5f13a1965f1717d71e5032841d80a337c2a2a6863ec20dc4775091` 在候选入口前后不变，组合工作区干净。
+- APK：`D:/codex-artifacts/clipboard-origin-20261001/wenyou-clipboard-0ae9ee32-debug.apk`，150191687 字节，SHA-256 `B00A1536074A9268448AA007D6AF2E79FD88A479DBA5D4377B185426671D3A46`。
+- 包名 `site.wenyou.app.debug`，显示名「温油站 Debug」，版本 `0.8.0-debug / 97`，仅 `arm64-v8a`，`debuggable`，APK v2 签名校验通过。
+- 成功日志：`D:/codex-worktrees/editor-debug-candidate/clipboard-candidate-apk-retry.log`。首次入口仅因一个测试 import 排序 info 停止，修正后重新执行唯一入口；原日志 `clipboard-candidate-apk.log` 保留，没有把旧 APK 当作新候选。
+
+此次仅交付 APK，未安装或启动设备：设备当前哈希 `fb2b248e…` 属于另一私帖分享 PR #80 候选，保留其验收现场。此包默认现有公网 API，属于独立 Debug 安装包而非隔离预览，未自动登录或业务写入。iOS 未编译或设备验收。PR #81 仍为 Draft，本次原问题待负责人真机验收，未运行全量测试、未合并、未部署。
 
 ## 真机复验步骤与交接
 
