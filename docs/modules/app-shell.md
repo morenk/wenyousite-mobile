@@ -40,7 +40,7 @@ Foundation v7.1.0 时间呈现候选／待验收：普通内容不足 72 小时�
 
 收藏页布局候选（2026-09-11，待负责人验收）：统一收藏页保留标题栏新建和主题/动态页签，选夹控件改为内容列内左对齐，与主题及动态列表共用 600dp 最大宽度和页面边距；旁边弱显示当前夹数量，长名称优先省略。目录加载、刷新失败、空目录及新建流程继续复用原控制器，详见[社交关系](social.md)。
 
-冷启动在创建应用根之前读取本地外观偏好；成功则直接使用保存模式，失败则首帧跟随系统并保留可重试提示。随后调用元信息接口并用 `versionCode` / `CFBundleVersion` 比较当前平台策略。低于最低构建或遇到不兼容内容格式时不可绕过：安装包已就绪则展示当前版本、目标版本与更新动作，尚未就绪则显示“新版正在准备中”，前台每 60 秒、恢复前台和用户点“重新检查”时重查。低于推荐构建且安装包已就绪时先恢复会话进入目标页，再择机显示可关闭的完整说明弹窗；按平台与目标构建号一次，旧忽略记录继续有效。进入可用页面和每次回到前台后的首个渲染帧完成时读取系统剪贴板；内容整体为合法的温油站主题、子贴、楼层、讨论、回复或私密邀请传送门且属于新的复制事件时，先询问是否前往。无论选择“暂不”还是“前往查看”，都会持久记录该次复制事件；退出应用再进入不会重复提示，只有用户在站外重新复制后才再次询问，即使文本与上次完全相同。应用内刚复制的合法坐标会在离开前台时标记为已处理，返回后不反向提示；混合文字、站外链接和非法坐标不触发提示。登录会话就绪后由 wallet 自动触发北京时间签到；应用保持前台时跨零点触发新日期检查，后台跨日则在首次恢复时补触发，只有本次真实领取才显示非阻断提示。回到前台时还会静默重查兼容信息，断网不打断正在使用的兼容客户端。Android 失去窗口焦点或进入后台时，Dart 与原生侧都把有效 IME 目标高度归零，不回退到可能仍残留键盘高度的引擎 inset；恢复或重新聚焦后先请求窗口重新应用 Insets，只以当前窗口焦点、Activity 生命周期和 IME 可见性共同确认的新高度避让页面。系统已经隐藏键盘时页面立即恢复完整高度，系统恢复键盘时仍保持输入区在键盘上方，不主动改变输入焦点、选区或未发送内容。
+冷启动在创建应用根之前读取本地外观偏好；成功则直接使用保存模式，失败则首帧跟随系统并保留可重试提示。随后调用元信息接口并用 `versionCode` / `CFBundleVersion` 比较当前平台策略。低于最低构建或遇到不兼容内容格式时不可绕过：安装包已就绪则展示当前版本、目标版本与更新动作，尚未就绪则显示“新版正在准备中”，前台每 60 秒、恢复前台和用户点“重新检查”时重查。低于推荐构建且安装包已就绪时先恢复会话进入目标页，再择机显示可关闭的完整说明弹窗；按平台与目标构建号一次，旧忽略记录继续有效。进入可用页面和每次回到前台后的首个渲染帧完成时读取系统剪贴板；内容整体为合法的温油站主题、子贴、楼层、讨论、回复或私密邀请传送门且属于新的复制事件时，先询问是否前往。无论选择“暂不”还是“前往查看”，都会持久记录该次复制事件；退出应用再进入不会重复提示，只有用户在站外重新复制后才再次询问，即使文本与上次完全相同。显式「复制链接」入口在系统复制成功时立即登记该事件，返回或重启后不反向提示，不再在离开前台时推断来源；混合文字、站外链接和非法坐标不触发提示。登录会话就绪后由 wallet 自动触发北京时间签到；应用保持前台时跨零点触发新日期检查，后台跨日则在首次恢复时补触发，只有本次真实领取才显示非阻断提示。回到前台时还会静默重查兼容信息，断网不打断正在使用的兼容客户端。Android 失去窗口焦点或进入后台时，Dart 与原生侧都把有效 IME 目标高度归零，不回退到可能仍残留键盘高度的引擎 inset；恢复或重新聚焦后先请求窗口重新应用 Insets，只以当前窗口焦点、Activity 生命周期和 IME 可见性共同确认的新高度避让页面。系统已经隐藏键盘时页面立即恢复完整高度，系统恢复键盘时仍保持输入区在键盘上方，不主动改变输入焦点、选区或未发送内容。
 
 Android 后台消息提醒默认开启，可在账号设置按设备关闭，选择跨重启、退出与切号保留。登录和恢复只读取通知权限，不自动弹系统授权框；Activity 在合法的离开前台启动窗口立即启动 specialUse 前台服务，确认运行后才建立首次基线并按 30 秒检查。常驻卡片静音、无横幅、不振动；新消息走系统“新消息提醒”频道，横幅收起后卡片保留，点击进入原有目标。前一轮未完成则跳过节拍；返回前台、退出、切号、关闭功能或服务失败立即使旧结果失效。划掉任务停止服务，重启手机后需再次打开应用；当前候选尚待负责人复验。
 
@@ -58,7 +58,7 @@ Android 后台消息提醒默认开启，可在账号设置按设备关闭，选
 
 签到的已领取日期与待展示回执分别保存，按 `SessionScope` 隔离。应用级反馈宿主观察生命周期、根与分支路由、模态弹层和普通操作消息；后台或被遮挡时保留回执，页面就绪后显示“今日签到获得 N 升温油。”，首次实际显示即确认消费，未被打断时仍显示 4 秒。普通操作消息优先，已显示的签到提示被切页、模态弹层、其他操作提示或切后台打断后不再补显；尚未显示的回执继续等待可见时机。跨日丢弃旧回执，退出和切号不保留旧账号消息，补显不重新签到；组件重新挂载复用当前会话的签到状态，进程重启则以钱包状态和流水核对。
 
-客户端兼容集合固定为 Markdown v3/v4/v5；未知版本继续进入不可绕过的更新流程。`AppCapabilities.markdownAlignment` 从元信息声明 v4 起启用普通段落与 H2/H3 对齐，`markdownImageAlignment` 只在声明 v5 时启用独立普通图片块对齐；主题与帖子只消费纯 capability，不直接读取启动控制器，冷启动和回前台静默重查共用同一判定。剪贴板导航只复用 `internal-reference v1` 解析结果与应用根路由，不新增链接解析器或预取请求；原生层以 Android `ClipDescription.timestamp` 或 iOS `UIPasteboard.changeCount` 标识复制事件，Dart 层持久化最后一次已处理事件和 SHA-256 指纹，恢复后的首帧只处理新的完整目标。
+客户端兼容集合固定为 Markdown v3/v4/v5；未知版本继续进入不可绕过的更新流程。`AppCapabilities.markdownAlignment` 从元信息声明 v4 起启用普通段落与 H2/H3 对齐，`markdownImageAlignment` 只在声明 v5 时启用独立普通图片块对齐；主题与帖子只消费纯 capability，不直接读取启动控制器，冷启动和回前台静默重查共用同一判定。剪贴板导航只复用 `internal-reference v1` 解析结果与应用根路由，不新增链接解析器或预取请求；原生层以 Android `ClipDescription.timestamp`（本应用显式复制附规范 UUID marker，但仍绑定系统 timestamp）或 iOS `UIPasteboard.changeCount` 标识复制事件，Dart 层持久化最后一次已处理事件和 SHA-256 指纹，恢复后的首帧只处理新的完整目标。
 
 外观偏好状态包含当前选择、写入中、失败目标、读取失败和用户提示；应用根只观察当前选择并映射为 Flutter `ThemeMode.system/light/dark`，复用已缓存的亮/黑夜 `ThemeData`，在下一帧直接换主题而不创建根 `AnimatedTheme`，主题变化不进入业务控制器。启动状态为 checking、ready、updateRequired、updateWaiting、failed；推荐更新作为 ready 的可选展示数据，不阻断应用壳。更新动作另有 idle、checking、downloading、verifying、installing、openingExternalPage、permissionRequired、installerOpened、externalPageOpened、failed。元信息映射为纯 `ContractInfo`，应用根通过 `AppCapabilities` 把 stickers、directMessages、pushNotifications 能力注入业务入口；入口默认关闭并只在服务端明确启用后创建，feature 不反向依赖 app-shell 控制器。元信息读取、安装包可用性预检、更新执行与推荐更新忽略记录均由 `app_shell/application` 端口表达，`main.dart` 组合根绑定 data 实现；application 控制器不直接依赖 Dio、MethodChannel 或 SharedPreferences。签到状态由 wallet 独立管理，不进入启动兼容状态机。生成客户端负责 `/api/v1`；APK 使用不带认证拦截器的独立 Dio，避免向下载地址泄露 Token。
 
@@ -80,7 +80,7 @@ Android Manifest 明确关闭全量备份，Android 11 及以下和 Android 12+ 
 
 通知引导使用设备级 SharedPreferences 布尔键 `notifications.guidance.handled.v1`，不保存账号、消息或权限结果；先保存再显示，切号/重启/拒绝/跳过不重复引导。读取或保存失败时保守跳过本次自动提示，手动设置入口不受影响。升级不会删除旧消息频道以重新取得横幅或声音权限。
 
-外观显式选择以 SharedPreferences 保存，跟随系统不保存覆盖值；偏好与账号无关且跨冷启动保留。契约结果只在本次进程缓存；每次冷启动和回前台重新检查。推荐继续读取旧 `dismissed_recommended_build_<platform>` 键；新的 `mobile_update_notice_v1_<platform>`（预览环境带环境前缀）JSON 独立保存安装基线、首次安装时间、待提示及其迁移原因、更新前／后已展示 build 集合，不按账号分组或随退出清理。观察与展示确认串行写入，避免旧快照覆盖；仅正确完整说明在前台入场动画结束后实际可见才记账，后台响应、加载、错误或排队均不算。写入失败保留进程内收据供下次补写，不宣称跨进程保存成功。剪贴板导航只额外保存最后一次已处理的复制事件标识和 64 位 SHA-256 指纹；取消与跳转都先完成记录，存储损坏时安全忽略并保留本进程去重。APK 以“目标构建 + 哈希前缀”暂存于应用 cache，先写 `.part`、通过长度与 SHA-256 后原子改名；新目标会清理旧 APK/partial，冷进程重新验证缓存，本次已验证文件只在内存记录并可供未知来源授权返回后直接继续。cache 可由系统清理；Token 仍由认证模块安全存储管理。
+外观显式选择以 SharedPreferences 保存，跟随系统不保存覆盖值；偏好与账号无关且跨冷启动保留。契约结果只在本次进程缓存；每次冷启动和回前台重新检查。推荐继续读取旧 `dismissed_recommended_build_<platform>` 键；新的 `mobile_update_notice_v1_<platform>`（预览环境带环境前缀）JSON 独立保存安装基线、首次安装时间、待提示及其迁移原因、更新前／后已展示 build 集合，不按账号分组或随退出清理。观察与展示确认串行写入，避免旧快照覆盖；仅正确完整说明在前台入场动画结束后实际可见才记账，后台响应、加载、错误或排队均不算。写入失败保留进程内收据供下次补写，不宣称跨进程保存成功。剪贴板导航只额外保存最后一次已处理的复制事件标识和 64 位 SHA-256 指纹；显式复制、取消与跳转共用壳层协调器，内存先记账、落盘串行；迟到的读取和旧弹窗选择不能覆盖新复制。存储失败保留本进程去重，不把成功复制误报失败，但不宣称跨进程保存成功。APK 以“目标构建 + 哈希前缀”暂存于应用 cache，先写 `.part`、通过长度与 SHA-256 后原子改名；新目标会清理旧 APK/partial，冷进程重新验证缓存，本次已验证文件只在内存记录并可供未知来源授权返回后直接继续。cache 可由系统清理；Token 仍由认证模块安全存储管理。
 
 设备开关由 BackgroundReminderPreferenceController 管理，SharedPreferences 键为 background.reminder.enabled.v1，缺省开启；读取失败先关闭并提供重试，写入中停止提醒且禁止重复操作，写入失败恢复原选择。后台消息指纹只存当前进程；退出/切号清除基线但不清除设备选择。
 
@@ -149,6 +149,8 @@ Android 的 Debug、Profile 和 Release 均仅支持 `arm64-v8a`，使用 ARM64 
 
 ## 13. 最近审查的契约版本和后端提交
 
+本次兼容契约审查：5.28.0-dev.20260929.1，Backend 21acf512285f2a21aaa831f960211780de73aafc。仅新增可选 nullable editedAt；本模块行为与原验收状态保持。
+
 2026-09-28 固定关系计数候选来源：Backend `e807a3aa0cb15a626e5601eedc93f23c72d2e6c4`／`5.27.1-dev.20260928.1`。OpenAPI 仅补充已注销账号与查看者可见性的计数说明并递增 PATCH，无字段、类型或接口变化；本模块运行时代码与既有验收状态保持。候选来源不代表已部署，详见[关系数量排查](../architecture/profile-follow-counts-investigation.md)。
 
 本轮交互按 Foundation 文档提交 `72d4785860d96ff0e2b336bc3f0f355ff908f77e`（PR #24）实现；仅交互文档，无新 Token 或 Tag，依赖仍固定远端最新正式 `v7.2.1`。Backend 文档同步候选 `3624a5723f40358a6a637999004d0a50a63e615f` 未改 HTTP／SDK；运行契约继续使用下列已部署来源。
@@ -206,3 +208,5 @@ Android 的 Debug、Profile 和 Release 均仅支持 `arm64-v8a`，使用 ARM64 
 后台执行入口：`lib/core/application/background_execution.dart`、`lib/core/platform/android_background_execution_gateway.dart`、`lib/features/app_shell/application/background_reminder_runtime.dart`，Android 原生实现为 `BackgroundExecutionChannel.kt` 与 `WenyouBackgroundReminderService.kt`；设备偏好为 `lib/core/application/background_reminder_preference.dart`，候选验收见[常驻与横幅记录](../architecture/background-reminders-acceptance.md)。
 
 代码入口：`lib/app/app_theme.dart`、`lib/app/app_router.dart`、`lib/app/wenyou_app.dart`、`lib/core/application/background_online_reminders.dart`、`lib/features/app_shell/application/background_online_poller.dart`、`lib/features/app_shell/application/background_online_reminder_coordinator.dart`、`lib/features/app_shell/presentation/app_scaffold.dart`、`lib/features/app_shell/presentation/startup_gate.dart`、`lib/core/platform/android_background_notification_gateway.dart`、`lib/main.dart`、`android/app/src/main/`、`ios/Runner/Assets.xcassets/`、`test/features/app_shell/`、`integration_test/performance_test.dart`、`tool/windows/Measure-WenyouAndroidPerformance.ps1`、`tool/release-mobile-from-local.sh`。参见[设置](settings.md)、[私有发布运维](../../contracts/mobile-release-operations.md)、[Foundation v6.9.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.9.0/docs/platforms/mobile.md)、[移动端性能基线](../architecture/performance.md)、[语义图标](../architecture/icons.md)、[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)、[温油钱包](wallet.md)和[站内私聊](direct-messages.md)。
+
+复制链接后恢复前台提示的候选与定向回归见[验收记录](../architecture/clipboard-own-link-acceptance.md)，原问题仍待负责人真机复验。

@@ -273,6 +273,8 @@ GIF 上传插入修复（2026-09-13，负责人验收通过）：新主题正文
 
 ## 13. 最近审查的契约版本和后端提交
 
+本次兼容契约审查：5.28.0-dev.20260929.1，Backend 21acf512285f2a21aaa831f960211780de73aafc。仅新增可选 nullable editedAt；本模块行为与原验收状态保持。
+
 2026-09-28 固定关系计数候选来源：Backend `e807a3aa0cb15a626e5601eedc93f23c72d2e6c4`／`5.27.1-dev.20260928.1`。OpenAPI 仅补充已注销账号与查看者可见性的计数说明并递增 PATCH，无字段、类型或接口变化；本模块运行时代码与既有验收状态保持。候选来源不代表已部署，详见[关系数量排查](../architecture/profile-follow-counts-investigation.md)。
 
 2026-09-27 更新说明已部署契约复核：Backend `1d43b85f7aa8cd1ab03f6ab34f1851462e1a0021`、契约 `5.27.0-dev.20260927.1`。新增公开说明与管理类型，既有接口和 `/meta` 保持兼容；新能力由 app-shell 独立接入，不代表本模块其他行为或负责人验收变化。详见[契约同步](../architecture/mobile-release-contract-sync.md)。
@@ -330,3 +332,5 @@ GIF 上传插入修复（2026-09-13，负责人验收通过）：新主题正文
 ## 14. 相关代码与架构文档
 
 主题创建、阅读、管理端口与状态：`lib/features/threads/application/`；API 适配器：`lib/features/threads/data/`；页面：`lib/features/threads/presentation/`；通用编辑会话与工具栏：`lib/features/editor/`；标签代码：`lib/features/tags/`。参见[编辑器](editor.md)、[Foundation 实现审计](../architecture/foundation-compliance-audit.md)、[主题帖测试审计](../architecture/thread-detail-test-audit.md)、[草稿](drafts.md)、[楼层与回复](posts.md)、[标签](tags.md)、[温油钱包](wallet.md)、[社区举报](reports.md)、[导航](../architecture/navigation.md)、[语义图标](../architecture/icons.md)、[Foundation v6.9.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.9.0/docs/platforms/mobile.md)。
+
+主题／子贴正文、楼层以及邀请生成后的自动复制与「再次复制」使用共享显式链接复制端口，系统复制成功立即由应用壳记录事件，切出返回不反向提示；普通正文／富文本复制保持原有协议。此行为为待真机复验候选，见[验收记录](../architecture/clipboard-own-link-acceptance.md)。

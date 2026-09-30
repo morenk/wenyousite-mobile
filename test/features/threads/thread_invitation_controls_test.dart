@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
+import 'package:wenyousite_mobile/core/navigation/navigation_link_writer.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/threads/data/thread_invitation_repository.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_invitation_models.dart';
@@ -11,7 +12,12 @@ import 'package:wenyousite_mobile/features/threads/presentation/thread_invitatio
 void main() {
   testWidgets('生成邀请必须确认旧链接失效并保留可重复复制链接', (tester) async {
     final repository = _PanelRepository();
-    await _pumpPanel(tester, repository);
+    final copied = <String>[];
+    await _pumpPanel(
+      tester,
+      repository,
+      linkWriter: (text) async => copied.add(text),
+    );
 
     await tester.tap(find.byKey(const Key('thread-invite-link-generate')));
     await tester.pumpAndSettle();
@@ -33,6 +39,10 @@ void main() {
       findsOneWidget,
     );
     expect(find.byKey(const Key('thread-invite-link-copy')), findsOneWidget);
+    expect(copied, ['https://wenyou.site/join/Abcd_1234-efGh56']);
+    await tester.tap(find.byKey(const Key('thread-invite-link-copy')));
+    await tester.pumpAndSettle();
+    expect(copied, List.filled(2, 'https://wenyou.site/join/Abcd_1234-efGh56'));
   });
 
   testWidgets('生成失败显示请求 ID 并可关闭提示', (tester) async {
@@ -63,11 +73,14 @@ void main() {
 
 Future<void> _pumpPanel(
   WidgetTester tester,
-  ThreadInvitationRepository repository,
-) async {
+  ThreadInvitationRepository repository, {
+  NavigationLinkWriter? linkWriter,
+}) async {
   final container = ProviderContainer(
     overrides: [
       threadInvitationRepositoryProvider.overrideWithValue(repository),
+      if (linkWriter != null)
+        navigationLinkWriterProvider.overrideWithValue(linkWriter),
     ],
   );
   final router = GoRouter(
