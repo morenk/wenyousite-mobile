@@ -493,6 +493,7 @@ export 'package:wenyou_api/src/model/thread_tags_find_all200_response.dart';
 export 'package:wenyou_api/src/model/thread_tags_remove200_response.dart';
 export 'package:wenyou_api/src/model/threads_create201_response.dart';
 export 'package:wenyou_api/src/model/threads_create_invite_link200_response.dart';
+export 'package:wenyou_api/src/model/threads_ensure_invite_link200_response.dart';
 export 'package:wenyou_api/src/model/threads_find_all200_response.dart';
 export 'package:wenyou_api/src/model/threads_find_by_id200_response.dart';
 export 'package:wenyou_api/src/model/threads_find_drafts200_response.dart';
