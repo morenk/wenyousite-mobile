@@ -572,6 +572,7 @@ Serializers _$serializers =
           ..add(ThreadTagsRemove200Response.serializer)
           ..add(ThreadsCreate201Response.serializer)
           ..add(ThreadsCreateInviteLink200Response.serializer)
+          ..add(ThreadsEnsureInviteLink200Response.serializer)
           ..add(ThreadsFindAll200Response.serializer)
           ..add(ThreadsFindById200Response.serializer)
           ..add(ThreadsFindDrafts200Response.serializer)

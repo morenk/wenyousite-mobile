@@ -233,6 +233,7 @@ const diagnosticApiRoutes = <String, String>{
   'POST /api/v1/users/me/block/{id}': 'usersFollowBlock',
   'POST /api/v1/users/{id}/tips': 'economyTipUser',
   'PUT /api/v1/subthreads/{subthreadId}/body': 'postsUpsertBody',
+  'PUT /api/v1/threads/{id}/invite-link': 'threadsEnsureInviteLink',
   'PUT /api/v1/threads/{threadId}/subthreads/reorder': 'subthreadsReorder',
   'DELETE /api/v1/moments/{id}/comments/{commentId}': 'momentsRemoveComment',
   'DELETE /api/v1/threads/{threadId}/tags/{tagId}': 'threadTagsRemove',

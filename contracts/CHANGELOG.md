@@ -1,5 +1,18 @@
 # API 合同变更
 
+## 5.29.0-dev.20261001.1
+
+- 兼容新增 PUT /threads/{id}/invite-link（threadsEnsureInviteLink），无请求体、200、现有 InviteLinkResponseDto。仅已发布私帖楼主可用，原子取得或首次创建；重复和并发复制不刷新 token。
+- 既有 POST 与 threadsCreateInviteLink 保持主动重置语义；旧链接对所有人统一失效，已有成员仍可从帖子入口访问。无迁移、无成员变更或旧接口弃用。
+- Web / Windows Mobile 从已提交契约生成客户端；当前邀请入口只保留点击即复制，每次使用 PUT，只有剪贴板失败才就地显示手动复制链接。当前消费端不提供独立标题、常驻说明、重置 UI 或正常态链接正文；接口失败不调用 POST。POST 继续兼容旧客户端重置，其结果不明时不得自动重发，可通过 PUT 取回当前链接。先后端兼容、再消费者，Foundation 仅同步交互说明。
+- 本轮邀请入口简化只修订消费文档；HTTP/OpenAPI、operationId、DTO、版本及旧客户端成员规则均保持，不新增迁移或 API 版本。
+
+## 5.28.0-dev.20260929.1
+
+- PostBaseResponseDto 兼容新增可选 nullable date-time `editedAt`，覆盖楼层、内嵌楼中楼、回复分页、详情与编辑响应；历史与未编辑帖子为 null。
+- 只在规范化持久正文实际改变的成功编辑事务中写入服务端时间；无改动保存、失败、置顶、删除恢复及发布骰子结算不改变编辑记录。BODY 写入使用相同语义。
+- Web / Mobile 楼层与楼中楼有 `editedAt` 时仅显示“编辑于…”及该时间，否则沿用 `createdAt`；时间格式、排序、`updatedAt` 与乐观锁语义不变。先发布兼容后端，再发布消费者；不删除旧字段。
+
 ## 5.27.1-dev.20260928.1
 
 - 修正本人、登录公开及游客公开资料的 `_count.following` / `_count.followers`：排除已注销账号，与同一查看者的关系列表使用相同过滤，保留双向拉黑语义和历史关系。
