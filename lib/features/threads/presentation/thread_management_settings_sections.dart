@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_selection_menu.dart';
@@ -45,7 +46,12 @@ class ThreadManagementBasicsSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('主题标题', style: Theme.of(context).textTheme.wenyouRowTitle),
+        Text(
+          '主题标题',
+          style: Theme.of(
+            context,
+          ).textTheme.wenyouRowTitle.copyWith(fontWeight: FontWeight.w400),
+        ),
         SizedBox(height: tokens.space8),
         TextFormField(
           key: const Key('thread-management-title'),
@@ -133,16 +139,81 @@ class ThreadManagementBasicsSection extends StatelessWidget {
             ],
           ),
         ),
-        SizedBox(height: tokens.space4),
-        WenyouSettingsLink(
-          contentPadding: EdgeInsets.zero,
-          key: const Key('thread-management-edit-tags'),
-          title: '主题标签',
-          value: tags.isEmpty ? '未添加' : tags.join('、'),
-          enabled: enabled,
-          onTap: enabled ? onEditTags : null,
-        ),
+        _ThreadManagementTags(tags: tags, enabled: enabled, onEdit: onEditTags),
       ],
+    );
+  }
+}
+
+class _ThreadManagementTags extends StatelessWidget {
+  const _ThreadManagementTags({
+    required this.tags,
+    required this.enabled,
+    required this.onEdit,
+  });
+  final List<String> tags;
+  final bool enabled;
+  final VoidCallback onEdit;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.wenyouTokens;
+    if (tags.isEmpty) {
+      return WenyouSettingsLink(
+        key: const Key('thread-management-edit-tags'),
+        contentPadding: EdgeInsets.zero,
+        title: '主题标签',
+        value: '添加标签',
+        enabled: enabled,
+        onTap: enabled ? onEdit : null,
+      );
+    }
+    return Semantics(
+      button: true,
+      enabled: enabled,
+      child: InkWell(
+        key: const Key('thread-management-edit-tags'),
+        onTap: enabled ? onEdit : null,
+        child: Padding(
+          padding: EdgeInsets.only(bottom: tokens.space8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              ConstrainedBox(
+                constraints: BoxConstraints(
+                  minHeight: tokens.minimumTouchTarget + tokens.space8,
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        '主题标签',
+                        style: Theme.of(context).textTheme.wenyouRowTitle
+                            .copyWith(fontWeight: FontWeight.w400),
+                      ),
+                    ),
+                    const WenyouIcon(WenyouIconIds.navigationNext),
+                  ],
+                ),
+              ),
+              Wrap(
+                key: const Key('thread-management-tag-summary'),
+                spacing: tokens.space12,
+                runSpacing: tokens.space8,
+                children: [
+                  for (final tag in tags)
+                    Text(
+                      WenyouElementContract.topicTagPrefix + tag,
+                      style: Theme.of(context).textTheme.wenyouLabel.copyWith(
+                        color: tokens.brandForeground,
+                      ),
+                    ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -171,7 +242,6 @@ class ThreadManagementPublishingSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tokens = context.wenyouTokens;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -208,7 +278,6 @@ class ThreadManagementPublishingSection extends StatelessWidget {
                   onStatusChanged(selected);
                 },
         ),
-        SizedBox(height: tokens.space4),
         WenyouSettingsLink(
           contentPadding: EdgeInsets.zero,
           key: const Key('thread-management-visibility'),
@@ -245,7 +314,6 @@ class ThreadManagementPublishingSection extends StatelessWidget {
                 },
         ),
         if (postingPolicy != null) ...[
-          SizedBox(height: tokens.space4),
           WenyouSettingsLink(
             contentPadding: EdgeInsets.zero,
             key: const Key('thread-management-posting-policy'),

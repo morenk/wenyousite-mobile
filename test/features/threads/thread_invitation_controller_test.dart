@@ -7,38 +7,6 @@ import 'package:wenyousite_mobile/features/threads/data/thread_invitation_reposi
 import 'package:wenyousite_mobile/features/threads/domain/thread_invitation_models.dart';
 
 void main() {
-  for (final failure in [
-    const ApiFailure(businessCode: 40101),
-    const ApiFailure(httpStatus: 429),
-    const ApiFailure(httpStatus: 503),
-    const ApiFailure.invalidResponse(diagnosticCode: 'TEST_INVALID_INVITE'),
-  ]) {
-    test(
-      '重置不确定失败只取回当前链接：${failure.businessCode ?? failure.httpStatus ?? failure.reason}',
-      () async {
-        final repository = _FakeInvitationRepository()..resetFailure = failure;
-        final controller = ThreadInviteLinkController('thread-1', repository);
-        addTearDown(controller.dispose);
-        final result = await controller.reset();
-        expect(repository.resetCalls, 1);
-        expect(repository.ensureCalls, 1);
-        expect(result?.resetConfirmed, isFalse);
-        expect(result?.recoveredAfterReset, isTrue);
-      },
-    );
-  }
-
-  test('明确拒绝重置不取回或重复提交', () async {
-    final repository = _FakeInvitationRepository()
-      ..resetFailure = const ApiFailure(httpStatus: 403, businessCode: 40301);
-    final controller = ThreadInviteLinkController('thread-1', repository);
-    addTearDown(controller.dispose);
-    expect(await controller.reset(), isNull);
-    expect(repository.resetCalls, 1);
-    expect(repository.ensureCalls, 0);
-    expect(controller.state.link, isNull);
-  });
-
   test('已加入预览重新核验旧链接404时清空预览并进入失败终态', () async {
     final repository = _FakeInvitationRepository(
       previewValue: _preview(alreadyJoined: true),
@@ -67,8 +35,8 @@ void main() {
     final link = await controller.ensure();
 
     expect(repository.ensureCalls, 1);
-    expect(link?.link.token, 'Abcd_1234-efGh56');
-    expect(controller.state.link, same(link?.link));
+    expect(link?.token, 'Abcd_1234-efGh56');
+    expect(controller.state.link, same(link));
     expect(controller.state.failure, isNull);
   });
 

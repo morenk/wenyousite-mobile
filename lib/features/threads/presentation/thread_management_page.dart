@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -7,9 +6,11 @@ import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_sheet.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_tag_chip.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_management_controller.dart';
 import 'package:wenyousite_mobile/features/threads/domain/subthread_management_models.dart';
@@ -17,6 +18,7 @@ import 'package:wenyousite_mobile/features/threads/domain/thread_management_mode
 import 'package:wenyousite_mobile/features/threads/presentation/subthread_management_page.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_export_sheet.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_invitation_controls.dart';
+import 'package:wenyousite_mobile/features/threads/presentation/thread_management_action_row.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_management_autosave.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_management_settings_sections.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_member_management_page.dart';
@@ -44,7 +46,7 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _titleFocusNode = FocusNode();
-  late final ThreadManagementAutosaveCoordinator _autosave;
+  late ThreadManagementAutosaveCoordinator _autosave;
   late ThreadManagementSection _section;
   String? _categorySlug;
   ThreadManagementStatus _status = ThreadManagementStatus.recruiting;
@@ -67,6 +69,25 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
     );
   }
 
+  void _resetTarget() {
+    _autosave.dispose();
+    _autosave = ThreadManagementAutosaveCoordinator(
+      hasChanges: _hasAutosaveChanges,
+      onSave: _saveAutomatically,
+    );
+    _boundSignature = null;
+    _changed = false;
+    _allowPop = false;
+    _tagEditorScheduled = false;
+    _section = widget.initialSection;
+  }
+
+  @override
+  void didUpdateWidget(covariant ThreadManagementPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.threadId != widget.threadId) _resetTarget();
+  }
+
   @override
   void dispose() {
     _autosave.dispose();
@@ -79,6 +100,9 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(sessionScopeProvider, (before, after) {
+      if (before != after) setState(_resetTarget);
+    });
     final provider = threadManagementControllerProvider(widget.threadId);
     final state = ref.watch(provider);
     final bootstrap = state.bootstrap;
@@ -168,9 +192,8 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
     final showInvite =
         thread.isOwner &&
         thread.published &&
-        thread.visibility == ThreadManagementVisibility.private;
-    final showActions = thread.published || thread.isOwner;
-    final actionTitleStyle = Theme.of(context).textTheme.wenyouRowTitle;
+        thread.visibility == ThreadManagementVisibility.private &&
+        _visibility == ThreadManagementVisibility.private;
     return WenyouPageBody(
       key: const Key('thread-management-settings-content'),
       child: Form(
@@ -194,7 +217,7 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
               },
               onEditTags: _editTags,
             ),
-            SizedBox(height: tokens.space24),
+            SizedBox(height: tokens.space16),
             ThreadManagementPublishingSection(
               status: _status,
               visibility: _visibility,
@@ -250,61 +273,32 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
                       ),
               ),
             ],
-            if (showActions) ...[
-              SizedBox(height: tokens.space24),
+            if (showInvite || thread.published) ...[
+              SizedBox(height: tokens.space16),
               if (showInvite)
-                ListTile(
-                  key: const Key('thread-management-invite'),
-                  contentPadding: EdgeInsets.zero,
-                  minTileHeight: 56,
+                ThreadInviteLinkCopyRow(
+                  key: ValueKey(widget.threadId),
+                  threadId: widget.threadId,
                   enabled: !locked,
-                  leading: const WenyouIcon(WenyouIconIds.securityPassword),
-                  title: const Text('私密邀请'),
-                  titleTextStyle: actionTitleStyle,
-                  trailing: const WenyouIcon(WenyouIconIds.navigationNext),
-                  onTap: locked ? null : _openInviteLinkSheet,
+                  beforeCopy: _prepareInviteCopy,
                 ),
-              if (showInvite) SizedBox(height: tokens.space4),
               if (thread.published)
-                ListTile(
+                ThreadManagementActionRow(
                   key: const Key('thread-management-export'),
-                  contentPadding: EdgeInsets.zero,
-                  minTileHeight: 56,
-                  enabled: !locked,
-                  leading: const WenyouIcon(WenyouIconIds.actionDownload),
-                  title: const Text('导出档案'),
-                  titleTextStyle: actionTitleStyle,
-                  trailing: const WenyouIcon(WenyouIconIds.navigationNext),
+                  title: '导出档案',
+                  icon: WenyouIconIds.actionDownload,
                   onTap: locked ? null : _exportArchive,
                 ),
-              if (thread.published && thread.isOwner)
-                SizedBox(height: tokens.space4),
-              if (thread.isOwner)
-                ListTile(
-                  key: const Key('thread-management-delete'),
-                  contentPadding: EdgeInsets.zero,
-                  minTileHeight: 56,
-                  enabled: !state.isBusy,
-                  leading: WenyouIcon(
-                    WenyouIconIds.actionDelete,
-                    color: state.isBusy
-                        ? tokens.mutedText
-                        : Theme.of(context).colorScheme.error,
-                  ),
-                  title: const Text('删除主题'),
-                  titleTextStyle: actionTitleStyle.copyWith(
-                    color: state.isBusy
-                        ? tokens.mutedText
-                        : Theme.of(context).colorScheme.error,
-                  ),
-                  trailing: WenyouIcon(
-                    WenyouIconIds.navigationNext,
-                    color: state.isBusy
-                        ? tokens.mutedText
-                        : Theme.of(context).colorScheme.error,
-                  ),
-                  onTap: state.isBusy ? null : _confirmDelete,
-                ),
+            ],
+            if (thread.isOwner) ...[
+              SizedBox(height: tokens.space16),
+              ThreadManagementActionRow(
+                key: const Key('thread-management-delete'),
+                title: '删除主题',
+                icon: WenyouIconIds.actionDelete,
+                destructive: true,
+                onTap: state.isBusy ? null : _confirmDelete,
+              ),
             ],
           ],
         ),
@@ -321,21 +315,24 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
     tagNames: _tagNames,
   );
 
-  Future<void> _openInviteLinkSheet() {
-    return showWenyouSheet<void>(
-      context: context,
-      builder: (sheetContext) => SingleChildScrollView(
-        padding: EdgeInsets.fromLTRB(
-          sheetContext.wenyouTokens.space16,
-          0,
-          sheetContext.wenyouTokens.space16,
-          sheetContext.wenyouTokens.space16,
-        ),
-        child: WenyouConstrainedWidth(
-          child: ThreadInviteLinkPanel(threadId: widget.threadId),
-        ),
-      ),
-    );
+  Future<bool> _prepareInviteCopy() async {
+    final threadId = widget.threadId;
+    final scope = ref.read(sessionScopeProvider);
+    if (!await _autosave.saveNow() ||
+        !mounted ||
+        widget.threadId != threadId ||
+        ref.read(sessionScopeProvider) != scope) {
+      return false;
+    }
+    final saved = ref.read(threadManagementControllerProvider(threadId));
+    final thread = saved.bootstrap?.thread;
+    return saved.phase == ThreadManagementPhase.ready &&
+        !saved.isBusy &&
+        thread != null &&
+        thread.canManage &&
+        thread.isOwner &&
+        thread.published &&
+        thread.visibility == ThreadManagementVisibility.private;
   }
 
   Future<void> _exportArchive() async {
@@ -675,13 +672,10 @@ class _ThreadTagSelectorSheetState extends State<_ThreadTagSelectorSheet> {
                   runSpacing: tokens.space8,
                   children: [
                     for (final tag in _tags)
-                      InputChip(
-                        label: Text(tag),
+                      WenyouTagChip(
+                        name: tag,
+                        deleteTooltip: '移除 #$tag',
                         onDeleted: () => setState(() => _tags.remove(tag)),
-                        deleteIcon: const WenyouIcon(
-                          WenyouIconIds.actionClose,
-                          size: 16,
-                        ),
                       ),
                   ],
                 ),

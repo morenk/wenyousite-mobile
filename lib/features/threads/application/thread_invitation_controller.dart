@@ -15,63 +15,23 @@ class ThreadInviteLinkController extends StateNotifier<ThreadInviteLinkState> {
   final String _threadId;
   final ThreadInvitationRepository _repository;
 
-  Future<ThreadInviteLinkResult?> ensure() => _obtain(reset: false);
-
-  Future<ThreadInviteLinkResult?> reset() => _obtain(reset: true);
-
-  Future<ThreadInviteLinkResult?> _obtain({required bool reset}) async {
+  Future<ThreadInvitationLink?> ensure() async {
     if (!mounted || state.isLoading) return null;
-    // 重新核对期间不保留可能已被另一设备重置的旧凭据。
+    // 每次分享重新核对，失败时不保留可能过期的凭据。
     state = const ThreadInviteLinkState(isLoading: true);
     try {
-      final link = await (reset
-          ? _repository.resetLink(_threadId)
-          : _repository.ensureLink(_threadId));
+      final link = await _repository.ensureLink(_threadId);
       if (!mounted) return null;
       state = ThreadInviteLinkState(link: link);
-      return ThreadInviteLinkResult(link: link, resetConfirmed: reset);
+      return link;
     } catch (error) {
       if (!mounted) return null;
-      final failure = mapApplicationFailure(error, '邀请链接操作失败，请稍后重试。');
-      if (reset &&
-          (failure.hasUnknownWriteOutcome ||
-              failure.isExpiredAccessToken ||
-              failure.reason == FailureReason.contractViolation)) {
-        // POST 不重放。取回当前链接只证明链接可用，不证明重置成功。
-        try {
-          final link = await _repository.ensureLink(_threadId);
-          if (!mounted) return null;
-          state = ThreadInviteLinkState(link: link);
-          return ThreadInviteLinkResult(link: link, recoveredAfterReset: true);
-        } catch (recoveryError) {
-          if (!mounted) return null;
-          state = ThreadInviteLinkState(
-            failure: mapApplicationFailure(recoveryError, '邀请链接获取失败，请稍后重试。'),
-            resetUnconfirmed: true,
-          );
-          return null;
-        }
-      }
-      state = ThreadInviteLinkState(failure: failure);
+      state = ThreadInviteLinkState(
+        failure: mapApplicationFailure(error, '邀请链接获取失败，请重试。'),
+      );
       return null;
     }
   }
-
-  void clearFailure() {
-    if (mounted && !state.isLoading) state = state.copyWith(failure: null);
-  }
-}
-
-class ThreadInviteLinkResult {
-  const ThreadInviteLinkResult({
-    required this.link,
-    this.resetConfirmed = false,
-    this.recoveredAfterReset = false,
-  });
-
-  final ThreadInvitationLink link;
-  final bool resetConfirmed;
-  final bool recoveredAfterReset;
 }
 
 class ThreadInvitationAccessController

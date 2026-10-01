@@ -19,6 +19,7 @@ Future<void> pumpThreadManagementTestPage(
   ThreadManagementRepository repository, {
   ThreadInvitationRepository? invitationRepository,
   SubthreadManagementRepository? subthreadRepository,
+  bool dark = false,
 }) async {
   final container = ProviderContainer(
     overrides: [
@@ -68,7 +69,11 @@ Future<void> pumpThreadManagementTestPage(
   await tester.pumpWidget(
     UncontrolledProviderScope(
       container: container,
-      child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
+      child: MaterialApp.router(
+        debugShowCheckedModeBanner: false,
+        theme: dark ? AppTheme.dark : AppTheme.light,
+        routerConfig: router,
+      ),
     ),
   );
   await tester.pumpAndSettle();
@@ -205,9 +210,17 @@ ThreadManagementBootstrap threadManagementTestBootstrap({
 
 class ThreadManagementTestInvitationRepository
     implements ThreadInvitationRepository {
+  int ensureCalls = 0;
   @override
-  Future<ThreadInvitationLink> ensureLink(String threadId) {
-    throw UnimplementedError();
+  Future<ThreadInvitationLink> ensureLink(String threadId) async {
+    ensureCalls++;
+    return ThreadInvitationLink(
+      id: 'invite',
+      threadId: threadId,
+      token: 'Abcd_1234-efGh56',
+      url: Uri.parse('https://wenyou.site/join/Abcd_1234-efGh56'),
+      createdAt: DateTime.utc(2026),
+    );
   }
 
   @override

@@ -6,13 +6,11 @@ class ThreadInviteLinkState {
     this.isLoading = false,
     this.link,
     this.failure,
-    this.resetUnconfirmed = false,
   });
 
   final bool isLoading;
   final ThreadInvitationLink? link;
   final ApiFailure? failure;
-  final bool resetUnconfirmed;
 
   ThreadInviteLinkState copyWith({
     bool? isLoading,
@@ -25,7 +23,6 @@ class ThreadInviteLinkState {
       failure: identical(failure, _unset)
           ? this.failure
           : failure as ApiFailure?,
-      resetUnconfirmed: resetUnconfirmed,
     );
   }
 }
