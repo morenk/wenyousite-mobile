@@ -25,7 +25,7 @@
 
 交互预览使用治理已验证的 `discussion-navigation-20261001` / `preview_735f30884c451baf96cf97f3`，Backend 身份为上述固定 SHA；Windows 仅借用治理持有的 API／媒体隧道，不复制数据库或凭据。设备 `4b9c39b5` 为唯一 ARM64 Android 16 真机，启动前再次通过 `dev:list` 检查排他会话。其他任务自行停止后才能安装本任务 Debug；不卸载、不清数据、不接管其他任务。
 
-当前真实历史副本最多 41 条主楼／43 条回复；万条规模证据来自独立测试，不宣称真人预览有历史万楼。普通构建的公网配置 APK 只记为构建证据，不作为本功能体验包。实际启动记录与最终门禁结果在本轮结束时补充。
+当前真实历史副本最多 41 条主楼／43 条回复；万条规模证据来自独立测试，不宣称真人预览有历史万楼。普通构建的公网配置 APK 只记为构建证据，不作为本功能体验包。实际启动与完整门禁结果见下文；功能画面和真人手感仍待负责人验收。
 
 ## 负责人体验清单
 
@@ -44,3 +44,14 @@
 - `目标回复沿 cursor 加载，揭开后普通分页错误保持列表可见`：`test/features/posts/post_replies_page_scrolling_lifecycle_cases.dart`，保留目标窗口后的分页失败／重试可见性断言，`post_replies_page_test.dart`整组43/43通过。
 
 构建产物 `build/app/outputs/flutter-apk/app-debug.apk`，109554022字节，SHA-256 `c952095518ad2e975e4e8a424c19c7814cbe65c1fd8a406653e33c8496de542a`，2026-10-02 22:01:23（北京时间）。这是公网默认配置构建证据，不用于新接口真人体验；隔离 Debug 由正式 `dev:start` 单独绑定本轮 consumer。
+
+## 隔离 Debug 启动记录
+
+应用与上述测试修复共同提交于 `bc9691663212a5642fd22d70e0a92599354d586c`，已推送[草稿 PR #83](https://github.com/morenk/wenyousite-mobile/pull/83)。本节仅补充文档，不改变已验证的应用源码。
+
+- 正式 `dev:start` 启动前再次核对 `dev:list`，原设备任务已经自行停止、无 active 或 blocked 冲突；没有接管、卸载或清数据。
+- 2026-10-02 22:09:18（北京时间）安装 `site.wenyou.app.debug`，版本 `0.8.0+97`；22:09:36 状态 `ready`，设备 `4b9c39b5`，启动记录 PID `24212`。`source` 与 `loadedSource` 均为上述提交，SHA-256 摘要均为 `3ab9e9f342eed0d7eed7d9df62c7fc6acb456bea19405f645de1ae647e5fd1bf`。
+- session `discussion-navigation-20261001`，runId `preview_735f30884c451baf96cf97f3`，Backend 固定 `62083784e27f697af3799e392011bf8f6dd825d2`，`borrowedTunnel=true`；源码与隔离身份已经由正式入口校验。
+- 实际设备 APK SHA-256 `ba6b6bb32e4a6ac45d2c7c79e6e60380729a05045f416316c6fe8b3378a233fa`，与上面的公网配置构建证据不同。本轮只首次安装与启动，没有热重载；后续热重载画面以新的 `loadedSource` 摘要为准，不能沿用初装 APK 哈希代表。
+- 已核对 Debug activity 启动；只读截图时负责人已在操作其他画面，未取得可归档的本功能画面。没有切回应用或导航打断负责人，故仍不能宣称真人视觉或千层拖动手感已验收。320dp 两倍字体明暗 Golden 仅为辅助证据。
+- 保持实时会话及共享桥接运行，后续反馈沿用本 Worktree、分支和 PR。状态用 `npm run dev:status` 查询，不将本条启动记录作为长期实时状态。
