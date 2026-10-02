@@ -14,6 +14,34 @@ void main() {
     '日常',
     '慢热长篇',
   ];
+  for (final dark in [false, true]) {
+    testWidgets('可见范围简短选项候选 ${dark ? 'dark_2x' : 'light_1x'}', (tester) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(320, 800);
+      tester.platformDispatcher.textScaleFactorTestValue = dark ? 2 : 1;
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+      await pumpThreadManagementTestPage(
+        tester,
+        ThreadManagementTestRepository(
+          initial: threadManagementTestBootstrap(),
+        ),
+        dark: dark,
+      );
+      final visibility = find.byKey(const Key('thread-management-visibility'));
+      await tester.ensureVisible(visibility);
+      await tester.tap(visibility);
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      await expectLater(
+        find.byType(Overlay).first,
+        matchesGoldenFile(
+          'goldens/thread_management_visibility_320_${dark ? 'dark_2x' : 'light_1x'}.png',
+        ),
+      );
+    });
+  }
   for (final width in [320.0, 360.0, 400.0, 600.0]) {
     for (final dark in [false, true]) {
       for (final scale in [1.0, 2.0]) {

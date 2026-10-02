@@ -215,6 +215,9 @@ void main() {
     await tester.tap(visibility);
     await tester.pumpAndSettle();
     expect(find.text('选择可见范围'), findsOneWidget);
+    expect(find.text('私密'), findsOneWidget);
+    expect(find.text('所有人都可以查看主题'), findsNothing);
+    expect(find.text('只有主题成员可以查看'), findsNothing);
     final private = find.byKey(
       const ValueKey('thread-management-visibility-choice-private'),
     );
@@ -225,7 +228,7 @@ void main() {
       repository.lastDraft?.visibility,
       ThreadManagementVisibility.private,
     );
-    expect(find.text('仅成员'), findsOneWidget);
+    expect(find.text('私密'), findsOneWidget);
     expect(find.text('只有主题成员可以查看'), findsNothing);
   });
 
