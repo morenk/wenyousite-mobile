@@ -197,6 +197,7 @@ import 'package:wenyou_api/src/model/direct_message_user_response_dto.dart';
 import 'package:wenyou_api/src/model/direct_messages_recall200_response.dart';
 import 'package:wenyou_api/src/model/direct_unread_count_response_dto.dart';
 import 'package:wenyou_api/src/model/discussion_author_response_dto.dart';
+import 'package:wenyou_api/src/model/discussion_window_target_dto.dart';
 import 'package:wenyou_api/src/model/draft_default_subthread_response_dto.dart';
 import 'package:wenyou_api/src/model/draft_response_dto.dart';
 import 'package:wenyou_api/src/model/draft_slot_usage_response_dto.dart';
@@ -217,6 +218,7 @@ import 'package:wenyou_api/src/model/economy_tip_thread201_response.dart';
 import 'package:wenyou_api/src/model/economy_tip_user201_response.dart';
 import 'package:wenyou_api/src/model/economy_transactions200_response.dart';
 import 'package:wenyou_api/src/model/floor_response_dto.dart';
+import 'package:wenyou_api/src/model/floor_window_response_dto.dart';
 import 'package:wenyou_api/src/model/forgot_password_dto.dart';
 import 'package:wenyou_api/src/model/gallery_image_dto.dart';
 import 'package:wenyou_api/src/model/gallery_list200_response.dart';
@@ -339,10 +341,12 @@ import 'package:wenyou_api/src/model/posting_capability_response_dto.dart';
 import 'package:wenyou_api/src/model/posts_create201_response.dart';
 import 'package:wenyou_api/src/model/posts_find_by_id200_response.dart';
 import 'package:wenyou_api/src/model/posts_find_floor_authors200_response.dart';
+import 'package:wenyou_api/src/model/posts_find_floor_window200_response.dart';
 import 'package:wenyou_api/src/model/posts_find_floors200_response.dart';
 import 'package:wenyou_api/src/model/posts_find_latest_in_thread200_response.dart';
 import 'package:wenyou_api/src/model/posts_find_replies200_response.dart';
 import 'package:wenyou_api/src/model/posts_find_reply_authors200_response.dart';
+import 'package:wenyou_api/src/model/posts_find_reply_window200_response.dart';
 import 'package:wenyou_api/src/model/posts_pin200_response.dart';
 import 'package:wenyou_api/src/model/posts_remove200_response.dart';
 import 'package:wenyou_api/src/model/posts_unpin200_response.dart';
@@ -368,6 +372,7 @@ import 'package:wenyou_api/src/model/reorder_subthreads_dto.dart';
 import 'package:wenyou_api/src/model/reordered_subthread_response_dto.dart';
 import 'package:wenyou_api/src/model/reply_response_dto.dart';
 import 'package:wenyou_api/src/model/reply_target_response_dto.dart';
+import 'package:wenyou_api/src/model/reply_window_response_dto.dart';
 import 'package:wenyou_api/src/model/report_response_dto.dart';
 import 'package:wenyou_api/src/model/report_user_summary_dto.dart';
 import 'package:wenyou_api/src/model/reports_create201_response.dart';
@@ -718,6 +723,7 @@ part 'serializers.g.dart';
   DirectMessagesRecall200Response,
   DirectUnreadCountResponseDto,
   DiscussionAuthorResponseDto,
+  DiscussionWindowTargetDto,
   DraftDefaultSubthreadResponseDto,
   DraftResponseDto,
   DraftSlotUsageResponseDto,
@@ -738,6 +744,7 @@ part 'serializers.g.dart';
   EconomyTipUser201Response,
   EconomyTransactions200Response,
   FloorResponseDto,
+  FloorWindowResponseDto,
   ForgotPasswordDto,
   GalleryImageDto,
   GalleryList200Response,
@@ -860,10 +867,12 @@ part 'serializers.g.dart';
   PostsCreate201Response,
   PostsFindById200Response,
   PostsFindFloorAuthors200Response,
+  PostsFindFloorWindow200Response,
   PostsFindFloors200Response,
   PostsFindLatestInThread200Response,
   PostsFindReplies200Response,
   PostsFindReplyAuthors200Response,
+  PostsFindReplyWindow200Response,
   PostsPin200Response,
   PostsRemove200Response,
   PostsUnpin200Response,
@@ -889,6 +898,7 @@ part 'serializers.g.dart';
   ReorderedSubthreadResponseDto,
   ReplyResponseDto,
   ReplyTargetResponseDto,
+  ReplyWindowResponseDto,
   ReportResponseDto,
   ReportUserSummaryDto,
   ReportsCreate201Response,

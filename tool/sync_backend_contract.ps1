@@ -200,6 +200,8 @@ $contractFiles = @(
   @{ Source = 'docs/mobile-client-guide.md'; Destination = 'mobile-client-guide.md' },
   @{ Source = 'docs/mobile-release-operations.md'; Destination = 'mobile-release-operations.md' },
   @{ Source = 'docs/app-download-gateway.md'; Destination = 'app-download-gateway.md' },
+  @{ Source = 'contracts/discussion-navigation.v1.json'; Destination = 'discussion-navigation.v1.json' },
+  @{ Source = 'docs/discussion-navigation.md'; Destination = 'discussion-navigation.md' },
   @{ Source = 'docs/media-display.md'; Destination = 'media-display.md' }
 )
 

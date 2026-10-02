@@ -75,6 +75,8 @@ auth 只提供登录页入口和普通会话；settings 只提供已登录入口
 
 ## 13. 最近审查的契约版本和后端提交
 
+2026-10-03 下载运行时契约同步：Backend `27dc3ff7eeb51334ff024feb8494e78eb7ae7fc8`／`5.31.0-dev.20261003.1`，完整保留下载接口与已合入的讨论窗口、可选 replyNumber。受限发布新增前置 `--gateway`；讨论定位能力留给独立切片，既有列表保持兼容，本模块其他行为与验收不因来源同步改变。见[同步记录](../architecture/private-apk-contract-sync.md)。
+
 2026-10-03 下载契约同步：Backend `c7060867fc938e002a14bff596886aea83279b1c`／`5.30.0-dev.20261002.2` 仅新增匿名下载信息与固定文件接口，本模块接口、状态及验收结论不变。SDK 和来源记录见[契约同步](../architecture/private-apk-contract-sync.md)；候选来源不代表已部署。
 
 2026-10-02 已部署来源登记：Backend `edd0b23d870d533df5f4ac787eb22df9a822981f`，API `5.29.0-dev.20261001.1`。官方同步入口仅更新来源SHA；OpenAPI、固定语料、消费者指南和生成客户端内容不变，本模块行为不变。

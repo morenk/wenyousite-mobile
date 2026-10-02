@@ -155,6 +155,8 @@ Android 的 Debug、Profile 和 Release 均仅支持 `arm64-v8a`，使用 ARM64 
 
 ## 13. 最近审查的契约版本和后端提交
 
+2026-10-03 下载运行时契约同步：Backend `27dc3ff7eeb51334ff024feb8494e78eb7ae7fc8`／`5.31.0-dev.20261003.1`，完整保留下载接口与已合入的讨论窗口、可选 replyNumber。受限发布新增前置 `--gateway`；讨论定位能力留给独立切片，既有列表保持兼容，本模块其他行为与验收不因来源同步改变。见[同步记录](../architecture/private-apk-contract-sync.md)。
+
 2026-10-03 下载网关契约同步：Backend `c7060867fc938e002a14bff596886aea83279b1c`／`5.30.0-dev.20261002.2`，新增匿名下载 JSON 与固定构建文件 GET/HEAD；`/meta` 和既有 APP 元数据／安装校验不变。SDK 新类型先保持生成可用，实际 APK 继续走独立下载 Dio，见[契约同步记录](../architecture/private-apk-contract-sync.md)。此处不代表已部署或已通过旧 APP 真机验收。
 
 2026-10-02 已部署来源登记：Backend `edd0b23d870d533df5f4ac787eb22df9a822981f`，API `5.29.0-dev.20261001.1`。官方同步入口仅更新来源SHA；OpenAPI、固定语料、消费者指南和生成客户端内容不变，本模块行为不变。

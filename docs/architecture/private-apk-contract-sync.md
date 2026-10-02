@@ -13,3 +13,13 @@ Foundation 文档／25 个共享场景固定于 `6c3776dd7c2de1aacafe0f6403fbb3e
 本次定向验证：OpenAPI validate 与 api:generate 成功；`app_download_contract_test.dart` 6 项通过，覆盖 nullable 状态、完整制品身份及匿名 HEAD/GET/Range；`contract_revision.test.mjs` 通过逐字来源同步和拒绝非祖先 revision；生成客户端全量分析零问题；API 覆盖 162/162、21 个模块文档检查通过。既有生成类型无变化，仅新增下载类型、导出、serializer 注册和三条诊断路由。此前应用完整门禁记录继续保留；最终接入后的必要门禁另行执行。
 
 源码来源检查继续以本文件的候选 SHA 为事实，不为消除公网版本／SHA 差异而部署或伪造同步。最终发布工具集成、测试与云／设备未验证项见[交接记录](private-apk-download-acceptance.md)。
+
+## 后续运行时契约同步（2026-10-03）
+
+精确来源更新为 Backend `27dc3ff7eeb51334ff024feb8494e78eb7ae7fc8`／`5.31.0-dev.20261003.1`。该提交包含下载运行时 `53f9325` 与最新讨论定位基线；下载 DTO/operationId 不变，完整 OpenAPI 新增两项讨论窗口、可选 `replyNumber`、窗口模型和 `40010 DISCUSSION_TARGET_FILTERED`，不能用先前下载 OpenAPI 覆盖它们。SDK 继续由固定生成器全量生成，窗口和编号的 UI 消费由另一个独立切片负责，本次不混改阅读行为。
+
+同步入口追加逐字导出 `discussion-navigation.v1.json` 和说明文档。两项未接入窗口 operationId 在覆盖清单明确列为独立切片；现有分页继续兼容。后端运行时入口已核验：原受限晋级命令前置 `--gateway`，`--url` 仍是历史 RainS3 制品地址；内部完成登记、鉴权预热、源身份/缓存复核、说明发布证明、网关启用和策略切换。失败恢复仍由原受限 `--recover` 执行，Windows 不自动恢复或直接执行内部 node CLI。
+
+凭据修正已经包含于本次同步的 Backend 文档：允许复用现有凭据，仅显式预热／修复读取私有配置，公开网关不持有或继承；应用限制不等于云端只读，不改原权限。此前记录保留为历史，不再作为当前前提。
+
+本次运行时来源同步验证：OpenAPI 校验／生成成功；下载契约消费 6 项通过；Windows 固定 revision 与新增文档逐字同步测试通过；生成客户端全量分析零问题；API 范围 162/162（238 总操作、76 项明确排除）及 21 个模块文档检查通过。最终门禁在发布工具接入后统一运行。
