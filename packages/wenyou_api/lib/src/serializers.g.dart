@@ -226,6 +226,7 @@ Serializers _$serializers =
           ..add(DirectUnreadCountResponseDto.serializer)
           ..add(DiscussionAuthorResponseDto.serializer)
           ..add(DiscussionAuthorResponseDtoRoleEnum.serializer)
+          ..add(DiscussionWindowTargetDto.serializer)
           ..add(DraftDefaultSubthreadResponseDto.serializer)
           ..add(DraftResponseDto.serializer)
           ..add(DraftSlotUsageResponseDto.serializer)
@@ -249,6 +250,7 @@ Serializers _$serializers =
           ..add(EconomyTransactions200Response.serializer)
           ..add(FloorResponseDto.serializer)
           ..add(FloorResponseDtoKindEnum.serializer)
+          ..add(FloorWindowResponseDto.serializer)
           ..add(ForgotPasswordDto.serializer)
           ..add(GalleryImageDto.serializer)
           ..add(GalleryList200Response.serializer)
@@ -412,10 +414,12 @@ Serializers _$serializers =
           ..add(PostsCreate201Response.serializer)
           ..add(PostsFindById200Response.serializer)
           ..add(PostsFindFloorAuthors200Response.serializer)
+          ..add(PostsFindFloorWindow200Response.serializer)
           ..add(PostsFindFloors200Response.serializer)
           ..add(PostsFindLatestInThread200Response.serializer)
           ..add(PostsFindReplies200Response.serializer)
           ..add(PostsFindReplyAuthors200Response.serializer)
+          ..add(PostsFindReplyWindow200Response.serializer)
           ..add(PostsPin200Response.serializer)
           ..add(PostsRemove200Response.serializer)
           ..add(PostsUnpin200Response.serializer)
@@ -447,6 +451,7 @@ Serializers _$serializers =
           ..add(ReplyResponseDto.serializer)
           ..add(ReplyResponseDtoKindEnum.serializer)
           ..add(ReplyTargetResponseDto.serializer)
+          ..add(ReplyWindowResponseDto.serializer)
           ..add(ReportResponseDto.serializer)
           ..add(ReportResponseDtoReasonCodeEnum.serializer)
           ..add(ReportResponseDtoStatusEnum.serializer)
@@ -855,6 +860,14 @@ Serializers _$serializers =
             () => ListBuilder<FloorResponseDto>(),
           )
           ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(FloorResponseDto)]),
+            () => ListBuilder<FloorResponseDto>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(FloorResponseDto)]),
+            () => ListBuilder<FloorResponseDto>(),
+          )
+          ..addBuilderFactory(
             const FullType(BuiltList, const [const FullType(GalleryImageDto)]),
             () => ListBuilder<GalleryImageDto>(),
           )
@@ -1099,6 +1112,14 @@ Serializers _$serializers =
           ..addBuilderFactory(
             const FullType(BuiltList, const [const FullType(ReplyResponseDto)]),
             () => ListBuilder<ReplyResponseDto>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(ReplyResponseDto)]),
+            () => ListBuilder<ReplyResponseDto>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(FloorResponseDto)]),
+            () => ListBuilder<FloorResponseDto>(),
           )
           ..addBuilderFactory(
             const FullType(BuiltList, const [

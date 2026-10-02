@@ -26,6 +26,7 @@ part 'post_detail_response_dto.g.dart';
 /// * [authorId]
 /// * [kind]
 /// * [floorNumber]
+/// * [replyNumber] - 根楼内固定回复编号，排序筛选与删除不重编号；主楼与正文为 null
 /// * [parentPostId]
 /// * [replyToPostId]
 /// * [clientRequestId] - 客户端创建请求幂等键；正文帖和旧客户端帖子为 null
@@ -66,6 +67,10 @@ abstract class PostDetailResponseDto implements Built<PostDetailResponseDto, Pos
 
   @BuiltValueField(wireName: r'floorNumber')
   num? get floorNumber;
+
+  /// 根楼内固定回复编号，排序筛选与删除不重编号；主楼与正文为 null
+  @BuiltValueField(wireName: r'replyNumber')
+  num? get replyNumber;
 
   @BuiltValueField(wireName: r'parentPostId')
   String? get parentPostId;
@@ -181,6 +186,13 @@ class _$PostDetailResponseDtoSerializer implements PrimitiveSerializer<PostDetai
       object.floorNumber,
       specifiedType: const FullType.nullable(num),
     );
+    if (object.replyNumber != null) {
+      yield r'replyNumber';
+      yield serializers.serialize(
+        object.replyNumber,
+        specifiedType: const FullType.nullable(num),
+      );
+    }
     yield r'parentPostId';
     yield object.parentPostId == null ? null : serializers.serialize(
       object.parentPostId,
@@ -337,6 +349,14 @@ class _$PostDetailResponseDtoSerializer implements PrimitiveSerializer<PostDetai
           ) as num?;
           if (valueDes == null) continue;
           result.floorNumber = valueDes;
+          break;
+        case r'replyNumber':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(num),
+          ) as num?;
+          if (valueDes == null) continue;
+          result.replyNumber = valueDes;
           break;
         case r'parentPostId':
           final valueDes = serializers.deserialize(

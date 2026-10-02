@@ -50,6 +50,7 @@ class WenyouDiscussionListControls<T extends Object> extends StatelessWidget {
     this.authorsFailure,
     this.onRetryAuthors,
     this.countKey,
+    this.onCountPressed,
     this.authorKey,
     this.orderKey,
     super.key,
@@ -62,6 +63,7 @@ class WenyouDiscussionListControls<T extends Object> extends StatelessWidget {
     required this.onOrderChanged,
     this.enabled = true,
     this.countKey,
+    this.onCountPressed,
     this.orderKey,
     super.key,
   }) : authorId = null,
@@ -87,13 +89,14 @@ class WenyouDiscussionListControls<T extends Object> extends StatelessWidget {
   final ApiFailure? authorsFailure;
   final VoidCallback? onRetryAuthors;
   final Key? countKey;
+  final VoidCallback? onCountPressed;
   final Key? authorKey;
   final Key? orderKey;
 
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
-    final count = Text(
+    final label = Text(
       countLabel,
       key: countKey,
       maxLines: 1,
@@ -103,6 +106,22 @@ class WenyouDiscussionListControls<T extends Object> extends StatelessWidget {
         fontWeight: FontWeight.w600,
       ),
     );
+    final count = onCountPressed == null
+        ? label
+        : Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton(
+              onPressed: onCountPressed,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Flexible(child: label),
+                  SizedBox(width: tokens.space4),
+                  const WenyouIcon(WenyouIconIds.navigationExpand, size: 16),
+                ],
+              ),
+            ),
+          );
     final hasAuthorControl = onAuthorChanged != null;
     final actions = hasAuthorControl
         ? _DiscussionDirectActions<T>(

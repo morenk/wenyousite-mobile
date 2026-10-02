@@ -53,6 +53,7 @@ class PostItem {
     required this.isBody,
     required this.isDeleted,
     this.floorNumber,
+    this.replyNumber,
     this.parentPostId,
     this.replyToPostId,
     this.replyToAuthor,
@@ -76,6 +77,7 @@ class PostItem {
   final bool isBody;
   final bool isDeleted;
   final int? floorNumber;
+  final int? replyNumber;
   final String? parentPostId;
   final String? replyToPostId;
   final PostAuthor? replyToAuthor;

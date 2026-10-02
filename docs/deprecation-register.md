@@ -1,5 +1,11 @@
 # 兼容与弃用登记
 
+## 讨论固定编号与双向窗口（候选／待验收）
+
+- 固定 Backend `62083784e27f697af3799e392011bf8f6dd825d2`／`5.30.0-dev.20261001.1`。新增 `postsFindFloorWindow`、`postsFindReplyWindow` 与可选 `replyNumber`；旧列表、创建及帖子 ID 坐标继续保留。`total` 是筛选后条数，`maxNumber` 是当前查看者在整个范围可访问的最大固定编号，编号空洞不重排。
+- 默认首屏保留最多十条置顶及对应 ID 抑制集合；直接编号、ID 与返回位置读取窗口时清空置顶区。仅 `40010 DISCUSSION_TARGET_FILTERED` 清作者筛选重试一次；404 不替换为邻居，也不清空已有阅读内容。
+- 发布顺序为兼容 Backend → 消费端；本切片不删除旧接口、生成 SDK 或后端编号兼容触发器。回滚消费者可恢复旧分页，已分配编号不重排。Foundation 正式依赖仍固定 `v7.2.1`，不新增本地持久阅读进度。
+
 ## 私密邀请链接复用（候选／待负责人验收）
 
 - 当前消费者文档来源升级至 Backend `4db0cdf2c079fc8b66545c67849053cd74945f8a`，API／Schema未变。本轮按负责人反馈移除Mobile邀请Sheet、重置入口及专属控制器状态，设置页仅直接复制PUT。POST、operationId、生成SDK和repository禁止重放策略继续保留；这次不删除兼容协议。以下是初始契约接入记录。

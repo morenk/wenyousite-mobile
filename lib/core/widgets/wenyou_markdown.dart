@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -18,6 +17,7 @@ import 'package:wenyousite_mobile/core/markdown/markdown_source_protection.dart'
 import 'package:wenyousite_mobile/core/media/media_display.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_link.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_reference.dart';
+import 'package:wenyousite_mobile/core/widgets/discussion_selection_scope.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_body_divider.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_dice_node.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_inline_text_elements.dart';
@@ -75,7 +75,11 @@ class WenyouMarkdown extends StatefulWidget {
   State<WenyouMarkdown> createState() => _WenyouMarkdownState();
 }
 
-class _WenyouMarkdownState extends State<WenyouMarkdown> {
+class _WenyouMarkdownState extends State<WenyouMarkdown>
+    with AutomaticKeepAliveClientMixin {
+  DiscussionSelectionController? _selectionScope;
+  @override
+  bool get wantKeepAlive => _hasSelection;
   final _selectionAreaKey = GlobalKey<SelectionAreaState>();
   late final ValueNotifier<Map<String, String>> _diceLabels;
   late final ValueNotifier<Map<String, String>> _diceSemantics;
@@ -101,6 +105,7 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    _selectionScope = DiscussionSelectionScope.of(context);
     _styleSheet = _createStyleSheet(context);
     _renderedBody = null;
   }
@@ -141,6 +146,7 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
 
   @override
   void dispose() {
+    _selectionScope?.update(this, false);
     _diceLabels.dispose();
     _diceSemantics.dispose();
     _diceDetails.dispose();
@@ -148,7 +154,10 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
   }
 
   @override
-  Widget build(BuildContext context) => _renderedBody ??= _buildBody();
+  Widget build(BuildContext context) {
+    super.build(context);
+    return _renderedBody ??= _buildBody();
+  }
 
   Widget _buildBody() {
     final Widget body;
@@ -386,6 +395,8 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
 
   void _handleSelectionChanged(SelectedContent? content) {
     _hasSelection = content?.plainText.isNotEmpty == true;
+    _selectionScope?.update(this, _hasSelection);
+    updateKeepAlive();
   }
 
   void _handleNonTextLongPress() {
@@ -404,6 +415,8 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
     selectableRegion?.hideToolbar();
     selectableRegion?.clearSelection();
     _hasSelection = false;
+    _selectionScope?.update(this, false);
+    updateKeepAlive();
   }
 
   Future<String> _addImageToStickers(Uri uri) =>

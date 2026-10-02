@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/network/session_remote.dart';
@@ -15,7 +14,7 @@ import 'package:wenyousite_mobile/features/social/data/thread_interaction_reposi
 import 'package:wenyousite_mobile/features/social/data/thread_subscription_repository.dart';
 import 'package:wenyousite_mobile/features/social/domain/thread_subscription_models.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.dart';
-
+import '../../support/discussion_window_fixture.dart';
 import 'thread_detail_page_content_fixtures.dart';
 
 class ThreadDetailPageTestFakePostDiscussionAuthorDirectory
@@ -334,7 +333,9 @@ class ThreadDetailPageTestFakeThreadInteractionRepository
   Future<int> unlike(String threadId) async => 12;
 }
 
-class ThreadDetailPageTestFakePostRepository implements PostRepository {
+class ThreadDetailPageTestFakePostRepository
+    with PostWindowFixture
+    implements PostRepository {
   final List<String> removedIds = [];
   final List<({String postId, bool pinned})> pinRequests = [];
 
@@ -392,7 +393,9 @@ class ThreadDetailPageTestFakePostRepository implements PostRepository {
   }) => throw UnsupportedError('unused');
 }
 
-class ThreadDetailPageTestCreatingPostRepository implements PostRepository {
+class ThreadDetailPageTestCreatingPostRepository
+    with PostWindowFixture
+    implements PostRepository {
   final List<PostCreateInput> createInputs = [];
 
   @override
