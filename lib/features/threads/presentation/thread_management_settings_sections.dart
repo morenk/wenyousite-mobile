@@ -301,7 +301,6 @@ class ThreadManagementPublishingSection extends StatelessWidget {
                               value: value,
                               keyValue: value.name,
                               label: value.label,
-                              supportingLabel: value.description,
                             ),
                         ],
                       );

@@ -10,7 +10,6 @@ import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_sheet.dart';
-import 'package:wenyousite_mobile/core/widgets/wenyou_tag_chip.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_management_controller.dart';
 import 'package:wenyousite_mobile/features/threads/domain/subthread_management_models.dart';
@@ -22,6 +21,7 @@ import 'package:wenyousite_mobile/features/threads/presentation/thread_managemen
 import 'package:wenyousite_mobile/features/threads/presentation/thread_management_autosave.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_management_settings_sections.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_member_management_page.dart';
+import 'package:wenyousite_mobile/features/threads/presentation/thread_tag_selector_sheet.dart';
 
 enum ThreadManagementSection { settings, subthreads, members }
 
@@ -440,7 +440,7 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
   Future<void> _editTags() async {
     final result = await showWenyouSheet<List<String>>(
       context: context,
-      builder: (_) => _ThreadTagSelectorSheet(initial: _tagNames),
+      builder: (_) => ThreadTagSelectorSheet(initial: _tagNames),
     );
     if (result != null && mounted) {
       setState(() => _tagNames = result);
@@ -591,145 +591,6 @@ class _ThreadManagementAutosaveIndicator extends StatelessWidget {
         );
       },
     );
-  }
-}
-
-class _ThreadTagSelectorSheet extends StatefulWidget {
-  const _ThreadTagSelectorSheet({required this.initial});
-
-  final List<String> initial;
-
-  @override
-  State<_ThreadTagSelectorSheet> createState() =>
-      _ThreadTagSelectorSheetState();
-}
-
-class _ThreadTagSelectorSheetState extends State<_ThreadTagSelectorSheet> {
-  final _controller = TextEditingController();
-  late final List<String> _tags = [...widget.initial];
-  String? _error;
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = context.wenyouTokens;
-    return AnimatedPadding(
-      duration: tokens.feedbackDuration,
-      padding: EdgeInsets.only(bottom: 0),
-      child: SingleChildScrollView(
-        padding: EdgeInsets.fromLTRB(
-          tokens.space16,
-          0,
-          tokens.space16,
-          tokens.space16,
-        ),
-        child: WenyouConstrainedWidth(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                '编辑主题标签',
-                style: Theme.of(context).textTheme.wenyouOverlayTitle,
-              ),
-              SizedBox(height: tokens.space12),
-              TextField(
-                key: const Key('thread-management-tag-input'),
-                controller: _controller,
-                autofocus: true,
-                enabled: _tags.length < 5,
-                maxLength: 20,
-                textInputAction: TextInputAction.done,
-                onSubmitted: (_) => _add(),
-                decoration: InputDecoration(
-                  labelText: '标签名称',
-                  hintText: '输入后添加',
-                  errorText: _error,
-                  suffixIcon: IconButton(
-                    key: const Key('thread-management-tag-add'),
-                    tooltip: '添加标签',
-                    onPressed: _tags.length < 5 ? _add : null,
-                    icon: const WenyouIcon(WenyouIconIds.actionAdd),
-                  ),
-                ),
-              ),
-              SizedBox(height: tokens.space8),
-              Text(
-                '已选 ${_tags.length}/5',
-                style: Theme.of(
-                  context,
-                ).textTheme.wenyouCompactBody.copyWith(color: tokens.mutedText),
-              ),
-              if (_tags.isNotEmpty) ...[
-                SizedBox(height: tokens.space8),
-                Wrap(
-                  spacing: tokens.space8,
-                  runSpacing: tokens.space8,
-                  children: [
-                    for (final tag in _tags)
-                      WenyouTagChip(
-                        name: tag,
-                        deleteTooltip: '移除 #$tag',
-                        onDeleted: () => setState(() => _tags.remove(tag)),
-                      ),
-                  ],
-                ),
-              ],
-              SizedBox(height: tokens.space16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  TextButton(
-                    key: const Key('thread-management-tag-cancel'),
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text('取消'),
-                  ),
-                  SizedBox(width: tokens.space8),
-                  FilledButton(
-                    key: const Key('thread-management-tag-done'),
-                    onPressed: () => Navigator.pop<List<String>>(
-                      context,
-                      List<String>.unmodifiable(_tags),
-                    ),
-                    child: const Text('完成'),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _add() {
-    final value = _controller.text.trim();
-    final pattern = RegExp(r'^[A-Za-z0-9_\u4e00-\u9fff#]+$');
-    final error = value.isEmpty
-        ? '请输入标签名称'
-        : value.length > 20
-        ? '标签名称不能超过 20 个字符'
-        : !pattern.hasMatch(value)
-        ? '只能使用中英文、数字、下划线和 #'
-        : _tags.contains(value)
-        ? '这个标签已经添加'
-        : _tags.length >= 5
-        ? '最多添加 5 个标签'
-        : null;
-    if (error != null) {
-      setState(() => _error = error);
-      return;
-    }
-    setState(() {
-      _tags.add(value);
-      _controller.clear();
-      _error = null;
-    });
   }
 }
 

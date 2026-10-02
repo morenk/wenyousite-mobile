@@ -13,13 +13,12 @@ enum ThreadManagementStatus {
 }
 
 enum ThreadManagementVisibility {
-  public('公开', '所有人都可以查看主题'),
-  private('仅成员', '只有主题成员可以查看');
+  public('公开'),
+  private('私密');
 
-  const ThreadManagementVisibility(this.label, this.description);
+  const ThreadManagementVisibility(this.label);
 
   final String label;
-  final String description;
 }
 
 class ThreadManagementCategory {
