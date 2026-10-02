@@ -112,7 +112,7 @@ void main() {
       find.byKey(const Key('thread-management-tag-input')),
       '新标签',
     );
-    await tester.tap(find.byKey(const Key('thread-management-tag-add')));
+    await tester.testTextInput.receiveAction(TextInputAction.done);
     await tester.pump();
     expect(find.byType(WenyouTagChip), findsOneWidget);
     expect(find.text('已选 1/5'), findsOneWidget);
@@ -127,9 +127,8 @@ void main() {
     await tester.tap(find.text('#原标签'));
     await tester.pumpAndSettle();
     final input = find.byKey(const Key('thread-management-tag-input'));
-    final add = find.byKey(const Key('thread-management-tag-add'));
     await tester.enterText(input, '原标签');
-    await tester.tap(add);
+    await tester.testTextInput.receiveAction(TextInputAction.done);
     await tester.pump();
     expect(find.text('这个标签已经添加'), findsOneWidget);
     expect(find.text('已选 2/5'), findsOneWidget);
@@ -138,13 +137,12 @@ void main() {
     expect(find.text('已选 1/5'), findsOneWidget);
     for (final tag in ['新的甲', '新的乙', '新的丙', '新的丁']) {
       await tester.enterText(input, tag);
-      await tester.tap(add);
+      await tester.testTextInput.receiveAction(TextInputAction.done);
       await tester.pump();
     }
     expect(find.text('已选 5/5'), findsOneWidget);
     expect(tester.widget<TextField>(input).enabled, isFalse);
-    expect(tester.widget<IconButton>(add).onPressed, isNull);
-    await tester.tapAt(tester.getCenter(add));
+    expect(find.byKey(const Key('thread-management-tag-add')), findsNothing);
     await tester.pump();
     expect(find.byType(WenyouTagChip), findsNWidgets(5));
     expect(repository.updateCalls, 0);

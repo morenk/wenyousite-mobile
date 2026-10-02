@@ -60,7 +60,7 @@ void main() {
       find.byKey(const Key('thread-management-tag-input')),
       '新标签',
     );
-    await tester.tap(find.byKey(const Key('thread-management-tag-add')));
+    await tester.testTextInput.receiveAction(TextInputAction.done);
     await tester.pump();
     final originalChip = find.widgetWithText(InputChip, '#原标签');
     tester.widget<InputChip>(originalChip).onDeleted!();
@@ -92,7 +92,7 @@ void main() {
       find.byKey(const Key('thread-management-tag-input')),
       '暂存标签',
     );
-    await tester.tap(find.byKey(const Key('thread-management-tag-add')));
+    await tester.testTextInput.receiveAction(TextInputAction.done);
     await tester.pump();
     final originalChip = find.widgetWithText(InputChip, '#原标签');
     tester.widget<InputChip>(originalChip).onDeleted!();
