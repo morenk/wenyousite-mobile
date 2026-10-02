@@ -14,10 +14,12 @@ import 'package:wenyou_api/src/model/create_post_dto.dart';
 import 'package:wenyou_api/src/model/posts_create201_response.dart';
 import 'package:wenyou_api/src/model/posts_find_by_id200_response.dart';
 import 'package:wenyou_api/src/model/posts_find_floor_authors200_response.dart';
+import 'package:wenyou_api/src/model/posts_find_floor_window200_response.dart';
 import 'package:wenyou_api/src/model/posts_find_floors200_response.dart';
 import 'package:wenyou_api/src/model/posts_find_latest_in_thread200_response.dart';
 import 'package:wenyou_api/src/model/posts_find_replies200_response.dart';
 import 'package:wenyou_api/src/model/posts_find_reply_authors200_response.dart';
+import 'package:wenyou_api/src/model/posts_find_reply_window200_response.dart';
 import 'package:wenyou_api/src/model/posts_pin200_response.dart';
 import 'package:wenyou_api/src/model/posts_remove200_response.dart';
 import 'package:wenyou_api/src/model/posts_unpin200_response.dart';
@@ -288,6 +290,109 @@ class PostsApi {
     }
 
     return Response<PostsFindFloorAuthors200Response>(
+      data: _responseData,
+      headers: _response.headers,
+      isRedirect: _response.isRedirect,
+      requestOptions: _response.requestOptions,
+      redirects: _response.redirects,
+      statusCode: _response.statusCode,
+      statusMessage: _response.statusMessage,
+      extra: _response.extra,
+    );
+  }
+
+  /// 按固定楼层编号或帖子 ID 直接读取有界双向窗口
+  ///
+  ///
+  /// Parameters:
+  /// * [subthreadId]
+  /// * [cursor] - 服务端返回的不透明分页游标；首次请求不传，后续必须原样回传
+  /// * [limit] - 每页条数（默认 20，最大 50）
+  /// * [order] - 列表顺序；帖子回复与动态独立楼中楼默认 OLDEST，动态主评论默认 NEWEST；动态主评论内嵌回复固定 OLDEST
+  /// * [authorId] - 只返回指定作者的回复
+  /// * [number] - 固定楼层/回复编号；与 postId、cursor 互斥
+  /// * [postId] - 已有帖子深链 ID；与 number、cursor 互斥
+  /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
+  /// * [headers] - Can be used to add additional headers to the request
+  /// * [extras] - Can be used to add flags to the request
+  /// * [validateStatus] - A [ValidateStatus] callback that can be used to determine request success based on the HTTP status of the response
+  /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
+  /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
+  ///
+  /// Returns a [Future] containing a [Response] with a [PostsFindFloorWindow200Response] as data
+  /// Throws [DioException] if API call or serialization fails
+  Future<Response<PostsFindFloorWindow200Response>> postsFindFloorWindow({
+    required String subthreadId,
+    String? cursor,
+    num? limit = 20,
+    String? order,
+    String? authorId,
+    num? number,
+    String? postId,
+    CancelToken? cancelToken,
+    Map<String, dynamic>? headers,
+    Map<String, dynamic>? extra,
+    ValidateStatus? validateStatus,
+    ProgressCallback? onSendProgress,
+    ProgressCallback? onReceiveProgress,
+  }) async {
+    final _path = r'/api/v1/subthreads/{subthreadId}/posts/window'.replaceAll('{' r'subthreadId' '}', encodeQueryParameter(_serializers, subthreadId, const FullType(String)).toString());
+    final _options = Options(
+      method: r'GET',
+      headers: <String, dynamic>{
+        ...?headers,
+      },
+      extra: <String, dynamic>{
+        'secure': <Map<String, String>>[
+          {
+            'type': 'http',
+            'scheme': 'bearer',
+            'name': 'bearer',
+          },
+        ],
+        ...?extra,
+      },
+      validateStatus: validateStatus,
+    );
+
+    final _queryParameters = <String, dynamic>{
+      if (cursor != null) r'cursor': encodeQueryParameter(_serializers, cursor, const FullType(String)),
+      if (limit != null) r'limit': encodeQueryParameter(_serializers, limit, const FullType(num)),
+      if (order != null) r'order': encodeQueryParameter(_serializers, order, const FullType(String)),
+      if (authorId != null) r'authorId': encodeQueryParameter(_serializers, authorId, const FullType(String)),
+      if (number != null) r'number': encodeQueryParameter(_serializers, number, const FullType(num)),
+      if (postId != null) r'postId': encodeQueryParameter(_serializers, postId, const FullType(String)),
+    };
+
+    final _response = await _dio.request<Object>(
+      _path,
+      options: _options,
+      queryParameters: _queryParameters,
+      cancelToken: cancelToken,
+      onSendProgress: onSendProgress,
+      onReceiveProgress: onReceiveProgress,
+    );
+
+    PostsFindFloorWindow200Response? _responseData;
+
+    try {
+      final rawResponse = _response.data;
+      _responseData = rawResponse == null ? null : _serializers.deserialize(
+        rawResponse,
+        specifiedType: const FullType(PostsFindFloorWindow200Response),
+      ) as PostsFindFloorWindow200Response;
+
+    } catch (error, stackTrace) {
+      throw DioException(
+        requestOptions: _response.requestOptions,
+        response: _response,
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    return Response<PostsFindFloorWindow200Response>(
       data: _responseData,
       headers: _response.headers,
       isRedirect: _response.isRedirect,
@@ -644,6 +749,109 @@ class PostsApi {
     }
 
     return Response<PostsFindReplyAuthors200Response>(
+      data: _responseData,
+      headers: _response.headers,
+      isRedirect: _response.isRedirect,
+      requestOptions: _response.requestOptions,
+      redirects: _response.redirects,
+      statusCode: _response.statusCode,
+      statusMessage: _response.statusMessage,
+      extra: _response.extra,
+    );
+  }
+
+  /// 按固定回复编号或帖子 ID 直接读取有界双向窗口
+  ///
+  ///
+  /// Parameters:
+  /// * [id]
+  /// * [cursor] - 服务端返回的不透明分页游标；首次请求不传，后续必须原样回传
+  /// * [limit] - 每页条数（默认 20，最大 50）
+  /// * [order] - 列表顺序；帖子回复与动态独立楼中楼默认 OLDEST，动态主评论默认 NEWEST；动态主评论内嵌回复固定 OLDEST
+  /// * [authorId] - 只返回指定作者的回复
+  /// * [number] - 固定楼层/回复编号；与 postId、cursor 互斥
+  /// * [postId] - 已有帖子深链 ID；与 number、cursor 互斥
+  /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
+  /// * [headers] - Can be used to add additional headers to the request
+  /// * [extras] - Can be used to add flags to the request
+  /// * [validateStatus] - A [ValidateStatus] callback that can be used to determine request success based on the HTTP status of the response
+  /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
+  /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
+  ///
+  /// Returns a [Future] containing a [Response] with a [PostsFindReplyWindow200Response] as data
+  /// Throws [DioException] if API call or serialization fails
+  Future<Response<PostsFindReplyWindow200Response>> postsFindReplyWindow({
+    required String id,
+    String? cursor,
+    num? limit = 20,
+    String? order,
+    String? authorId,
+    num? number,
+    String? postId,
+    CancelToken? cancelToken,
+    Map<String, dynamic>? headers,
+    Map<String, dynamic>? extra,
+    ValidateStatus? validateStatus,
+    ProgressCallback? onSendProgress,
+    ProgressCallback? onReceiveProgress,
+  }) async {
+    final _path = r'/api/v1/posts/{id}/replies/window'.replaceAll('{' r'id' '}', encodeQueryParameter(_serializers, id, const FullType(String)).toString());
+    final _options = Options(
+      method: r'GET',
+      headers: <String, dynamic>{
+        ...?headers,
+      },
+      extra: <String, dynamic>{
+        'secure': <Map<String, String>>[
+          {
+            'type': 'http',
+            'scheme': 'bearer',
+            'name': 'bearer',
+          },
+        ],
+        ...?extra,
+      },
+      validateStatus: validateStatus,
+    );
+
+    final _queryParameters = <String, dynamic>{
+      if (cursor != null) r'cursor': encodeQueryParameter(_serializers, cursor, const FullType(String)),
+      if (limit != null) r'limit': encodeQueryParameter(_serializers, limit, const FullType(num)),
+      if (order != null) r'order': encodeQueryParameter(_serializers, order, const FullType(String)),
+      if (authorId != null) r'authorId': encodeQueryParameter(_serializers, authorId, const FullType(String)),
+      if (number != null) r'number': encodeQueryParameter(_serializers, number, const FullType(num)),
+      if (postId != null) r'postId': encodeQueryParameter(_serializers, postId, const FullType(String)),
+    };
+
+    final _response = await _dio.request<Object>(
+      _path,
+      options: _options,
+      queryParameters: _queryParameters,
+      cancelToken: cancelToken,
+      onSendProgress: onSendProgress,
+      onReceiveProgress: onReceiveProgress,
+    );
+
+    PostsFindReplyWindow200Response? _responseData;
+
+    try {
+      final rawResponse = _response.data;
+      _responseData = rawResponse == null ? null : _serializers.deserialize(
+        rawResponse,
+        specifiedType: const FullType(PostsFindReplyWindow200Response),
+      ) as PostsFindReplyWindow200Response;
+
+    } catch (error, stackTrace) {
+      throw DioException(
+        requestOptions: _response.requestOptions,
+        response: _response,
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    return Response<PostsFindReplyWindow200Response>(
       data: _responseData,
       headers: _response.headers,
       isRedirect: _response.isRedirect,

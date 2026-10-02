@@ -196,6 +196,8 @@ $contractFiles = @(
   @{ Source = 'contracts/fixtures/media-display/duplicate-frames.webp'; Destination = 'fixtures/media-display/duplicate-frames.webp' },
   @{ Source = 'contracts/fixtures/media-display/manifest.json'; Destination = 'fixtures/media-display/manifest.json' },
   @{ Source = 'contracts/internal-reference-v1-fixtures.json'; Destination = 'internal-reference-v1-fixtures.json' },
+  @{ Source = 'contracts/discussion-navigation.v1.json'; Destination = 'discussion-navigation.v1.json' },
+  @{ Source = 'docs/discussion-navigation.md'; Destination = 'discussion-navigation.md' },
   @{ Source = 'contracts/CHANGELOG.md'; Destination = 'CHANGELOG.md' },
   @{ Source = 'docs/mobile-client-guide.md'; Destination = 'mobile-client-guide.md' },
   @{ Source = 'docs/mobile-release-operations.md'; Destination = 'mobile-release-operations.md' },
