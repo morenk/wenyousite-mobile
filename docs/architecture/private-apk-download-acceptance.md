@@ -1,4 +1,4 @@
-# 私有 APK 发布与下载适配（候选开发中／待验收）
+# 私有 APK 发布与下载适配（候选／待验收）
 
 ## 范围和基线
 
@@ -51,7 +51,33 @@ HTTP 测试在 adapter 中把虚构 HTTPS 地址的传输映射到本机，保�
 | `prewarm-before-promote` | Windows fixture 验证受限 gateway 参数、先预检再构建、身份复核、失败不回退；内部预热顺序由固定 Backend 源码与其隔离测试证明，本任务不在 Windows 执行 Backend |
 | `migration-public-read-gate` | 未改桶公共读，Mobile 测试不能替代旧 APP 和网关隔离验收 |
 
-## 本轮完整门禁与 Debug 产物
+## 最终候选门禁与 Debug 产物
+
+2026-10-03 对最终应用源码 `1708da695ea5013d8d821354ac6500ebf3914a33` 执行 `npm run check:apk -- -TestConcurrency 2 -ContinueAfterFailure`，退出码 **1**。仅公网契约精确来源检查失败，其余阶段和 Debug 构建均成功；不能据此声明完整门禁通过或已可合并。
+
+| 项目 | 实际结果 |
+| --- | --- |
+| OpenAPI、固定来源、SDK 再生成一致性 | 通过 |
+| 全仓格式、应用及生成客户端静态分析 | 通过，分析零问题 |
+| 架构、模块文档、API 覆盖 | 通过；21 个模块；164/164（总操作 238，明确排除 74） |
+| 全量 Flutter `test/` | **5,142 通过、1 跳过** |
+| `npm run test:release-tool` | **87/87 通过**；覆盖上传器、Windows 发布脚本、说明编排、契约来源、质量门禁、候选构建和 `tool/dev/*.test.mjs` |
+| 公网精确版本／SHA | **失败**；期望 `5.31.0-dev.20261003.1 / 1857d60fe3af309149eb5c1846be221d3a45fb86`，实际 `5.30.0-dev.20261001.1 / 2b803a8e4bc73bc01bd046142e6f9005f92aa411` |
+| Markdown 兼容范围 | 实际 Markdown 5 在支持的 3/4/5 范围内；不是失败原因 |
+| Debug 构建与 APK 签名检查 | 成功；APK v2 签名有效，证书为 Android Debug |
+
+该差异来自候选 Backend 尚未部署，未以部署、改写来源或放宽比较消除它。后续仅补本文及 CHANGELOG，不改变应用源码和 APK 的证据绑定。
+
+- APK 绝对路径：`D:\codex-worktrees\9e50\wenyousite-mobile\build\app\outputs\flutter-apk\app-debug.apk`。
+- 身份：`site.wenyou.app.debug`，`0.8.0-debug+97`，最低 API 26，目标 API 36，仅 `arm64-v8a`。
+- 生成时间：2026-10-03 05:11:24（Asia/Shanghai）；大小 **150,335,830 bytes**。
+- APK SHA-256：`cedf2721fc27e1b7d554e24f2f77b0f9734de6ad6476dcac614fe3151e7f77ee`。
+- 本机日志：`private-apk-final-gate.log`（Git 忽略）；SHA-256：`e81fa1c48d66c870d33904ef9bb9278a360ff3d336dae3e7bd3341d2c8bd0afa`。
+- 分支已推送，评审入口为 [Mobile PR #84](https://github.com/morenk/wenyousite-mobile/pull/84)，保持草稿候选；依赖 [Backend PR #41](https://github.com/morenk/wenyousite-backend/pull/41) 与 [Foundation 语义 PR #30](https://github.com/morenk/wenyousite-foundation/pull/30)。
+
+没有安装 APK、启动设备 Debug 会话、读取真实云凭据或执行正式签名／上传／晋级。构建工具提示 `flutter_image_compress_common` 仍使用 Kotlin Gradle Plugin；本轮构建成功，该提示不构成下载迁移的已验证内容。
+
+## 历史门禁与中止记录
 
 2026-10-02 在 Windows 执行一次 `npm run check:apk -- -ContinueAfterFailure`，退出码 **1**。唯一失败为公网 `/meta.buildSha` 与本地契约来源精确 SHA 不同，见上述基线；未修改线上、未放宽检查，也不报告为完整门禁通过。
 
@@ -62,15 +88,24 @@ HTTP 测试在 adapter 中把虚构 HTTPS 地址的传输映射到本机，保�
 - APK SHA-256：`5f5c0a29139b4bf2c8ecc7f2a424166a1f55b557cae0935b7c97e09340436a7a`。
 - 本机完整日志：`private-apk-gate.log`（Git 忽略）；SHA-256：`93a4bf25fa412f0e461fb06f34df784c4ff5f5d10d51fc36614dc0b6a3428160`。
 
-没有安装该 APK、启动 Debug 设备会话、读取真实云凭据或执行正式签名／上传／晋级。后端契约和 CLI 接入前不重复全量门禁或构建；最终验证按后续实际变更和治理安排执行。
+此历史 APK 没有安装，也没有启动 Debug 设备会话；当前文件已由上节最终候选覆盖，历史摘要只用于追溯。
 
 2026-10-03 曾对 `0a6312db` 启动最终门禁，再生成、格式、应用/SDK 分析、架构、文档及 API 范围通过；公网当时为 `5.30.0-dev.20261001.1 / 2b803a8e4bc73bc01bd046142e6f9005f92aa411`，与候选不符。全量测试途中发现 `dev` 已新合入讨论定位切片，于是仅停止本任务的门禁进程树并保留日志 `private-apk-interrupted-gate-0a6312.log`；此轮被主动中止，不计作完整通过、不绑定新 APK。解决冲突后在最终整合源码重跑完整门禁。
 
 ## 剩余交接与验收
 
-1. 已固定 Backend 受限 CLI 并完成 Windows 编排；当前等待最终本地门禁与独立环境验收。
-2. 针对已提交 CLI 增补编排模拟，再对最终集成代码完成所需门禁，记录失败项和未覆盖云／设备验收，不把本轮准备阶段的检查冒充最终迁移验证。
-3. 治理协调独占设备与隔离环境后复验旧正式 APP 的 HEAD/GET。此任务不执行实际上传、正式安装、晋级、部署、桶权限修改或线上写入。
-4. 缓存缺失、预算/限流、Range 服务端计费与持久化由 Backend 的隔离测试证明；Mobile 测试不冒充这些服务端验收。
+真机前置：治理提供已核验、与线上隔离的 HTTPS 下载地址和既有策略样本；正式覆盖安装另需与已安装 `site.wenyou.app` 同签名、目标构建更高的真实 APK。Backend `sample=downloads` 的 build 4242 是合成数据，不能作为安装验收制品；不得为接入 HTTP 样本放宽 APP 的 HTTPS 或身份校验。此次 Debug APK 只作为编译与界面候选证据，包名为 `site.wenyou.app.debug`，不能冒充对旧正式包的更新。此处没有授权或执行真实签名／发布。
 
-当前为候选／待验收，源码与完整契约已在本任务集成；最终门禁、推送与 PR 结果在交付时补记。完整迁移、旧正式 APP 真机验收和可合并状态尚未达成。
+负责人手测清单：
+
+- 核对实际打开的包名、版本和构建。旧正式 APP 在隔离策略下先 HEAD；出现更新说明后，点击前不发 APK GET，点击后显示下载进度并在校验成功后进入系统安装器。
+- 真实正式候选验证包名、目标构建和签名；拒绝未知来源权限后再授权，应能继续使用已验证文件。记录取消、恢复与最终安装结果，不能用 Debug 包安装成功代替。
+- 本轮消费者候选分别接收 429／`Retry-After: 120` 和 503；检查稍后重试提示和强制门禁：429 的 120 秒内不再请求该下载地址；503 遵守其 Retry-After，缺失时等待 60 秒。当前进程内手动重查／回前台也不能绕过，到期后可恢复。429/503 的新等待行为不强加给未升级的旧二进制。
+- 预置下载内容篡改、身份不符或非预期 206 时不得进入安装器，恢复有效制品后可重新下载。正式环境只读，不为测试主动破坏生产缓存或制品。
+- 记录候选提交、包名、APK SHA、设备、操作和负责人明确结果；未回复、自动测试与系统安装器打开均不等于验收通过。
+
+1. 已固定 Backend 受限 CLI、完成 Windows 编排及最终本地验证；公网来源门禁仍因候选尚未部署而失败，后续在对应后端上线后核对实际来源。
+2. 治理协调独占设备与隔离环境后复验旧正式 APP 的 HEAD/GET。此任务不执行实际上传、正式安装、晋级、部署、桶权限修改或线上写入。
+3. 缓存缺失、预算/限流、Range 服务端计费与持久化由 Backend 的隔离测试证明；Mobile 测试不冒充这些服务端验收。
+
+当前为候选／待验收，源码与完整契约已集成并推送 PR #84，最终门禁和 APK 证据见上节。完整迁移、旧正式 APP 真机验收和可合并状态尚未达成。
