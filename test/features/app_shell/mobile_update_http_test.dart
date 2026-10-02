@@ -14,9 +14,126 @@ void main() {
   setUp(() async => fixture = await _DownloadFixture.start());
   tearDown(() async => fixture.close());
 
+  test('429 后重新预检和手动下载共用等待期限，不重复访问下载地址', () async {
+    fixture.failureMethod = 'HEAD';
+    fixture.failureStatus = 429;
+    final update = _update('/api/v1/app-downloads/android/43/file');
+    expect(
+      (await fixture.service.checkAvailability(update)).isAvailable,
+      isFalse,
+    );
+    expect(
+      (await fixture.service.checkAvailability(update)).isAvailable,
+      isFalse,
+    );
+    await expectLater(
+      fixture.service.launchUpdate(update, onStage: (_) {}, onProgress: (_) {}),
+      throwsA(isA<MobileUpdateException>()),
+    );
+    expect(fixture.requests.map((r) => r.method), ['HEAD']);
+    expect(fixture.bridge.paths, isEmpty);
+  });
+
+  for (final status in [429, 503]) {
+    test('$status 遵守整数 Retry-After，跨构建预检不绕过，到期后可显式恢复', () async {
+      fixture.failureMethod = 'HEAD';
+      fixture.failureStatus = status;
+      fixture.retryAfter = '120';
+      final update = _update('/api/v1/app-downloads/android/43/file');
+      final availability = await fixture.service.checkAvailability(update);
+      expect(availability.userMessage, _failureMessage(status));
+      fixture.failureMethod = null;
+      fixture.now = fixture.now.add(const Duration(seconds: 119));
+      final other = _update('/api/v1/app-downloads/android/44/file', build: 44);
+      expect(
+        (await fixture.service.checkAvailability(other)).isAvailable,
+        isFalse,
+      );
+      expect(fixture.requests, hasLength(1));
+      fixture.now = fixture.now.add(const Duration(seconds: 1));
+      expect(
+        (await fixture.service.checkAvailability(update)).isAvailable,
+        isTrue,
+      );
+      await fixture.service.launchUpdate(
+        update,
+        onStage: (_) {},
+        onProgress: (_) {},
+      );
+      expect(fixture.requests.map((r) => r.method), ['HEAD', 'HEAD', 'GET']);
+      expect(fixture.bridge.builds, [43]);
+    });
+
+    test('GET $status 后缓存的预检结果不能绕过等待', () async {
+      final update = _update('/api/v1/app-downloads/android/43/file');
+      await fixture.service.checkAvailability(update);
+      fixture.failureMethod = 'GET';
+      fixture.failureStatus = status;
+      for (var i = 0; i < 2; i++) {
+        await expectLater(
+          fixture.service.launchUpdate(
+            update,
+            onStage: (_) {},
+            onProgress: (_) {},
+          ),
+          throwsA(
+            isA<MobileUpdateException>().having(
+              (e) => e.userMessage,
+              '提示',
+              _failureMessage(status),
+            ),
+          ),
+        );
+      }
+      expect(fixture.requests.map((r) => r.method), ['HEAD', 'GET']);
+      expect(await fixture.cachedFiles(), isEmpty);
+    });
+  }
+
+  for (final retryAfter in <String?>[null, 'invalid', '-1']) {
+    test('429 Retry-After 为 $retryAfter 时保守等待一分钟', () async {
+      fixture.failureMethod = 'HEAD';
+      fixture.failureStatus = 429;
+      fixture.retryAfter = retryAfter;
+      final update = _update('/api/v1/app-downloads/android/43/file');
+      await fixture.service.checkAvailability(update);
+      fixture.failureMethod = null;
+      fixture.now = fixture.now.add(const Duration(seconds: 59));
+      expect(
+        (await fixture.service.checkAvailability(update)).isAvailable,
+        isFalse,
+      );
+      expect(fixture.requests, hasLength(1));
+      fixture.now = fixture.now.add(const Duration(seconds: 1));
+      expect(
+        (await fixture.service.checkAvailability(update)).isAvailable,
+        isTrue,
+      );
+    });
+  }
+
+  test('已验证 APK 的继续安装不受下载等待影响', () async {
+    final update = _update('/api/v1/app-downloads/android/43/file');
+    await fixture.service.launchUpdate(
+      update,
+      onStage: (_) {},
+      onProgress: (_) {},
+    );
+    fixture.failureMethod = 'HEAD';
+    fixture.failureStatus = 429;
+    await fixture.service.checkAvailability(update);
+    await fixture.service.launchUpdate(
+      update,
+      onStage: (_) {},
+      onProgress: (_) {},
+    );
+    expect(fixture.requests.map((r) => r.method), ['HEAD', 'GET', 'HEAD']);
+    expect(fixture.bridge.builds, [43, 43]);
+  });
+
   for (final path in [
     '/mobile/android/wenyou-1.0.0-43.apk',
-    '/releases/43/file',
+    '/api/v1/app-downloads/android/43/file',
   ]) {
     test('旧下载器在 $path 先 HEAD 后 GET，完整校验后安装', () async {
       final update = _update(path);
@@ -54,7 +171,7 @@ void main() {
         fixture.failureStatus = status;
         await expectLater(
           fixture.service.launchUpdate(
-            _update('/releases/43/file'),
+            _update('/api/v1/app-downloads/android/43/file'),
             onStage: (_) {},
             onProgress: (_) {},
           ),
@@ -74,13 +191,27 @@ void main() {
     fixture.partialGet = true;
     await expectLater(
       fixture.service.launchUpdate(
-        _update('/releases/43/file'),
+        _update('/api/v1/app-downloads/android/43/file'),
         onStage: (_) {},
         onProgress: (_) {},
       ),
       throwsA(isA<MobileUpdateException>()),
     );
     expect(fixture.requests.map((r) => r.method), ['HEAD', 'GET']);
+    expect(fixture.bridge.paths, isEmpty);
+    expect(await fixture.cachedFiles(), isEmpty);
+  });
+
+  test('未请求 Range 时，即使 206 携带全部正确字节也不安装', () async {
+    fixture.fullRangeGet = true;
+    await expectLater(
+      fixture.service.launchUpdate(
+        _update('/api/v1/app-downloads/android/43/file'),
+        onStage: (_) {},
+        onProgress: (_) {},
+      ),
+      throwsA(isA<MobileUpdateException>()),
+    );
     expect(fixture.bridge.paths, isEmpty);
     expect(await fixture.cachedFiles(), isEmpty);
   });
@@ -96,7 +227,7 @@ void main() {
       fixture.omitGetHeader = header;
       await expectLater(
         fixture.service.launchUpdate(
-          _update('/releases/43/file'),
+          _update('/api/v1/app-downloads/android/43/file'),
           onStage: (_) {},
           onProgress: (_) {},
         ),
@@ -108,12 +239,15 @@ void main() {
   }
 }
 
-MobileUpdateInfo _update(String path) => MobileUpdateInfo(
+String _failureMessage(int status) =>
+    status == 429 ? '下载请求较多，请稍后重试。' : '安装包暂时无法下载，请稍后重试。';
+
+MobileUpdateInfo _update(String path, {int build = 43}) => MobileUpdateInfo(
   kind: MobileUpdateKind.required,
   platform: MobileClientPlatform.android,
   currentVersion: '0.9.0',
   currentBuild: 42,
-  targetBuild: 43,
+  targetBuild: build,
   updateUri: Uri.https('download.invalid', path),
 );
 
@@ -125,6 +259,7 @@ class _DownloadFixture {
       platformBridge: bridge,
       platformOverride: MobileClientPlatform.android,
       temporaryDirectoryProvider: () async => directory,
+      now: () => now,
     );
     server.listen(_respond);
   }
@@ -143,7 +278,10 @@ class _DownloadFixture {
   late final DeviceMobileUpdateService service;
   String? failureMethod;
   int failureStatus = 503;
+  String? retryAfter = '60';
+  DateTime now = DateTime.utc(2026, 10, 3);
   bool partialGet = false;
+  bool fullRangeGet = false;
   String? omitGetHeader;
 
   Future<void> _respond(HttpRequest request) async {
@@ -151,13 +289,15 @@ class _DownloadFixture {
     final response = request.response;
     if (request.method == failureMethod) {
       response.statusCode = failureStatus;
-      response.headers.set('retry-after', '60');
+      if (retryAfter != null) response.headers.set('retry-after', retryAfter!);
       await response.close();
       return;
     }
     final partial = partialGet && request.method == 'GET';
     final body = partial ? bytes.sublist(0, 64) : bytes;
-    response.statusCode = partial ? 206 : 200;
+    response.statusCode = partial || (fullRangeGet && request.method == 'GET')
+        ? 206
+        : 200;
     response.contentLength = body.length;
     final headers = {
       'content-type': 'application/vnd.android.package-archive',
@@ -166,7 +306,10 @@ class _DownloadFixture {
       'x-amz-meta-application-id': 'site.wenyou.app',
       'x-amz-meta-version-code': '43',
       'x-amz-meta-version-name': '1.0.0',
+      'cache-control': 'private, no-store',
       if (partial) 'content-range': 'bytes 0-63/${bytes.length}',
+      if (fullRangeGet && request.method == 'GET')
+        'content-range': 'bytes 0-${bytes.length - 1}/${bytes.length}',
     };
     for (final header in headers.entries) {
       if (request.method == 'GET' && header.key == omitGetHeader) continue;

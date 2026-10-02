@@ -46,10 +46,12 @@ export function releaseConfig(env) {
     prefix: (env.WENYOU_RELEASE_S3_PREFIX || 'mobile/android').replace(/^\/+|\/+$/g, ''),
   };
   if (!config.accessKeyId || !config.secretAccessKey) {
-    throw new Error('缺少 RainS3 发布专用 AccessKey');
+    throw new Error('缺少 RainS3 发布上传凭据');
   }
   for (const field of ['endpoint', 'publicBaseUrl']) {
-    const url = new URL(config[field]);
+    let url;
+    try { url = new URL(config[field]); }
+    catch { throw new Error(`${field} 不是有效 URL`); }
     if (url.protocol !== 'https:') throw new Error(`${field} 必须使用 HTTPS`);
     if (url.username || url.password || url.search || url.hash) {
       throw new Error(`${field} 不得包含凭据、查询参数或 fragment`);
@@ -86,32 +88,6 @@ export function releaseObjectPlan({ version, build, apkPath, shaPath, manifestPa
     { path: manifestPath, fileName: basename(manifestPath), contentType: 'application/json; charset=utf-8' },
     { path: apkPath, fileName: expectedApk, contentType: APK_CONTENT_TYPE, attachment: true },
   ];
-}
-
-export function assertPublicApkHeaders(headers, expected) {
-  const contentType = headers.get('content-type')?.split(';', 1)[0]?.trim().toLowerCase();
-  if (contentType !== APK_CONTENT_TYPE) throw new Error('公网 APK Content-Type 不正确');
-  if (Number(headers.get('content-length')) !== expected.size) throw new Error('公网 APK 大小不一致');
-  const cache = headers.get('cache-control')?.toLowerCase() || '';
-  for (const directive of ['public', 'max-age=31536000', 'immutable']) {
-    if (!cache.includes(directive)) throw new Error(`公网 APK 缺少缓存指令 ${directive}`);
-  }
-  const disposition = headers.get('content-disposition') || '';
-  if (!disposition.toLowerCase().includes('attachment') || !disposition.includes(expected.fileName)) {
-    throw new Error('公网 APK Content-Disposition 不正确');
-  }
-  if (headers.get('x-amz-meta-apk-sha256')?.toLowerCase() !== expected.sha256) {
-    throw new Error('公网 APK SHA-256 metadata 不一致');
-  }
-  if (headers.get('x-amz-meta-application-id') !== 'site.wenyou.app') {
-    throw new Error('公网 APK applicationId metadata 不一致');
-  }
-  if (headers.get('x-amz-meta-version-name') !== expected.version) {
-    throw new Error('公网 APK versionName metadata 不一致');
-  }
-  if (headers.get('x-amz-meta-version-code') !== String(expected.build)) {
-    throw new Error('公网 APK versionCode metadata 不一致');
-  }
 }
 
 function sha256File(file) {
@@ -213,10 +189,15 @@ export async function verifyPrivateArtifacts(client, config, artifacts) {
       if (!response.Body) throw new Error('发布附件缺少正文');
       const hash = createHash('sha256');
       let length = 0;
-      for await (const chunk of response.Body) {
-        length += chunk.length;
-        if (length > artifact.size) throw new Error('发布附件正文超过已核验大小');
-        hash.update(chunk);
+      try {
+        for await (const chunk of response.Body) {
+          length += chunk.length;
+          if (length > artifact.size) throw new Error('发布附件正文超过已核验大小');
+          hash.update(chunk);
+        }
+      } catch {
+        // 流读取的错误同样可能携带签名请求；不透传 SDK 原始内容。
+        throw new Error(`读取发布附件正文失败: ${artifact.key}`);
       }
       if (length !== artifact.size || hash.digest('hex') !== artifact.artifactSha256) {
         throw new Error(`发布附件正文摘要或大小不一致: ${artifact.key}`);

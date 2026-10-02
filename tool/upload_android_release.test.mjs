@@ -4,7 +4,6 @@ import { createServer } from 'node:http';
 import { S3Client } from '@aws-sdk/client-s3';
 import test from 'node:test';
 import {
-  assertPublicApkHeaders,
   parseArguments,
   parseSha256Sidecar,
   releaseConfig,
@@ -26,7 +25,7 @@ test('RainS3 默认使用独立发布桶与固定下载域名', () => {
   assert.equal(config.publicBaseUrl, 'https://wenyou-apk.cn-nb1.rains3.com');
 });
 
-test('凭据只能用于 APK 目录，拒绝图片桶与携带凭据的 URL', () => {
+test('上传程序固定 APK 目录，拒绝图片桶与携带凭据的 URL', () => {
   const env = { WENYOU_RELEASE_S3_ACCESS_KEY_ID: 'fixture-key',
     WENYOU_RELEASE_S3_SECRET_ACCESS_KEY: 'fixture-secret' };
   for (const invalid of [{ WENYOU_RELEASE_S3_BUCKET: 'images' },
@@ -35,6 +34,31 @@ test('凭据只能用于 APK 目录，拒绝图片桶与携带凭据的 URL', ()
     { WENYOU_RELEASE_PUBLIC_BASE_URL: 'https://example.invalid?token=secret' }]) {
     assert.throws(() => releaseConfig({ ...env, ...invalid }));
   }
+});
+
+test('无效端点不在错误中回显原始配置', () => {
+  assert.throws(() => releaseConfig({
+    WENYOU_RELEASE_S3_ACCESS_KEY_ID: 'fixture-key',
+    WENYOU_RELEASE_S3_SECRET_ACCESS_KEY: 'fixture-secret',
+    WENYOU_RELEASE_S3_ENDPOINT: 'fixture-secret is not a URL',
+  }), (error) => error.message === 'endpoint 不是有效 URL');
+});
+
+test('附件流读取失败不回显 SDK 原始错误且关闭流', async () => {
+  let destroyed = false;
+  const body = {
+    async *[Symbol.asyncIterator]() { throw new Error('fixture-secret Authorization=private'); },
+    destroy() { destroyed = true; },
+  };
+  const object = { ContentLength: 8, ContentType: 'text/plain',
+    CacheControl: 'public, max-age=31536000, immutable',
+    Metadata: { 'apk-sha256': digest, 'artifact-sha256': digest }, Body: body };
+  const client = { send: async () => object };
+  await assert.rejects(verifyPrivateArtifacts(client, { bucket: 'wenyou-apk' }, [{
+    key: 'mobile/android/fixture', size: 8, contentType: 'text/plain',
+    apkSha256: digest, artifactSha256: digest, metadata: object.Metadata,
+  }]), (error) => error.message === '读取发布附件正文失败: mobile/android/fixture');
+  assert.equal(destroyed, true);
 });
 
 test('SDK 故障日志不回显签名请求或凭据', async () => {
@@ -172,34 +196,3 @@ test('发布对象名称与构建摘要必须一致', () => {
   ]);
 });
 
-test('公网 APK 必须带不可变缓存与发布 metadata', () => {
-  const headers = new Headers({
-    'content-type': 'application/vnd.android.package-archive',
-    'content-length': '90900000',
-    'cache-control': 'public, max-age=31536000, immutable',
-    'content-disposition': 'attachment; filename="wenyou-1.0.0-42.apk"',
-    'x-amz-meta-apk-sha256': digest,
-    'x-amz-meta-application-id': 'site.wenyou.app',
-    'x-amz-meta-version-name': '1.0.0',
-    'x-amz-meta-version-code': '42',
-  });
-  assert.doesNotThrow(() =>
-    assertPublicApkHeaders(headers, {
-      size: 90_900_000,
-      sha256: digest,
-      fileName: 'wenyou-1.0.0-42.apk',
-      version: '1.0.0',
-      build: 42,
-    }),
-  );
-  headers.set('content-length', '1');
-  assert.throws(() =>
-    assertPublicApkHeaders(headers, {
-      size: 90_900_000,
-      sha256: digest,
-      fileName: 'wenyou-1.0.0-42.apk',
-      version: '1.0.0',
-      build: 42,
-    }),
-  );
-});

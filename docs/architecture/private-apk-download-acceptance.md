@@ -1,19 +1,23 @@
-# 私有 APK 发布与下载适配（开发中）
+# 私有 APK 发布与下载适配（候选开发中／待验收）
 
 ## 范围和基线
 
 - Windows Worktree：`D:\codex-worktrees\9e50\wenyousite-mobile`，分支 `codex/20261002-private-apk-release`，由更新后的 `origin/dev` `510c63db8e28ec3563d8fc0e9593fa7440b4e66d` 建立。
-- 已 fetch Foundation tags，正式最新 `v7.2.1` 与 `pubspec.yaml` 一致；不改视觉、依赖或 Android 原生代码。
-- 本地 Backend 契约来源 `4db0cdf2c079fc8b66545c67849053cd74945f8a`，只读镜像 `origin/dev` 与公网 OpenAPI 版本均为 `5.29.0-dev.20261001.1`。2026-10-02 公网 `/meta.buildSha` 为 `edd0b23d870d533df5f4ac787eb22df9a822981f`，与本地精确 revision 不同；公网精确来源门禁仍需如实报告。
-- 本任务只实施 Mobile 的发布工具和消费者回归。Backend 精确下载契约、预热／晋级 CLI 的已提交 SHA 尚未交付，不臆造字段，不手工修改生成客户端。
+- 已 fetch Foundation tags，正式最新 `v7.2.1` 与 `pubspec.yaml` 一致；另参考下载语义提交 `6c3776dd7c2de1aacafe0f6403fbb3ea98c5fb0d`，不新增 Token、依赖或 Android 原生实现。
+- 契约通过独立 `chore` 提交 `021029ad` 同步 Backend `c7060867fc938e002a14bff596886aea83279b1c`／`5.30.0-dev.20261002.2`，见[同步记录](private-apk-contract-sync.md)。此 SHA 的受限晋级脚本仍是旧协议，新预热／晋级入口须等运行时提交后接入；不臆造 SSH 参数，不手改生成客户端。
+- 2026-10-02 历史门禁时本地来源 `4db0cdf2c079fc8b66545c67849053cd74945f8a` 与公网 `/meta.buildSha` `edd0b23d870d533df5f4ac787eb22df9a822981f` 不同，双方 OpenAPI 为 `5.29.0-dev.20261001.1`。后续公网来源差异继续如实报告，不改线上或放宽门禁。
 
 ## 独立完成的实现
 
-发布工具改用鉴权 S3 HEAD 和 sidecar/manifest GET，保留 APK 类型、大小、SHA-256、证书、包名、版本、构建和源提交 metadata。附件流式读取且不超过本地已知长度和 64 KiB，不下载完整 APK 验证；所有网络失败停止，禁止公开回退。旧对象同名同内容可复用，metadata 不符禁止覆盖。
+发布准备提交 `d07c9080` 改用鉴权 S3 HEAD 和 sidecar/manifest GET，保留 APK 类型、大小、SHA-256、证书、包名、版本、构建和源提交 metadata。附件流式读取且不超过本地已知长度和 64 KiB，不下载完整 APK 验证；所有网络失败停止，禁止公开回退。旧对象同名同内容可复用，metadata 不符禁止覆盖。
 
-发布目录限制为 `wenyou-apk/mobile/android`；不接受含凭据、查询参数或 fragment 的 endpoint/URL。SDK 网络错误只输出状态，SSH 移除本机上传凭据并禁用 SendEnv。DPAPI、Windows 签名、原生安装器验证均保留。
+上传程序限制 `wenyou-apk/mobile/android`；不接受含凭据、查询参数或 fragment 的 endpoint/URL。SDK 请求、附件流和无效 URL 解析错误不回显原始敏感输入，SSH 移除本机上传凭据并禁用 SendEnv。DPAPI、Windows 签名、原生安装器验证均保留。
 
-旧 APP 不要求 URL 具有 `.apk` 后缀，只要求安全连接、HEAD/GET 元数据一致、完整长度与摘要，并由原生桥核对包名／构建／当前签名。当前客户端使用整包 GET，不发 Range；206 部分正文必须拒绝且清理 `.part`。429/503 沿用可重试失败／预检等待，不自动回退或重新下载。
+负责人于 2026-10-03 允许复用现有存储凭据，不要求新建只读凭据，不调整原有云权限。目录与读取操作限制是应用层约束，不证明凭据在云端只读或只能访问 APK；泄漏可能影响其原有授权的全部资源。后端只能在隔离的显式预热／修复进程读取私有配置，公开网关不得持有或继承凭据；Windows 不通过 SSH 传递上传密钥。
+
+消费者保留独立 Dio 的安全连接、HEAD/GET 元数据、完整长度与 SHA-256 验证，并由原生桥核对包名／构建／已安装签名。固定文件 URL 无需 `.apk` 后缀，允许网关 `private, no-store`；当前只请求整包，不发 Range，HEAD/GET 都只接受 200，非预期 206 即使带完整字节也拒绝安装并清理 `.part`。
+
+429/503 候选按 origin 共用 `Retry-After` 整数秒期限，缺失或非法时等待 60 秒；同源切换构建、缓存的预检结果不能绕过。到期不主动重发，由下一次既有检查或用户操作恢复。已验证 APK 的继续安装不受网络等待影响。限流和暂时不可下载分别给出稍后重试提示，强制更新保留门禁，等待页不推断“正在发布”。
 
 ## 已执行的隔离回归
 
@@ -25,13 +29,28 @@
 
 HTTP 测试在 adapter 中把虚构 HTTPS 地址的传输映射到本机，保留消费者 HTTPS 判断；不能代表公网 TLS、Caddy、实际 Backend 网关或真机安装验收。原生安装桥使用测试替身，不能代替正式签名 APK 的系统覆盖安装。
 
+2026-10-03 新消费者验证：`mobile_update_http_test.dart`、`mobile_update_service_test.dart`、`mobile_release_controller_test.dart`、`mobile_update_controller_test.dart`（均在 `test/features/app_shell/`）与 `test/app_shell_test.dart` 共 **72 项通过**。明确拒绝完整字节 206 后，重跑前两个文件 **30 项通过**。同一“429 后重新预检和手动下载共用等待期限”回归在旧实现失败（3 次 HEAD），候选只发 1 次；这是新网关的隔离构造响应，不声称已复现生产网关或已安装旧 APP。架构及 21 个模块文档检查通过；全量静态分析零问题；新增 320dp／两倍字号／明暗主题的两项强制等待 Widget 检查通过。发布上传与 Windows 脚本最新回归 32/32 通过（移除未使用的旧公网 header 检查，新增流错误及无效 URL 脱敏）。
+
+## Foundation 验收编号映射
+
+| 编号 | Mobile 证据与边界 |
+| --- | --- |
+| `download-explicit-action`、`legacy-head-get` | HTTP 用例只在显式 launch 后 GET，覆盖旧 URL 与固定构建 URL；旧正式 APK 真机仍待验收 |
+| `info-target-race` | 控制器测试验证下载前目标变化禁止下载旧目标；Mobile 仍以 `/meta` 决策 |
+| `download-rate-limited`、`download-service-unavailable` | HTTP 等待期限与恢复；Controller/Widget 显示提示且不解除强制门禁 |
+| `single-range` | SDK 测试验证 Range 参数；APP 不发 Range，HTTP 用例拒绝非预期 206；服务端范围和计费由 Backend 验证 |
+| `artifact-identity-preserved` | S3 metadata/附件 SHA、APP 长度/摘要/缓存回归；原生签名未改，正式覆盖安装待真机 |
+| `accessible-layout` | 共用等待组件的新增提示窄屏／大字号 Widget 检查；未查看画面不作为视觉验收 |
+| `prewarm-before-promote` | 待 Backend 已提交受限 CLI 后接入，尚未完成 |
+| `migration-public-read-gate` | 未改桶公共读，Mobile 测试不能替代旧 APP 和网关隔离验收 |
+
 ## 本轮完整门禁与 Debug 产物
 
 2026-10-02 在 Windows 执行一次 `npm run check:apk -- -ContinueAfterFailure`，退出码 **1**。唯一失败为公网 `/meta.buildSha` 与本地契约来源精确 SHA 不同，见上述基线；未修改线上、未放宽检查，也不报告为完整门禁通过。
 
 - OpenAPI 校验、固定契约来源、SDK 再生成一致性、全仓格式、应用及生成客户端全量分析、架构、模块文档和 API 覆盖均通过。
 - 全量 Flutter：**5,053 通过、1 跳过**；全量 Windows 发布及开发工具：**82/82 通过**。
-- Debug 构建成功，应用与原生及生成 SDK 源码没有改动，绑定原应用源码 `510c63db8e28ec3563d8fc0e9593fa7440b4e66d`。工具、回归和文档仍是本任务未提交改动；这不是新下载 CLI 集成后的最终验证。
+- Debug 构建成功，绑定当时应用／原生／SDK 源码 `510c63db8e28ec3563d8fc0e9593fa7440b4e66d`；**不覆盖本轮新 SDK、下载等待或后续 CLI**，不能作为最终迁移验证。
 - APK：`build/app/outputs/flutter-apk/app-debug.apk`，`site.wenyou.app.debug`，`0.8.0-debug+97`，仅 `arm64-v8a`，**109,443,518 bytes**。
 - APK SHA-256：`5f5c0a29139b4bf2c8ecc7f2a424166a1f55b557cae0935b7c97e09340436a7a`。
 - 本机完整日志：`private-apk-gate.log`（Git 忽略）；SHA-256：`93a4bf25fa412f0e461fb06f34df784c4ff5f5d10d51fc36614dc0b6a3428160`。
@@ -40,9 +59,9 @@ HTTP 测试在 adapter 中把虚构 HTTPS 地址的传输映射到本机，保�
 
 ## 剩余交接与验收
 
-1. 收到 Backend 精确 SHA 后同步固定契约、生成 SDK，接入源对象身份与对外 URL 分离、先预热后晋级及失败恢复。
+1. 收到 Backend 受限 CLI 运行时精确 SHA 后同步后续契约，接入源对象身份、历史 URL 与对外固定 URL 分离、先预热后晋级及失败恢复。
 2. 针对已提交 CLI 增补编排模拟，再对最终集成代码完成所需门禁，记录失败项和未覆盖云／设备验收，不把本轮准备阶段的检查冒充最终迁移验证。
 3. 治理协调独占设备与隔离环境后复验旧正式 APP 的 HEAD/GET。此任务不执行实际上传、正式安装、晋级、部署、桶权限修改或线上写入。
 4. 缓存缺失、预算/限流、Range 服务端计费与持久化由 Backend 的隔离测试证明；Mobile 测试不冒充这些服务端验收。
 
-当前为开发中，尚无完整迁移、真机验收或可合并结论；尚未提交、推送或创建迁移 PR，等待治理交付 Backend 精确 SHA/CLI 后继续同一任务。
+当前为候选开发中；发布准备与契约同步已有独立本地提交，尚未推送或创建迁移 PR。完整迁移、真机验收与可合并状态尚未达成；同步最新 `origin/dev` 和 Backend 受限 CLI 后完成最终验证及 PR。

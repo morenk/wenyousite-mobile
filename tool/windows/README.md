@@ -6,7 +6,9 @@ JSON 构建摘要保存 `notesConfirmedRevision`，将确认记录与 APK 摘要
 
 上传器只允许 `wenyou-apk/mobile/android`，上传后以签名 S3 HEAD 核对大小、类型、不可变缓存、附件名与完整发布 metadata，并以签名 GET 读回两个不超过 64 KiB 的附件，逐字节验证本地 SHA-256。验证不再要求 APK 桶允许公开读取；不会因鉴权失败、对象缺失或服务不可用而回退公开桶。既有同名对象必须身份与内容均一致才能复用，禁止覆盖。Windows 的 DPAPI 存储和正式签名流程保持；SSH 子进程移除上传 AccessKey/SecretKey，禁用 SendEnv，SDK 错误不回显签名请求或原始服务端错误正文。
 
-本站下载网关接入仍待 Backend 已提交的下载契约和预热／晋级 CLI；现阶段保留旧 URL 输出与既有晋级协议，不得据此宣称私有下载迁移已完成，也不得关闭桶的公共读。模拟回归与交接记录见[私有 APK 下载适配](../../docs/architecture/private-apk-download-acceptance.md)。
+负责人已允许复用现有存储凭据，不要求新建只读凭据，也不调整现有云端权限。上述 APK 目录约束属于应用层限制，不等于凭据只有 APK 读取权限；泄漏可能影响该凭据原先授权的全部资源。预热／修复凭据需在后端隔离配置中显式读取，公开网关不能持有或继承；Windows 不通过 SSH 转交上传凭据，也不复制生产配置。
+
+已同步 Backend `c7060867fc938e002a14bff596886aea83279b1c` 的下载契约；预热／晋级仍待受限 CLI 运行时代码提交。现阶段保留旧 URL 输出与既有晋级协议，不得据此宣称私有下载迁移已完成，也不得关闭桶的公共读。模拟回归与交接记录见[私有 APK 下载适配](../../docs/architecture/private-apk-download-acceptance.md)。
 
 `BuildOnly` 只构建签名测试制品，无需已配置说明，也不联系说明或晋级通道。`UploadOnly` 构建并上传对象，但不修改推荐策略或公开说明；真实晋级仍须重新完成完整发布流程。中断恢复、后台确认规则和受限入口部署依赖由上游[发布运维文档](../../contracts/mobile-release-operations.md)维护。本轮开发仅使用 fixture 测试，不执行正式构建、上传或晋级。
 

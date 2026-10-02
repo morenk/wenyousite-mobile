@@ -97,6 +97,7 @@ class DeviceMobileUpdateService
     MobileClientPlatform? platformOverride,
     Future<Directory> Function()? temporaryDirectoryProvider,
     Future<bool> Function(Uri uri)? externalLauncher,
+    DateTime Function()? now,
   }) {
     return DeviceMobileUpdateService._(
       downloadDio,
@@ -104,6 +105,7 @@ class DeviceMobileUpdateService
       platformOverride,
       temporaryDirectoryProvider ?? getTemporaryDirectory,
       externalLauncher ?? _launchExternal,
+      now ?? DateTime.now,
     );
   }
 
@@ -113,6 +115,7 @@ class DeviceMobileUpdateService
     this._platformOverride,
     this._temporaryDirectoryProvider,
     this._externalLauncher,
+    this._now,
   );
 
   static const _applicationId = 'site.wenyou.app';
@@ -124,6 +127,8 @@ class DeviceMobileUpdateService
   final MobileClientPlatform? _platformOverride;
   final Future<Directory> Function() _temporaryDirectoryProvider;
   final Future<bool> Function(Uri uri) _externalLauncher;
+  final DateTime Function() _now;
+  final _downloadCooldowns = <String, ({DateTime until, String message})>{};
   _VerifiedAndroidArtifact? _verifiedArtifact;
   _AvailableAndroidRelease? _availableRelease;
 
@@ -171,6 +176,14 @@ class DeviceMobileUpdateService
       );
       return MobileUpdateAvailability.available(
         targetVersion: metadata.versionName,
+      );
+    } on _DownloadUnavailable catch (error) {
+      _availableRelease = null;
+      return MobileUpdateAvailability.preparing(userMessage: error.userMessage);
+    } on DioException catch (error) {
+      _availableRelease = null;
+      return MobileUpdateAvailability.preparing(
+        userMessage: _temporaryDownloadFailure(uri, error)?.userMessage,
       );
     } on Object {
       _availableRelease = null;
@@ -252,7 +265,8 @@ class DeviceMobileUpdateService
     } on MobileUpdateException {
       rethrow;
     } on DioException catch (error) {
-      throw MobileUpdateException('安装包下载失败，请检查网络后重试。', error);
+      throw _temporaryDownloadFailure(uri, error) ??
+          MobileUpdateException('安装包下载失败，请检查网络后重试。', error);
     } on PlatformException catch (error) {
       if (error.code.startsWith('apk_')) {
         await _discardVerifiedArtifact();
@@ -284,6 +298,7 @@ class DeviceMobileUpdateService
     Uri uri, {
     required int targetBuild,
   }) async {
+    _checkDownloadCooldown(uri);
     final response = await _downloadDio.headUri<Object?>(
       uri,
       options: Options(
@@ -295,6 +310,40 @@ class DeviceMobileUpdateService
       response,
       targetBuild: targetBuild,
     );
+  }
+
+  void _checkDownloadCooldown(Uri uri) {
+    final now = _now();
+    _downloadCooldowns.removeWhere((_, value) => !value.until.isAfter(now));
+    final cooldown = _downloadCooldowns[uri.origin];
+    if (cooldown != null) throw _DownloadUnavailable(cooldown.message);
+  }
+
+  _DownloadUnavailable? _temporaryDownloadFailure(Uri uri, DioException error) {
+    final message = switch (error.response?.statusCode) {
+      429 => '下载请求较多，请稍后重试。',
+      503 => '安装包暂时无法下载，请稍后重试。',
+      _ => null,
+    };
+    if (message == null) return null;
+    final retryAfter = error.response?.headers.value('retry-after')?.trim();
+    // 下载契约使用整数秒；缺失或非法时保守等待一分钟，不自动重发请求。
+    final seconds = retryAfter != null && RegExp(r'^\d+$').hasMatch(retryAfter)
+        ? BigInt.parse(retryAfter)
+        : BigInt.from(60);
+    final deadline =
+        BigInt.from(_now().millisecondsSinceEpoch) +
+        seconds * BigInt.from(1000);
+    final maximum = BigInt.from(8640000000000000);
+    final until = DateTime.fromMillisecondsSinceEpoch(
+      (deadline > maximum ? maximum : deadline).toInt(),
+    );
+    // 同源的不同构建共用限额；迟到的短等待不能缩短已有期限。
+    final previous = _downloadCooldowns[uri.origin];
+    if (previous == null || until.isAfter(previous.until)) {
+      _downloadCooldowns[uri.origin] = (until: until, message: message);
+    }
+    return _DownloadUnavailable(message);
   }
 
   Future<UpdateLaunchResult> _install(
@@ -324,6 +373,7 @@ class DeviceMobileUpdateService
     final partialFile = File('${finalFile.path}.part');
     await _deleteIfExists(partialFile);
     try {
+      _checkDownloadCooldown(uri);
       onStage(MobileUpdateStage.downloading);
       final response = await _downloadDio.downloadUri(
         uri,
@@ -406,6 +456,10 @@ class DeviceMobileUpdateService
   }
 }
 
+class _DownloadUnavailable extends MobileUpdateException {
+  const _DownloadUnavailable(super.userMessage);
+}
+
 class _AndroidReleaseMetadata {
   const _AndroidReleaseMetadata({
     required this.contentLength,
@@ -419,6 +473,10 @@ class _AndroidReleaseMetadata {
   }) {
     if (response.realUri.scheme.toLowerCase() != 'https') {
       throw const MobileUpdateException('安装包下载地址不是安全连接。');
+    }
+    // 当前下载器只请求整包；即使 206 的长度/摘要碰巧匹配也不能作为完整响应。
+    if (response.statusCode != 200) {
+      throw const MobileUpdateException('安装包下载失败，请稍后重试。');
     }
     final contentType = _header(
       response,
