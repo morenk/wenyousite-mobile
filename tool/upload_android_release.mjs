@@ -4,6 +4,7 @@ import { createReadStream, readFileSync, statSync } from 'node:fs';
 import { basename, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import {
+  GetObjectCommand,
   HeadObjectCommand,
   PutObjectCommand,
   S3Client,
@@ -50,8 +51,13 @@ export function releaseConfig(env) {
   for (const field of ['endpoint', 'publicBaseUrl']) {
     const url = new URL(config[field]);
     if (url.protocol !== 'https:') throw new Error(`${field} 必须使用 HTTPS`);
+    if (url.username || url.password || url.search || url.hash) {
+      throw new Error(`${field} 不得包含凭据、查询参数或 fragment`);
+    }
   }
-  if (!/^[0-9A-Za-z._/-]+$/.test(config.prefix)) throw new Error('对象前缀格式不合法');
+  if (config.bucket !== 'wenyou-apk' || config.prefix !== 'mobile/android') {
+    throw new Error('发布工具只允许 wenyou-apk 桶的 mobile/android 目录');
+  }
   return config;
 }
 
@@ -127,11 +133,22 @@ async function headObject(client, bucket, key) {
     return await client.send(new HeadObjectCommand({ Bucket: bucket, Key: key }));
   } catch (error) {
     if (isMissingObject(error)) return null;
-    throw error;
+    throw storageFailure(error);
   }
 }
 
-function assertStoredObject(head, artifact) {
+function storageFailure(error) {
+  const status = error?.$metadata?.httpStatusCode;
+  // SDK/对象存储错误正文可能回显签名请求；不输出原始 message、headers 或凭据。
+  return new Error(`鉴权对象存储请求失败${Number.isInteger(status) ? ` (HTTP ${status})` : ''}`);
+}
+
+async function sendStorage(client, command) {
+  try { return await client.send(command); }
+  catch (error) { throw storageFailure(error); }
+}
+
+export function assertStoredObject(head, artifact) {
   if (Number(head.ContentLength) !== artifact.size) throw new Error(`已有对象大小不一致: ${artifact.key}`);
   if (normalizeContentType(head.ContentType) !== normalizeContentType(artifact.contentType)) {
     throw new Error(`已有对象 Content-Type 不一致: ${artifact.key}`);
@@ -143,16 +160,24 @@ function assertStoredObject(head, artifact) {
   if (head.Metadata?.['apk-sha256']?.toLowerCase() !== artifact.apkSha256) {
     throw new Error(`已有对象 APK 摘要不一致，禁止覆盖: ${artifact.key}`);
   }
+  for (const [name, value] of Object.entries(artifact.metadata)) {
+    if (head.Metadata?.[name] !== value) {
+      throw new Error(`对象发布身份不一致 (${name}): ${artifact.key}`);
+    }
+  }
+  if (artifact.attachment && head.ContentDisposition !== `attachment; filename="${artifact.fileName}"`) {
+    throw new Error(`对象 Content-Disposition 不正确: ${artifact.key}`);
+  }
 }
 
-async function ensureUploaded(client, config, artifact) {
+export async function ensureUploaded(client, config, artifact) {
   const existing = await headObject(client, config.bucket, artifact.key);
   if (existing) {
     assertStoredObject(existing, artifact);
     process.stderr.write(`对象已存在且内容一致，跳过: ${artifact.key}\n`);
     return;
   }
-  await client.send(
+  await sendStorage(client,
     new PutObjectCommand({
       Bucket: config.bucket,
       Key: artifact.key,
@@ -172,24 +197,33 @@ async function ensureUploaded(client, config, artifact) {
   assertStoredObject(uploaded, artifact);
 }
 
-async function verifyPublicArtifacts(publicUrl, expected) {
-  const apkResponse = await fetch(publicUrl, { method: 'HEAD', redirect: 'follow' });
-  if (!apkResponse.ok || apkResponse.url !== publicUrl) {
-    throw new Error(`公网 APK HEAD 失败或发生重定向: ${apkResponse.status}`);
-  }
-  assertPublicApkHeaders(apkResponse.headers, expected);
-
-  const sidecarResponse = await fetch(`${publicUrl}.sha256`, { redirect: 'follow' });
-  if (!sidecarResponse.ok) throw new Error(`公网 SHA sidecar 读取失败: ${sidecarResponse.status}`);
-  const publicSha = parseSha256Sidecar(await sidecarResponse.text(), expected.fileName);
-  if (publicSha !== expected.sha256) throw new Error('公网 SHA sidecar 与 APK 不一致');
-
-  const manifestUrl = publicUrl.replace(/\.apk$/, '.json');
-  const manifestResponse = await fetch(manifestUrl, { redirect: 'follow' });
-  if (!manifestResponse.ok) throw new Error(`公网构建摘要读取失败: ${manifestResponse.status}`);
-  const publicManifest = await manifestResponse.json();
-  if (publicManifest.apkSha256?.toLowerCase() !== expected.sha256) {
-    throw new Error('公网构建摘要与 APK 不一致');
+export async function verifyPrivateArtifacts(client, config, artifacts) {
+  for (const artifact of artifacts) {
+    const head = await headObject(client, config.bucket, artifact.key);
+    if (!head) throw new Error(`待核验对象不存在: ${artifact.key}`);
+    assertStoredObject(head, artifact);
+    // APK 由本地验签/摘要和上传后 HEAD 固定身份；只读回两个小附件，避免再次下载 APK。
+    if (artifact.attachment) continue;
+    if (artifact.size > 64 * 1024) throw new Error('发布附件超过 64 KiB');
+    const response = await sendStorage(client, new GetObjectCommand({
+      Bucket: config.bucket, Key: artifact.key, IfMatch: head.ETag,
+    }));
+    try {
+      assertStoredObject(response, artifact);
+      if (!response.Body) throw new Error('发布附件缺少正文');
+      const hash = createHash('sha256');
+      let length = 0;
+      for await (const chunk of response.Body) {
+        length += chunk.length;
+        if (length > artifact.size) throw new Error('发布附件正文超过已核验大小');
+        hash.update(chunk);
+      }
+      if (length !== artifact.size || hash.digest('hex') !== artifact.artifactSha256) {
+        throw new Error(`发布附件正文摘要或大小不一致: ${artifact.key}`);
+      }
+    } finally {
+      response.Body?.destroy();
+    }
   }
 }
 
@@ -249,18 +283,13 @@ async function main() {
     region: config.region,
     credentials: { accessKeyId: config.accessKeyId, secretAccessKey: config.secretAccessKey },
     forcePathStyle: true,
+    maxAttempts: 2,
+    requestHandler: { connectionTimeout: 10_000, requestTimeout: 60_000 },
   });
   for (const artifact of artifacts) await ensureUploaded(client, config, artifact);
 
   const publicUrl = `${config.publicBaseUrl.replace(/\/$/, '')}/${prefix}${apkFileName}`;
-  const expected = {
-    fileName: apkFileName,
-    size: apkSize,
-    sha256: actualApkSha,
-    version: args.version,
-    build: Number(args.build),
-  };
-  await verifyPublicArtifacts(publicUrl, expected);
+  await verifyPrivateArtifacts(client, config, artifacts);
   process.stdout.write(`${JSON.stringify({ url: publicUrl, size: apkSize, sha256: actualApkSha })}\n`);
 }
 

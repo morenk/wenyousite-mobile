@@ -137,11 +137,17 @@ fi
 
 PROJECT_DIR=$(cd -- "$PROJECT_DIR" && pwd)
 
+release_ssh() {
+  # 上传凭据只供本机对象存储进程使用，不让 SSH 继承或通过 SendEnv 转发。
+  env -u WENYOU_RELEASE_S3_ACCESS_KEY_ID -u WENYOU_RELEASE_S3_SECRET_ACCESS_KEY \
+    ssh -o 'SendEnv=-*' -o BatchMode=yes -o ConnectTimeout=15 "$SSH_TARGET" "$@"
+}
+
 preflight_android_notes() {
   local remote_command response
   printf -v remote_command 'sudo -n %q --preflight --version %q --build %q' \
     "$REMOTE_PROMOTE_COMMAND" "$VERSION_NAME" "$BUILD_NUMBER"
-  if ! response=$(ssh -o BatchMode=yes -o ConnectTimeout=15 "$SSH_TARGET" "$remote_command"); then
+  if ! response=$(release_ssh "$remote_command"); then
     echo "更新说明预检失败；请确认后台文案。若上次发布中断，请由负责人执行受限 --recover 后重试。" >&2
     return 1
   fi
@@ -427,7 +433,7 @@ publish_android() {
     "$apk_size" \
     "$apk_sha256" \
     "$ANDROID_NOTES_REVISION"
-  ssh -o BatchMode=yes -o ConnectTimeout=15 "$SSH_TARGET" "$remote_command"
+  release_ssh "$remote_command"
 }
 
 publish_ios() {

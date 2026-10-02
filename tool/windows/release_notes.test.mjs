@@ -55,6 +55,9 @@ function fixture({ mode = '', first = result, second = result, sshFailure = fals
   fs.writeFileSync(path.join(bin, 'npm'), '#!/usr/bin/env bash\necho npm >> "$FIXTURE_LOG"\n');
   fs.writeFileSync(path.join(bin, 'flutter'), '#!/usr/bin/env bash\necho flutter >> "$FIXTURE_LOG"\nexit 88\n');
   fs.writeFileSync(path.join(bin, 'ssh'), `#!/usr/bin/env bash
+    if [ -n "\${WENYOU_RELEASE_S3_ACCESS_KEY_ID:-}" ] || [ -n "\${WENYOU_RELEASE_S3_SECRET_ACCESS_KEY:-}" ]; then
+      echo credential-leak >> "$FIXTURE_LOG"; exit 71;
+    fi
     echo "ssh $*" >> "$FIXTURE_LOG"
     if [[ "$*" == *--preflight* ]]; then
       ${sshFailure ? 'exit 37' : ''}
@@ -72,7 +75,8 @@ function fixture({ mode = '', first = result, second = result, sshFailure = fals
     const bashPath = path.resolve(gitExecPath, '../../../bin/bash.exe');
     const run = spawnSync(bashPath, args, {
       cwd: root, encoding: 'utf8', timeout: 30000,
-      env: { ...process.env, FIXTURE_ROOT: root.replaceAll('\\', '/'), FIXTURE_LOG: log.replaceAll('\\', '/'), WENYOU_RELEASE_SSH_TARGET: 'fixture.invalid', ANDROID_SDK_ROOT: root },
+      env: { ...process.env, FIXTURE_ROOT: root.replaceAll('\\', '/'), FIXTURE_LOG: log.replaceAll('\\', '/'), WENYOU_RELEASE_SSH_TARGET: 'fixture.invalid', ANDROID_SDK_ROOT: root,
+        WENYOU_RELEASE_S3_ACCESS_KEY_ID: 'fixture-key', WENYOU_RELEASE_S3_SECRET_ACCESS_KEY: 'fixture-secret' },
     });
     if (run.error) throw run.error;
     return { ...run, calls: fs.existsSync(log) ? fs.readFileSync(log, 'utf8') : '' };

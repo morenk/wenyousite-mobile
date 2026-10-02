@@ -4,6 +4,10 @@ Android 发布候选现要求后台先确认精确版本的纯文本说明。`Pu
 
 JSON 构建摘要保存 `notesConfirmedRevision`，将确认记录与 APK 摘要、版本和源提交绑定；无预检的分段构建该值为 `null`。
 
+上传器只允许 `wenyou-apk/mobile/android`，上传后以签名 S3 HEAD 核对大小、类型、不可变缓存、附件名与完整发布 metadata，并以签名 GET 读回两个不超过 64 KiB 的附件，逐字节验证本地 SHA-256。验证不再要求 APK 桶允许公开读取；不会因鉴权失败、对象缺失或服务不可用而回退公开桶。既有同名对象必须身份与内容均一致才能复用，禁止覆盖。Windows 的 DPAPI 存储和正式签名流程保持；SSH 子进程移除上传 AccessKey/SecretKey，禁用 SendEnv，SDK 错误不回显签名请求或原始服务端错误正文。
+
+本站下载网关接入仍待 Backend 已提交的下载契约和预热／晋级 CLI；现阶段保留旧 URL 输出与既有晋级协议，不得据此宣称私有下载迁移已完成，也不得关闭桶的公共读。模拟回归与交接记录见[私有 APK 下载适配](../../docs/architecture/private-apk-download-acceptance.md)。
+
 `BuildOnly` 只构建签名测试制品，无需已配置说明，也不联系说明或晋级通道。`UploadOnly` 构建并上传对象，但不修改推荐策略或公开说明；真实晋级仍须重新完成完整发布流程。中断恢复、后台确认规则和受限入口部署依赖由上游[发布运维文档](../../contracts/mobile-release-operations.md)维护。本轮开发仅使用 fixture 测试，不执行正式构建、上传或晋级。
 
 Debug、Profile 和 Release 均为仅含 `arm64-v8a` 的单 APK。仓库 Gradle 在 `defaultConfig` 统一声明 ABI，并关闭 Flutter 自动默认过滤，避免把 ARM32/x86_64 再合入制品。Debug 候选、完整门禁和正式构建入口传入 `--target-platform android-arm64`；直接构建 Profile 时也使用该参数，不使用会偏移构建号的 ABI 分包。开发和验收使用 ARM64 设备。参考 [Flutter ABI 过滤说明](https://docs.flutter.dev/release/breaking-changes/default-abi-filters-android)。
