@@ -1,5 +1,15 @@
 # API 合同变更
 
+## 5.30.0-dev.20261002.2
+
+- 下载 DTO、路径、operationId 与前版一致；HEAD 在 GET 之前注册，兼容主 API 默认 Fastify 自动 HEAD 行为，避免重复路由阻止启动。生成文档方法顺序相应调整。
+- 本提交只修正路由注册与机器文档顺序；独立预算、预热、位置登记和合成下载预览随后在同分支交付。
+
+## 5.30.0-dev.20261002.1
+
+- 兼容新增匿名下载信息 `appDownloadsInfo` 与固定构建 GET/HEAD `appDownloadsFile` / `appDownloadsHead`；DTO、Range、状态码与旧 APP metadata 见 [下载网关契约](../docs/app-download-gateway.md)。
+- Android meta 的 updateUrl 允许本站固定构建文件 URL；旧源站发布身份与审计原文保留。先兼容网关/发布工具和预热，再切换消费者，关闭 APK 公共读需独立评审。
+
 ## 5.29.0-dev.20261001.1
 
 - 兼容新增 PUT /threads/{id}/invite-link（threadsEnsureInviteLink），无请求体、200、现有 InviteLinkResponseDto。仅已发布私帖楼主可用，原子取得或首次创建；重复和并发复制不刷新 token。

@@ -105,12 +105,15 @@ import 'package:wenyou_api/src/model/admin_user_moderation_response_dto.dart';
 import 'package:wenyou_api/src/model/admin_user_sanction_response_dto.dart';
 import 'package:wenyou_api/src/model/admin_user_search_item_dto.dart';
 import 'package:wenyou_api/src/model/admin_user_search_response_dto.dart';
+import 'package:wenyou_api/src/model/android_download_info_dto.dart';
+import 'package:wenyou_api/src/model/android_download_release_dto.dart';
 import 'package:wenyou_api/src/model/api_capabilities_response_dto.dart';
 import 'package:wenyou_api/src/model/api_error_envelope.dart';
 import 'package:wenyou_api/src/model/api_meta_response_dto.dart';
 import 'package:wenyou_api/src/model/api_paginated_success_envelope.dart';
 import 'package:wenyou_api/src/model/api_pagination_meta.dart';
 import 'package:wenyou_api/src/model/api_success_envelope.dart';
+import 'package:wenyou_api/src/model/app_downloads_info200_response.dart';
 import 'package:wenyou_api/src/model/appeal_access_token_response_dto.dart';
 import 'package:wenyou_api/src/model/auth_change_password200_response.dart';
 import 'package:wenyou_api/src/model/auth_forgot_password200_response.dart';
@@ -623,12 +626,15 @@ part 'serializers.g.dart';
   AdminUserSanctionResponseDto,
   AdminUserSearchItemDto,
   AdminUserSearchResponseDto,
+  AndroidDownloadInfoDto,
+  AndroidDownloadReleaseDto,
   ApiCapabilitiesResponseDto,
   ApiErrorEnvelope,
   ApiMetaResponseDto,
   ApiPaginatedSuccessEnvelope,$ApiPaginatedSuccessEnvelope,
   ApiPaginationMeta,
   ApiSuccessEnvelope,$ApiSuccessEnvelope,
+  AppDownloadsInfo200Response,
   AppealAccessTokenResponseDto,
   AuthChangePassword200Response,
   AuthForgotPassword200Response,
