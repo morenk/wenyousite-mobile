@@ -52,6 +52,9 @@
 - 正式 `dev:start` 启动前再次核对 `dev:list`，原设备任务已经自行停止、无 active 或 blocked 冲突；没有接管、卸载或清数据。
 - 2026-10-02 22:09:18（北京时间）安装 `site.wenyou.app.debug`，版本 `0.8.0+97`；22:09:36 状态 `ready`，设备 `4b9c39b5`，启动记录 PID `24212`。`source` 与 `loadedSource` 均为上述提交，SHA-256 摘要均为 `3ab9e9f342eed0d7eed7d9df62c7fc6acb456bea19405f645de1ae647e5fd1bf`。
 - session `discussion-navigation-20261001`，runId `preview_735f30884c451baf96cf97f3`，Backend 固定 `62083784e27f697af3799e392011bf8f6dd825d2`，`borrowedTunnel=true`；源码与隔离身份已经由正式入口校验。
-- 实际设备 APK SHA-256 `ba6b6bb32e4a6ac45d2c7c79e6e60380729a05045f416316c6fe8b3378a233fa`，与上面的公网配置构建证据不同。本轮只首次安装与启动，没有热重载；后续热重载画面以新的 `loadedSource` 摘要为准，不能沿用初装 APK 哈希代表。
+- 实际设备 APK SHA-256 `ba6b6bb32e4a6ac45d2c7c79e6e60380729a05045f416316c6fe8b3378a233fa`，与上面的公网配置构建证据不同。后续热重载画面以新的 `loadedSource` 摘要为准，不能沿用初装 APK 哈希代表。
 - 已核对 Debug activity 启动；只读截图时负责人已在操作其他画面，未取得可归档的本功能画面。没有切回应用或导航打断负责人，故仍不能宣称真人视觉或千层拖动手感已验收。320dp 两倍字体明暗 Golden 仅为辅助证据。
-- 保持实时会话及共享桥接运行，后续反馈沿用本 Worktree、分支和 PR。状态用 `npm run dev:status` 查询，不将本条启动记录作为长期实时状态。
+- 22:11:47 调试会话收到 Flutter `app.stop` 后退出。只读复核时本次应用 PID `24212` 仍存活、Activity 在后台，crash buffer 与该 PID 的 error log 均为空；系统退出记录只包含更早的其他 PID，不能据此认定本次应用崩溃或用户强停。运行入口为保护日志隐私不持久保存 `app.log`，故当前证据不足以确定退出原因。共享桥接仍正常，但会话清理已移除本任务设备 reverse，此时从图标打开应用也不能连接隔离 API。
+- `dev:list` 再次确认无其他任务占用后，按既有授权仅尝试一次正式 `dev:start` 恢复，没有清数据或另行执行构建入口。22:23:44 增量安装相同哈希的隔离 APK，22:24:04 重新 `ready`，PID `12665`；`source`／`loadedSource` 为文档提交 `4a80ab5747e3b79fb83a0c2c3dfa99faa4770f38`，应用摘要仍为 `3ab9e9f342eed0d7eed7d9df62c7fc6acb456bea19405f645de1ae647e5fd1bf`。设备 API／媒体 reverse `40885`／`39259` 已重新建立，session、runId 及 Backend 身份不变。
+- 恢复后只读观察至 22:26:35，连续就绪超过两分半，覆盖此前约两分钟退出窗口；状态仍为 `ready`、PID 与两条 reverse 均保留。没有为观察导航或操作手机。一次未复现不能证明退出原因已消除，后续若再发生须保留现场继续定位，不能无限重启掩盖问题。
+- 后续反馈沿用本 Worktree、分支和 PR。状态用 `npm run dev:status` 查询，不将本条启动记录作为长期实时状态。
