@@ -115,7 +115,7 @@ class _RevealHarnessState extends State<_RevealHarness> {
                 itemBuilder: (context, index) {
                   final id = _items[index];
                   final isTarget = id == 'target';
-                  return DiscussionKeepAlive(
+                  return KeyedSubtree(
                     key: ValueKey('reveal-item-$id'),
                     child: SizedBox(
                       key: isTarget ? _targetKey : null,

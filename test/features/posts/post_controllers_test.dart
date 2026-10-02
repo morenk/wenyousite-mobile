@@ -4,9 +4,10 @@ import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_controllers.dart';
 import 'package:wenyousite_mobile/features/posts/data/post_repository.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
+import '../../support/discussion_window_fixture.dart';
 
 void main() {
-  test('独立讨论验证首屏外目标并沿真实 cursor 页定位', () async {
+  test('独立讨论首屏直接读取目标窗口，无须逐页扫描', () async {
     final repository = _FakePostRepository(
       posts: {'root': _post('root'), 'focus': _reply('focus', minute: 2)},
       onReplies: ({cursor, required order, authorId}) async {
@@ -31,14 +32,10 @@ void main() {
 
     await controller.load();
 
-    expect(controller.state.replies.map((item) => item.id), ['reply-1']);
+    expect(controller.state.replies.map((item) => item.id), ['focus']);
     expect(repository.postRequests, ['root', 'focus']);
     await controller.locateReply('focus');
-    expect(controller.state.replies.map((item) => item.id), [
-      'reply-1',
-      'focus',
-      'reply-2',
-    ]);
+    expect(controller.state.replies.map((item) => item.id), ['focus']);
 
     await controller.setOrder(PostReplyOrder.newest);
     expect(controller.state.order, PostReplyOrder.newest);
@@ -126,10 +123,10 @@ void main() {
     await controller.load();
     expect(repository.postRequests, ['root', 'focus', 'root', 'focus']);
     expect(controller.state.phase, PostDiscussionPhase.ready);
-    expect(controller.state.replies.map((reply) => reply.id), ['reply-1']);
+    expect(controller.state.replies.map((reply) => reply.id), ['focus']);
   });
 
-  test('独立讨论首屏完成后串行预取剩余全部文字回复', () async {
+  test('独立讨论每次邻近预取只加载一页', () async {
     var activeRequests = 0;
     var maximumActiveRequests = 0;
     final repository = _FakePostRepository(
@@ -172,19 +169,17 @@ void main() {
     expect(controller.state.replies.map((item) => item.id), [
       'reply-1',
       'reply-2',
-      'reply-3',
     ]);
-    expect(controller.state.hasMore, isFalse);
+    expect(controller.state.hasMore, isTrue);
     expect(controller.state.isPrefetchingReplies, isFalse);
     expect(maximumActiveRequests, 1);
     expect(repository.replyRequests.map((request) => request.cursor), [
       null,
       'page-2',
-      'page-3',
     ]);
   });
 
-  test('回复分页 cursor 连续失效时只重载一次首页并提供重试', () async {
+  test('回复分页 cursor 失效只重取当前位置窗口一次', () async {
     var firstPage = 0;
     final repository = _FakePostRepository(
       posts: {'root': _post('root')},
@@ -211,8 +206,7 @@ void main() {
 
     expect(firstPage, 2);
     expect(controller.state.replies.single.id, 'fresh-2');
-    expect(controller.state.transientFailure?.isInvalidCursor, isTrue);
-    expect(controller.state.retryAction, PostDiscussionRetryAction.loadMore);
+    expect(controller.state.transientFailure, isNull);
     expect(controller.state.isPrefetchingReplies, isFalse);
   });
 
@@ -714,7 +708,7 @@ typedef _UpdateHandler =
       required int version,
     });
 
-class _FakePostRepository implements PostRepository {
+class _FakePostRepository with PostWindowFixture implements PostRepository {
   _FakePostRepository({
     this.posts = const {},
     this.onFetchPost,

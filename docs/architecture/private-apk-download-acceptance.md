@@ -3,9 +3,10 @@
 ## 范围和基线
 
 - Windows Worktree：`D:\codex-worktrees\9e50\wenyousite-mobile`，分支 `codex/20261002-private-apk-release`，由更新后的 `origin/dev` `510c63db8e28ec3563d8fc0e9593fa7440b4e66d` 建立。
-- 已 fetch Foundation tags，正式最新 `v7.2.1` 与 `pubspec.yaml` 一致；另参考下载语义提交 `6c3776dd7c2de1aacafe0f6403fbb3ea98c5fb0d`，不新增 Token、依赖或 Android 原生实现。
+- 已 fetch Foundation tags，正式最新 `v7.2.1` 与 `pubspec.yaml` 一致；语义参考 PR #30 最终提交 `b75835b1ffcf2dc6d98f86e94a3b71804a53f0bb`（26 个固定用例），包含既有凭据复用边界；不新增 Token、依赖或 Android 原生实现。
 - 契约先通过 `021029ad` 同步首版下载协议，后由 `940560b5` 固定运行时 Backend `27dc3ff7eeb51334ff024feb8494e78eb7ae7fc8`／`5.31.0-dev.20261003.1`，见[同步记录](private-apk-contract-sync.md)。生成 SDK 完整保留上游讨论定位新增内容，其 UI 消费由独立切片处理。
 - `79f73119` 已合入最新 Mobile `origin/dev` `5dfeb583`，保留双方变更记录；当前契约继续固定下载候选来源，不用旧线上 SHA 覆盖它。
+- 最终来源进一步固定 Backend `1857d60fe3af309149eb5c1846be221d3a45fb86`（PR #41）：相对 `27dc3ff7` 只有隔离预览响应头修正，同步契约与发布 CLI 逐字不变。随后合入新 Mobile `origin/dev` `4a52274c` 的完整讨论定位实现，移除两项已消费窗口 API 的临时排除，不覆盖原切片的验收边界。
 - 2026-10-02 历史门禁时本地来源 `4db0cdf2c079fc8b66545c67849053cd74945f8a` 与公网 `/meta.buildSha` `edd0b23d870d533df5f4ac787eb22df9a822981f` 不同，双方 OpenAPI 为 `5.29.0-dev.20261001.1`。后续公网来源差异继续如实报告，不改线上或放宽门禁。
 
 ## 独立完成的实现
@@ -45,6 +46,7 @@ HTTP 测试在 adapter 中把虚构 HTTPS 地址的传输映射到本机，保�
 | `download-rate-limited`、`download-service-unavailable` | HTTP 等待期限与恢复；Controller/Widget 显示提示且不解除强制门禁 |
 | `single-range` | SDK 测试验证 Range 参数；APP 不发 Range，HTTP 用例拒绝非预期 206；服务端范围和计费由 Backend 验证 |
 | `artifact-identity-preserved` | S3 metadata/附件 SHA、APP 长度/摘要/缓存回归；原生签名未改，正式覆盖安装待真机 |
+| `origin-credential-reuse` | Windows 使用虚构既有凭据、固定上传目录、错误脱敏和 SSH 环境隔离回归；后端预热读取范围、私有配置权限、公众进程隔离由 Backend 独立测试及部署验收证明，Windows 上传仍需要写入操作 |
 | `accessible-layout` | 共用等待组件的新增提示窄屏／大字号 Widget 检查；未查看画面不作为视觉验收 |
 | `prewarm-before-promote` | Windows fixture 验证受限 gateway 参数、先预检再构建、身份复核、失败不回退；内部预热顺序由固定 Backend 源码与其隔离测试证明，本任务不在 Windows 执行 Backend |
 | `migration-public-read-gate` | 未改桶公共读，Mobile 测试不能替代旧 APP 和网关隔离验收 |
@@ -61,6 +63,8 @@ HTTP 测试在 adapter 中把虚构 HTTPS 地址的传输映射到本机，保�
 - 本机完整日志：`private-apk-gate.log`（Git 忽略）；SHA-256：`93a4bf25fa412f0e461fb06f34df784c4ff5f5d10d51fc36614dc0b6a3428160`。
 
 没有安装该 APK、启动 Debug 设备会话、读取真实云凭据或执行正式签名／上传／晋级。后端契约和 CLI 接入前不重复全量门禁或构建；最终验证按后续实际变更和治理安排执行。
+
+2026-10-03 曾对 `0a6312db` 启动最终门禁，再生成、格式、应用/SDK 分析、架构、文档及 API 范围通过；公网当时为 `5.30.0-dev.20261001.1 / 2b803a8e4bc73bc01bd046142e6f9005f92aa411`，与候选不符。全量测试途中发现 `dev` 已新合入讨论定位切片，于是仅停止本任务的门禁进程树并保留日志 `private-apk-interrupted-gate-0a6312.log`；此轮被主动中止，不计作完整通过、不绑定新 APK。解决冲突后在最终整合源码重跑完整门禁。
 
 ## 剩余交接与验收
 

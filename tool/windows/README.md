@@ -8,7 +8,7 @@ JSON 构建摘要保存 `notesConfirmedRevision`，将确认记录与 APK 摘要
 
 负责人已允许复用现有存储凭据，不要求新建只读凭据，也不调整现有云端权限。上述 APK 目录约束属于应用层限制，不等于凭据只有 APK 读取权限；泄漏可能影响该凭据原先授权的全部资源。预热／修复凭据需在后端隔离配置中显式读取，公开网关不能持有或继承；Windows 不通过 SSH 转交上传凭据，也不复制生产配置。
 
-发布协议绑定 Backend `27dc3ff7eeb51334ff024feb8494e78eb7ae7fc8`。上传器输出 v1 制品身份：`bucket/key/legacyUpdateUrl` 为源对象事实，`publicUrl` 为本站固定构建文件地址，另有版本、构建、大小和摘要。`release_artifact.mjs` 在晋级前再次精确核验全部身份字段；不接受旧 `{url,size,sha256}` 输出、下载页地址或混淆的两个 URL。旧 `WENYOU_RELEASE_PUBLIC_BASE_URL` 仅兼容历史地址，新名称为 `WENYOU_RELEASE_LEGACY_BASE_URL`，两者都必须符合后端固定的 RainS3 原始身份；不控制公开下载地址。
+发布协议绑定 Backend 最终提交 `1857d60fe3af309149eb5c1846be221d3a45fb86`（与 `27dc3ff7` 的受限入口逐字相同）。上传器输出 v1 制品身份：`bucket/key/legacyUpdateUrl` 为源对象事实，`publicUrl` 为本站固定构建文件地址，另有版本、构建、大小和摘要。`release_artifact.mjs` 在晋级前再次精确核验全部身份字段；不接受旧 `{url,size,sha256}` 输出、下载页地址或混淆的两个 URL。旧 `WENYOU_RELEASE_PUBLIC_BASE_URL` 仅兼容历史地址，新名称为 `WENYOU_RELEASE_LEGACY_BASE_URL`，两者都必须符合后端固定的 RainS3 原始身份；不控制公开下载地址。
 
 Windows 只调用 `sudo -n <既有受限晋级入口> --gateway --version ... --build ... --url <legacyUpdateUrl> --size ... --sha256 ... --notes-revision ...`。Backend 内部依次完成登记、鉴权预热、源身份及缓存复核、说明发布证明、网关启用和 meta 切换；Windows 不通过 SSH 传密钥、上传 manifest、执行任意 node CLI 或独立重启服务。预热或晋级失败只保留失败结果，由后端 journal 补偿；需恢复时仍由负责人明确执行原 `--recover`。成功后才显示本站固定地址，历史 RainS3 地址和旧审计不改写。
 

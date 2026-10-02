@@ -1,5 +1,7 @@
 # 私有 APK 下载契约同步
 
+当前最终来源为 Backend `1857d60fe3af309149eb5c1846be221d3a45fb86`／`5.31.0-dev.20261003.1`。与 `27dc3ff7` 比较，所有同步契约及受限发布脚本逐字相同，仅后端隔离预览响应头有修正。Mobile 新 `origin/dev` `4a52274c` 已合入讨论定位实现，本任务保留该实现、移除两项窗口接口的临时排除；当前 API 范围为 164/164。以下保留分阶段同步依据，不把早期未接入状态当作当前产品事实。
+
 2026-10-03 从 Backend 已提交分支 `codex/20261002-download-gateway` 同步 `c7060867fc938e002a14bff596886aea83279b1c`，OpenAPI `5.30.0-dev.20261002.2`。首契约为 `3bd4633e1f647783030eb3db872442c8a64d6f07`；后续修正将 HEAD 显式声明在 GET 前并固定匿名认证语义。
 
 同步使用 `tool/sync_backend_contract.ps1 -BackendPath <只读镜像> -Branch codex/20261002-download-gateway -Revision <完整 SHA>`，新增逐字导出的 `contracts/app-download-gateway.md`。SDK 仅通过固定 OpenAPI Generator `7.23.0`、规范化脚本及 build_runner 生成，不手改生成物。

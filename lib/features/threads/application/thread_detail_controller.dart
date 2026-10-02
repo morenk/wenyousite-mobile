@@ -1,9 +1,8 @@
 import 'dart:async';
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
 import 'package:wenyousite_mobile/core/application/visibility_cache_invalidation.dart';
-import 'package:wenyousite_mobile/core/models/paging.dart';
+import 'package:wenyousite_mobile/core/models/discussion_window.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_detail_repository_ports.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.dart';
@@ -20,6 +19,8 @@ class ThreadDetailState {
     this.detail,
     this.selectedSubthreadId,
     this.floors = const [],
+    this.window,
+    this.pinnedFloors = const [],
     this.cursor,
     this.hasMore = false,
     this.isRefreshing = false,
@@ -37,6 +38,10 @@ class ThreadDetailState {
   final ThreadDetailModel? detail;
   final String? selectedSubthreadId;
   final List<ThreadFloorModel> floors;
+  final DiscussionWindowBuffer<ThreadFloorModel>? window;
+  final List<ThreadFloorModel> pinnedFloors;
+  int get maxNumber => window?.maxNumber ?? 0;
+  bool get hasBefore => window?.beforeCursor != null;
   final String? cursor;
   final bool hasMore;
   final bool isRefreshing;
@@ -57,6 +62,8 @@ class ThreadDetailState {
     Object? detail = _unset,
     Object? selectedSubthreadId = _unset,
     List<ThreadFloorModel>? floors,
+    Object? window = _unset,
+    List<ThreadFloorModel>? pinnedFloors,
     Object? cursor = _unset,
     bool? hasMore,
     bool? isRefreshing,
@@ -78,6 +85,10 @@ class ThreadDetailState {
           ? this.selectedSubthreadId
           : selectedSubthreadId as String?,
       floors: floors ?? this.floors,
+      window: identical(window, _unset)
+          ? this.window
+          : window as DiscussionWindowBuffer<ThreadFloorModel>?,
+      pinnedFloors: pinnedFloors ?? this.pinnedFloors,
       cursor: identical(cursor, _unset) ? this.cursor : cursor as String?,
       hasMore: hasMore ?? this.hasMore,
       isRefreshing: isRefreshing ?? this.isRefreshing,
@@ -111,6 +122,10 @@ class ThreadDetailController extends StateNotifier<ThreadDetailState> {
   final ThreadDetailRepository _repository;
   final String threadId;
   int _requestEpoch = 0;
+  bool _retryBefore = false;
+  String? visibleFloorId;
+  bool Function()? canApplyPage;
+  void Function()? beforeWindowApply;
 
   Future<void> loadInitial() async {
     final epoch = ++_requestEpoch;
@@ -139,14 +154,23 @@ class ThreadDetailController extends StateNotifier<ThreadDetailState> {
 
   /// 删除已确认后保留已加载窗口，统计重读会取消旧分页请求，避免迟到结果补回。
   Future<void> removeDeletedFloor(String floorId) async {
-    state = state.copyWith(
-      floors: state.floors.where((floor) => floor.id != floorId).toList(),
-    );
+    final window = state.window;
+    if (window != null) {
+      state = _withWindow(
+        window.removeWhere((item) => item.id == floorId),
+        pins: state.pinnedFloors.where((item) => item.id != floorId).toList(),
+      );
+    }
+    if (visibleFloorId == floorId) {
+      visibleFloorId = state.floors.firstOrNull?.id;
+    }
     await refreshMetadata();
   }
 
   Future<void> refresh() async {
     final previousSelectedId = state.selectedSubthreadId;
+    var metadataVerified = false;
+    final refreshId = visibleFloorId ?? state.floors.firstOrNull?.id;
     final epoch = ++_requestEpoch;
     state = state.copyWith(
       isRefreshing: true,
@@ -160,26 +184,58 @@ class ThreadDetailController extends StateNotifier<ThreadDetailState> {
       if (!_isCurrent(epoch)) return;
       final selectedId = detail.preferredSubthreadId(state.selectedSubthreadId);
       final selectionChanged = selectedId != previousSelectedId;
-      state = state.copyWith(
-        phase: ThreadDetailPhase.ready,
-        detail: detail,
-        selectedSubthreadId: selectedId,
-        floorAuthorId: selectionChanged ? null : state.floorAuthorId,
-        floors: const [],
-        cursor: null,
-        hasMore: false,
-        failure: null,
-        isLoadingFloors: selectedId != null,
-      );
-      if (selectedId == null) {
-        state = state.copyWith(isRefreshing: false);
+      metadataVerified = true;
+      state = state.copyWith(detail: detail, failure: null);
+      if (selectionChanged || state.window == null) {
+        state = state.copyWith(
+          selectedSubthreadId: selectedId,
+          floorAuthorId: selectionChanged ? null : state.floorAuthorId,
+          floors: const [],
+          window: null,
+          pinnedFloors: const [],
+          cursor: null,
+          hasMore: false,
+          isLoadingFloors: selectedId != null,
+        );
+        if (selectedId != null) {
+          await _loadFirstFloors(epoch, selectedId);
+        } else {
+          state = state.copyWith(isRefreshing: false);
+        }
         return;
       }
-      await _loadFirstFloors(epoch, selectedId);
+      final result = await _readWindow(
+        subthreadId: selectedId!,
+        order: state.floorOrder,
+        authorId: state.floorAuthorId,
+        postId: refreshId,
+        active: () => _isCurrent(epoch),
+      );
+      if (!_isCurrent(epoch)) return;
+      beforeWindowApply?.call();
+      state = _withWindow(
+        DiscussionWindowBuffer(result.page),
+        pins: const [],
+      ).copyWith(floorAuthorId: result.author);
     } on Object catch (error) {
       if (!_isCurrent(epoch)) return;
       final failure = _asFailure(error, '刷新主题详情失败，请稍后重试。');
-      if (_isRestricted(failure)) {
+      if (metadataVerified &&
+          failure.httpStatus == 404 &&
+          refreshId != null &&
+          state.window != null) {
+        beforeWindowApply?.call();
+        state = _withWindow(
+          state.window!.removeWhere((item) => item.id == refreshId),
+          pins: state.pinnedFloors
+              .where((item) => item.id != refreshId)
+              .toList(),
+        );
+        visibleFloorId = state.floors.firstOrNull?.id;
+        return;
+      }
+      if (failure.httpStatus == 403 ||
+          (!metadataVerified && failure.httpStatus == 404)) {
         _hideRestrictedContent(failure);
         return;
       }
@@ -225,6 +281,8 @@ class ThreadDetailController extends StateNotifier<ThreadDetailState> {
         selectedSubthreadId: selectedId,
         floorAuthorId: selectionChanged ? null : state.floorAuthorId,
         floors: shouldReloadFloors ? const [] : state.floors,
+        window: shouldReloadFloors ? null : state.window,
+        pinnedFloors: shouldReloadFloors ? const [] : state.pinnedFloors,
         cursor: shouldReloadFloors ? null : state.cursor,
         hasMore: shouldReloadFloors ? false : state.hasMore,
         isLoadingFloors: shouldReloadFloors,
@@ -258,6 +316,8 @@ class ThreadDetailController extends StateNotifier<ThreadDetailState> {
       selectedSubthreadId: subthreadId,
       floorAuthorId: null,
       floors: const [],
+      window: null,
+      pinnedFloors: const [],
       cursor: null,
       hasMore: false,
       isLoadingFloors: true,
@@ -296,6 +356,8 @@ class ThreadDetailController extends StateNotifier<ThreadDetailState> {
       floorOrder: order,
       floorAuthorId: normalizedAuthorId,
       floors: const [],
+      window: null,
+      pinnedFloors: const [],
       cursor: null,
       hasMore: false,
       isLoadingFloors: true,
@@ -312,6 +374,8 @@ class ThreadDetailController extends StateNotifier<ThreadDetailState> {
     final epoch = ++_requestEpoch;
     state = state.copyWith(
       floors: const [],
+      window: null,
+      pinnedFloors: const [],
       cursor: null,
       hasMore: false,
       isLoadingFloors: true,
@@ -322,116 +386,208 @@ class ThreadDetailController extends StateNotifier<ThreadDetailState> {
     await _loadFirstFloors(epoch, selectedId);
   }
 
-  Future<void> loadMore() => prefetchRemainingFloors();
+  ThreadDetailState _withWindow(
+    DiscussionWindowBuffer<ThreadFloorModel> window, {
+    List<ThreadFloorModel>? pins,
+  }) {
+    final pinned = pins ?? state.pinnedFloors;
+    final ids = pinned.map((item) => item.id).toSet();
+    return state.copyWith(
+      window: window,
+      pinnedFloors: pinned,
+      floors: [
+        ...pinned,
+        ...window.items.where((item) => !ids.contains(item.id)),
+      ],
+      cursor: window.afterCursor,
+      hasMore: window.afterCursor != null,
+      isLoadingFloors: false,
+      isLoadingMore: false,
+      isPrefetchingFloors: false,
+      isRefreshing: false,
+      transientFailure: null,
+    );
+  }
 
-  Future<void> locateFloor(String floorId) =>
-      prefetchRemainingFloors(untilFloorId: floorId);
+  Future<
+    ({DiscussionWindow<ThreadFloorModel> page, String? author, bool cleared})
+  >
+  _readWindow({
+    required String subthreadId,
+    required ThreadFloorOrder order,
+    required String? authorId,
+    int? number,
+    String? postId,
+    String? cursor,
+    bool Function()? active,
+  }) async {
+    try {
+      return (
+        page: await _repository.fetchFloorWindow(
+          subthreadId: subthreadId,
+          number: number,
+          postId: postId,
+          cursor: cursor,
+          order: order,
+          authorId: authorId,
+        ),
+        author: authorId,
+        cleared: false,
+      );
+    } on ApiFailure catch (failure) {
+      if (failure.businessCode != 40010 ||
+          authorId == null ||
+          (number == null && postId == null) ||
+          active == null ||
+          !active()) {
+        rethrow;
+      }
+      return (
+        page: await _repository.fetchFloorWindow(
+          subthreadId: subthreadId,
+          number: number,
+          postId: postId,
+          order: order,
+        ),
+        author: null,
+        cleared: true,
+      );
+    }
+  }
 
-  /// Fetches all remaining text pages sequentially. The page starts this only
-  /// after the first frame, while the sliver remains responsible for lazily
-  /// creating image widgets inside its bounded cache neighborhood.
-  Future<void> prefetchRemainingFloors({String? untilFloorId}) async {
-    final selectedId = state.selectedSubthreadId;
+  Future<({String id, bool clearedAuthor})?> locate({
+    int? number,
+    String? postId,
+    required String subthreadId,
+    required ThreadFloorOrder order,
+    required String? authorId,
+    required bool Function() active,
+  }) async {
     if (state.phase != ThreadDetailPhase.ready ||
-        selectedId == null ||
+        state.detail?.subthreadById(subthreadId) == null) {
+      return null;
+    }
+    final epoch = ++_requestEpoch;
+    state = state.copyWith(isLoadingMore: false, isPrefetchingFloors: false);
+    bool current() => _isCurrent(epoch) && active();
+    final result = await _readWindow(
+      subthreadId: subthreadId,
+      order: order,
+      authorId: authorId,
+      number: number,
+      postId: postId,
+      active: current,
+    );
+    if (!current()) return null;
+    final id = result.page.targetId;
+    if (id == null) throw const ApiFailure(userMessage: '未找到该楼层。');
+    state = _withWindow(DiscussionWindowBuffer(result.page), pins: const [])
+        .copyWith(
+          selectedSubthreadId: subthreadId,
+          floorOrder: order,
+          floorAuthorId: result.author,
+        );
+    visibleFloorId = id;
+    return (id: id, clearedAuthor: result.cleared);
+  }
+
+  Future<void> locateFloor(String id) async {
+    if (state.floors.any((item) => item.id == id)) return;
+    final scope = state.selectedSubthreadId;
+    if (scope == null) return;
+    final epoch = _requestEpoch;
+    try {
+      await locate(
+        postId: id,
+        subthreadId: scope,
+        order: state.floorOrder,
+        authorId: state.floorAuthorId,
+        active: () => mounted,
+      );
+    } on Object catch (error) {
+      if (!mounted || _requestEpoch != epoch + 1) return;
+      _finishFloorPrefetchFailure(_asFailure(error, '目标楼层加载失败，请重试。'));
+    }
+  }
+
+  Future<void> loadMore() => loadAdjacent(before: _retryBefore);
+  Future<void> prefetchRemainingFloors() => loadAdjacent();
+  Future<void> loadAdjacent({bool before = false}) async {
+    final selected = state.selectedSubthreadId;
+    final window = state.window;
+    final cursor = before ? window?.beforeCursor : window?.afterCursor;
+    if (selected == null ||
+        state.phase != ThreadDetailPhase.ready ||
         state.isLoadingFloors ||
+        state.isRefreshing ||
         state.isPrefetchingFloors ||
-        !state.hasMore) {
+        cursor == null ||
+        canApplyPage?.call() == false) {
       return;
     }
     final epoch = _requestEpoch;
-    final order = state.floorOrder;
-    final authorId = state.floorAuthorId;
-    final seenCursors = <String>{};
-    var didRestartInvalidCursor = false;
+    _retryBefore = before;
     state = state.copyWith(
       isLoadingMore: true,
       isPrefetchingFloors: true,
       transientFailure: null,
     );
-
-    while (_matchesFloorRequest(epoch, selectedId, order, authorId) &&
-        state.hasMore &&
-        (untilFloorId == null ||
-            !state.floors.any((floor) => floor.id == untilFloorId))) {
-      final cursor = state.cursor;
-      if (cursor == null || !seenCursors.add(cursor)) {
-        _finishFloorPrefetchFailure(
-          const ApiFailure(userMessage: '楼层位置异常，请重试。'),
-        );
-        return;
-      }
+    try {
+      DiscussionWindow<ThreadFloorModel> page;
+      var replace = false;
       try {
-        final page = await _repository.fetchFloors(
-          subthreadId: selectedId,
+        page = (await _readWindow(
+          subthreadId: selected,
+          order: state.floorOrder,
+          authorId: state.floorAuthorId,
           cursor: cursor,
-          order: order,
-          authorId: authorId,
-        );
-        if (!_matchesFloorRequest(epoch, selectedId, order, authorId)) return;
-        final merged = mergeUniqueBy(
-          state.floors,
-          page.items,
-          keyOf: (item) => item.id,
-        );
+        )).page;
+      } on ApiFailure catch (failure) {
+        if (!failure.isInvalidCursor || !_isCurrent(epoch)) rethrow;
+        page = (await _readWindow(
+          subthreadId: selected,
+          order: state.floorOrder,
+          authorId: state.floorAuthorId,
+          postId: visibleFloorId ?? state.floors.firstOrNull?.id,
+        )).page;
+        replace = true;
+      }
+      if (!_isCurrent(epoch)) return;
+      if (canApplyPage?.call() == false) {
         state = state.copyWith(
-          floors: sortThreadFloors(merged, order),
-          cursor: page.cursor,
-          hasMore: page.hasMore,
-          transientFailure: null,
+          isLoadingMore: false,
+          isPrefetchingFloors: false,
         );
-      } on Object catch (error) {
-        if (!_matchesFloorRequest(epoch, selectedId, order, authorId)) return;
-        final failure = _asFailure(error, '加载更多楼层失败，请稍后重试。');
-        if (_isRestricted(failure)) {
-          _hideRestrictedContent(failure);
-          return;
-        }
-        if (failure.isInvalidCursor && !didRestartInvalidCursor) {
-          didRestartInvalidCursor = true;
-          seenCursors.clear();
-          try {
-            final firstPage = await _repository.fetchFloors(
-              subthreadId: selectedId,
-              order: order,
-              authorId: authorId,
-            );
-            if (!_matchesFloorRequest(epoch, selectedId, order, authorId)) {
-              return;
-            }
-            state = state.copyWith(
-              floors: sortThreadFloors(firstPage.items, order),
-              cursor: firstPage.cursor,
-              hasMore: firstPage.hasMore,
-              transientFailure: null,
-            );
-            continue;
-          } on Object catch (restartError) {
-            if (!_matchesFloorRequest(epoch, selectedId, order, authorId)) {
-              return;
-            }
-            final restartFailure = _asFailure(restartError, '楼层重新加载失败，请稍后重试。');
-            if (_isRestricted(restartFailure)) {
-              _hideRestrictedContent(restartFailure);
-              return;
-            }
-            _finishFloorPrefetchFailure(restartFailure);
-            return;
-          }
-        }
-        _finishFloorPrefetchFailure(failure);
         return;
       }
-    }
-
-    if (_matchesFloorRequest(epoch, selectedId, order, authorId)) {
-      state = state.copyWith(isLoadingMore: false, isPrefetchingFloors: false);
+      if (!replace &&
+          (before ? page.beforeCursor : page.afterCursor) == cursor) {
+        throw const ApiFailure(userMessage: '楼层位置没有更新，请重试。');
+      }
+      final next = replace
+          ? DiscussionWindowBuffer(page)
+          : window!.extend(
+              page,
+              before: before,
+              idOf: (item) => item.id,
+              visibleId: visibleFloorId,
+            );
+      beforeWindowApply?.call();
+      state = _withWindow(next, pins: replace ? const [] : null);
+    } on Object catch (error) {
+      if (!_isCurrent(epoch)) return;
+      final failure = _asFailure(error, '更多楼层加载失败，请重试。');
+      if (failure.httpStatus == 403 || failure.httpStatus == 404) {
+        _hideRestrictedContent(failure);
+      } else {
+        _finishFloorPrefetchFailure(failure);
+      }
     }
   }
 
   Future<void> _loadFirstFloors(int epoch, String subthreadId) async {
     try {
-      final page = await _repository.fetchFloors(
+      final page = await _repository.fetchFloorWindow(
         subthreadId: subthreadId,
         order: state.floorOrder,
         authorId: state.floorAuthorId,
@@ -439,15 +595,8 @@ class ThreadDetailController extends StateNotifier<ThreadDetailState> {
       if (!_isCurrent(epoch) || state.selectedSubthreadId != subthreadId) {
         return;
       }
-      state = state.copyWith(
-        floors: sortThreadFloors(page.items, state.floorOrder),
-        cursor: page.cursor,
-        hasMore: page.hasMore,
-        isRefreshing: false,
-        isLoadingFloors: false,
-        isPrefetchingFloors: false,
-        transientFailure: null,
-      );
+      visibleFloorId = null;
+      state = _withWindow(DiscussionWindowBuffer(page), pins: page.pinnedItems);
     } on Object catch (error) {
       if (!_isCurrent(epoch) || state.selectedSubthreadId != subthreadId) {
         return;
@@ -468,17 +617,6 @@ class ThreadDetailController extends StateNotifier<ThreadDetailState> {
 
   bool _isCurrent(int epoch) => mounted && epoch == _requestEpoch;
 
-  bool _matchesFloorRequest(
-    int epoch,
-    String subthreadId,
-    ThreadFloorOrder order,
-    String? authorId,
-  ) =>
-      _isCurrent(epoch) &&
-      state.selectedSubthreadId == subthreadId &&
-      state.floorOrder == order &&
-      state.floorAuthorId == authorId;
-
   void _finishFloorPrefetchFailure(ApiFailure failure) {
     state = state.copyWith(
       isLoadingMore: false,
@@ -498,6 +636,8 @@ class ThreadDetailController extends StateNotifier<ThreadDetailState> {
       selectedSubthreadId: null,
       floorAuthorId: null,
       floors: const [],
+      window: null,
+      pinnedFloors: const [],
       cursor: null,
       hasMore: false,
       isRefreshing: false,
