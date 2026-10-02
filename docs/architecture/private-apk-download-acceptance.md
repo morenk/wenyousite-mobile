@@ -4,7 +4,8 @@
 
 - Windows Worktree：`D:\codex-worktrees\9e50\wenyousite-mobile`，分支 `codex/20261002-private-apk-release`，由更新后的 `origin/dev` `510c63db8e28ec3563d8fc0e9593fa7440b4e66d` 建立。
 - 已 fetch Foundation tags，正式最新 `v7.2.1` 与 `pubspec.yaml` 一致；另参考下载语义提交 `6c3776dd7c2de1aacafe0f6403fbb3ea98c5fb0d`，不新增 Token、依赖或 Android 原生实现。
-- 契约通过独立 `chore` 提交 `021029ad` 同步 Backend `c7060867fc938e002a14bff596886aea83279b1c`／`5.30.0-dev.20261002.2`，见[同步记录](private-apk-contract-sync.md)。此 SHA 的受限晋级脚本仍是旧协议，新预热／晋级入口须等运行时提交后接入；不臆造 SSH 参数，不手改生成客户端。
+- 契约先通过 `021029ad` 同步首版下载协议，后由 `940560b5` 固定运行时 Backend `27dc3ff7eeb51334ff024feb8494e78eb7ae7fc8`／`5.31.0-dev.20261003.1`，见[同步记录](private-apk-contract-sync.md)。生成 SDK 完整保留上游讨论定位新增内容，其 UI 消费由独立切片处理。
+- `79f73119` 已合入最新 Mobile `origin/dev` `5dfeb583`，保留双方变更记录；当前契约继续固定下载候选来源，不用旧线上 SHA 覆盖它。
 - 2026-10-02 历史门禁时本地来源 `4db0cdf2c079fc8b66545c67849053cd74945f8a` 与公网 `/meta.buildSha` `edd0b23d870d533df5f4ac787eb22df9a822981f` 不同，双方 OpenAPI 为 `5.29.0-dev.20261001.1`。后续公网来源差异继续如实报告，不改线上或放宽门禁。
 
 ## 独立完成的实现
@@ -18,6 +19,10 @@
 消费者保留独立 Dio 的安全连接、HEAD/GET 元数据、完整长度与 SHA-256 验证，并由原生桥核对包名／构建／已安装签名。固定文件 URL 无需 `.apk` 后缀，允许网关 `private, no-store`；当前只请求整包，不发 Range，HEAD/GET 都只接受 200，非预期 206 即使带完整字节也拒绝安装并清理 `.part`。
 
 429/503 候选按 origin 共用 `Retry-After` 整数秒期限，缺失或非法时等待 60 秒；同源切换构建、缓存的预检结果不能绕过。到期不主动重发，由下一次既有检查或用户操作恢复。已验证 APK 的继续安装不受网络等待影响。限流和暂时不可下载分别给出稍后重试提示，强制更新保留门禁，等待页不推断“正在发布”。
+
+发布工具已接入已提交的受限 `--gateway`，两次说明预检也带该前置标志，因此旧入口不支持时在构建前停止。上传器输出源桶／key／历史 URL 与独立 publicUrl，晋级前严格复核版本、build、大小和 SHA；`--url` 继续传原 RainS3 身份。后端在单个受限入口内预热并晋级，失败不回退旧通道、不自动恢复、不报告成功；Windows 不执行远程内部 CLI 或代管服务。上传-only 明确只完成源对象上传，不声称已预热或公开可用。
+
+最终编排定向检查：`node --test --test-concurrency=1 tool/upload_android_release.test.mjs tool/windows/release_notes.test.mjs` **29/29 通过**。实际运行本地 shell 参数解析和受限命令编排，SSH／构建／上传采用测试替身，不把替身结果当作已部署 Backend 的实际预热或恢复证明。该行为依赖合并部署后的同版后端入口。
 
 ## 已执行的隔离回归
 
@@ -41,7 +46,7 @@ HTTP 测试在 adapter 中把虚构 HTTPS 地址的传输映射到本机，保�
 | `single-range` | SDK 测试验证 Range 参数；APP 不发 Range，HTTP 用例拒绝非预期 206；服务端范围和计费由 Backend 验证 |
 | `artifact-identity-preserved` | S3 metadata/附件 SHA、APP 长度/摘要/缓存回归；原生签名未改，正式覆盖安装待真机 |
 | `accessible-layout` | 共用等待组件的新增提示窄屏／大字号 Widget 检查；未查看画面不作为视觉验收 |
-| `prewarm-before-promote` | 待 Backend 已提交受限 CLI 后接入，尚未完成 |
+| `prewarm-before-promote` | Windows fixture 验证受限 gateway 参数、先预检再构建、身份复核、失败不回退；内部预热顺序由固定 Backend 源码与其隔离测试证明，本任务不在 Windows 执行 Backend |
 | `migration-public-read-gate` | 未改桶公共读，Mobile 测试不能替代旧 APP 和网关隔离验收 |
 
 ## 本轮完整门禁与 Debug 产物
@@ -59,9 +64,9 @@ HTTP 测试在 adapter 中把虚构 HTTPS 地址的传输映射到本机，保�
 
 ## 剩余交接与验收
 
-1. 收到 Backend 受限 CLI 运行时精确 SHA 后同步后续契约，接入源对象身份、历史 URL 与对外固定 URL 分离、先预热后晋级及失败恢复。
+1. 已固定 Backend 受限 CLI 并完成 Windows 编排；当前等待最终本地门禁与独立环境验收。
 2. 针对已提交 CLI 增补编排模拟，再对最终集成代码完成所需门禁，记录失败项和未覆盖云／设备验收，不把本轮准备阶段的检查冒充最终迁移验证。
 3. 治理协调独占设备与隔离环境后复验旧正式 APP 的 HEAD/GET。此任务不执行实际上传、正式安装、晋级、部署、桶权限修改或线上写入。
 4. 缓存缺失、预算/限流、Range 服务端计费与持久化由 Backend 的隔离测试证明；Mobile 测试不冒充这些服务端验收。
 
-当前为候选开发中；发布准备与契约同步已有独立本地提交，尚未推送或创建迁移 PR。完整迁移、真机验收与可合并状态尚未达成；同步最新 `origin/dev` 和 Backend 受限 CLI 后完成最终验证及 PR。
+当前为候选／待验收，源码与完整契约已在本任务集成；最终门禁、推送与 PR 结果在交付时补记。完整迁移、旧正式 APP 真机验收和可合并状态尚未达成。

@@ -3,6 +3,7 @@ import { createHash } from 'node:crypto';
 import { createServer } from 'node:http';
 import { S3Client } from '@aws-sdk/client-s3';
 import test from 'node:test';
+import { createReleaseArtifact, parseReleaseArtifact } from './release_artifact.mjs';
 import {
   parseArguments,
   parseSha256Sidecar,
@@ -14,7 +15,7 @@ import {
 
 const digest = 'a'.repeat(64);
 
-test('RainS3 默认使用独立发布桶与固定下载域名', () => {
+test('RainS3 源对象地址与本站固定下载地址分开', () => {
   const config = releaseConfig({
     WENYOU_RELEASE_S3_ACCESS_KEY_ID: 'test-access-key',
     WENYOU_RELEASE_S3_SECRET_ACCESS_KEY: 'test-secret-key',
@@ -22,7 +23,32 @@ test('RainS3 默认使用独立发布桶与固定下载域名', () => {
   assert.equal(config.endpoint, 'https://cn-nb1.rains3.com');
   assert.equal(config.bucket, 'wenyou-apk');
   assert.equal(config.prefix, 'mobile/android');
-  assert.equal(config.publicBaseUrl, 'https://wenyou-apk.cn-nb1.rains3.com');
+  assert.equal(config.legacyBaseUrl, 'https://wenyou-apk.cn-nb1.rains3.com');
+  const artifact = createReleaseArtifact({ versionName: '1.0.0', buildNumber: 42, sizeBytes: 123, sha256: digest });
+  assert.equal(artifact.key, 'mobile/android/wenyou-1.0.0-42.apk');
+  assert.equal(artifact.legacyUpdateUrl, 'https://wenyou-apk.cn-nb1.rains3.com/mobile/android/wenyou-1.0.0-42.apk');
+  assert.equal(artifact.publicUrl, 'https://wenyou.site/api/v1/app-downloads/android/42/file');
+  assert.deepEqual(parseReleaseArtifact(JSON.stringify(artifact), '1.0.0', 42), artifact);
+});
+
+test('晋级输入要求源身份与两个地址精确匹配，不接受旧 uploader 输出或混淆目标', () => {
+  const artifact = createReleaseArtifact({ versionName: '1.0.0', buildNumber: 42, sizeBytes: 123, sha256: digest });
+  for (const value of [null, [], {}, { url: artifact.legacyUpdateUrl, size: 123, sha256: digest },
+    ...Object.entries({ schemaVersion: 2, applicationId: 'site.wenyou.app.debug', versionName: '1.0.1',
+      buildNumber: 43, sizeBytes: 0, sha256: 'bad', bucket: 'images', key: '../images/a.apk',
+      legacyUpdateUrl: artifact.publicUrl, publicUrl: artifact.legacyUpdateUrl }).map(([key, value]) => ({ ...artifact, [key]: value })),
+  ]) assert.throws(() => parseReleaseArtifact(JSON.stringify(value), '1.0.0', 42));
+  assert.throws(() => parseReleaseArtifact('fixture-secret', '1.0.0', 42),
+    error => !error.message.includes('fixture-secret'));
+});
+
+test('原 PUBLIC_BASE_URL 只兼容历史身份，不允许误设下载页或新站地址', () => {
+  const env = { WENYOU_RELEASE_S3_ACCESS_KEY_ID: 'fixture-key', WENYOU_RELEASE_S3_SECRET_ACCESS_KEY: 'fixture-secret' };
+  assert.equal(releaseConfig({ ...env, WENYOU_RELEASE_PUBLIC_BASE_URL: 'https://wenyou-apk.cn-nb1.rains3.com/' }).legacyBaseUrl,
+    'https://wenyou-apk.cn-nb1.rains3.com/');
+  for (const key of ['WENYOU_RELEASE_PUBLIC_BASE_URL', 'WENYOU_RELEASE_LEGACY_BASE_URL']) {
+    assert.throws(() => releaseConfig({ ...env, [key]: 'https://wenyou.site/download' }));
+  }
 });
 
 test('上传程序固定 APK 目录，拒绝图片桶与携带凭据的 URL', () => {

@@ -9,6 +9,7 @@ import {
   PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3';
+import { createReleaseArtifact, LEGACY_APK_ORIGIN } from './release_artifact.mjs';
 
 const APK_CONTENT_TYPE = 'application/vnd.android.package-archive';
 const IMMUTABLE_CACHE = 'public, max-age=31536000, immutable';
@@ -40,15 +41,14 @@ export function releaseConfig(env) {
     bucket: env.WENYOU_RELEASE_S3_BUCKET || 'wenyou-apk',
     accessKeyId: env.WENYOU_RELEASE_S3_ACCESS_KEY_ID,
     secretAccessKey: env.WENYOU_RELEASE_S3_SECRET_ACCESS_KEY,
-    publicBaseUrl:
-      env.WENYOU_RELEASE_PUBLIC_BASE_URL ||
-      'https://wenyou-apk.cn-nb1.rains3.com',
+    legacyBaseUrl: env.WENYOU_RELEASE_LEGACY_BASE_URL ||
+      env.WENYOU_RELEASE_PUBLIC_BASE_URL || LEGACY_APK_ORIGIN,
     prefix: (env.WENYOU_RELEASE_S3_PREFIX || 'mobile/android').replace(/^\/+|\/+$/g, ''),
   };
   if (!config.accessKeyId || !config.secretAccessKey) {
     throw new Error('缺少 RainS3 发布上传凭据');
   }
-  for (const field of ['endpoint', 'publicBaseUrl']) {
+  for (const field of ['endpoint', 'legacyBaseUrl']) {
     let url;
     try { url = new URL(config[field]); }
     catch { throw new Error(`${field} 不是有效 URL`); }
@@ -59,6 +59,12 @@ export function releaseConfig(env) {
   }
   if (config.bucket !== 'wenyou-apk' || config.prefix !== 'mobile/android') {
     throw new Error('发布工具只允许 wenyou-apk 桶的 mobile/android 目录');
+  }
+  // 受限晋级入口固定历史对象地址；旧 PUBLIC_BASE_URL 仅作为兼容别名。
+  for (const value of [config.legacyBaseUrl, env.WENYOU_RELEASE_PUBLIC_BASE_URL]) {
+    if (value && value.replace(/\/$/, '') !== LEGACY_APK_ORIGIN) {
+      throw new Error('历史 APK 地址必须匹配已提交的 RainS3 制品身份');
+    }
   }
   return config;
 }
@@ -229,6 +235,8 @@ async function main() {
   }
   const apkSize = statSync(apkPath).size;
   if (Number(manifest.apkSize) !== apkSize) throw new Error('构建摘要中的 APK 大小不一致');
+  const release = createReleaseArtifact({ versionName: args.version,
+    buildNumber: Number(args.build), sizeBytes: apkSize, sha256: actualApkSha });
 
   const plan = releaseObjectPlan({
     version: args.version,
@@ -267,11 +275,13 @@ async function main() {
     maxAttempts: 2,
     requestHandler: { connectionTimeout: 10_000, requestTimeout: 60_000 },
   });
-  for (const artifact of artifacts) await ensureUploaded(client, config, artifact);
-
-  const publicUrl = `${config.publicBaseUrl.replace(/\/$/, '')}/${prefix}${apkFileName}`;
-  await verifyPrivateArtifacts(client, config, artifacts);
-  process.stdout.write(`${JSON.stringify({ url: publicUrl, size: apkSize, sha256: actualApkSha })}\n`);
+  try {
+    for (const artifact of artifacts) await ensureUploaded(client, config, artifact);
+    await verifyPrivateArtifacts(client, config, artifacts);
+    process.stdout.write(`${JSON.stringify(release)}\n`);
+  } finally {
+    client.destroy();
+  }
 }
 
 const invokedDirectly = process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href;
