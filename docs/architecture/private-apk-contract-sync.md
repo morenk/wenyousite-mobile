@@ -1,6 +1,12 @@
 # 私有 APK 下载契约同步
 
-当前来源为 Backend `10b7819ad4a15777490dad5ab9abb7ae961422fc`／`5.32.0-dev.20261003.1`，共 238 个操作；Mobile API 范围仍为 164/164。通过既有同步入口完整导出 33 个文件并重新生成 SDK，独立固定的列表／行内组合语料保持各自来源。讨论定位实现和受限发布 CLI 未变。以下保留分阶段同步依据，不把早期未接入状态当作当前产品事实。
+当前消费者来源固定到已合并并部署的 Backend `3748cc8c85a73f400fa4e237a8d7dd6eecd1853e`／`5.32.0-dev.20261003.1`，共 238 个操作；Mobile API 范围仍为 164/164。2026-10-04 公网来源及主题列表兼容检查通过。以下保留分阶段同步依据，不把早期状态当作当前产品事实。
+
+## 合并后来源与公网验证（2026-10-04）
+
+通过 `tool/sync_backend_contract.ps1 -BackendPath <只读镜像> -Branch dev -Revision 3748cc8c85a73f400fa4e237a8d7dd6eecd1853e` 完整导出；33 个文件与已消费的 `10b7819a` 一致，独立固定的列表／行内组合语料继续使用各自来源，OpenAPI 保留两处既有重复参数规范化。受限发布 CLI 逐字一致；源提交后的改动只涉及 Backend 依赖和测试执行身份／临时进程隔离。
+
+同步结果只有 `backend-contract.properties` 的 revision 一行变化；OpenAPI、SDK、应用／测试、依赖和 Android 配置均未变，不重复生成、全量测试或构建。保留应用源码 `828128ce` 已通过的本地检查和 Debug APK 证据。治理确认标准部署退出 0 后，Mobile 执行 `npm run api:verify:production` 退出 0：公网 `/meta` 的版本与 SHA 精确匹配，Markdown 5 在支持范围内，`GET /threads` Schema 兼容；原历史失败日志保留，见[验收记录](private-apk-download-acceptance.md)。原正式推荐包 97 不在本次发布或替换，正式包预热、网关策略切换和旧 APP 安装尚未验收。
 
 ## 每日下载次数兼容契约（2026-10-03）
 

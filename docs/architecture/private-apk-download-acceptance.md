@@ -1,5 +1,19 @@
 # 私有 APK 发布与下载适配（候选／待验收）
 
+## 合并准备与公网来源验证（2026-10-04）
+
+治理已传递用户的合并部署授权，不将合并授权记作真机验收通过。准备阶段独立核验时 PR #84 HEAD 为 `10ee55da9ba3bc9527b7313ce35dc09af151100f`，本地／远端一致、工作区干净，完整包含 `origin/dev` `4a52274c`，PR 无冲突；GitHub 检查为空，符合已停用 Actions 的规则。70 个变更文件限定于下载消费者、发布工具、契约／生成客户端、回归与文档，无 Android／iOS／依赖或工作流改动。
+
+Backend 已合并 PR #41 与 #42，通过正式同步入口固定部署来源 `3748cc8c85a73f400fa4e237a8d7dd6eecd1853e`。33 个导出文件及受限发布 CLI 与原 `10b7819a` 一致，同步仅更新来源 revision，API 仍为 `5.32.0-dev.20261003.1`。治理随后确认标准部署退出 0、本机与公网健康检查成功；Mobile 独立执行 `npm run api:verify:production` 退出 0，精确匹配公网版本／SHA、支持 Markdown 5，并验证 `GET /threads?limit=1` 的列表 Schema 兼容。公网验证日志为 `build/private-apk-merge-public-verify.log`，SHA-256 `316e22b15edfade1e58ed49d65ca48f4bff30d760c40d2766b9bf32a741c02da`。
+
+本轮来源准备检查通过：33 个导出文件逐项比对、受限发布 CLI 逐字比对、`dart run tool/check_contract_sources.dart`、`npm run docs:check`（21 个模块）、`dart run tool/audit_api_coverage.dart --require-complete`（164/164）及 `git diff --check`。应用、SDK、工具、测试、原生配置和依赖与已验证应用源码的差异检查为空。
+
+应用源码与 `828128ce` 一致，既有门禁日志和 APK 的 SHA-256 已重新核对一致，5,161 项 Flutter／1 跳过、87 项 Windows 工具及 Debug 构建证据继续保留；历史完整门禁退出 1 的记录不改写。本轮补齐当时唯一未通过的公网检查，未机械重复同一应用源码的完整门禁。兼容发布工具按授权先合入就绪，正式包预热、网关 URL 切换及旧 APP／正式签名覆盖安装仍待后续配置与负责人验收，不视为已通过。
+
+部署准备阶段对原正式包仅执行匿名 HEAD：`0.8.0+97`、`site.wenyou.app`、33,610,393 bytes，以及声明 SHA-256 `401dae520edeadaa51fda47e7556bedb2604b007ecb1e023f5d64eae22643e87` 与治理 TSV 一致，返回 200；没有下载正文，不能将响应头核对冒充字节摘要验证。原策略仍使用 RainS3 地址；本轮不新建 Mobile Release，不上传、晋级或安装 APK，不关闭桶公共读。
+
+Windows 凭据只确认受控文件存在并核对仓库读取协议，没有读取或解密凭据值。治理侧传输被执行策略拦截后交负责人手动配置，本任务不重试或替代传输。现有 Worktree、预览和验收产物保留，不因合并准备清理。
+
 ## 每日下载次数增补（2026-10-03，候选／待验收）
 
 本轮沿用相同 Windows Worktree、分支及 PR #84。治理和 Mobile AGENTS 已读取；固定 Backend `10b7819ad4a15777490dad5ab9abb7ae961422fc`／`5.32.0-dev.20261003.1`，通过官方同步导出 33 个文件并重新生成 SDK，操作仍为 238 项、Mobile 范围 164/164。先提交独立 chore `aade8bd6`，再实现消费者提示；其余发布 CLI、文件完整性与原生签名校验不变。

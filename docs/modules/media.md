@@ -132,6 +132,8 @@ galleryList：读取 GalleryList200Response / GalleryPageDto / GalleryImageDto�
 
 ## 13. 最近审查的契约版本和后端提交
 
+2026-10-04 部署来源审查：Backend `3748cc8c85a73f400fa4e237a8d7dd6eecd1853e` 已合并并部署，契约仍为 `5.32.0-dev.20261003.1`；33 个导出文件及受限发布 CLI 与原候选一致，仅 revision 更新。Mobile 公网来源与主题列表兼容门禁通过，本模块实现与原有验收边界不变，见[同步记录](../architecture/private-apk-contract-sync.md)。
+
 2026-10-03 每日下载次数契约同步：Backend `10b7819ad4a15777490dad5ab9abb7ae961422fc`／`5.32.0-dev.20261003.1`，238 个操作；仅下载 429 原因头、可选 Cookie 与计次说明兼容扩展，原生无 Cookie HEAD/GET 继续保留。本模块其他行为及原验收边界不变，见[契约同步](../architecture/private-apk-contract-sync.md)。
 
 2026-10-03 下载最终来源整合：Backend `1857d60fe3af309149eb5c1846be221d3a45fb86`／`5.31.0-dev.20261003.1`；相对 `27dc3ff7` 只修正隔离预览响应头，机器契约与受限发布入口逐字不变。已合入 Mobile `dev` 的讨论定位切片 `4a52274c`，保留其实现和验收边界，移除两项窗口接口的临时排除，API 范围为 164 项。

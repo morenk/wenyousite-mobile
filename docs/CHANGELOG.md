@@ -1,5 +1,11 @@
 # 移动端变更记录
 
+## 2026-10-04 — 下载契约部署来源与公网验证（真机待验收）
+
+- 通过正式同步入口固定已合并 Backend `3748cc8c85a73f400fa4e237a8d7dd6eecd1853e`，API 仍为 `5.32.0-dev.20261003.1`；33 个导出文件和受限发布 CLI 与原候选一致，仅来源 revision 变化。
+- Backend 标准部署成功后，`api:verify:production` 退出 0：公网版本／SHA 匹配、Markdown 5 兼容，主题列表 Schema 检查通过。应用、SDK、测试及原 Debug APK 不变，保留已有本地门禁和历史失败日志，按授权继续 PR #84 合并。
+- 原正式推荐包 97 仅作 HEAD 元数据核对，不新建 Mobile Release 或上传／晋级／安装；正式包预热、网关策略切换及旧 APP 安装仍待验收。现有预览、Worktree 和验收产物保留。详见[合并准备记录](architecture/private-apk-download-acceptance.md)。
+
 ## 2026-10-03 — 每日下载额度候选验证（待负责人验收）
 
 - 最终应用源码 `828128ce` 的 `check:apk` 完成本地验证：Flutter 5,161 通过／1 跳过、Windows 工具 87/87，通过静态、契约生成、架构、文档和 API 范围检查；Debug APK 构建与 v2 签名验证成功。
