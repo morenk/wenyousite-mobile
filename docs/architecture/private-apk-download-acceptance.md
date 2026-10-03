@@ -1,5 +1,19 @@
 # 私有 APK 发布与下载适配（候选／待验收）
 
+## 每日下载次数增补（2026-10-03，候选／待验收）
+
+本轮沿用相同 Windows Worktree、分支及 PR #84。治理和 Mobile AGENTS 已读取；固定 Backend `10b7819ad4a15777490dad5ab9abb7ae961422fc`／`5.32.0-dev.20261003.1`，通过官方同步导出 33 个文件并重新生成 SDK，操作仍为 238 项、Mobile 范围 164/164。先提交独立 chore `aade8bd6`，再实现消费者提示；其余发布 CLI、文件完整性与原生签名校验不变。
+
+目标是 HEAD 或 GET 返回 429 时从原因头区分设备／IP 当天次数耗尽，并沿用服务端 Retry-After 等待。共享默认浏览器设备 3 次、IP 10 次、跨构建和北京时间日界语义由 Backend 实现；原生不新增 Cookie、info 前置请求或硬件标识。未知／缺失原因兼容原通用提示，503 不按次数原因改判，已验证本地包继续安装不消耗新下载。本轮是网络契约扩展，按高风险入口对最终源码执行完整 `check:apk`，不增加视觉样式测试。
+
+只使用本机随机端口的 HTTP fixture 验证 Mobile 行为，不访问真实桶或凭据，不调用远程发布／迁移。HEAD 无正文、GET 空 429、HEAD→GET 额度竞争、跨构建等待、北京时间次日前后及本地包复用属于本轮自动检查；服务端 SQLite 原子计次、跨进程持久化、Cookie 签名及真实旧 APP 安装由 Backend／负责人独立验收。公网仍是已部署 `5.30.0-dev.20261001.1 / 2b803a8e4bc73bc01bd046142e6f9005f92aa411`，现有来源门禁差异如实保留。
+
+Auto-review 默认偏好已传递；当前工具没有设置入口，宿主审批策略为 `never`，未设置为 Auto-review，本轮未重新核验 reviewer。未以提示词或仓库文档代替实际权限配置，也未递归分派。
+
+本轮已执行 `flutter test --no-pub --concurrency=2`，路径为 `test/features/app_shell/` 下的 `mobile_update_http_test.dart`、`mobile_update_service_test.dart`、`mobile_update_controller_test.dart`、`mobile_release_controller_test.dart`，**56 项通过**。新增设备每日限额 HEAD 用例在旧实现先失败（只得到通用限流提示），候选通过；这是已提交新契约的构造响应，不声称复现了生产或真机问题。契约同步阶段另运行 `app_download_contract_test.dart`，**6 项通过**。
+
+最终完整门禁、应用 SHA 和新 APK 证据在收敛后补记。下列 `1708da69` 与 `1857d60f` 记录属于前一候选，不覆盖本次新增行为。
+
 ## 范围和基线
 
 - Windows Worktree：`D:\codex-worktrees\9e50\wenyousite-mobile`，分支 `codex/20261002-private-apk-release`，由更新后的 `origin/dev` `510c63db8e28ec3563d8fc0e9593fa7440b4e66d` 建立。
@@ -51,7 +65,7 @@ HTTP 测试在 adapter 中把虚构 HTTPS 地址的传输映射到本机，保�
 | `prewarm-before-promote` | Windows fixture 验证受限 gateway 参数、先预检再构建、身份复核、失败不回退；内部预热顺序由固定 Backend 源码与其隔离测试证明，本任务不在 Windows 执行 Backend |
 | `migration-public-read-gate` | 未改桶公共读，Mobile 测试不能替代旧 APP 和网关隔离验收 |
 
-## 最终候选门禁与 Debug 产物
+## 前一候选门禁与 Debug 产物（1708da69）
 
 2026-10-03 对最终应用源码 `1708da695ea5013d8d821354ac6500ebf3914a33` 执行 `npm run check:apk -- -TestConcurrency 2 -ContinueAfterFailure`，退出码 **1**。仅公网契约精确来源检查失败，其余阶段和 Debug 构建均成功；不能据此声明完整门禁通过或已可合并。
 

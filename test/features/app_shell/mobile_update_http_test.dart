@@ -14,6 +14,133 @@ void main() {
   setUp(() async => fixture = await _DownloadFixture.start());
   tearDown(() async => fixture.close());
 
+  const dailyMessages = {
+    'device_daily_limit': '此设备今日下载次数已用完，请在北京时间次日零点后重试。',
+    'ip_daily_limit': '当前网络今日下载次数已用完，请在北京时间次日零点后重试。',
+  };
+  for (final entry in dailyMessages.entries) {
+    for (final method in ['HEAD', 'GET']) {
+      test('$method 空正文 429 ${entry.key} 按原因提示并等待到北京时间次日', () async {
+        fixture.now = DateTime.utc(2026, 10, 3, 14);
+        fixture.failureMethod = method;
+        fixture.failureStatus = 429;
+        fixture.limitReason = entry.key;
+        fixture.retryAfter = '7200';
+        final update = _update('/api/v1/app-downloads/android/43/file');
+        if (method == 'HEAD') {
+          final availability = await fixture.service.checkAvailability(update);
+          expect(availability.isAvailable, isFalse);
+          expect(availability.userMessage, entry.value);
+        } else {
+          expect(
+            (await fixture.service.checkAvailability(update)).isAvailable,
+            isTrue,
+          );
+          await expectLater(
+            fixture.service.launchUpdate(
+              update,
+              onStage: (_) {},
+              onProgress: (_) {},
+            ),
+            throwsA(
+              isA<MobileUpdateException>().having(
+                (e) => e.userMessage,
+                '当天额度提示',
+                entry.value,
+              ),
+            ),
+          );
+        }
+        final initialRequests = method == 'HEAD' ? 1 : 2;
+        fixture.failureMethod = null;
+        fixture.now = fixture.now.add(const Duration(seconds: 7199));
+        final other = _update(
+          '/api/v1/app-downloads/android/44/file',
+          build: 44,
+        );
+        expect(
+          (await fixture.service.checkAvailability(other)).userMessage,
+          entry.value,
+        );
+        await expectLater(
+          fixture.service.launchUpdate(
+            update,
+            onStage: (_) {},
+            onProgress: (_) {},
+          ),
+          throwsA(isA<MobileUpdateException>()),
+        );
+        expect(fixture.requests, hasLength(initialRequests));
+        expect(fixture.bridge.paths, isEmpty);
+        expect(await fixture.cachedFiles(), isEmpty);
+        fixture.now = fixture.now.add(const Duration(seconds: 1));
+        expect(fixture.now, DateTime.utc(2026, 10, 3, 16));
+        // 到期不会自动下载；用户下一次操作才恢复 HEAD→GET。
+        expect(fixture.requests, hasLength(initialRequests));
+        expect(
+          (await fixture.service.checkAvailability(update)).isAvailable,
+          isTrue,
+        );
+        await fixture.service.launchUpdate(
+          update,
+          onStage: (_) {},
+          onProgress: (_) {},
+        );
+        expect(fixture.requests, hasLength(initialRequests + 2));
+        expect(fixture.bridge.builds, [43]);
+      });
+    }
+  }
+
+  for (final reason in <String?>[
+    'byte_budget',
+    'request_rate',
+    'concurrency',
+    'bandwidth',
+    'future_reason',
+    null,
+  ]) {
+    for (final method in ['HEAD', 'GET']) {
+      test('$method 空正文 429 $reason 保留通用提示与等待', () async {
+        fixture.failureMethod = method;
+        fixture.failureStatus = 429;
+        fixture.limitReason = reason;
+        final update = _update('/api/v1/app-downloads/android/43/file');
+        for (var attempt = 0; attempt < 2; attempt++) {
+          await expectLater(
+            fixture.service.launchUpdate(
+              update,
+              onStage: (_) {},
+              onProgress: (_) {},
+            ),
+            throwsA(
+              isA<MobileUpdateException>().having(
+                (e) => e.userMessage,
+                '兼容提示',
+                '下载请求较多，请稍后重试。',
+              ),
+            ),
+          );
+        }
+        expect(
+          fixture.requests.map((r) => r.method),
+          method == 'HEAD' ? ['HEAD'] : ['HEAD', 'GET'],
+        );
+        expect(fixture.bridge.paths, isEmpty);
+        expect(await fixture.cachedFiles(), isEmpty);
+      });
+    }
+  }
+
+  test('503 不将附带的次数原因误判为每日额度耗尽', () async {
+    fixture.failureMethod = 'HEAD';
+    fixture.limitReason = 'ip_daily_limit';
+    final availability = await fixture.service.checkAvailability(
+      _update('/api/v1/app-downloads/android/43/file'),
+    );
+    expect(availability.userMessage, '安装包暂时无法下载，请稍后重试。');
+  });
+
   test('429 后重新预检和手动下载共用等待期限，不重复访问下载地址', () async {
     fixture.failureMethod = 'HEAD';
     fixture.failureStatus = 429;
@@ -112,30 +239,37 @@ void main() {
     });
   }
 
-  test('已验证 APK 的继续安装不受下载等待影响', () async {
-    final update = _update('/api/v1/app-downloads/android/43/file');
-    await fixture.service.launchUpdate(
-      update,
-      onStage: (_) {},
-      onProgress: (_) {},
-    );
-    fixture.failureMethod = 'HEAD';
-    fixture.failureStatus = 429;
-    await fixture.service.checkAvailability(update);
-    await fixture.service.launchUpdate(
-      update,
-      onStage: (_) {},
-      onProgress: (_) {},
-    );
-    expect(fixture.requests.map((r) => r.method), ['HEAD', 'GET', 'HEAD']);
-    expect(fixture.bridge.builds, [43, 43]);
-  });
+  for (final reason in <String?>[null, ...dailyMessages.keys]) {
+    test('已验证 APK 的继续安装不受 $reason 下载等待影响', () async {
+      final update = _update('/api/v1/app-downloads/android/43/file');
+      await fixture.service.launchUpdate(
+        update,
+        onStage: (_) {},
+        onProgress: (_) {},
+      );
+      fixture.failureMethod = 'HEAD';
+      fixture.failureStatus = 429;
+      fixture.limitReason = reason;
+      fixture.retryAfter = '7200';
+      await fixture.service.checkAvailability(update);
+      await fixture.service.launchUpdate(
+        update,
+        onStage: (_) {},
+        onProgress: (_) {},
+      );
+      expect(fixture.requests.map((r) => r.method), ['HEAD', 'GET', 'HEAD']);
+      expect(fixture.bridge.builds, [43, 43]);
+    });
+  }
 
   for (final path in [
     '/mobile/android/wenyou-1.0.0-43.apk',
     '/api/v1/app-downloads/android/43/file',
   ]) {
-    test('旧下载器在 $path 先 HEAD 后 GET，完整校验后安装', () async {
+    test('无 Cookie 旧下载器在 $path 先 HEAD 后 GET，完整校验后安装', () async {
+      fixture.responseCookie =
+          '__Host-wenyou-download-device=fixture-signed-id; '
+          'Path=/; HttpOnly; SameSite=Lax; Secure';
       final update = _update(path);
       final availability = await fixture.service.checkAvailability(update);
       expect(availability.isAvailable, isTrue);
@@ -150,6 +284,12 @@ void main() {
       expect(result, UpdateLaunchResult.installerOpened);
       expect(fixture.requests.map((r) => r.method), ['HEAD', 'GET']);
       expect(fixture.requests.every((r) => r.uri.path == path), isTrue);
+      expect(
+        fixture.requests.every(
+          (r) => r.headers.value(HttpHeaders.cookieHeader) == null,
+        ),
+        isTrue,
+      );
       expect(
         fixture.requests.every(
           (r) => r.headers.value(HttpHeaders.rangeHeader) == null,
@@ -279,6 +419,8 @@ class _DownloadFixture {
   String? failureMethod;
   int failureStatus = 503;
   String? retryAfter = '60';
+  String? limitReason;
+  String? responseCookie;
   DateTime now = DateTime.utc(2026, 10, 3);
   bool partialGet = false;
   bool fullRangeGet = false;
@@ -287,9 +429,16 @@ class _DownloadFixture {
   Future<void> _respond(HttpRequest request) async {
     requests.add(request);
     final response = request.response;
+    if (responseCookie != null) {
+      response.headers.set(HttpHeaders.setCookieHeader, responseCookie!);
+    }
     if (request.method == failureMethod) {
       response.statusCode = failureStatus;
+      response.contentLength = 0;
       if (retryAfter != null) response.headers.set('retry-after', retryAfter!);
+      if (limitReason != null) {
+        response.headers.set('X-Download-Limit-Reason', limitReason!);
+      }
       await response.close();
       return;
     }

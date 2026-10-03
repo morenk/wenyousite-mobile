@@ -320,8 +320,16 @@ class DeviceMobileUpdateService
   }
 
   _DownloadUnavailable? _temporaryDownloadFailure(Uri uri, DioException error) {
+    // HEAD 和受预算限制的 GET 可以没有正文；限额原因只从固定响应头读取。
+    final reason = error.response?.headers
+        .value('x-download-limit-reason')
+        ?.trim();
     final message = switch (error.response?.statusCode) {
-      429 => '下载请求较多，请稍后重试。',
+      429 => switch (reason) {
+        'device_daily_limit' => '此设备今日下载次数已用完，请在北京时间次日零点后重试。',
+        'ip_daily_limit' => '当前网络今日下载次数已用完，请在北京时间次日零点后重试。',
+        _ => '下载请求较多，请稍后重试。',
+      },
       503 => '安装包暂时无法下载，请稍后重试。',
       _ => null,
     };
