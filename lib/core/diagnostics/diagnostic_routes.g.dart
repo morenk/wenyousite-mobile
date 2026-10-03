@@ -26,6 +26,7 @@ const diagnosticApiRoutes = <String, String>{
   'GET /api/v1/admin/thread-categories': 'adminTaxonomyListCategories',
   'GET /api/v1/admin/users': 'adminModerationListUsers',
   'GET /api/v1/admin/users/search': 'adminSearchUsers',
+  'GET /api/v1/app-downloads/android': 'appDownloadsInfo',
   'GET /api/v1/auth/sessions': 'authListSessions',
   'GET /api/v1/bookmarks': 'bookmarksFindAll',
   'GET /api/v1/bookmarks/folders': 'bookmarksFindFolders',
@@ -146,6 +147,7 @@ const diagnosticApiRoutes = <String, String>{
   'GET /api/v1/admin/mobile-releases/{id}': 'adminMobileReleasesDetail',
   'GET /api/v1/admin/reports/{id}': 'adminReportsFindOne',
   'GET /api/v1/admin/users/{id}': 'adminModerationGetUser',
+  'GET /api/v1/app-downloads/android/{buildNumber}/file': 'appDownloadsFile',
   'GET /api/v1/direct-conversations/by-user/{userId}':
       'directConversationsFindByUser',
   'GET /api/v1/direct-conversations/{id}': 'directConversationsFindById',
@@ -183,6 +185,7 @@ const diagnosticApiRoutes = <String, String>{
   'GET /api/v1/users/{id}/moments': 'userMomentsList',
   'GET /api/v1/users/{id}/played-threads': 'usersGetUserPlayedThreads',
   'GET /api/v1/users/{id}/recent-replies': 'usersGetUserRecentReplies',
+  'HEAD /api/v1/app-downloads/android/{buildNumber}/file': 'appDownloadsHead',
   'PATCH /api/v1/admin/content/thread/{id}/taxonomy':
       'adminContentUpdateTaxonomy',
   'PATCH /api/v1/admin/mobile-releases/{id}': 'adminMobileReleasesUpdate',
