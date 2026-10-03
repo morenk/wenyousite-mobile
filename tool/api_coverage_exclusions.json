@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "contractVersion": "5.31.0-dev.20261003.1",
+  "contractVersion": "5.32.0-dev.20261003.1",
   "exclusions": [
-    { "operationId": "appDownloadsInfo", "category": "web_download_page", "reason": "公开下载页读取的信息接口；Mobile 继续由 /meta 决定更新策略，不从下载页产生更新资格。" },
+    { "operationId": "appDownloadsInfo", "category": "web_download_page", "reason": "Web 下载入口读取全局发布状态；Mobile 继续由 /meta 决定更新策略，无 Cookie 的 HEAD/GET 不增加 info 前置调用。" },
     { "operationId": "appDownloadsHead", "category": "streamed_apk_update", "reason": "Mobile 使用独立下载 Dio 对 /meta 指定的文件 URL 执行 HEAD，保留旧 APP 元数据校验，不调用生成 JSON API。" },
     { "operationId": "appDownloadsFile", "category": "streamed_apk_update", "reason": "Mobile 使用独立下载 Dio 将 /meta 指定 APK 流式落盘并校验 SHA-256，避免生成客户端整包缓冲。" },
     { "operationId": "mobileReleasesList", "category": "removed_history_ui", "reason": "负责人决定只保留更新前后一次说明弹窗，移除移动端历史浏览；已部署接口和生成SDK仍保留兼容。" },

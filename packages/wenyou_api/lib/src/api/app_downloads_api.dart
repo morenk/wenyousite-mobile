@@ -180,7 +180,7 @@ class AppDownloadsApi {
   }
 
   /// 匿名读取当前 Android 下载信息；仅 JSON，不预取 APK
-  ///
+  /// release/status 表示全局发布及缓存可用性，不因当前访客次数耗尽改为 paused；不扣下载次数。可签发/续签随机浏览器 Cookie，需同源携带；客户端不自行生成标识。旧 APP 无需新增此调用，直接 HEAD/GET 保持兼容。
   ///
   /// Parameters:
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
