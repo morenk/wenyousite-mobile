@@ -12,7 +12,23 @@ Auto-review 默认偏好已传递；当前工具没有设置入口，宿主审�
 
 本轮已执行 `flutter test --no-pub --concurrency=2`，路径为 `test/features/app_shell/` 下的 `mobile_update_http_test.dart`、`mobile_update_service_test.dart`、`mobile_update_controller_test.dart`、`mobile_release_controller_test.dart`，**56 项通过**。新增设备每日限额 HEAD 用例在旧实现先失败（只得到通用限流提示），候选通过；这是已提交新契约的构造响应，不声称复现了生产或真机问题。契约同步阶段另运行 `app_download_contract_test.dart`，**6 项通过**。
 
-最终完整门禁、应用 SHA 和新 APK 证据在收敛后补记。下列 `1708da69` 与 `1857d60f` 记录属于前一候选，不覆盖本次新增行为。
+全量静态分析零问题，源码固定于 `828128ceba30657f42098e3928fdd3fa19c54a3c`；最终门禁和新 APK 证据如下。下列 `1708da69` 与 `1857d60f` 记录属于前一候选，不覆盖本次新增行为。
+
+本轮负责人后续手测在已核验隔离环境进行：分别返回设备／IP 次数耗尽的无正文 HEAD 429 和 HEAD 成功后的空正文 GET 429，确认对应当日提示、强制更新不解除、冷却内重复操作不重新下载；等待服务端指定期限后显式重试可恢复。已有校验通过的包在未知来源授权返回后继续安装，不能因为每日限额重复下载。旧无 Cookie 正式 APP 的 IP 10 次总额度，以及新 Cookie 的浏览器设备 3 次、跨构建／跨日持久化属于服务端及真实设备联合验收，不由 Mobile 本机响应替身证明；合成 build 4242 不用于安装。
+
+### 每日次数最终门禁与产物（828128ce）
+
+在 Windows 对上述源码执行 `npm run check:apk -- -TestConcurrency 2 -ContinueAfterFailure`，退出码 **1**，唯一未通过阶段为公网契约检查。其余阶段均通过：OpenAPI 校验、固定来源、SDK 再生成一致性、全仓格式、应用／生成客户端全量静态分析、架构、21 个模块文档及 API 范围 164/164；全量 Flutter `test/` **5,161 通过、1 跳过**；`npm run test:release-tool` **87/87 通过**；Debug APK 构建成功。33 个导出文件另与固定 Backend 逐项核对一致（保留两处既有参数规范化及独立语料来源），受限发布 CLI 与前一来源逐字相同。
+
+公网阶段首次因 TLS 握手中断失败；第一次单项复查仍连接中断。最后一次同入口 `npm run api:verify:production` 取得完整响应，确认期望 `5.32.0-dev.20261003.1 / 10b7819ad4a15777490dad5ab9abb7ae961422fc`，实际仍为 `5.30.0-dev.20261001.1 / 2b803a8e4bc73bc01bd046142e6f9005f92aa411`。Markdown 5 在支持的 3/4/5 范围内。原门禁和单项复查均保留非零退出，不宣称全绿，也未部署、改写来源或放宽比较。
+
+- 当前 APK：`D:\codex-worktrees\9e50\wenyousite-mobile\build\app\outputs\flutter-apk\app-debug.apk`，生成于 **2026-10-03 23:02:57（Asia/Shanghai）**，**150,314,508 bytes**。
+- 包名 `site.wenyou.app.debug`，版本 `0.8.0-debug+97`；最低 API 26，目标 API 36，仅 `arm64-v8a`；`apksigner` 验证 v2 签名有效，证书为 Android Debug。
+- APK SHA-256：`99bbffc3f7170923b1163e55dab98f365d2d0b4b43ce6c128a035f498bcae900`。
+- 完整门禁日志 `build/private-apk-daily-final-gate.log`，SHA-256：`ff32953245d0ce21a8d66ca1a8e90e07e97e98704ae4bc98ecd5265f78b68429`。
+- 最终公网复查日志 `build/private-apk-daily-public-final.log`，SHA-256：`96006081573a6d46889143a645226c2ae82b5a1e3f875b141cd95ee3cd296757`。首次单项连接失败日志另存 `build/private-apk-daily-public-recheck.log`；以上日志均 Git 忽略。
+
+门禁后只更新验收文档与 CHANGELOG，应用、测试、契约和生成客户端与 `828128ce` 一致，不重复完整门禁或构建。上述当前 APK 覆盖了同一路径的前一产物；仍未安装或用于正式包覆盖，真实云配置、桶、凭据、部署和生产数据均未触碰。候选继续在 [PR #84](https://github.com/morenk/wenyousite-mobile/pull/84) 评审，剩余为兼容部署后的公网来源复验，以及隔离网关／真实旧 APP／正式签名覆盖安装的负责人验收。
 
 ## 范围和基线
 
