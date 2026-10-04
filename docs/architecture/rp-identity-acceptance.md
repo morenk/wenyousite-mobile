@@ -34,7 +34,7 @@
 
 ## Debug APK 候选
 
-完整入口继续收集证据时成功构建 `build/app/outputs/flutter-apk/app-debug.apk`，构建耗时 192.2 秒；未安装、签名发布或上传 Release。APK 对应本批次最终应用源码，之后的收尾只修改测试和验收记录；精确 Git SHA 随 PR 与治理交付汇总。
+完整入口继续收集证据时成功构建 `build/app/outputs/flutter-apk/app-debug.apk`，构建耗时 192.2 秒。APK 对应应用候选 `c9d52571f01dcfbb483598539410ac11ab015c71`，之后的收尾只修改验收记录。未签名发布或上传 Release；用户随后要求直接 ADB 安装，结果记录如下。
 
 - 包名：`site.wenyou.app.debug`，应用名：`温油站 Debug`。
 - 版本：`0.8.0-debug`，versionCode `97`；仅 `arm64-v8a`，minSdk `26`、targetSdk `36`。
@@ -43,9 +43,11 @@
 
 该普通 Debug 包沿用公网默认地址；它只是构建证据，不能用于尚未部署 RP 契约的业务写入验收。连接设备后应通过固定隔离会话的开发入口启动带预览配置的 Debug 会话。构建保留既有 `flutter_image_compress_common` 的 KGP 未来兼容警告，本期未更改依赖或 Gradle 配置。
 
+2026-10-05，按用户“debugapp 帮我直接 adb 安装一下”的明确要求，检测到 `2509FPN0BC / arm64-v8a` 设备（标识尾号 `39b5`）。安装前核对设备已有正式包和独立 Debug 包，版本均不作为源码身份依据；开发会话登记没有占用该设备的活跃任务。执行 `adb install -r` 返回 `Success`，保留应用数据；设备内 `site.wenyou.app.debug/base.apk` 的 SHA-256 与上述候选完全一致，版本 `0.8.0-debug (97)`、`lastUpdateTime=2026-10-05 03:17:22`。已告知用户打开“温油站 Debug”；本次只确认安装，没有进行 RP 真机业务写入或负责人视觉验收。
+
 ## 环境与人工验收
 
-所有 Mobile 写入测试仅使用本地 mock，Backend 写入测试由其独立 E2E 登记清理，未进行线上写入。当天真实快照入口尚不可用，不能使用旧快照冒称当天真实数据；共享预览已启用并明确标注合成资料，session 为 `rp-identity-v1`、runId 为 `preview_0f496fe47ba12aa584db24b5`。Mobile 尚未连接设备或启动该批次的 Debug 会话，不能把 Web 的合成数据交互结果记为 Mobile 端到端通过。
+所有 Mobile 写入测试仅使用本地 mock，Backend 写入测试由其独立 E2E 登记清理，未进行线上写入。当天真实快照入口尚不可用，不能使用旧快照冒称当天真实数据；共享预览已启用并明确标注合成资料，session 为 `rp-identity-v1`、runId 为 `preview_0f496fe47ba12aa584db24b5`。自动验证阶段没有连接设备，用户随后连接并要求安装，已完成上述 ADB 核验；尚未启动该批次的隔离 Debug 会话，不能把 Web 的合成数据交互结果记为 Mobile 端到端通过。
 
 身份卡 320dp 深浅色 Golden 已生成并实际查看，布局与三个动作无溢出；测试字体子集缺少个别角色名字形，不代表设备系统字体效果。双倍字号卡片和表单布局断言通过。浏览器、真机及负责人视觉验收仍待完成，不能由 Golden 替代。
 
