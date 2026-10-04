@@ -7,7 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
-import 'package:wenyousite_mobile/core/models/cursor_page.dart';
+import 'package:wenyousite_mobile/core/models/discussion_window.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/discussion_target_loading.dart';
@@ -87,41 +87,22 @@ void registerPostRepliesPageScrollingLifecycleCases() {
     expect(find.byKey(const Key('post-replies-list')), findsOneWidget);
   });
 
-  testWidgets('目标回复沿 cursor 加载，揭开后普通分页错误保持列表可见', (tester) async {
-    final first = postRepliesPageTestReply(
-      'first',
-      '前页回复',
-      postRepliesPageTestOtherAuthor,
+  testWidgets('目标回复直接窗口定位，揭开后相邻页失败和重试保持列表可见', (tester) async {
+    final target = PostItem(
+      id: 'remote-target',
+      threadId: 'thread',
+      subthreadId: 'subthread',
+      author: postRepliesPageTestOtherAuthor,
+      content: '远端目标回复',
+      version: 1,
+      createdAt: postRepliesPageTestRootCreatedAt,
+      updatedAt: postRepliesPageTestRootCreatedAt,
+      isBody: false,
+      isDeleted: false,
+      parentPostId: 'root',
+      replyNumber: 5000,
     );
-    final target = postRepliesPageTestReply(
-      'remote-target',
-      '远端目标回复',
-      postRepliesPageTestOtherAuthor,
-    );
-    final cursors = <String?>[];
-    final repository = PostRepliesPageTestFakePostRepository(
-      onFetchPost: (id) async =>
-          id == 'root' ? postRepliesPageTestRoot : target,
-      onFetchReplies:
-          ({required rootPostId, cursor, required order, authorId}) async {
-            cursors.add(cursor);
-            if (cursor == null) {
-              return CursorPage(
-                items: [first],
-                cursor: 'page-2',
-                hasMore: true,
-              );
-            }
-            if (cursor == 'page-2') {
-              return CursorPage(
-                items: [target],
-                cursor: 'page-3',
-                hasMore: true,
-              );
-            }
-            throw const ApiFailure(userMessage: '更多回复加载失败。');
-          },
-    );
+    final repository = _TargetWindowFailureRepository(target);
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -141,11 +122,19 @@ void registerPostRepliesPageScrollingLifecycleCases() {
     );
     await tester.pumpAndSettle();
 
-    expect(cursors.take(2), [null, 'page-2']);
-    expect(cursors, contains('page-3'));
+    expect(repository.requests, [
+      (postId: 'remote-target', cursor: null),
+      (postId: null, cursor: 'page-3'),
+    ]);
     expect(find.byKey(const Key('discussion-target-cover')), findsNothing);
     expect(find.byKey(const Key('post-reply-remote-target')), findsOneWidget);
     expect(find.text('更多回复加载失败。'), findsOneWidget);
+    await tester.tap(find.widgetWithText(TextButton, '重试'));
+    await tester.pumpAndSettle();
+    expect(repository.requests.last, (postId: null, cursor: 'page-3'));
+    expect(repository.requests.length, 3);
+    expect(find.byKey(const Key('post-reply-remote-target')), findsOneWidget);
+    expect(find.byKey(const Key('discussion-target-cover')), findsNothing);
   });
   testWidgets('楼中楼末尾长回复从作者信息开头定位', (tester) async {
     await tester.pumpWidget(
@@ -647,4 +636,33 @@ void registerPostRepliesPageScrollingLifecycleCases() {
 
     expect(copiedMarkdown, [root.content, reply.content]);
   });
+}
+
+class _TargetWindowFailureRepository
+    extends PostRepliesPageTestFakePostRepository {
+  _TargetWindowFailureRepository(this.target);
+  final PostItem target;
+  final requests = <({String? postId, String? cursor})>[];
+
+  @override
+  Future<DiscussionWindow<PostItem>> fetchReplyWindow({
+    required String rootPostId,
+    int? number,
+    String? postId,
+    String? cursor,
+    int limit = 20,
+    PostReplyOrder order = PostReplyOrder.oldest,
+    String? authorId,
+  }) async {
+    requests.add((postId: postId, cursor: cursor));
+    if (cursor != null) throw const ApiFailure(userMessage: '更多回复加载失败。');
+    return DiscussionWindow(
+      items: [target],
+      total: 10000,
+      maxNumber: 10000,
+      targetId: target.id,
+      targetNumber: target.replyNumber,
+      afterCursor: 'page-3',
+    );
+  }
 }

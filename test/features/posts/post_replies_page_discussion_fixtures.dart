@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
-
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -27,8 +26,8 @@ import 'package:wenyousite_mobile/features/posts/presentation/post_replies_page.
 import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
 import 'package:wenyousite_mobile/features/stickers/application/sticker_repository_ports.dart';
 import 'package:wenyousite_mobile/features/stickers/domain/sticker_models.dart';
-
 import '../../support/button_finder.dart';
+import '../../support/discussion_window_fixture.dart';
 import '../../support/memory_pending_media_file_store.dart';
 import 'post_replies_page_upload_operations.dart';
 
@@ -196,7 +195,9 @@ typedef PostRepliesPageTestUpdateHandler =
       required int version,
     });
 
-class PostRepliesPageTestFakePostRepository implements PostRepository {
+class PostRepliesPageTestFakePostRepository
+    with PostWindowFixture
+    implements PostRepository {
   PostRepliesPageTestFakePostRepository({
     this.createCompleter,
     this.onFetchPost,

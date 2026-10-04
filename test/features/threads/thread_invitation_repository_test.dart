@@ -3,37 +3,70 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
 import 'package:wenyousite_mobile/features/threads/data/thread_invitation_repository.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_invitation_models.dart';
 
 void main() {
-  test('生成邀请链接校验主题并组合当前 Web origin', () async {
+  test('重置使用原POST且显式禁止重放', () async {
     final api = _MockThreadsApi();
     when(
-      () => api.threadsCreateInviteLink(id: 'thread-1'),
+      () => api.threadsCreateInviteLink(
+        id: 'thread-1',
+        extra: ApiRequestPolicy.authenticatedNonReplayable.extra,
+      ),
+    ).thenAnswer(
+      (_) async => Response(
+        requestOptions: RequestOptions(path: '/invite-link'),
+        data: ThreadsCreateInviteLink200Response(
+          (b) => b
+            ..code = ApiSuccessEnvelopeCodeEnum.number0
+            ..message = 'ok'
+            ..data.replace(_inviteLinkResponse().data!.data),
+        ),
+      ),
+    );
+    final result = await ApiThreadInvitationRepository(
+      api,
+      'https://wenyou.site',
+    ).resetLink('thread-1');
+    expect(result.token, 'Abcd_1234-efGh56');
+    verify(
+      () => api.threadsCreateInviteLink(
+        id: 'thread-1',
+        extra: {ApiRequestExtraKeys.noAutomaticReplay: true},
+      ),
+    ).called(1);
+    verifyNever(() => api.threadsEnsureInviteLink(id: any(named: 'id')));
+  });
+
+  test('取得邀请链接校验主题并组合当前 Web origin', () async {
+    final api = _MockThreadsApi();
+    when(
+      () => api.threadsEnsureInviteLink(id: 'thread-1'),
     ).thenAnswer((_) async => _inviteLinkResponse());
 
     final result = await ApiThreadInvitationRepository(
       api,
       'https://wenyou.site',
-    ).generateLink('thread-1');
+    ).ensureLink('thread-1');
 
     expect(result.threadId, 'thread-1');
     expect(result.token, 'Abcd_1234-efGh56');
     expect(result.url.toString(), 'https://wenyou.site/join/Abcd_1234-efGh56');
   });
 
-  test('生成邀请响应目标不一致时不返回可分享链接', () async {
+  test('取得邀请响应目标不一致时不返回可分享链接', () async {
     final api = _MockThreadsApi();
     when(
-      () => api.threadsCreateInviteLink(id: 'thread-1'),
+      () => api.threadsEnsureInviteLink(id: 'thread-1'),
     ).thenAnswer((_) async => _inviteLinkResponse(threadId: 'other-thread'));
 
     await expectLater(
       ApiThreadInvitationRepository(
         api,
         'https://wenyou.site',
-      ).generateLink('thread-1'),
+      ).ensureLink('thread-1'),
       throwsA(isA<ApiFailure>()),
     );
   });
@@ -113,14 +146,14 @@ void main() {
 
 class _MockThreadsApi extends Mock implements ThreadsApi {}
 
-Response<ThreadsCreateInviteLink200Response> _inviteLinkResponse({
+Response<ThreadsEnsureInviteLink200Response> _inviteLinkResponse({
   String threadId = 'thread-1',
 }) {
   return Response(
     requestOptions: RequestOptions(
       path: '/api/v1/threads/thread-1/invite-link',
     ),
-    data: ThreadsCreateInviteLink200Response(
+    data: ThreadsEnsureInviteLink200Response(
       (response) => response
         ..code = ApiSuccessEnvelopeCodeEnum.number0
         ..message = 'ok'

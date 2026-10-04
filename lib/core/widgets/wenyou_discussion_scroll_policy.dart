@@ -8,32 +8,8 @@ import 'package:flutter/rendering.dart'
         ScrollCacheExtent;
 import 'package:flutter/widgets.dart';
 
-/// Prepares the visible discussion plus two viewports on either side.
-/// Materialized rows are then retained by [DiscussionKeepAlive].
+/// 只预布局可见区域两侧各两屏；离屏行正常释放，选字等临时状态由子组件保留。
 const discussionScrollCacheExtent = ScrollCacheExtent.viewport(2.0);
-
-/// Retains a discussion row after its first layout so returning to already-read
-/// content never reparses and relays out its Markdown subtree.
-class DiscussionKeepAlive extends StatefulWidget {
-  const DiscussionKeepAlive({required this.child, super.key});
-
-  final Widget child;
-
-  @override
-  State<DiscussionKeepAlive> createState() => _DiscussionKeepAliveState();
-}
-
-class _DiscussionKeepAliveState extends State<DiscussionKeepAlive>
-    with AutomaticKeepAliveClientMixin {
-  @override
-  bool get wantKeepAlive => true;
-
-  @override
-  Widget build(BuildContext context) {
-    super.build(context);
-    return widget.child;
-  }
-}
 
 /// Starts one discussion text prefetch task after the current frame is
 /// delivered, without scheduling duplicates during intervening rebuilds.
@@ -88,6 +64,7 @@ class DiscussionTargetRevealCoordinator {
     required ScrollController scrollController,
     required bool Function() isMounted,
     required VoidCallback requestRebuild,
+    double? targetOffset,
     VoidCallback? onAligned,
   }) {
     if (_scopeSignature != scopeSignature) {
@@ -118,12 +95,10 @@ class DiscussionTargetRevealCoordinator {
       }
       final targetContext = targetKey.currentContext;
       if (targetContext != null && _canReveal(targetContext)) {
-        Scrollable.ensureVisible(
+        alignDiscussionTarget(
           targetContext,
-          duration: Duration.zero,
-          // 按块开头对齐，避免比例对齐把超长目标的作者与正文开头滚出视口。
-          // 视口负责扣除吸顶 Sliver；末尾短目标按自然滚动边界停靠。
-          alignment: 0,
+          scrollController,
+          offset: targetOffset,
         );
         _lastContentSignature = contentSignature;
         _attemptTargetId = null;
@@ -227,4 +202,27 @@ class DiscussionTargetRevealCoordinator {
 
   /// 滑杆和首尾按钮发起的是程序滚动，也必须结束深链的自动对齐。
   void releaseForUserNavigation() => _releasedByUser = true;
+}
+
+/// 返回使用实际视口坐标，避免把吸顶目录高度重复加入条目内偏移。
+void alignDiscussionTarget(
+  BuildContext context,
+  ScrollController scroll, {
+  double? offset,
+}) {
+  if (offset == null) {
+    Scrollable.ensureVisible(context, duration: Duration.zero, alignment: 0);
+    return;
+  }
+  final target = context.findRenderObject();
+  if (target == null || !target.attached || !scroll.hasClients) return;
+  final viewport = RenderAbstractViewport.of(target);
+  final revealed = viewport.getOffsetToReveal(target, 0);
+  final position = scroll.position;
+  scroll.jumpTo(
+    (revealed.offset + revealed.rect.top + offset).clamp(
+      position.minScrollExtent,
+      position.maxScrollExtent,
+    ),
+  );
 }

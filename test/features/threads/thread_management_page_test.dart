@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
@@ -59,9 +60,9 @@ void main() {
       find.byKey(const Key('thread-management-tag-input')),
       '新标签',
     );
-    await tester.tap(find.byKey(const Key('thread-management-tag-add')));
+    await tester.testTextInput.receiveAction(TextInputAction.done);
     await tester.pump();
-    final originalChip = find.widgetWithText(InputChip, '原标签');
+    final originalChip = find.widgetWithText(InputChip, '#原标签');
     tester.widget<InputChip>(originalChip).onDeleted!();
     await tester.pump();
     await tester.tap(find.byKey(const Key('thread-management-tag-done')));
@@ -71,8 +72,8 @@ void main() {
     expect(find.text('编辑主题标签'), findsNothing);
     expect(find.text('主题标签'), findsOneWidget);
     expect(find.text('1/5'), findsNothing);
-    expect(find.text('新标签'), findsOneWidget);
-    expect(find.text('原标签'), findsNothing);
+    expect(find.text('#新标签'), findsOneWidget);
+    expect(find.text('#原标签'), findsNothing);
   });
 
   testWidgets('主题标签取消编辑后关闭面板并保留原表单', (tester) async {
@@ -91,9 +92,9 @@ void main() {
       find.byKey(const Key('thread-management-tag-input')),
       '暂存标签',
     );
-    await tester.tap(find.byKey(const Key('thread-management-tag-add')));
+    await tester.testTextInput.receiveAction(TextInputAction.done);
     await tester.pump();
-    final originalChip = find.widgetWithText(InputChip, '原标签');
+    final originalChip = find.widgetWithText(InputChip, '#原标签');
     tester.widget<InputChip>(originalChip).onDeleted!();
     await tester.pump();
     await tester.tap(find.byKey(const Key('thread-management-tag-cancel')));
@@ -103,8 +104,8 @@ void main() {
     expect(find.text('编辑主题标签'), findsNothing);
     expect(find.text('主题标签'), findsOneWidget);
     expect(find.text('1/5'), findsNothing);
-    expect(find.text('原标签'), findsOneWidget);
-    expect(find.text('暂存标签'), findsNothing);
+    expect(find.text('#原标签'), findsOneWidget);
+    expect(find.text('#暂存标签'), findsNothing);
   });
 
   testWidgets('整页加载失败显示问题编号并可原地重试', (tester) async {
@@ -145,7 +146,7 @@ void main() {
     expect(find.text('当前账号没有管理这个主题的权限。'), findsOneWidget);
     expect(find.byKey(const Key('thread-management-save')), findsNothing);
     expect(find.byKey(const Key('thread-management-title')), findsNothing);
-    expect(find.byKey(const Key('thread-invite-link-generate')), findsNothing);
+    expect(find.byKey(const Key('thread-invite-link-copy')), findsNothing);
     expect(find.byKey(const Key('thread-management-delete')), findsNothing);
     expect(repository.lastDraft, isNull);
     expect(repository.removeCalls, 0);
@@ -214,6 +215,9 @@ void main() {
     await tester.tap(visibility);
     await tester.pumpAndSettle();
     expect(find.text('选择可见范围'), findsOneWidget);
+    expect(find.text('私密'), findsOneWidget);
+    expect(find.text('所有人都可以查看主题'), findsNothing);
+    expect(find.text('只有主题成员可以查看'), findsNothing);
     final private = find.byKey(
       const ValueKey('thread-management-visibility-choice-private'),
     );
@@ -224,7 +228,7 @@ void main() {
       repository.lastDraft?.visibility,
       ThreadManagementVisibility.private,
     );
-    expect(find.text('仅成员'), findsOneWidget);
+    expect(find.text('私密'), findsOneWidget);
     expect(find.text('只有主题成员可以查看'), findsNothing);
   });
 
@@ -398,7 +402,7 @@ void main() {
     FocusManager.instance.primaryFocus?.unfocus();
     await tester.pumpAndSettle();
 
-    final invitation = find.byKey(const Key('thread-management-invite'));
+    final invitation = find.byKey(const Key('thread-invite-link-copy'));
     await tester.ensureVisible(invitation);
     await tester.pumpAndSettle();
     expect(invitation, findsOneWidget);
@@ -483,7 +487,13 @@ void main() {
     expect(repository.lastDraft?.visibility, ThreadManagementVisibility.public);
   });
 
-  testWidgets('只有已发布私密主题楼主看到邀请链接管理', (tester) async {
+  testWidgets('只有已发布私密主题楼主直接复制邀请且不打开抽屉', (tester) async {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(SystemChannels.platform, (_) async => null);
+    addTearDown(
+      () => TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(SystemChannels.platform, null),
+    );
     await pumpThreadManagementTestPage(
       tester,
       ThreadManagementTestRepository(
@@ -493,19 +503,17 @@ void main() {
       ),
       invitationRepository: ThreadManagementTestInvitationRepository(),
     );
-    final entry = find.byKey(const Key('thread-management-invite'));
+    final entry = find.byKey(const Key('thread-invite-link-copy'));
     expect(entry, findsOneWidget);
     expect(find.text('生成或复制邀请链接'), findsNothing);
-    expect(find.byKey(const Key('thread-invite-link-generate')), findsNothing);
+    expect(find.byKey(const Key('thread-invite-link-copy')), findsOneWidget);
 
     await tester.ensureVisible(entry);
     await tester.tap(entry);
     await tester.pumpAndSettle();
-
-    expect(
-      find.byKey(const Key('thread-invite-link-generate')),
-      findsOneWidget,
-    );
+    expect(find.byKey(const Key('thread-invite-link-copy')), findsOneWidget);
+    expect(find.text('私密邀请'), findsNothing);
+    expect(find.text('重置邀请链接'), findsNothing);
   });
 
   testWidgets('楼主删除经过二次确认后返回首页', (tester) async {
@@ -555,7 +563,12 @@ void main() {
     );
     expect(
       tester
-          .widget<ListTile>(find.byKey(const Key('thread-management-delete')))
+          .widget<ListTile>(
+            find.descendant(
+              of: find.byKey(const Key('thread-management-delete')),
+              matching: find.byType(ListTile),
+            ),
+          )
           .onTap,
       isNotNull,
     );

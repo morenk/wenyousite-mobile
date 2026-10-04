@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -14,7 +13,6 @@ import 'package:wenyousite_mobile/features/posts/application/post_controllers.da
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
 import 'package:wenyousite_mobile/features/posts/presentation/post_composer_sheet.dart';
 import 'package:wenyousite_mobile/features/posts/presentation/post_replies_page.dart';
-
 import 'post_replies_page_test_support.dart';
 
 void registerPostRepliesPageLoadingWritesCases() {
@@ -574,16 +572,9 @@ void registerPostRepliesPageLoadingWritesCases() {
 
     await tester.pumpWidget(postRepliesPageTestPostRepliesApp(container));
     await postRepliesPageTestPumpUi(tester);
-    await postRepliesPageTestLongPressPostMetadata(tester, 'root');
-    await postRepliesPageTestPumpUi(tester);
-
+    expect(find.byKey(const Key('post-card-root')), findsNothing);
+    expect(find.byKey(const Key('post-card-deleted-reply')), findsNothing);
     expect(find.byKey(const Key('post-card-action-root-report')), findsNothing);
-    await tester.tap(find.byKey(const Key('wenyou-modal-action-close')));
-    await postRepliesPageTestPumpUi(tester);
-
-    await postRepliesPageTestLongPressPostMetadata(tester, 'deleted-reply');
-    await postRepliesPageTestPumpUi(tester);
-
     expect(
       find.byKey(const Key('post-card-action-deleted-reply-report')),
       findsNothing,

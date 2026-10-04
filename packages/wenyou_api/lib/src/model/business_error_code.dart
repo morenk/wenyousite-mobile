@@ -45,6 +45,9 @@ class BusinessErrorCode extends EnumClass {
   @BuiltValueEnumConst(wireNumber: 40009)
   static const BusinessErrorCode UNSUPPORTED_MARKDOWN_FORMAT = _$UNSUPPORTED_MARKDOWN_FORMAT;
   /// 稳定业务错误码；名称和值来源于 ErrorCode
+  @BuiltValueEnumConst(wireNumber: 40010)
+  static const BusinessErrorCode DISCUSSION_TARGET_FILTERED = _$DISCUSSION_TARGET_FILTERED;
+  /// 稳定业务错误码；名称和值来源于 ErrorCode
   @BuiltValueEnumConst(wireNumber: 40100)
   static const BusinessErrorCode UNAUTHORIZED = _$UNAUTHORIZED;
   /// 稳定业务错误码；名称和值来源于 ErrorCode
