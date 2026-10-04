@@ -15,7 +15,6 @@ import 'package:wenyousite_mobile/features/threads/data/thread_detail_repository
 import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_page.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_target_utils.dart';
-
 import '../../support/deterministic_test_fonts.dart';
 import '../../support/scripted_http_client_adapter.dart';
 
@@ -28,9 +27,8 @@ void main() {
         '/api/v1/threads/thread-1' => ScriptedHttpResponse.json(
           _threadEnvelope(),
         ),
-        '/api/v1/subthreads/subthread-1/posts' => ScriptedHttpResponse.json(
-          _floorsEnvelope(),
-        ),
+        '/api/v1/subthreads/subthread-1/posts/window' =>
+          ScriptedHttpResponse.json(_floorWindowEnvelope()),
         _ => ScriptedHttpResponse.json({
           'code': 40400,
           'message': 'unexpected ${request.path}',
@@ -51,7 +49,7 @@ void main() {
       adapter.requests.map((request) => request.path),
       containsAllInOrder([
         '/api/v1/threads/thread-1',
-        '/api/v1/subthreads/subthread-1/posts',
+        '/api/v1/subthreads/subthread-1/posts/window',
       ]),
     );
   });
@@ -83,16 +81,16 @@ void main() {
         '/api/v1/posts/floor-target' => ScriptedHttpResponse.json(
           _postTargetEnvelope(),
         ),
-        '/api/v1/subthreads/subthread-1/posts' => ScriptedHttpResponse.json(
-          _floorsEnvelope(),
-        ),
-        '/api/v1/subthreads/subthread-2/posts' => ScriptedHttpResponse.json(
-          _floorsEnvelope(
-            subthreadId: 'subthread-2',
-            floorId: 'floor-target',
-            content: '网络深链目标楼层',
+        '/api/v1/subthreads/subthread-1/posts/window' =>
+          ScriptedHttpResponse.json(_floorWindowEnvelope()),
+        '/api/v1/subthreads/subthread-2/posts/window' =>
+          ScriptedHttpResponse.json(
+            _floorWindowEnvelope(
+              subthreadId: 'subthread-2',
+              floorId: 'floor-target',
+              content: '网络深链目标楼层',
+            ),
           ),
-        ),
         _ => ScriptedHttpResponse.json({
           'code': 40400,
           'message': 'unexpected ${request.path}',
@@ -118,7 +116,7 @@ void main() {
       containsAll([
         '/api/v1/threads/thread-1',
         '/api/v1/posts/floor-target',
-        '/api/v1/subthreads/subthread-2/posts',
+        '/api/v1/subthreads/subthread-2/posts/window',
       ]),
     );
   });
@@ -475,6 +473,33 @@ Map<String, Object?> _createdReplyEnvelope({required String clientRequestId}) {
         'avatar': null,
         'level': 2,
       },
+    },
+  };
+}
+
+Map<String, Object?> _floorWindowEnvelope({
+  String subthreadId = 'subthread-1',
+  String floorId = 'floor-1',
+  String content = '真实楼层内容',
+}) {
+  final envelope = _floorsEnvelope(
+    subthreadId: subthreadId,
+    floorId: floorId,
+    content: content,
+  );
+  final items = envelope['data'] as List;
+  return {
+    ...envelope,
+    'data': {
+      'items': items,
+      'pinnedItems': [],
+      'total': items.length,
+      'maxNumber': 1,
+      'target': null,
+      'beforeCursor': null,
+      'afterCursor': null,
+      'hasBefore': false,
+      'hasAfter': false,
     },
   };
 }

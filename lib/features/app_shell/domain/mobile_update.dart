@@ -82,14 +82,16 @@ class MobileUpdateInfo {
 
 class MobileUpdateAvailability {
   const MobileUpdateAvailability.available({this.targetVersion})
-    : isAvailable = true;
+    : isAvailable = true,
+      userMessage = null;
 
-  const MobileUpdateAvailability.preparing()
+  const MobileUpdateAvailability.preparing({this.userMessage})
     : isAvailable = false,
       targetVersion = null;
 
   final bool isAvailable;
   final String? targetVersion;
+  final String? userMessage;
 }
 
 MobileUpdateInfo? evaluateMobileUpdate({

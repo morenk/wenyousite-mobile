@@ -6,7 +6,6 @@ import 'package:wenyousite_mobile/features/posts/application/post_controllers.da
 import 'package:wenyousite_mobile/features/posts/data/post_repository.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
 import 'package:wenyousite_mobile/features/threads/data/thread_detail_repository.dart';
-
 import '../../support/scripted_http_client_adapter.dart';
 
 // 原楼层实测 76 条，正序每页 20 条，第 74 条的目标详情不可见；
@@ -23,7 +22,9 @@ void main() {
     await controller.load();
     expect(controller.state.phase, PostDiscussionPhase.ready);
     expect(controller.state.replies, hasLength(20));
-    await controller.prefetchRemainingReplies();
+    while (controller.state.hasMore) {
+      await controller.loadAdjacent();
+    }
     _expectComplete(controller, PostReplyOrder.oldest);
     expect(
       stack.replyRequests.map((request) => request.queryParameters['cursor']),
@@ -31,7 +32,9 @@ void main() {
     );
 
     await controller.refresh();
-    await controller.loadMore();
+    while (controller.state.hasMore) {
+      await controller.loadAdjacent();
+    }
     _expectComplete(controller, PostReplyOrder.oldest);
     expect(stack.replyRequests, hasLength(8));
   });
@@ -45,15 +48,21 @@ void main() {
     expect(controller.state.phase, PostDiscussionPhase.ready);
     expect(controller.state.replies[2].id, 'reply-74');
     expect(controller.state.replies[2].replyToAuthor, isNull);
-    await controller.loadMore();
+    while (controller.state.hasMore) {
+      await controller.loadAdjacent();
+    }
     _expectComplete(controller, PostReplyOrder.newest);
 
     await controller.load();
-    await controller.loadMore();
+    while (controller.state.hasMore) {
+      await controller.loadAdjacent();
+    }
     _expectComplete(controller, PostReplyOrder.newest);
     final previousRequests = stack.replyRequests.length;
     await controller.setAuthor('author');
-    await controller.loadMore();
+    while (controller.state.hasMore) {
+      await controller.loadAdjacent();
+    }
     _expectComplete(controller, PostReplyOrder.newest);
     final filteredRequests = stack.replyRequests.skip(previousRequests);
     expect(filteredRequests, hasLength(4));
@@ -153,7 +162,8 @@ class _DiscussionStack {
           ]),
         );
       }
-      if (request.path != '/api/v1/posts/floor/replies') {
+      if (request.path != '/api/v1/posts/floor/replies' &&
+          request.path != '/api/v1/posts/floor/replies/window') {
         throw StateError('意外请求：${request.path}');
       }
       if (replyOverride != null) {
@@ -170,12 +180,36 @@ class _DiscussionStack {
           : ordered.indexWhere((number) => 'reply-$number' == cursor) + 1;
       if (cursor != null && start == 0) throw StateError('意外 cursor：$cursor');
       final current = ordered.skip(start).take(20).toList();
+      final items = current.map(_reply).toList();
+      final after = start + current.length < _replyCount
+          ? 'reply-${current.last}'
+          : null;
+      final postId = request.queryParameters['postId'];
       return ScriptedHttpResponse.json(
-        _page(
-          current.map(_reply).toList(),
-          cursor: 'reply-${current.last}',
-          hasMore: start + current.length < _replyCount,
-        ),
+        request.path.endsWith('/window')
+            ? {
+                'code': 0,
+                'message': 'ok',
+                'data': {
+                  'items': items,
+                  'pinnedItems': [],
+                  'total': _replyCount,
+                  'maxNumber': _replyCount,
+                  'target': postId == null
+                      ? null
+                      : {
+                          'id': postId,
+                          'number': int.parse(
+                            (postId as String).split('-').last,
+                          ),
+                        },
+                  'beforeCursor': null,
+                  'afterCursor': after,
+                  'hasBefore': false,
+                  'hasAfter': after != null,
+                },
+              }
+            : _page(items, cursor: after, hasMore: after != null),
       );
     });
     dio = Dio(BaseOptions(baseUrl: 'https://example.invalid/api/v1'))
@@ -199,7 +233,7 @@ class _DiscussionStack {
   late final PostDiscussionController controller;
 
   List<RequestOptions> get replyRequests => adapter.requests
-      .where((request) => request.path == '/api/v1/posts/floor/replies')
+      .where((request) => request.path == '/api/v1/posts/floor/replies/window')
       .toList();
 
   void close() {
@@ -238,6 +272,7 @@ Map<String, Object?> _reply(int number) {
     'authorId': 'author',
     'kind': 'FLOOR',
     'floorNumber': null,
+    'replyNumber': number == 0 ? null : number,
     'pinnedAt': null,
     'parentPostId': 'floor',
     'replyToPostId': number == _unavailableReplyNumber

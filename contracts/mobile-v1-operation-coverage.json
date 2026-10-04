@@ -1,14 +1,38 @@
 {
   "schemaVersion": 1,
-  "contractVersion": "5.28.0-dev.20260929.1",
+  "contractVersion": "5.32.0-dev.20261003.1",
   "counts": {
-    "total": 232,
-    "v1": 107,
+    "total": 238,
+    "v1": 110,
     "deferred": 66,
     "notApplicable": 58,
-    "infrastructure": 1
+    "infrastructure": 4
   },
   "operations": [
+    {
+      "operationId": "appDownloadsInfo",
+      "method": "GET",
+      "path": "/api/v1/app-downloads/android",
+      "module": "infrastructure",
+      "disposition": "infrastructure",
+      "status": "not_applicable"
+    },
+    {
+      "operationId": "appDownloadsHead",
+      "method": "HEAD",
+      "path": "/api/v1/app-downloads/android/{buildNumber}/file",
+      "module": "infrastructure",
+      "disposition": "infrastructure",
+      "status": "not_applicable"
+    },
+    {
+      "operationId": "appDownloadsFile",
+      "method": "GET",
+      "path": "/api/v1/app-downloads/android/{buildNumber}/file",
+      "module": "infrastructure",
+      "disposition": "infrastructure",
+      "status": "not_applicable"
+    },
     {
       "operationId": "healthCheck",
       "method": "GET",
@@ -551,6 +575,14 @@
       "status": "planned"
     },
     {
+      "operationId": "threadsEnsureInviteLink",
+      "method": "PUT",
+      "path": "/api/v1/threads/{id}/invite-link",
+      "module": "threads",
+      "disposition": "v1",
+      "status": "planned"
+    },
+    {
       "operationId": "threadsCreateInviteLink",
       "method": "POST",
       "path": "/api/v1/threads/{id}/invite-link",
@@ -982,6 +1014,22 @@
       "operationId": "postsCreate",
       "method": "POST",
       "path": "/api/v1/subthreads/{subthreadId}/posts",
+      "module": "posts",
+      "disposition": "v1",
+      "status": "planned"
+    },
+    {
+      "operationId": "postsFindFloorWindow",
+      "method": "GET",
+      "path": "/api/v1/subthreads/{subthreadId}/posts/window",
+      "module": "posts",
+      "disposition": "v1",
+      "status": "planned"
+    },
+    {
+      "operationId": "postsFindReplyWindow",
+      "method": "GET",
+      "path": "/api/v1/posts/{id}/replies/window",
       "module": "posts",
       "disposition": "v1",
       "status": "planned"

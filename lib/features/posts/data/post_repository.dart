@@ -1,8 +1,10 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyou_api/wenyou_api.dart';
+import 'package:wenyousite_mobile/core/models/discussion_window.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
+import 'package:wenyousite_mobile/core/network/discussion_window_mapper.dart';
 import 'package:wenyousite_mobile/core/network/media_display_mapper.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_repository_ports.dart';
@@ -21,6 +23,62 @@ class ApiPostRepository implements PostRepository {
     40006: '图片或表情无法保存，请重新选择后再试。',
     40009: '正文格式无法保存，请调整图片或文字排版后重试。',
   };
+
+  @override
+  Future<DiscussionWindow<PostItem>> fetchReplyWindow({
+    required String rootPostId,
+    int? number,
+    String? postId,
+    String? cursor,
+    int limit = 20,
+    PostReplyOrder order = PostReplyOrder.oldest,
+    String? authorId,
+  }) async {
+    try {
+      final dto = (await _api.postsFindReplyWindow(
+        id: rootPostId,
+        number: number,
+        postId: postId,
+        cursor: cursor,
+        limit: limit,
+        order: order.apiValue,
+        authorId: authorId,
+      )).data?.data;
+      if (dto == null ||
+          dto.items.any(
+            (item) =>
+                item.replyNumber == null ||
+                item.replyNumber != item.replyNumber!.toInt(),
+          ) ||
+          dto.pinnedItems.isNotEmpty ||
+          (authorId != null &&
+              dto.items.any((item) => item.authorId != authorId))) {
+        throw const ApiFailure.invalidResponse(
+          diagnosticCode: 'replies.window.invalid_scope',
+        );
+      }
+      _validateReplyPage(dto.items, rootPostId: rootPostId);
+      return mapDiscussionWindow(
+        items: dto.items.map(_mapReply).toList(),
+        pinnedItems: const [],
+        total: dto.total,
+        maxNumber: dto.maxNumber,
+        targetId: dto.target?.id,
+        targetNumber: dto.target?.number,
+        beforeCursor: dto.beforeCursor,
+        afterCursor: dto.afterCursor,
+        hasBefore: dto.hasBefore,
+        hasAfter: dto.hasAfter,
+        limit: limit,
+        requestedNumber: number,
+        requestedId: postId,
+        idOf: (item) => item.id,
+        numberOf: (item) => item.replyNumber,
+      );
+    } on DioException catch (error) {
+      throw ApiFailure.fromDio(error);
+    }
+  }
 
   @override
   Future<PostItem> fetchPost(String postId) async {
@@ -343,6 +401,7 @@ class ApiPostRepository implements PostRepository {
       isBody: dto.kind == PostResponseDtoKindEnum.BODY,
       isDeleted: dto.deletedAt != null,
       floorNumber: dto.floorNumber?.toInt(),
+      replyNumber: dto.replyNumber?.toInt(),
       pinnedAt: dto.pinnedAt,
       parentPostId: dto.parentPostId,
       replyToPostId: dto.replyToPostId,
@@ -365,6 +424,7 @@ class ApiPostRepository implements PostRepository {
       isBody: dto.kind == ReplyResponseDtoKindEnum.BODY,
       isDeleted: dto.deletedAt != null,
       floorNumber: dto.floorNumber?.toInt(),
+      replyNumber: dto.replyNumber?.toInt(),
       pinnedAt: dto.pinnedAt,
       parentPostId: dto.parentPostId,
       replyToPostId: dto.replyToPostId,
@@ -390,6 +450,7 @@ class ApiPostRepository implements PostRepository {
       isBody: dto.kind == PostDetailResponseDtoKindEnum.BODY,
       isDeleted: dto.deletedAt != null,
       floorNumber: dto.floorNumber?.toInt(),
+      replyNumber: dto.replyNumber?.toInt(),
       pinnedAt: dto.pinnedAt,
       parentPostId: dto.parentPostId,
       replyToPostId: dto.replyToPostId,

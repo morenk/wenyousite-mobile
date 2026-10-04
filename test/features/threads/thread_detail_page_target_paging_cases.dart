@@ -300,7 +300,7 @@ void registerThreadDetailPageTargetPagingCases() {
     expect(find.text('更多楼层加载失败。'), findsOneWidget);
   });
 
-  testWidgets('远端目标通过真实 cursor 页定位并稳定揭开完整列表', (tester) async {
+  testWidgets('远端目标直接请求目标窗口并稳定揭开', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(360, 640);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -358,7 +358,7 @@ void registerThreadDetailPageTargetPagingCases() {
     await tester.pump(const Duration(milliseconds: 200));
     expect(tester.getRect(targetFinder), targetRect);
     expect(repository.requestedSubthreads, ['subthread-1', 'subthread-1']);
-    expect(repository.requestedCursors, [null, 'next-cursor']);
+    expect(repository.requestedCursors, [null, null]);
   });
 
   testWidgets('发表楼层后重读真实列表并定位到新楼层', (tester) async {

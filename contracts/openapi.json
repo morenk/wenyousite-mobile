@@ -1,6 +1,836 @@
 {
   "openapi": "3.0.0",
   "paths": {
+    "/api/v1/app-downloads/android": {
+      "get": {
+        "description": "release/status 表示全局发布及缓存可用性，不因当前访客次数耗尽改为 paused；不扣下载次数。可签发/续签随机浏览器 Cookie，需同源携带；客户端不自行生成标识。旧 APP 无需新增此调用，直接 HEAD/GET 保持兼容。",
+        "operationId": "appDownloadsInfo",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "headers": {
+              "Set-Cookie": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "可选：第一方签名随机浏览器标识；HttpOnly、SameSite=Lax，生产 Secure；不是用户认证，旧 APP 可忽略"
+              },
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "X-API-Contract-Version": {
+                "$ref": "#/components/headers/XApiContractVersion"
+              }
+            },
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppDownloadsInfo200Response"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "请求频率、并发、带宽或持久化字节预算超限；info 不检查也不消费个体下载次数",
+            "headers": {
+              "Retry-After": {
+                "$ref": "#/components/headers/RetryAfter"
+              },
+              "X-Download-Limit-Reason": {
+                "schema": {
+                  "type": "string",
+                  "enum": [
+                    "device_daily_limit",
+                    "ip_daily_limit",
+                    "byte_budget",
+                    "request_rate",
+                    "concurrency",
+                    "bandwidth"
+                  ]
+                },
+                "description": "脱敏机器原因；HEAD 无正文，GET 错误正文也可能为空"
+              },
+              "Set-Cookie": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "可选：第一方签名随机浏览器标识；HttpOnly、SameSite=Lax，生产 Secure；不是用户认证，旧 APP 可忽略"
+              },
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "X-API-Contract-Version": {
+                "$ref": "#/components/headers/XApiContractVersion"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "账本/目录依赖异常或网关未接通；文件缓存缺失/损坏、撤回/暂停也为 503；绝不回源",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "X-API-Contract-Version": {
+                "$ref": "#/components/headers/XApiContractVersion"
+              }
+            }
+          },
+          "default": {
+            "description": "未在此操作中单独列出的错误响应",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "X-API-Contract-Version": {
+                "$ref": "#/components/headers/XApiContractVersion"
+              }
+            }
+          }
+        },
+        "summary": "匿名读取当前 Android 下载信息；仅 JSON，不预取 APK",
+        "tags": [
+          "App Downloads"
+        ],
+        "x-auth-mode": "public",
+        "security": []
+      }
+    },
+    "/api/v1/app-downloads/android/{buildNumber}/file": {
+      "head": {
+        "operationId": "appDownloadsHead",
+        "parameters": [
+          {
+            "name": "buildNumber",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 2100000000
+            }
+          },
+          {
+            "name": "Range",
+            "in": "header",
+            "description": "仅单段 bytes=start-end、start- 或 -suffix；非法/多段为 416",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "If-Range",
+            "in": "header",
+            "description": "匹配 ETag 或 Last-Modified 才应用 Range；不匹配发送完整文件",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "已发布且已验证的完整 APK；合法 GET 最后阶段原子预占一次尝试与正文预算，中断/失败不退；HEAD 预检但不消费次数或正文预算，HEAD→GET 仍可能竞争失败",
+            "headers": {
+              "Set-Cookie": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "可选：第一方签名随机浏览器标识；HttpOnly、SameSite=Lax，生产 Secure；不是用户认证，旧 APP 可忽略"
+              },
+              "Content-Type": {
+                "schema": {
+                  "type": "string",
+                  "enum": [
+                    "application/vnd.android.package-archive"
+                  ]
+                }
+              },
+              "Content-Length": {
+                "schema": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "description": "本次响应正文长度；HEAD 同 GET"
+              },
+              "Content-Disposition": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "attachment; filename=\"wenyou-<version>-<build>.apk\""
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "private, no-store；禁止代理缓存绕过预算"
+              },
+              "Accept-Ranges": {
+                "schema": {
+                  "type": "string",
+                  "enum": [
+                    "bytes"
+                  ]
+                }
+              },
+              "ETag": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "双引号包围的 SHA-256"
+              },
+              "Last-Modified": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "发布时间，HTTP-date"
+              },
+              "x-amz-meta-apk-sha256": {
+                "schema": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{64}$"
+                }
+              },
+              "x-amz-meta-application-id": {
+                "schema": {
+                  "type": "string",
+                  "enum": [
+                    "site.wenyou.app"
+                  ]
+                }
+              },
+              "x-amz-meta-version-name": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "x-amz-meta-version-code": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "X-API-Contract-Version": {
+                "$ref": "#/components/headers/XApiContractVersion"
+              }
+            },
+            "content": {
+              "application/vnd.android.package-archive": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "206": {
+            "description": "单段范围；每次有效 Range GET 也计一次尝试，主动重试不豁免；HEAD 无正文且不计次",
+            "headers": {
+              "Set-Cookie": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "可选：第一方签名随机浏览器标识；HttpOnly、SameSite=Lax，生产 Secure；不是用户认证，旧 APP 可忽略"
+              },
+              "Content-Type": {
+                "schema": {
+                  "type": "string",
+                  "enum": [
+                    "application/vnd.android.package-archive"
+                  ]
+                }
+              },
+              "Content-Length": {
+                "schema": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "description": "本次响应正文长度；HEAD 同 GET"
+              },
+              "Content-Disposition": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "attachment; filename=\"wenyou-<version>-<build>.apk\""
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "private, no-store；禁止代理缓存绕过预算"
+              },
+              "Accept-Ranges": {
+                "schema": {
+                  "type": "string",
+                  "enum": [
+                    "bytes"
+                  ]
+                }
+              },
+              "ETag": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "双引号包围的 SHA-256"
+              },
+              "Last-Modified": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "发布时间，HTTP-date"
+              },
+              "x-amz-meta-apk-sha256": {
+                "schema": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{64}$"
+                }
+              },
+              "x-amz-meta-application-id": {
+                "schema": {
+                  "type": "string",
+                  "enum": [
+                    "site.wenyou.app"
+                  ]
+                }
+              },
+              "x-amz-meta-version-name": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "x-amz-meta-version-code": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Content-Range": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "X-API-Contract-Version": {
+                "$ref": "#/components/headers/XApiContractVersion"
+              }
+            },
+            "content": {
+              "application/vnd.android.package-archive": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "构建不存在或未发布",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "X-API-Contract-Version": {
+                "$ref": "#/components/headers/XApiContractVersion"
+              }
+            }
+          },
+          "416": {
+            "description": "非法、多段或越界 Range",
+            "headers": {
+              "Content-Range": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "bytes */<总长度>"
+              },
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "X-API-Contract-Version": {
+                "$ref": "#/components/headers/XApiContractVersion"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "设备/IP 每日下载尝试次数、请求频率、并发、带宽或持久化字节预算超限；次数默认3/10，跨构建累计，次数耗尽时 Retry-After 到北京时间下一日；HEAD 预检不计次，GET 最终判定；无有效 Cookie 仍受 IP 总限额",
+            "headers": {
+              "Retry-After": {
+                "$ref": "#/components/headers/RetryAfter"
+              },
+              "X-Download-Limit-Reason": {
+                "schema": {
+                  "type": "string",
+                  "enum": [
+                    "device_daily_limit",
+                    "ip_daily_limit",
+                    "byte_budget",
+                    "request_rate",
+                    "concurrency",
+                    "bandwidth"
+                  ]
+                },
+                "description": "脱敏机器原因；HEAD 无正文，GET 错误正文也可能为空"
+              },
+              "Set-Cookie": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "可选：第一方签名随机浏览器标识；HttpOnly、SameSite=Lax，生产 Secure；不是用户认证，旧 APP 可忽略"
+              },
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "X-API-Contract-Version": {
+                "$ref": "#/components/headers/XApiContractVersion"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "账本/目录依赖异常或网关未接通；文件缓存缺失/损坏、撤回/暂停也为 503；绝不回源",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "X-API-Contract-Version": {
+                "$ref": "#/components/headers/XApiContractVersion"
+              }
+            }
+          },
+          "default": {
+            "description": "未在此操作中单独列出的错误响应",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "X-API-Contract-Version": {
+                "$ref": "#/components/headers/XApiContractVersion"
+              }
+            }
+          }
+        },
+        "tags": [
+          "App Downloads"
+        ],
+        "x-auth-mode": "public",
+        "security": []
+      },
+      "get": {
+        "operationId": "appDownloadsFile",
+        "parameters": [
+          {
+            "name": "buildNumber",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 2100000000
+            }
+          },
+          {
+            "name": "Range",
+            "in": "header",
+            "description": "仅单段 bytes=start-end、start- 或 -suffix；非法/多段为 416",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "If-Range",
+            "in": "header",
+            "description": "匹配 ETag 或 Last-Modified 才应用 Range；不匹配发送完整文件",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "已发布且已验证的完整 APK；合法 GET 最后阶段原子预占一次尝试与正文预算，中断/失败不退；HEAD 预检但不消费次数或正文预算，HEAD→GET 仍可能竞争失败",
+            "headers": {
+              "Set-Cookie": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "可选：第一方签名随机浏览器标识；HttpOnly、SameSite=Lax，生产 Secure；不是用户认证，旧 APP 可忽略"
+              },
+              "Content-Type": {
+                "schema": {
+                  "type": "string",
+                  "enum": [
+                    "application/vnd.android.package-archive"
+                  ]
+                }
+              },
+              "Content-Length": {
+                "schema": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "description": "本次响应正文长度；HEAD 同 GET"
+              },
+              "Content-Disposition": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "attachment; filename=\"wenyou-<version>-<build>.apk\""
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "private, no-store；禁止代理缓存绕过预算"
+              },
+              "Accept-Ranges": {
+                "schema": {
+                  "type": "string",
+                  "enum": [
+                    "bytes"
+                  ]
+                }
+              },
+              "ETag": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "双引号包围的 SHA-256"
+              },
+              "Last-Modified": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "发布时间，HTTP-date"
+              },
+              "x-amz-meta-apk-sha256": {
+                "schema": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{64}$"
+                }
+              },
+              "x-amz-meta-application-id": {
+                "schema": {
+                  "type": "string",
+                  "enum": [
+                    "site.wenyou.app"
+                  ]
+                }
+              },
+              "x-amz-meta-version-name": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "x-amz-meta-version-code": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "X-API-Contract-Version": {
+                "$ref": "#/components/headers/XApiContractVersion"
+              }
+            },
+            "content": {
+              "application/vnd.android.package-archive": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "206": {
+            "description": "单段范围；每次有效 Range GET 也计一次尝试，主动重试不豁免；HEAD 无正文且不计次",
+            "headers": {
+              "Set-Cookie": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "可选：第一方签名随机浏览器标识；HttpOnly、SameSite=Lax，生产 Secure；不是用户认证，旧 APP 可忽略"
+              },
+              "Content-Type": {
+                "schema": {
+                  "type": "string",
+                  "enum": [
+                    "application/vnd.android.package-archive"
+                  ]
+                }
+              },
+              "Content-Length": {
+                "schema": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "description": "本次响应正文长度；HEAD 同 GET"
+              },
+              "Content-Disposition": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "attachment; filename=\"wenyou-<version>-<build>.apk\""
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "private, no-store；禁止代理缓存绕过预算"
+              },
+              "Accept-Ranges": {
+                "schema": {
+                  "type": "string",
+                  "enum": [
+                    "bytes"
+                  ]
+                }
+              },
+              "ETag": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "双引号包围的 SHA-256"
+              },
+              "Last-Modified": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "发布时间，HTTP-date"
+              },
+              "x-amz-meta-apk-sha256": {
+                "schema": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{64}$"
+                }
+              },
+              "x-amz-meta-application-id": {
+                "schema": {
+                  "type": "string",
+                  "enum": [
+                    "site.wenyou.app"
+                  ]
+                }
+              },
+              "x-amz-meta-version-name": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "x-amz-meta-version-code": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Content-Range": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "X-API-Contract-Version": {
+                "$ref": "#/components/headers/XApiContractVersion"
+              }
+            },
+            "content": {
+              "application/vnd.android.package-archive": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "构建不存在或未发布",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "X-API-Contract-Version": {
+                "$ref": "#/components/headers/XApiContractVersion"
+              }
+            }
+          },
+          "416": {
+            "description": "非法、多段或越界 Range",
+            "headers": {
+              "Content-Range": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "bytes */<总长度>"
+              },
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "X-API-Contract-Version": {
+                "$ref": "#/components/headers/XApiContractVersion"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "设备/IP 每日下载尝试次数、请求频率、并发、带宽或持久化字节预算超限；次数默认3/10，跨构建累计，次数耗尽时 Retry-After 到北京时间下一日；HEAD 预检不计次，GET 最终判定；无有效 Cookie 仍受 IP 总限额",
+            "headers": {
+              "Retry-After": {
+                "$ref": "#/components/headers/RetryAfter"
+              },
+              "X-Download-Limit-Reason": {
+                "schema": {
+                  "type": "string",
+                  "enum": [
+                    "device_daily_limit",
+                    "ip_daily_limit",
+                    "byte_budget",
+                    "request_rate",
+                    "concurrency",
+                    "bandwidth"
+                  ]
+                },
+                "description": "脱敏机器原因；HEAD 无正文，GET 错误正文也可能为空"
+              },
+              "Set-Cookie": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "可选：第一方签名随机浏览器标识；HttpOnly、SameSite=Lax，生产 Secure；不是用户认证，旧 APP 可忽略"
+              },
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "X-API-Contract-Version": {
+                "$ref": "#/components/headers/XApiContractVersion"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "账本/目录依赖异常或网关未接通；文件缓存缺失/损坏、撤回/暂停也为 503；绝不回源",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "X-API-Contract-Version": {
+                "$ref": "#/components/headers/XApiContractVersion"
+              }
+            }
+          },
+          "default": {
+            "description": "未在此操作中单独列出的错误响应",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "X-API-Contract-Version": {
+                "$ref": "#/components/headers/XApiContractVersion"
+              }
+            }
+          }
+        },
+        "tags": [
+          "App Downloads"
+        ],
+        "x-auth-mode": "public",
+        "security": []
+      }
+    },
     "/api/v1/health": {
       "get": {
         "operationId": "healthCheck",
@@ -5768,6 +6598,121 @@
       }
     },
     "/api/v1/threads/{id}/invite-link": {
+      "put": {
+        "operationId": "threadsEnsureInviteLink",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "当前邀请链接；重复或并发请求不更换 token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThreadsEnsureInviteLink200Response"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "X-API-Contract-Version": {
+                "$ref": "#/components/headers/XApiContractVersion"
+              }
+            }
+          },
+          "401": {
+            "description": "未登录",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "X-API-Contract-Version": {
+                "$ref": "#/components/headers/XApiContractVersion"
+              }
+            }
+          },
+          "403": {
+            "description": "仅 OWNER / 未发布 / 非私密帖",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "X-API-Contract-Version": {
+                "$ref": "#/components/headers/XApiContractVersion"
+              }
+            }
+          },
+          "404": {
+            "description": "主题帖不存在或不可访问",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "X-API-Contract-Version": {
+                "$ref": "#/components/headers/XApiContractVersion"
+              }
+            }
+          },
+          "default": {
+            "description": "未在此操作中单独列出的错误响应",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "X-API-Contract-Version": {
+                "$ref": "#/components/headers/XApiContractVersion"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "取得或首次创建私密帖邀请链接（仅 OWNER，已发布 + 私密帖）",
+        "tags": [
+          "Threads"
+        ],
+        "x-auth-mode": "authenticated"
+      },
       "post": {
         "operationId": "threadsCreateInviteLink",
         "parameters": [
@@ -10008,6 +10953,366 @@
           "Posts"
         ],
         "x-auth-mode": "authenticated"
+      }
+    },
+    "/api/v1/subthreads/{subthreadId}/posts/window": {
+      "get": {
+        "operationId": "postsFindFloorWindow",
+        "parameters": [
+          {
+            "name": "subthreadId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "服务端返回的不透明分页游标；首次请求不传，后续必须原样回传",
+            "schema": {
+              "example": "clxabc123...",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "每页条数（默认 20，最大 50）",
+            "schema": {
+              "default": 20,
+              "example": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "order",
+            "required": false,
+            "in": "query",
+            "description": "列表顺序；帖子回复与动态独立楼中楼默认 OLDEST，动态主评论默认 NEWEST；动态主评论内嵌回复固定 OLDEST",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "OLDEST",
+                "NEWEST"
+              ]
+            }
+          },
+          {
+            "name": "authorId",
+            "required": false,
+            "in": "query",
+            "description": "只返回指定作者的回复",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "number",
+            "required": false,
+            "in": "query",
+            "description": "固定楼层/回复编号；与 postId、cursor 互斥",
+            "schema": {
+              "minimum": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "postId",
+            "required": false,
+            "in": "query",
+            "description": "已有帖子深链 ID；与 number、cursor 互斥",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PostsFindFloorWindow200Response"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "X-API-Contract-Version": {
+                "$ref": "#/components/headers/XApiContractVersion"
+              }
+            }
+          },
+          "400": {
+            "description": "参数互斥或游标无效（40007）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "X-API-Contract-Version": {
+                "$ref": "#/components/headers/XApiContractVersion"
+              }
+            }
+          },
+          "404": {
+            "description": "目标不存在或不可访问",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "X-API-Contract-Version": {
+                "$ref": "#/components/headers/XApiContractVersion"
+              }
+            }
+          },
+          "409": {
+            "description": "目标被作者筛选排除（40010），可清筛选重试",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "X-API-Contract-Version": {
+                "$ref": "#/components/headers/XApiContractVersion"
+              }
+            }
+          },
+          "default": {
+            "description": "未在此操作中单独列出的错误响应",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "X-API-Contract-Version": {
+                "$ref": "#/components/headers/XApiContractVersion"
+              }
+            }
+          }
+        },
+        "summary": "按固定楼层编号或帖子 ID 直接读取有界双向窗口",
+        "tags": [
+          "Posts"
+        ],
+        "x-auth-mode": "optional",
+        "security": [
+          {
+            "bearer": []
+          },
+          {}
+        ]
+      }
+    },
+    "/api/v1/posts/{id}/replies/window": {
+      "get": {
+        "operationId": "postsFindReplyWindow",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "服务端返回的不透明分页游标；首次请求不传，后续必须原样回传",
+            "schema": {
+              "example": "clxabc123...",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "每页条数（默认 20，最大 50）",
+            "schema": {
+              "default": 20,
+              "example": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "order",
+            "required": false,
+            "in": "query",
+            "description": "列表顺序；帖子回复与动态独立楼中楼默认 OLDEST，动态主评论默认 NEWEST；动态主评论内嵌回复固定 OLDEST",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "OLDEST",
+                "NEWEST"
+              ]
+            }
+          },
+          {
+            "name": "authorId",
+            "required": false,
+            "in": "query",
+            "description": "只返回指定作者的回复",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "number",
+            "required": false,
+            "in": "query",
+            "description": "固定楼层/回复编号；与 postId、cursor 互斥",
+            "schema": {
+              "minimum": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "postId",
+            "required": false,
+            "in": "query",
+            "description": "已有帖子深链 ID；与 number、cursor 互斥",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PostsFindReplyWindow200Response"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "X-API-Contract-Version": {
+                "$ref": "#/components/headers/XApiContractVersion"
+              }
+            }
+          },
+          "400": {
+            "description": "参数互斥或游标无效（40007）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "X-API-Contract-Version": {
+                "$ref": "#/components/headers/XApiContractVersion"
+              }
+            }
+          },
+          "404": {
+            "description": "目标不存在或不可访问",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "X-API-Contract-Version": {
+                "$ref": "#/components/headers/XApiContractVersion"
+              }
+            }
+          },
+          "409": {
+            "description": "目标被作者筛选排除（40010），可清筛选重试",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "X-API-Contract-Version": {
+                "$ref": "#/components/headers/XApiContractVersion"
+              }
+            }
+          },
+          "default": {
+            "description": "未在此操作中单独列出的错误响应",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "X-API-Contract-Version": {
+                "$ref": "#/components/headers/XApiContractVersion"
+              }
+            }
+          }
+        },
+        "summary": "按固定回复编号或帖子 ID 直接读取有界双向窗口",
+        "tags": [
+          "Posts"
+        ],
+        "x-auth-mode": "optional",
+        "security": [
+          {
+            "bearer": []
+          },
+          {}
+        ]
       }
     },
     "/api/v1/subthreads/{subthreadId}/posts/authors": {
@@ -20492,7 +21797,7 @@
   "info": {
     "title": "温油站 API",
     "description": "温油站共同创作社区后端接口文档 | [前端接入指南](../docs/frontend-guide.md)",
-    "version": "5.28.0-dev.20260929.1",
+    "version": "5.32.0-dev.20261003.1",
     "contact": {}
   },
   "tags": [
@@ -20647,6 +21952,103 @@
       }
     },
     "schemas": {
+      "AndroidDownloadReleaseDto": {
+        "type": "object",
+        "properties": {
+          "platform": {
+            "type": "string",
+            "enum": [
+              "android"
+            ]
+          },
+          "applicationId": {
+            "type": "string",
+            "example": "site.wenyou.app"
+          },
+          "versionName": {
+            "type": "string",
+            "example": "0.3.0-dev.36"
+          },
+          "buildNumber": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 2100000000
+          },
+          "sizeBytes": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 536870912
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "fileName": {
+            "type": "string",
+            "example": "wenyou-0.3.0-dev.36-42.apk"
+          },
+          "publishedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "downloadUrl": {
+            "type": "string",
+            "example": "https://wenyou.site/api/v1/app-downloads/android/42/file"
+          },
+          "releaseNotesUrl": {
+            "type": "string",
+            "example": "https://wenyou.site/api/v1/mobile-releases/android/42"
+          }
+        },
+        "required": [
+          "platform",
+          "applicationId",
+          "versionName",
+          "buildNumber",
+          "sizeBytes",
+          "sha256",
+          "fileName",
+          "publishedAt",
+          "downloadUrl",
+          "releaseNotesUrl"
+        ]
+      },
+      "AndroidDownloadInfoDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "available",
+              "no_release",
+              "withdrawn",
+              "paused",
+              "unavailable"
+            ]
+          },
+          "release": {
+            "nullable": true,
+            "description": "仅 available 含已校验制品，其余状态为 null",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AndroidDownloadReleaseDto"
+              }
+            ]
+          },
+          "retryAfterSeconds": {
+            "type": "integer",
+            "minimum": 1,
+            "nullable": true,
+            "description": "建议等待秒数，无确定重试时间为 null"
+          }
+        },
+        "required": [
+          "status",
+          "release",
+          "retryAfterSeconds"
+        ]
+      },
       "RequestCodeDto": {
         "type": "object",
         "properties": {
@@ -26064,6 +27466,12 @@
             "type": "number",
             "nullable": true
           },
+          "replyNumber": {
+            "type": "number",
+            "nullable": true,
+            "minimum": 1,
+            "description": "根楼内固定回复编号，排序筛选与删除不重编号；主楼与正文为 null"
+          },
           "parentPostId": {
             "type": "string",
             "nullable": true
@@ -26185,6 +27593,12 @@
             "type": "number",
             "nullable": true
           },
+          "replyNumber": {
+            "type": "number",
+            "nullable": true,
+            "minimum": 1,
+            "description": "根楼内固定回复编号，排序筛选与删除不重编号；主楼与正文为 null"
+          },
           "parentPostId": {
             "type": "string",
             "nullable": true
@@ -26272,6 +27686,147 @@
           "author",
           "_count",
           "replies"
+        ]
+      },
+      "DiscussionWindowTargetDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "number": {
+            "type": "number",
+            "minimum": 1
+          }
+        },
+        "required": [
+          "id",
+          "number"
+        ]
+      },
+      "FloorWindowResponseDto": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "number",
+            "minimum": 0,
+            "description": "当前查看者、作者筛选下的可见条数"
+          },
+          "maxNumber": {
+            "type": "number",
+            "nullable": true,
+            "description": "当前查看者在本范围可访问的最大固定编号，不受作者筛选影响；无可访问内容为 null"
+          },
+          "target": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DiscussionWindowTargetDto"
+              }
+            ]
+          },
+          "beforeCursor": {
+            "type": "string",
+            "nullable": true
+          },
+          "afterCursor": {
+            "type": "string",
+            "nullable": true
+          },
+          "hasBefore": {
+            "type": "boolean"
+          },
+          "hasAfter": {
+            "type": "boolean"
+          },
+          "items": {
+            "description": "自然编号顺序窗口，最多 limit 条；置顶也仅在其自然编号位置",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FloorResponseDto"
+            }
+          },
+          "pinnedItems": {
+            "description": "仅默认首屏返回最多十条置顶；消费者保留置顶区时须按 ID 抑制 items 重复，直接定位时清空置顶区",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FloorResponseDto"
+            }
+          }
+        },
+        "required": [
+          "total",
+          "maxNumber",
+          "target",
+          "beforeCursor",
+          "afterCursor",
+          "hasBefore",
+          "hasAfter",
+          "items",
+          "pinnedItems"
+        ]
+      },
+      "ReplyWindowResponseDto": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "number",
+            "minimum": 0,
+            "description": "当前查看者、作者筛选下的可见条数"
+          },
+          "maxNumber": {
+            "type": "number",
+            "nullable": true,
+            "description": "当前查看者在本范围可访问的最大固定编号，不受作者筛选影响；无可访问内容为 null"
+          },
+          "target": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DiscussionWindowTargetDto"
+              }
+            ]
+          },
+          "beforeCursor": {
+            "type": "string",
+            "nullable": true
+          },
+          "afterCursor": {
+            "type": "string",
+            "nullable": true
+          },
+          "hasBefore": {
+            "type": "boolean"
+          },
+          "hasAfter": {
+            "type": "boolean"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReplyResponseDto"
+            }
+          },
+          "pinnedItems": {
+            "description": "楼中楼恒为空数组",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FloorResponseDto"
+            }
+          }
+        },
+        "required": [
+          "total",
+          "maxNumber",
+          "target",
+          "beforeCursor",
+          "afterCursor",
+          "hasBefore",
+          "hasAfter",
+          "items",
+          "pinnedItems"
         ]
       },
       "DiscussionAuthorResponseDto": {
@@ -26376,6 +27931,12 @@
           "floorNumber": {
             "type": "number",
             "nullable": true
+          },
+          "replyNumber": {
+            "type": "number",
+            "nullable": true,
+            "minimum": 1,
+            "description": "根楼内固定回复编号，排序筛选与删除不重编号；主楼与正文为 null"
           },
           "parentPostId": {
             "type": "string",
@@ -26562,6 +28123,12 @@
           "floorNumber": {
             "type": "number",
             "nullable": true
+          },
+          "replyNumber": {
+            "type": "number",
+            "nullable": true,
+            "minimum": 1,
+            "description": "根楼内固定回复编号，排序筛选与删除不重编号；主楼与正文为 null"
           },
           "parentPostId": {
             "type": "string",
@@ -31547,6 +33114,24 @@
           }
         ]
       },
+      "AppDownloadsInfo200Response": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ApiSuccessEnvelope"
+          },
+          {
+            "type": "object",
+            "required": [
+              "data"
+            ],
+            "properties": {
+              "data": {
+                "$ref": "#/components/schemas/AndroidDownloadInfoDto"
+              }
+            }
+          }
+        ]
+      },
       "HealthCheck200Response": {
         "allOf": [
           {
@@ -32817,6 +34402,24 @@
           }
         ]
       },
+      "ThreadsEnsureInviteLink200Response": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ApiSuccessEnvelope"
+          },
+          {
+            "type": "object",
+            "required": [
+              "data"
+            ],
+            "properties": {
+              "data": {
+                "$ref": "#/components/schemas/InviteLinkResponseDto"
+              }
+            }
+          }
+        ]
+      },
       "ThreadsCreateInviteLink200Response": {
         "allOf": [
           {
@@ -33826,6 +35429,42 @@
             "properties": {
               "data": {
                 "$ref": "#/components/schemas/PostResponseDto"
+              }
+            }
+          }
+        ]
+      },
+      "PostsFindFloorWindow200Response": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ApiSuccessEnvelope"
+          },
+          {
+            "type": "object",
+            "required": [
+              "data"
+            ],
+            "properties": {
+              "data": {
+                "$ref": "#/components/schemas/FloorWindowResponseDto"
+              }
+            }
+          }
+        ]
+      },
+      "PostsFindReplyWindow200Response": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ApiSuccessEnvelope"
+          },
+          {
+            "type": "object",
+            "required": [
+              "data"
+            ],
+            "properties": {
+              "data": {
+                "$ref": "#/components/schemas/ReplyWindowResponseDto"
               }
             }
           }
@@ -35939,6 +37578,7 @@
           40007,
           40008,
           40009,
+          40010,
           40100,
           40101,
           40102,
@@ -36033,6 +37673,7 @@
           "INVALID_CURSOR",
           "INVALID_WENYOU_AMOUNT",
           "UNSUPPORTED_MARKDOWN_FORMAT",
+          "DISCUSSION_TARGET_FILTERED",
           "UNAUTHORIZED",
           "TOKEN_EXPIRED",
           "TOKEN_INVALID",
