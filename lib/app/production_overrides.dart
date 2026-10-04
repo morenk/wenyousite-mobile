@@ -75,6 +75,8 @@ import 'package:wenyousite_mobile/features/thread_feed/application/cover_animati
 import 'package:wenyousite_mobile/features/thread_feed/data/device_cover_animation_source.dart';
 import 'package:wenyousite_mobile/features/thread_feed/data/thread_category_catalog_repository.dart';
 import 'package:wenyousite_mobile/features/thread_feed/thread_feed_catalog.dart';
+import 'package:wenyousite_mobile/features/thread_identity/data/thread_identity_repository.dart';
+import 'package:wenyousite_mobile/features/thread_identity/identity_ports.dart';
 import 'package:wenyousite_mobile/features/threads/data/subthread_management_repository.dart';
 import 'package:wenyousite_mobile/features/threads/data/thread_compose_repository.dart';
 import 'package:wenyousite_mobile/features/threads/data/thread_detail_repository.dart';
@@ -214,6 +216,8 @@ List<Override> productionProviderOverrides() => [
       return PostThreadContext(
         isPrivate: detail.isPrivate,
         canManageThread: detail.canManageThread,
+        supportsRpIdentity: detail.supportsRpIdentity,
+        ownerId: detail.owner.id,
       );
     };
   }),
@@ -259,6 +263,9 @@ List<Override> productionProviderOverrides() => [
   ),
   threadDetailRepositoryProvider.overrideWith(
     (ref) => ref.watch(apiThreadDetailRepositoryProvider),
+  ),
+  threadIdentityRepositoryProvider.overrideWith(
+    (ref) => ref.watch(apiThreadIdentityRepositoryProvider),
   ),
   postDiscussionAuthorDirectoryProvider.overrideWith(
     (ref) => ref.watch(apiPostDiscussionAuthorDirectoryProvider),

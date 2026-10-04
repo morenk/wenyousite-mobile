@@ -2,8 +2,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_controllers.dart';
+import 'package:wenyousite_mobile/features/posts/application/post_publish_draft.dart';
 import 'package:wenyousite_mobile/features/posts/data/post_repository.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
+import 'package:wenyousite_mobile/features/thread_identity/identity_models.dart';
 import '../../support/discussion_window_fixture.dart';
 
 void main() {
@@ -301,7 +303,7 @@ void main() {
     expect(repository.replyRequests.last.order, PostReplyOrder.newest);
   });
 
-  test('创建结果不明确时复用幂等键，确认后补写用户的新内容', () async {
+  test('创建结果不明确时冻结正文、身份与幂等键，重试只确认原发表', () async {
     var createCalls = 0;
     final repository = _FakePostRepository(
       onCreate: (input) async {
@@ -323,20 +325,104 @@ void main() {
     addTearDown(controller.dispose);
     controller.updateContent('第一次提交');
 
-    expect(await controller.submit(), isNull);
+    expect(
+      await controller.submit(
+        identityMode: PostIdentityMode.rp,
+        identityToken: 'rp-old',
+      ),
+      isNull,
+    );
     expect(controller.state.hasAmbiguousCreate, isTrue);
     controller.updateContent('断线后继续编辑');
-    final result = await controller.submit();
+    final result = await controller.submit(
+      identityMode: PostIdentityMode.account,
+      identityToken: 'changed',
+    );
 
-    expect(result?.content, '断线后继续编辑');
+    expect(result?.content, '第一次提交');
     expect(repository.createInputs, hasLength(2));
     expect(
       repository.createInputs.map((input) => input.clientRequestId).toSet(),
       {'request-stable'},
     );
     expect(repository.createInputs.last.content, '第一次提交');
-    expect(repository.updateRequests.single.content, '断线后继续编辑');
+    expect(repository.createInputs.last.identityMode, PostIdentityMode.rp);
+    expect(repository.createInputs.last.identityToken, 'rp-old');
+    expect(repository.updateRequests, isEmpty);
     expect(controller.state.pendingCreate, isNull);
+  });
+
+  test('先持久化发表意图再发送，重新打开仍复用原身份和请求键', () async {
+    Map<String, Object?>? saved;
+    final repository = _FakePostRepository(
+      onCreate: (input) async {
+        expect(saved, isNotNull);
+        expect(
+          PostPublishDraft.fromJson(saved)?.pending?.input.clientRequestId,
+          input.clientRequestId,
+        );
+        throw const ApiFailure(userMessage: '连接中断');
+      },
+    );
+    final controller = PostComposerController(
+      repository,
+      _createFloorTarget,
+      createRequestId: () => 'stable',
+    );
+    controller.updateContent('持久草稿');
+    await controller.submit(
+      identityMode: PostIdentityMode.rp,
+      identityToken: 'token-old',
+      persistCreateIntent: () async {
+        saved = PostPublishDraft(
+          mode: PostIdentityMode.rp,
+          identityToken: 'token-old',
+          pending: controller.state.pendingCreate,
+        ).toJson();
+        expect(repository.createInputs, isEmpty);
+        return true;
+      },
+    );
+    controller.dispose();
+    final retryRepository = _FakePostRepository();
+    final reopened = PostComposerController(
+      retryRepository,
+      _createFloorTarget,
+      createRequestId: () => 'must-not-use',
+    );
+    addTearDown(reopened.dispose);
+    reopened.restorePendingCreate(PostPublishDraft.fromJson(saved)!.pending!);
+    await reopened.submit(identityMode: PostIdentityMode.account);
+    expect(retryRepository.createInputs.single.content, '持久草稿');
+    expect(retryRepository.createInputs.single.clientRequestId, 'stable');
+    expect(retryRepository.createInputs.single.identityToken, 'token-old');
+    expect(
+      retryRepository.createInputs.single.identityMode,
+      PostIdentityMode.rp,
+    );
+  });
+
+  test('发表意图保存失败不发送请求，可原样重试', () async {
+    final repository = _FakePostRepository();
+    final controller = PostComposerController(
+      repository,
+      _createFloorTarget,
+      createRequestId: () => 'stable',
+    );
+    addTearDown(controller.dispose);
+    controller.updateContent('草稿');
+    expect(
+      await controller.submit(persistCreateIntent: () async => false),
+      isNull,
+    );
+    expect(repository.createInputs, isEmpty);
+    expect(controller.state.isSubmitting, isFalse);
+    expect(controller.state.pendingCreate?.input.clientRequestId, 'stable');
+    expect(
+      await controller.submit(persistCreateIntent: () async => true),
+      isNotNull,
+    );
+    expect(repository.createInputs.single.clientRequestId, 'stable');
   });
 
   test('编辑版本冲突读取最新版并只在确认后以新版本覆盖', () async {
@@ -778,6 +864,8 @@ class _FakePostRepository with PostWindowFixture implements PostRepository {
     required String subthreadId,
     required String content,
     int? version,
+    String? identityToken,
+    PostIdentityMode? identityMode,
   }) async {
     bodyRequests.add((
       subthreadId: subthreadId,

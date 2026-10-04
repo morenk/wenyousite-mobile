@@ -6,6 +6,7 @@ import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
 import 'package:wenyousite_mobile/features/posts/data/post_repository.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
+import 'package:wenyousite_mobile/features/thread_identity/identity_models.dart';
 
 const _clientRequestId = '123e4567-e89b-42d3-a456-426614174000';
 const _replyClientRequestId = '123e4567-e89b-42d3-a456-426614174001';
@@ -204,6 +205,8 @@ void main() {
       const PostCreateInput(
         subthreadId: 'subthread',
         content: '新回复',
+        identityMode: PostIdentityMode.rp,
+        identityToken: 'identity-old',
         clientRequestId: '123e4567-e89b-42d3-a456-426614174000',
         parentPostId: 'floor',
         replyToPostId: 'reply-target',
@@ -218,12 +221,15 @@ void main() {
       subthreadId: 'subthread',
       content: '子贴正文',
       version: 8,
+      identityMode: PostIdentityMode.account,
     );
     await repository.remove(created.id);
     await repository.setPinned(created.id, pinned: true);
     await repository.setPinned(created.id, pinned: false);
 
     expect(createPayload.content, '新回复');
+    expect(createPayload.identityMode, CreatePostDtoIdentityModeEnum.RP);
+    expect(createPayload.identityToken, 'identity-old');
     expect(
       createPayload.clientRequestId,
       '123e4567-e89b-42d3-a456-426614174000',
@@ -236,6 +242,7 @@ void main() {
     expect(created.diceRolls.single.notation, '1d20');
     expect(updated.diceRolls.single.total, 16);
     expect(bodyPayload.content, '子贴正文');
+    expect(bodyPayload.identityMode, UpsertBodyDtoIdentityModeEnum.ACCOUNT);
     expect(bodyPayload.version, 8);
     expect(body.isBody, isTrue);
     expect(

@@ -1,5 +1,6 @@
 import 'package:wenyousite_mobile/core/media/media_display.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
+import 'package:wenyousite_mobile/features/thread_identity/identity_models.dart';
 
 enum PostReplyOrder {
   oldest('最早回复在前', 'OLDEST'),
@@ -17,12 +18,17 @@ class PostAuthor {
     required this.username,
     required this.level,
     this.avatarUrl,
+    this.rpIdentity,
   });
 
   final String id;
   final String username;
   final int level;
   final String? avatarUrl;
+  final RpIdentity? rpIdentity;
+  String get displayName => rpIdentity?.nickname ?? username;
+  String? get displayAvatarUrl =>
+      rpIdentity != null ? rpIdentity!.avatarUrl : avatarUrl;
 }
 
 class PostDiceRoll {
@@ -47,6 +53,7 @@ class PostItem {
     required this.author,
     required this.content,
     this.mediaDisplays = const {},
+    this.mentionLabels = const {},
     required this.version,
     required this.createdAt,
     required this.updatedAt,
@@ -71,6 +78,7 @@ class PostItem {
   final PostAuthor author;
   final String content;
   final Map<String, MediaDisplay> mediaDisplays;
+  final Map<String, String> mentionLabels;
   final int version;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -100,6 +108,8 @@ class PostCreateInput {
     required this.clientRequestId,
     this.parentPostId,
     this.replyToPostId,
+    this.identityToken,
+    this.identityMode,
   });
 
   final String subthreadId;
@@ -107,6 +117,8 @@ class PostCreateInput {
   final String clientRequestId;
   final String? parentPostId;
   final String? replyToPostId;
+  final String? identityToken;
+  final PostIdentityMode? identityMode;
 }
 
 enum PostComposerKind { createFloor, createReply, editPost, upsertBody }

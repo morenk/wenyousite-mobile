@@ -242,6 +242,7 @@ class ApiThreadManagementRepository implements ThreadManagementRepository {
     }
     final body = defaultSubthread.bodyPost;
     return ThreadManagementSnapshot(
+      rpIdentityEnabled: dto.rpIdentityEnabled,
       id: dto.id,
       title: dto.title?.trim() ?? '',
       categorySlug: dto.category,

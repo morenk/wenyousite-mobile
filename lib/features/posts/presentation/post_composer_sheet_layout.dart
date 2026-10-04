@@ -80,6 +80,7 @@ class PostComposerEditorRegion extends StatelessWidget {
   const PostComposerEditorRegion({
     required this.editorSession,
     this.pendingImages,
+    this.mentionLabels = const {},
     required this.label,
     required this.placeholder,
     required this.threadId,
@@ -92,6 +93,7 @@ class PostComposerEditorRegion extends StatelessWidget {
 
   final RichEditorSession editorSession;
   final EditorPendingImages? pendingImages;
+  final Map<String, String> mentionLabels;
   final String label;
   final String placeholder;
   final String threadId;
@@ -138,6 +140,7 @@ class PostComposerEditorRegion extends StatelessWidget {
                             customLeadingBlockBuilder:
                                 wenyouEditorLeadingBlockBuilder(context),
                             embedBuilders: wenyouEditorEmbedBuilders(
+                              mentionLabels: mentionLabels,
                               mediaDisplays: editorSession.mediaDisplays,
                               pendingImages: pendingImages,
                             ),

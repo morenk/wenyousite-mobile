@@ -1,8 +1,10 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
+import 'package:wenyousite_mobile/core/application/visibility_cache_invalidation.dart';
 import 'package:wenyousite_mobile/core/diagnostics/debug_diagnostic_console.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/discussion_author_filter_restore.dart';
@@ -25,6 +27,7 @@ import 'package:wenyousite_mobile/features/posts/presentation/post_composer_shee
 import 'package:wenyousite_mobile/features/reports/domain/report_models.dart';
 import 'package:wenyousite_mobile/features/reports/presentation/report_widgets.dart';
 import 'package:wenyousite_mobile/features/social/application/thread_subscription_controller.dart';
+import 'package:wenyousite_mobile/features/thread_identity/identity_widgets.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_detail_controller.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_app_bar_actions.dart';
@@ -241,6 +244,14 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
       unawaited(ref.read(provider.notifier).retryFloors());
     });
     final state = ref.watch(provider);
+    ref.listen(provider.select((value) => value.detail?.rpIdentityEnabled), (
+      previous,
+      next,
+    ) {
+      if (previous != null && next != null && previous != next) {
+        ref.read(visibilityCacheInvalidatorProvider)();
+      }
+    });
     _quickScroll.synchronize(
       contentRevision: (state.floors, state.selectedSubthread?.body),
       scope: (
@@ -619,6 +630,10 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
   }
 
   Future<void> _refreshDetail() async {
+    final selected = ref.read(_detailProvider).selectedSubthreadId;
+    if (selected != null) {
+      ref.invalidate(postFloorDiscussionAuthorsProvider(selected));
+    }
     final routeTarget = widget.entryTarget.postId;
     if (routeTarget != null && _navigation.targetId == null) {
       ref.invalidate(threadPostTargetProvider(routeTarget));
@@ -652,6 +667,8 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     required ThreadSubthreadModel? selectedSubthread,
   }) async {
     switch (action) {
+      case ThreadDetailAppBarAction.identity:
+        await showThreadIdentityEditor(context, widget.threadId);
       case ThreadDetailAppBarAction.editBody:
         if (selectedSubthread != null) {
           await _compose(threadDetailBodyTarget(detail, selectedSubthread));
@@ -742,6 +759,8 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     final draftKey = postComposerDraftKey(target);
     final openedSessionScope = ref.read(sessionScopeProvider);
     final result = await showPostComposerSheet(
+      supportsRpIdentity:
+          ref.read(_detailProvider).detail?.supportsRpIdentity ?? false,
       context: context,
       target: target,
       initialDraft: _composerDrafts[draftKey],

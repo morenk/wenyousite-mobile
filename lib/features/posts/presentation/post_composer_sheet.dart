@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_capabilities.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/application/visibility_cache_invalidation.dart';
 import 'package:wenyousite_mobile/core/diagnostics/diagnostic_widgets.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
@@ -18,13 +19,19 @@ import 'package:wenyousite_mobile/features/editor/editor.dart';
 import 'package:wenyousite_mobile/features/media/presentation/editor_image_crop_dialog.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_composer_draft.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_controllers.dart';
+import 'package:wenyousite_mobile/features/posts/application/post_identity_selection.dart';
+import 'package:wenyousite_mobile/features/posts/application/post_publish_draft.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
 import 'package:wenyousite_mobile/features/posts/presentation/post_composer_diagnostics.dart';
-import 'package:wenyousite_mobile/features/posts/presentation/post_composer_expansion.dart';
+import 'package:wenyousite_mobile/features/posts/presentation/post_composer_host.dart';
 import 'package:wenyousite_mobile/features/posts/presentation/post_composer_opening.dart';
 import 'package:wenyousite_mobile/features/posts/presentation/post_composer_sheet_layout.dart';
+import 'package:wenyousite_mobile/features/posts/presentation/post_identity_composer_bar.dart';
+import 'package:wenyousite_mobile/features/posts/presentation/post_identity_confirmation.dart';
 import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
 import 'package:wenyousite_mobile/features/stickers/presentation/sticker_widgets.dart';
+import 'package:wenyousite_mobile/features/thread_identity/identity_ports.dart';
+import 'package:wenyousite_mobile/features/thread_identity/identity_widgets.dart';
 
 export 'package:wenyousite_mobile/features/posts/application/post_composer_draft.dart'
     show PostComposerDraft, setPostComposerDraft;
@@ -34,6 +41,7 @@ Future<PostItem?> showPostComposerSheet({
   required PostComposerTarget target,
   PostComposerDraft? initialDraft,
   ValueChanged<PostComposerDraft?>? onDraftChanged,
+  bool supportsRpIdentity = false,
 }) {
   return showWenyouComposerSheet<PostItem>(
     context: context,
@@ -42,7 +50,14 @@ Future<PostItem?> showPostComposerSheet({
       target: target,
       initialDraft: initialDraft,
       onDraftChanged: onDraftChanged,
-      builder: (context, composer) => _PostComposerRouteHost(
+      builder: (context, composer) => PostComposerRouteHost(
+        initialInsertion:
+            target.kind == PostComposerKind.createFloor ||
+                target.kind == PostComposerKind.createReply
+            ? target.initialContent
+            : null,
+        supportsRpIdentity: supportsRpIdentity,
+        publishDraft: composer.publishDraft,
         target: composer.target,
         baseline: composer.baseline,
         onDraftChanged: onDraftChanged,
@@ -60,76 +75,6 @@ String postComposerDraftKey(PostComposerTarget target) => [
   target.replyToPostId ?? '',
 ].join(':');
 
-class _PostComposerRouteHost extends StatefulWidget {
-  const _PostComposerRouteHost({
-    required this.target,
-    required this.baseline,
-    this.onDraftChanged,
-  });
-
-  final PostComposerTarget target;
-  final PostComposerBaseline baseline;
-  final ValueChanged<PostComposerDraft?>? onDraftChanged;
-
-  @override
-  State<_PostComposerRouteHost> createState() => _PostComposerRouteHostState();
-}
-
-class _PostComposerRouteHostState extends State<_PostComposerRouteHost> {
-  final _navigatorKey = GlobalKey<NavigatorState>();
-  final _composerKey = GlobalKey<_PostComposerSheetState>();
-  ModalRoute<Object?>? _outerRoute;
-  NavigatorState? _outerNavigator;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _outerRoute ??= ModalRoute.of(context);
-    _outerNavigator ??= Navigator.of(context);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return PopScope<Object?>(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, _) {
-        if (didPop) return;
-        final navigator = _navigatorKey.currentState;
-        if (navigator != null && navigator.canPop()) {
-          navigator.pop();
-          return;
-        }
-        _composerKey.currentState?.handleSystemBack();
-      },
-      child: Navigator(
-        key: _navigatorKey,
-        onGenerateRoute: (settings) => PageRouteBuilder<void>(
-          settings: settings,
-          opaque: false,
-          transitionDuration: Duration.zero,
-          reverseTransitionDuration: Duration.zero,
-          pageBuilder: (context, _, _) => ExpandablePostComposer(
-            target: widget.target,
-            baseline: widget.baseline,
-            onDraftChanged: widget.onDraftChanged,
-            composerKey: _composerKey,
-            onRequestClose: () =>
-                _composerKey.currentState?.requestCloseFromOutside(),
-            onClose: _close,
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _close(PostItem? result) {
-    final route = _outerRoute;
-    final navigator = _outerNavigator;
-    if (route == null || navigator == null || !route.isActive) return;
-    navigator.removeRoute<Object?>(route, result);
-  }
-}
-
 typedef PostComposerToolbarInteractionChanged =
     void Function(bool open, double requiredHeight);
 
@@ -139,6 +84,9 @@ class PostComposerSheet extends ConsumerStatefulWidget {
     required this.baseline,
     required this.onClose,
     this.onDraftChanged,
+    this.supportsRpIdentity = false,
+    this.publishDraft,
+    this.initialInsertion,
     this.expanded = false,
     this.onResize,
     this.onToggleExpanded,
@@ -149,6 +97,9 @@ class PostComposerSheet extends ConsumerStatefulWidget {
   });
 
   final PostComposerTarget target;
+  final bool supportsRpIdentity;
+  final PostPublishDraft? publishDraft;
+  final String? initialInsertion;
   final PostComposerBaseline baseline;
   final ValueChanged<PostItem?> onClose;
   final ValueChanged<PostComposerDraft?>? onDraftChanged;
@@ -160,10 +111,10 @@ class PostComposerSheet extends ConsumerStatefulWidget {
   final ValueChanged<bool>? onDismissEnabledChanged;
 
   @override
-  ConsumerState<PostComposerSheet> createState() => _PostComposerSheetState();
+  ConsumerState<PostComposerSheet> createState() => PostComposerSheetState();
 }
 
-class _PostComposerSheetState extends ConsumerState<PostComposerSheet>
+class PostComposerSheetState extends ConsumerState<PostComposerSheet>
     with WidgetsBindingObserver {
   late final RichEditorSession _editorSession;
   late final Object _openedSessionScope;
@@ -178,7 +129,9 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet>
   int _toolbarInteractionGeneration = 0;
   int _minimumHeightGeneration = 0;
   late final EditorPendingImages _pendingImages;
+  PostIdentitySelection? _identitySelection;
   bool _publishing = false;
+  bool _initializingDraft = true;
   final _diagnostics = PostComposerDiagnostics();
   final Object _contentDraftSessionKey = Object();
 
@@ -189,6 +142,17 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _openedSessionScope = ref.read(sessionScopeProvider);
+    if (widget.supportsRpIdentity && widget.target.postId == null) {
+      _identitySelection = PostIdentitySelection(
+        ref.read(threadIdentityRepositoryProvider),
+        widget.target.threadId,
+      );
+      _identitySelection!.restore(
+        selected: widget.publishDraft?.mode,
+        token: widget.publishDraft?.identityToken,
+      );
+      _identitySelection!.addListener(_onIdentityChanged);
+    }
     _editorSession = RichEditorSession(
       initialMarkdown: widget.target.initialContent,
       initialMediaDisplays: widget.baseline.mediaDisplays,
@@ -212,14 +176,30 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet>
       },
     )..addListener(_onEditorSessionChanged);
     _pendingImages = EditorPendingImages(
+      captureMetadata: () => _publishDraft().toJson(),
+      restoreMetadata: (value) {
+        final restored = PostPublishDraft.fromJson(value);
+        if (restored == null) return;
+        _identitySelection?.restore(
+          selected: restored.mode,
+          token: restored.identityToken,
+        );
+        if (restored.pending case final pending?) {
+          ref
+              .read(postComposerControllerProvider(widget.target).notifier)
+              .restorePendingCreate(pending);
+        }
+      },
       ref: ref,
       editor: _editorSession,
       target: 'post:${postComposerDraftKey(widget.target)}',
-      baseline: jsonEncode([
-        widget.baseline.postId,
-        widget.baseline.version,
-        widget.baseline.content,
-      ]),
+      baseline: widget.target.postId == null
+          ? null
+          : jsonEncode([
+              widget.baseline.postId,
+              widget.baseline.version,
+              widget.baseline.content,
+            ]),
       confirmRestore: () async => await showWenyouConfirmationDialog(
         context: context,
         title: '正文已有更新',
@@ -231,8 +211,38 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet>
       ),
     )..addListener(_onPendingImagesChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) unawaited(_pendingImages.restore());
+      if (mounted) {
+        unawaited(_restoreWithInsertion());
+      }
     });
+  }
+
+  Future<void> _restoreWithInsertion() async {
+    try {
+      if (widget.publishDraft?.pending case final pending?) {
+        ref
+            .read(postComposerControllerProvider(widget.target).notifier)
+            .restorePendingCreate(pending);
+      }
+      await _pendingImages.restore();
+      if (!mounted || _pendingImages.saveFailure != null) return;
+      final state = ref.read(postComposerControllerProvider(widget.target));
+      final restoredContent = _editorSession.localMarkdown;
+      final content = mergePostComposerInsertion(
+        content: restoredContent,
+        insertion: widget.initialInsertion,
+        pending: state.hasAmbiguousCreate,
+      );
+      if (content != restoredContent) {
+        _editorSession.applyExternalMarkdown(content);
+        if (!_pendingImages.hasPending) {
+          _editorSession.onMarkdownChanged(content);
+        }
+      }
+      await _identitySelection?.refresh();
+    } finally {
+      if (mounted) setState(() => _initializingDraft = false);
+    }
   }
 
   @override
@@ -256,6 +266,7 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet>
       ..removeListener(_onEditorSessionChanged)
       ..dispose();
     _toolbarController.dispose();
+    _identitySelection?.dispose();
     super.dispose();
   }
 
@@ -278,7 +289,10 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet>
     );
     final tokens = context.wenyouTokens;
     final locked =
-        state.isSubmitting || _publishing || _pendingImages.restoring;
+        state.isSubmitting ||
+        _publishing ||
+        _pendingImages.restoring ||
+        _initializingDraft;
     final hasSupportContent =
         state.failure != null ||
         state.hasAmbiguousCreate ||
@@ -288,7 +302,7 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet>
         _pendingImages.waitingToPublish;
     _scheduleMinimumHeightCheck(hasSupportContent);
     _reportDismissEnabled(!state.isSubmitting && !_closing && !_preparingClose);
-    _editorSession.readOnly = locked;
+    _editorSession.readOnly = locked || state.hasAmbiguousCreate;
     return KeyedSubtree(
       key: const Key('post-composer-sheet'),
       child: Column(
@@ -302,6 +316,12 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet>
             onToggleExpanded: widget.onToggleExpanded,
           ),
           const Divider(height: 1),
+          if (_identitySelection case final selection?)
+            PostIdentityComposerBar(
+              selection: selection,
+              locked: locked || state.hasAmbiguousCreate,
+              onSettings: _editIdentity,
+            ),
           if (state.failure != null)
             Padding(
               padding: EdgeInsets.fromLTRB(
@@ -312,13 +332,27 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet>
               ),
               child: WenyouStatusBanner(
                 key: const Key('post-composer-failure'),
-                message: state.failure!.userMessage,
+                message: state.failure!.reason == FailureReason.localPersistence
+                    ? '本机草稿保存失败，尚未发表，请重试。'
+                    : state.failure!.userMessage,
                 detail: _requestDetail(state.failure),
                 tone: WenyouStatusTone.error,
                 action: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     CopyDiagnosticButton(failure: state.failure),
+                    if (state.failure?.businessCode == 40002 &&
+                        widget.target.kind == PostComposerKind.upsertBody &&
+                        widget.target.postId == null)
+                      TextButton(
+                        onPressed: locked
+                            ? null
+                            : () {
+                                ref.read(visibilityCacheInvalidatorProvider)();
+                                unawaited(_requestClose());
+                              },
+                        child: const Text('保留草稿并查看已有正文'),
+                      ),
                     if (state.conflict != null)
                       TextButton.icon(
                         key: const Key('post-composer-retry-conflict'),
@@ -338,9 +372,13 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet>
                 tokens.space12,
                 0,
               ),
-              child: const WenyouStatusBanner(
-                message: '上次发布失败。',
-                detail: '再次提交会先确认上次结果，不会重复发布；之后再保存本次修改。',
+              child: WenyouStatusBanner(
+                message: '本次发表需要确认。',
+                detail: '正文和身份已保留。重试会确认同一次发表，不会重复发布。',
+                action: TextButton(
+                  onPressed: locked ? null : _submit,
+                  child: const Text('重试确认发表'),
+                ),
               ),
             ),
           if (_editorSession.codecFailure != null)
@@ -388,12 +426,13 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet>
             ),
           EditorPublishWaiting(images: _pendingImages),
           PostComposerEditorRegion(
+            mentionLabels: widget.baseline.mentionLabels,
             editorSession: _editorSession,
             pendingImages: _pendingImages,
             label: widget.target.label,
             placeholder: _placeholder(widget.target.kind),
             threadId: widget.target.threadId,
-            locked: locked,
+            locked: locked || state.hasAmbiguousCreate,
             canvasMeasureKey: _canvasMeasureKey,
             toolbarMeasureKey: _toolbarMeasureKey,
             toolbar: WenyouComposerDock(
@@ -408,7 +447,10 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet>
                 imageAlignment: _editorSession.imageAlignment,
               ),
               surface: WenyouComposerSurface.expandableSheet,
-              enabled: !locked && _editorSession.codecFailure == null,
+              enabled:
+                  !locked &&
+                  !state.hasAmbiguousCreate &&
+                  _editorSession.codecFailure == null,
               editorFocusNode: _editorSession.focusNode,
               onInsertImage: _insertImage,
               onInsertHorizontalRule: _editorSession.insertHorizontalRule,
@@ -423,6 +465,8 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet>
               isSubmitting: state.isSubmitting || _publishing,
               submitLabel: _publishing
                   ? '正在发布…'
+                  : state.hasAmbiguousCreate
+                  ? '重试确认发表'
                   : _submitLabel(widget.target.kind),
               characterCount: _editorSession.characterCount,
               characterLimit: 10000,
@@ -556,13 +600,49 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet>
       return;
     }
     _pendingImages.finishWaiting();
+    final controller = ref.read(
+      postComposerControllerProvider(widget.target).notifier,
+    );
+    final pending = ref
+        .read(postComposerControllerProvider(widget.target))
+        .pendingCreate;
+    final selection = _identitySelection;
+    if (pending == null && selection != null) {
+      if (!await confirmPostIdentity(context, selection)) return;
+      if (!mounted ||
+          _closing ||
+          ref.read(sessionScopeProvider) != _openedSessionScope) {
+        return;
+      }
+    }
     final result = await ref
         .read(postComposerControllerProvider(widget.target).notifier)
-        .submit();
+        .submit(
+          identityToken: _identitySelection?.acceptedToken,
+          identityMode: _identitySelection?.mode,
+          persistCreateIntent: _pendingImages.save,
+        );
     if (!mounted) return;
-    if (_closing ||
-        ref.read(sessionScopeProvider) != _openedSessionScope ||
-        result == null) {
+    if (result == null) {
+      await _pendingImages.save();
+      if (!mounted || _closing) return;
+      final code = ref
+          .read(postComposerControllerProvider(widget.target))
+          .failure
+          ?.businessCode;
+      if (code == 40011 && selection != null) {
+        if (await confirmPostIdentity(context, selection, force: true) &&
+            mounted) {
+          controller.confirmIdentityChange();
+          await _pendingImages.save();
+          if (mounted) showWenyouSnackBar(context, '身份已确认，请再次点击发表。');
+        }
+      } else if (code == 40012) {
+        showWenyouSnackBar(context, '提及对象已发生变化，请重新选择；草稿已保留。');
+      }
+      return;
+    }
+    if (_closing || ref.read(sessionScopeProvider) != _openedSessionScope) {
       return;
     }
     final cleaned = await _pendingImages.clear();
@@ -675,8 +755,41 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet>
 
   void _notifyDraft(String content) {
     widget.onDraftChanged?.call(
-      widget.baseline.draftFor(content, displays: _editorSession.mediaDisplays),
+      widget.baseline.draftFor(
+        content,
+        displays: _editorSession.mediaDisplays,
+        publishDraft:
+            _identitySelection != null ||
+                ref
+                        .read(postComposerControllerProvider(widget.target))
+                        .pendingCreate !=
+                    null
+            ? _publishDraft()
+            : null,
+      ),
     );
+  }
+
+  PostPublishDraft _publishDraft() => PostPublishDraft(
+    mode: _identitySelection?.mode,
+    identityToken: _identitySelection?.acceptedToken,
+    pending: ref
+        .read(postComposerControllerProvider(widget.target))
+        .pendingCreate,
+  );
+
+  void _onIdentityChanged() {
+    if (!mounted || _closing) return;
+    setState(() {});
+    _notifyDraft(
+      ref.read(postComposerControllerProvider(widget.target)).content,
+    );
+    unawaited(_pendingImages.save());
+  }
+
+  Future<void> _editIdentity() async {
+    await showThreadIdentityEditor(context, widget.target.threadId);
+    if (mounted && !_closing) await _identitySelection?.refresh();
   }
 
   Future<void> _openContentDrafts() async {

@@ -20,13 +20,15 @@ void main() {
       'owner',
       'collaborator',
       'player',
+      'participant',
     ]);
     expect(authors.map((author) => author.role), [
       PostDiscussionAuthorRole.owner,
       PostDiscussionAuthorRole.collaborator,
       PostDiscussionAuthorRole.player,
+      PostDiscussionAuthorRole.participant,
     ]);
-    expect(authors.any((author) => author.userId == 'participant'), isFalse);
+    expect(authors.any((author) => author.userId == 'participant'), isTrue);
     verify(
       () => api.postsFindFloorAuthors(subthreadId: 'subthread-1'),
     ).called(1);

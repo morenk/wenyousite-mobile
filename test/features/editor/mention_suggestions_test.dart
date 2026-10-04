@@ -13,6 +13,44 @@ import '../../support/deterministic_test_fonts.dart';
 void main() {
   setUpAll(loadDeterministicTestFonts);
 
+  testWidgets('长 RP 名称按 Unicode 字符查询并保留前文插入账号节点', (tester) async {
+    final nickname = '😀' * 24;
+    final repository = _FakeRepository(
+      result: MentionCandidatesResult(
+        users: [
+          MentionCandidate(
+            id: 'user-rp',
+            username: '真实账号',
+            rpNickname: nickname,
+            relation: MentionCandidateRelation.player,
+          ),
+        ],
+        canMentionAllPlayers: false,
+      ),
+    );
+    final controller = _controller('前面的正文 @$nickname');
+    final focusNode = FocusNode();
+    addTearDown(controller.dispose);
+    addTearDown(focusNode.dispose);
+    await _pumpPanel(
+      tester,
+      repository: repository,
+      controller: controller,
+      focusNode: focusNode,
+      threadId: 'thread-1',
+    );
+    await tester.pump(const Duration(milliseconds: 2));
+
+    expect(repository.queries, [('thread-1', nickname)]);
+    expect(find.text('真实账号 · 帖内玩家'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('mention-user-user-rp')));
+    await tester.pump();
+    expect(
+      MarkdownDeltaCodec.encode(controller.document.toDelta()),
+      '前面的正文 [@$nickname](/users/user-rp) ',
+    );
+  });
+
   testWidgets('输入 @ 后查询主题候选并插入规范用户节点', (tester) async {
     final repository = _FakeRepository(
       result: const MentionCandidatesResult(

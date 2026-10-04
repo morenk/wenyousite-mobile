@@ -42,6 +42,7 @@ class WenyouMarkdown extends StatefulWidget {
     required this.data,
     this.diceLabels = const {},
     this.mediaDisplays = const {},
+    this.mentionLabels = const {},
     this.diceSemantics = const {},
     this.diceDetails = const {},
     this.onInternalLink,
@@ -58,6 +59,7 @@ class WenyouMarkdown extends StatefulWidget {
 
   final String data;
   final Map<String, MediaDisplay> mediaDisplays;
+  final Map<String, String> mentionLabels;
   final Map<String, String> diceLabels;
   final Map<String, String> diceSemantics;
   final Map<String, WenyouDiceRollDetail> diceDetails;
@@ -82,6 +84,7 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
   bool get wantKeepAlive => _hasSelection;
   final _selectionAreaKey = GlobalKey<SelectionAreaState>();
   late final ValueNotifier<Map<String, String>> _diceLabels;
+  late final ValueNotifier<Map<String, String>> _mentionLabels;
   late final ValueNotifier<Map<String, String>> _diceSemantics;
   late final ValueNotifier<Map<String, WenyouDiceRollDetail>> _diceDetails;
   late String _normalizedData;
@@ -97,6 +100,7 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
   void initState() {
     super.initState();
     _diceLabels = ValueNotifier(Map.unmodifiable(widget.diceLabels));
+    _mentionLabels = ValueNotifier(Map.unmodifiable(widget.mentionLabels));
     _diceSemantics = ValueNotifier(Map.unmodifiable(widget.diceSemantics));
     _diceDetails = ValueNotifier(Map.unmodifiable(widget.diceDetails));
     _prepareData();
@@ -125,6 +129,9 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
     if (!mapEquals(oldWidget.mediaDisplays, widget.mediaDisplays)) {
       _renderedBody = null;
     }
+    if (!mapEquals(oldWidget.mentionLabels, widget.mentionLabels)) {
+      _mentionLabels.value = Map.unmodifiable(widget.mentionLabels);
+    }
     if (oldWidget.data != widget.data ||
         oldWidget.enablePlainTextFastPath != widget.enablePlainTextFastPath) {
       _prepareData();
@@ -148,6 +155,7 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
   void dispose() {
     _selectionScope?.update(this, false);
     _diceLabels.dispose();
+    _mentionLabels.dispose();
     _diceSemantics.dispose();
     _diceDetails.dispose();
     super.dispose();
@@ -378,6 +386,7 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
       ),
       'wenyou-mention': _MentionMarkdownBuilder(
         (location) => _openInternalLocation(context, location),
+        _mentionLabels,
       ),
       'code': _InlineCodeMarkdownBuilder(),
       'hr': _HorizontalRuleMarkdownBuilder(fontSize: widget.bodyFontSize),
@@ -540,7 +549,7 @@ bool _isUnambiguousPlainText(String data) {
 class _UserMentionInlineSyntax extends md.InlineSyntax {
   _UserMentionInlineSyntax()
     : super(
-        r'\[(@[^\]\r\n]{1,32})\]\(/users/([a-zA-Z0-9_-]+)\)',
+        r'\[(@[^\]\r\n]{1,48})\]\(/users/([a-zA-Z0-9_-]+)\)',
         startCharacter: 0x5b,
       );
 
@@ -566,9 +575,10 @@ class _AllPlayersMentionInlineSyntax extends md.InlineSyntax {
 }
 
 class _MentionMarkdownBuilder extends WenyouMarkdownInlineBuilder {
-  _MentionMarkdownBuilder(this.onTap);
+  _MentionMarkdownBuilder(this.onTap, this.labels);
 
   final ValueChanged<Uri> onTap;
+  final ValueListenable<Map<String, String>> labels;
 
   @override
   Widget? buildInlineContent(
@@ -576,19 +586,30 @@ class _MentionMarkdownBuilder extends WenyouMarkdownInlineBuilder {
     md.Element element,
     TextStyle? preferredStyle,
     TextStyle? parentStyle,
-  ) {
-    final label = element.textContent;
-    final style = preferredStyle ?? parentStyle;
-    final location = Uri.tryParse(element.attributes['location'] ?? '');
-    if (location == null || location.path.isEmpty) {
-      return WenyouMentionSurface(label: label, style: style);
-    }
-    return WenyouMentionLink(
-      label: label,
-      style: style,
-      onTap: () => onTap(location),
-    );
-  }
+  ) => ValueListenableBuilder<Map<String, String>>(
+    valueListenable: labels,
+    builder: (context, values, _) {
+      var label = element.textContent;
+      final style = preferredStyle ?? parentStyle;
+      final location = Uri.tryParse(element.attributes['location'] ?? '');
+      if (location != null &&
+          location.pathSegments.length == 2 &&
+          location.pathSegments.first == 'users' &&
+          label.startsWith('@')) {
+        final display =
+            values['${location.pathSegments.last}\u0000${label.substring(1)}'];
+        if (display != null) label = '@$display';
+      }
+      if (location == null || location.path.isEmpty) {
+        return WenyouMentionSurface(label: label, style: style);
+      }
+      return WenyouMentionLink(
+        label: label,
+        style: style,
+        onTap: () => onTap(location),
+      );
+    },
+  );
 }
 
 class _InlineCodeMarkdownBuilder extends WenyouMarkdownInlineBuilder {

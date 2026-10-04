@@ -11,8 +11,10 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/media/reading_gallery.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_controllers.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_discussion_author_directory_ports.dart';
+import 'package:wenyousite_mobile/features/posts/composer_targets.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_discussion_author.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
+import 'package:wenyousite_mobile/features/thread_identity/identity_widgets.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_detail_controller.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_overview.dart';
@@ -61,7 +63,7 @@ List<Widget> buildThreadDetailReadingSlivers(
       ? target
       : null;
   final displayedFloors = state.floors;
-  return [
+  final slivers = <Widget>[
     SliverToBoxAdapter(
       child: WenyouContentFrame(
         top: 8,
@@ -330,5 +332,34 @@ List<Widget> buildThreadDetailReadingSlivers(
         ),
       ),
     ],
+  ];
+  return [
+    for (final sliver in slivers)
+      ThreadIdentityReadingScope(
+        threadId: threadId,
+        available: detail.supportsRpIdentity,
+        ownerId: detail.owner.id,
+        onMention: selected == null
+            ? null
+            : (identity) {
+                if (!authenticated) {
+                  onRequireLogin();
+                  return;
+                }
+                onCompose(
+                  threadIdentityMentionTarget(
+                    threadDetailFloorTarget(detail, selected),
+                    identity,
+                  ),
+                );
+              },
+        onFilter: (userId) {
+          onFilterChanged?.call();
+          ref
+              .read(provider.notifier)
+              .applyFloorFilters(order: state.floorOrder, authorId: userId);
+        },
+        child: sliver,
+      ),
   ];
 }

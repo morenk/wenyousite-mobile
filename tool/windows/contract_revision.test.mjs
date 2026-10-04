@@ -24,6 +24,7 @@ test('固定部署祖先导出同一 SHA，拒绝远端 dev 以外提交且不�
     fs.copyFileSync(path.join(repository, 'contracts/app-download-gateway.md'), path.join(backend, 'docs/app-download-gateway.md'));
     fs.copyFileSync(path.join(repository, 'contracts/discussion-navigation.md'), path.join(backend, 'docs/discussion-navigation.md'));
     fs.copyFileSync(path.join(repository, 'contracts/media-display.md'), path.join(backend, 'docs/media-display.md'));
+    fs.copyFileSync(path.join(repository, 'contracts/thread-identity.md'), path.join(backend, 'docs/thread-identity.md'));
     git('init', '-b', 'dev');
     git('config', 'user.name', 'Contract fixture');
     git('config', 'user.email', 'fixture@example.invalid');
@@ -68,6 +69,8 @@ test('固定部署祖先导出同一 SHA，拒绝远端 dev 以外提交且不�
       'discussion-navigation.md',
       'mobile-release-operations.md',
       'app-download-gateway.md',
+      'thread-identity.md',
+      'thread-identity.v1.fixtures.json',
       'fixtures/media-display/duplicate-frames.gif',
       'fixtures/media-display/duplicate-frames.webp',
       'fixtures/media-display/manifest.json',

@@ -6,6 +6,8 @@ import 'package:wenyousite_mobile/features/posts/application/post_composer_draft
 import 'package:wenyousite_mobile/features/posts/application/post_repository_ports.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
 import 'package:wenyousite_mobile/features/posts/presentation/post_composer_opening.dart';
+import 'package:wenyousite_mobile/features/thread_identity/identity_models.dart';
+
 import '../../support/discussion_window_fixture.dart';
 
 void main() {
@@ -262,5 +264,7 @@ class _FakePostRepository with PostWindowFixture implements PostRepository {
     required String subthreadId,
     required String content,
     int? version,
+    String? identityToken,
+    PostIdentityMode? identityMode,
   }) => throw UnimplementedError();
 }

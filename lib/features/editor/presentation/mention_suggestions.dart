@@ -195,10 +195,9 @@ class _MentionSuggestionsState extends ConsumerState<MentionSuggestions> {
   }
 
   ActiveMentionQuery? _detectQueryAt(int cursor) {
-    // A valid query contains at most 24 characters. Reading one extra
-    // character before `@` is enough to validate the boundary without
-    // materializing the complete document for every key event.
-    final windowStart = cursor > 26 ? cursor - 26 : 0;
+    // 24 个 Unicode 字符最多占 48 个 UTF-16 单元，另保留 @ 和前边界。
+    // 只读取末尾窗口，避免每次输入都展开整篇正文。
+    final windowStart = cursor > 50 ? cursor - 50 : 0;
     final text = widget.controller.document.getPlainText(
       windowStart,
       cursor - windowStart,
@@ -503,7 +502,12 @@ class _MentionResults extends StatelessWidget {
             minTileHeight: context.wenyouTokens.minimumTouchTarget,
             leading: const WenyouIcon(WenyouIconIds.actionMention),
             title: Text(candidate.label),
-            trailing: Text(candidate.relationLabel),
+            subtitle: candidate.rpNickname == null
+                ? null
+                : Text(candidate.supportingLabel),
+            trailing: candidate.rpNickname == null
+                ? Text(candidate.relationLabel)
+                : null,
             onTap: () => onUser(candidate),
           );
         },

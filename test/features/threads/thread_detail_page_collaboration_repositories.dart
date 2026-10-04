@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/network/session_remote.dart';
@@ -13,7 +14,9 @@ import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
 import 'package:wenyousite_mobile/features/social/data/thread_interaction_repository.dart';
 import 'package:wenyousite_mobile/features/social/data/thread_subscription_repository.dart';
 import 'package:wenyousite_mobile/features/social/domain/thread_subscription_models.dart';
+import 'package:wenyousite_mobile/features/thread_identity/identity_models.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.dart';
+
 import '../../support/discussion_window_fixture.dart';
 import 'thread_detail_page_content_fixtures.dart';
 
@@ -390,6 +393,8 @@ class ThreadDetailPageTestFakePostRepository
     required String subthreadId,
     required String content,
     int? version,
+    String? identityToken,
+    PostIdentityMode? identityMode,
   }) => throw UnsupportedError('unused');
 }
 
@@ -450,6 +455,8 @@ class ThreadDetailPageTestCreatingPostRepository
     required String subthreadId,
     required String content,
     int? version,
+    String? identityToken,
+    PostIdentityMode? identityMode,
   }) => throw UnsupportedError('unused');
 }
 

@@ -6,6 +6,7 @@ import 'package:wenyousite_mobile/core/network/media_display_mapper.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/social/application/thread_subscription_repository_ports.dart';
 import 'package:wenyousite_mobile/features/social/domain/thread_subscription_models.dart';
+import 'package:wenyousite_mobile/features/thread_identity/identity_mapping.dart';
 
 export 'package:wenyousite_mobile/features/social/application/thread_subscription_repository_ports.dart'
     show ThreadSubscriptionRepository, threadSubscriptionRepositoryProvider;
@@ -63,6 +64,7 @@ class ApiThreadSubscriptionRepository implements ThreadSubscriptionRepository {
                 member.user.avatarDisplay,
               ),
               level: member.user.level.toInt(),
+              rpIdentity: mapRpIdentity(member.user.rpIdentity),
             ),
           )
           .toList(growable: false);

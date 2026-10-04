@@ -1,21 +1,28 @@
-enum MentionCandidateRelation { following, player }
+enum MentionCandidateRelation { following, player, owner, collaborator }
 
 class MentionCandidate {
   const MentionCandidate({
     required this.id,
     required this.username,
     required this.relation,
+    this.rpNickname,
   });
 
   final String id;
   final String username;
   final MentionCandidateRelation relation;
+  final String? rpNickname;
 
-  String get label => '@$username';
+  String get displayName => rpNickname ?? username;
+  String get label => '@$displayName';
+  String get supportingLabel =>
+      rpNickname == null ? relationLabel : '$username · $relationLabel';
 
   String get relationLabel => switch (relation) {
     MentionCandidateRelation.following => '我关注的人',
     MentionCandidateRelation.player => '帖内玩家',
+    MentionCandidateRelation.owner => '楼主',
+    MentionCandidateRelation.collaborator => '协作者',
   };
 }
 
@@ -57,21 +64,26 @@ class ActiveMentionQuery {
   int get hashCode => Object.hash(start, end, query);
 }
 
-final _mentionQueryPattern = RegExp(r'^[A-Za-z0-9\u4e00-\u9fff]{0,24}$');
+final _mentionQueryPattern = RegExp(r'^[^\[\]\\<>\x00-\x1f\x7f]{0,48}$');
 final _mentionWordPattern = RegExp(r'[A-Za-z0-9\u4e00-\u9fff]');
 
 ActiveMentionQuery? detectActiveMentionQuery(String plainText, int cursor) {
   if (cursor < 0 || cursor > plainText.length) return null;
   final prefix = plainText.substring(0, cursor);
-  final at = prefix.lastIndexOf('@');
-  if (at < 0) return null;
-  if (at > 0) {
-    final previous = prefix[at - 1];
-    if (previous == r'\' || _mentionWordPattern.hasMatch(previous)) {
-      return null;
-    }
-  }
+  final starts = RegExp('@')
+      .allMatches(prefix)
+      .map((match) => match.start)
+      .where(
+        (at) =>
+            at == 0 ||
+            (prefix[at - 1] != r'\' &&
+                !_mentionWordPattern.hasMatch(prefix[at - 1])),
+      );
+  if (starts.isEmpty) return null;
+  final at = starts.last;
   final query = prefix.substring(at + 1);
-  if (!_mentionQueryPattern.hasMatch(query)) return null;
+  if (!_mentionQueryPattern.hasMatch(query) || query.runes.length > 24) {
+    return null;
+  }
   return ActiveMentionQuery(start: at, end: cursor, query: query);
 }

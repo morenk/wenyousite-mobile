@@ -9,7 +9,7 @@ class MarkdownContent {
   static final _emptyImage = RegExp(r'!\[[^\]]*\]\(\s*\)');
   static final _emptyLink = RegExp(r'\[[^\]]*\]\(\s*\)');
   static final _image = RegExp(r'!\[[^\]]*\]\(\s*[^)\s]+[^)]*\)');
-  static final _link = RegExp(r'\[([^\]]+)\]\(\s*[^)\s]+[^)]*\)');
+  static final _link = RegExp(r'\[([^\]]+)\]\(\s*([^)\s]+)[^)]*\)');
   static final _httpAutolink = RegExp(
     r'<https?://[^\s<>]+>',
     caseSensitive: false,
@@ -596,7 +596,11 @@ class MarkdownContent {
   static bool isSafeImage(Uri uri) =>
       uri.scheme == 'https' || uri.scheme == 'http';
 
-  static String toPlainTextPreview(String markdown, {int maxLength = 180}) {
+  static String toPlainTextPreview(
+    String markdown, {
+    int maxLength = 180,
+    Map<String, String> mentionLabels = const {},
+  }) {
     if (maxLength <= 0) return '';
     final visible =
         MarkdownAlignmentContract.removeMarkerLines(normalize(markdown))
@@ -605,7 +609,18 @@ class MarkdownContent {
               (match) => '[${match.group(1)!.trim()}]',
             )
             .replaceAll(_previewImage, '[图片]')
-            .replaceAllMapped(_link, (match) => match.group(1) ?? '[链接]')
+            .replaceAllMapped(_link, (match) {
+              final label = match.group(1)!;
+              final path = match.group(2)!;
+              if (label.startsWith('@') &&
+                  RegExp(r'^/users/[a-zA-Z0-9_-]+$').hasMatch(path)) {
+                final userId = path.substring('/users/'.length);
+                final display =
+                    mentionLabels['$userId\u0000${label.substring(1)}'];
+                if (display != null) return '@$display';
+              }
+              return label;
+            })
             .replaceAll(_httpAutolink, '[链接]')
             .replaceAll(_previewUrl, '[链接]')
             .replaceAll(_html, ' ')

@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/models/discussion_window.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
+import 'package:wenyousite_mobile/features/thread_identity/identity_models.dart';
 
 abstract interface class PostRepository {
   Future<DiscussionWindow<PostItem>> fetchReplyWindow({
@@ -35,6 +36,8 @@ abstract interface class PostRepository {
     required String subthreadId,
     required String content,
     int? version,
+    String? identityToken,
+    PostIdentityMode? identityMode,
   });
 
   Future<void> remove(String postId);
@@ -91,6 +94,8 @@ class _UnboundPostRepository implements PostRepository {
     required String subthreadId,
     required String content,
     int? version,
+    String? identityToken,
+    PostIdentityMode? identityMode,
   }) {
     return Future.error(_error());
   }

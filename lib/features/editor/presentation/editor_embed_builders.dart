@@ -18,9 +18,10 @@ import 'package:wenyousite_mobile/features/editor/presentation/editor_pending_im
 List<EmbedBuilder> wenyouEditorEmbedBuilders({
   Map<String, MediaDisplay> mediaDisplays = const {},
   EditorPendingImages? pendingImages,
+  Map<String, String> mentionLabels = const {},
 }) => [
   _InternalReferenceEmbedBuilder(),
-  _MentionEmbedBuilder(),
+  _MentionEmbedBuilder(mentionLabels),
   _DiceEmbedBuilder(),
   _StickerEmbedBuilder(mediaDisplays),
   _ImageEmbedBuilder(mediaDisplays, pendingImages),
@@ -79,7 +80,8 @@ Map<String, dynamic>? _payload(EmbedContext context) {
 }
 
 class _MentionEmbedBuilder extends EmbedBuilder {
-  const _MentionEmbedBuilder();
+  const _MentionEmbedBuilder(this.mentionLabels);
+  final Map<String, String> mentionLabels;
 
   @override
   String get key => MarkdownDeltaCodec.mentionEmbed;
@@ -103,12 +105,16 @@ class _MentionEmbedBuilder extends EmbedBuilder {
   @override
   Widget build(BuildContext context, EmbedContext embedContext) {
     final payload = _payload(embedContext);
+    final original = payload?['label']?.toString() ?? '@用户';
+    final label = original.startsWith('@') ? original.substring(1) : original;
+    final projected = mentionLabels['${payload?['userId']}\u0000$label'];
+    final display = projected == null ? original : '@$projected';
     return Semantics(
       key: const Key('editor-mention'),
-      label: '提及 ${payload?['label'] ?? '用户'}',
+      label: '提及 $display',
       excludeSemantics: true,
       child: WenyouMentionSurface(
-        label: payload?['label']?.toString() ?? '@用户',
+        label: display,
         style: embedContext.textStyle,
       ),
     );

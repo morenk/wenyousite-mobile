@@ -56,6 +56,15 @@ class ApiFailure implements Exception {
         diagnosticCode: diagnosticCode,
       );
 
+  /// 写请求发出前，本地持久化失败；远端尚未接收操作。
+  const ApiFailure.localWrite({required String diagnosticCode})
+    : this(
+        source: FailureSource.device,
+        reason: FailureReason.localPersistence,
+        recoveryAction: FailureRecoveryAction.retry,
+        diagnosticCode: diagnosticCode,
+      );
+
   factory ApiFailure.contractViolation({
     required String userMessage,
     required String diagnosticCode,

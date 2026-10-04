@@ -183,6 +183,14 @@ class _MemberRow extends ConsumerWidget {
                             style: Theme.of(context).textTheme.wenyouRowTitle,
                           ),
                           SizedBox(height: tokens.space4),
+                          if (member.rpNickname case final nickname?)
+                            Text(
+                              '帖内身份：$nickname',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.wenyouCaption
+                                  .copyWith(color: tokens.mutedText),
+                            ),
                           Text(
                             'Lv.${member.level} · ${member.role.label} · '
                             '${member.playerMarked ? '玩家' : '非玩家'}',

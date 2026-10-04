@@ -48,7 +48,7 @@ class MarkdownDeltaCodec {
   static const _stickerPrefix = 'wenyousite-sticker:v1:';
 
   static final _mention = RegExp(
-    r'^\[(@[^\]\r\n]{1,32})\]\(/users/([a-zA-Z0-9_-]+)\)',
+    r'^\[(@[^\]\r\n]{1,48})\]\(/users/([a-zA-Z0-9_-]+)\)',
   );
   static final _dice = MarkdownDiceContract.nodeAtStart;
   static final _image = RegExp(

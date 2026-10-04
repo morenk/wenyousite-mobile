@@ -1,4 +1,5 @@
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
+import 'package:wenyousite_mobile/features/thread_identity/identity_ports.dart';
 
 PostComposerTarget postReplyTarget(PostItem root, PostItem target) {
   return (
@@ -10,7 +11,7 @@ PostComposerTarget postReplyTarget(PostItem root, PostItem target) {
     replyToPostId: target.id,
     version: null,
     initialContent: '',
-    label: '回复 @${target.author.username}',
+    label: '回复 @${target.author.displayName}',
   );
 }
 
@@ -27,3 +28,18 @@ PostComposerTarget postEditTarget(PostItem post, String label) {
     label: label,
   );
 }
+
+PostComposerTarget threadIdentityMentionTarget(
+  PostComposerTarget target,
+  ThreadIdentityState identity,
+) => (
+  kind: target.kind,
+  threadId: target.threadId,
+  subthreadId: target.subthreadId,
+  postId: target.postId,
+  parentPostId: target.parentPostId,
+  replyToPostId: target.replyToPostId,
+  version: target.version,
+  initialContent: '[@${identity.displayName}](/users/${identity.userId}) ',
+  label: '提及 @${identity.displayName}',
+);

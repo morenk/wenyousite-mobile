@@ -1,3 +1,5 @@
+import 'package:wenyousite_mobile/features/thread_identity/identity_models.dart';
+
 enum ThreadSubscriptionType { thread, user }
 
 class ThreadSubscriptionRecord {
@@ -22,10 +24,16 @@ class ThreadSubscriptionCandidate {
     required this.username,
     required this.level,
     this.avatarUrl,
+    this.rpIdentity,
   });
 
   final String userId;
   final String username;
   final int level;
   final String? avatarUrl;
+  final RpIdentity? rpIdentity;
+
+  String get displayName => rpIdentity?.nickname ?? username;
+  String? get displayAvatarUrl =>
+      rpIdentity == null ? avatarUrl : rpIdentity!.avatarUrl;
 }

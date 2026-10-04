@@ -44,6 +44,10 @@ class ApiMentionCandidateRepository implements MentionCandidateRepository {
             MentionCandidateRelation.following,
           MentionCandidateDtoRelationEnum.PLAYER =>
             MentionCandidateRelation.player,
+          MentionCandidateDtoRelationEnum.OWNER =>
+            MentionCandidateRelation.owner,
+          MentionCandidateDtoRelationEnum.COLLABORATOR =>
+            MentionCandidateRelation.collaborator,
           _ => null,
         };
         if (relation == null ||
@@ -57,6 +61,7 @@ class ApiMentionCandidateRepository implements MentionCandidateRepository {
             id: candidate.id,
             username: candidate.username,
             relation: relation,
+            rpNickname: candidate.rpIdentity?.nickname,
           ),
         );
       }

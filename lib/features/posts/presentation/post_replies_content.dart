@@ -29,6 +29,7 @@ import 'package:wenyousite_mobile/features/posts/presentation/post_reply_filters
 import 'package:wenyousite_mobile/features/reports/domain/report_models.dart';
 import 'package:wenyousite_mobile/features/reports/reports.dart';
 import 'package:wenyousite_mobile/features/stickers/stickers.dart';
+import 'package:wenyousite_mobile/features/thread_identity/identity_widgets.dart';
 
 class PostDiscussionList extends StatelessWidget {
   const PostDiscussionList({
@@ -54,6 +55,8 @@ class PostDiscussionList extends StatelessWidget {
     required this.onCompose,
     required this.onDelete,
     required this.onTogglePin,
+    this.supportsRpIdentity = false,
+    this.ownerId,
     super.key,
   });
 
@@ -79,6 +82,8 @@ class PostDiscussionList extends StatelessWidget {
   final ValueChanged<PostComposerTarget> onCompose;
   final void Function(PostItem post, bool root) onDelete;
   final ValueChanged<PostItem> onTogglePin;
+  final bool supportsRpIdentity;
+  final String? ownerId;
 
   @override
   Widget build(BuildContext context) {
@@ -152,139 +157,155 @@ class PostDiscussionList extends StatelessWidget {
         SizedBox(height: tokens.space12),
       ],
     ];
-    return CustomScrollView(
-      key: const Key('post-replies-list'),
-      controller: scrollController,
-      scrollCacheExtent: discussionScrollCacheExtent,
-      physics: ReadingQuickScrollPhysics(
-        controller: quickScroll,
-        parent: const AlwaysScrollableScrollPhysics(),
-      ),
-      slivers: [
-        SliverPadding(
-          padding: EdgeInsets.fromLTRB(
-            horizontal,
-            tokens.space8,
-            horizontal,
-            0,
-          ),
-          sliver: SliverList.list(
-            children: [
-              for (final child in leadingWidgets)
-                WenyouConstrainedWidth(child: child),
-            ],
-          ),
+    return ThreadIdentityReadingScope(
+      threadId: root.threadId,
+      available: supportsRpIdentity,
+      ownerId: ownerId,
+      onMention: authenticated
+          ? (identity) => onCompose(
+              threadIdentityMentionTarget(
+                postReplyTarget(root, root),
+                identity,
+              ),
+            )
+          : null,
+      onFilter: onAuthorChanged,
+      child: CustomScrollView(
+        key: const Key('post-replies-list'),
+        controller: scrollController,
+        scrollCacheExtent: discussionScrollCacheExtent,
+        physics: ReadingQuickScrollPhysics(
+          controller: quickScroll,
+          parent: const AlwaysScrollableScrollPhysics(),
         ),
-        if (state.replies.isEmpty)
+        slivers: [
           SliverPadding(
-            padding: EdgeInsets.symmetric(horizontal: horizontal),
-            sliver: const SliverToBoxAdapter(
-              child: WenyouConstrainedWidth(
-                child: WenyouEmptyState(
-                  icon: WenyouIconIds.metricReplies,
-                  title: '还没有回复',
+            padding: EdgeInsets.fromLTRB(
+              horizontal,
+              tokens.space8,
+              horizontal,
+              0,
+            ),
+            sliver: SliverList.list(
+              children: [
+                for (final child in leadingWidgets)
+                  WenyouConstrainedWidth(child: child),
+              ],
+            ),
+          ),
+          if (state.replies.isEmpty)
+            SliverPadding(
+              padding: EdgeInsets.symmetric(horizontal: horizontal),
+              sliver: const SliverToBoxAdapter(
+                child: WenyouConstrainedWidth(
+                  child: WenyouEmptyState(
+                    icon: WenyouIconIds.metricReplies,
+                    title: '还没有回复',
+                  ),
+                ),
+              ),
+            )
+          else
+            SliverPadding(
+              padding: EdgeInsets.symmetric(horizontal: horizontal),
+              sliver: DiscussionSliverList(
+                key: itemListKey,
+                scope: (root.id, state.order, state.authorId),
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                    final reply = state.replies[index];
+                    return KeyedSubtree(
+                      key: ValueKey('post-reply-item-${reply.id}'),
+                      child: WenyouConstrainedWidth(
+                        child: Column(
+                          children: [
+                            if (index > 0)
+                              WenyouContentItemDivider(
+                                key: ValueKey('post-reply-divider-${reply.id}'),
+                              ),
+                            ReadingPositionAnchor(
+                              controller: quickScroll,
+                              postId: reply.id,
+                              number: reply.replyNumber,
+                              label: reply.replyNumber == null
+                                  ? '${reply.author.displayName}的回复附近'
+                                  : '第 ${reply.replyNumber} 条回复附近',
+                              child: _PostCard(
+                                key: Key('post-reply-${reply.id}'),
+                                post: reply,
+                                galleryTarget: ReadingGalleryTarget(
+                                  scope: ReadingGalleryScope.postReplies,
+                                  scopeId: root.id,
+                                  authorId: state.authorId,
+                                  order: state.order == PostReplyOrder.newest
+                                      ? ReadingGalleryOrder.newest
+                                      : ReadingGalleryOrder.oldest,
+                                ),
+                                timeReference: timeReference,
+                                focused: reply.id == focusedReplyId,
+                                targetFrameKey: reply.id == focusedReplyId
+                                    ? targetKey
+                                    : null,
+                                canEdit: reply.isAuthoredBy(viewerId),
+                                canDelete:
+                                    reply.isAuthoredBy(viewerId) ||
+                                    canManageThread,
+                                pending: actions.pendingPostId == reply.id,
+                                reportReturnTo:
+                                    canReport &&
+                                        !reply.isDeleted &&
+                                        !reply.isAuthoredBy(viewerId)
+                                    ? _reportLocation(root, reply.id)
+                                    : null,
+                                onReply: authenticated
+                                    ? () => onCompose(
+                                        postReplyTarget(root, reply),
+                                      )
+                                    : null,
+                                onEdit: () =>
+                                    onCompose(postEditTarget(reply, '编辑回复')),
+                                onDelete: () => onDelete(reply, false),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                  childCount: state.replies.length,
+                  findChildIndexCallback: (key) {
+                    final value = key is ValueKey<String> ? key.value : null;
+                    if (value == null ||
+                        !value.startsWith('post-reply-item-')) {
+                      return null;
+                    }
+                    final replyId = value.substring('post-reply-item-'.length);
+                    final index = state.replies.indexWhere(
+                      (reply) => reply.id == replyId,
+                    );
+                    return index < 0 ? null : index;
+                  },
                 ),
               ),
             ),
-          )
-        else
           SliverPadding(
-            padding: EdgeInsets.symmetric(horizontal: horizontal),
-            sliver: DiscussionSliverList(
-              key: itemListKey,
-              scope: (root.id, state.order, state.authorId),
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  final reply = state.replies[index];
-                  return KeyedSubtree(
-                    key: ValueKey('post-reply-item-${reply.id}'),
-                    child: WenyouConstrainedWidth(
-                      child: Column(
-                        children: [
-                          if (index > 0)
-                            WenyouContentItemDivider(
-                              key: ValueKey('post-reply-divider-${reply.id}'),
-                            ),
-                          ReadingPositionAnchor(
-                            controller: quickScroll,
-                            postId: reply.id,
-                            number: reply.replyNumber,
-                            label: reply.replyNumber == null
-                                ? '${reply.author.username}的回复附近'
-                                : '第 ${reply.replyNumber} 条回复附近',
-                            child: _PostCard(
-                              key: Key('post-reply-${reply.id}'),
-                              post: reply,
-                              galleryTarget: ReadingGalleryTarget(
-                                scope: ReadingGalleryScope.postReplies,
-                                scopeId: root.id,
-                                authorId: state.authorId,
-                                order: state.order == PostReplyOrder.newest
-                                    ? ReadingGalleryOrder.newest
-                                    : ReadingGalleryOrder.oldest,
-                              ),
-                              timeReference: timeReference,
-                              focused: reply.id == focusedReplyId,
-                              targetFrameKey: reply.id == focusedReplyId
-                                  ? targetKey
-                                  : null,
-                              canEdit: reply.isAuthoredBy(viewerId),
-                              canDelete:
-                                  reply.isAuthoredBy(viewerId) ||
-                                  canManageThread,
-                              pending: actions.pendingPostId == reply.id,
-                              reportReturnTo:
-                                  canReport &&
-                                      !reply.isDeleted &&
-                                      !reply.isAuthoredBy(viewerId)
-                                  ? _reportLocation(root, reply.id)
-                                  : null,
-                              onReply: authenticated
-                                  ? () =>
-                                        onCompose(postReplyTarget(root, reply))
-                                  : null,
-                              onEdit: () =>
-                                  onCompose(postEditTarget(reply, '编辑回复')),
-                              onDelete: () => onDelete(reply, false),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-                childCount: state.replies.length,
-                findChildIndexCallback: (key) {
-                  final value = key is ValueKey<String> ? key.value : null;
-                  if (value == null || !value.startsWith('post-reply-item-')) {
-                    return null;
-                  }
-                  final replyId = value.substring('post-reply-item-'.length);
-                  final index = state.replies.indexWhere(
-                    (reply) => reply.id == replyId,
-                  );
-                  return index < 0 ? null : index;
-                },
+            padding: EdgeInsets.fromLTRB(
+              horizontal,
+              state.hasMore ? tokens.space12 : 0,
+              horizontal,
+              tokens.minimumTouchTarget + tokens.space32 + tokens.space16,
+            ),
+            sliver: SliverToBoxAdapter(
+              child: WenyouConstrainedWidth(
+                child: PostDiscussionPaginationStatus(
+                  state: state,
+                  onRetry: onRetry,
+                ),
               ),
             ),
           ),
-        SliverPadding(
-          padding: EdgeInsets.fromLTRB(
-            horizontal,
-            state.hasMore ? tokens.space12 : 0,
-            horizontal,
-            tokens.minimumTouchTarget + tokens.space32 + tokens.space16,
-          ),
-          sliver: SliverToBoxAdapter(
-            child: WenyouConstrainedWidth(
-              child: PostDiscussionPaginationStatus(
-                state: state,
-                onRetry: onRetry,
-              ),
-            ),
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -368,6 +389,8 @@ class _PostCard extends ConsumerWidget {
                 galleryTarget: galleryTarget,
                 data: post.content,
                 mediaDisplays: post.mediaDisplays,
+                mentionLabels: post.mentionLabels,
+                onInternalLink: (uri) => openThreadReadingLink(context, uri),
                 diceLabels: _postDiceLabels(post.diceRolls),
                 diceSemantics: {
                   for (final roll in post.diceRolls)
@@ -499,14 +522,30 @@ class _PostAuthorLine extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
     final avatarSize = root ? 36.0 : 28.0;
+    final scope = ThreadIdentityReadingScope.maybeOf(context);
+    final role = scope?.roleLabelFor(post.author.id);
     return Row(
       children: [
         WenyouAvatarButton(
           key: Key('post-author-avatar-${post.id}'),
-          username: post.author.username,
-          avatarUrl: post.author.avatarUrl,
+          username: post.author.displayName,
+          avatarUrl: post.author.displayAvatarUrl,
+          semanticsLabel: scope?.available == true
+              ? '查看 ${post.author.displayName} 的帖内身份'
+              : null,
           visualSize: avatarSize,
-          onTap: () => context.push(AppRouteLocations.user(post.author.id)),
+          onTap: () {
+            if (scope?.available == true) {
+              scope!.open(
+                context,
+                post.author.id,
+                historical: post.author.rpIdentity,
+                roleLabel: role,
+              );
+            } else {
+              context.push(AppRouteLocations.user(post.author.id));
+            }
+          },
         ),
         SizedBox(width: tokens.space8),
         Expanded(
@@ -517,7 +556,7 @@ class _PostAuthorLine extends StatelessWidget {
                 children: [
                   Flexible(
                     child: Text(
-                      post.author.username,
+                      post.author.displayName,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: root
@@ -530,6 +569,13 @@ class _PostAuthorLine extends StatelessWidget {
                     key: Key('post-level-${post.id}'),
                     level: post.author.level,
                   ),
+                  if (role != null) ...[
+                    SizedBox(width: tokens.space4),
+                    Text(
+                      role,
+                      style: Theme.of(context).textTheme.wenyouCaption,
+                    ),
+                  ],
                   if (root && post.isPinned) ...[
                     SizedBox(width: tokens.space8),
                     const WenyouIcon(WenyouIconIds.statusPinned, size: 14),
@@ -551,7 +597,7 @@ class _PostAuthorLine extends StatelessWidget {
                   if (!root && post.replyNumber != null)
                     '回复编号 ${post.replyNumber}',
                   if (!root && post.replyToAuthor != null)
-                    '回复 ${post.replyToAuthor!.username}'
+                    '回复 ${post.replyToAuthor!.displayName}'
                   else if (!root)
                     '回复',
                   '发布时间：',
@@ -560,7 +606,7 @@ class _PostAuthorLine extends StatelessWidget {
                   if (root) '#${post.floorNumber ?? '-'}',
                   if (!root && post.replyNumber != null) '#${post.replyNumber}',
                   if (!root && post.replyToAuthor != null)
-                    '回复 @${post.replyToAuthor!.username}'
+                    '回复 @${post.replyToAuthor!.displayName}'
                   else if (!root)
                     '回复',
                   '',

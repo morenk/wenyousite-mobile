@@ -285,12 +285,19 @@ class _PlayerSubscriptionSheet extends ConsumerWidget {
                 ),
                 contentPadding: EdgeInsets.zero,
                 leading: WenyouAvatar(
-                  username: candidate.username,
-                  avatarUrl: candidate.avatarUrl,
+                  username: candidate.displayName,
+                  avatarUrl: candidate.displayAvatarUrl,
                   size: 40,
                 ),
-                title: Text(candidate.username),
-                subtitle: WenyouLevelBadge(level: candidate.level),
+                title: Text(candidate.displayName),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (candidate.rpIdentity != null)
+                      Text('@${candidate.username}'),
+                    WenyouLevelBadge(level: candidate.level),
+                  ],
+                ),
                 trailing: OutlinedButton(
                   key: ValueKey('thread-subscription-user-${candidate.userId}'),
                   onPressed: state.isPending

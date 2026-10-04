@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -11,6 +12,7 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_sheet.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
+import 'package:wenyousite_mobile/features/thread_identity/identity_widgets.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_management_controller.dart';
 import 'package:wenyousite_mobile/features/threads/domain/subthread_management_models.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_management_models.dart';
@@ -237,6 +239,12 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
                 unawaited(_autosave.saveNow());
               },
             ),
+            if (thread.isOwner && thread.rpIdentityEnabled != null)
+              ThreadIdentitySettings(
+                key: ValueKey('identity-settings-${widget.threadId}'),
+                threadId: widget.threadId,
+                initialEnabled: thread.rpIdentityEnabled!,
+              ),
             if (state.failure != null) ...[
               SizedBox(height: tokens.space12),
               WenyouStatusBanner(

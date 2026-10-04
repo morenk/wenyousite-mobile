@@ -10,11 +10,13 @@ class WenyouAvatarButton extends StatelessWidget {
     required this.visualSize,
     required this.onTap,
     this.avatarUrl,
+    this.semanticsLabel,
     super.key,
   });
 
   final String username;
   final String? avatarUrl;
+  final String? semanticsLabel;
   final double visualSize;
   final VoidCallback onTap;
 
@@ -23,7 +25,7 @@ class WenyouAvatarButton extends StatelessWidget {
     final tokens = context.wenyouTokens;
     return Semantics(
       button: true,
-      label: '查看 $username 的个人主页',
+      label: semanticsLabel ?? '查看 $username 的个人主页',
       child: SizedBox.square(
         dimension: tokens.minimumTouchTarget,
         child: InkResponse(

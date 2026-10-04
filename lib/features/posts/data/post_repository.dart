@@ -9,6 +9,8 @@ import 'package:wenyousite_mobile/core/network/media_display_mapper.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_repository_ports.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
+import 'package:wenyousite_mobile/features/thread_identity/identity_mapping.dart';
+import 'package:wenyousite_mobile/features/thread_identity/identity_models.dart';
 
 export 'package:wenyousite_mobile/features/posts/application/post_repository_ports.dart'
     show PostRepository, postRepositoryProvider;
@@ -134,6 +136,12 @@ class ApiPostRepository implements PostRepository {
       final payload = CreatePostDto((builder) {
         builder
           ..content = input.content
+          ..identityToken = input.identityToken
+          ..identityMode = switch (input.identityMode) {
+            PostIdentityMode.account => CreatePostDtoIdentityModeEnum.ACCOUNT,
+            PostIdentityMode.rp => CreatePostDtoIdentityModeEnum.RP,
+            null => null,
+          }
           ..clientRequestId = input.clientRequestId;
         if (input.parentPostId != null) {
           builder.parentPostId = input.parentPostId;
@@ -198,10 +206,18 @@ class ApiPostRepository implements PostRepository {
     required String subthreadId,
     required String content,
     int? version,
+    String? identityToken,
+    PostIdentityMode? identityMode,
   }) async {
     try {
       final payload = UpsertBodyDto((builder) {
         builder.content = content;
+        builder.identityToken = identityToken;
+        builder.identityMode = switch (identityMode) {
+          PostIdentityMode.account => UpsertBodyDtoIdentityModeEnum.ACCOUNT,
+          PostIdentityMode.rp => UpsertBodyDtoIdentityModeEnum.RP,
+          null => null,
+        };
         if (version != null) builder.version = version;
       });
       final dto = (await _api.postsUpsertBody(
@@ -390,6 +406,7 @@ class ApiPostRepository implements PostRepository {
   PostItem _mapPost(PostResponseDto dto) {
     return PostItem(
       mediaDisplays: mapMarkdownMediaDisplays(dto.mediaDisplays),
+      mentionLabels: mapMentionIdentityLabels(dto.mentionIdentities),
       id: dto.id,
       threadId: dto.threadId,
       subthreadId: dto.subthreadId,
@@ -413,6 +430,7 @@ class ApiPostRepository implements PostRepository {
   PostItem _mapReply(ReplyResponseDto dto) {
     return PostItem(
       mediaDisplays: mapMarkdownMediaDisplays(dto.mediaDisplays),
+      mentionLabels: mapMentionIdentityLabels(dto.mentionIdentities),
       id: dto.id,
       threadId: dto.threadId,
       subthreadId: dto.subthreadId,
@@ -439,6 +457,7 @@ class ApiPostRepository implements PostRepository {
   PostItem _mapDetail(PostDetailResponseDto dto) {
     return PostItem(
       mediaDisplays: mapMarkdownMediaDisplays(dto.mediaDisplays),
+      mentionLabels: mapMentionIdentityLabels(dto.mentionIdentities),
       id: dto.id,
       threadId: dto.threadId,
       subthreadId: dto.subthreadId,
@@ -466,6 +485,7 @@ class ApiPostRepository implements PostRepository {
     return PostAuthor(
       id: dto.id,
       username: dto.username,
+      rpIdentity: mapRpIdentity(dto.rpIdentity),
       level: dto.level.toInt(),
       avatarUrl: _safeHttpUrl(
         mapAvatarDisplayUrl(dto.avatar, dto.avatarDisplay),
