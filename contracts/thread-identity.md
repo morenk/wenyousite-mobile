@@ -18,7 +18,7 @@ HTTP 事实源为 `contracts/openapi.json`，版本 `5.33.0-dev.20261005.1`。�
 
 真实账号 `id/username/avatar` 始终保持原义。帖内作者、replyToPost.author、搜索内容作者新增可选 `rpIdentity: { id, nickname, avatar, avatarDisplay? } | null`。有效时优先显示其中昵称和头像，否则显示原账号。头像变体同时遵守媒体治理状态。Topic 题头 owner、成员 user、mention候选和作者筛选目录使用当前身份；历史楼层使用发表时快照，不能以当前目录资料覆盖。ThreadBodyPost 新增可选 author 和 mentionIdentities。详情新增可选 rpIdentityEnabled，缺失按 false。
 
-筛选和订阅始终绑定账号 ID，一个账号一项；作者响应字段为现有 id，非新的角色 ID。曾以 RP 发言的账号撤资格后仍可筛选历史全部发言。管理列表以账号用户名为主、角色为辅。全站用户目录、主页、私聊、关注与首页作者不注入 RP。
+筛选和订阅始终绑定账号 ID，一个账号一项；作者响应字段为现有 id，非新的角色 ID。目录包含当前可见范围内所有实际发言账号（包括从未使用 RP 的普通读者与退出成员）；角色仅用于展示和排序。撤资格后仍可筛选历史全部发言。管理列表以账号用户名为主、角色为辅。全站用户目录、主页、私聊、关注与首页作者不注入 RP。
 
 通知仍以真实账号识别；有权限读取的帖子通知 payload 可带可选 rpIdentity 补充“以某角色”，关闭或目标不可用时不展示。搜索与档案导出使用和帖子一致的历史作者与提及；导出不改变数据库正文。
 
@@ -36,6 +36,8 @@ CreatePostDto、UpsertBodyDto、CreateSubthreadDto、SaveThreadAggregateDto 接�
 
 token只关联本帖身份设置、资格、开关专用版本与展示缺省字段，不受标题变更或发言更新时间影响。成功发言的同 clientRequestId 网络重试先返回原帖，后续改名/关闭不能导致重复发帖；同幂等键不同正文或 identityMode 仍按原冲突规则拒绝（帖子409/CONFLICT，子贴409/IDEMPOTENCY_KEY_REUSED=40912）。mode包含在冻结payload中；token只用于首次确认，不因成功重试时角色变化而重新校验。客户端冻结待重试 payload；明确409未写入、重新确认身份后使用新幂等键。
 
+首次 UpsertBody 没有 clientRequestId；超时重试时如果首请求已创建，省略 version 的重试返回版本冲突，不覆盖原正文或身份。客户端可回读并展示已保存正文与作者；相同正文不能严格证明是原请求，禁止自动附新 version 强行覆盖。
+
 修改和清除仅影响后续新发言，编辑旧正文不换作者。关闭时全部已保存 RP 显示恢复账号，重新开启恢复快照。开启前与关闭期间新发言不追溯套用。资格撤销保留旧历史，后续可明确选择 ACCOUNT；尚停留 RP 的草稿须确认改为 ACCOUNT 后再发。快照有真实媒体引用，换头像后旧图不被孤儿回收；治理移除仍令 URL 与变体都不可展示。账号注销不暴露历史身份。
 
 ## Markdown 提及
@@ -46,8 +48,16 @@ token只关联本帖身份设置、资格、开关专用版本与展示缺省字
 
 每条帖子新增可选 `mentionIdentities: [{ userId, label, displayName, identityId }]`。label 是源 Markdown 标签（不含 @），以 userId + label 匹配渲染节点，不能只按 userId 覆盖同一作者的不同历史称呼。编辑与重新保存继续用源 content，不把展示名写回正文。关闭时 displayName=账号用户名，开启时已验证的 RP 标签显示原 label；普通正文名字不变。
 
-启用 RP 时，服务端在写事务内验证新增标签属于目标账号的当前/已登记历史帖内昵称；已存在正文中的 userId+label 原样保留，包括无快照的旧账号提及，关闭 RP 的旧账号提及写语义保持兼容。服务端，保存插入时标签。对方在选择后改名仍可接受已登记旧名；伪造其他用户角色名返回 HTTP 409 / RP_MENTION_CHANGED=40012，保留草稿并要求重新选择提及。未知/注销或已拉黑目标在读取时显示不可用用户，不泄露 RP。代码和转义节点没有提及语义。一个账号出现多个不同标签仍只按原账号通知且保持原去重。
+启用 RP 时，服务端在写事务内验证新增标签属于目标账号的当前/已登记历史帖内昵称；已存在正文中的 userId+label 原样保留，包括无快照的旧账号提及，关闭 RP 的旧账号提及写语义保持兼容。保存插入时标签。对方在选择后改名仍可接受已登记旧名；伪造其他用户角色名返回 HTTP 409 / RP_MENTION_CHANGED=40012，保留草稿并要求重新选择提及。未知/注销或已拉黑目标在读取时显示不可用用户，不泄露 RP。代码和转义节点没有提及语义。一个账号出现多个不同标签仍只按原账号通知且保持原去重。
 
 ## 验收与发布
 
 先兼容后端，再 Foundation 语义与 Web/Mobile 消费；不删除旧 username/avatar、旧 Markdown 提及或旧无RP写接口。迁移只加表和nullable/default字段。隔离测试覆盖权限、跨帖隔离、关闭重开、改名/头像历史、clear 单项、提及归属、重名、撤权竞态、幂等重试、搜索/通知/导出及媒体引用。UI 实际画面与负责人验收独立于后端自动测试。
+
+### 隔离回归与合成预览入口
+
+通过仓库隔离入口执行 `pnpm exec tsx scripts/e2e-runner.ts --source --suite=thread-identity`，每次运行登记独立 PG/Redis/上传目录，完成或失败后按该轮归属清理。`scripts/thread-identity.integration.ts` 包括实际 HTTP 四种创建路径、角色权限、混合身份、历史提及、清除资料、媒体引用、幂等模式及排队关闭竞态。
+
+无法取得当天已核验真实快照时，`pnpm exec tsx scripts/thread-identity-preview.ts` 仅创建明确标记的合成样本，沿用已提交的 sample preview 隔离资源与快照流程，禁止回落线上或旧真实快照。需先完成 build；输出只有 consumer、账号文件、内容文件的私有路径与非秘密定位。五种账号含楼主、协作者、两个同昵称玩家与读者；样本包含同账号 ACCOUNT/RP、历史昵称、回复提及及第二主题。实际密码仅保存私有文件，不能打印或提交。同一 `rp-identity-v1` 会话跨轮复用，停止与删除依照 [实时预览入口](dev-preview-session.md)。合成样本与真实快照验收分别报告。
+
+合成联验描述中的 `snapshot.sourceKind=synthetic-thread-identities` 标明数据由本轮隔离样本生成；消费者横幅必须显示“隔离合成样本”，不得把该描述的日期与哈希称为真实用户快照验收。私有账号与内容清单另以 `isolatedSample: true` 和相同 `runId` 绑定会话。
