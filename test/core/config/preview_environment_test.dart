@@ -13,11 +13,13 @@ AppEnvironment previewEnvironment({
   String run = 'aaaaaaaaaaaaaaaaaaaaaaaa',
   String api = 'http://127.0.0.1:23080/api/v1',
   String media = 'http://127.0.0.1:23081',
+  String sourceKind = '',
 }) => AppEnvironment(
   apiBaseUrl: api,
   previewSession: 'test-preview',
   previewRun: 'preview_$run',
   previewSnapshotAt: '2026-09-26T00:00:00Z',
+  previewSourceKind: sourceKind,
   previewSnapshotSha: 'a' * 64,
   previewMediaOrigin: media,
 );
@@ -25,6 +27,23 @@ AppEnvironment previewEnvironment({
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   const production = AppEnvironment(apiBaseUrl: 'https://wenyou.site/api/v1');
+  test('合成预览有明确标识且拒绝未知来源', () {
+    expect(previewEnvironment().previewLabel, '开发预览');
+    for (final kind in ['synthetic-downloads', 'synthetic-thread-identities']) {
+      final environment = previewEnvironment(sourceKind: kind);
+      expect(environment.previewLabel, '合成数据预览');
+      expect(
+        () => environment.validatePreview(isDebugMode: true),
+        returnsNormally,
+      );
+    }
+    expect(
+      () => previewEnvironment(
+        sourceKind: 'production',
+      ).validatePreview(isDebugMode: true),
+      throwsStateError,
+    );
+  });
   test('预览只允许完整 Debug 配置与独立 loopback，release 和线上地址拒绝', () {
     expect(
       () => previewEnvironment().validatePreview(isDebugMode: true),
