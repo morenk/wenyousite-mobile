@@ -6,6 +6,41 @@ part of 'create_subthread_dto.dart';
 // BuiltValueGenerator
 // **************************************************************************
 
+const CreateSubthreadDtoIdentityModeEnum
+_$createSubthreadDtoIdentityModeEnum_ACCOUNT =
+    const CreateSubthreadDtoIdentityModeEnum._('ACCOUNT');
+const CreateSubthreadDtoIdentityModeEnum
+_$createSubthreadDtoIdentityModeEnum_RP =
+    const CreateSubthreadDtoIdentityModeEnum._('RP');
+const CreateSubthreadDtoIdentityModeEnum
+_$createSubthreadDtoIdentityModeEnum_unknownDefaultOpenApi =
+    const CreateSubthreadDtoIdentityModeEnum._('unknownDefaultOpenApi');
+
+CreateSubthreadDtoIdentityModeEnum _$createSubthreadDtoIdentityModeEnumValueOf(
+  String name,
+) {
+  switch (name) {
+    case 'ACCOUNT':
+      return _$createSubthreadDtoIdentityModeEnum_ACCOUNT;
+    case 'RP':
+      return _$createSubthreadDtoIdentityModeEnum_RP;
+    case 'unknownDefaultOpenApi':
+      return _$createSubthreadDtoIdentityModeEnum_unknownDefaultOpenApi;
+    default:
+      return _$createSubthreadDtoIdentityModeEnum_unknownDefaultOpenApi;
+  }
+}
+
+final BuiltSet<CreateSubthreadDtoIdentityModeEnum>
+_$createSubthreadDtoIdentityModeEnumValues =
+    BuiltSet<CreateSubthreadDtoIdentityModeEnum>(
+      const <CreateSubthreadDtoIdentityModeEnum>[
+        _$createSubthreadDtoIdentityModeEnum_ACCOUNT,
+        _$createSubthreadDtoIdentityModeEnum_RP,
+        _$createSubthreadDtoIdentityModeEnum_unknownDefaultOpenApi,
+      ],
+    );
+
 const CreateSubthreadDtoPostingPolicyEnum
 _$createSubthreadDtoPostingPolicyEnum_PARTICIPANTS =
     const CreateSubthreadDtoPostingPolicyEnum._('PARTICIPANTS');
@@ -46,9 +81,47 @@ _$createSubthreadDtoPostingPolicyEnumValues =
       ],
     );
 
+Serializer<CreateSubthreadDtoIdentityModeEnum>
+_$createSubthreadDtoIdentityModeEnumSerializer =
+    _$CreateSubthreadDtoIdentityModeEnumSerializer();
 Serializer<CreateSubthreadDtoPostingPolicyEnum>
 _$createSubthreadDtoPostingPolicyEnumSerializer =
     _$CreateSubthreadDtoPostingPolicyEnumSerializer();
+
+class _$CreateSubthreadDtoIdentityModeEnumSerializer
+    implements PrimitiveSerializer<CreateSubthreadDtoIdentityModeEnum> {
+  static const Map<String, Object> _toWire = const <String, Object>{
+    'ACCOUNT': 'ACCOUNT',
+    'RP': 'RP',
+    'unknownDefaultOpenApi': 'unknown_default_open_api',
+  };
+  static const Map<Object, String> _fromWire = const <Object, String>{
+    'ACCOUNT': 'ACCOUNT',
+    'RP': 'RP',
+    'unknown_default_open_api': 'unknownDefaultOpenApi',
+  };
+
+  @override
+  final Iterable<Type> types = const <Type>[CreateSubthreadDtoIdentityModeEnum];
+  @override
+  final String wireName = 'CreateSubthreadDtoIdentityModeEnum';
+
+  @override
+  Object serialize(
+    Serializers serializers,
+    CreateSubthreadDtoIdentityModeEnum object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => _toWire[object.name] ?? object.name;
+
+  @override
+  CreateSubthreadDtoIdentityModeEnum deserialize(
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => CreateSubthreadDtoIdentityModeEnum.valueOf(
+    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
+  );
+}
 
 class _$CreateSubthreadDtoPostingPolicyEnumSerializer
     implements PrimitiveSerializer<CreateSubthreadDtoPostingPolicyEnum> {
@@ -93,6 +166,8 @@ class _$CreateSubthreadDto extends CreateSubthreadDto {
   @override
   final String? identityToken;
   @override
+  final CreateSubthreadDtoIdentityModeEnum? identityMode;
+  @override
   final String? clientRequestId;
   @override
   final String title;
@@ -109,6 +184,7 @@ class _$CreateSubthreadDto extends CreateSubthreadDto {
 
   _$CreateSubthreadDto._({
     this.identityToken,
+    this.identityMode,
     this.clientRequestId,
     required this.title,
     this.content,
@@ -129,6 +205,7 @@ class _$CreateSubthreadDto extends CreateSubthreadDto {
     if (identical(other, this)) return true;
     return other is CreateSubthreadDto &&
         identityToken == other.identityToken &&
+        identityMode == other.identityMode &&
         clientRequestId == other.clientRequestId &&
         title == other.title &&
         content == other.content &&
@@ -140,6 +217,7 @@ class _$CreateSubthreadDto extends CreateSubthreadDto {
   int get hashCode {
     var _$hash = 0;
     _$hash = $jc(_$hash, identityToken.hashCode);
+    _$hash = $jc(_$hash, identityMode.hashCode);
     _$hash = $jc(_$hash, clientRequestId.hashCode);
     _$hash = $jc(_$hash, title.hashCode);
     _$hash = $jc(_$hash, content.hashCode);
@@ -153,6 +231,7 @@ class _$CreateSubthreadDto extends CreateSubthreadDto {
   String toString() {
     return (newBuiltValueToStringHelper(r'CreateSubthreadDto')
           ..add('identityToken', identityToken)
+          ..add('identityMode', identityMode)
           ..add('clientRequestId', clientRequestId)
           ..add('title', title)
           ..add('content', content)
@@ -170,6 +249,11 @@ class CreateSubthreadDtoBuilder
   String? get identityToken => _$this._identityToken;
   set identityToken(String? identityToken) =>
       _$this._identityToken = identityToken;
+
+  CreateSubthreadDtoIdentityModeEnum? _identityMode;
+  CreateSubthreadDtoIdentityModeEnum? get identityMode => _$this._identityMode;
+  set identityMode(CreateSubthreadDtoIdentityModeEnum? identityMode) =>
+      _$this._identityMode = identityMode;
 
   String? _clientRequestId;
   String? get clientRequestId => _$this._clientRequestId;
@@ -202,6 +286,7 @@ class CreateSubthreadDtoBuilder
     final $v = _$v;
     if ($v != null) {
       _identityToken = $v.identityToken;
+      _identityMode = $v.identityMode;
       _clientRequestId = $v.clientRequestId;
       _title = $v.title;
       _content = $v.content;
@@ -230,6 +315,7 @@ class CreateSubthreadDtoBuilder
         _$v ??
         _$CreateSubthreadDto._(
           identityToken: identityToken,
+          identityMode: identityMode,
           clientRequestId: clientRequestId,
           title: BuiltValueNullFieldError.checkNotNull(
             title,

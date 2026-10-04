@@ -6,9 +6,82 @@ part of 'upsert_body_dto.dart';
 // BuiltValueGenerator
 // **************************************************************************
 
+const UpsertBodyDtoIdentityModeEnum _$upsertBodyDtoIdentityModeEnum_ACCOUNT =
+    const UpsertBodyDtoIdentityModeEnum._('ACCOUNT');
+const UpsertBodyDtoIdentityModeEnum _$upsertBodyDtoIdentityModeEnum_RP =
+    const UpsertBodyDtoIdentityModeEnum._('RP');
+const UpsertBodyDtoIdentityModeEnum
+_$upsertBodyDtoIdentityModeEnum_unknownDefaultOpenApi =
+    const UpsertBodyDtoIdentityModeEnum._('unknownDefaultOpenApi');
+
+UpsertBodyDtoIdentityModeEnum _$upsertBodyDtoIdentityModeEnumValueOf(
+  String name,
+) {
+  switch (name) {
+    case 'ACCOUNT':
+      return _$upsertBodyDtoIdentityModeEnum_ACCOUNT;
+    case 'RP':
+      return _$upsertBodyDtoIdentityModeEnum_RP;
+    case 'unknownDefaultOpenApi':
+      return _$upsertBodyDtoIdentityModeEnum_unknownDefaultOpenApi;
+    default:
+      return _$upsertBodyDtoIdentityModeEnum_unknownDefaultOpenApi;
+  }
+}
+
+final BuiltSet<UpsertBodyDtoIdentityModeEnum>
+_$upsertBodyDtoIdentityModeEnumValues = BuiltSet<UpsertBodyDtoIdentityModeEnum>(
+  const <UpsertBodyDtoIdentityModeEnum>[
+    _$upsertBodyDtoIdentityModeEnum_ACCOUNT,
+    _$upsertBodyDtoIdentityModeEnum_RP,
+    _$upsertBodyDtoIdentityModeEnum_unknownDefaultOpenApi,
+  ],
+);
+
+Serializer<UpsertBodyDtoIdentityModeEnum>
+_$upsertBodyDtoIdentityModeEnumSerializer =
+    _$UpsertBodyDtoIdentityModeEnumSerializer();
+
+class _$UpsertBodyDtoIdentityModeEnumSerializer
+    implements PrimitiveSerializer<UpsertBodyDtoIdentityModeEnum> {
+  static const Map<String, Object> _toWire = const <String, Object>{
+    'ACCOUNT': 'ACCOUNT',
+    'RP': 'RP',
+    'unknownDefaultOpenApi': 'unknown_default_open_api',
+  };
+  static const Map<Object, String> _fromWire = const <Object, String>{
+    'ACCOUNT': 'ACCOUNT',
+    'RP': 'RP',
+    'unknown_default_open_api': 'unknownDefaultOpenApi',
+  };
+
+  @override
+  final Iterable<Type> types = const <Type>[UpsertBodyDtoIdentityModeEnum];
+  @override
+  final String wireName = 'UpsertBodyDtoIdentityModeEnum';
+
+  @override
+  Object serialize(
+    Serializers serializers,
+    UpsertBodyDtoIdentityModeEnum object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => _toWire[object.name] ?? object.name;
+
+  @override
+  UpsertBodyDtoIdentityModeEnum deserialize(
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => UpsertBodyDtoIdentityModeEnum.valueOf(
+    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
+  );
+}
+
 class _$UpsertBodyDto extends UpsertBodyDto {
   @override
   final String? identityToken;
+  @override
+  final UpsertBodyDtoIdentityModeEnum? identityMode;
   @override
   final String content;
   @override
@@ -17,8 +90,12 @@ class _$UpsertBodyDto extends UpsertBodyDto {
   factory _$UpsertBodyDto([void Function(UpsertBodyDtoBuilder)? updates]) =>
       (UpsertBodyDtoBuilder()..update(updates))._build();
 
-  _$UpsertBodyDto._({this.identityToken, required this.content, this.version})
-    : super._();
+  _$UpsertBodyDto._({
+    this.identityToken,
+    this.identityMode,
+    required this.content,
+    this.version,
+  }) : super._();
   @override
   UpsertBodyDto rebuild(void Function(UpsertBodyDtoBuilder) updates) =>
       (toBuilder()..update(updates)).build();
@@ -31,6 +108,7 @@ class _$UpsertBodyDto extends UpsertBodyDto {
     if (identical(other, this)) return true;
     return other is UpsertBodyDto &&
         identityToken == other.identityToken &&
+        identityMode == other.identityMode &&
         content == other.content &&
         version == other.version;
   }
@@ -39,6 +117,7 @@ class _$UpsertBodyDto extends UpsertBodyDto {
   int get hashCode {
     var _$hash = 0;
     _$hash = $jc(_$hash, identityToken.hashCode);
+    _$hash = $jc(_$hash, identityMode.hashCode);
     _$hash = $jc(_$hash, content.hashCode);
     _$hash = $jc(_$hash, version.hashCode);
     _$hash = $jf(_$hash);
@@ -49,6 +128,7 @@ class _$UpsertBodyDto extends UpsertBodyDto {
   String toString() {
     return (newBuiltValueToStringHelper(r'UpsertBodyDto')
           ..add('identityToken', identityToken)
+          ..add('identityMode', identityMode)
           ..add('content', content)
           ..add('version', version))
         .toString();
@@ -63,6 +143,11 @@ class UpsertBodyDtoBuilder
   String? get identityToken => _$this._identityToken;
   set identityToken(String? identityToken) =>
       _$this._identityToken = identityToken;
+
+  UpsertBodyDtoIdentityModeEnum? _identityMode;
+  UpsertBodyDtoIdentityModeEnum? get identityMode => _$this._identityMode;
+  set identityMode(UpsertBodyDtoIdentityModeEnum? identityMode) =>
+      _$this._identityMode = identityMode;
 
   String? _content;
   String? get content => _$this._content;
@@ -80,6 +165,7 @@ class UpsertBodyDtoBuilder
     final $v = _$v;
     if ($v != null) {
       _identityToken = $v.identityToken;
+      _identityMode = $v.identityMode;
       _content = $v.content;
       _version = $v.version;
       _$v = null;
@@ -105,6 +191,7 @@ class UpsertBodyDtoBuilder
         _$v ??
         _$UpsertBodyDto._(
           identityToken: identityToken,
+          identityMode: identityMode,
           content: BuiltValueNullFieldError.checkNotNull(
             content,
             r'UpsertBodyDto',

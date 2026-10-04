@@ -13,6 +13,7 @@ part 'create_subthread_dto.g.dart';
 ///
 /// Properties:
 /// * [identityToken] - GET 帖内身份返回的确认 token；新建正文或发言时使用。身份变化返回 409/40011，保留草稿并重新确认
+/// * [identityMode] - 本次新发言身份；ACCOUNT 明确使用站内账号且不校验 RP token，RP 要求有效帖内身份和 identityToken。省略沿用旧确认规则；编辑已有正文忽略此字段
 /// * [clientRequestId] - 客户端创建幂等键；同一次提交和网络重试必须复用
 /// * [title] - 子贴标题
 /// * [content] - 子贴正文（kind=BODY，可选，留空仅创建空子贴）
@@ -23,6 +24,11 @@ abstract class CreateSubthreadDto implements Built<CreateSubthreadDto, CreateSub
   /// GET 帖内身份返回的确认 token；新建正文或发言时使用。身份变化返回 409/40011，保留草稿并重新确认
   @BuiltValueField(wireName: r'identityToken')
   String? get identityToken;
+
+  /// 本次新发言身份；ACCOUNT 明确使用站内账号且不校验 RP token，RP 要求有效帖内身份和 identityToken。省略沿用旧确认规则；编辑已有正文忽略此字段
+  @BuiltValueField(wireName: r'identityMode')
+  CreateSubthreadDtoIdentityModeEnum? get identityMode;
+  // enum identityModeEnum {  ACCOUNT,  RP,  };
 
   /// 客户端创建幂等键；同一次提交和网络重试必须复用
   @BuiltValueField(wireName: r'clientRequestId')
@@ -74,6 +80,13 @@ class _$CreateSubthreadDtoSerializer implements PrimitiveSerializer<CreateSubthr
       yield serializers.serialize(
         object.identityToken,
         specifiedType: const FullType(String),
+      );
+    }
+    if (object.identityMode != null) {
+      yield r'identityMode';
+      yield serializers.serialize(
+        object.identityMode,
+        specifiedType: const FullType(CreateSubthreadDtoIdentityModeEnum),
       );
     }
     if (object.clientRequestId != null) {
@@ -139,6 +152,13 @@ class _$CreateSubthreadDtoSerializer implements PrimitiveSerializer<CreateSubthr
           ) as String;
           result.identityToken = valueDes;
           break;
+        case r'identityMode':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(CreateSubthreadDtoIdentityModeEnum),
+          ) as CreateSubthreadDtoIdentityModeEnum;
+          result.identityMode = valueDes;
+          break;
         case r'clientRequestId':
           final valueDes = serializers.deserialize(
             value,
@@ -201,6 +221,26 @@ class _$CreateSubthreadDtoSerializer implements PrimitiveSerializer<CreateSubthr
     );
     return result.build();
   }
+}
+
+class CreateSubthreadDtoIdentityModeEnum extends EnumClass {
+
+  /// 本次新发言身份；ACCOUNT 明确使用站内账号且不校验 RP token，RP 要求有效帖内身份和 identityToken。省略沿用旧确认规则；编辑已有正文忽略此字段
+  @BuiltValueEnumConst(wireName: r'ACCOUNT')
+  static const CreateSubthreadDtoIdentityModeEnum ACCOUNT = _$createSubthreadDtoIdentityModeEnum_ACCOUNT;
+  /// 本次新发言身份；ACCOUNT 明确使用站内账号且不校验 RP token，RP 要求有效帖内身份和 identityToken。省略沿用旧确认规则；编辑已有正文忽略此字段
+  @BuiltValueEnumConst(wireName: r'RP')
+  static const CreateSubthreadDtoIdentityModeEnum RP = _$createSubthreadDtoIdentityModeEnum_RP;
+  /// 本次新发言身份；ACCOUNT 明确使用站内账号且不校验 RP token，RP 要求有效帖内身份和 identityToken。省略沿用旧确认规则；编辑已有正文忽略此字段
+  @BuiltValueEnumConst(wireName: r'unknown_default_open_api', fallback: true)
+  static const CreateSubthreadDtoIdentityModeEnum unknownDefaultOpenApi = _$createSubthreadDtoIdentityModeEnum_unknownDefaultOpenApi;
+
+  static Serializer<CreateSubthreadDtoIdentityModeEnum> get serializer => _$createSubthreadDtoIdentityModeEnumSerializer;
+
+  const CreateSubthreadDtoIdentityModeEnum._(String name): super(name);
+
+  static BuiltSet<CreateSubthreadDtoIdentityModeEnum> get values => _$createSubthreadDtoIdentityModeEnumValues;
+  static CreateSubthreadDtoIdentityModeEnum valueOf(String name) => _$createSubthreadDtoIdentityModeEnumValueOf(name);
 }
 
 class CreateSubthreadDtoPostingPolicyEnum extends EnumClass {

@@ -3,6 +3,7 @@
 //
 
 // ignore_for_file: unused_element
+import 'package:built_collection/built_collection.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 
@@ -12,6 +13,7 @@ part 'create_post_dto.g.dart';
 ///
 /// Properties:
 /// * [identityToken] - GET 帖内身份返回的确认 token；新建正文或发言时使用。身份变化返回 409/40011，保留草稿并重新确认
+/// * [identityMode] - 本次新发言身份；ACCOUNT 明确使用站内账号且不校验 RP token，RP 要求有效帖内身份和 identityToken。省略沿用旧确认规则；编辑已有正文忽略此字段
 /// * [content] - 帖子正文；骰子使用 [[dice:v1:<UUID>:<NdM±K>]] 内联节点
 /// * [parentPostId] - 父楼层 ID（楼中楼回复时指定，平级挂载，无嵌套深度限制）
 /// * [replyToPostId] - 回复目标帖 ID；必须同时提供 parentPostId，且目标属于该主楼层
@@ -21,6 +23,11 @@ abstract class CreatePostDto implements Built<CreatePostDto, CreatePostDtoBuilde
   /// GET 帖内身份返回的确认 token；新建正文或发言时使用。身份变化返回 409/40011，保留草稿并重新确认
   @BuiltValueField(wireName: r'identityToken')
   String? get identityToken;
+
+  /// 本次新发言身份；ACCOUNT 明确使用站内账号且不校验 RP token，RP 要求有效帖内身份和 identityToken。省略沿用旧确认规则；编辑已有正文忽略此字段
+  @BuiltValueField(wireName: r'identityMode')
+  CreatePostDtoIdentityModeEnum? get identityMode;
+  // enum identityModeEnum {  ACCOUNT,  RP,  };
 
   /// 帖子正文；骰子使用 [[dice:v1:<UUID>:<NdM±K>]] 内联节点
   @BuiltValueField(wireName: r'content')
@@ -66,6 +73,13 @@ class _$CreatePostDtoSerializer implements PrimitiveSerializer<CreatePostDto> {
       yield serializers.serialize(
         object.identityToken,
         specifiedType: const FullType(String),
+      );
+    }
+    if (object.identityMode != null) {
+      yield r'identityMode';
+      yield serializers.serialize(
+        object.identityMode,
+        specifiedType: const FullType(CreatePostDtoIdentityModeEnum),
       );
     }
     yield r'content';
@@ -124,6 +138,13 @@ class _$CreatePostDtoSerializer implements PrimitiveSerializer<CreatePostDto> {
           ) as String;
           result.identityToken = valueDes;
           break;
+        case r'identityMode':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(CreatePostDtoIdentityModeEnum),
+          ) as CreatePostDtoIdentityModeEnum;
+          result.identityMode = valueDes;
+          break;
         case r'content':
           final valueDes = serializers.deserialize(
             value,
@@ -179,4 +200,24 @@ class _$CreatePostDtoSerializer implements PrimitiveSerializer<CreatePostDto> {
     );
     return result.build();
   }
+}
+
+class CreatePostDtoIdentityModeEnum extends EnumClass {
+
+  /// 本次新发言身份；ACCOUNT 明确使用站内账号且不校验 RP token，RP 要求有效帖内身份和 identityToken。省略沿用旧确认规则；编辑已有正文忽略此字段
+  @BuiltValueEnumConst(wireName: r'ACCOUNT')
+  static const CreatePostDtoIdentityModeEnum ACCOUNT = _$createPostDtoIdentityModeEnum_ACCOUNT;
+  /// 本次新发言身份；ACCOUNT 明确使用站内账号且不校验 RP token，RP 要求有效帖内身份和 identityToken。省略沿用旧确认规则；编辑已有正文忽略此字段
+  @BuiltValueEnumConst(wireName: r'RP')
+  static const CreatePostDtoIdentityModeEnum RP = _$createPostDtoIdentityModeEnum_RP;
+  /// 本次新发言身份；ACCOUNT 明确使用站内账号且不校验 RP token，RP 要求有效帖内身份和 identityToken。省略沿用旧确认规则；编辑已有正文忽略此字段
+  @BuiltValueEnumConst(wireName: r'unknown_default_open_api', fallback: true)
+  static const CreatePostDtoIdentityModeEnum unknownDefaultOpenApi = _$createPostDtoIdentityModeEnum_unknownDefaultOpenApi;
+
+  static Serializer<CreatePostDtoIdentityModeEnum> get serializer => _$createPostDtoIdentityModeEnumSerializer;
+
+  const CreatePostDtoIdentityModeEnum._(String name): super(name);
+
+  static BuiltSet<CreatePostDtoIdentityModeEnum> get values => _$createPostDtoIdentityModeEnumValues;
+  static CreatePostDtoIdentityModeEnum valueOf(String name) => _$createPostDtoIdentityModeEnumValueOf(name);
 }

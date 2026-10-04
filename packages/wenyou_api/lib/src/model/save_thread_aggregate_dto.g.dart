@@ -6,6 +6,40 @@ part of 'save_thread_aggregate_dto.dart';
 // BuiltValueGenerator
 // **************************************************************************
 
+const SaveThreadAggregateDtoIdentityModeEnum
+_$saveThreadAggregateDtoIdentityModeEnum_ACCOUNT =
+    const SaveThreadAggregateDtoIdentityModeEnum._('ACCOUNT');
+const SaveThreadAggregateDtoIdentityModeEnum
+_$saveThreadAggregateDtoIdentityModeEnum_RP =
+    const SaveThreadAggregateDtoIdentityModeEnum._('RP');
+const SaveThreadAggregateDtoIdentityModeEnum
+_$saveThreadAggregateDtoIdentityModeEnum_unknownDefaultOpenApi =
+    const SaveThreadAggregateDtoIdentityModeEnum._('unknownDefaultOpenApi');
+
+SaveThreadAggregateDtoIdentityModeEnum
+_$saveThreadAggregateDtoIdentityModeEnumValueOf(String name) {
+  switch (name) {
+    case 'ACCOUNT':
+      return _$saveThreadAggregateDtoIdentityModeEnum_ACCOUNT;
+    case 'RP':
+      return _$saveThreadAggregateDtoIdentityModeEnum_RP;
+    case 'unknownDefaultOpenApi':
+      return _$saveThreadAggregateDtoIdentityModeEnum_unknownDefaultOpenApi;
+    default:
+      return _$saveThreadAggregateDtoIdentityModeEnum_unknownDefaultOpenApi;
+  }
+}
+
+final BuiltSet<SaveThreadAggregateDtoIdentityModeEnum>
+_$saveThreadAggregateDtoIdentityModeEnumValues =
+    BuiltSet<SaveThreadAggregateDtoIdentityModeEnum>(
+      const <SaveThreadAggregateDtoIdentityModeEnum>[
+        _$saveThreadAggregateDtoIdentityModeEnum_ACCOUNT,
+        _$saveThreadAggregateDtoIdentityModeEnum_RP,
+        _$saveThreadAggregateDtoIdentityModeEnum_unknownDefaultOpenApi,
+      ],
+    );
+
 const SaveThreadAggregateDtoStatusEnum
 _$saveThreadAggregateDtoStatusEnum_RECRUITING =
     const SaveThreadAggregateDtoStatusEnum._('RECRUITING');
@@ -127,6 +161,9 @@ _$saveThreadAggregateDtoDefaultSubthreadPostingPolicyEnumValues =
       _$saveThreadAggregateDtoDefaultSubthreadPostingPolicyEnum_unknownDefaultOpenApi,
     ]);
 
+Serializer<SaveThreadAggregateDtoIdentityModeEnum>
+_$saveThreadAggregateDtoIdentityModeEnumSerializer =
+    _$SaveThreadAggregateDtoIdentityModeEnumSerializer();
 Serializer<SaveThreadAggregateDtoStatusEnum>
 _$saveThreadAggregateDtoStatusEnumSerializer =
     _$SaveThreadAggregateDtoStatusEnumSerializer();
@@ -136,6 +173,43 @@ _$saveThreadAggregateDtoVisibilityEnumSerializer =
 Serializer<SaveThreadAggregateDtoDefaultSubthreadPostingPolicyEnum>
 _$saveThreadAggregateDtoDefaultSubthreadPostingPolicyEnumSerializer =
     _$SaveThreadAggregateDtoDefaultSubthreadPostingPolicyEnumSerializer();
+
+class _$SaveThreadAggregateDtoIdentityModeEnumSerializer
+    implements PrimitiveSerializer<SaveThreadAggregateDtoIdentityModeEnum> {
+  static const Map<String, Object> _toWire = const <String, Object>{
+    'ACCOUNT': 'ACCOUNT',
+    'RP': 'RP',
+    'unknownDefaultOpenApi': 'unknown_default_open_api',
+  };
+  static const Map<Object, String> _fromWire = const <Object, String>{
+    'ACCOUNT': 'ACCOUNT',
+    'RP': 'RP',
+    'unknown_default_open_api': 'unknownDefaultOpenApi',
+  };
+
+  @override
+  final Iterable<Type> types = const <Type>[
+    SaveThreadAggregateDtoIdentityModeEnum,
+  ];
+  @override
+  final String wireName = 'SaveThreadAggregateDtoIdentityModeEnum';
+
+  @override
+  Object serialize(
+    Serializers serializers,
+    SaveThreadAggregateDtoIdentityModeEnum object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => _toWire[object.name] ?? object.name;
+
+  @override
+  SaveThreadAggregateDtoIdentityModeEnum deserialize(
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => SaveThreadAggregateDtoIdentityModeEnum.valueOf(
+    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
+  );
+}
 
 class _$SaveThreadAggregateDtoStatusEnumSerializer
     implements PrimitiveSerializer<SaveThreadAggregateDtoStatusEnum> {
@@ -258,6 +332,8 @@ class _$SaveThreadAggregateDto extends SaveThreadAggregateDto {
   @override
   final String? identityToken;
   @override
+  final SaveThreadAggregateDtoIdentityModeEnum? identityMode;
+  @override
   final String? title;
   @override
   final String? category;
@@ -287,6 +363,7 @@ class _$SaveThreadAggregateDto extends SaveThreadAggregateDto {
 
   _$SaveThreadAggregateDto._({
     this.identityToken,
+    this.identityMode,
     this.title,
     this.category,
     this.status,
@@ -313,6 +390,7 @@ class _$SaveThreadAggregateDto extends SaveThreadAggregateDto {
     if (identical(other, this)) return true;
     return other is SaveThreadAggregateDto &&
         identityToken == other.identityToken &&
+        identityMode == other.identityMode &&
         title == other.title &&
         category == other.category &&
         status == other.status &&
@@ -330,6 +408,7 @@ class _$SaveThreadAggregateDto extends SaveThreadAggregateDto {
   int get hashCode {
     var _$hash = 0;
     _$hash = $jc(_$hash, identityToken.hashCode);
+    _$hash = $jc(_$hash, identityMode.hashCode);
     _$hash = $jc(_$hash, title.hashCode);
     _$hash = $jc(_$hash, category.hashCode);
     _$hash = $jc(_$hash, status.hashCode);
@@ -349,6 +428,7 @@ class _$SaveThreadAggregateDto extends SaveThreadAggregateDto {
   String toString() {
     return (newBuiltValueToStringHelper(r'SaveThreadAggregateDto')
           ..add('identityToken', identityToken)
+          ..add('identityMode', identityMode)
           ..add('title', title)
           ..add('category', category)
           ..add('status', status)
@@ -372,6 +452,12 @@ class SaveThreadAggregateDtoBuilder
   String? get identityToken => _$this._identityToken;
   set identityToken(String? identityToken) =>
       _$this._identityToken = identityToken;
+
+  SaveThreadAggregateDtoIdentityModeEnum? _identityMode;
+  SaveThreadAggregateDtoIdentityModeEnum? get identityMode =>
+      _$this._identityMode;
+  set identityMode(SaveThreadAggregateDtoIdentityModeEnum? identityMode) =>
+      _$this._identityMode = identityMode;
 
   String? _title;
   String? get title => _$this._title;
@@ -434,6 +520,7 @@ class SaveThreadAggregateDtoBuilder
     final $v = _$v;
     if ($v != null) {
       _identityToken = $v.identityToken;
+      _identityMode = $v.identityMode;
       _title = $v.title;
       _category = $v.category;
       _status = $v.status;
@@ -470,6 +557,7 @@ class SaveThreadAggregateDtoBuilder
           _$v ??
           _$SaveThreadAggregateDto._(
             identityToken: identityToken,
+            identityMode: identityMode,
             title: title,
             category: category,
             status: status,

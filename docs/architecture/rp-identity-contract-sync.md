@@ -1,6 +1,8 @@
 # 帖内 RP 身份契约同步
 
-固定 Backend `473738d25405828932f2e307f38ff82bbf50c2a4`（任务分支 `codex/20261004-rp-identity-backend`），HTTP `5.33.0-dev.20261004.1`。这是未部署的兼容候选，不能据此宣称线上支持。
+用户补充允许逐条选择 RP／ACCOUNT。增量契约为四种创建／首次 BODY 写入增加可选 `identityMode`，省略仍走旧确认协议；ACCOUNT 不受 RP token 或资格变化干扰，RP 必须具有有效资料和本人确认。未知结果重试冻结 mode、token、正文和 UUID；编辑旧正文不改变原身份。再次单独同步并生成，业务改动随后提交。
+
+固定 Backend `5ab9767ff8ddce917ddb2560ea655bb58a2408a3`（任务分支 `codex/20261004-rp-identity-backend`），HTTP `5.33.0-dev.20261005.1`。这是未部署的兼容候选，不能据此宣称线上支持。
 
 通过 `tool/sync_backend_contract.ps1` 导出机器契约、Markdown 语义和 `thread-identity.v1.fixtures.json`，以 OpenAPI Generator 7.23.0 重新生成 Dart SDK。新增五个身份端点，既有账号字段保持原义，帖子和候选的身份字段全部可选；新端消费缺失字段时沿用账号资料。Foundation 样式仍固定正式 `v7.2.1`，不引用未发布包。
 

@@ -19,7 +19,7 @@ part 'thread_detail_response_dto.g.dart';
 /// ThreadDetailResponseDto
 ///
 /// Properties:
-/// * [rpIdentityEnabled]
+/// * [rpIdentityEnabled] - 帖内身份是否开启；旧响应缺失时按 false
 /// * [id]
 /// * [title]
 /// * [ownerId]
@@ -51,6 +51,7 @@ part 'thread_detail_response_dto.g.dart';
 /// * [capabilities]
 @BuiltValue()
 abstract class ThreadDetailResponseDto implements Built<ThreadDetailResponseDto, ThreadDetailResponseDtoBuilder> {
+  /// 帖内身份是否开启；旧响应缺失时按 false
   @BuiltValueField(wireName: r'rpIdentityEnabled')
   bool? get rpIdentityEnabled;
 
@@ -153,8 +154,7 @@ abstract class ThreadDetailResponseDto implements Built<ThreadDetailResponseDto,
   factory ThreadDetailResponseDto([void updates(ThreadDetailResponseDtoBuilder b)]) = _$ThreadDetailResponseDto;
 
   @BuiltValueHook(initializeBuilder: true)
-  static void _defaults(ThreadDetailResponseDtoBuilder b) => b
-      ..rpIdentityEnabled = false;
+  static void _defaults(ThreadDetailResponseDtoBuilder b) => b;
 
   @BuiltValueSerializer(custom: true)
   static Serializer<ThreadDetailResponseDto> get serializer => _$ThreadDetailResponseDtoSerializer();
