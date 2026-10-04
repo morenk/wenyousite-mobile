@@ -15,6 +15,7 @@ lib/src/api/admin_moderation_api.dart
 lib/src/api/admin_operations_api.dart
 lib/src/api/admin_reports_api.dart
 lib/src/api/admin_taxonomy_api.dart
+lib/src/api/app_downloads_api.dart
 lib/src/api/auth_api.dart
 lib/src/api/bookmarks_api.dart
 lib/src/api/client_moderation_api.dart
@@ -138,12 +139,15 @@ lib/src/model/admin_user_moderation_response_dto.dart
 lib/src/model/admin_user_sanction_response_dto.dart
 lib/src/model/admin_user_search_item_dto.dart
 lib/src/model/admin_user_search_response_dto.dart
+lib/src/model/android_download_info_dto.dart
+lib/src/model/android_download_release_dto.dart
 lib/src/model/api_capabilities_response_dto.dart
 lib/src/model/api_error_envelope.dart
 lib/src/model/api_meta_response_dto.dart
 lib/src/model/api_paginated_success_envelope.dart
 lib/src/model/api_pagination_meta.dart
 lib/src/model/api_success_envelope.dart
+lib/src/model/app_downloads_info200_response.dart
 lib/src/model/appeal_access_token_response_dto.dart
 lib/src/model/auth_change_password200_response.dart
 lib/src/model/auth_forgot_password200_response.dart
@@ -228,6 +232,7 @@ lib/src/model/direct_message_user_response_dto.dart
 lib/src/model/direct_messages_recall200_response.dart
 lib/src/model/direct_unread_count_response_dto.dart
 lib/src/model/discussion_author_response_dto.dart
+lib/src/model/discussion_window_target_dto.dart
 lib/src/model/draft_default_subthread_response_dto.dart
 lib/src/model/draft_response_dto.dart
 lib/src/model/draft_slot_usage_response_dto.dart
@@ -248,6 +253,7 @@ lib/src/model/economy_tip_thread201_response.dart
 lib/src/model/economy_tip_user201_response.dart
 lib/src/model/economy_transactions200_response.dart
 lib/src/model/floor_response_dto.dart
+lib/src/model/floor_window_response_dto.dart
 lib/src/model/forgot_password_dto.dart
 lib/src/model/gallery_image_dto.dart
 lib/src/model/gallery_list200_response.dart
@@ -370,10 +376,12 @@ lib/src/model/posting_capability_response_dto.dart
 lib/src/model/posts_create201_response.dart
 lib/src/model/posts_find_by_id200_response.dart
 lib/src/model/posts_find_floor_authors200_response.dart
+lib/src/model/posts_find_floor_window200_response.dart
 lib/src/model/posts_find_floors200_response.dart
 lib/src/model/posts_find_latest_in_thread200_response.dart
 lib/src/model/posts_find_replies200_response.dart
 lib/src/model/posts_find_reply_authors200_response.dart
+lib/src/model/posts_find_reply_window200_response.dart
 lib/src/model/posts_pin200_response.dart
 lib/src/model/posts_remove200_response.dart
 lib/src/model/posts_unpin200_response.dart
@@ -399,6 +407,7 @@ lib/src/model/reorder_subthreads_dto.dart
 lib/src/model/reordered_subthread_response_dto.dart
 lib/src/model/reply_response_dto.dart
 lib/src/model/reply_target_response_dto.dart
+lib/src/model/reply_window_response_dto.dart
 lib/src/model/report_response_dto.dart
 lib/src/model/report_user_summary_dto.dart
 lib/src/model/reports_create201_response.dart
@@ -492,6 +501,7 @@ lib/src/model/thread_tags_find_all200_response.dart
 lib/src/model/thread_tags_remove200_response.dart
 lib/src/model/threads_create201_response.dart
 lib/src/model/threads_create_invite_link200_response.dart
+lib/src/model/threads_ensure_invite_link200_response.dart
 lib/src/model/threads_find_all200_response.dart
 lib/src/model/threads_find_by_id200_response.dart
 lib/src/model/threads_find_drafts200_response.dart

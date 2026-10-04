@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
 import 'package:wenyousite_mobile/core/network/media_display_mapper.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_invitation_repository_ports.dart';
@@ -19,25 +20,43 @@ class ApiThreadInvitationRepository implements ThreadInvitationRepository {
   final String _webOrigin;
 
   @override
-  Future<ThreadInvitationLink> generateLink(String threadId) async {
+  Future<ThreadInvitationLink> ensureLink(String threadId) async {
     try {
-      final response = await _threadsApi.threadsCreateInviteLink(id: threadId);
-      final dto = response.data?.data;
-      if (dto == null ||
-          dto.threadId != threadId ||
-          !_tokenPattern.hasMatch(dto.token)) {
-        throw const ApiFailure(userMessage: '邀请链接生成失败，请重新生成。');
-      }
-      return ThreadInvitationLink(
-        id: dto.id,
-        threadId: dto.threadId,
-        token: dto.token,
-        url: Uri.parse(_webOrigin).resolve('/join/${dto.token}'),
-        createdAt: dto.createdAt,
-      );
+      final response = await _threadsApi.threadsEnsureInviteLink(id: threadId);
+      return _mapLink(response.data?.data, threadId);
     } on DioException catch (error) {
       throw ApiFailure.fromDio(error);
     }
+  }
+
+  @override
+  Future<ThreadInvitationLink> resetLink(String threadId) async {
+    try {
+      final response = await _threadsApi.threadsCreateInviteLink(
+        id: threadId,
+        extra: ApiRequestPolicy.authenticatedNonReplayable.extra,
+      );
+      return _mapLink(response.data?.data, threadId);
+    } on DioException catch (error) {
+      throw ApiFailure.fromDio(error);
+    }
+  }
+
+  ThreadInvitationLink _mapLink(InviteLinkResponseDto? dto, String threadId) {
+    if (dto == null ||
+        dto.threadId != threadId ||
+        !_tokenPattern.hasMatch(dto.token)) {
+      throw const ApiFailure.invalidResponse(
+        diagnosticCode: 'THREAD_INVITE_LINK_INVALID',
+      );
+    }
+    return ThreadInvitationLink(
+      id: dto.id,
+      threadId: dto.threadId,
+      token: dto.token,
+      url: Uri.parse(_webOrigin).resolve('/join/${dto.token}'),
+      createdAt: dto.createdAt,
+    );
   }
 
   @override

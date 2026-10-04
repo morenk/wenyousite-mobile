@@ -17,6 +17,7 @@ import 'package:wenyousite_mobile/features/threads/data/thread_detail_repository
 import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_page.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_target_utils.dart';
+import '../../support/discussion_window_fixture.dart';
 import 'thread_detail_page_collaboration_repositories.dart';
 import 'thread_detail_page_content_fixtures.dart';
 
@@ -472,6 +473,7 @@ Future<void> threadDetailPageTestDismissPostComposerFromOutside(
 }
 
 class ThreadDetailPageTestFakeThreadDetailRepository
+    with FloorWindowFixture
     implements ThreadDetailRepository {
   ThreadDetailPageTestFakeThreadDetailRepository({
     this.threadFailure,

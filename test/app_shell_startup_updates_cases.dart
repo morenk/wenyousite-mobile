@@ -291,8 +291,8 @@ void registerAppShellStartupUpdatesCases() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('新版正在准备中'), findsOneWidget);
-    expect(find.text('当前版本暂时无法继续使用。新版正在发布，请稍后再试。'), findsOneWidget);
+    expect(find.text('暂时无法更新'), findsOneWidget);
+    expect(find.text('当前版本需要更新才能继续使用，请稍后重试。'), findsOneWidget);
     expect(find.textContaining('兼容信息'), findsNothing);
     expect(find.byKey(const Key('mobile-update-recheck')), findsOneWidget);
     expect(find.text('首页'), findsNothing);
@@ -372,7 +372,7 @@ void registerAppShellStartupUpdatesCases() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.text('新版正在准备中'), findsOneWidget);
+    expect(find.text('暂时无法更新'), findsOneWidget);
     expect(find.text('首页'), findsNothing);
   });
 
@@ -587,11 +587,72 @@ void registerAppShellStartupUpdatesCases() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('新版正在准备中'), findsOneWidget);
+    expect(find.text('暂时无法更新'), findsOneWidget);
     expect(find.text('当前 0.3.0+7'), findsOneWidget);
     expect(find.byKey(const Key('mobile-update-start')), findsNothing);
     expect(find.byKey(const Key('mobile-update-recheck')), findsOneWidget);
   });
+
+  for (final message in ['下载请求较多，请稍后重试。', '安装包暂时无法下载，请稍后重试。']) {
+    testWidgets('强制更新保留门禁并显示 $message', (tester) async {
+      tester.view.physicalSize = const Size(320, 640);
+      tester.view.devicePixelRatio = 1;
+      tester.platformDispatcher.textScaleFactorTestValue = 2;
+      tester.platformDispatcher.platformBrightnessTestValue =
+          message.startsWith('安装包') ? Brightness.dark : Brightness.light;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+      addTearDown(tester.platformDispatcher.clearPlatformBrightnessTestValue);
+      final updateService = AppShellTestFakeMobileUpdateService(
+        build: 7,
+        releaseAvailable: false,
+        availabilityMessage: message,
+      );
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            mobileUpdateNoticeStoreProvider.overrideWithValue(noticeStore),
+            mobileReleaseRepositoryProvider.overrideWithValue(
+              TestReleaseRepository(),
+            ),
+            metaRepositoryProvider.overrideWithValue(
+              AppShellTestFixedMetaRepository(
+                contractVersion: '5.0.0',
+                android: const MobilePlatformPolicy(
+                  minimumSupportedBuild: 8,
+                  recommendedBuild: 10,
+                  updateUrl: appShellTestAndroidUpdateUrl,
+                ),
+              ),
+            ),
+            mobileUpdateServiceProvider.overrideWithValue(updateService),
+            tokenStoreProvider.overrideWithValue(
+              AppShellTestMemoryTokenStore(),
+            ),
+            homeRepositoryProvider.overrideWithValue(
+              AppShellTestEmptyHomeRepository(),
+            ),
+          ],
+          child: const WenyouApp(),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('暂时无法更新'), findsOneWidget);
+      expect(find.text(message), findsOneWidget);
+      expect(find.text('首页'), findsNothing);
+      expect(find.byKey(const Key('mobile-update-start')), findsNothing);
+      expect(tester.takeException(), isNull);
+      await tester.ensureVisible(
+        find.byKey(const Key('mobile-update-recheck')),
+      );
+      await tester.tap(find.byKey(const Key('mobile-update-recheck')));
+      await tester.pumpAndSettle();
+      expect(find.text(message), findsOneWidget);
+      expect(updateService.launchCalls, 0);
+      expect(tester.takeException(), isNull);
+    });
+  }
 
   testWidgets('安装包尚未上传时等待，重新检查发现安装包后显示更新入口', (tester) async {
     final repository = AppShellTestFixedMetaRepository(
@@ -629,7 +690,7 @@ void registerAppShellStartupUpdatesCases() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('新版正在准备中'), findsOneWidget);
+    expect(find.text('暂时无法更新'), findsOneWidget);
     expect(updateService.availabilityChecks, 1);
 
     updateService.releaseAvailable = true;
@@ -676,7 +737,7 @@ void registerAppShellStartupUpdatesCases() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.text('新版正在准备中'), findsOneWidget);
+    expect(find.text('暂时无法更新'), findsOneWidget);
 
     updateService.releaseAvailable = true;
     await tester.pump(const Duration(seconds: 60));

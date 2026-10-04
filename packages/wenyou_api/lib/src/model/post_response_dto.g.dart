@@ -87,6 +87,8 @@ class _$PostResponseDto extends PostResponseDto {
   @override
   final num? floorNumber;
   @override
+  final num? replyNumber;
+  @override
   final String? parentPostId;
   @override
   final String? replyToPostId;
@@ -122,6 +124,7 @@ class _$PostResponseDto extends PostResponseDto {
     required this.authorId,
     required this.kind,
     this.floorNumber,
+    this.replyNumber,
     this.parentPostId,
     this.replyToPostId,
     this.clientRequestId,
@@ -153,6 +156,7 @@ class _$PostResponseDto extends PostResponseDto {
         authorId == other.authorId &&
         kind == other.kind &&
         floorNumber == other.floorNumber &&
+        replyNumber == other.replyNumber &&
         parentPostId == other.parentPostId &&
         replyToPostId == other.replyToPostId &&
         clientRequestId == other.clientRequestId &&
@@ -177,6 +181,7 @@ class _$PostResponseDto extends PostResponseDto {
     _$hash = $jc(_$hash, authorId.hashCode);
     _$hash = $jc(_$hash, kind.hashCode);
     _$hash = $jc(_$hash, floorNumber.hashCode);
+    _$hash = $jc(_$hash, replyNumber.hashCode);
     _$hash = $jc(_$hash, parentPostId.hashCode);
     _$hash = $jc(_$hash, replyToPostId.hashCode);
     _$hash = $jc(_$hash, clientRequestId.hashCode);
@@ -203,6 +208,7 @@ class _$PostResponseDto extends PostResponseDto {
           ..add('authorId', authorId)
           ..add('kind', kind)
           ..add('floorNumber', floorNumber)
+          ..add('replyNumber', replyNumber)
           ..add('parentPostId', parentPostId)
           ..add('replyToPostId', replyToPostId)
           ..add('clientRequestId', clientRequestId)
@@ -253,6 +259,10 @@ class PostResponseDtoBuilder
   num? _floorNumber;
   num? get floorNumber => _$this._floorNumber;
   set floorNumber(num? floorNumber) => _$this._floorNumber = floorNumber;
+
+  num? _replyNumber;
+  num? get replyNumber => _$this._replyNumber;
+  set replyNumber(num? replyNumber) => _$this._replyNumber = replyNumber;
 
   String? _parentPostId;
   String? get parentPostId => _$this._parentPostId;
@@ -321,6 +331,7 @@ class PostResponseDtoBuilder
       _authorId = $v.authorId;
       _kind = $v.kind;
       _floorNumber = $v.floorNumber;
+      _replyNumber = $v.replyNumber;
       _parentPostId = $v.parentPostId;
       _replyToPostId = $v.replyToPostId;
       _clientRequestId = $v.clientRequestId;
@@ -384,6 +395,7 @@ class PostResponseDtoBuilder
               'kind',
             ),
             floorNumber: floorNumber,
+            replyNumber: replyNumber,
             parentPostId: parentPostId,
             replyToPostId: replyToPostId,
             clientRequestId: clientRequestId,

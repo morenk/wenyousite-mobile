@@ -2,7 +2,9 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
+import 'package:wenyousite_mobile/core/models/discussion_window.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/network/discussion_window_mapper.dart';
 import 'package:wenyousite_mobile/core/network/media_display_mapper.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_detail_repository_ports.dart';
@@ -16,6 +18,69 @@ class ApiThreadDetailRepository implements ThreadDetailRepository {
 
   final ThreadsApi _threadsApi;
   final PostsApi _postsApi;
+
+  @override
+  Future<DiscussionWindow<ThreadFloorModel>> fetchFloorWindow({
+    required String subthreadId,
+    int? number,
+    String? postId,
+    String? cursor,
+    int limit = 20,
+    ThreadFloorOrder order = ThreadFloorOrder.oldest,
+    String? authorId,
+  }) async {
+    try {
+      final dto = (await _postsApi.postsFindFloorWindow(
+        subthreadId: subthreadId,
+        number: number,
+        postId: postId,
+        cursor: cursor,
+        limit: limit,
+        order: order.apiValue,
+        authorId: authorId,
+      )).data?.data;
+      if (dto == null ||
+          [...dto.items, ...dto.pinnedItems].any(
+            (item) =>
+                item.floorNumber == null ||
+                item.floorNumber != item.floorNumber!.toInt(),
+          ) ||
+          ((number != null || postId != null || cursor != null) &&
+              dto.pinnedItems.isNotEmpty) ||
+          (authorId != null &&
+              [
+                ...dto.items,
+                ...dto.pinnedItems,
+              ].any((item) => item.authorId != authorId))) {
+        throw const ApiFailure.invalidResponse(
+          diagnosticCode: 'floors.window.invalid_scope',
+        );
+      }
+      _validateFloors([
+        ...dto.items,
+        ...dto.pinnedItems,
+      ], expectedSubthreadId: subthreadId);
+      return mapDiscussionWindow(
+        items: dto.items.map(_mapFloor).toList(),
+        pinnedItems: dto.pinnedItems.map(_mapFloor).toList(),
+        total: dto.total,
+        maxNumber: dto.maxNumber,
+        targetId: dto.target?.id,
+        targetNumber: dto.target?.number,
+        beforeCursor: dto.beforeCursor,
+        afterCursor: dto.afterCursor,
+        hasBefore: dto.hasBefore,
+        hasAfter: dto.hasAfter,
+        limit: limit,
+        requestedNumber: number,
+        requestedId: postId,
+        idOf: (item) => item.id,
+        numberOf: (item) => item.floorNumber,
+      );
+    } on DioException catch (error) {
+      throw ApiFailure.fromDio(error);
+    }
+  }
 
   @override
   Future<ThreadDetailModel> fetchThread(String threadId) async {

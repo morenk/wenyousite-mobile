@@ -205,7 +205,12 @@ class _PageRepository implements ThreadInvitationRepository {
   }
 
   @override
-  Future<ThreadInvitationLink> generateLink(String threadId) {
+  Future<ThreadInvitationLink> ensureLink(String threadId) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<ThreadInvitationLink> resetLink(String threadId) {
     throw UnimplementedError();
   }
 }

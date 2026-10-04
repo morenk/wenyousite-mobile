@@ -1,3 +1,4 @@
+import 'package:wenyousite_mobile/core/models/discussion_window.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
 
@@ -12,6 +13,7 @@ class PostDiscussionState {
     this.phase = PostDiscussionPhase.loading,
     this.root,
     this.replies = const [],
+    this.window,
     this.cursor,
     this.hasMore = false,
     this.order = PostReplyOrder.oldest,
@@ -27,6 +29,10 @@ class PostDiscussionState {
   final PostDiscussionPhase phase;
   final PostItem? root;
   final List<PostItem> replies;
+  final DiscussionWindowBuffer<PostItem>? window;
+  int get maxNumber => window?.maxNumber ?? 0;
+  int get total => window?.total ?? root?.replyCount ?? 0;
+  bool get hasBefore => window?.beforeCursor != null;
   final String? cursor;
   final bool hasMore;
   final PostReplyOrder order;
@@ -42,6 +48,7 @@ class PostDiscussionState {
     PostDiscussionPhase? phase,
     Object? root = _unset,
     List<PostItem>? replies,
+    Object? window = _unset,
     Object? cursor = _unset,
     bool? hasMore,
     PostReplyOrder? order,
@@ -57,6 +64,9 @@ class PostDiscussionState {
       phase: phase ?? this.phase,
       root: identical(root, _unset) ? this.root : root as PostItem?,
       replies: replies ?? this.replies,
+      window: identical(window, _unset)
+          ? this.window
+          : window as DiscussionWindowBuffer<PostItem>?,
       cursor: identical(cursor, _unset) ? this.cursor : cursor as String?,
       hasMore: hasMore ?? this.hasMore,
       order: order ?? this.order,

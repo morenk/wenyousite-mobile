@@ -7,6 +7,7 @@ import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/core/widgets/discussion_sliver_list.dart';
 import 'package:wenyousite_mobile/core/widgets/reading_quick_scroll.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_content_action_menu.dart';
@@ -32,6 +33,8 @@ import 'package:wenyousite_mobile/features/stickers/stickers.dart';
 class PostDiscussionList extends StatelessWidget {
   const PostDiscussionList({
     required this.state,
+    this.countKey,
+    this.onLocate,
     required this.actions,
     required this.viewerId,
     required this.authenticated,
@@ -55,6 +58,8 @@ class PostDiscussionList extends StatelessWidget {
   });
 
   final PostDiscussionState state;
+  final Key? countKey;
+  final VoidCallback? onLocate;
   final PostActionState actions;
   final String? viewerId;
   final bool authenticated;
@@ -90,7 +95,7 @@ class PostDiscussionList extends StatelessWidget {
         ),
         SizedBox(height: tokens.space12),
       ],
-      DiscussionKeepAlive(
+      KeyedSubtree(
         child: ReadingPositionAnchor(
           controller: quickScroll,
           label: '原楼层',
@@ -122,6 +127,8 @@ class PostDiscussionList extends StatelessWidget {
       ),
       SizedBox(height: tokens.space12),
       PostReplyFilters(
+        key: countKey,
+        onLocate: onLocate,
         state: state,
         replyCount: root.replyCount,
         authors: authors,
@@ -183,75 +190,82 @@ class PostDiscussionList extends StatelessWidget {
         else
           SliverPadding(
             padding: EdgeInsets.symmetric(horizontal: horizontal),
-            sliver: SliverList.builder(
+            sliver: DiscussionSliverList(
               key: itemListKey,
-              itemCount: state.replies.length,
-              itemBuilder: (context, index) {
-                final reply = state.replies[index];
-                return DiscussionKeepAlive(
-                  key: ValueKey('post-reply-item-${reply.id}'),
-                  child: WenyouConstrainedWidth(
-                    child: Column(
-                      children: [
-                        if (index > 0)
-                          WenyouContentItemDivider(
-                            key: ValueKey('post-reply-divider-${reply.id}'),
-                          ),
-                        ReadingPositionAnchor(
-                          controller: quickScroll,
-                          label: reply.floorNumber == null
-                              ? '${reply.author.username}的回复附近'
-                              : '第 ${reply.floorNumber} 楼回复附近',
-                          child: _PostCard(
-                            key: Key('post-reply-${reply.id}'),
-                            post: reply,
-                            galleryTarget: ReadingGalleryTarget(
-                              scope: ReadingGalleryScope.postReplies,
-                              scopeId: root.id,
-                              authorId: state.authorId,
-                              order: state.order == PostReplyOrder.newest
-                                  ? ReadingGalleryOrder.newest
-                                  : ReadingGalleryOrder.oldest,
+              scope: (root.id, state.order, state.authorId),
+              delegate: SliverChildBuilderDelegate(
+                (context, index) {
+                  final reply = state.replies[index];
+                  return KeyedSubtree(
+                    key: ValueKey('post-reply-item-${reply.id}'),
+                    child: WenyouConstrainedWidth(
+                      child: Column(
+                        children: [
+                          if (index > 0)
+                            WenyouContentItemDivider(
+                              key: ValueKey('post-reply-divider-${reply.id}'),
                             ),
-                            timeReference: timeReference,
-                            focused: reply.id == focusedReplyId,
-                            targetFrameKey: reply.id == focusedReplyId
-                                ? targetKey
-                                : null,
-                            canEdit: reply.isAuthoredBy(viewerId),
-                            canDelete:
-                                reply.isAuthoredBy(viewerId) || canManageThread,
-                            pending: actions.pendingPostId == reply.id,
-                            reportReturnTo:
-                                canReport &&
-                                    !reply.isDeleted &&
-                                    !reply.isAuthoredBy(viewerId)
-                                ? _reportLocation(root, reply.id)
-                                : null,
-                            onReply: authenticated
-                                ? () => onCompose(postReplyTarget(root, reply))
-                                : null,
-                            onEdit: () =>
-                                onCompose(postEditTarget(reply, '编辑回复')),
-                            onDelete: () => onDelete(reply, false),
+                          ReadingPositionAnchor(
+                            controller: quickScroll,
+                            postId: reply.id,
+                            number: reply.replyNumber,
+                            label: reply.replyNumber == null
+                                ? '${reply.author.username}的回复附近'
+                                : '第 ${reply.replyNumber} 条回复附近',
+                            child: _PostCard(
+                              key: Key('post-reply-${reply.id}'),
+                              post: reply,
+                              galleryTarget: ReadingGalleryTarget(
+                                scope: ReadingGalleryScope.postReplies,
+                                scopeId: root.id,
+                                authorId: state.authorId,
+                                order: state.order == PostReplyOrder.newest
+                                    ? ReadingGalleryOrder.newest
+                                    : ReadingGalleryOrder.oldest,
+                              ),
+                              timeReference: timeReference,
+                              focused: reply.id == focusedReplyId,
+                              targetFrameKey: reply.id == focusedReplyId
+                                  ? targetKey
+                                  : null,
+                              canEdit: reply.isAuthoredBy(viewerId),
+                              canDelete:
+                                  reply.isAuthoredBy(viewerId) ||
+                                  canManageThread,
+                              pending: actions.pendingPostId == reply.id,
+                              reportReturnTo:
+                                  canReport &&
+                                      !reply.isDeleted &&
+                                      !reply.isAuthoredBy(viewerId)
+                                  ? _reportLocation(root, reply.id)
+                                  : null,
+                              onReply: authenticated
+                                  ? () =>
+                                        onCompose(postReplyTarget(root, reply))
+                                  : null,
+                              onEdit: () =>
+                                  onCompose(postEditTarget(reply, '编辑回复')),
+                              onDelete: () => onDelete(reply, false),
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                );
-              },
-              findChildIndexCallback: (key) {
-                final value = key is ValueKey<String> ? key.value : null;
-                if (value == null || !value.startsWith('post-reply-item-')) {
-                  return null;
-                }
-                final replyId = value.substring('post-reply-item-'.length);
-                final index = state.replies.indexWhere(
-                  (reply) => reply.id == replyId,
-                );
-                return index < 0 ? null : index;
-              },
+                  );
+                },
+                childCount: state.replies.length,
+                findChildIndexCallback: (key) {
+                  final value = key is ValueKey<String> ? key.value : null;
+                  if (value == null || !value.startsWith('post-reply-item-')) {
+                    return null;
+                  }
+                  final replyId = value.substring('post-reply-item-'.length);
+                  final index = state.replies.indexWhere(
+                    (reply) => reply.id == replyId,
+                  );
+                  return index < 0 ? null : index;
+                },
+              ),
             ),
           ),
         SliverPadding(
@@ -534,6 +548,8 @@ class _PostAuthorLine extends StatelessWidget {
                 reference: timeReference,
                 semanticsPrefix: [
                   if (root) '楼层 ${post.floorNumber ?? '-'}',
+                  if (!root && post.replyNumber != null)
+                    '回复编号 ${post.replyNumber}',
                   if (!root && post.replyToAuthor != null)
                     '回复 ${post.replyToAuthor!.username}'
                   else if (!root)
@@ -542,6 +558,7 @@ class _PostAuthorLine extends StatelessWidget {
                 ].join('，'),
                 prefix: [
                   if (root) '#${post.floorNumber ?? '-'}',
+                  if (!root && post.replyNumber != null) '#${post.replyNumber}',
                   if (!root && post.replyToAuthor != null)
                     '回复 @${post.replyToAuthor!.username}'
                   else if (!root)
