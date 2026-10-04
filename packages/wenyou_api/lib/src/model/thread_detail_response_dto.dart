@@ -19,6 +19,7 @@ part 'thread_detail_response_dto.g.dart';
 /// ThreadDetailResponseDto
 ///
 /// Properties:
+/// * [rpIdentityEnabled]
 /// * [id]
 /// * [title]
 /// * [ownerId]
@@ -50,6 +51,9 @@ part 'thread_detail_response_dto.g.dart';
 /// * [capabilities]
 @BuiltValue()
 abstract class ThreadDetailResponseDto implements Built<ThreadDetailResponseDto, ThreadDetailResponseDtoBuilder> {
+  @BuiltValueField(wireName: r'rpIdentityEnabled')
+  bool? get rpIdentityEnabled;
+
   @BuiltValueField(wireName: r'id')
   String get id;
 
@@ -149,7 +153,8 @@ abstract class ThreadDetailResponseDto implements Built<ThreadDetailResponseDto,
   factory ThreadDetailResponseDto([void updates(ThreadDetailResponseDtoBuilder b)]) = _$ThreadDetailResponseDto;
 
   @BuiltValueHook(initializeBuilder: true)
-  static void _defaults(ThreadDetailResponseDtoBuilder b) => b;
+  static void _defaults(ThreadDetailResponseDtoBuilder b) => b
+      ..rpIdentityEnabled = false;
 
   @BuiltValueSerializer(custom: true)
   static Serializer<ThreadDetailResponseDto> get serializer => _$ThreadDetailResponseDtoSerializer();
@@ -167,6 +172,13 @@ class _$ThreadDetailResponseDtoSerializer implements PrimitiveSerializer<ThreadD
     ThreadDetailResponseDto object, {
     FullType specifiedType = FullType.unspecified,
   }) sync* {
+    if (object.rpIdentityEnabled != null) {
+      yield r'rpIdentityEnabled';
+      yield serializers.serialize(
+        object.rpIdentityEnabled,
+        specifiedType: const FullType(bool),
+      );
+    }
     yield r'id';
     yield serializers.serialize(
       object.id,
@@ -347,6 +359,13 @@ class _$ThreadDetailResponseDtoSerializer implements PrimitiveSerializer<ThreadD
       final key = serializedList[i] as String;
       final value = serializedList[i + 1];
       switch (key) {
+        case r'rpIdentityEnabled':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(bool),
+          ) as bool;
+          result.rpIdentityEnabled = valueDes;
+          break;
         case r'id':
           final valueDes = serializers.deserialize(
             value,

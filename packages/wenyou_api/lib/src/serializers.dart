@@ -252,6 +252,7 @@ import 'package:wenyou_api/src/model/media_reissue_upload_url200_response.dart';
 import 'package:wenyou_api/src/model/media_response_dto.dart';
 import 'package:wenyou_api/src/model/mention_candidate_dto.dart';
 import 'package:wenyou_api/src/model/mention_candidates_response_dto.dart';
+import 'package:wenyou_api/src/model/mention_identity_display_dto.dart';
 import 'package:wenyou_api/src/model/message_response_dto.dart';
 import 'package:wenyou_api/src/model/meta_get_meta200_response.dart';
 import 'package:wenyou_api/src/model/mobile_compatibility_dto.dart';
@@ -383,6 +384,7 @@ import 'package:wenyou_api/src/model/resolve_moderation_case_dto.dart';
 import 'package:wenyou_api/src/model/resolve_report_dto.dart';
 import 'package:wenyou_api/src/model/revoke_sanction_dto.dart';
 import 'package:wenyou_api/src/model/revoke_session_response_dto.dart';
+import 'package:wenyou_api/src/model/rp_identity_response_dto.dart';
 import 'package:wenyou_api/src/model/sanction_user_dto.dart';
 import 'package:wenyou_api/src/model/save_thread_aggregate_dto.dart';
 import 'package:wenyou_api/src/model/search_author_response_dto.dart';
@@ -403,6 +405,7 @@ import 'package:wenyou_api/src/model/set_avatar_dto.dart';
 import 'package:wenyou_api/src/model/set_direct_conversation_archive_dto.dart';
 import 'package:wenyou_api/src/model/set_profile_cover_dto.dart';
 import 'package:wenyou_api/src/model/set_read_status_dto.dart';
+import 'package:wenyou_api/src/model/set_thread_identity_enabled_dto.dart';
 import 'package:wenyou_api/src/model/site_operational_settings_get200_response.dart';
 import 'package:wenyou_api/src/model/site_operational_settings_response_dto.dart';
 import 'package:wenyou_api/src/model/site_operational_settings_update200_response.dart';
@@ -446,6 +449,15 @@ import 'package:wenyou_api/src/model/thread_cover_media_response_dto.dart';
 import 'package:wenyou_api/src/model/thread_cover_preview_variant_response_dto.dart';
 import 'package:wenyou_api/src/model/thread_detail_response_dto.dart';
 import 'package:wenyou_api/src/model/thread_export_dto.dart';
+import 'package:wenyou_api/src/model/thread_identities_clear200_response.dart';
+import 'package:wenyou_api/src/model/thread_identities_find_user200_response.dart';
+import 'package:wenyou_api/src/model/thread_identities_mine200_response.dart';
+import 'package:wenyou_api/src/model/thread_identities_set_enabled200_response.dart';
+import 'package:wenyou_api/src/model/thread_identities_update200_response.dart';
+import 'package:wenyou_api/src/model/thread_identity_account_dto.dart';
+import 'package:wenyou_api/src/model/thread_identity_profile_dto.dart';
+import 'package:wenyou_api/src/model/thread_identity_settings_dto.dart';
+import 'package:wenyou_api/src/model/thread_identity_state_dto.dart';
 import 'package:wenyou_api/src/model/thread_like_response_dto.dart';
 import 'package:wenyou_api/src/model/thread_list_count_response_dto.dart';
 import 'package:wenyou_api/src/model/thread_list_default_subthread_response_dto.dart';
@@ -492,6 +504,7 @@ import 'package:wenyou_api/src/model/update_site_settings_dto.dart';
 import 'package:wenyou_api/src/model/update_subthread_dto.dart';
 import 'package:wenyou_api/src/model/update_thread_category_dto.dart';
 import 'package:wenyou_api/src/model/update_thread_dto.dart';
+import 'package:wenyou_api/src/model/update_thread_identity_dto.dart';
 import 'package:wenyou_api/src/model/update_user_dto.dart';
 import 'package:wenyou_api/src/model/upload_url_response_dto.dart';
 import 'package:wenyou_api/src/model/upsert_body_dto.dart';
@@ -778,6 +791,7 @@ part 'serializers.g.dart';
   MediaResponseDto,
   MentionCandidateDto,
   MentionCandidatesResponseDto,
+  MentionIdentityDisplayDto,
   MessageResponseDto,
   MetaGetMeta200Response,
   MobileCompatibilityDto,
@@ -909,6 +923,7 @@ part 'serializers.g.dart';
   ResolveReportDto,
   RevokeSanctionDto,
   RevokeSessionResponseDto,
+  RpIdentityResponseDto,
   SanctionUserDto,
   SaveThreadAggregateDto,
   SearchAuthorResponseDto,
@@ -929,6 +944,7 @@ part 'serializers.g.dart';
   SetDirectConversationArchiveDto,
   SetProfileCoverDto,
   SetReadStatusDto,
+  SetThreadIdentityEnabledDto,
   SiteOperationalSettingsGet200Response,
   SiteOperationalSettingsResponseDto,
   SiteOperationalSettingsUpdate200Response,
@@ -972,6 +988,15 @@ part 'serializers.g.dart';
   ThreadCoverPreviewVariantResponseDto,
   ThreadDetailResponseDto,
   ThreadExportDto,
+  ThreadIdentitiesClear200Response,
+  ThreadIdentitiesFindUser200Response,
+  ThreadIdentitiesMine200Response,
+  ThreadIdentitiesSetEnabled200Response,
+  ThreadIdentitiesUpdate200Response,
+  ThreadIdentityAccountDto,
+  ThreadIdentityProfileDto,
+  ThreadIdentitySettingsDto,
+  ThreadIdentityStateDto,
   ThreadLikeResponseDto,
   ThreadListCountResponseDto,
   ThreadListDefaultSubthreadResponseDto,
@@ -1018,6 +1043,7 @@ part 'serializers.g.dart';
   UpdateSubthreadDto,
   UpdateThreadCategoryDto,
   UpdateThreadDto,
+  UpdateThreadIdentityDto,
   UpdateUserDto,
   UploadUrlResponseDto,
   UpsertBodyDto,

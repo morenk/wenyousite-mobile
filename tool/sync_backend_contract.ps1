@@ -198,6 +198,8 @@ $contractFiles = @(
   @{ Source = 'contracts/internal-reference-v1-fixtures.json'; Destination = 'internal-reference-v1-fixtures.json' },
   @{ Source = 'contracts/discussion-navigation.v1.json'; Destination = 'discussion-navigation.v1.json' },
   @{ Source = 'docs/discussion-navigation.md'; Destination = 'discussion-navigation.md' },
+  @{ Source = 'contracts/thread-identity.v1.fixtures.json'; Destination = 'thread-identity.v1.fixtures.json' },
+  @{ Source = 'docs/thread-identity.md'; Destination = 'thread-identity.md' },
   @{ Source = 'contracts/CHANGELOG.md'; Destination = 'CHANGELOG.md' },
   @{ Source = 'docs/mobile-client-guide.md'; Destination = 'mobile-client-guide.md' },
   @{ Source = 'docs/mobile-release-operations.md'; Destination = 'mobile-release-operations.md' },

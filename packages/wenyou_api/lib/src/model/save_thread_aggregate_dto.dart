@@ -12,6 +12,7 @@ part 'save_thread_aggregate_dto.g.dart';
 /// SaveThreadAggregateDto
 ///
 /// Properties:
+/// * [identityToken] - GET 帖内身份返回的确认 token；新建正文或发言时使用。身份变化返回 409/40011，保留草稿并重新确认
 /// * [title]
 /// * [category] - 管理员配置的分类 slug；服务端会去除首尾空白并转为大写
 /// * [status]
@@ -25,6 +26,10 @@ part 'save_thread_aggregate_dto.g.dart';
 /// * [tagNames]
 @BuiltValue()
 abstract class SaveThreadAggregateDto implements Built<SaveThreadAggregateDto, SaveThreadAggregateDtoBuilder> {
+  /// GET 帖内身份返回的确认 token；新建正文或发言时使用。身份变化返回 409/40011，保留草稿并重新确认
+  @BuiltValueField(wireName: r'identityToken')
+  String? get identityToken;
+
   @BuiltValueField(wireName: r'title')
   String? get title;
 
@@ -91,6 +96,13 @@ class _$SaveThreadAggregateDtoSerializer implements PrimitiveSerializer<SaveThre
     SaveThreadAggregateDto object, {
     FullType specifiedType = FullType.unspecified,
   }) sync* {
+    if (object.identityToken != null) {
+      yield r'identityToken';
+      yield serializers.serialize(
+        object.identityToken,
+        specifiedType: const FullType(String),
+      );
+    }
     if (object.title != null) {
       yield r'title';
       yield serializers.serialize(
@@ -183,6 +195,13 @@ class _$SaveThreadAggregateDtoSerializer implements PrimitiveSerializer<SaveThre
       final key = serializedList[i] as String;
       final value = serializedList[i + 1];
       switch (key) {
+        case r'identityToken':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(String),
+          ) as String;
+          result.identityToken = valueDes;
+          break;
         case r'title':
           final valueDes = serializers.deserialize(
             value,

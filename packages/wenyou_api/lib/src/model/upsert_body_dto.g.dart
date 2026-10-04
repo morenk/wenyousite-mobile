@@ -8,6 +8,8 @@ part of 'upsert_body_dto.dart';
 
 class _$UpsertBodyDto extends UpsertBodyDto {
   @override
+  final String? identityToken;
+  @override
   final String content;
   @override
   final num? version;
@@ -15,7 +17,8 @@ class _$UpsertBodyDto extends UpsertBodyDto {
   factory _$UpsertBodyDto([void Function(UpsertBodyDtoBuilder)? updates]) =>
       (UpsertBodyDtoBuilder()..update(updates))._build();
 
-  _$UpsertBodyDto._({required this.content, this.version}) : super._();
+  _$UpsertBodyDto._({this.identityToken, required this.content, this.version})
+    : super._();
   @override
   UpsertBodyDto rebuild(void Function(UpsertBodyDtoBuilder) updates) =>
       (toBuilder()..update(updates)).build();
@@ -27,6 +30,7 @@ class _$UpsertBodyDto extends UpsertBodyDto {
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
     return other is UpsertBodyDto &&
+        identityToken == other.identityToken &&
         content == other.content &&
         version == other.version;
   }
@@ -34,6 +38,7 @@ class _$UpsertBodyDto extends UpsertBodyDto {
   @override
   int get hashCode {
     var _$hash = 0;
+    _$hash = $jc(_$hash, identityToken.hashCode);
     _$hash = $jc(_$hash, content.hashCode);
     _$hash = $jc(_$hash, version.hashCode);
     _$hash = $jf(_$hash);
@@ -43,6 +48,7 @@ class _$UpsertBodyDto extends UpsertBodyDto {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'UpsertBodyDto')
+          ..add('identityToken', identityToken)
           ..add('content', content)
           ..add('version', version))
         .toString();
@@ -52,6 +58,11 @@ class _$UpsertBodyDto extends UpsertBodyDto {
 class UpsertBodyDtoBuilder
     implements Builder<UpsertBodyDto, UpsertBodyDtoBuilder> {
   _$UpsertBodyDto? _$v;
+
+  String? _identityToken;
+  String? get identityToken => _$this._identityToken;
+  set identityToken(String? identityToken) =>
+      _$this._identityToken = identityToken;
 
   String? _content;
   String? get content => _$this._content;
@@ -68,6 +79,7 @@ class UpsertBodyDtoBuilder
   UpsertBodyDtoBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
+      _identityToken = $v.identityToken;
       _content = $v.content;
       _version = $v.version;
       _$v = null;
@@ -92,6 +104,7 @@ class UpsertBodyDtoBuilder
     final _$result =
         _$v ??
         _$UpsertBodyDto._(
+          identityToken: identityToken,
           content: BuiltValueNullFieldError.checkNotNull(
             content,
             r'UpsertBodyDto',

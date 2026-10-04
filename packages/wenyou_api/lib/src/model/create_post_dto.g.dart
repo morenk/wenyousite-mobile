@@ -8,6 +8,8 @@ part of 'create_post_dto.dart';
 
 class _$CreatePostDto extends CreatePostDto {
   @override
+  final String? identityToken;
+  @override
   final String content;
   @override
   final String? parentPostId;
@@ -20,6 +22,7 @@ class _$CreatePostDto extends CreatePostDto {
       (CreatePostDtoBuilder()..update(updates))._build();
 
   _$CreatePostDto._({
+    this.identityToken,
     required this.content,
     this.parentPostId,
     this.replyToPostId,
@@ -36,6 +39,7 @@ class _$CreatePostDto extends CreatePostDto {
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
     return other is CreatePostDto &&
+        identityToken == other.identityToken &&
         content == other.content &&
         parentPostId == other.parentPostId &&
         replyToPostId == other.replyToPostId &&
@@ -45,6 +49,7 @@ class _$CreatePostDto extends CreatePostDto {
   @override
   int get hashCode {
     var _$hash = 0;
+    _$hash = $jc(_$hash, identityToken.hashCode);
     _$hash = $jc(_$hash, content.hashCode);
     _$hash = $jc(_$hash, parentPostId.hashCode);
     _$hash = $jc(_$hash, replyToPostId.hashCode);
@@ -56,6 +61,7 @@ class _$CreatePostDto extends CreatePostDto {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'CreatePostDto')
+          ..add('identityToken', identityToken)
           ..add('content', content)
           ..add('parentPostId', parentPostId)
           ..add('replyToPostId', replyToPostId)
@@ -67,6 +73,11 @@ class _$CreatePostDto extends CreatePostDto {
 class CreatePostDtoBuilder
     implements Builder<CreatePostDto, CreatePostDtoBuilder> {
   _$CreatePostDto? _$v;
+
+  String? _identityToken;
+  String? get identityToken => _$this._identityToken;
+  set identityToken(String? identityToken) =>
+      _$this._identityToken = identityToken;
 
   String? _content;
   String? get content => _$this._content;
@@ -93,6 +104,7 @@ class CreatePostDtoBuilder
   CreatePostDtoBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
+      _identityToken = $v.identityToken;
       _content = $v.content;
       _parentPostId = $v.parentPostId;
       _replyToPostId = $v.replyToPostId;
@@ -119,6 +131,7 @@ class CreatePostDtoBuilder
     final _$result =
         _$v ??
         _$CreatePostDto._(
+          identityToken: identityToken,
           content: BuiltValueNullFieldError.checkNotNull(
             content,
             r'CreatePostDto',

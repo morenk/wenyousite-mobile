@@ -11,10 +11,15 @@ part 'upsert_body_dto.g.dart';
 /// UpsertBodyDto
 ///
 /// Properties:
+/// * [identityToken] - GET 帖内身份返回的确认 token；新建正文或发言时使用。身份变化返回 409/40011，保留草稿并重新确认
 /// * [content] - 正文（Markdown）；骰子使用内联节点，发布时仍必须包含非骰子可见文字
 /// * [version] - 乐观锁版本号。正文已存在时必填（传入过期版本返回 409）；首次创建时忽略
 @BuiltValue()
 abstract class UpsertBodyDto implements Built<UpsertBodyDto, UpsertBodyDtoBuilder> {
+  /// GET 帖内身份返回的确认 token；新建正文或发言时使用。身份变化返回 409/40011，保留草稿并重新确认
+  @BuiltValueField(wireName: r'identityToken')
+  String? get identityToken;
+
   /// 正文（Markdown）；骰子使用内联节点，发布时仍必须包含非骰子可见文字
   @BuiltValueField(wireName: r'content')
   String get content;
@@ -46,6 +51,13 @@ class _$UpsertBodyDtoSerializer implements PrimitiveSerializer<UpsertBodyDto> {
     UpsertBodyDto object, {
     FullType specifiedType = FullType.unspecified,
   }) sync* {
+    if (object.identityToken != null) {
+      yield r'identityToken';
+      yield serializers.serialize(
+        object.identityToken,
+        specifiedType: const FullType(String),
+      );
+    }
     yield r'content';
     yield serializers.serialize(
       object.content,
@@ -81,6 +93,13 @@ class _$UpsertBodyDtoSerializer implements PrimitiveSerializer<UpsertBodyDto> {
       final key = serializedList[i] as String;
       final value = serializedList[i + 1];
       switch (key) {
+        case r'identityToken':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(String),
+          ) as String;
+          result.identityToken = valueDes;
+          break;
         case r'content':
           final valueDes = serializers.deserialize(
             value,

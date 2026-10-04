@@ -11,12 +11,17 @@ part 'create_post_dto.g.dart';
 /// CreatePostDto
 ///
 /// Properties:
+/// * [identityToken] - GET 帖内身份返回的确认 token；新建正文或发言时使用。身份变化返回 409/40011，保留草稿并重新确认
 /// * [content] - 帖子正文；骰子使用 [[dice:v1:<UUID>:<NdM±K>]] 内联节点
 /// * [parentPostId] - 父楼层 ID（楼中楼回复时指定，平级挂载，无嵌套深度限制）
 /// * [replyToPostId] - 回复目标帖 ID；必须同时提供 parentPostId，且目标属于该主楼层
 /// * [clientRequestId] - 客户端创建请求幂等键；同一次用户提交及网络重试必须复用
 @BuiltValue()
 abstract class CreatePostDto implements Built<CreatePostDto, CreatePostDtoBuilder> {
+  /// GET 帖内身份返回的确认 token；新建正文或发言时使用。身份变化返回 409/40011，保留草稿并重新确认
+  @BuiltValueField(wireName: r'identityToken')
+  String? get identityToken;
+
   /// 帖子正文；骰子使用 [[dice:v1:<UUID>:<NdM±K>]] 内联节点
   @BuiltValueField(wireName: r'content')
   String get content;
@@ -56,6 +61,13 @@ class _$CreatePostDtoSerializer implements PrimitiveSerializer<CreatePostDto> {
     CreatePostDto object, {
     FullType specifiedType = FullType.unspecified,
   }) sync* {
+    if (object.identityToken != null) {
+      yield r'identityToken';
+      yield serializers.serialize(
+        object.identityToken,
+        specifiedType: const FullType(String),
+      );
+    }
     yield r'content';
     yield serializers.serialize(
       object.content,
@@ -105,6 +117,13 @@ class _$CreatePostDtoSerializer implements PrimitiveSerializer<CreatePostDto> {
       final key = serializedList[i] as String;
       final value = serializedList[i + 1];
       switch (key) {
+        case r'identityToken':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(String),
+          ) as String;
+          result.identityToken = valueDes;
+          break;
         case r'content':
           final valueDes = serializers.deserialize(
             value,

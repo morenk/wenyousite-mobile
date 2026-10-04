@@ -256,6 +256,8 @@ class _$SaveThreadAggregateDtoDefaultSubthreadPostingPolicyEnumSerializer
 
 class _$SaveThreadAggregateDto extends SaveThreadAggregateDto {
   @override
+  final String? identityToken;
+  @override
   final String? title;
   @override
   final String? category;
@@ -284,6 +286,7 @@ class _$SaveThreadAggregateDto extends SaveThreadAggregateDto {
   ]) => (SaveThreadAggregateDtoBuilder()..update(updates))._build();
 
   _$SaveThreadAggregateDto._({
+    this.identityToken,
     this.title,
     this.category,
     this.status,
@@ -309,6 +312,7 @@ class _$SaveThreadAggregateDto extends SaveThreadAggregateDto {
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
     return other is SaveThreadAggregateDto &&
+        identityToken == other.identityToken &&
         title == other.title &&
         category == other.category &&
         status == other.status &&
@@ -325,6 +329,7 @@ class _$SaveThreadAggregateDto extends SaveThreadAggregateDto {
   @override
   int get hashCode {
     var _$hash = 0;
+    _$hash = $jc(_$hash, identityToken.hashCode);
     _$hash = $jc(_$hash, title.hashCode);
     _$hash = $jc(_$hash, category.hashCode);
     _$hash = $jc(_$hash, status.hashCode);
@@ -343,6 +348,7 @@ class _$SaveThreadAggregateDto extends SaveThreadAggregateDto {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'SaveThreadAggregateDto')
+          ..add('identityToken', identityToken)
           ..add('title', title)
           ..add('category', category)
           ..add('status', status)
@@ -361,6 +367,11 @@ class _$SaveThreadAggregateDto extends SaveThreadAggregateDto {
 class SaveThreadAggregateDtoBuilder
     implements Builder<SaveThreadAggregateDto, SaveThreadAggregateDtoBuilder> {
   _$SaveThreadAggregateDto? _$v;
+
+  String? _identityToken;
+  String? get identityToken => _$this._identityToken;
+  set identityToken(String? identityToken) =>
+      _$this._identityToken = identityToken;
 
   String? _title;
   String? get title => _$this._title;
@@ -422,6 +433,7 @@ class SaveThreadAggregateDtoBuilder
   SaveThreadAggregateDtoBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
+      _identityToken = $v.identityToken;
       _title = $v.title;
       _category = $v.category;
       _status = $v.status;
@@ -457,6 +469,7 @@ class SaveThreadAggregateDtoBuilder
       _$result =
           _$v ??
           _$SaveThreadAggregateDto._(
+            identityToken: identityToken,
             title: title,
             category: category,
             status: status,

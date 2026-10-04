@@ -38,6 +38,12 @@ const BusinessErrorCode _$UNSUPPORTED_MARKDOWN_FORMAT =
     const BusinessErrorCode._('UNSUPPORTED_MARKDOWN_FORMAT');
 const BusinessErrorCode _$DISCUSSION_TARGET_FILTERED =
     const BusinessErrorCode._('DISCUSSION_TARGET_FILTERED');
+const BusinessErrorCode _$RP_IDENTITY_CHANGED = const BusinessErrorCode._(
+  'RP_IDENTITY_CHANGED',
+);
+const BusinessErrorCode _$RP_MENTION_CHANGED = const BusinessErrorCode._(
+  'RP_MENTION_CHANGED',
+);
 const BusinessErrorCode _$UNAUTHORIZED = const BusinessErrorCode._(
   'UNAUTHORIZED',
 );
@@ -289,6 +295,10 @@ BusinessErrorCode _$valueOf(String name) {
       return _$UNSUPPORTED_MARKDOWN_FORMAT;
     case 'DISCUSSION_TARGET_FILTERED':
       return _$DISCUSSION_TARGET_FILTERED;
+    case 'RP_IDENTITY_CHANGED':
+      return _$RP_IDENTITY_CHANGED;
+    case 'RP_MENTION_CHANGED':
+      return _$RP_MENTION_CHANGED;
     case 'UNAUTHORIZED':
       return _$UNAUTHORIZED;
     case 'TOKEN_EXPIRED':
@@ -470,6 +480,8 @@ final BuiltSet<BusinessErrorCode> _$values =
       _$INVALID_WENYOU_AMOUNT,
       _$UNSUPPORTED_MARKDOWN_FORMAT,
       _$DISCUSSION_TARGET_FILTERED,
+      _$RP_IDENTITY_CHANGED,
+      _$RP_MENTION_CHANGED,
       _$UNAUTHORIZED,
       _$TOKEN_EXPIRED,
       _$TOKEN_INVALID,
@@ -569,6 +581,8 @@ class _$BusinessErrorCodeMeta {
       _$UNSUPPORTED_MARKDOWN_FORMAT;
   BusinessErrorCode get DISCUSSION_TARGET_FILTERED =>
       _$DISCUSSION_TARGET_FILTERED;
+  BusinessErrorCode get RP_IDENTITY_CHANGED => _$RP_IDENTITY_CHANGED;
+  BusinessErrorCode get RP_MENTION_CHANGED => _$RP_MENTION_CHANGED;
   BusinessErrorCode get UNAUTHORIZED => _$UNAUTHORIZED;
   BusinessErrorCode get TOKEN_EXPIRED => _$TOKEN_EXPIRED;
   BusinessErrorCode get TOKEN_INVALID => _$TOKEN_INVALID;
@@ -691,6 +705,8 @@ class _$BusinessErrorCodeSerializer
     'INVALID_WENYOU_AMOUNT': 40008,
     'UNSUPPORTED_MARKDOWN_FORMAT': 40009,
     'DISCUSSION_TARGET_FILTERED': 40010,
+    'RP_IDENTITY_CHANGED': 40011,
+    'RP_MENTION_CHANGED': 40012,
     'UNAUTHORIZED': 40100,
     'TOKEN_EXPIRED': 40101,
     'TOKEN_INVALID': 40102,
@@ -786,6 +802,8 @@ class _$BusinessErrorCodeSerializer
     40008: 'INVALID_WENYOU_AMOUNT',
     40009: 'UNSUPPORTED_MARKDOWN_FORMAT',
     40010: 'DISCUSSION_TARGET_FILTERED',
+    40011: 'RP_IDENTITY_CHANGED',
+    40012: 'RP_MENTION_CHANGED',
     40100: 'UNAUTHORIZED',
     40101: 'TOKEN_EXPIRED',
     40102: 'TOKEN_INVALID',

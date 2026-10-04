@@ -91,6 +91,8 @@ class _$CreateSubthreadDtoPostingPolicyEnumSerializer
 
 class _$CreateSubthreadDto extends CreateSubthreadDto {
   @override
+  final String? identityToken;
+  @override
   final String? clientRequestId;
   @override
   final String title;
@@ -106,6 +108,7 @@ class _$CreateSubthreadDto extends CreateSubthreadDto {
   ]) => (CreateSubthreadDtoBuilder()..update(updates))._build();
 
   _$CreateSubthreadDto._({
+    this.identityToken,
     this.clientRequestId,
     required this.title,
     this.content,
@@ -125,6 +128,7 @@ class _$CreateSubthreadDto extends CreateSubthreadDto {
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
     return other is CreateSubthreadDto &&
+        identityToken == other.identityToken &&
         clientRequestId == other.clientRequestId &&
         title == other.title &&
         content == other.content &&
@@ -135,6 +139,7 @@ class _$CreateSubthreadDto extends CreateSubthreadDto {
   @override
   int get hashCode {
     var _$hash = 0;
+    _$hash = $jc(_$hash, identityToken.hashCode);
     _$hash = $jc(_$hash, clientRequestId.hashCode);
     _$hash = $jc(_$hash, title.hashCode);
     _$hash = $jc(_$hash, content.hashCode);
@@ -147,6 +152,7 @@ class _$CreateSubthreadDto extends CreateSubthreadDto {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'CreateSubthreadDto')
+          ..add('identityToken', identityToken)
           ..add('clientRequestId', clientRequestId)
           ..add('title', title)
           ..add('content', content)
@@ -159,6 +165,11 @@ class _$CreateSubthreadDto extends CreateSubthreadDto {
 class CreateSubthreadDtoBuilder
     implements Builder<CreateSubthreadDto, CreateSubthreadDtoBuilder> {
   _$CreateSubthreadDto? _$v;
+
+  String? _identityToken;
+  String? get identityToken => _$this._identityToken;
+  set identityToken(String? identityToken) =>
+      _$this._identityToken = identityToken;
 
   String? _clientRequestId;
   String? get clientRequestId => _$this._clientRequestId;
@@ -190,6 +201,7 @@ class CreateSubthreadDtoBuilder
   CreateSubthreadDtoBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
+      _identityToken = $v.identityToken;
       _clientRequestId = $v.clientRequestId;
       _title = $v.title;
       _content = $v.content;
@@ -217,6 +229,7 @@ class CreateSubthreadDtoBuilder
     final _$result =
         _$v ??
         _$CreateSubthreadDto._(
+          identityToken: identityToken,
           clientRequestId: clientRequestId,
           title: BuiltValueNullFieldError.checkNotNull(
             title,

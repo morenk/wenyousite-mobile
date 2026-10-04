@@ -12,6 +12,7 @@ part 'create_subthread_dto.g.dart';
 /// CreateSubthreadDto
 ///
 /// Properties:
+/// * [identityToken] - GET 帖内身份返回的确认 token；新建正文或发言时使用。身份变化返回 409/40011，保留草稿并重新确认
 /// * [clientRequestId] - 客户端创建幂等键；同一次提交和网络重试必须复用
 /// * [title] - 子贴标题
 /// * [content] - 子贴正文（kind=BODY，可选，留空仅创建空子贴）
@@ -19,6 +20,10 @@ part 'create_subthread_dto.g.dart';
 /// * [postingPolicy] - PARTICIPANTS=所有参与人可发帖, COLLABORATORS=仅协作者可发帖, PLAYERS=仅被标记为玩家的参与人可发帖
 @BuiltValue()
 abstract class CreateSubthreadDto implements Built<CreateSubthreadDto, CreateSubthreadDtoBuilder> {
+  /// GET 帖内身份返回的确认 token；新建正文或发言时使用。身份变化返回 409/40011，保留草稿并重新确认
+  @BuiltValueField(wireName: r'identityToken')
+  String? get identityToken;
+
   /// 客户端创建幂等键；同一次提交和网络重试必须复用
   @BuiltValueField(wireName: r'clientRequestId')
   String? get clientRequestId;
@@ -64,6 +69,13 @@ class _$CreateSubthreadDtoSerializer implements PrimitiveSerializer<CreateSubthr
     CreateSubthreadDto object, {
     FullType specifiedType = FullType.unspecified,
   }) sync* {
+    if (object.identityToken != null) {
+      yield r'identityToken';
+      yield serializers.serialize(
+        object.identityToken,
+        specifiedType: const FullType(String),
+      );
+    }
     if (object.clientRequestId != null) {
       yield r'clientRequestId';
       yield serializers.serialize(
@@ -120,6 +132,13 @@ class _$CreateSubthreadDtoSerializer implements PrimitiveSerializer<CreateSubthr
       final key = serializedList[i] as String;
       final value = serializedList[i + 1];
       switch (key) {
+        case r'identityToken':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(String),
+          ) as String;
+          result.identityToken = valueDes;
+          break;
         case r'clientRequestId':
           final valueDes = serializers.deserialize(
             value,
