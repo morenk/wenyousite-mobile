@@ -12,6 +12,7 @@ part 'create_subthread_dto.g.dart';
 /// CreateSubthreadDto
 ///
 /// Properties:
+/// * [identityId] - 本次新发言选择的帖内身份 ID；新客户端 RP 模式必须与该身份 token 一起发送。省略仅兼容旧单身份客户端；ACCOUNT 忽略，编辑旧正文不改变原身份
 /// * [identityToken] - GET 帖内身份返回的确认 token；新建正文或发言时使用。身份变化返回 409/40011，保留草稿并重新确认
 /// * [identityMode] - 本次新发言身份；ACCOUNT 明确使用站内账号且不校验 RP token，RP 要求有效帖内身份和 identityToken。省略沿用旧确认规则；编辑已有正文忽略此字段
 /// * [clientRequestId] - 客户端创建幂等键；同一次提交和网络重试必须复用
@@ -21,6 +22,10 @@ part 'create_subthread_dto.g.dart';
 /// * [postingPolicy] - PARTICIPANTS=所有参与人可发帖, COLLABORATORS=仅协作者可发帖, PLAYERS=仅被标记为玩家的参与人可发帖
 @BuiltValue()
 abstract class CreateSubthreadDto implements Built<CreateSubthreadDto, CreateSubthreadDtoBuilder> {
+  /// 本次新发言选择的帖内身份 ID；新客户端 RP 模式必须与该身份 token 一起发送。省略仅兼容旧单身份客户端；ACCOUNT 忽略，编辑旧正文不改变原身份
+  @BuiltValueField(wireName: r'identityId')
+  String? get identityId;
+
   /// GET 帖内身份返回的确认 token；新建正文或发言时使用。身份变化返回 409/40011，保留草稿并重新确认
   @BuiltValueField(wireName: r'identityToken')
   String? get identityToken;
@@ -75,6 +80,13 @@ class _$CreateSubthreadDtoSerializer implements PrimitiveSerializer<CreateSubthr
     CreateSubthreadDto object, {
     FullType specifiedType = FullType.unspecified,
   }) sync* {
+    if (object.identityId != null) {
+      yield r'identityId';
+      yield serializers.serialize(
+        object.identityId,
+        specifiedType: const FullType(String),
+      );
+    }
     if (object.identityToken != null) {
       yield r'identityToken';
       yield serializers.serialize(
@@ -145,6 +157,13 @@ class _$CreateSubthreadDtoSerializer implements PrimitiveSerializer<CreateSubthr
       final key = serializedList[i] as String;
       final value = serializedList[i + 1];
       switch (key) {
+        case r'identityId':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(String),
+          ) as String;
+          result.identityId = valueDes;
+          break;
         case r'identityToken':
           final valueDes = serializers.deserialize(
             value,

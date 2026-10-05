@@ -79,6 +79,8 @@ class _$UpsertBodyDtoIdentityModeEnumSerializer
 
 class _$UpsertBodyDto extends UpsertBodyDto {
   @override
+  final String? identityId;
+  @override
   final String? identityToken;
   @override
   final UpsertBodyDtoIdentityModeEnum? identityMode;
@@ -91,6 +93,7 @@ class _$UpsertBodyDto extends UpsertBodyDto {
       (UpsertBodyDtoBuilder()..update(updates))._build();
 
   _$UpsertBodyDto._({
+    this.identityId,
     this.identityToken,
     this.identityMode,
     required this.content,
@@ -107,6 +110,7 @@ class _$UpsertBodyDto extends UpsertBodyDto {
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
     return other is UpsertBodyDto &&
+        identityId == other.identityId &&
         identityToken == other.identityToken &&
         identityMode == other.identityMode &&
         content == other.content &&
@@ -116,6 +120,7 @@ class _$UpsertBodyDto extends UpsertBodyDto {
   @override
   int get hashCode {
     var _$hash = 0;
+    _$hash = $jc(_$hash, identityId.hashCode);
     _$hash = $jc(_$hash, identityToken.hashCode);
     _$hash = $jc(_$hash, identityMode.hashCode);
     _$hash = $jc(_$hash, content.hashCode);
@@ -127,6 +132,7 @@ class _$UpsertBodyDto extends UpsertBodyDto {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'UpsertBodyDto')
+          ..add('identityId', identityId)
           ..add('identityToken', identityToken)
           ..add('identityMode', identityMode)
           ..add('content', content)
@@ -138,6 +144,10 @@ class _$UpsertBodyDto extends UpsertBodyDto {
 class UpsertBodyDtoBuilder
     implements Builder<UpsertBodyDto, UpsertBodyDtoBuilder> {
   _$UpsertBodyDto? _$v;
+
+  String? _identityId;
+  String? get identityId => _$this._identityId;
+  set identityId(String? identityId) => _$this._identityId = identityId;
 
   String? _identityToken;
   String? get identityToken => _$this._identityToken;
@@ -164,6 +174,7 @@ class UpsertBodyDtoBuilder
   UpsertBodyDtoBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
+      _identityId = $v.identityId;
       _identityToken = $v.identityToken;
       _identityMode = $v.identityMode;
       _content = $v.content;
@@ -190,6 +201,7 @@ class UpsertBodyDtoBuilder
     final _$result =
         _$v ??
         _$UpsertBodyDto._(
+          identityId: identityId,
           identityToken: identityToken,
           identityMode: identityMode,
           content: BuiltValueNullFieldError.checkNotNull(

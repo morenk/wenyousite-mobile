@@ -186,6 +186,7 @@ Serializers _$serializers =
           ..add(CreateReportDto.serializer)
           ..add(CreateReportDtoReasonCodeEnum.serializer)
           ..add(CreateReportDtoTargetTypeEnum.serializer)
+          ..add(CreateRpIdentityDto.serializer)
           ..add(CreateSubscriptionDto.serializer)
           ..add(CreateSubscriptionDtoTypeEnum.serializer)
           ..add(CreateSubthreadDto.serializer)
@@ -206,6 +207,7 @@ Serializers _$serializers =
           ..add(DailyCheckInResponseDtoRewardAmountEnum.serializer)
           ..add(DeleteBookmarkFolderResponseDto.serializer)
           ..add(DeleteDraftResponseDto.serializer)
+          ..add(DeleteRpIdentityDto.serializer)
           ..add(DiceRollResponseDto.serializer)
           ..add(DirectConversationLookupResponseDto.serializer)
           ..add(DirectConversationLookupResponseDtoContactStateEnum.serializer)
@@ -480,7 +482,15 @@ Serializers _$serializers =
           ..add(ResolveReportDtoOutcomeEnum.serializer)
           ..add(RevokeSanctionDto.serializer)
           ..add(RevokeSessionResponseDto.serializer)
+          ..add(RpIdentitiesCreate201Response.serializer)
+          ..add(RpIdentitiesFind200Response.serializer)
+          ..add(RpIdentitiesList200Response.serializer)
+          ..add(RpIdentitiesRemove200Response.serializer)
+          ..add(RpIdentitiesUpdate200Response.serializer)
+          ..add(RpIdentityCollectionDto.serializer)
+          ..add(RpIdentityCollectionDtoLimitEnum.serializer)
           ..add(RpIdentityResponseDto.serializer)
+          ..add(RpIdentityStateDto.serializer)
           ..add(SanctionUserDto.serializer)
           ..add(SanctionUserDtoTypeEnum.serializer)
           ..add(SaveThreadAggregateDto.serializer)
@@ -620,6 +630,7 @@ Serializers _$serializers =
           ..add(UpdateMobileReleaseDto.serializer)
           ..add(UpdateMomentDto.serializer)
           ..add(UpdatePostDto.serializer)
+          ..add(UpdateRpIdentityDto.serializer)
           ..add(UpdateSiteSettingsDto.serializer)
           ..add(UpdateSubthreadDto.serializer)
           ..add(UpdateSubthreadDtoPostingPolicyEnum.serializer)
@@ -1178,6 +1189,12 @@ Serializers _$serializers =
           ..addBuilderFactory(
             const FullType(BuiltList, const [const FullType(FloorResponseDto)]),
             () => ListBuilder<FloorResponseDto>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [
+              const FullType(RpIdentityStateDto),
+            ]),
+            () => ListBuilder<RpIdentityStateDto>(),
           )
           ..addBuilderFactory(
             const FullType(BuiltList, const [

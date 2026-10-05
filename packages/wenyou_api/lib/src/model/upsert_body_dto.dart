@@ -12,12 +12,17 @@ part 'upsert_body_dto.g.dart';
 /// UpsertBodyDto
 ///
 /// Properties:
+/// * [identityId] - 本次新发言选择的帖内身份 ID；新客户端 RP 模式必须与该身份 token 一起发送。省略仅兼容旧单身份客户端；ACCOUNT 忽略，编辑旧正文不改变原身份
 /// * [identityToken] - GET 帖内身份返回的确认 token；新建正文或发言时使用。身份变化返回 409/40011，保留草稿并重新确认
 /// * [identityMode] - 本次新发言身份；ACCOUNT 明确使用站内账号且不校验 RP token，RP 要求有效帖内身份和 identityToken。省略沿用旧确认规则；编辑已有正文忽略此字段
 /// * [content] - 正文（Markdown）；骰子使用内联节点，发布时仍必须包含非骰子可见文字
 /// * [version] - 乐观锁版本号。正文已存在时必填（传入过期版本返回 409）；首次创建时忽略
 @BuiltValue()
 abstract class UpsertBodyDto implements Built<UpsertBodyDto, UpsertBodyDtoBuilder> {
+  /// 本次新发言选择的帖内身份 ID；新客户端 RP 模式必须与该身份 token 一起发送。省略仅兼容旧单身份客户端；ACCOUNT 忽略，编辑旧正文不改变原身份
+  @BuiltValueField(wireName: r'identityId')
+  String? get identityId;
+
   /// GET 帖内身份返回的确认 token；新建正文或发言时使用。身份变化返回 409/40011，保留草稿并重新确认
   @BuiltValueField(wireName: r'identityToken')
   String? get identityToken;
@@ -58,6 +63,13 @@ class _$UpsertBodyDtoSerializer implements PrimitiveSerializer<UpsertBodyDto> {
     UpsertBodyDto object, {
     FullType specifiedType = FullType.unspecified,
   }) sync* {
+    if (object.identityId != null) {
+      yield r'identityId';
+      yield serializers.serialize(
+        object.identityId,
+        specifiedType: const FullType(String),
+      );
+    }
     if (object.identityToken != null) {
       yield r'identityToken';
       yield serializers.serialize(
@@ -107,6 +119,13 @@ class _$UpsertBodyDtoSerializer implements PrimitiveSerializer<UpsertBodyDto> {
       final key = serializedList[i] as String;
       final value = serializedList[i + 1];
       switch (key) {
+        case r'identityId':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(String),
+          ) as String;
+          result.identityId = valueDes;
+          break;
         case r'identityToken':
           final valueDes = serializers.deserialize(
             value,

@@ -163,6 +163,7 @@ import 'package:wenyou_api/src/model/create_moment_dto.dart';
 import 'package:wenyou_api/src/model/create_notification_campaign_dto.dart';
 import 'package:wenyou_api/src/model/create_post_dto.dart';
 import 'package:wenyou_api/src/model/create_report_dto.dart';
+import 'package:wenyou_api/src/model/create_rp_identity_dto.dart';
 import 'package:wenyou_api/src/model/create_subscription_dto.dart';
 import 'package:wenyou_api/src/model/create_subthread_dto.dart';
 import 'package:wenyou_api/src/model/create_tag_dto.dart';
@@ -174,6 +175,7 @@ import 'package:wenyou_api/src/model/current_user_response_dto.dart';
 import 'package:wenyou_api/src/model/daily_check_in_response_dto.dart';
 import 'package:wenyou_api/src/model/delete_bookmark_folder_response_dto.dart';
 import 'package:wenyou_api/src/model/delete_draft_response_dto.dart';
+import 'package:wenyou_api/src/model/delete_rp_identity_dto.dart';
 import 'package:wenyou_api/src/model/dice_roll_response_dto.dart';
 import 'package:wenyou_api/src/model/direct_conversation_lookup_response_dto.dart';
 import 'package:wenyou_api/src/model/direct_conversation_response_dto.dart';
@@ -384,7 +386,14 @@ import 'package:wenyou_api/src/model/resolve_moderation_case_dto.dart';
 import 'package:wenyou_api/src/model/resolve_report_dto.dart';
 import 'package:wenyou_api/src/model/revoke_sanction_dto.dart';
 import 'package:wenyou_api/src/model/revoke_session_response_dto.dart';
+import 'package:wenyou_api/src/model/rp_identities_create201_response.dart';
+import 'package:wenyou_api/src/model/rp_identities_find200_response.dart';
+import 'package:wenyou_api/src/model/rp_identities_list200_response.dart';
+import 'package:wenyou_api/src/model/rp_identities_remove200_response.dart';
+import 'package:wenyou_api/src/model/rp_identities_update200_response.dart';
+import 'package:wenyou_api/src/model/rp_identity_collection_dto.dart';
 import 'package:wenyou_api/src/model/rp_identity_response_dto.dart';
+import 'package:wenyou_api/src/model/rp_identity_state_dto.dart';
 import 'package:wenyou_api/src/model/sanction_user_dto.dart';
 import 'package:wenyou_api/src/model/save_thread_aggregate_dto.dart';
 import 'package:wenyou_api/src/model/search_author_response_dto.dart';
@@ -500,6 +509,7 @@ import 'package:wenyou_api/src/model/update_managed_tag_dto.dart';
 import 'package:wenyou_api/src/model/update_mobile_release_dto.dart';
 import 'package:wenyou_api/src/model/update_moment_dto.dart';
 import 'package:wenyou_api/src/model/update_post_dto.dart';
+import 'package:wenyou_api/src/model/update_rp_identity_dto.dart';
 import 'package:wenyou_api/src/model/update_site_settings_dto.dart';
 import 'package:wenyou_api/src/model/update_subthread_dto.dart';
 import 'package:wenyou_api/src/model/update_thread_category_dto.dart';
@@ -702,6 +712,7 @@ part 'serializers.g.dart';
   CreateNotificationCampaignDto,
   CreatePostDto,
   CreateReportDto,
+  CreateRpIdentityDto,
   CreateSubscriptionDto,
   CreateSubthreadDto,
   CreateTagDto,
@@ -713,6 +724,7 @@ part 'serializers.g.dart';
   DailyCheckInResponseDto,
   DeleteBookmarkFolderResponseDto,
   DeleteDraftResponseDto,
+  DeleteRpIdentityDto,
   DiceRollResponseDto,
   DirectConversationLookupResponseDto,
   DirectConversationResponseDto,
@@ -923,7 +935,14 @@ part 'serializers.g.dart';
   ResolveReportDto,
   RevokeSanctionDto,
   RevokeSessionResponseDto,
+  RpIdentitiesCreate201Response,
+  RpIdentitiesFind200Response,
+  RpIdentitiesList200Response,
+  RpIdentitiesRemove200Response,
+  RpIdentitiesUpdate200Response,
+  RpIdentityCollectionDto,
   RpIdentityResponseDto,
+  RpIdentityStateDto,
   SanctionUserDto,
   SaveThreadAggregateDto,
   SearchAuthorResponseDto,
@@ -1039,6 +1058,7 @@ part 'serializers.g.dart';
   UpdateMobileReleaseDto,
   UpdateMomentDto,
   UpdatePostDto,
+  UpdateRpIdentityDto,
   UpdateSiteSettingsDto,
   UpdateSubthreadDto,
   UpdateThreadCategoryDto,

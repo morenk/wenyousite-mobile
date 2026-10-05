@@ -79,6 +79,8 @@ class _$CreatePostDtoIdentityModeEnumSerializer
 
 class _$CreatePostDto extends CreatePostDto {
   @override
+  final String? identityId;
+  @override
   final String? identityToken;
   @override
   final CreatePostDtoIdentityModeEnum? identityMode;
@@ -95,6 +97,7 @@ class _$CreatePostDto extends CreatePostDto {
       (CreatePostDtoBuilder()..update(updates))._build();
 
   _$CreatePostDto._({
+    this.identityId,
     this.identityToken,
     this.identityMode,
     required this.content,
@@ -113,6 +116,7 @@ class _$CreatePostDto extends CreatePostDto {
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
     return other is CreatePostDto &&
+        identityId == other.identityId &&
         identityToken == other.identityToken &&
         identityMode == other.identityMode &&
         content == other.content &&
@@ -124,6 +128,7 @@ class _$CreatePostDto extends CreatePostDto {
   @override
   int get hashCode {
     var _$hash = 0;
+    _$hash = $jc(_$hash, identityId.hashCode);
     _$hash = $jc(_$hash, identityToken.hashCode);
     _$hash = $jc(_$hash, identityMode.hashCode);
     _$hash = $jc(_$hash, content.hashCode);
@@ -137,6 +142,7 @@ class _$CreatePostDto extends CreatePostDto {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'CreatePostDto')
+          ..add('identityId', identityId)
           ..add('identityToken', identityToken)
           ..add('identityMode', identityMode)
           ..add('content', content)
@@ -150,6 +156,10 @@ class _$CreatePostDto extends CreatePostDto {
 class CreatePostDtoBuilder
     implements Builder<CreatePostDto, CreatePostDtoBuilder> {
   _$CreatePostDto? _$v;
+
+  String? _identityId;
+  String? get identityId => _$this._identityId;
+  set identityId(String? identityId) => _$this._identityId = identityId;
 
   String? _identityToken;
   String? get identityToken => _$this._identityToken;
@@ -186,6 +196,7 @@ class CreatePostDtoBuilder
   CreatePostDtoBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
+      _identityId = $v.identityId;
       _identityToken = $v.identityToken;
       _identityMode = $v.identityMode;
       _content = $v.content;
@@ -214,6 +225,7 @@ class CreatePostDtoBuilder
     final _$result =
         _$v ??
         _$CreatePostDto._(
+          identityId: identityId,
           identityToken: identityToken,
           identityMode: identityMode,
           content: BuiltValueNullFieldError.checkNotNull(

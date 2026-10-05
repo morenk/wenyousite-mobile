@@ -12,7 +12,14 @@ import 'dart:typed_data';
 import 'package:wenyou_api/src/api_util.dart';
 import 'package:wenyou_api/src/model/add_thread_tag_dto.dart';
 import 'package:wenyou_api/src/model/api_error_envelope.dart';
+import 'package:wenyou_api/src/model/create_rp_identity_dto.dart';
 import 'package:wenyou_api/src/model/create_thread_dto.dart';
+import 'package:wenyou_api/src/model/delete_rp_identity_dto.dart';
+import 'package:wenyou_api/src/model/rp_identities_create201_response.dart';
+import 'package:wenyou_api/src/model/rp_identities_find200_response.dart';
+import 'package:wenyou_api/src/model/rp_identities_list200_response.dart';
+import 'package:wenyou_api/src/model/rp_identities_remove200_response.dart';
+import 'package:wenyou_api/src/model/rp_identities_update200_response.dart';
 import 'package:wenyou_api/src/model/save_thread_aggregate_dto.dart';
 import 'package:wenyou_api/src/model/set_thread_identity_enabled_dto.dart';
 import 'package:wenyou_api/src/model/thread_export_dto.dart';
@@ -42,6 +49,7 @@ import 'package:wenyou_api/src/model/threads_remove200_response.dart';
 import 'package:wenyou_api/src/model/threads_save_aggregate200_response.dart';
 import 'package:wenyou_api/src/model/threads_unlike200_response.dart';
 import 'package:wenyou_api/src/model/threads_update200_response.dart';
+import 'package:wenyou_api/src/model/update_rp_identity_dto.dart';
 import 'package:wenyou_api/src/model/update_thread_dto.dart';
 import 'package:wenyou_api/src/model/update_thread_identity_dto.dart';
 
@@ -52,6 +60,483 @@ class ThreadsApi {
   final Serializers _serializers;
 
   const ThreadsApi(this._dio, this._serializers);
+
+  /// 新增一个帖内角色；首次建立兼容锚点，归档后不自动替换
+  ///
+  ///
+  /// Parameters:
+  /// * [threadId]
+  /// * [createRpIdentityDto]
+  /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
+  /// * [headers] - Can be used to add additional headers to the request
+  /// * [extras] - Can be used to add flags to the request
+  /// * [validateStatus] - A [ValidateStatus] callback that can be used to determine request success based on the HTTP status of the response
+  /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
+  /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
+  ///
+  /// Returns a [Future] containing a [Response] with a [RpIdentitiesCreate201Response] as data
+  /// Throws [DioException] if API call or serialization fails
+  Future<Response<RpIdentitiesCreate201Response>> rpIdentitiesCreate({
+    required String threadId,
+    required CreateRpIdentityDto createRpIdentityDto,
+    CancelToken? cancelToken,
+    Map<String, dynamic>? headers,
+    Map<String, dynamic>? extra,
+    ValidateStatus? validateStatus,
+    ProgressCallback? onSendProgress,
+    ProgressCallback? onReceiveProgress,
+  }) async {
+    final _path = r'/api/v1/threads/{threadId}/rp-identities'.replaceAll('{' r'threadId' '}', encodeQueryParameter(_serializers, threadId, const FullType(String)).toString());
+    final _options = Options(
+      method: r'POST',
+      headers: <String, dynamic>{
+        ...?headers,
+      },
+      extra: <String, dynamic>{
+        'secure': <Map<String, String>>[
+          {
+            'type': 'http',
+            'scheme': 'bearer',
+            'name': 'bearer',
+          },
+        ],
+        ...?extra,
+      },
+      contentType: 'application/json',
+      validateStatus: validateStatus,
+    );
+
+    dynamic _bodyData;
+
+    try {
+      const _type = FullType(CreateRpIdentityDto);
+      _bodyData = _serializers.serialize(createRpIdentityDto, specifiedType: _type);
+
+    } catch(error, stackTrace) {
+      throw DioException(
+         requestOptions: _options.compose(
+          _dio.options,
+          _path,
+        ),
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    final _response = await _dio.request<Object>(
+      _path,
+      data: _bodyData,
+      options: _options,
+      cancelToken: cancelToken,
+      onSendProgress: onSendProgress,
+      onReceiveProgress: onReceiveProgress,
+    );
+
+    RpIdentitiesCreate201Response? _responseData;
+
+    try {
+      final rawResponse = _response.data;
+      _responseData = rawResponse == null ? null : _serializers.deserialize(
+        rawResponse,
+        specifiedType: const FullType(RpIdentitiesCreate201Response),
+      ) as RpIdentitiesCreate201Response;
+
+    } catch (error, stackTrace) {
+      throw DioException(
+        requestOptions: _response.requestOptions,
+        response: _response,
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    return Response<RpIdentitiesCreate201Response>(
+      data: _responseData,
+      headers: _response.headers,
+      isRedirect: _response.isRedirect,
+      requestOptions: _response.requestOptions,
+      redirects: _response.redirects,
+      statusCode: _response.statusCode,
+      statusMessage: _response.statusMessage,
+      extra: _response.extra,
+    );
+  }
+
+  /// 按稳定角色 ID 读取身份卡；删除后只返回账号及删除状态
+  ///
+  ///
+  /// Parameters:
+  /// * [threadId]
+  /// * [identityId]
+  /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
+  /// * [headers] - Can be used to add additional headers to the request
+  /// * [extras] - Can be used to add flags to the request
+  /// * [validateStatus] - A [ValidateStatus] callback that can be used to determine request success based on the HTTP status of the response
+  /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
+  /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
+  ///
+  /// Returns a [Future] containing a [Response] with a [RpIdentitiesFind200Response] as data
+  /// Throws [DioException] if API call or serialization fails
+  Future<Response<RpIdentitiesFind200Response>> rpIdentitiesFind({
+    required String threadId,
+    required String identityId,
+    CancelToken? cancelToken,
+    Map<String, dynamic>? headers,
+    Map<String, dynamic>? extra,
+    ValidateStatus? validateStatus,
+    ProgressCallback? onSendProgress,
+    ProgressCallback? onReceiveProgress,
+  }) async {
+    final _path = r'/api/v1/threads/{threadId}/rp-identities/{identityId}'.replaceAll('{' r'threadId' '}', encodeQueryParameter(_serializers, threadId, const FullType(String)).toString()).replaceAll('{' r'identityId' '}', encodeQueryParameter(_serializers, identityId, const FullType(String)).toString());
+    final _options = Options(
+      method: r'GET',
+      headers: <String, dynamic>{
+        ...?headers,
+      },
+      extra: <String, dynamic>{
+        'secure': <Map<String, String>>[
+          {
+            'type': 'http',
+            'scheme': 'bearer',
+            'name': 'bearer',
+          },
+        ],
+        ...?extra,
+      },
+      validateStatus: validateStatus,
+    );
+
+    final _response = await _dio.request<Object>(
+      _path,
+      options: _options,
+      cancelToken: cancelToken,
+      onSendProgress: onSendProgress,
+      onReceiveProgress: onReceiveProgress,
+    );
+
+    RpIdentitiesFind200Response? _responseData;
+
+    try {
+      final rawResponse = _response.data;
+      _responseData = rawResponse == null ? null : _serializers.deserialize(
+        rawResponse,
+        specifiedType: const FullType(RpIdentitiesFind200Response),
+      ) as RpIdentitiesFind200Response;
+
+    } catch (error, stackTrace) {
+      throw DioException(
+        requestOptions: _response.requestOptions,
+        response: _response,
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    return Response<RpIdentitiesFind200Response>(
+      data: _responseData,
+      headers: _response.headers,
+      isRedirect: _response.isRedirect,
+      requestOptions: _response.requestOptions,
+      redirects: _response.redirects,
+      statusCode: _response.statusCode,
+      statusMessage: _response.statusMessage,
+      extra: _response.extra,
+    );
+  }
+
+  /// 列出自己的帖内角色及各角色发表确认 token（最多十个）
+  ///
+  ///
+  /// Parameters:
+  /// * [threadId]
+  /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
+  /// * [headers] - Can be used to add additional headers to the request
+  /// * [extras] - Can be used to add flags to the request
+  /// * [validateStatus] - A [ValidateStatus] callback that can be used to determine request success based on the HTTP status of the response
+  /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
+  /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
+  ///
+  /// Returns a [Future] containing a [Response] with a [RpIdentitiesList200Response] as data
+  /// Throws [DioException] if API call or serialization fails
+  Future<Response<RpIdentitiesList200Response>> rpIdentitiesList({
+    required String threadId,
+    CancelToken? cancelToken,
+    Map<String, dynamic>? headers,
+    Map<String, dynamic>? extra,
+    ValidateStatus? validateStatus,
+    ProgressCallback? onSendProgress,
+    ProgressCallback? onReceiveProgress,
+  }) async {
+    final _path = r'/api/v1/threads/{threadId}/rp-identities'.replaceAll('{' r'threadId' '}', encodeQueryParameter(_serializers, threadId, const FullType(String)).toString());
+    final _options = Options(
+      method: r'GET',
+      headers: <String, dynamic>{
+        ...?headers,
+      },
+      extra: <String, dynamic>{
+        'secure': <Map<String, String>>[
+          {
+            'type': 'http',
+            'scheme': 'bearer',
+            'name': 'bearer',
+          },
+        ],
+        ...?extra,
+      },
+      validateStatus: validateStatus,
+    );
+
+    final _response = await _dio.request<Object>(
+      _path,
+      options: _options,
+      cancelToken: cancelToken,
+      onSendProgress: onSendProgress,
+      onReceiveProgress: onReceiveProgress,
+    );
+
+    RpIdentitiesList200Response? _responseData;
+
+    try {
+      final rawResponse = _response.data;
+      _responseData = rawResponse == null ? null : _serializers.deserialize(
+        rawResponse,
+        specifiedType: const FullType(RpIdentitiesList200Response),
+      ) as RpIdentitiesList200Response;
+
+    } catch (error, stackTrace) {
+      throw DioException(
+        requestOptions: _response.requestOptions,
+        response: _response,
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    return Response<RpIdentitiesList200Response>(
+      data: _responseData,
+      headers: _response.headers,
+      isRedirect: _response.isRedirect,
+      requestOptions: _response.requestOptions,
+      redirects: _response.redirects,
+      statusCode: _response.statusCode,
+      statusMessage: _response.statusMessage,
+      extra: _response.extra,
+    );
+  }
+
+  /// 删除自己的指定角色并释放名额；历史身份和媒体保留
+  ///
+  ///
+  /// Parameters:
+  /// * [threadId]
+  /// * [identityId]
+  /// * [deleteRpIdentityDto]
+  /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
+  /// * [headers] - Can be used to add additional headers to the request
+  /// * [extras] - Can be used to add flags to the request
+  /// * [validateStatus] - A [ValidateStatus] callback that can be used to determine request success based on the HTTP status of the response
+  /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
+  /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
+  ///
+  /// Returns a [Future] containing a [Response] with a [RpIdentitiesRemove200Response] as data
+  /// Throws [DioException] if API call or serialization fails
+  Future<Response<RpIdentitiesRemove200Response>> rpIdentitiesRemove({
+    required String threadId,
+    required String identityId,
+    required DeleteRpIdentityDto deleteRpIdentityDto,
+    CancelToken? cancelToken,
+    Map<String, dynamic>? headers,
+    Map<String, dynamic>? extra,
+    ValidateStatus? validateStatus,
+    ProgressCallback? onSendProgress,
+    ProgressCallback? onReceiveProgress,
+  }) async {
+    final _path = r'/api/v1/threads/{threadId}/rp-identities/{identityId}'.replaceAll('{' r'threadId' '}', encodeQueryParameter(_serializers, threadId, const FullType(String)).toString()).replaceAll('{' r'identityId' '}', encodeQueryParameter(_serializers, identityId, const FullType(String)).toString());
+    final _options = Options(
+      method: r'DELETE',
+      headers: <String, dynamic>{
+        ...?headers,
+      },
+      extra: <String, dynamic>{
+        'secure': <Map<String, String>>[
+          {
+            'type': 'http',
+            'scheme': 'bearer',
+            'name': 'bearer',
+          },
+        ],
+        ...?extra,
+      },
+      contentType: 'application/json',
+      validateStatus: validateStatus,
+    );
+
+    dynamic _bodyData;
+
+    try {
+      const _type = FullType(DeleteRpIdentityDto);
+      _bodyData = _serializers.serialize(deleteRpIdentityDto, specifiedType: _type);
+
+    } catch(error, stackTrace) {
+      throw DioException(
+         requestOptions: _options.compose(
+          _dio.options,
+          _path,
+        ),
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    final _response = await _dio.request<Object>(
+      _path,
+      data: _bodyData,
+      options: _options,
+      cancelToken: cancelToken,
+      onSendProgress: onSendProgress,
+      onReceiveProgress: onReceiveProgress,
+    );
+
+    RpIdentitiesRemove200Response? _responseData;
+
+    try {
+      final rawResponse = _response.data;
+      _responseData = rawResponse == null ? null : _serializers.deserialize(
+        rawResponse,
+        specifiedType: const FullType(RpIdentitiesRemove200Response),
+      ) as RpIdentitiesRemove200Response;
+
+    } catch (error, stackTrace) {
+      throw DioException(
+        requestOptions: _response.requestOptions,
+        response: _response,
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    return Response<RpIdentitiesRemove200Response>(
+      data: _responseData,
+      headers: _response.headers,
+      isRedirect: _response.isRedirect,
+      requestOptions: _response.requestOptions,
+      redirects: _response.redirects,
+      statusCode: _response.statusCode,
+      statusMessage: _response.statusMessage,
+      extra: _response.extra,
+    );
+  }
+
+  /// 修改自己的指定角色；只影响此角色之后的新发言
+  ///
+  ///
+  /// Parameters:
+  /// * [threadId]
+  /// * [identityId]
+  /// * [updateRpIdentityDto]
+  /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
+  /// * [headers] - Can be used to add additional headers to the request
+  /// * [extras] - Can be used to add flags to the request
+  /// * [validateStatus] - A [ValidateStatus] callback that can be used to determine request success based on the HTTP status of the response
+  /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
+  /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
+  ///
+  /// Returns a [Future] containing a [Response] with a [RpIdentitiesUpdate200Response] as data
+  /// Throws [DioException] if API call or serialization fails
+  Future<Response<RpIdentitiesUpdate200Response>> rpIdentitiesUpdate({
+    required String threadId,
+    required String identityId,
+    required UpdateRpIdentityDto updateRpIdentityDto,
+    CancelToken? cancelToken,
+    Map<String, dynamic>? headers,
+    Map<String, dynamic>? extra,
+    ValidateStatus? validateStatus,
+    ProgressCallback? onSendProgress,
+    ProgressCallback? onReceiveProgress,
+  }) async {
+    final _path = r'/api/v1/threads/{threadId}/rp-identities/{identityId}'.replaceAll('{' r'threadId' '}', encodeQueryParameter(_serializers, threadId, const FullType(String)).toString()).replaceAll('{' r'identityId' '}', encodeQueryParameter(_serializers, identityId, const FullType(String)).toString());
+    final _options = Options(
+      method: r'PUT',
+      headers: <String, dynamic>{
+        ...?headers,
+      },
+      extra: <String, dynamic>{
+        'secure': <Map<String, String>>[
+          {
+            'type': 'http',
+            'scheme': 'bearer',
+            'name': 'bearer',
+          },
+        ],
+        ...?extra,
+      },
+      contentType: 'application/json',
+      validateStatus: validateStatus,
+    );
+
+    dynamic _bodyData;
+
+    try {
+      const _type = FullType(UpdateRpIdentityDto);
+      _bodyData = _serializers.serialize(updateRpIdentityDto, specifiedType: _type);
+
+    } catch(error, stackTrace) {
+      throw DioException(
+         requestOptions: _options.compose(
+          _dio.options,
+          _path,
+        ),
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    final _response = await _dio.request<Object>(
+      _path,
+      data: _bodyData,
+      options: _options,
+      cancelToken: cancelToken,
+      onSendProgress: onSendProgress,
+      onReceiveProgress: onReceiveProgress,
+    );
+
+    RpIdentitiesUpdate200Response? _responseData;
+
+    try {
+      final rawResponse = _response.data;
+      _responseData = rawResponse == null ? null : _serializers.deserialize(
+        rawResponse,
+        specifiedType: const FullType(RpIdentitiesUpdate200Response),
+      ) as RpIdentitiesUpdate200Response;
+
+    } catch (error, stackTrace) {
+      throw DioException(
+        requestOptions: _response.requestOptions,
+        response: _response,
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    return Response<RpIdentitiesUpdate200Response>(
+      data: _responseData,
+      headers: _response.headers,
+      isRedirect: _response.isRedirect,
+      requestOptions: _response.requestOptions,
+      redirects: _response.redirects,
+      statusCode: _response.statusCode,
+      statusMessage: _response.statusMessage,
+      extra: _response.extra,
+    );
+  }
 
   /// 清除自己的当前帖内资料；保留历史发言身份
   ///

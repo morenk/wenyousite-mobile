@@ -44,6 +44,9 @@ const BusinessErrorCode _$RP_IDENTITY_CHANGED = const BusinessErrorCode._(
 const BusinessErrorCode _$RP_MENTION_CHANGED = const BusinessErrorCode._(
   'RP_MENTION_CHANGED',
 );
+const BusinessErrorCode _$RP_IDENTITY_LIMIT = const BusinessErrorCode._(
+  'RP_IDENTITY_LIMIT',
+);
 const BusinessErrorCode _$UNAUTHORIZED = const BusinessErrorCode._(
   'UNAUTHORIZED',
 );
@@ -299,6 +302,8 @@ BusinessErrorCode _$valueOf(String name) {
       return _$RP_IDENTITY_CHANGED;
     case 'RP_MENTION_CHANGED':
       return _$RP_MENTION_CHANGED;
+    case 'RP_IDENTITY_LIMIT':
+      return _$RP_IDENTITY_LIMIT;
     case 'UNAUTHORIZED':
       return _$UNAUTHORIZED;
     case 'TOKEN_EXPIRED':
@@ -482,6 +487,7 @@ final BuiltSet<BusinessErrorCode> _$values =
       _$DISCUSSION_TARGET_FILTERED,
       _$RP_IDENTITY_CHANGED,
       _$RP_MENTION_CHANGED,
+      _$RP_IDENTITY_LIMIT,
       _$UNAUTHORIZED,
       _$TOKEN_EXPIRED,
       _$TOKEN_INVALID,
@@ -583,6 +589,7 @@ class _$BusinessErrorCodeMeta {
       _$DISCUSSION_TARGET_FILTERED;
   BusinessErrorCode get RP_IDENTITY_CHANGED => _$RP_IDENTITY_CHANGED;
   BusinessErrorCode get RP_MENTION_CHANGED => _$RP_MENTION_CHANGED;
+  BusinessErrorCode get RP_IDENTITY_LIMIT => _$RP_IDENTITY_LIMIT;
   BusinessErrorCode get UNAUTHORIZED => _$UNAUTHORIZED;
   BusinessErrorCode get TOKEN_EXPIRED => _$TOKEN_EXPIRED;
   BusinessErrorCode get TOKEN_INVALID => _$TOKEN_INVALID;
@@ -707,6 +714,7 @@ class _$BusinessErrorCodeSerializer
     'DISCUSSION_TARGET_FILTERED': 40010,
     'RP_IDENTITY_CHANGED': 40011,
     'RP_MENTION_CHANGED': 40012,
+    'RP_IDENTITY_LIMIT': 40013,
     'UNAUTHORIZED': 40100,
     'TOKEN_EXPIRED': 40101,
     'TOKEN_INVALID': 40102,
@@ -804,6 +812,7 @@ class _$BusinessErrorCodeSerializer
     40010: 'DISCUSSION_TARGET_FILTERED',
     40011: 'RP_IDENTITY_CHANGED',
     40012: 'RP_MENTION_CHANGED',
+    40013: 'RP_IDENTITY_LIMIT',
     40100: 'UNAUTHORIZED',
     40101: 'TOKEN_EXPIRED',
     40102: 'TOKEN_INVALID',
