@@ -239,3 +239,6 @@ Backend PR #43 已合并，管理入口 `deploy.sh --backend-only` 成功，精�
 
 
 旧集合的账号行另与 RP 资料分离，避免恢复不存在的角色时确认框误用另一个 RP 称呼。最终相关 7 项及针对文件分析通过（`.rp-peer-legacy-account-final.log`、`.rp-peer-legacy-account-analyze.log`）。手机重新附加会话 30106／Flutter PID38944／App PID20840，热重启 6,708ms code=0，随后实际热重载 1/4677 libraries、1,754ms code=0，已加载摘要 `30279f2dbf6a69e78e40044d2cad1e28d1d5191fbf5b971ea30228fac13acb36`。随后该会话再次报告 Lost connection，登记为断连，不能把最后成功载入等同持续在线；后续恢复状态另记。手机前台截图确认过原错误与空白编辑器，未进行公网业务发表。
+
+
+Backend PR44 按负责人追加授权已合并为 `58f4526e3d4d293770428d92b332e02bb6b3fddd`。Windows 标准 sync 入口从只读 Git 镜像同步该已合并提交，只有 backend-contract.properties 的来源 SHA 变化，OpenAPI、Markdown v6 文档和语料、生成 SDK 均无差异；固定语料来源检查通过。模块文档统一更新已审查来源，不用旧任务 SHA 冒称未来部署事实。实际公网只读门禁与发布结果待管理入口完成后续记。

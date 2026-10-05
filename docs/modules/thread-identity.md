@@ -64,7 +64,7 @@ domain 只包含不可变 RP 展示值、身份模式和更新输入。applicati
 
 ## 13. 最近审查的契约版本和后端提交
 
-OpenAPI `5.35.0-dev.20261005.1`；Backend `62142042b76e2f15a92794337316bd4c1e3dd659`。Markdown 6 为可选扩展，结构化提及按原 sourceHref + 原标签映射；账号、角色和旧裸链接各自保持语义。全局 Markdown 仍为 5，新增提及写开关默认关闭。
+OpenAPI `5.35.0-dev.20261005.1`；Backend `58f4526e3d4d293770428d92b332e02bb6b3fddd`。Markdown 6 为可选扩展，结构化提及按原 sourceHref + 原标签映射；账号、角色和旧裸链接各自保持语义。全局 Markdown 仍为 5，新增提及写开关默认关闭。
 
 ## 14. 相关代码与架构文档
 
