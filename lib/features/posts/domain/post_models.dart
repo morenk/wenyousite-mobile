@@ -62,6 +62,7 @@ class PostItem {
     this.floorNumber,
     this.replyNumber,
     this.parentPostId,
+    this.parentFloorNumber,
     this.replyToPostId,
     this.replyToAuthor,
     this.clientRequestId,
@@ -87,6 +88,7 @@ class PostItem {
   final int? floorNumber;
   final int? replyNumber;
   final String? parentPostId;
+  final int? parentFloorNumber;
   final String? replyToPostId;
   final PostAuthor? replyToAuthor;
   final String? clientRequestId;

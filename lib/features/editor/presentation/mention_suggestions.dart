@@ -10,6 +10,7 @@ import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_feedback.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_selection_menu.dart';
 import 'package:wenyousite_mobile/features/editor/application/mention_candidates_controller.dart';
 import 'package:wenyousite_mobile/features/editor/domain/mention_models.dart';
 
@@ -291,7 +292,7 @@ class _MentionSuggestionsState extends ConsumerState<MentionSuggestions> {
         state.phase == MentionCandidatesPhase.loading;
     return _MentionPanel(
       key: const Key('mention-suggestions'),
-      title: active.query.isEmpty ? '选择要提及的人' : '查找“${active.query}”',
+      title: '提及',
       onDismiss: _dismiss,
       child: loading
           ? const _MentionStatus(
@@ -357,9 +358,9 @@ class _MentionPanel extends StatelessWidget {
           clipBehavior: Clip.antiAlias,
           child: Padding(
             padding: EdgeInsets.fromLTRB(
-              tokens.space12,
+              tokens.space8,
               0,
-              tokens.space4,
+              tokens.space8,
               tokens.space8,
             ),
             child: Column(
@@ -485,16 +486,21 @@ class _MentionResults extends StatelessWidget {
       constraints: const BoxConstraints(maxHeight: 144),
       child: ListView.builder(
         key: const Key('mention-results'),
+        padding: EdgeInsets.zero,
+        primary: false,
         shrinkWrap: true,
         itemCount: count,
         itemBuilder: (context, index) {
           if (showAllPlayers && index == 0) {
-            return ListTile(
+            return WenyouSelectionTile(
               key: const Key('mention-all-players'),
-              minTileHeight: context.wenyouTokens.minimumTouchTarget,
-              leading: const WenyouIcon(WenyouIconIds.identityMembers),
-              title: const Text('@全体玩家'),
-              trailing: const Text('仅楼主/协作者'),
+              selected: false,
+              leading: const SizedBox.square(
+                dimension: 40,
+                child: Center(child: WenyouIcon(WenyouIconIds.identityMembers)),
+              ),
+              label: '全体玩家',
+              supportingLabel: '仅楼主/协作者',
               onTap: onAllPlayers,
             );
           }
@@ -517,27 +523,21 @@ class _MentionResults extends StatelessWidget {
             label: candidate.isRole && sameNames.length > 1
                 ? '同名角色 $ordinal，共 ${sameNames.length} 个'
                 : null,
-            child: ListTile(
+            child: WenyouSelectionTile(
               key: ValueKey('mention-user-${candidate.key}'),
-              minTileHeight: context.wenyouTokens.minimumTouchTarget,
+              selected: false,
+              maxLines: 1,
               leading: WenyouAvatar(
                 username: candidate.displayName,
                 avatarUrl: candidate.avatarUrl,
-                size: context.wenyouTokens.space32,
+                size: 40,
               ),
-              title: Text(candidate.label),
-              subtitle: !candidate.isRole
-                  ? null
-                  : Text(candidate.supportingLabel),
-              trailing: candidate.isRole && sameVisual
-                  ? Text('$ordinal/${sameNames.length}')
-                  : !candidate.isRole
-                  ? Text(
-                      candidate.isExplicitAccount
-                          ? '站内身份'
-                          : candidate.relationLabel,
-                    )
-                  : null,
+              label: candidate.displayName,
+              supportingLabel: candidate.isRole
+                  ? '${candidate.supportingLabel}${sameVisual ? ' · $ordinal/${sameNames.length}' : ''}'
+                  : candidate.isExplicitAccount
+                  ? '站内身份'
+                  : candidate.relationLabel,
               onTap: () => onUser(candidate),
             ),
           );

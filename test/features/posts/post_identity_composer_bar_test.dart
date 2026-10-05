@@ -79,10 +79,14 @@ void main() {
     return selection;
   }
 
-  testWidgets('两行选项区分模式，选择原身份后只改变本次选择', (tester) async {
+  testWidgets('单行身份菜单选择账号后只改变本次选择', (tester) async {
     var settings = 0;
     final selection = await pumpBar(tester, onSettings: () => settings++);
     expect(find.text('发表楼层'), findsNothing);
+    expect(
+      tester.getSize(find.byKey(const Key('post-composer-header'))).height,
+      60,
+    );
     expect(find.text('编辑资料'), findsNothing);
     await tester.tap(find.byKey(const Key('post-composer-identity-mode')));
     await tester.pumpAndSettle();
@@ -92,8 +96,8 @@ void main() {
     expect(selection.mode, PostIdentityMode.rp);
     await tester.tap(find.byKey(const Key('post-composer-identity-mode')));
     await tester.pumpAndSettle();
-    expect(find.text('帖内身份'), findsOneWidget);
-    expect(find.text('站内身份'), findsOneWidget);
+    expect(find.text('帖内身份'), findsNothing);
+    expect(find.text('站内身份'), findsNothing);
     await tester.tap(find.byKey(const Key('post-identity-option-account')));
     await tester.pumpAndSettle();
     expect(selection.mode, PostIdentityMode.account);

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "contractVersion": "5.35.0-dev.20261005.1",
+  "contractVersion": "5.36.0-dev.20261005.1",
   "exclusions": [
     { "operationId": "appDownloadsInfo", "category": "web_download_page", "reason": "Web 下载入口读取全局发布状态；Mobile 继续由 /meta 决定更新策略，无 Cookie 的 HEAD/GET 不增加 info 前置调用。" },
     { "operationId": "appDownloadsHead", "category": "streamed_apk_update", "reason": "Mobile 使用独立下载 Dio 对 /meta 指定的文件 URL 执行 HEAD，保留旧 APP 元数据校验，不调用生成 JSON API。" },

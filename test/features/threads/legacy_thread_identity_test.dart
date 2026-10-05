@@ -7,6 +7,7 @@ import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/app/app_capabilities.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/app/production_overrides.dart';
+import 'package:wenyousite_mobile/core/domain/domain_validation_exception.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/app_shell/domain/contract_info.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_controllers.dart';
@@ -133,23 +134,23 @@ void main() {
         'other',
         const ThreadIdentityUpdate(version: 3),
       ),
-      throwsA(isA<ApiFailure>()),
+      throwsA(isA<DomainValidationException>()),
     );
     await expectLater(
       repo.updateRole('thread', 'role', const ThreadIdentityUpdate(version: 2)),
-      throwsA(isA<ApiFailure>()),
+      throwsA(isA<DomainValidationException>()),
     );
     await expectLater(
       repo.updateRole('thread', 'role', const ThreadIdentityUpdate()),
-      throwsA(isA<ApiFailure>()),
+      throwsA(isA<DomainValidationException>()),
     );
     await expectLater(
       repo.create('thread', const ThreadIdentityUpdate(nickname: '新角色')),
-      throwsA(isA<ApiFailure>()),
+      throwsA(isA<DomainValidationException>()),
     );
     await expectLater(
       repo.remove('thread', 'role', 3),
-      throwsA(isA<ApiFailure>()),
+      throwsA(isA<DomainValidationException>()),
     );
     expect(requests.every((r) => r.method == 'GET'), isTrue);
   });

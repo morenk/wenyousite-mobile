@@ -14,6 +14,7 @@ class ThreadIdentitySummary extends StatelessWidget {
     this.avatarSize = 40,
     this.maxNameLines,
     this.trailing,
+    this.nameBadge,
     super.key,
   });
 
@@ -25,6 +26,7 @@ class ThreadIdentitySummary extends StatelessWidget {
   final double avatarSize;
   final int? maxNameLines;
   final Widget? trailing;
+  final String? nameBadge;
 
   @override
   Widget build(BuildContext context) {
@@ -52,11 +54,28 @@ class ThreadIdentitySummary extends StatelessWidget {
                   caption,
                   style: text.wenyouCaption.copyWith(color: tokens.mutedText),
                 ),
-              Text(
-                name,
-                maxLines: maxNameLines,
-                overflow: maxNameLines == null ? null : TextOverflow.ellipsis,
-                style: text.wenyouCompactTitle,
+              Row(
+                children: [
+                  Flexible(
+                    child: Text(
+                      name,
+                      maxLines: maxNameLines,
+                      overflow: maxNameLines == null
+                          ? null
+                          : TextOverflow.ellipsis,
+                      style: text.wenyouCompactTitle,
+                    ),
+                  ),
+                  if (nameBadge case final badge?) ...[
+                    SizedBox(width: tokens.space4),
+                    Text(
+                      badge,
+                      style: text.wenyouCaption.copyWith(
+                        color: tokens.mutedText,
+                      ),
+                    ),
+                  ],
+                ],
               ),
               if (supportingText case final supporting?) ...[
                 SizedBox(height: tokens.space4),

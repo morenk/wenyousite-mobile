@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
@@ -30,6 +31,7 @@ void main() {
                 context: context,
                 builder: (_) => WenyouSheetBody(
                   title: '帖内身份',
+                  showHeader: false,
                   slivers: [
                     SliverToBoxAdapter(
                       child: ThreadIdentityCardContent(
@@ -55,15 +57,48 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('旧楼层卡片区分当时名字、当前名字和真实账号', (tester) async {
+  testWidgets('旧楼层卡片保留当时名字和真实账号，不追加当前角色对照行', (tester) async {
     await pumpCard(tester);
     expect(find.text('本条发言身份'), findsNothing);
     expect(find.text('白夜'), findsOneWidget);
-    expect(find.text('现为'), findsOneWidget);
-    expect(find.text('夜渡'), findsOneWidget);
+    expect(find.text('现为'), findsNothing);
+    expect(find.text('夜渡'), findsNothing);
     expect(find.text('小明'), findsOneWidget);
     expect(find.text('楼主'), findsOneWidget);
     expect(find.text('站内账号：小明'), findsNothing);
+  });
+
+  testWidgets('无顶部标题与X，外部点击、下滑、系统返回和无障碍均可关闭', (tester) async {
+    final handle = tester.ensureSemantics();
+    for (final method in ['outside', 'drag', 'back', 'semantics']) {
+      await pumpCard(tester);
+      expect(find.text('帖内身份'), findsOneWidget);
+      expect(find.byTooltip('关闭帖内身份'), findsNothing);
+      switch (method) {
+        case 'outside':
+          await tester.tapAt(const Offset(8, 8));
+        case 'drag':
+          await tester.flingFrom(
+            tester.getTopLeft(find.byType(BottomSheet)) + const Offset(160, 16),
+            const Offset(0, 600),
+            1200,
+          );
+        case 'back':
+          await tester.binding.handlePopRoute();
+        case 'semantics':
+          final node = tester.getSemantics(
+            find.byKey(const Key('wenyou-sheet-dismiss')),
+          );
+          expect(
+            node.getSemanticsData().hasAction(SemanticsAction.dismiss),
+            isTrue,
+          );
+          node.owner!.performAction(node.id, SemanticsAction.dismiss);
+      }
+      await tester.pumpAndSettle();
+      expect(find.byType(BottomSheet), findsNothing, reason: method);
+    }
+    handle.dispose();
   });
 
   testWidgets('关闭后即使仍有旧属性也不会显示历史或当前角色名', (tester) async {
@@ -107,7 +142,7 @@ void main() {
     semantics.dispose();
   });
 
-  testWidgets('仅头像变化保留对照，清除后账号不重复展示且不解释状态', (tester) async {
+  testWidgets('改头像或清除后仍只保留历史头像与账号行', (tester) async {
     for (final currentName in ['白夜', null]) {
       await tester.pumpWidget(
         MaterialApp(
@@ -130,15 +165,10 @@ void main() {
       final summaries = tester
           .widgetList<ThreadIdentitySummary>(find.byType(ThreadIdentitySummary))
           .toList();
-      expect(summaries, hasLength(currentName == null ? 2 : 3));
+      expect(summaries, hasLength(2));
       expect(summaries.first.avatarUrl, 'https://example.invalid/old.png');
-      expect(
-        summaries[1].avatarUrl,
-        currentName == null
-            ? 'https://example.invalid/account.png'
-            : 'https://example.invalid/current.png',
-      );
-      expect(summaries[1].label, currentName == null ? null : '现为');
+      expect(summaries[1].avatarUrl, 'https://example.invalid/account.png');
+      expect(summaries[1].label, isNull);
       expect(find.text('当前使用站内资料'), findsNothing);
       expect(find.text('小明'), findsOneWidget);
     }
@@ -164,7 +194,8 @@ void main() {
           'goldens/rp_identity_card_320_${dark ? 'dark' : 'light'}.png',
         ),
       );
-      await tester.tap(find.byTooltip('关闭帖内身份'));
+      expect(find.byTooltip('关闭帖内身份'), findsNothing);
+      await tester.binding.handlePopRoute();
       await tester.pumpAndSettle();
       await pumpCard(
         tester,

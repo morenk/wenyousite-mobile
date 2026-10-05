@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:wenyousite_mobile/app/app_capabilities.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_sheet.dart';
 import 'package:wenyousite_mobile/features/thread_identity/identity_models.dart';
 import 'package:wenyousite_mobile/features/thread_identity/identity_ports.dart';
+import 'package:wenyousite_mobile/features/thread_identity/identity_profile.dart';
 import 'package:wenyousite_mobile/features/thread_identity/presentation/thread_identity_card_content.dart';
+import 'package:wenyousite_mobile/features/thread_identity/presentation/thread_identity_reading_scope.dart';
 
 Future<void> showThreadIdentityCard({
   required BuildContext context,
@@ -16,21 +19,25 @@ Future<void> showThreadIdentityCard({
   bool fromPost = false,
   String? roleLabel,
 }) async {
-  final openAccount = await showWenyouSheet<bool>(
+  final readingScope = ThreadIdentityReadingScope.maybeOf(context);
+  final targetId = historical?.id ?? identityId;
+  final provider = targetId != null
+      ? rpIdentityCardProvider((
+          threadId: threadId,
+          userId: userId,
+          identityId: targetId,
+        ))
+      : threadIdentityCardProvider((threadId: threadId, userId: userId));
+  // 每次打开重新校验当前角色绑定，不沿用另一个已打开卡片的投影。
+  ProviderScope.containerOf(context, listen: false).invalidate(provider);
+  final location = await showWenyouSheet<String>(
     context: context,
     builder: (context) => Consumer(
       builder: (context, ref, _) {
-        final targetId = historical?.id ?? identityId;
-        final provider = targetId != null
-            ? rpIdentityCardProvider((
-                threadId: threadId,
-                userId: userId,
-                identityId: targetId,
-              ))
-            : threadIdentityCardProvider((threadId: threadId, userId: userId));
         final state = ref.watch(provider);
         return WenyouSheetBody(
           title: '帖内身份',
+          showHeader: false,
           slivers: [
             SliverToBoxAdapter(
               child: state.when(
@@ -45,7 +52,34 @@ Future<void> showThreadIdentityCard({
                   currentName: value.display?.nickname,
                   currentAvatarUrl: value.display?.avatarUrl,
                   roleLabel: roleLabel,
-                  onOpenAccount: () => Navigator.of(context).pop(true),
+                  profile:
+                      !ref
+                          .watch(appCapabilitiesProvider)
+                          .rpIdentityProfileSupported
+                      ? null
+                      : switch (value.profilePostStatus) {
+                          IdentityProfilePostStatus.none => null,
+                          IdentityProfilePostStatus.unavailable => const Text(
+                            '资料暂不可用',
+                          ),
+                          IdentityProfilePostStatus.available =>
+                            ThreadIdentityReadingScope(
+                              threadId: threadId,
+                              available: value.enabled,
+                              ownerId: readingScope?.ownerId,
+                              child:
+                                  ref.watch(
+                                    identityProfilePreviewBuilderProvider,
+                                  )(
+                                    threadId: threadId,
+                                    postId: value.profilePostId!,
+                                    onOpenPost: (location) =>
+                                        Navigator.of(context).pop(location),
+                                  ),
+                            ),
+                        },
+                  onOpenAccount: () =>
+                      Navigator.of(context).pop(AppRouteLocations.user(userId)),
                 ),
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (_, _) => Column(
@@ -65,6 +99,6 @@ Future<void> showThreadIdentityCard({
       },
     ),
   );
-  if (!context.mounted || openAccount != true) return;
-  await context.push(AppRouteLocations.user(userId));
+  if (!context.mounted || location == null) return;
+  await context.push(location);
 }

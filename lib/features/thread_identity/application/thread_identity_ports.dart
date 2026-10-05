@@ -68,6 +68,9 @@ class ThreadIdentityState {
     this.deleted = false,
     this.canDelete = false,
     this.compatibilityIdentity = false,
+    this.profilePostId,
+    this.editableProfilePostId,
+    this.profilePostStatus = IdentityProfilePostStatus.none,
   });
 
   final String threadId;
@@ -86,11 +89,16 @@ class ThreadIdentityState {
   final bool deleted;
   final bool canDelete;
   final bool compatibilityIdentity;
+  final String? profilePostId;
+  final String? editableProfilePostId;
+  final IdentityProfilePostStatus profilePostStatus;
 
   bool get hasRp => !deleted && enabled && eligible && display != null;
   String get displayName => hasRp ? display!.nickname : accountName;
   String? get displayAvatarUrl => hasRp ? display!.avatarUrl : accountAvatarUrl;
 }
+
+enum IdentityProfilePostStatus { none, available, unavailable }
 
 class ThreadIdentityCollection {
   const ThreadIdentityCollection({

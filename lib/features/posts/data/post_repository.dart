@@ -499,6 +499,7 @@ class ApiPostRepository implements PostRepository {
       replyCount: dto.count.replies.toInt(),
       threadTitle: dto.thread.title,
       subthreadTitle: dto.subthread.title,
+      parentFloorNumber: dto.parentPost?.floorNumber?.toInt(),
       diceRolls: dto.diceRolls.map(_mapDice).toList(growable: false),
     );
   }

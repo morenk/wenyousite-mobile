@@ -10,6 +10,7 @@ class AppCapabilities {
     this.legacySingleThreadIdentity = false,
     this.roleMentionsSupported = false,
     this.roleMentionsWriteEnabled = false,
+    this.rpIdentityProfileSupported = false,
   });
 
   final bool stickers;
@@ -20,6 +21,7 @@ class AppCapabilities {
   final bool legacySingleThreadIdentity;
   final bool roleMentionsSupported;
   final bool roleMentionsWriteEnabled;
+  final bool rpIdentityProfileSupported;
 }
 
 /// Application composition supplies the server-advertised capability set.

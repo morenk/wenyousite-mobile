@@ -16,6 +16,7 @@ class ThreadIdentityCardContent extends StatelessWidget {
     this.currentAvatarUrl,
     this.roleLabel,
     this.fromPost = false,
+    this.profile,
     super.key,
   });
 
@@ -28,6 +29,7 @@ class ThreadIdentityCardContent extends StatelessWidget {
   final String? currentAvatarUrl;
   final String? roleLabel;
   final bool fromPost;
+  final Widget? profile;
   final VoidCallback onOpenAccount;
 
   @override
@@ -41,10 +43,6 @@ class ThreadIdentityCardContent extends StatelessWidget {
         : current != null && !fromPost
         ? currentAvatarUrl
         : accountAvatarUrl;
-    final changed =
-        history != null &&
-        current != null &&
-        (name != current || avatar != currentAvatarUrl);
     final hasRp = history != null || (!fromPost && current != null);
     final account = Semantics(
       button: true,
@@ -83,21 +81,13 @@ class ThreadIdentityCardContent extends StatelessWidget {
             name: name,
             avatarUrl: avatar,
             avatarSize: 48,
-            supportingText: roleLabel,
+            nameBadge: roleLabel,
+            supportingText: '帖内身份',
           )
         else
           account,
-        if (changed) ...[
-          SizedBox(height: tokens.space16),
-          ThreadIdentitySummary(
-            key: const Key('thread-identity-current-name'),
-            name: current,
-            label: '现为',
-            avatarUrl: currentAvatarUrl,
-            avatarSize: 32,
-          ),
-        ],
         if (hasRp) ...[
+          if (profile != null) ...[SizedBox(height: tokens.space16), profile!],
           SizedBox(height: tokens.space16),
           Divider(height: 1, color: tokens.border),
           account,

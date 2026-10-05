@@ -5,6 +5,7 @@ import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
 import 'package:wenyousite_mobile/features/thread_identity/data/thread_identity_repository.dart';
 import 'package:wenyousite_mobile/features/thread_identity/identity_models.dart';
+import 'package:wenyousite_mobile/features/thread_identity/identity_ports.dart';
 
 void main() {
   late Dio dio;
@@ -59,6 +60,71 @@ void main() {
     'deleted': false,
     'compatibilityIdentity': true,
     'canDelete': true,
+  });
+
+  test('新能力支持绑定与显式解绑，旧能力不发送新增字段', () async {
+    asRole();
+    for (final supported in [false, true]) {
+      final repo = ApiThreadIdentityRepository(
+        WenyouApi(dio: dio).getThreadsApi(),
+        profileSupported: supported,
+      );
+      await repo.create(
+        'thread',
+        const ThreadIdentityUpdate(nickname: '白鸦', profilePostId: 'post'),
+      );
+      expect(
+        (requests.last.data as Map)['profilePostId'],
+        supported ? 'post' : null,
+      );
+      await repo.updateRole(
+        'thread',
+        'rp',
+        const ThreadIdentityUpdate(version: 3, clearProfilePost: true),
+      );
+      expect(
+        (requests.last.data as Map)['clearProfilePost'],
+        supported ? true : null,
+      );
+      expect((requests.last.data as Map).containsKey('profilePostId'), isFalse);
+      await repo.updateRole(
+        'thread',
+        'rp',
+        const ThreadIdentityUpdate(version: 3, nickname: '新名'),
+      );
+      expect((requests.last.data as Map).containsKey('profilePostId'), isFalse);
+      expect(
+        (requests.last.data as Map).containsKey('clearProfilePost'),
+        isFalse,
+      );
+    }
+  });
+
+  test('不可用展示与本人原绑定分开；无能力字段默认不绑定', () async {
+    asRole();
+    expect(
+      (await repository.find('thread', 'rp')).profilePostStatus,
+      IdentityProfilePostStatus.none,
+    );
+    (response['identity']! as Map)['profilePostId'] = 'private-post';
+    response.addAll({
+      'profilePostStatus': 'UNAVAILABLE',
+      'profilePostId': null,
+    });
+    final state = await repository.find('thread', 'rp');
+    expect(state.editableProfilePostId, 'private-post');
+    expect(state.profilePostId, isNull);
+    expect(state.profilePostStatus, IdentityProfilePostStatus.unavailable);
+    response.addAll({
+      'profilePostStatus': 'AVAILABLE',
+      'profilePostId': 'post',
+    });
+    expect((await repository.find('thread', 'rp')).profilePostId, 'post');
+    response['profilePostId'] = null;
+    await expectLater(
+      repository.find('thread', 'rp'),
+      throwsA(isA<ApiFailure>()),
+    );
   });
 
   test('集合保留空资料名额和稳定角色 ID，拒绝跨账号成员', () async {

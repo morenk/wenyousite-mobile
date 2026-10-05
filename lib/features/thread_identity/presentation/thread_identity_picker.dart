@@ -50,23 +50,28 @@ class ThreadIdentityPicker extends StatelessWidget {
     final modeLabel = selected == null ? '站内身份' : '帖内身份';
     final canCreate = canEdit && identities.length < limit;
     final canChoose = identities.isNotEmpty || canCreate;
-    Widget summary({bool isOpen = false}) => Padding(
-      padding: EdgeInsets.all(tokens.space8),
-      child: ThreadIdentitySummary(
-        name: name,
-        label: identities.isEmpty ? null : modeLabel,
-        avatarUrl: selected == null ? accountAvatarUrl : selected.avatarUrl,
-        avatarSize: 32,
-        maxNameLines: 1,
-        trailing: canChoose
-            ? WenyouIcon(
-                isOpen
-                    ? WenyouIconIds.navigationCollapse
-                    : WenyouIconIds.navigationExpand,
-                size: 16,
-                color: enabled ? tokens.text : tokens.mutedText,
-              )
-            : null,
+    Widget summary({bool isOpen = false}) => ConstrainedBox(
+      constraints: BoxConstraints(minHeight: tokens.minimumTouchTarget),
+      child: Padding(
+        padding: EdgeInsets.symmetric(
+          horizontal: tokens.space8,
+          vertical: tokens.space4,
+        ),
+        child: ThreadIdentitySummary(
+          name: name,
+          avatarUrl: selected == null ? accountAvatarUrl : selected.avatarUrl,
+          avatarSize: 28,
+          maxNameLines: 1,
+          trailing: canChoose
+              ? WenyouIcon(
+                  isOpen
+                      ? WenyouIconIds.navigationCollapse
+                      : WenyouIconIds.navigationExpand,
+                  size: 16,
+                  color: enabled ? tokens.text : tokens.mutedText,
+                )
+              : null,
+        ),
       ),
     );
     if (!canChoose) return summary();
@@ -80,6 +85,7 @@ class ThreadIdentityPicker extends StatelessWidget {
       tooltip: '选择本次发表身份',
       optionKeyPrefix: 'post-identity-option',
       showScrollIndicator: identities.isNotEmpty,
+      optionMaxLines: 1,
       optionTrailingBuilder: !canEdit
           ? null
           : (menuContext, choice) => choice.identityId != null
@@ -123,13 +129,11 @@ class ThreadIdentityPicker extends StatelessWidget {
             ),
             keyValue: 'rp-${identity.id}',
             label: identity.nickname,
-            supportingLabel: identity.nickname == accountName ? '帖内身份' : null,
           ),
         WenyouFilterOption(
           value: (action: _Action.account, identityId: null),
           keyValue: 'account',
           label: accountName,
-          supportingLabel: '站内身份',
         ),
         if (canCreate)
           const WenyouFilterOption(

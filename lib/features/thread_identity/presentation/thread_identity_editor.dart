@@ -2,8 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wenyousite_mobile/app/app_capabilities.dart';
 import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
 import 'package:wenyousite_mobile/core/application/visibility_cache_invalidation.dart';
+import 'package:wenyousite_mobile/core/domain/domain_validation_exception.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_feedback.dart';
@@ -17,6 +19,7 @@ import 'package:wenyousite_mobile/features/media/application/media_upload_task_c
 import 'package:wenyousite_mobile/features/media/avatar_crop.dart';
 import 'package:wenyousite_mobile/features/thread_identity/identity_models.dart';
 import 'package:wenyousite_mobile/features/thread_identity/identity_ports.dart';
+import 'package:wenyousite_mobile/features/thread_identity/identity_profile.dart';
 import 'package:wenyousite_mobile/features/thread_identity/presentation/thread_identity_editor_content.dart';
 
 Future<ThreadIdentityState?> showThreadIdentityEditor(
@@ -50,6 +53,9 @@ class _ThreadIdentityEditor extends ConsumerStatefulWidget {
 
 class _ThreadIdentityEditorState extends ConsumerState<_ThreadIdentityEditor> {
   final _nickname = TextEditingController();
+  final _profileLink = TextEditingController();
+  String _initialProfileLink = '';
+  String? _profileLinkError;
   final _uploadKey = Object();
   ThreadIdentityState? _identity;
   String? _avatarMediaId;
@@ -77,7 +83,8 @@ class _ThreadIdentityEditorState extends ConsumerState<_ThreadIdentityEditor> {
   bool get _dirty =>
       _loaded &&
       (_nickname.text.trim() != (_identity?.nickname ?? '') ||
-          _avatarMediaId != _identity?.avatarMediaId);
+          _avatarMediaId != _identity?.avatarMediaId ||
+          _profileLink.text.trim() != _initialProfileLink);
 
   Future<void> _requestClose() async {
     if (!_active || _confirmingClose || _allowPop) return;
@@ -91,7 +98,7 @@ class _ThreadIdentityEditorState extends ConsumerState<_ThreadIdentityEditor> {
       final discard = await showWenyouConfirmationDialog(
         context: context,
         title: '放弃未保存的修改？',
-        message: '帖内头像或昵称尚未保存。',
+        message: '身份资料尚未保存。',
         confirmLabel: '放弃修改',
         cancelLabel: '继续编辑',
         confirmKey: const Key('thread-identity-discard'),
@@ -130,6 +137,13 @@ class _ThreadIdentityEditorState extends ConsumerState<_ThreadIdentityEditor> {
         _identity = value;
         if (!_loaded) {
           _nickname.text = widget.draft?.nickname ?? value.nickname ?? '';
+          _initialProfileLink = value.editableProfilePostId == null
+              ? ''
+              : identityProfilePostLink(
+                  widget.threadId,
+                  value.editableProfilePostId!,
+                );
+          _profileLink.text = widget.draft?.profileLink ?? _initialProfileLink;
           _avatarMediaId = widget.draft?.avatarMediaId ?? value.avatarMediaId;
           _avatarUrl = widget.draft?.avatarUrl ?? value.displayAvatarUrl;
           _uncertain = widget.draft?.uncertain ?? false;
@@ -154,11 +168,13 @@ class _ThreadIdentityEditorState extends ConsumerState<_ThreadIdentityEditor> {
     if (_retainDraft && widget.draft != null) {
       final draft = widget.draft!;
       draft.nickname = _nickname.text.trim();
+      draft.profileLink = _profileLink.text.trim();
       draft.avatarMediaId = _avatarMediaId;
       draft.avatarUrl = _avatarUrl;
       draft.uncertain = _uncertain;
     }
     _nickname.dispose();
+    _profileLink.dispose();
     super.dispose();
   }
 
@@ -199,6 +215,15 @@ class _ThreadIdentityEditorState extends ConsumerState<_ThreadIdentityEditor> {
                   )
                 : ThreadIdentityEditorContent(
                     nicknameController: _nickname,
+                    profileLinkController:
+                        ref
+                            .watch(appCapabilitiesProvider)
+                            .rpIdentityProfileSupported
+                        ? _profileLink
+                        : null,
+                    profileLinkError: _profileLinkError,
+                    onProfileLinkChanged: (_) =>
+                        setState(() => _profileLinkError = null),
                     previewName: _nickname.text.trim().isEmpty
                         ? identity.accountName
                         : _nickname.text.trim(),
@@ -328,6 +353,42 @@ class _ThreadIdentityEditorState extends ConsumerState<_ThreadIdentityEditor> {
       _busy = true;
       _error = null;
     });
+    final profileChanged =
+        !clear &&
+        ref.read(appCapabilitiesProvider).rpIdentityProfileSupported &&
+        _profileLink.text.trim() != _initialProfileLink;
+    String? profilePostId;
+    if (profileChanged && _profileLink.text.trim().isNotEmpty) {
+      try {
+        profilePostId = parseIdentityProfilePostLink(
+          _profileLink.text,
+          threadId: widget.threadId,
+        );
+        final target = await ref.read(identityProfilePostLookupProvider)(
+          profilePostId,
+        );
+        if (!_active) return;
+        if (target == null || target.id != profilePostId) {
+          throw const DomainValidationException('资料暂不可用');
+        }
+        if (target.threadId != widget.threadId) {
+          throw const DomainValidationException('请选择本主题内的楼层');
+        }
+      } on Object catch (error) {
+        if (_active) {
+          final failure = mapApplicationFailure(error, '资料读取失败，请重试');
+          setState(() {
+            _busy = false;
+            _profileLinkError = error is DomainValidationException
+                ? error.message
+                : const {401, 403, 404, 410}.contains(failure.httpStatus)
+                ? '资料暂不可用'
+                : '资料读取失败，请重试';
+          });
+        }
+        return;
+      }
+    }
     try {
       final repo = ref.read(threadIdentityRepositoryProvider);
       final input = ThreadIdentityUpdate(
@@ -336,6 +397,8 @@ class _ThreadIdentityEditorState extends ConsumerState<_ThreadIdentityEditor> {
         avatarMediaId: _avatarMediaId,
         clearAvatar: _avatarMediaId == null,
         version: identity.version,
+        profilePostId: profileChanged ? profilePostId : null,
+        clearProfilePost: profileChanged && profilePostId == null,
       );
       final value = clear
           ? await repo.remove(
@@ -350,6 +413,7 @@ class _ThreadIdentityEditorState extends ConsumerState<_ThreadIdentityEditor> {
       ref.read(visibilityCacheInvalidatorProvider)();
       _uncertain = false;
       _nickname.clear();
+      _profileLink.clear();
       _avatarMediaId = null;
       _avatarUrl = null;
       widget.draft?.clear();
@@ -367,6 +431,10 @@ class _ThreadIdentityEditorState extends ConsumerState<_ThreadIdentityEditor> {
       // 刷新资格与集合，同时保留输入；下次写入需明确确认版本或未知新建。
       await _load();
       if (_active) {
+        if (profileChanged && failure.businessCode == 40403) {
+          setState(() => _profileLinkError = '资料暂不可用');
+          return;
+        }
         setState(
           () => _error = failure.businessCode == 40013
               ? '已满 10 个身份'

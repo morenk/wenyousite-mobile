@@ -14,7 +14,6 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_content_action_menu.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_content_item_divider.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_discussion_scroll_policy.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_level_badge.dart';
-import 'package:wenyousite_mobile/core/widgets/wenyou_markdown.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_time_text.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_transient_target_frame.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
@@ -25,10 +24,10 @@ import 'package:wenyousite_mobile/features/posts/domain/post_discussion_author.d
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
 import 'package:wenyousite_mobile/features/posts/presentation/post_composer_targets.dart';
 import 'package:wenyousite_mobile/features/posts/presentation/post_discussion_states.dart';
+import 'package:wenyousite_mobile/features/posts/presentation/post_reading_body.dart';
 import 'package:wenyousite_mobile/features/posts/presentation/post_reply_filters.dart';
 import 'package:wenyousite_mobile/features/reports/domain/report_models.dart';
 import 'package:wenyousite_mobile/features/reports/reports.dart';
-import 'package:wenyousite_mobile/features/stickers/stickers.dart';
 import 'package:wenyousite_mobile/features/thread_identity/identity_widgets.dart';
 
 class PostDiscussionList extends StatelessWidget {
@@ -374,32 +373,9 @@ class _PostCard extends ConsumerWidget {
                 ).textTheme.wenyouCompactBody.copyWith(color: tokens.mutedText),
               )
             else
-              StickerPostMarkdown(
-                postId: post.id,
-                postVersion: post.version,
+              PostReadingBody(
+                post: post,
                 galleryTarget: galleryTarget,
-                data: post.content,
-                mediaDisplays: post.mediaDisplays,
-                mentionLabels: post.mentionLabels,
-                onInternalLink: (uri) => openThreadReadingLink(context, uri),
-                diceLabels: _postDiceLabels(post.diceRolls),
-                diceSemantics: {
-                  for (final roll in post.diceRolls)
-                    roll.nodeId: formatWenyouDiceSemantics(
-                      notation: roll.notation,
-                      results: roll.results,
-                      total: roll.total,
-                    ),
-                },
-                diceDetails: {
-                  for (final roll in post.diceRolls)
-                    roll.nodeId.toLowerCase(): WenyouDiceRollDetail(
-                      results: roll.results,
-                      total: roll.total,
-                    ),
-                },
-                bodyFontSize: 17,
-                bodyHeight: 1.8,
                 onTapText: canTapReply ? onReply : null,
                 onLongPressNonText: openActions,
               ),

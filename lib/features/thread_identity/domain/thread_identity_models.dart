@@ -25,6 +25,8 @@ class ThreadIdentityUpdate {
     this.clearNickname = false,
     this.clearAvatar = false,
     this.version,
+    this.profilePostId,
+    this.clearProfilePost = false,
   });
 
   final String? nickname;
@@ -32,16 +34,20 @@ class ThreadIdentityUpdate {
   final bool clearNickname;
   final bool clearAvatar;
   final int? version;
+  final String? profilePostId;
+  final bool clearProfilePost;
 }
 
 /// 同一发表会话保留新建角色输入，网络结果不明时可先返回身份列表核对。
 class ThreadIdentityEditorDraft {
   String nickname = '';
+  String profileLink = '';
   String? avatarMediaId;
   String? avatarUrl;
   bool uncertain = false;
   void clear() {
     nickname = '';
+    profileLink = '';
     avatarMediaId = null;
     avatarUrl = null;
     uncertain = false;

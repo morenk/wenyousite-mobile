@@ -50,10 +50,10 @@ void main() {
         dark: dark,
       );
       await tester.pump(const Duration(milliseconds: 2));
-      expect(find.text('@同名'), findsNWidgets(2));
+      expect(find.text('同名'), findsNWidgets(2));
       expect(find.byType(WenyouAvatar), findsNWidgets(2));
-      expect(find.text('1/2'), findsOneWidget);
-      expect(find.text('2/2'), findsOneWidget);
+      expect(find.textContaining('1/2'), findsOneWidget);
+      expect(find.textContaining('2/2'), findsOneWidget);
       await expectLater(
         find.byKey(const Key('mention-floating-panel')),
         matchesGoldenFile(
@@ -72,6 +72,35 @@ void main() {
   }
 
   setUpAll(loadDeterministicTestFonts);
+
+  testWidgets('候选列表不继承页面顶端安全区造成空白', (tester) async {
+    tester.view.padding = const FakeViewPadding(top: 96);
+    addTearDown(tester.view.resetPadding);
+    final controller = _controller('@');
+    final focusNode = FocusNode();
+    addTearDown(controller.dispose);
+    addTearDown(focusNode.dispose);
+    await _pumpPanel(
+      tester,
+      repository: _FakeRepository(
+        result: const MentionCandidatesResult(
+          users: [],
+          canMentionAllPlayers: true,
+        ),
+      ),
+      controller: controller,
+      focusNode: focusNode,
+      threadId: 'thread-1',
+    );
+    await tester.pump(const Duration(milliseconds: 2));
+    final list = find.byKey(const Key('mention-results'));
+    final first = find.byKey(const Key('mention-all-players'));
+    expect(
+      tester.getTopLeft(first).dy - tester.getTopLeft(list).dy,
+      lessThanOrEqualTo(4),
+    );
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets('长 RP 名称按 Unicode 字符查询并保留前文插入账号节点', (tester) async {
     final nickname = '😀' * 24;

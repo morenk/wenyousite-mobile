@@ -35,7 +35,8 @@ void main() {
     identityToken: 'confirmed',
     display: RpIdentity(id: 'rp', nickname: '同名用户'),
   );
-  testWidgets('名字相同时常驻栏仍区分帖内身份和站内身份', (tester) async {
+  testWidgets('常驻栏隐藏模式副标题，读屏仍区分同名账号和角色', (tester) async {
+    final semantics = tester.ensureSemantics();
     final repo = _IdentityRepository();
     when(() => repo.mine('thread')).thenAnswer((_) async => sameNameIdentity);
     final selection = PostIdentitySelection(repo, 'thread');
@@ -54,12 +55,15 @@ void main() {
         ),
       ),
     );
-    expect(find.text('帖内身份'), findsOneWidget);
+    expect(find.text('帖内身份'), findsNothing);
+    expect(find.bySemanticsLabel(RegExp('以帖内身份「同名用户」发表')), findsOneWidget);
     expect(find.text('同名用户'), findsOneWidget);
     selection.select(PostIdentityMode.account);
     await tester.pump();
-    expect(find.text('站内身份'), findsOneWidget);
+    expect(find.text('站内身份'), findsNothing);
+    expect(find.bySemanticsLabel(RegExp('以站内身份「同名用户」发表')), findsOneWidget);
     expect(tester.takeException(), isNull);
+    semantics.dispose();
   });
   testWidgets('退出账号时立即关闭身份资料Sheet，不残留私帖输入', (tester) async {
     final repo = _IdentityRepository();

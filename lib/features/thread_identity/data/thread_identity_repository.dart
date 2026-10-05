@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/app/app_capabilities.dart';
+import 'package:wenyousite_mobile/core/domain/domain_validation_exception.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
@@ -10,8 +11,13 @@ import 'package:wenyousite_mobile/features/thread_identity/identity_models.dart'
 import 'package:wenyousite_mobile/features/thread_identity/identity_ports.dart';
 
 class ApiThreadIdentityRepository implements ThreadIdentityRepository {
-  ApiThreadIdentityRepository(this._api, {this.legacySingleIdentity = false});
+  ApiThreadIdentityRepository(
+    this._api, {
+    this.legacySingleIdentity = false,
+    this.profileSupported = false,
+  });
   final bool legacySingleIdentity;
+  final bool profileSupported;
   final ThreadsApi _api;
 
   @override
@@ -92,7 +98,7 @@ class ApiThreadIdentityRepository implements ThreadIdentityRepository {
     String threadId,
     ThreadIdentityUpdate input,
   ) => legacySingleIdentity
-      ? Future.error(const ApiFailure(userMessage: '暂时无法添加身份。'))
+      ? Future.error(const DomainValidationException('暂时无法添加身份。'))
       : _roleRead(
           threadId,
           () async => (await _api.rpIdentitiesCreate(
@@ -101,7 +107,11 @@ class ApiThreadIdentityRepository implements ThreadIdentityRepository {
             createRpIdentityDto: CreateRpIdentityDto(
               (b) => b
                 ..nickname = input.nickname
-                ..avatarMediaId = input.avatarMediaId,
+                ..avatarMediaId = input.avatarMediaId
+                ..profilePostId = profileSupported ? input.profilePostId : null
+                ..clearProfilePost = profileSupported && input.clearProfilePost
+                    ? true
+                    : null,
             ),
           )).data?.data,
         );
@@ -125,6 +135,10 @@ class ApiThreadIdentityRepository implements ThreadIdentityRepository {
                 ..avatarMediaId = input.avatarMediaId
                 ..clearNickname = input.clearNickname
                 ..clearAvatar = input.clearAvatar
+                ..profilePostId = profileSupported ? input.profilePostId : null
+                ..clearProfilePost = profileSupported && input.clearProfilePost
+                    ? true
+                    : null
                 ..version = input.version,
             ),
           )).data?.data,
@@ -137,7 +151,7 @@ class ApiThreadIdentityRepository implements ThreadIdentityRepository {
     String identityId,
     int version,
   ) => legacySingleIdentity
-      ? Future.error(const ApiFailure(userMessage: '暂时无法删除身份。'))
+      ? Future.error(const DomainValidationException('暂时无法删除身份。'))
       : _roleRead(
           threadId,
           () async => (await _api.rpIdentitiesRemove(
@@ -157,7 +171,7 @@ class ApiThreadIdentityRepository implements ThreadIdentityRepository {
   ) async {
     final state = await mine(threadId);
     if (state.identityId != identityId) {
-      throw const ApiFailure(userMessage: '该身份已变化，请重新选择。');
+      throw const DomainValidationException('该身份已变化，请重新选择。');
     }
     return state;
   }
@@ -169,7 +183,7 @@ class ApiThreadIdentityRepository implements ThreadIdentityRepository {
   ) async {
     final state = await _legacyRole(threadId, identityId);
     if (input.version == null || input.version != state.version) {
-      throw const ApiFailure(userMessage: '资料已变化，请重新打开后编辑。');
+      throw const DomainValidationException('资料已变化，请重新打开后编辑。');
     }
     return update(threadId, input);
   }
@@ -218,6 +232,12 @@ class ApiThreadIdentityRepository implements ThreadIdentityRepository {
       deleted: dto.deleted,
       canDelete: dto.canDelete,
       compatibilityIdentity: dto.compatibilityIdentity,
+      profilePostId: dto.profilePostId,
+      editableProfilePostId: dto.identity?.profilePostId,
+      profilePostStatus: _profileStatus(
+        dto.profilePostStatus?.name,
+        dto.profilePostId,
+      ),
     );
   }
 
@@ -253,6 +273,10 @@ class ApiThreadIdentityRepository implements ThreadIdentityRepository {
           ..avatarMediaId = input.avatarMediaId
           ..clearNickname = input.clearNickname
           ..clearAvatar = input.clearAvatar
+          ..profilePostId = profileSupported ? input.profilePostId : null
+          ..clearProfilePost = profileSupported && input.clearProfilePost
+              ? true
+              : null
           ..version = input.version,
       ),
     )).data?.data,
@@ -316,11 +340,32 @@ class ApiThreadIdentityRepository implements ThreadIdentityRepository {
         version: dto.identity?.version.toInt(),
         display: dto.enabled ? mapRpIdentity(dto.display) : null,
         identityToken: dto.identityToken,
+        profilePostId: dto.profilePostId,
+        editableProfilePostId: dto.identity?.profilePostId,
+        profilePostStatus: _profileStatus(
+          dto.profilePostStatus?.name,
+          dto.profilePostId,
+        ),
       );
     } on DioException catch (error) {
       throw ApiFailure.fromDio(error);
     }
   }
+}
+
+IdentityProfilePostStatus _profileStatus(String? status, String? postId) {
+  if (status == 'AVAILABLE' && postId != null && postId.isNotEmpty) {
+    return IdentityProfilePostStatus.available;
+  }
+  if (status == 'UNAVAILABLE' && postId == null) {
+    return IdentityProfilePostStatus.unavailable;
+  }
+  if ((status == null || status == 'NONE') && postId == null) {
+    return IdentityProfilePostStatus.none;
+  }
+  throw const ApiFailure.invalidResponse(
+    diagnosticCode: 'rp_profile_state_invalid',
+  );
 }
 
 final apiThreadIdentityRepositoryProvider = Provider<ThreadIdentityRepository>(
@@ -329,5 +374,8 @@ final apiThreadIdentityRepositoryProvider = Provider<ThreadIdentityRepository>(
     legacySingleIdentity: ref
         .watch(appCapabilitiesProvider)
         .legacySingleThreadIdentity,
+    profileSupported: ref
+        .watch(appCapabilitiesProvider)
+        .rpIdentityProfileSupported,
   ),
 );

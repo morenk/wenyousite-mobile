@@ -40,6 +40,8 @@ class ApiMetaRepository implements MetaRepository {
             data.capabilities.roleMentionsV6Supported ?? false,
         roleMentionsWriteEnabled:
             data.capabilities.roleMentionsV6WriteEnabled ?? false,
+        rpIdentityProfileSupported:
+            data.capabilities.rpIdentityProfileSupported ?? false,
       );
     } on DioException catch (error) {
       if (kDebugMode) {

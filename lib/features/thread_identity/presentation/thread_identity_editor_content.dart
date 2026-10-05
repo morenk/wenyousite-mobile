@@ -25,6 +25,9 @@ class ThreadIdentityEditorContent extends StatelessWidget {
     this.progressLabel,
     this.maxNicknameLength,
     this.onReviewIdentities,
+    this.profileLinkController,
+    this.onProfileLinkChanged,
+    this.profileLinkError,
     super.key,
   });
 
@@ -44,6 +47,9 @@ class ThreadIdentityEditorContent extends StatelessWidget {
   final VoidCallback onClear;
   final VoidCallback? onReviewIdentities;
   final ValueChanged<String> onNicknameChanged;
+  final TextEditingController? profileLinkController;
+  final ValueChanged<String>? onProfileLinkChanged;
+  final String? profileLinkError;
 
   @override
   Widget build(BuildContext context) {
@@ -91,6 +97,22 @@ class ThreadIdentityEditorContent extends StatelessWidget {
           ),
           onChanged: onNicknameChanged,
         ),
+        if (profileLinkController != null) ...[
+          SizedBox(height: tokens.space12),
+          TextField(
+            key: const Key('thread-identity-profile-link'),
+            controller: profileLinkController,
+            enabled: enabled,
+            keyboardType: TextInputType.url,
+            autocorrect: false,
+            decoration: InputDecoration(
+              labelText: '资料楼层链接（可选）',
+              errorText: profileLinkError,
+              errorMaxLines: 3,
+            ),
+            onChanged: onProfileLinkChanged,
+          ),
+        ],
         if (!canEdit) ...[
           SizedBox(height: tokens.space12),
           const WenyouStatusBanner(message: '当前无法设置帖内身份，已保留你的输入。'),

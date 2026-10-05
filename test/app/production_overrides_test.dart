@@ -24,6 +24,22 @@ import 'package:wenyousite_mobile/features/users/application/user_repository_por
 import 'package:wenyousite_mobile/features/wallet/application/wallet_repository_ports.dart';
 
 void main() {
+  test('资料绑定只按服务能力开启，缺失保持旧表单', () {
+    expect(
+      appCapabilitiesForContract(null).rpIdentityProfileSupported,
+      isFalse,
+    );
+    expect(
+      appCapabilitiesForContract(
+        const ContractInfo(
+          contractVersion: '5.36.0-dev.20261005.1',
+          markdownContractVersion: 5,
+          rpIdentityProfileSupported: true,
+        ),
+      ).rpIdentityProfileSupported,
+      isTrue,
+    );
+  });
   test('角色提及的支持与新写开关分开，旧meta保持关闭', () {
     expect(appCapabilitiesForContract(null).roleMentionsSupported, isFalse);
     for (final enabled in [false, true]) {

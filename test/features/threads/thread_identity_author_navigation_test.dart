@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:wenyousite_mobile/app/app_capabilities.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/features/thread_identity/identity_models.dart';
 import 'package:wenyousite_mobile/features/thread_identity/identity_ports.dart';
+import 'package:wenyousite_mobile/features/thread_identity/identity_profile.dart';
 import 'package:wenyousite_mobile/features/thread_identity/identity_widgets.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_post_author_line.dart';
@@ -47,6 +49,13 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
+            appCapabilitiesProvider.overrideWithValue(
+              const AppCapabilities(rpIdentityProfileSupported: true),
+            ),
+            identityProfilePreviewBuilderProvider.overrideWithValue(
+              ({required threadId, required postId, required onOpenPost}) =>
+                  Text('当前资料 $postId'),
+            ),
             rpIdentityCardProvider((
               threadId: 'thread',
               userId: 'account-1',
@@ -61,6 +70,8 @@ void main() {
                 canEdit: false,
                 accountName: '站内用户',
                 display: RpIdentity(id: 'rp-1', nickname: '新角色'),
+                profilePostId: 'current-profile',
+                profilePostStatus: IdentityProfilePostStatus.available,
               );
             }),
           ],
@@ -75,7 +86,8 @@ void main() {
       if (hasRp) {
         expect(find.text('帖内身份'), findsOneWidget);
         expect(find.text('旧角色'), findsWidgets);
-        expect(find.text('新角色'), findsOneWidget);
+        expect(find.text('新角色'), findsNothing);
+        expect(find.text('当前资料 current-profile'), findsOneWidget);
         expect(identityReads, 1);
         await tester.tap(find.byKey(const Key('thread-identity-open-account')));
         await tester.pumpAndSettle();

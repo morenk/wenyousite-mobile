@@ -91,6 +91,8 @@ GIF 上传插入修复（2026-09-13，负责人验收通过）：子贴正文、
 
 新发言按每账号每主题最多十个 RP 身份选择；草稿和未知结果发表请求冻结 identityMode、identityId、identityToken，恢复时不套用新默认角色，删除后须确认改用账号。历史 RP 卡按该条快照的同一 identityId 对照，站内身份头像直接进入账号主页；角色提及保留原标签与明确身份目标；筛选、订阅和通知去重继续按账号。
 
+身份资料引用复用 `PostReadingBody`，与独立楼层和楼中楼保持相同正文、媒体、骰子详情和提及渲染；预览不传入回复、编辑或删除动作。`PostIdentityProfilePreview` 每次打开独立调用 `postsFindById`，核对 id/threadId/删除状态并跟随 viewerScope 失效；不读取任意 URL、不保存正文副本。底部紧凑来源链接使用子贴名、父楼／回复编号，回到已有定位路由。整个身份面板统一滚动，预览自身不另加滚动容器。
+
 ## 6. 状态模型和数据流
 
 完整展示（负责人已验收）：正文、回复和编辑 PostDetail 的授权 mediaDisplays 映射进入阅读组件、完整大图与 RichEditorSession；编辑重开、云草稿恢复和未发送草稿携带映射，持久化及复制保持原 Markdown URL。见[全场景验收记录](../architecture/animation-webp-all-surfaces.md)。
@@ -225,7 +227,7 @@ v5 图片在写入 `postsUpdate`、`postsUpsertBody` 或创建接口前会规范
 
 ## 13. 最近审查的契约版本和后端提交
 
-2026-10-05 逐条身份补充契约：固定 Backend `58f4526e3d4d293770428d92b332e02bb6b3fddd`／`5.35.0-dev.20261005.1`。四个新发言／首次正文写入增加可选 `identityMode: ACCOUNT|RP`；ACCOUNT 明确沿用站内资料，RP 需本人确认，旧正文编辑保留原身份。此 chore 只同步固定契约和生成 SDK，产品接入与验收另行记录。
+2026-10-05 逐条身份补充契约：固定 Backend `6d1228cd8c128f24860ef99747aa923c461a595a`／`5.36.0-dev.20261005.1`。四个新发言／首次正文写入增加可选 `identityMode: ACCOUNT|RP`；ACCOUNT 明确沿用站内资料，RP 需本人确认，旧正文编辑保留原身份。此 chore 只同步固定契约和生成 SDK，产品接入与验收另行记录。
 
 2026-10-05 帖内身份契约同步：Backend `473738d25405828932f2e307f38ff82bbf50c2a4`／`5.33.0-dev.20261004.1`，新增五个可选身份操作及历史显示投影。本 chore 仅同步固定来源和生成 SDK，原模块行为及验收边界保持；后续业务接入另行记录，见[契约同步](../architecture/rp-identity-contract-sync.md)。
 

@@ -57,6 +57,7 @@ import 'package:wenyousite_mobile/features/notifications/data/notification_repos
 import 'package:wenyousite_mobile/features/posts/application/post_thread_context_ports.dart';
 import 'package:wenyousite_mobile/features/posts/data/post_discussion_author_repository.dart';
 import 'package:wenyousite_mobile/features/posts/data/post_repository.dart';
+import 'package:wenyousite_mobile/features/posts/presentation/post_identity_profile_preview.dart';
 import 'package:wenyousite_mobile/features/reports/data/report_repository.dart';
 import 'package:wenyousite_mobile/features/search/data/search_repository.dart';
 import 'package:wenyousite_mobile/features/settings/application/settings_repository_ports.dart';
@@ -77,6 +78,7 @@ import 'package:wenyousite_mobile/features/thread_feed/data/thread_category_cata
 import 'package:wenyousite_mobile/features/thread_feed/thread_feed_catalog.dart';
 import 'package:wenyousite_mobile/features/thread_identity/data/thread_identity_repository.dart';
 import 'package:wenyousite_mobile/features/thread_identity/identity_ports.dart';
+import 'package:wenyousite_mobile/features/thread_identity/identity_profile.dart';
 import 'package:wenyousite_mobile/features/threads/data/subthread_management_repository.dart';
 import 'package:wenyousite_mobile/features/threads/data/thread_compose_repository.dart';
 import 'package:wenyousite_mobile/features/threads/data/thread_detail_repository.dart';
@@ -267,6 +269,23 @@ List<Override> productionProviderOverrides() => [
   threadIdentityRepositoryProvider.overrideWith(
     (ref) => ref.watch(apiThreadIdentityRepositoryProvider),
   ),
+  identityProfilePostLookupProvider.overrideWith((ref) {
+    final repository = ref.watch(postRepositoryProvider);
+    return (postId) async {
+      final post = await repository.fetchPost(postId);
+      return post.isDeleted
+          ? null
+          : IdentityProfilePostTarget(id: post.id, threadId: post.threadId);
+    };
+  }),
+  identityProfilePreviewBuilderProvider.overrideWithValue(
+    ({required threadId, required postId, required onOpenPost}) =>
+        PostIdentityProfilePreview(
+          threadId: threadId,
+          postId: postId,
+          onOpenPost: onOpenPost,
+        ),
+  ),
   postDiscussionAuthorDirectoryProvider.overrideWith(
     (ref) => ref.watch(apiPostDiscussionAuthorDirectoryProvider),
   ),
@@ -336,5 +355,6 @@ AppCapabilities appCapabilitiesForContract(ContractInfo? contract) {
         contract?.contractVersion.startsWith('5.33.') ?? false,
     roleMentionsSupported: contract?.roleMentionsSupported ?? false,
     roleMentionsWriteEnabled: contract?.roleMentionsWriteEnabled ?? false,
+    rpIdentityProfileSupported: contract?.rpIdentityProfileSupported ?? false,
   );
 }

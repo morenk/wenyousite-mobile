@@ -153,7 +153,7 @@ Android 账号设置新增“后台消息提醒”设备开关，默认开启；
 
 ## 13. 最近审查的契约版本和后端提交
 
-本轮共享契约复核：OpenAPI `5.35.0-dev.20261005.1`，Backend `58f4526e3d4d293770428d92b332e02bb6b3fddd`。新增帖内多角色集合及可选发表 identityId，Markdown 5 与本模块既有消费保持；实际部署与设备验收另行登记，相关行为见[帖内身份](thread-identity.md)。
+本轮共享契约复核：OpenAPI `5.36.0-dev.20261005.1`，Backend `6d1228cd8c128f24860ef99747aa923c461a595a`。新增帖内多角色集合及可选发表 identityId，Markdown 5 与本模块既有消费保持；实际部署与设备验收另行登记，相关行为见[帖内身份](thread-identity.md)。
 
 
 2026-10-05 逐条身份补充契约：固定 Backend `ff1a84178b37fabd7f8fd77e53989b4842b4d42f`／`5.33.0-dev.20261005.1`。四个新发言／首次正文写入增加可选 `identityMode: ACCOUNT|RP`；ACCOUNT 明确沿用站内资料，RP 需本人确认，旧正文编辑保留原身份。此 chore 只同步固定契约和生成 SDK，产品接入与验收另行记录。
