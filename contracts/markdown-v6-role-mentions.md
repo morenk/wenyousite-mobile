@@ -8,11 +8,11 @@
 
 `/meta.capabilities.roleMentionsV6Supported`（缺失 false）表示本服务端接受新读取与写 DTO 能力字段；`roleMentionsV6WriteEnabled`（缺失 false）表示允许新增 v6 源。环境变量 `RP_MENTION_V6_ENABLED` 默认 false，隔离测试可显式 true。全局 Markdown 版本独立保持 5。
 
-七个 DTO 新增可选 `markdownContractVersion: 6`：CreatePostDto、UpdatePostDto、UpsertBodyDto、CreateSubthreadDto、SaveThreadAggregateDto、CreateDraftDto、UpdateDraftDto。新客户端仅在 supported=true 时始终发送能力字段，包括删光原角色节点的编辑；旧后端可能拒绝未知字段。读取 header 不能替代写 DTO。普通正文和旧 bare 节点不因声明 6 或写开关关闭被拒绝。
+八个 DTO 新增可选 `markdownContractVersion: 6`：CreateThreadDto、CreatePostDto、UpdatePostDto、UpsertBodyDto、CreateSubthreadDto、SaveThreadAggregateDto、CreateDraftDto、UpdateDraftDto。新客户端仅在 supported=true 时始终发送能力字段，包括删光原角色节点的编辑；旧后端可能拒绝未知字段。读取 header 不能替代写 DTO。普通正文和旧 bare 节点不因声明 6 或写开关关闭被拒绝。
 
-提交正文或原存正文任一包含 v6 节点而没有能力 6：HTTP409 / 40014 MARKDOWN_CAPABILITY_REQUIRED，不修改任何正文，保留客户端草稿。此规则覆盖首次/更新 BODY、聚合编辑不变正文、普通楼层 PATCH、云草稿同槽覆盖和 PATCH；原存源不能由降级副本覆盖。
+提交正文或原存正文任一包含 v6 节点而没有能力 6：HTTP409 / 40014 MARKDOWN_CAPABILITY_REQUIRED，不修改任何正文，保留客户端草稿。此规则覆盖初始新主题 content、首次/更新 BODY、聚合编辑不变正文、普通楼层 PATCH、云草稿同槽覆盖和 PATCH；原存源不能由降级副本覆盖。
 
-写开关关闭时，仅新增的 v6 源键拒绝 HTTP409 / 40015 ROLE_MENTIONS_DISABLED；有能力客户端仍能保存、重排、复制原文已有节点或删除节点。键为原 `sourceHref + label`，不是位置序号。写入身份 ID/token/mode 与原幂等规则不变；能力字段本身不是发言身份选择。
+写开关关闭时，仅新增的 v6 源键拒绝 HTTP409 / 40015 ROLE_MENTIONS_DISABLED；有能力客户端仍能保存、重排、复制原文已有节点或删除节点。键为原 `sourceHref + label`，不是位置序号。新主题尚未存在帖内角色，只能存显式 ACCOUNT，跨主题 RP 源拒绝40012。写入身份 ID/token/mode 与原幂等规则不变；能力字段本身不是发言身份选择。
 
 ## 规范源码
 
@@ -20,7 +20,7 @@
 - ACCOUNT：`[@站内名](/users/{userId}?identityMode=ACCOUNT)`。
 - LEGACY：`[@旧称呼](/users/{userId})`，保留旧单身份快照解释，不能声称显式 ACCOUNT。
 
-链接使用相对用户路径、唯一且精确的参数；角色 ID 必须是合法 CUID。混合 rpIdentityId/identityMode、重复键、未知参数、空/非法 ID 拒绝40012，不回退到普通 @名字扫描。代码与转义节点不产生提及。源码 label 不含换行/右中括号，1–32字符；角色昵称维持原最多24字符规则。
+链接使用相对用户路径、唯一且精确的参数；角色 ID 必须是合法 CUID。混合 rpIdentityId/identityMode、重复键、未知参数、空/非法 ID 拒绝40012，不回退到普通 @名字扫描。代码与转义节点不产生提及。源码 label 不含换行/右中括号，1–32个 Unicode 码点（不按UTF-16单元计数，24个emoji昵称合法）；角色昵称维持原最多24字符规则。
 
 RP 绑定 userId + identityId + 插入 label，仅该主题、该账号、有效且有资格角色及其自身当前/已登记别名可用于新插入。不可用、归档、跨账号、跨主题或伪造 label 返回409/40012；复制到另一主题须重新选择。原正文已有合法节点可在关闭、归档、撤资格之后保留、重排和删除，快照保持。草稿没有主题上下文，只存语法合法源，发布时必须重新验证归属，不能把草稿当成授权。
 
@@ -39,6 +39,8 @@ includeIdentities=true 但新写开关关闭时 users=[]；canMentionAllPlayers 
 RpIdentityCollectionDto.defaultIdentityId 固定 null，新空白编辑器默认 ACCOUNT；恢复显式草稿不改。compatibilityIdentity/compatibilityIdentityId 仅为旧 single 协议内部锚点，不是产品主角色、候选优先级或目录头像。账号范围的题头、成员、作者目录、订阅显示站内资料；历史发言/回复/通知来源仍使用发表快照。
 
 ## 读取与显示
+
+通知 payload.preview 始终是服务端安全显示的纯文本摘要，不携带原 v6 href；推送也使用安全账号摘要，通知入口返回来源帖后再读角色卡。
 
 有 header6：原 content 不变；mentionIdentities 增加 sourceHref、targetIdentityId、threadId。原 label 与 sourceHref 是匹配键；targetIdentityId 不随关闭/归档丢失，identityId 是可遮蔽的显示身份，不能作为稳定目标。显示使用 displayName。角色关闭时 displayName 回账号、identityId=null；重开恢复插入快照 label。同ID卡片查询不能指向该账号其他角色。
 

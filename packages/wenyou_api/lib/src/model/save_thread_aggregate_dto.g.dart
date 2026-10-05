@@ -7,8 +7,8 @@ part of 'save_thread_aggregate_dto.dart';
 // **************************************************************************
 
 const SaveThreadAggregateDtoMarkdownContractVersionEnum
-_$saveThreadAggregateDtoMarkdownContractVersionEnum_n6 =
-    const SaveThreadAggregateDtoMarkdownContractVersionEnum._('n6');
+_$saveThreadAggregateDtoMarkdownContractVersionEnum_number6 =
+    const SaveThreadAggregateDtoMarkdownContractVersionEnum._('number6');
 const SaveThreadAggregateDtoMarkdownContractVersionEnum
 _$saveThreadAggregateDtoMarkdownContractVersionEnum_unknownDefaultOpenApi =
     const SaveThreadAggregateDtoMarkdownContractVersionEnum._(
@@ -18,8 +18,8 @@ _$saveThreadAggregateDtoMarkdownContractVersionEnum_unknownDefaultOpenApi =
 SaveThreadAggregateDtoMarkdownContractVersionEnum
 _$saveThreadAggregateDtoMarkdownContractVersionEnumValueOf(String name) {
   switch (name) {
-    case 'n6':
-      return _$saveThreadAggregateDtoMarkdownContractVersionEnum_n6;
+    case 'number6':
+      return _$saveThreadAggregateDtoMarkdownContractVersionEnum_number6;
     case 'unknownDefaultOpenApi':
       return _$saveThreadAggregateDtoMarkdownContractVersionEnum_unknownDefaultOpenApi;
     default:
@@ -32,7 +32,7 @@ _$saveThreadAggregateDtoMarkdownContractVersionEnumValues =
     BuiltSet<SaveThreadAggregateDtoMarkdownContractVersionEnum>(const <
       SaveThreadAggregateDtoMarkdownContractVersionEnum
     >[
-      _$saveThreadAggregateDtoMarkdownContractVersionEnum_n6,
+      _$saveThreadAggregateDtoMarkdownContractVersionEnum_number6,
       _$saveThreadAggregateDtoMarkdownContractVersionEnum_unknownDefaultOpenApi,
     ]);
 
@@ -211,12 +211,12 @@ class _$SaveThreadAggregateDtoMarkdownContractVersionEnumSerializer
     implements
         PrimitiveSerializer<SaveThreadAggregateDtoMarkdownContractVersionEnum> {
   static const Map<String, Object> _toWire = const <String, Object>{
-    'n6': '6',
-    'unknownDefaultOpenApi': '11184809',
+    'number6': 6,
+    'unknownDefaultOpenApi': 11184809,
   };
   static const Map<Object, String> _fromWire = const <Object, String>{
-    '6': 'n6',
-    '11184809': 'unknownDefaultOpenApi',
+    6: 'number6',
+    11184809: 'unknownDefaultOpenApi',
   };
 
   @override

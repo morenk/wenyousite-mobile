@@ -177,7 +177,7 @@ media/application 提供相册与上传端口、唯一任务状态、取消、�
 
 ## 13. 最近审查的契约版本和后端提交
 
-本轮共享契约复核：OpenAPI `5.35.0-dev.20261005.1`，Backend `2ba848a1dc835205a96887ee440c97428a74a5dd`。新增帖内多角色集合及可选发表 identityId，Markdown 5 与本模块既有消费保持；新功能尚未部署，相关行为见[帖内身份](thread-identity.md)。
+本轮共享契约复核：OpenAPI `5.35.0-dev.20261005.1`，Backend `62142042b76e2f15a92794337316bd4c1e3dd659`。新增帖内多角色集合及可选发表 identityId，Markdown 5 与本模块既有消费保持；新功能尚未部署，相关行为见[帖内身份](thread-identity.md)。
 
 
 2026-10-05 逐条身份补充契约：固定 Backend `ff1a84178b37fabd7f8fd77e53989b4842b4d42f`／`5.33.0-dev.20261005.1`。四个新发言／首次正文写入增加可选 `identityMode: ACCOUNT|RP`；ACCOUNT 明确沿用站内资料，RP 需本人确认，旧正文编辑保留原身份。此 chore 只同步固定契约和生成 SDK，产品接入与验收另行记录。

@@ -198,6 +198,7 @@ Serializers _$serializers =
           ..add(CreateTagDto.serializer)
           ..add(CreateThreadCategoryDto.serializer)
           ..add(CreateThreadDto.serializer)
+          ..add(CreateThreadDtoMarkdownContractVersionEnum.serializer)
           ..add(CreateThreadDtoVisibilityEnum.serializer)
           ..add(CreateUploadUrlDto.serializer)
           ..add(CreateUploadUrlDtoContentTypeEnum.serializer)

@@ -7,8 +7,8 @@ part of 'create_draft_dto.dart';
 // **************************************************************************
 
 const CreateDraftDtoMarkdownContractVersionEnum
-_$createDraftDtoMarkdownContractVersionEnum_n6 =
-    const CreateDraftDtoMarkdownContractVersionEnum._('n6');
+_$createDraftDtoMarkdownContractVersionEnum_number6 =
+    const CreateDraftDtoMarkdownContractVersionEnum._('number6');
 const CreateDraftDtoMarkdownContractVersionEnum
 _$createDraftDtoMarkdownContractVersionEnum_unknownDefaultOpenApi =
     const CreateDraftDtoMarkdownContractVersionEnum._('unknownDefaultOpenApi');
@@ -16,8 +16,8 @@ _$createDraftDtoMarkdownContractVersionEnum_unknownDefaultOpenApi =
 CreateDraftDtoMarkdownContractVersionEnum
 _$createDraftDtoMarkdownContractVersionEnumValueOf(String name) {
   switch (name) {
-    case 'n6':
-      return _$createDraftDtoMarkdownContractVersionEnum_n6;
+    case 'number6':
+      return _$createDraftDtoMarkdownContractVersionEnum_number6;
     case 'unknownDefaultOpenApi':
       return _$createDraftDtoMarkdownContractVersionEnum_unknownDefaultOpenApi;
     default:
@@ -29,7 +29,7 @@ final BuiltSet<CreateDraftDtoMarkdownContractVersionEnum>
 _$createDraftDtoMarkdownContractVersionEnumValues =
     BuiltSet<CreateDraftDtoMarkdownContractVersionEnum>(
       const <CreateDraftDtoMarkdownContractVersionEnum>[
-        _$createDraftDtoMarkdownContractVersionEnum_n6,
+        _$createDraftDtoMarkdownContractVersionEnum_number6,
         _$createDraftDtoMarkdownContractVersionEnum_unknownDefaultOpenApi,
       ],
     );
@@ -41,12 +41,12 @@ _$createDraftDtoMarkdownContractVersionEnumSerializer =
 class _$CreateDraftDtoMarkdownContractVersionEnumSerializer
     implements PrimitiveSerializer<CreateDraftDtoMarkdownContractVersionEnum> {
   static const Map<String, Object> _toWire = const <String, Object>{
-    'n6': '6',
-    'unknownDefaultOpenApi': '11184809',
+    'number6': 6,
+    'unknownDefaultOpenApi': 11184809,
   };
   static const Map<Object, String> _fromWire = const <Object, String>{
-    '6': 'n6',
-    '11184809': 'unknownDefaultOpenApi',
+    6: 'number6',
+    11184809: 'unknownDefaultOpenApi',
   };
 
   @override

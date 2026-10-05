@@ -265,10 +265,10 @@ class _$CreateSubthreadDtoSerializer implements PrimitiveSerializer<CreateSubthr
 class CreateSubthreadDtoMarkdownContractVersionEnum extends EnumClass {
 
   /// 声明编辑器支持 Markdown 6 角色提及源的无损读取/编辑。服务端 capabilities.roleMentionsV6Supported 为 true 时新端始终发送，包括删光旧节点；未声明而新/原正文含 v6 返回 409/40014。新节点还须 roleMentionsV6WriteEnabled。
-  @BuiltValueEnumConst(wireName: r'6')
-  static const CreateSubthreadDtoMarkdownContractVersionEnum n6 = _$createSubthreadDtoMarkdownContractVersionEnum_n6;
+  @BuiltValueEnumConst(wireNumber: 6)
+  static const CreateSubthreadDtoMarkdownContractVersionEnum number6 = _$createSubthreadDtoMarkdownContractVersionEnum_number6;
   /// 声明编辑器支持 Markdown 6 角色提及源的无损读取/编辑。服务端 capabilities.roleMentionsV6Supported 为 true 时新端始终发送，包括删光旧节点；未声明而新/原正文含 v6 返回 409/40014。新节点还须 roleMentionsV6WriteEnabled。
-  @BuiltValueEnumConst(wireName: r'11184809', fallback: true)
+  @BuiltValueEnumConst(wireNumber: 11184809, fallback: true)
   static const CreateSubthreadDtoMarkdownContractVersionEnum unknownDefaultOpenApi = _$createSubthreadDtoMarkdownContractVersionEnum_unknownDefaultOpenApi;
 
   static Serializer<CreateSubthreadDtoMarkdownContractVersionEnum> get serializer => _$createSubthreadDtoMarkdownContractVersionEnumSerializer;

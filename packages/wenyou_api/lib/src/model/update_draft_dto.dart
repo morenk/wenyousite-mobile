@@ -146,10 +146,10 @@ class _$UpdateDraftDtoSerializer implements PrimitiveSerializer<UpdateDraftDto> 
 class UpdateDraftDtoMarkdownContractVersionEnum extends EnumClass {
 
   /// 声明编辑器支持 Markdown 6 角色提及源的无损读取/编辑。服务端 capabilities.roleMentionsV6Supported 为 true 时新端始终发送，包括删光旧节点；未声明而新/原正文含 v6 返回 409/40014。新节点还须 roleMentionsV6WriteEnabled。
-  @BuiltValueEnumConst(wireName: r'6')
-  static const UpdateDraftDtoMarkdownContractVersionEnum n6 = _$updateDraftDtoMarkdownContractVersionEnum_n6;
+  @BuiltValueEnumConst(wireNumber: 6)
+  static const UpdateDraftDtoMarkdownContractVersionEnum number6 = _$updateDraftDtoMarkdownContractVersionEnum_number6;
   /// 声明编辑器支持 Markdown 6 角色提及源的无损读取/编辑。服务端 capabilities.roleMentionsV6Supported 为 true 时新端始终发送，包括删光旧节点；未声明而新/原正文含 v6 返回 409/40014。新节点还须 roleMentionsV6WriteEnabled。
-  @BuiltValueEnumConst(wireName: r'11184809', fallback: true)
+  @BuiltValueEnumConst(wireNumber: 11184809, fallback: true)
   static const UpdateDraftDtoMarkdownContractVersionEnum unknownDefaultOpenApi = _$updateDraftDtoMarkdownContractVersionEnum_unknownDefaultOpenApi;
 
   static Serializer<UpdateDraftDtoMarkdownContractVersionEnum> get serializer => _$updateDraftDtoMarkdownContractVersionEnumSerializer;

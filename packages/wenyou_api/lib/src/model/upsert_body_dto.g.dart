@@ -7,8 +7,8 @@ part of 'upsert_body_dto.dart';
 // **************************************************************************
 
 const UpsertBodyDtoMarkdownContractVersionEnum
-_$upsertBodyDtoMarkdownContractVersionEnum_n6 =
-    const UpsertBodyDtoMarkdownContractVersionEnum._('n6');
+_$upsertBodyDtoMarkdownContractVersionEnum_number6 =
+    const UpsertBodyDtoMarkdownContractVersionEnum._('number6');
 const UpsertBodyDtoMarkdownContractVersionEnum
 _$upsertBodyDtoMarkdownContractVersionEnum_unknownDefaultOpenApi =
     const UpsertBodyDtoMarkdownContractVersionEnum._('unknownDefaultOpenApi');
@@ -16,8 +16,8 @@ _$upsertBodyDtoMarkdownContractVersionEnum_unknownDefaultOpenApi =
 UpsertBodyDtoMarkdownContractVersionEnum
 _$upsertBodyDtoMarkdownContractVersionEnumValueOf(String name) {
   switch (name) {
-    case 'n6':
-      return _$upsertBodyDtoMarkdownContractVersionEnum_n6;
+    case 'number6':
+      return _$upsertBodyDtoMarkdownContractVersionEnum_number6;
     case 'unknownDefaultOpenApi':
       return _$upsertBodyDtoMarkdownContractVersionEnum_unknownDefaultOpenApi;
     default:
@@ -29,7 +29,7 @@ final BuiltSet<UpsertBodyDtoMarkdownContractVersionEnum>
 _$upsertBodyDtoMarkdownContractVersionEnumValues =
     BuiltSet<UpsertBodyDtoMarkdownContractVersionEnum>(
       const <UpsertBodyDtoMarkdownContractVersionEnum>[
-        _$upsertBodyDtoMarkdownContractVersionEnum_n6,
+        _$upsertBodyDtoMarkdownContractVersionEnum_number6,
         _$upsertBodyDtoMarkdownContractVersionEnum_unknownDefaultOpenApi,
       ],
     );
@@ -76,12 +76,12 @@ _$upsertBodyDtoIdentityModeEnumSerializer =
 class _$UpsertBodyDtoMarkdownContractVersionEnumSerializer
     implements PrimitiveSerializer<UpsertBodyDtoMarkdownContractVersionEnum> {
   static const Map<String, Object> _toWire = const <String, Object>{
-    'n6': '6',
-    'unknownDefaultOpenApi': '11184809',
+    'number6': 6,
+    'unknownDefaultOpenApi': 11184809,
   };
   static const Map<Object, String> _fromWire = const <Object, String>{
-    '6': 'n6',
-    '11184809': 'unknownDefaultOpenApi',
+    6: 'number6',
+    11184809: 'unknownDefaultOpenApi',
   };
 
   @override

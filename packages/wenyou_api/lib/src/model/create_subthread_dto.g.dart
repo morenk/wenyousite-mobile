@@ -7,8 +7,8 @@ part of 'create_subthread_dto.dart';
 // **************************************************************************
 
 const CreateSubthreadDtoMarkdownContractVersionEnum
-_$createSubthreadDtoMarkdownContractVersionEnum_n6 =
-    const CreateSubthreadDtoMarkdownContractVersionEnum._('n6');
+_$createSubthreadDtoMarkdownContractVersionEnum_number6 =
+    const CreateSubthreadDtoMarkdownContractVersionEnum._('number6');
 const CreateSubthreadDtoMarkdownContractVersionEnum
 _$createSubthreadDtoMarkdownContractVersionEnum_unknownDefaultOpenApi =
     const CreateSubthreadDtoMarkdownContractVersionEnum._(
@@ -18,8 +18,8 @@ _$createSubthreadDtoMarkdownContractVersionEnum_unknownDefaultOpenApi =
 CreateSubthreadDtoMarkdownContractVersionEnum
 _$createSubthreadDtoMarkdownContractVersionEnumValueOf(String name) {
   switch (name) {
-    case 'n6':
-      return _$createSubthreadDtoMarkdownContractVersionEnum_n6;
+    case 'number6':
+      return _$createSubthreadDtoMarkdownContractVersionEnum_number6;
     case 'unknownDefaultOpenApi':
       return _$createSubthreadDtoMarkdownContractVersionEnum_unknownDefaultOpenApi;
     default:
@@ -31,7 +31,7 @@ final BuiltSet<CreateSubthreadDtoMarkdownContractVersionEnum>
 _$createSubthreadDtoMarkdownContractVersionEnumValues =
     BuiltSet<CreateSubthreadDtoMarkdownContractVersionEnum>(
       const <CreateSubthreadDtoMarkdownContractVersionEnum>[
-        _$createSubthreadDtoMarkdownContractVersionEnum_n6,
+        _$createSubthreadDtoMarkdownContractVersionEnum_number6,
         _$createSubthreadDtoMarkdownContractVersionEnum_unknownDefaultOpenApi,
       ],
     );
@@ -125,12 +125,12 @@ class _$CreateSubthreadDtoMarkdownContractVersionEnumSerializer
     implements
         PrimitiveSerializer<CreateSubthreadDtoMarkdownContractVersionEnum> {
   static const Map<String, Object> _toWire = const <String, Object>{
-    'n6': '6',
-    'unknownDefaultOpenApi': '11184809',
+    'number6': 6,
+    'unknownDefaultOpenApi': 11184809,
   };
   static const Map<Object, String> _fromWire = const <Object, String>{
-    '6': 'n6',
-    '11184809': 'unknownDefaultOpenApi',
+    6: 'number6',
+    11184809: 'unknownDefaultOpenApi',
   };
 
   @override

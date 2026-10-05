@@ -15,7 +15,7 @@ part 'mention_identity_display_dto.g.dart';
 /// * [targetIdentityId] - 稳定目标角色 ID；ACCOUNT/legacy 为 null，不随关闭/归档丢失。仅声明 Markdown 6 的读取返回角色目标
 /// * [threadId] - 角色所属主题；跨页面身份卡读取使用，不能猜当前页面主题
 /// * [userId]
-/// * [label] - 正文 canonical mention 的原始标签（不含 @），与 userId 共同作为映射键
+/// * [label] - 正文 canonical mention 的原始标签（不含 @），与 sourceHref 共同作为映射键；旧 bare 兼容 userId+label
 /// * [displayName] - 此次阅读应显示的名字；关闭时为账号用户名
 /// * [identityId]
 @BuiltValue()
@@ -35,7 +35,7 @@ abstract class MentionIdentityDisplayDto implements Built<MentionIdentityDisplay
   @BuiltValueField(wireName: r'userId')
   String get userId;
 
-  /// 正文 canonical mention 的原始标签（不含 @），与 userId 共同作为映射键
+  /// 正文 canonical mention 的原始标签（不含 @），与 sourceHref 共同作为映射键；旧 bare 兼容 userId+label
   @BuiltValueField(wireName: r'label')
   String get label;
 

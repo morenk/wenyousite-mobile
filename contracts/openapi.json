@@ -33168,6 +33168,13 @@
       "CreateThreadDto": {
         "type": "object",
         "properties": {
+          "markdownContractVersion": {
+            "type": "integer",
+            "enum": [
+              6
+            ],
+            "description": "声明编辑器支持 Markdown 6 角色提及源的无损读取/编辑。服务端 capabilities.roleMentionsV6Supported 为 true 时新端始终发送，包括删光旧节点；未声明而新/原正文含 v6 返回 409/40014。新节点还须 roleMentionsV6WriteEnabled。"
+          },
           "clientRequestId": {
             "type": "string",
             "format": "uuid",
@@ -33267,7 +33274,7 @@
           },
           "label": {
             "type": "string",
-            "description": "正文 canonical mention 的原始标签（不含 @），与 userId 共同作为映射键"
+            "description": "正文 canonical mention 的原始标签（不含 @），与 sourceHref 共同作为映射键；旧 bare 兼容 userId+label"
           },
           "displayName": {
             "type": "string",
@@ -33820,7 +33827,7 @@
         "type": "object",
         "properties": {
           "markdownContractVersion": {
-            "type": "number",
+            "type": "integer",
             "enum": [
               6
             ],
@@ -35823,7 +35830,7 @@
         "type": "object",
         "properties": {
           "markdownContractVersion": {
-            "type": "number",
+            "type": "integer",
             "enum": [
               6
             ],
@@ -36492,7 +36499,7 @@
         "type": "object",
         "properties": {
           "markdownContractVersion": {
-            "type": "number",
+            "type": "integer",
             "enum": [
               6
             ],
@@ -36659,7 +36666,7 @@
         "type": "object",
         "properties": {
           "markdownContractVersion": {
-            "type": "number",
+            "type": "integer",
             "enum": [
               6
             ],
@@ -36903,7 +36910,7 @@
         "type": "object",
         "properties": {
           "markdownContractVersion": {
-            "type": "number",
+            "type": "integer",
             "enum": [
               6
             ],
@@ -37039,7 +37046,7 @@
         "type": "object",
         "properties": {
           "markdownContractVersion": {
-            "type": "number",
+            "type": "integer",
             "enum": [
               6
             ],
@@ -37076,7 +37083,7 @@
         "type": "object",
         "properties": {
           "markdownContractVersion": {
-            "type": "number",
+            "type": "integer",
             "enum": [
               6
             ],
