@@ -58,6 +58,7 @@ class PostComposerController extends StateNotifier<PostComposerState> {
     String? identityId,
     PostIdentityMode? identityMode,
     Future<bool> Function()? persistCreateIntent,
+    bool legacySingleIdentity = false,
   }) async {
     if (state.isSubmitting) return null;
     final validation = _validate(state.content);
@@ -75,7 +76,7 @@ class PostComposerController extends StateNotifier<PostComposerState> {
       PostComposerKind.createFloor ||
       PostComposerKind.createReply => _submitCreate(
         identityToken: identityToken,
-        identityId: identityId,
+        identityId: legacySingleIdentity ? null : identityId,
         identityMode: identityMode,
         persistCreateIntent: persistCreateIntent,
       ),
@@ -86,7 +87,7 @@ class PostComposerController extends StateNotifier<PostComposerState> {
       PostComposerKind.upsertBody => _submitBody(
         version: target.version,
         identityToken: identityToken,
-        identityId: identityId,
+        identityId: legacySingleIdentity ? null : identityId,
         identityMode: identityMode,
         persistCreateIntent: persistCreateIntent,
       ),

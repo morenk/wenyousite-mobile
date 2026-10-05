@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wenyousite_mobile/app/app_capabilities.dart';
 import 'package:wenyousite_mobile/core/application/visibility_cache_invalidation.dart';
 import 'package:wenyousite_mobile/features/thread_identity/identity_models.dart';
 
@@ -119,11 +120,25 @@ typedef RpIdentityTarget = ({
   String identityId,
 });
 final rpIdentityCardProvider = FutureProvider.autoDispose
-    .family<ThreadIdentityState, RpIdentityTarget>((ref, target) async {
-      ref.watch(viewerScopeProvider);
-      final value = await ref
-          .watch(threadIdentityRepositoryProvider)
-          .find(target.threadId, target.identityId);
-      if (value.userId != target.userId) throw StateError('帖内身份账号不匹配。');
-      return value;
-    }, dependencies: [viewerScopeProvider, threadIdentityRepositoryProvider]);
+    .family<ThreadIdentityState, RpIdentityTarget>(
+      (ref, target) async {
+        ref.watch(viewerScopeProvider);
+        final repo = ref.watch(threadIdentityRepositoryProvider);
+        final legacy = ref
+            .watch(appCapabilitiesProvider)
+            .legacySingleThreadIdentity;
+        final value = legacy
+            ? await repo.findUser(target.threadId, target.userId)
+            : await repo.find(target.threadId, target.identityId);
+        if (legacy && value.identityId != target.identityId) {
+          throw StateError('帖内身份不匹配。');
+        }
+        if (value.userId != target.userId) throw StateError('帖内身份账号不匹配。');
+        return value;
+      },
+      dependencies: [
+        viewerScopeProvider,
+        threadIdentityRepositoryProvider,
+        appCapabilitiesProvider,
+      ],
+    );

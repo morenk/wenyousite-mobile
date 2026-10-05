@@ -7,6 +7,7 @@ class AppCapabilities {
     this.pushNotifications = false,
     this.markdownAlignment = false,
     this.markdownImageAlignment = false,
+    this.legacySingleThreadIdentity = false,
     this.roleMentionsSupported = false,
     this.roleMentionsWriteEnabled = false,
   });
@@ -16,6 +17,7 @@ class AppCapabilities {
   final bool pushNotifications;
   final bool markdownAlignment;
   final bool markdownImageAlignment;
+  final bool legacySingleThreadIdentity;
   final bool roleMentionsSupported;
   final bool roleMentionsWriteEnabled;
 }

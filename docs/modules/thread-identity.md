@@ -71,3 +71,8 @@ OpenAPI `5.35.0-dev.20261005.1`；Backend `62142042b76e2f15a92794337316bd4c1e3dd
 - `lib/features/thread_identity/`；`lib/features/posts/application/post_identity_selection.dart`。
 - [主题](threads.md)、[帖子](posts.md)、[兼容与弃用登记](../deprecation-register.md)。
 - `contracts/thread-identity.md`、`contracts/thread-identity.v1.fixtures.json`。
+
+
+### 已知单身份环境兼容
+
+仅 `/meta` 明确为 5.33 时复用原 single 读取和有版本的既有资料维护：菜单显示站内账号及已有角色，不提供集合新增或归档。角色卡按账号读取后核对原角色 ID。集合 404、网络失败、未知版本和新写开关关闭均不触发此降级；5.34 及以后的集合路径不变。旧写入不发送 identityId，新版请求仍明确携带角色 ID；本地草稿保留选择，首次请求在持久化前冻结省略 ID 的旧载荷，升级后的未知结果重试不能自动补 ID。

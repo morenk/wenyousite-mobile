@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyou_api/wenyou_api.dart';
+import 'package:wenyousite_mobile/app/app_capabilities.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
@@ -9,11 +10,23 @@ import 'package:wenyousite_mobile/features/thread_identity/identity_models.dart'
 import 'package:wenyousite_mobile/features/thread_identity/identity_ports.dart';
 
 class ApiThreadIdentityRepository implements ThreadIdentityRepository {
-  ApiThreadIdentityRepository(this._api);
+  ApiThreadIdentityRepository(this._api, {this.legacySingleIdentity = false});
+  final bool legacySingleIdentity;
   final ThreadsApi _api;
 
   @override
   Future<ThreadIdentityCollection> list(String threadId) async {
+    if (legacySingleIdentity) {
+      final state = await mine(threadId);
+      final roles = [if (state.identityId != null) state];
+      return ThreadIdentityCollection(
+        account: state,
+        identities: roles,
+        // 旧接口没有原子新增/归档，仅保留已有身份维护。
+        limit: roles.length,
+        compatibilityIdentityId: state.identityId,
+      );
+    }
     try {
       final dto = (await _api.rpIdentitiesList(threadId: threadId)).data?.data;
       if (dto == null ||
@@ -55,70 +68,103 @@ class ApiThreadIdentityRepository implements ThreadIdentityRepository {
 
   @override
   Future<ThreadIdentityState> find(String threadId, String identityId) =>
-      _roleRead(
-        threadId,
-        () async => (await _api.rpIdentitiesFind(
-          threadId: threadId,
+      legacySingleIdentity
+      ? _legacyRole(threadId, identityId)
+      : _roleRead(
+          threadId,
+          () async => (await _api.rpIdentitiesFind(
+            threadId: threadId,
+            identityId: identityId,
+          )).data?.data,
           identityId: identityId,
-        )).data?.data,
-        identityId: identityId,
-      );
+        );
 
   @override
   Future<ThreadIdentityState> create(
     String threadId,
     ThreadIdentityUpdate input,
-  ) => _roleRead(
-    threadId,
-    () async => (await _api.rpIdentitiesCreate(
-      threadId: threadId,
-      extra: ApiRequestPolicy.authenticatedNonReplayable.extra,
-      createRpIdentityDto: CreateRpIdentityDto(
-        (b) => b
-          ..nickname = input.nickname
-          ..avatarMediaId = input.avatarMediaId,
-      ),
-    )).data?.data,
-  );
+  ) => legacySingleIdentity
+      ? Future.error(const ApiFailure(userMessage: '暂时无法添加身份。'))
+      : _roleRead(
+          threadId,
+          () async => (await _api.rpIdentitiesCreate(
+            threadId: threadId,
+            extra: ApiRequestPolicy.authenticatedNonReplayable.extra,
+            createRpIdentityDto: CreateRpIdentityDto(
+              (b) => b
+                ..nickname = input.nickname
+                ..avatarMediaId = input.avatarMediaId,
+            ),
+          )).data?.data,
+        );
 
   @override
   Future<ThreadIdentityState> updateRole(
     String threadId,
     String identityId,
     ThreadIdentityUpdate input,
-  ) => _roleRead(
-    threadId,
-    () async => (await _api.rpIdentitiesUpdate(
-      threadId: threadId,
-      identityId: identityId,
-      extra: ApiRequestPolicy.authenticatedNonReplayable.extra,
-      updateRpIdentityDto: UpdateRpIdentityDto(
-        (b) => b
-          ..nickname = input.nickname
-          ..avatarMediaId = input.avatarMediaId
-          ..clearNickname = input.clearNickname
-          ..clearAvatar = input.clearAvatar
-          ..version = input.version,
-      ),
-    )).data?.data,
-    identityId: identityId,
-  );
+  ) => legacySingleIdentity
+      ? _updateLegacyRole(threadId, identityId, input)
+      : _roleRead(
+          threadId,
+          () async => (await _api.rpIdentitiesUpdate(
+            threadId: threadId,
+            identityId: identityId,
+            extra: ApiRequestPolicy.authenticatedNonReplayable.extra,
+            updateRpIdentityDto: UpdateRpIdentityDto(
+              (b) => b
+                ..nickname = input.nickname
+                ..avatarMediaId = input.avatarMediaId
+                ..clearNickname = input.clearNickname
+                ..clearAvatar = input.clearAvatar
+                ..version = input.version,
+            ),
+          )).data?.data,
+          identityId: identityId,
+        );
 
   @override
   Future<ThreadIdentityState> remove(
     String threadId,
     String identityId,
     int version,
-  ) => _roleRead(
-    threadId,
-    () async => (await _api.rpIdentitiesRemove(
-      threadId: threadId,
-      identityId: identityId,
-      extra: ApiRequestPolicy.authenticatedNonReplayable.extra,
-      deleteRpIdentityDto: DeleteRpIdentityDto((b) => b.version = version),
-    )).data?.data,
-    identityId: identityId,
-  );
+  ) => legacySingleIdentity
+      ? Future.error(const ApiFailure(userMessage: '暂时无法删除身份。'))
+      : _roleRead(
+          threadId,
+          () async => (await _api.rpIdentitiesRemove(
+            threadId: threadId,
+            identityId: identityId,
+            extra: ApiRequestPolicy.authenticatedNonReplayable.extra,
+            deleteRpIdentityDto: DeleteRpIdentityDto(
+              (b) => b.version = version,
+            ),
+          )).data?.data,
+          identityId: identityId,
+        );
+
+  Future<ThreadIdentityState> _legacyRole(
+    String threadId,
+    String identityId,
+  ) async {
+    final state = await mine(threadId);
+    if (state.identityId != identityId) {
+      throw const ApiFailure(userMessage: '该身份已变化，请重新选择。');
+    }
+    return state;
+  }
+
+  Future<ThreadIdentityState> _updateLegacyRole(
+    String threadId,
+    String identityId,
+    ThreadIdentityUpdate input,
+  ) async {
+    final state = await _legacyRole(threadId, identityId);
+    if (input.version == null || input.version != state.version) {
+      throw const ApiFailure(userMessage: '资料已变化，请重新打开后编辑。');
+    }
+    return update(threadId, input);
+  }
 
   Future<ThreadIdentityState> _roleRead(
     String threadId,
@@ -270,6 +316,10 @@ class ApiThreadIdentityRepository implements ThreadIdentityRepository {
 }
 
 final apiThreadIdentityRepositoryProvider = Provider<ThreadIdentityRepository>(
-  (ref) =>
-      ApiThreadIdentityRepository(ref.watch(wenyouApiProvider).getThreadsApi()),
+  (ref) => ApiThreadIdentityRepository(
+    ref.watch(wenyouApiProvider).getThreadsApi(),
+    legacySingleIdentity: ref
+        .watch(appCapabilitiesProvider)
+        .legacySingleThreadIdentity,
+  ),
 );

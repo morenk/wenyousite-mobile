@@ -331,6 +331,9 @@ AppCapabilities appCapabilitiesForContract(ContractInfo? contract) {
     pushNotifications: contract?.pushNotificationsEnabled ?? false,
     markdownAlignment: (contract?.markdownContractVersion ?? 0) >= 4,
     markdownImageAlignment: (contract?.markdownContractVersion ?? 0) >= 5,
+    // 仅已知的单身份契约使用旧入口，集合请求失败不能触发降级。
+    legacySingleThreadIdentity:
+        contract?.contractVersion.startsWith('5.33.') ?? false,
     roleMentionsSupported: contract?.roleMentionsSupported ?? false,
     roleMentionsWriteEnabled: contract?.roleMentionsWriteEnabled ?? false,
   );

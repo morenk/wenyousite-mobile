@@ -599,6 +599,9 @@ class PostComposerSheetState extends ConsumerState<PostComposerSheet>
               : null,
           identityToken: _identitySelection?.acceptedToken,
           identityMode: _identitySelection?.mode,
+          legacySingleIdentity: ref
+              .read(appCapabilitiesProvider)
+              .legacySingleThreadIdentity,
           persistCreateIntent: _pendingImages.save,
         );
     if (!mounted) return;
