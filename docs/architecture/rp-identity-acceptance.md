@@ -242,3 +242,11 @@ Backend PR #43 已合并，管理入口 `deploy.sh --backend-only` 成功，精�
 
 
 Backend PR44 按负责人追加授权已合并为 `58f4526e3d4d293770428d92b332e02bb6b3fddd`。Windows 标准 sync 入口从只读 Git 镜像同步该已合并提交，只有 backend-contract.properties 的来源 SHA 变化，OpenAPI、Markdown v6 文档和语料、生成 SDK 均无差异；固定语料来源检查通过。模块文档统一更新已审查来源，不用旧任务 SHA 冒称未来部署事实。实际公网只读门禁与发布结果待管理入口完成后续记。
+
+
+### 已授权兼容后端上线后的只读核验
+
+Backend `58f4526e3d4d293770428d92b332e02bb6b3fddd` 已通过管理入口正式部署。`dart run tool/verify_production_api.dart` 退出 0（`.rp-peer-production-deployed.log`）：公网 API／bundle `5.35.0-dev.20261005.1`、build 精确等于上述 SHA、实际 Markdown5 在支持范围，GET /threads Schema 兼容。原先因 ff1a841 旧版本导致的公网兼容阻塞已解除；先前失败日志保持，不把部署前入口改写为全绿。新角色提及写入默认关闭仍保持，Mobile PR 未合并或发布 APK。
+
+
+新后端上线后，手机于会话 `32640`、Flutter PID `30980`、App PID `8981` 重新附加，并热重启 `6,035ms / code=0` 刷新启动能力；加载摘要仍为 `30279f2dbf6a69e78e40044d2cad1e28d1d5191fbf5b971ea30228fac13acb36`。此时本机登记 ready，保留热重载通道供微调；运行状态以后续会话查询为准，不能以该记录保证切后台后仍在线。负责人已收到重新打开身份菜单的验收请求，尚未将自动加载成功作为视觉通过。未生成或安装 APK。
