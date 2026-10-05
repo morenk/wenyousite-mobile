@@ -9,17 +9,22 @@ class PostIdentitySelection extends ChangeNotifier {
   PostIdentitySelection(this.repository, this.threadId);
   final ThreadIdentityRepository repository;
   final String threadId;
-  ThreadIdentityState? identity;
+  ThreadIdentityCollection? collection;
+  String? identityId;
+  ThreadIdentityState? get identity =>
+      collection?.find(identityId) ?? collection?.account;
   PostIdentityMode? mode;
   String? acceptedToken;
   ApiFailure? failure;
   bool loading = false;
   bool _disposed = false;
   int _epoch = 0;
+  bool _resolveLegacy = false;
 
   bool get changed =>
       mode == PostIdentityMode.rp &&
-      (identity?.hasRp != true || acceptedToken != identity?.identityToken);
+      (collection?.find(identityId)?.hasRp != true ||
+          acceptedToken != identity?.identityToken);
   String get displayName => mode == PostIdentityMode.rp
       ? identity?.displayName ?? '帖内身份'
       : identity?.accountName ?? '站内身份';
@@ -30,12 +35,22 @@ class PostIdentitySelection extends ChangeNotifier {
     failure = null;
     notifyListeners();
     try {
-      final value = await repository.mine(threadId);
+      final value = await repository.list(threadId);
       if (_disposed || epoch != _epoch) return false;
-      identity = value;
+      collection = value;
       if (mode == null) {
-        mode = value.hasRp ? PostIdentityMode.rp : PostIdentityMode.account;
-        acceptedToken = value.identityToken;
+        identityId = value.defaultIdentityId;
+        mode = value.find(identityId)?.hasRp == true
+            ? PostIdentityMode.rp
+            : PostIdentityMode.account;
+        acceptedToken = mode == PostIdentityMode.rp
+            ? identity?.identityToken
+            : null;
+      }
+      // 旧 RP 草稿只迁移到明确的兼容身份，绝不猜另一个角色。
+      if (_resolveLegacy) {
+        _resolveLegacy = false;
+        identityId = value.compatibilityIdentityId;
       }
       return true;
     } on Object catch (error) {
@@ -51,22 +66,53 @@ class PostIdentitySelection extends ChangeNotifier {
     }
   }
 
-  void select(PostIdentityMode next) {
-    if (next == PostIdentityMode.rp && identity?.hasRp != true) return;
+  void select(PostIdentityMode next, {String? id}) {
+    final candidate = id ?? identityId ?? collection?.defaultIdentityId;
+    if (next == PostIdentityMode.rp &&
+        collection?.find(candidate)?.hasRp != true) {
+      return;
+    }
+    identityId = next == PostIdentityMode.rp ? candidate : null;
     mode = next;
-    acceptedToken = identity?.identityToken;
+    acceptedToken = mode == PostIdentityMode.rp
+        ? identity?.identityToken
+        : null;
     notifyListeners();
   }
 
   void confirmCurrent() {
-    if (identity?.hasRp != true) mode = PostIdentityMode.account;
-    acceptedToken = identity?.identityToken;
+    if (collection?.find(identityId)?.hasRp != true) {
+      mode = PostIdentityMode.account;
+      identityId = null;
+    }
+    acceptedToken = mode == PostIdentityMode.rp
+        ? identity?.identityToken
+        : null;
     notifyListeners();
   }
 
-  void restore({required PostIdentityMode? selected, String? token}) {
+  /// 保存结果已明确角色 ID；后续列表读取失败也不能丢失用户的新选择。
+  void acceptSaved(ThreadIdentityState saved, {required bool created}) {
+    if (!saved.hasRp || saved.identityId == null) return;
+    if (created ||
+        (mode == PostIdentityMode.rp && identityId == saved.identityId)) {
+      restore(
+        selected: PostIdentityMode.rp,
+        id: saved.identityId,
+        token: saved.identityToken,
+      );
+    }
+  }
+
+  void restore({
+    required PostIdentityMode? selected,
+    String? token,
+    String? id,
+  }) {
     if (selected == null) return;
     mode = selected;
+    identityId = selected == PostIdentityMode.rp ? id : null;
+    _resolveLegacy = selected == PostIdentityMode.rp && id == null;
     acceptedToken = token;
     notifyListeners();
   }

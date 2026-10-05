@@ -161,15 +161,6 @@ class PostDiscussionList extends StatelessWidget {
       threadId: root.threadId,
       available: supportsRpIdentity,
       ownerId: ownerId,
-      onMention: authenticated
-          ? (identity) => onCompose(
-              threadIdentityMentionTarget(
-                postReplyTarget(root, root),
-                identity,
-              ),
-            )
-          : null,
-      onFilter: onAuthorChanged,
       child: CustomScrollView(
         key: const Key('post-replies-list'),
         controller: scrollController,
@@ -530,7 +521,8 @@ class _PostAuthorLine extends StatelessWidget {
           key: Key('post-author-avatar-${post.id}'),
           username: post.author.displayName,
           avatarUrl: post.author.displayAvatarUrl,
-          semanticsLabel: scope?.available == true
+          semanticsLabel:
+              scope?.available == true && post.author.rpIdentity != null
               ? '查看 ${post.author.displayName} 的帖内身份'
               : null,
           visualSize: avatarSize,

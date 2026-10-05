@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_selection_menu.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_identity_selection.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_publish_draft.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
@@ -13,9 +14,14 @@ import 'package:wenyousite_mobile/features/thread_identity/identity_models.dart'
 import 'package:wenyousite_mobile/features/thread_identity/identity_ports.dart';
 import 'package:wenyousite_mobile/features/thread_identity/identity_widgets.dart';
 
+import '../../support/thread_identity_fixtures.dart';
 import 'post_replies_page_test_support.dart';
 
-class _IdentityRepository extends Mock implements ThreadIdentityRepository {}
+class _IdentityRepository extends Mock implements ThreadIdentityRepository {
+  @override
+  Future<ThreadIdentityCollection> list(String threadId) async =>
+      identityTestCollection(await mine(threadId));
+}
 
 void main() {
   const sameNameIdentity = ThreadIdentityState(
@@ -42,15 +48,16 @@ void main() {
           body: PostIdentityComposerBar(
             selection: selection,
             locked: false,
-            onSettings: () {},
+            onSettings: (_) {},
           ),
         ),
       ),
     );
-    expect(find.text('以帖内身份「同名用户」发表'), findsOneWidget);
+    expect(find.text('帖内身份'), findsOneWidget);
+    expect(find.text('同名用户'), findsOneWidget);
     selection.select(PostIdentityMode.account);
     await tester.pump();
-    expect(find.text('以站内身份「同名用户」发表'), findsOneWidget);
+    expect(find.text('站内身份'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
   testWidgets('退出账号时立即关闭身份资料Sheet，不残留私帖输入', (tester) async {
@@ -163,11 +170,10 @@ void main() {
     await postRepliesPageTestPumpUi(tester);
     expect(tester.takeException(), isNull);
     expect(find.text('重试确认发表'), findsWidgets);
-    final dropdown = tester.widget<DropdownButton<PostIdentityMode>>(
+    final dropdown = tester.widget<WenyouSelectionMenu>(
       find.byKey(const Key('post-composer-identity-mode')),
     );
-    expect(dropdown.value, PostIdentityMode.rp);
-    expect(dropdown.onChanged, isNull);
+    expect(dropdown.enabled, isFalse);
     expect(posts.createInputs, isEmpty);
     await postRepliesPageTestDismissPostComposerFromOutside(tester);
     expect(tester.takeException(), isNull);

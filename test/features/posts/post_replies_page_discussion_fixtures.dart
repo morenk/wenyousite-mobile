@@ -317,6 +317,7 @@ class PostRepliesPageTestFakePostRepository
     required String content,
     int? version,
     String? identityToken,
+    String? identityId,
     PostIdentityMode? identityMode,
   }) {
     throw UnsupportedError('not used');

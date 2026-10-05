@@ -55,6 +55,7 @@ class PostComposerController extends StateNotifier<PostComposerState> {
 
   Future<PostItem?> submit({
     String? identityToken,
+    String? identityId,
     PostIdentityMode? identityMode,
     Future<bool> Function()? persistCreateIntent,
   }) async {
@@ -74,6 +75,7 @@ class PostComposerController extends StateNotifier<PostComposerState> {
       PostComposerKind.createFloor ||
       PostComposerKind.createReply => _submitCreate(
         identityToken: identityToken,
+        identityId: identityId,
         identityMode: identityMode,
         persistCreateIntent: persistCreateIntent,
       ),
@@ -84,6 +86,7 @@ class PostComposerController extends StateNotifier<PostComposerState> {
       PostComposerKind.upsertBody => _submitBody(
         version: target.version,
         identityToken: identityToken,
+        identityId: identityId,
         identityMode: identityMode,
         persistCreateIntent: persistCreateIntent,
       ),
@@ -104,6 +107,7 @@ class PostComposerController extends StateNotifier<PostComposerState> {
 
   Future<PostItem?> _submitCreate({
     String? identityToken,
+    String? identityId,
     PostIdentityMode? identityMode,
     Future<bool> Function()? persistCreateIntent,
   }) async {
@@ -117,6 +121,7 @@ class PostComposerController extends StateNotifier<PostComposerState> {
           parentPostId: target.parentPostId,
           replyToPostId: target.replyToPostId,
           identityToken: identityToken,
+          identityId: identityId,
           identityMode: identityMode,
         );
     // 请求发出前保存相同正文、身份和幂等键，异常退出后仍确认同一次发表。
@@ -195,6 +200,7 @@ class PostComposerController extends StateNotifier<PostComposerState> {
   Future<PostItem?> _submitBody({
     required int? version,
     String? identityToken,
+    String? identityId,
     PostIdentityMode? identityMode,
     Future<bool> Function()? persistCreateIntent,
   }) async {
@@ -207,6 +213,7 @@ class PostComposerController extends StateNotifier<PostComposerState> {
                   content: state.content,
                   clientRequestId: _requestId,
                   identityToken: identityToken,
+                  identityId: identityId,
                   identityMode: identityMode,
                 ),
               )
@@ -235,6 +242,7 @@ class PostComposerController extends StateNotifier<PostComposerState> {
         subthreadId: target.subthreadId,
         content: pending?.input.content ?? state.content,
         version: version,
+        identityId: pending != null ? pending.input.identityId : identityId,
         identityToken: pending != null
             ? pending.input.identityToken
             : identityToken,

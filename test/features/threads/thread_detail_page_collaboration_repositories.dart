@@ -394,6 +394,7 @@ class ThreadDetailPageTestFakePostRepository
     required String content,
     int? version,
     String? identityToken,
+    String? identityId,
     PostIdentityMode? identityMode,
   }) => throw UnsupportedError('unused');
 }
@@ -456,6 +457,7 @@ class ThreadDetailPageTestCreatingPostRepository
     required String content,
     int? version,
     String? identityToken,
+    String? identityId,
     PostIdentityMode? identityMode,
   }) => throw UnsupportedError('unused');
 }

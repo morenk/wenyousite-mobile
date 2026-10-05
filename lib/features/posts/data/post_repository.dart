@@ -136,6 +136,7 @@ class ApiPostRepository implements PostRepository {
       final payload = CreatePostDto((builder) {
         builder
           ..content = input.content
+          ..identityId = input.identityId
           ..identityToken = input.identityToken
           ..identityMode = switch (input.identityMode) {
             PostIdentityMode.account => CreatePostDtoIdentityModeEnum.ACCOUNT,
@@ -207,11 +208,13 @@ class ApiPostRepository implements PostRepository {
     required String content,
     int? version,
     String? identityToken,
+    String? identityId,
     PostIdentityMode? identityMode,
   }) async {
     try {
       final payload = UpsertBodyDto((builder) {
         builder.content = content;
+        builder.identityId = identityId;
         builder.identityToken = identityToken;
         builder.identityMode = switch (identityMode) {
           PostIdentityMode.account => UpsertBodyDtoIdentityModeEnum.ACCOUNT,

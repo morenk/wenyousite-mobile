@@ -32,6 +32,7 @@ void main() {
         content: any(named: 'content'),
         version: null,
         identityToken: any(named: 'identityToken'),
+        identityId: any(named: 'identityId'),
         identityMode: any(named: 'identityMode'),
       ),
     ).thenAnswer((invocation) async {
@@ -43,6 +44,7 @@ void main() {
     await controller.submit(
       identityMode: PostIdentityMode.rp,
       identityToken: 'old',
+      identityId: 'role-old',
       persistCreateIntent: () async {
         expect(calls, isEmpty);
         saved = PostPublishDraft.fromJson(
@@ -59,11 +61,13 @@ void main() {
     await controller.submit(
       identityMode: PostIdentityMode.account,
       identityToken: 'new',
+      identityId: 'role-new',
     );
     expect(calls, hasLength(2));
     expect(calls.last[#content], '正文');
     expect(calls.last[#identityMode], PostIdentityMode.rp);
     expect(calls.last[#identityToken], 'old');
+    expect(calls.last[#identityId], 'role-old');
     expect(calls.last[#version], isNull);
   });
 
@@ -76,6 +80,7 @@ void main() {
         content: '正文',
         version: null,
         identityToken: null,
+        identityId: null,
         identityMode: PostIdentityMode.account,
       ),
     ).thenAnswer((_) async {

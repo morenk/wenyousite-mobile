@@ -8,7 +8,13 @@ import 'package:wenyousite_mobile/features/posts/application/post_publish_draft.
 import 'package:wenyousite_mobile/features/thread_identity/identity_models.dart';
 import 'package:wenyousite_mobile/features/thread_identity/identity_ports.dart';
 
-class _Repository extends Mock implements ThreadIdentityRepository {}
+import '../../support/thread_identity_fixtures.dart';
+
+class _Repository extends Mock implements ThreadIdentityRepository {
+  @override
+  Future<ThreadIdentityCollection> list(String threadId) async =>
+      identityTestCollection(await mine(threadId));
+}
 
 ThreadIdentityState _identity({
   String token = 'one',

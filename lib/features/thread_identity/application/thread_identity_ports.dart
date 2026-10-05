@@ -3,6 +3,22 @@ import 'package:wenyousite_mobile/core/application/visibility_cache_invalidation
 import 'package:wenyousite_mobile/features/thread_identity/identity_models.dart';
 
 abstract interface class ThreadIdentityRepository {
+  Future<ThreadIdentityCollection> list(String threadId);
+  Future<ThreadIdentityState> find(String threadId, String identityId);
+  Future<ThreadIdentityState> create(
+    String threadId,
+    ThreadIdentityUpdate input,
+  );
+  Future<ThreadIdentityState> updateRole(
+    String threadId,
+    String identityId,
+    ThreadIdentityUpdate input,
+  );
+  Future<ThreadIdentityState> remove(
+    String threadId,
+    String identityId,
+    int version,
+  );
   Future<ThreadIdentityState> mine(String threadId);
   Future<ThreadIdentityState> findUser(String threadId, String userId);
   Future<ThreadIdentityState> update(
@@ -48,6 +64,9 @@ class ThreadIdentityState {
     this.version,
     this.display,
     this.identityToken,
+    this.deleted = false,
+    this.canDelete = false,
+    this.compatibilityIdentity = false,
   });
 
   final String threadId;
@@ -63,8 +82,48 @@ class ThreadIdentityState {
   final int? version;
   final RpIdentity? display;
   final String? identityToken;
+  final bool deleted;
+  final bool canDelete;
+  final bool compatibilityIdentity;
 
-  bool get hasRp => enabled && eligible && display != null;
+  bool get hasRp => !deleted && enabled && eligible && display != null;
   String get displayName => hasRp ? display!.nickname : accountName;
   String? get displayAvatarUrl => hasRp ? display!.avatarUrl : accountAvatarUrl;
 }
+
+class ThreadIdentityCollection {
+  const ThreadIdentityCollection({
+    required this.account,
+    required this.identities,
+    this.limit = 10,
+    this.compatibilityIdentityId,
+    this.defaultIdentityId,
+  });
+  final ThreadIdentityState account;
+  final List<ThreadIdentityState> identities;
+  final int limit;
+  final String? compatibilityIdentityId;
+  final String? defaultIdentityId;
+  ThreadIdentityState? find(String? id) {
+    if (id == null) return null;
+    for (final value in identities) {
+      if (value.identityId == id) return value;
+    }
+    return null;
+  }
+}
+
+typedef RpIdentityTarget = ({
+  String threadId,
+  String userId,
+  String identityId,
+});
+final rpIdentityCardProvider = FutureProvider.autoDispose
+    .family<ThreadIdentityState, RpIdentityTarget>((ref, target) async {
+      ref.watch(viewerScopeProvider);
+      final value = await ref
+          .watch(threadIdentityRepositoryProvider)
+          .find(target.threadId, target.identityId);
+      if (value.userId != target.userId) throw StateError('帖内身份账号不匹配。');
+      return value;
+    }, dependencies: [viewerScopeProvider, threadIdentityRepositoryProvider]);

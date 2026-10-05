@@ -54,6 +54,105 @@ void main() {
   });
   tearDown(() => dio.close(force: true));
 
+  void asRole() => response.addAll({
+    'identityId': 'rp',
+    'deleted': false,
+    'compatibilityIdentity': true,
+    'canDelete': true,
+  });
+
+  test('集合保留空资料名额和稳定角色 ID，拒绝跨账号成员', () async {
+    asRole();
+    final role = Map<String, Object?>.of(response);
+    final empty = {
+      ...role,
+      'identityId': 'empty',
+      'identity': {
+        'id': 'empty',
+        'nickname': null,
+        'avatarMediaId': null,
+        'version': 1,
+      },
+      'display': null,
+    };
+    response = {
+      ...role,
+      'identities': [role, empty],
+      'activeCount': 2,
+      'limit': 10,
+      'compatibilityIdentityId': 'rp',
+      'defaultIdentityId': 'rp',
+    };
+    final state = await repository.list('thread');
+    expect(state.identities.length, 2);
+    expect(state.find('empty')!.hasRp, isFalse);
+    expect(state.defaultIdentityId, 'rp');
+    response['identities'] = [
+      role,
+      {
+        ...empty,
+        'userId': 'other',
+        'account': {'id': 'other', 'username': '其他', 'avatar': null},
+      },
+    ];
+    await expectLater(repository.list('thread'), throwsA(isA<ApiFailure>()));
+  });
+
+  test('角色创建、更新与删除分别走集合端点，写请求不自动重放', () async {
+    asRole();
+    await repository.create(
+      'thread',
+      const ThreadIdentityUpdate(nickname: '白鸦'),
+    );
+    expect(requests.last.method, 'POST');
+    expect(requests.last.path, endsWith('/rp-identities'));
+    expect(requests.last.data, containsPair('nickname', '白鸦'));
+    await repository.updateRole(
+      'thread',
+      'rp',
+      const ThreadIdentityUpdate(nickname: '新名', clearAvatar: true, version: 3),
+    );
+    expect(requests.last.method, 'PUT');
+    expect(requests.last.data, containsPair('version', 3));
+    expect(requests.last.data, containsPair('clearAvatar', true));
+    response.addAll({
+      'deleted': true,
+      'identity': null,
+      'display': null,
+      'identityToken': null,
+      'canDelete': false,
+    });
+    final removed = await repository.remove('thread', 'rp', 3);
+    expect(requests.last.method, 'DELETE');
+    expect(requests.last.path, endsWith('/rp-identities/rp'));
+    expect(requests.last.data, {'version': 3});
+    expect(removed.deleted, isTrue);
+    expect(removed.identityId, 'rp');
+    expect(removed.hasRp, isFalse);
+    expect(
+      requests.every(
+        (request) =>
+            request.extra[ApiRequestExtraKeys.noAutomaticReplay] == true,
+      ),
+      isTrue,
+    );
+  });
+
+  test('历史卡片只查同一个角色，不能接受其他角色的响应', () async {
+    asRole();
+    await repository.find('thread', 'rp');
+    expect(requests.single.path, endsWith('/rp-identities/rp'));
+    await expectLater(
+      repository.find('thread', 'another'),
+      throwsA(isA<ApiFailure>()),
+    );
+    response['display'] = {'id': 'another', 'nickname': '同名', 'avatar': null};
+    await expectLater(
+      repository.find('thread', 'rp'),
+      throwsA(isA<ApiFailure>()),
+    );
+  });
+
   test('昵称与头像分别清除使用显式标记，保存禁止自动重放', () async {
     final state = await repository.update(
       'thread',

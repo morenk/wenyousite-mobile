@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_settings_body.dart';
 import 'package:wenyousite_mobile/features/threads/data/thread_member_management_repository.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_member_management_models.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_member_management_page.dart';
@@ -69,7 +70,7 @@ void main() {
     );
   });
 
-  testWidgets('成员使用紧凑列表行且未选角色为空心并留出按钮间距', (tester) async {
+  testWidgets('成员复用设置卡片且未选角色为空心并留出按钮间距', (tester) async {
     await _pumpPage(tester, _FakeRepository(bootstrap: _bootstrap()));
 
     final owner = find.byKey(const ValueKey('thread-member-profile-owner-1'));
@@ -108,7 +109,11 @@ void main() {
     );
     expect(
       tester.getTopLeft(player).dy - tester.getTopLeft(owner).dy,
-      lessThan(70),
+      inInclusiveRange(76, 88),
+    );
+    expect(
+      find.ancestor(of: player, matching: find.byType(WenyouSettingsGroup)),
+      findsOneWidget,
     );
   });
 
@@ -181,12 +186,16 @@ void main() {
     expect(find.text('玩家甲'), findsOneWidget);
   });
 
-  for (final width in [360.0, 400.0, 600.0]) {
+  for (final width in [320.0, 360.0, 400.0, 600.0]) {
     testWidgets('$width dp 成员管理页无布局溢出', (tester) async {
       tester.view.devicePixelRatio = 1;
       tester.view.physicalSize = Size(width, 820);
       addTearDown(tester.view.resetDevicePixelRatio);
       addTearDown(tester.view.resetPhysicalSize);
+      if (width == 320) {
+        tester.platformDispatcher.textScaleFactorTestValue = 2;
+        addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+      }
       await _pumpPage(tester, _FakeRepository(bootstrap: _bootstrap()));
 
       expect(tester.takeException(), isNull);
@@ -194,24 +203,35 @@ void main() {
     });
   }
 
-  testWidgets('360dp 成员权限紧凑列表视觉基线', (tester) async {
-    tester.view.devicePixelRatio = 1;
-    tester.view.physicalSize = const Size(360, 800);
-    addTearDown(tester.view.resetDevicePixelRatio);
-    addTearDown(tester.view.resetPhysicalSize);
-    await _pumpPage(tester, _FakeRepository(bootstrap: _bootstrap()));
+  for (final dark in [false, true]) {
+    testWidgets('360dp 成员权限卡片视觉基线 $dark', (tester) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(360, 800);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.view.resetPhysicalSize);
+      await _pumpPage(
+        tester,
+        _FakeRepository(bootstrap: _bootstrap()),
+        dark: dark,
+      );
 
-    await expectLater(
-      find.byType(Scaffold).last,
-      matchesGoldenFile('goldens/thread_member_management_list_360.png'),
-    );
-  });
+      await expectLater(
+        find.byType(Scaffold).last,
+        matchesGoldenFile(
+          dark
+              ? 'goldens/thread_member_management_list_360_dark.png'
+              : 'goldens/thread_member_management_list_360.png',
+        ),
+      );
+    });
+  }
 }
 
 Future<void> _pumpPage(
   WidgetTester tester,
-  ThreadMemberManagementRepository repository,
-) async {
+  ThreadMemberManagementRepository repository, {
+  bool dark = false,
+}) async {
   final router = GoRouter(
     initialLocation: '/threads/thread-1/manage/members',
     routes: [
@@ -234,7 +254,10 @@ Future<void> _pumpPage(
       overrides: [
         threadMemberManagementRepositoryProvider.overrideWithValue(repository),
       ],
-      child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
+      child: MaterialApp.router(
+        theme: dark ? AppTheme.dark : AppTheme.light,
+        routerConfig: router,
+      ),
     ),
   );
   await tester.pumpAndSettle();

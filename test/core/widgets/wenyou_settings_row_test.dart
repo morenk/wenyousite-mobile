@@ -10,6 +10,35 @@ import '../../support/deterministic_test_fonts.dart';
 void main() {
   setUpAll(loadDeterministicTestFonts);
 
+  testWidgets('无说明的设置直接切换，忙碌操作不重复触发', (tester) async {
+    var value = false;
+    var actions = 0;
+    await tester.pumpWidget(
+      _app(
+        child: Column(
+          children: [
+            WenyouSettingsToggle(
+              title: '帖内身份',
+              value: value,
+              onChanged: (next) => value = next,
+            ),
+            WenyouSettingsLink(
+              title: '导出档案',
+              isBusy: true,
+              onTap: () => actions++,
+            ),
+          ],
+        ),
+      ),
+    );
+    expect(find.byType(Tooltip), findsNothing);
+    await tester.tap(find.text('帖内身份'));
+    expect(value, isTrue);
+    await tester.tap(find.text('导出档案'));
+    expect(actions, 0);
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+  });
+
   for (final dark in [false, true]) {
     for (final width in [320.0, 360.0, 600.0]) {
       testWidgets('设置长值在 $width 宽两倍字号 ${dark ? '黑夜' : '浅色'} 完整换行', (

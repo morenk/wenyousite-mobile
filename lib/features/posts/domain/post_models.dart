@@ -109,6 +109,7 @@ class PostCreateInput {
     this.parentPostId,
     this.replyToPostId,
     this.identityToken,
+    this.identityId,
     this.identityMode,
   });
 
@@ -118,6 +119,7 @@ class PostCreateInput {
   final String? parentPostId;
   final String? replyToPostId;
   final String? identityToken;
+  final String? identityId;
   final PostIdentityMode? identityMode;
 }
 

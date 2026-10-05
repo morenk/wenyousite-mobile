@@ -207,6 +207,7 @@ void main() {
         content: '新回复',
         identityMode: PostIdentityMode.rp,
         identityToken: 'identity-old',
+        identityId: 'role-selected',
         clientRequestId: '123e4567-e89b-42d3-a456-426614174000',
         parentPostId: 'floor',
         replyToPostId: 'reply-target',
@@ -230,6 +231,7 @@ void main() {
     expect(createPayload.content, '新回复');
     expect(createPayload.identityMode, CreatePostDtoIdentityModeEnum.RP);
     expect(createPayload.identityToken, 'identity-old');
+    expect(createPayload.identityId, 'role-selected');
     expect(
       createPayload.clientRequestId,
       '123e4567-e89b-42d3-a456-426614174000',

@@ -8,6 +8,8 @@ import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_feedback.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_sheet.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart'
+    show showWenyouSnackBar;
 import 'package:wenyousite_mobile/features/media/application/avatar_image_policy.dart';
 import 'package:wenyousite_mobile/features/media/application/avatar_image_ports.dart';
 import 'package:wenyousite_mobile/features/media/application/image_crop_ports.dart';
@@ -19,15 +21,28 @@ import 'package:wenyousite_mobile/features/thread_identity/presentation/thread_i
 
 Future<ThreadIdentityState?> showThreadIdentityEditor(
   BuildContext context,
-  String threadId,
-) => showWenyouSheet<ThreadIdentityState>(
+  String threadId, {
+  String? identityId,
+  ThreadIdentityEditorDraft? draft,
+}) => showWenyouSheet<ThreadIdentityState>(
   context: context,
-  builder: (_) => _ThreadIdentityEditor(threadId: threadId),
+  dismissible: false,
+  builder: (_) => _ThreadIdentityEditor(
+    threadId: threadId,
+    identityId: identityId,
+    draft: draft,
+  ),
 );
 
 class _ThreadIdentityEditor extends ConsumerStatefulWidget {
-  const _ThreadIdentityEditor({required this.threadId});
+  const _ThreadIdentityEditor({
+    required this.threadId,
+    this.identityId,
+    this.draft,
+  });
   final String threadId;
+  final String? identityId;
+  final ThreadIdentityEditorDraft? draft;
   @override
   ConsumerState<_ThreadIdentityEditor> createState() =>
       _ThreadIdentityEditorState();
@@ -42,6 +57,13 @@ class _ThreadIdentityEditorState extends ConsumerState<_ThreadIdentityEditor> {
   String? _error;
   bool _busy = false;
   bool _loaded = false;
+  bool _uncertain = false;
+  bool _retainDraft = false;
+  bool _versionChanged = false;
+  bool _atLimit = false;
+  bool _allowPop = false;
+  bool _confirmingClose = false;
+  bool _saveInFlight = false;
   late final Object _session;
 
   @override
@@ -52,19 +74,65 @@ class _ThreadIdentityEditorState extends ConsumerState<_ThreadIdentityEditor> {
   }
 
   bool get _active => mounted && ref.read(sessionScopeProvider) == _session;
+  bool get _dirty =>
+      _loaded &&
+      (_nickname.text.trim() != (_identity?.nickname ?? '') ||
+          _avatarMediaId != _identity?.avatarMediaId);
+
+  Future<void> _requestClose() async {
+    if (!_active || _confirmingClose || _allowPop) return;
+    if (_busy ||
+        ref.read(mediaUploadTaskControllerProvider(_uploadKey)).isBusy) {
+      showWenyouSnackBar(context, '资料正在处理，请稍候。');
+      return;
+    }
+    if (_dirty) {
+      _confirmingClose = true;
+      final discard = await showWenyouConfirmationDialog(
+        context: context,
+        title: '放弃未保存的修改？',
+        message: '帖内头像或昵称尚未保存。',
+        confirmLabel: '放弃修改',
+        cancelLabel: '继续编辑',
+        confirmKey: const Key('thread-identity-discard'),
+        tone: WenyouConfirmationTone.destructive,
+      );
+      _confirmingClose = false;
+      if (!discard || !_active) return;
+    }
+    await _finish();
+  }
+
+  Future<void> _finish([ThreadIdentityState? result]) async {
+    if (!_active || _allowPop) return;
+    final route = ModalRoute.of(context);
+    setState(() => _allowPop = true);
+    await WidgetsBinding.instance.endOfFrame;
+    if (mounted && _active && route?.isCurrent == true) {
+      Navigator.of(context).pop(result);
+    }
+  }
 
   Future<void> _load() async {
     try {
-      final value = await ref
-          .read(threadIdentityRepositoryProvider)
-          .mine(widget.threadId);
+      final repo = ref.read(threadIdentityRepositoryProvider);
+      final collection = widget.identityId == null
+          ? await repo.list(widget.threadId)
+          : null;
+      final value =
+          collection?.account ??
+          await repo.find(widget.threadId, widget.identityId!);
+      _atLimit =
+          collection != null &&
+          collection.identities.length >= collection.limit;
       if (!_active) return;
       setState(() {
         _identity = value;
         if (!_loaded) {
-          _nickname.text = value.nickname ?? '';
-          _avatarMediaId = value.avatarMediaId;
-          _avatarUrl = value.displayAvatarUrl;
+          _nickname.text = widget.draft?.nickname ?? value.nickname ?? '';
+          _avatarMediaId = widget.draft?.avatarMediaId ?? value.avatarMediaId;
+          _avatarUrl = widget.draft?.avatarUrl ?? value.displayAvatarUrl;
+          _uncertain = widget.draft?.uncertain ?? false;
           _loaded = true;
         }
         _error = null;
@@ -82,6 +150,14 @@ class _ThreadIdentityEditorState extends ConsumerState<_ThreadIdentityEditor> {
 
   @override
   void dispose() {
+    if (!_retainDraft) widget.draft?.clear();
+    if (_retainDraft && widget.draft != null) {
+      final draft = widget.draft!;
+      draft.nickname = _nickname.text.trim();
+      draft.avatarMediaId = _avatarMediaId;
+      draft.avatarUrl = _avatarUrl;
+      draft.uncertain = _uncertain;
+    }
     _nickname.dispose();
     super.dispose();
   }
@@ -98,51 +174,64 @@ class _ThreadIdentityEditorState extends ConsumerState<_ThreadIdentityEditor> {
     if (!_active) return const SizedBox.shrink();
     final upload = ref.watch(mediaUploadTaskControllerProvider(_uploadKey));
     final identity = _identity;
-    return WenyouSheetBody(
-      title: '设置帖内身份',
-      slivers: [
-        SliverToBoxAdapter(
-          child: identity == null
-              ? Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (_error == null)
-                      const CircularProgressIndicator()
-                    else ...[
-                      Text(_error!),
-                      TextButton(onPressed: _load, child: const Text('重试')),
+    return PopScope<ThreadIdentityState>(
+      canPop: _allowPop || (!_dirty && !_busy && !upload.isBusy),
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) unawaited(_requestClose());
+      },
+      child: WenyouSheetBody(
+        title: '设置帖内身份',
+        onClose: _requestClose,
+        closeEnabled: !_busy && !upload.isBusy,
+        slivers: [
+          SliverToBoxAdapter(
+            child: identity == null
+                ? Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (_error == null)
+                        const CircularProgressIndicator()
+                      else ...[
+                        Text(_error!),
+                        TextButton(onPressed: _load, child: const Text('重试')),
+                      ],
                     ],
-                  ],
-                )
-              : ThreadIdentityEditorContent(
-                  nicknameController: _nickname,
-                  accountName: identity.accountName,
-                  previewName: _nickname.text.trim().isEmpty
-                      ? identity.accountName
-                      : _nickname.text.trim(),
-                  previewAvatarUrl: _avatarMediaId == null
-                      ? identity.accountAvatarUrl
-                      : _avatarUrl,
-                  canEdit: identity.canEdit && _active,
-                  isBusy: _busy || upload.isBusy,
-                  hasCustomAvatar: _avatarMediaId != null,
-                  hasSavedIdentity:
-                      identity.nickname != null ||
-                      identity.avatarMediaId != null,
-                  maxNicknameLength: 24,
-                  progressLabel: upload.isBusy ? upload.progressLabel : null,
-                  errorMessage: _error ?? upload.failure?.userMessage,
-                  onNicknameChanged: (_) => setState(() {}),
-                  onSelectAvatar: _pickAvatar,
-                  onClearAvatar: () => setState(() {
-                    _avatarMediaId = null;
-                    _avatarUrl = null;
-                  }),
-                  onSave: () => _save(clear: false),
-                  onClear: () => _save(clear: true),
-                ),
-        ),
-      ],
+                  )
+                : ThreadIdentityEditorContent(
+                    nicknameController: _nickname,
+                    previewName: _nickname.text.trim().isEmpty
+                        ? identity.accountName
+                        : _nickname.text.trim(),
+                    previewAvatarUrl: _avatarMediaId == null
+                        ? identity.accountAvatarUrl
+                        : _avatarUrl,
+                    canEdit: identity.canEdit && _active && !_atLimit,
+                    isBusy: _busy || upload.isBusy,
+                    hasCustomAvatar: _avatarMediaId != null,
+                    hasSavedIdentity: identity.canDelete,
+                    maxNicknameLength: 24,
+                    progressLabel: upload.isBusy ? upload.progressLabel : null,
+                    errorMessage: _atLimit
+                        ? '已满 10 个身份'
+                        : _error ?? upload.failure?.userMessage,
+                    onReviewIdentities: _uncertain
+                        ? () {
+                            _retainDraft = true;
+                            unawaited(_finish());
+                          }
+                        : null,
+                    onNicknameChanged: (_) => setState(() {}),
+                    onSelectAvatar: _pickAvatar,
+                    onClearAvatar: () => setState(() {
+                      _avatarMediaId = null;
+                      _avatarUrl = null;
+                    }),
+                    onSave: () => _save(clear: false),
+                    onClear: () => _save(clear: true),
+                  ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -186,6 +275,16 @@ class _ThreadIdentityEditorState extends ConsumerState<_ThreadIdentityEditor> {
   }
 
   Future<void> _save({required bool clear}) async {
+    if (_saveInFlight) return;
+    _saveInFlight = true;
+    try {
+      await _performSave(clear: clear);
+    } finally {
+      _saveInFlight = false;
+    }
+  }
+
+  Future<void> _performSave({required bool clear}) async {
     final identity = _identity;
     if (_busy || !_active || identity == null) return;
     if (!clear) {
@@ -195,12 +294,32 @@ class _ThreadIdentityEditorState extends ConsumerState<_ThreadIdentityEditor> {
         return;
       }
     }
+    if (!clear &&
+        widget.identityId == null &&
+        _nickname.text.trim().isEmpty &&
+        _avatarMediaId == null) {
+      setState(() => _error = '请设置昵称或头像');
+      return;
+    }
+    if ((_uncertain || _versionChanged) &&
+        !await showWenyouConfirmationDialog(
+          context: context,
+          title: _uncertain ? '再次新建身份？' : '保存你的修改？',
+          message: _uncertain
+              ? '上次操作可能已成功。再次新建会占用一个名额，请先确认身份列表。'
+              : '这份身份已在其他地方修改，继续将覆盖对应资料。',
+          confirmLabel: _uncertain ? '再次新建' : '保存',
+          cancelLabel: '返回',
+        )) {
+      return;
+    }
+    if (!mounted || !_active) return;
     if (clear &&
         !await showWenyouConfirmationDialog(
           context: context,
-          title: '清除帖内资料？',
-          message: '之后的发言将沿用站内资料，已有发言保留当时的身份。',
-          confirmLabel: '清除',
+          title: '删除这个身份？',
+          message: '已有发言保留当时的身份。',
+          confirmLabel: '删除',
         )) {
       return;
     }
@@ -211,31 +330,49 @@ class _ThreadIdentityEditorState extends ConsumerState<_ThreadIdentityEditor> {
     });
     try {
       final repo = ref.read(threadIdentityRepositoryProvider);
+      final input = ThreadIdentityUpdate(
+        nickname: _nickname.text.trim().isEmpty ? null : _nickname.text.trim(),
+        clearNickname: _nickname.text.trim().isEmpty,
+        avatarMediaId: _avatarMediaId,
+        clearAvatar: _avatarMediaId == null,
+        version: identity.version,
+      );
       final value = clear
-          ? await repo.clear(widget.threadId)
-          : await repo.update(
+          ? await repo.remove(
               widget.threadId,
-              ThreadIdentityUpdate(
-                nickname: _nickname.text.trim().isEmpty
-                    ? null
-                    : _nickname.text.trim(),
-                clearNickname: _nickname.text.trim().isEmpty,
-                avatarMediaId: _avatarMediaId,
-                clearAvatar: _avatarMediaId == null,
-                version: identity.version,
-              ),
-            );
+              widget.identityId!,
+              identity.version!,
+            )
+          : widget.identityId == null
+          ? await repo.create(widget.threadId, input)
+          : await repo.updateRole(widget.threadId, widget.identityId!, input);
       if (!mounted || !_active) return;
       ref.read(visibilityCacheInvalidatorProvider)();
-      Navigator.of(context).pop(value);
+      _uncertain = false;
+      _nickname.clear();
+      _avatarMediaId = null;
+      _avatarUrl = null;
+      widget.draft?.clear();
+      await _finish(value);
     } on Object catch (error) {
       if (!_active) return;
       final failure = mapApplicationFailure(error, '帖内资料保存失败，已保留你的输入。');
-      // 刷新资格和版本，同时保持用户尚未提交的头像与昵称输入。
+      _versionChanged = failure.businessCode == 40002;
+      if (widget.identityId == null &&
+          (failure.httpStatus == null ||
+              failure.httpStatus! >= 500 ||
+              failure.httpStatus == 429)) {
+        _uncertain = true;
+      }
+      // 刷新资格与集合，同时保留输入；下次写入需明确确认版本或未知新建。
       await _load();
       if (_active) {
         setState(
-          () => _error = wenyouFailureMessage(failure, treatAsWrite: true),
+          () => _error = failure.businessCode == 40013
+              ? '已满 10 个身份'
+              : _uncertain
+              ? '保存失败，请先查看身份列表。'
+              : wenyouFailureMessage(failure, treatAsWrite: true),
         );
       }
     } finally {

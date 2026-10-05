@@ -37,6 +37,8 @@ class WenyouSelectionMenu<T> extends StatefulWidget {
     this.menuSummary,
     this.matchAnchorWidth = false,
     this.showScrollIndicator = false,
+    this.optionLeadingBuilder,
+    this.optionTrailingBuilder,
     super.key,
   });
 
@@ -51,6 +53,8 @@ class WenyouSelectionMenu<T> extends StatefulWidget {
   final String? menuSummary;
   final bool matchAnchorWidth;
   final bool showScrollIndicator;
+  final Widget Function(BuildContext context, T value)? optionLeadingBuilder;
+  final Widget? Function(BuildContext context, T value)? optionTrailingBuilder;
 
   @override
   State<WenyouSelectionMenu<T>> createState() => _WenyouSelectionMenuState<T>();
@@ -95,7 +99,16 @@ class _WenyouSelectionMenuState<T> extends State<WenyouSelectionMenu<T>> {
       final trailingWidth = option.trailingLabel == null
           ? 0.0
           : measure(option.trailingLabel!) + tokens.space12;
-      width = math.max(width, labelWidth + trailingWidth + 68);
+      final leadingWidth = widget.optionLeadingBuilder == null
+          ? 0
+          : 32 + tokens.space12;
+      final actionWidth = widget.optionTrailingBuilder == null
+          ? 0
+          : tokens.minimumTouchTarget + tokens.space8;
+      width = math.max(
+        width,
+        labelWidth + trailingWidth + leadingWidth + actionWidth + 68,
+      );
     }
     if (widget.menuTitle != null) {
       width = math.max(
@@ -170,22 +183,44 @@ class _WenyouSelectionMenuState<T> extends State<WenyouSelectionMenu<T>> {
                     ),
                   ),
                 for (final option in widget.options)
-                  PopupMenuItem<T>(
-                    key:
-                        widget.optionKeyPrefix == null ||
-                            option.keyValue == null
-                        ? null
-                        : Key('${widget.optionKeyPrefix}-${option.keyValue}'),
-                    value: option.value,
-                    height: tokens.minimumTouchTarget,
-                    padding: EdgeInsets.zero,
-                    child: WenyouSelectionRow(
-                      label: option.label,
-                      supportingLabel: option.supportingLabel,
-                      trailingLabel: option.trailingLabel,
+                  if (widget.optionTrailingBuilder != null)
+                    _SelectionActionEntry<T>(
+                      key:
+                          widget.optionKeyPrefix == null ||
+                              option.keyValue == null
+                          ? null
+                          : Key('${widget.optionKeyPrefix}-${option.keyValue}'),
+                      option: option,
                       selected: option.value == widget.selected,
+                      leadingBuilder: widget.optionLeadingBuilder,
+                      actionBuilder: widget.optionTrailingBuilder!,
+                    )
+                  else
+                    PopupMenuItem<T>(
+                      key:
+                          widget.optionKeyPrefix == null ||
+                              option.keyValue == null
+                          ? null
+                          : Key('${widget.optionKeyPrefix}-${option.keyValue}'),
+                      value: option.value,
+                      height: tokens.minimumTouchTarget,
+                      padding: EdgeInsets.zero,
+                      child: WenyouSelectionRow(
+                        leading: widget.optionLeadingBuilder == null
+                            ? null
+                            : SizedBox.square(
+                                dimension: 32,
+                                child: widget.optionLeadingBuilder!(
+                                  context,
+                                  option.value,
+                                ),
+                              ),
+                        label: option.label,
+                        supportingLabel: option.supportingLabel,
+                        trailingLabel: option.trailingLabel,
+                        selected: option.value == widget.selected,
+                      ),
                     ),
-                  ),
               ];
               if (!widget.showScrollIndicator) return items;
               return [
@@ -204,6 +239,79 @@ class _WenyouSelectionMenuState<T> extends State<WenyouSelectionMenu<T>> {
           ),
         );
       },
+    );
+  }
+}
+
+/// 同一视觉行中的选择和次要动作分别可聚焦，不合并读屏点击语义。
+class _SelectionActionEntry<T> extends PopupMenuEntry<T> {
+  const _SelectionActionEntry({
+    required this.option,
+    required this.selected,
+    required this.actionBuilder,
+    this.leadingBuilder,
+    super.key,
+  });
+  final WenyouFilterOption<T> option;
+  final bool selected;
+  final Widget Function(BuildContext, T)? leadingBuilder;
+  final Widget? Function(BuildContext, T) actionBuilder;
+  @override
+  double get height => 48;
+  @override
+  bool represents(T? value) => option.value == value;
+  @override
+  State<_SelectionActionEntry<T>> createState() =>
+      _SelectionActionEntryState<T>();
+}
+
+class _SelectionActionEntryState<T> extends State<_SelectionActionEntry<T>> {
+  @override
+  Widget build(BuildContext context) {
+    final option = widget.option;
+    final tokens = context.wenyouTokens;
+    final action = widget.actionBuilder(context, option.value);
+    final row = WenyouSelectionRow(
+      label: option.label,
+      supportingLabel: option.supportingLabel,
+      trailingLabel: option.trailingLabel,
+      selected: widget.selected,
+      leading: widget.leadingBuilder == null
+          ? null
+          : SizedBox.square(
+              dimension: 32,
+              child: widget.leadingBuilder!(context, option.value),
+            ),
+    );
+    if (action == null) {
+      return PopupMenuItem<T>(
+        value: option.value,
+        padding: EdgeInsets.zero,
+        child: row,
+      );
+    }
+    return Ink(
+      decoration: BoxDecoration(
+        color: widget.selected ? tokens.accentedBackground : null,
+        borderRadius: BorderRadius.circular(tokens.radiusControl),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Semantics(
+              container: true,
+              button: true,
+              selected: widget.selected,
+              child: InkWell(
+                onTap: () => Navigator.of(context).pop(option.value),
+                child: row,
+              ),
+            ),
+          ),
+          action,
+          SizedBox(width: tokens.space12),
+        ],
+      ),
     );
   }
 }

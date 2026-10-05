@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
-import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_feedback.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_identity_selection.dart';
 import 'package:wenyousite_mobile/features/thread_identity/identity_models.dart';
+import 'package:wenyousite_mobile/features/thread_identity/identity_widgets.dart';
 
 class PostIdentityComposerBar extends StatelessWidget {
   const PostIdentityComposerBar({
@@ -13,7 +14,7 @@ class PostIdentityComposerBar extends StatelessWidget {
   });
   final PostIdentitySelection selection;
   final bool locked;
-  final VoidCallback onSettings;
+  final ValueChanged<String?> onSettings;
 
   @override
   Widget build(BuildContext context) => AnimatedBuilder(
@@ -21,96 +22,70 @@ class PostIdentityComposerBar extends StatelessWidget {
     builder: (context, _) {
       final identity = selection.identity;
       final tokens = context.wenyouTokens;
+      final enabled = !locked && !selection.loading;
       if (identity == null) {
-        return ListTile(
-          dense: true,
-          title: Text(selection.failure == null ? '正在读取发表身份…' : '发表身份加载失败'),
-          trailing: selection.failure == null
-              ? null
-              : TextButton(
-                  onPressed: locked ? null : selection.refresh,
-                  child: const Text('重试'),
-                ),
+        return Padding(
+          padding: EdgeInsets.all(tokens.space12),
+          child: WenyouStatusBanner(
+            message: selection.failure == null ? '正在读取发表身份…' : '发表身份加载失败',
+            tone: selection.failure == null
+                ? WenyouStatusTone.neutral
+                : WenyouStatusTone.error,
+            action: selection.failure == null
+                ? null
+                : TextButton(
+                    onPressed: enabled ? selection.refresh : null,
+                    child: const Text('重试'),
+                  ),
+          ),
         );
       }
-      return Padding(
-        padding: EdgeInsets.symmetric(horizontal: tokens.space12),
-        child: Row(
-          children: [
-            Expanded(
-              child: DropdownButtonHideUnderline(
-                child: DropdownButton<PostIdentityMode>(
-                  key: const Key('post-composer-identity-mode'),
-                  value: selection.mode,
-                  isExpanded: true,
-                  onChanged: locked || selection.loading
-                      ? null
-                      : (value) {
-                          if (value != null) selection.select(value);
-                        },
-                  selectedItemBuilder: (context) => [
-                    for (final mode in PostIdentityMode.values)
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: _option(context, mode, selected: true),
-                      ),
-                  ],
-                  items: [
-                    DropdownMenuItem(
-                      value: PostIdentityMode.account,
-                      child: _option(context, PostIdentityMode.account),
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          ThreadIdentityPicker(
+            accountName: identity.accountName,
+            accountAvatarUrl: identity.accountAvatarUrl,
+            identities: [
+              for (final role in selection.collection!.identities)
+                role.display ??
+                    RpIdentity(
+                      id: role.identityId!,
+                      nickname: role.nickname ?? '未设置',
                     ),
-                    DropdownMenuItem(
-                      value: PostIdentityMode.rp,
-                      enabled: identity.hasRp,
-                      child: _option(context, PostIdentityMode.rp),
-                    ),
-                  ],
-                ),
+            ],
+            unconfiguredIdentityIds: {
+              for (final role in selection.collection!.identities)
+                if (!role.hasRp) role.identityId!,
+            },
+            selectedIdentityId: selection.mode == PostIdentityMode.rp
+                ? selection.identityId
+                : null,
+            canEdit: identity.canEdit,
+            limit: selection.collection!.limit,
+            enabled: enabled,
+            onSelected: (id) => selection.select(
+              id == null ? PostIdentityMode.account : PostIdentityMode.rp,
+              id: id,
+            ),
+            onEdit: onSettings,
+            onCreate: () => onSettings(null),
+          ),
+          if (!locked && selection.failure != null) ...[
+            SizedBox(height: tokens.space4),
+            WenyouStatusBanner(
+              key: const Key('post-composer-identity-notice'),
+              message: '发表身份加载失败，已保留当前选择。',
+              tone: WenyouStatusTone.error,
+              action: TextButton(
+                onPressed: enabled ? selection.refresh : null,
+                child: const Text('重试'),
               ),
             ),
-            if (identity.canEdit)
-              TextButton(
-                key: const Key('post-composer-identity-settings'),
-                onPressed: locked || selection.loading ? null : onSettings,
-                child: const Text('设置'),
-              ),
           ],
-        ),
+        ],
       );
     },
   );
-
-  Widget _option(
-    BuildContext context,
-    PostIdentityMode mode, {
-    bool selected = false,
-  }) {
-    final identity = selection.identity!;
-    final rp = mode == PostIdentityMode.rp;
-    final name = rp ? identity.displayName : identity.accountName;
-    final title = rp ? '帖内身份' : '站内身份';
-    final label = rp && selection.changed && selected
-        ? '帖内身份已变化，发表前需确认'
-        : rp && !identity.hasRp
-        ? '帖内身份（暂不可用）'
-        : selected
-        ? '以$title「$name」发表'
-        : '$title · $name';
-    return Row(
-      children: [
-        WenyouAvatar(
-          username: name,
-          avatarUrl: rp
-              ? identity.display?.avatarUrl
-              : identity.accountAvatarUrl,
-          size: 24,
-        ),
-        SizedBox(width: context.wenyouTokens.space8),
-        Expanded(
-          child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
-        ),
-      ],
-    );
-  }
 }

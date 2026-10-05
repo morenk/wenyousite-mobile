@@ -2,13 +2,20 @@ import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
 import 'package:wenyousite_mobile/features/thread_identity/identity_models.dart';
 
 class PostPublishDraft {
-  const PostPublishDraft({this.mode, this.identityToken, this.pending});
+  const PostPublishDraft({
+    this.mode,
+    this.identityToken,
+    this.identityId,
+    this.pending,
+  });
   final PostIdentityMode? mode;
   final String? identityToken;
+  final String? identityId;
   final PendingPostCreate? pending;
 
   Map<String, Object?> toJson() => {
     if (mode != null) 'identityMode': mode!.name,
+    if (identityId != null) 'identityId': identityId,
     if (identityToken != null) 'identityToken': identityToken,
     if (pending case final value?)
       'pendingCreate': {
@@ -18,6 +25,7 @@ class PostPublishDraft {
         'parentPostId': value.input.parentPostId,
         'replyToPostId': value.input.replyToPostId,
         'identityMode': value.input.identityMode?.name,
+        'identityId': value.input.identityId,
         'identityToken': value.input.identityToken,
       },
   };
@@ -44,12 +52,14 @@ class PostPublishDraft {
           parentPostId: optional(input['parentPostId']),
           replyToPostId: optional(input['replyToPostId']),
           identityMode: modeOf(input['identityMode']),
+          identityId: optional(input['identityId']),
           identityToken: optional(input['identityToken']),
         ),
       );
     }
     return PostPublishDraft(
       mode: modeOf(value['identityMode']),
+      identityId: optional(value['identityId']),
       identityToken: optional(value['identityToken']),
       pending: pending,
     );

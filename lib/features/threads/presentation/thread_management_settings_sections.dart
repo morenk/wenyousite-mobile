@@ -3,6 +3,7 @@ import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_selection_menu.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_settings_body.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_settings_row.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_sheet.dart';
 import 'package:wenyousite_mobile/features/threads/domain/subthread_management_models.dart';
@@ -43,37 +44,44 @@ class ThreadManagementBasicsSection extends StatelessWidget {
     final hasSelectableCategory = categories.any(
       (category) => category.isSelectable,
     );
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+    return WenyouSettingsGroup(
+      title: '基本信息',
       children: [
-        Text(
-          '主题标题',
-          style: Theme.of(
-            context,
-          ).textTheme.wenyouRowTitle.copyWith(fontWeight: FontWeight.w400),
-        ),
-        SizedBox(height: tokens.space8),
-        TextFormField(
-          key: const Key('thread-management-title'),
-          controller: titleController,
-          focusNode: titleFocusNode,
-          enabled: enabled,
-          maxLength: 100,
-          textInputAction: TextInputAction.done,
-          style: Theme.of(context).textTheme.wenyouBody,
-          decoration: const InputDecoration(
-            hintText: '一句话说明这个主题',
-            counterText: '',
+        Padding(
+          padding: EdgeInsets.all(tokens.space16),
+          child: Semantics(
+            label: '主题标题',
+            child: TextFormField(
+              key: const Key('thread-management-title'),
+              controller: titleController,
+              focusNode: titleFocusNode,
+              enabled: enabled,
+              maxLength: 100,
+              textInputAction: TextInputAction.done,
+              style: Theme.of(context).textTheme.wenyouBody,
+              decoration: InputDecoration(
+                hintText: '输入主题标题',
+                counterText: '',
+                filled: false,
+                isDense: true,
+                contentPadding: EdgeInsets.symmetric(vertical: tokens.space8),
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                disabledBorder: InputBorder.none,
+                errorBorder: InputBorder.none,
+                focusedErrorBorder: InputBorder.none,
+              ),
+              onChanged: onTitleChanged,
+              validator: (value) {
+                final title = value?.trim() ?? '';
+                if (title.isEmpty) return '请输入主题标题';
+                if (title.runes.length > 100) return '标题不能超过 100 个字符';
+                return null;
+              },
+            ),
           ),
-          onChanged: onTitleChanged,
-          validator: (value) {
-            final title = value?.trim() ?? '';
-            if (title.isEmpty) return '请输入主题标题';
-            if (title.runes.length > 100) return '标题不能超过 100 个字符';
-            return null;
-          },
         ),
-        SizedBox(height: tokens.space8),
         FormField<String>(
           key: ValueKey('thread-management-category-field-$version'),
           initialValue: categorySlug,
@@ -82,7 +90,6 @@ class ThreadManagementBasicsSection extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               WenyouSettingsLink(
-                contentPadding: EdgeInsets.zero,
                 key: const Key('thread-management-category'),
                 title: '所在分区',
                 value: selectedCategory == null
@@ -161,7 +168,6 @@ class _ThreadManagementTags extends StatelessWidget {
     if (tags.isEmpty) {
       return WenyouSettingsLink(
         key: const Key('thread-management-edit-tags'),
-        contentPadding: EdgeInsets.zero,
         title: '主题标签',
         value: '添加标签',
         enabled: enabled,
@@ -175,7 +181,12 @@ class _ThreadManagementTags extends StatelessWidget {
         key: const Key('thread-management-edit-tags'),
         onTap: enabled ? onEdit : null,
         child: Padding(
-          padding: EdgeInsets.only(bottom: tokens.space8),
+          padding: EdgeInsets.fromLTRB(
+            tokens.space16,
+            0,
+            tokens.space16,
+            tokens.space12,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -228,6 +239,7 @@ class ThreadManagementPublishingSection extends StatelessWidget {
     required this.onStatusChanged,
     required this.onVisibilityChanged,
     required this.onPostingPolicyChanged,
+    this.identitySetting,
     super.key,
   });
 
@@ -239,14 +251,14 @@ class ThreadManagementPublishingSection extends StatelessWidget {
   final ValueChanged<ThreadManagementStatus> onStatusChanged;
   final ValueChanged<ThreadManagementVisibility> onVisibilityChanged;
   final ValueChanged<SubthreadPostingPolicy> onPostingPolicyChanged;
+  final Widget? identitySetting;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+    return WenyouSettingsGroup(
+      title: '访问与互动',
       children: [
         WenyouSettingsLink(
-          contentPadding: EdgeInsets.zero,
           key: const Key('thread-management-status'),
           title: '招募状态',
           value: status.label,
@@ -258,7 +270,6 @@ class ThreadManagementPublishingSection extends StatelessWidget {
                       await _showChoiceSheet<ThreadManagementStatus>(
                         context: context,
                         title: '选择招募状态',
-                        supportingText: '状态只用于展示，不会限制发言；发言权限单独设置。',
                         selected: status,
                         optionKeyPrefix: 'thread-management-status-choice',
                         options: [
@@ -279,7 +290,6 @@ class ThreadManagementPublishingSection extends StatelessWidget {
                 },
         ),
         WenyouSettingsLink(
-          contentPadding: EdgeInsets.zero,
           key: const Key('thread-management-visibility'),
           title: '可见范围',
           value: canChangeVisibility
@@ -314,7 +324,6 @@ class ThreadManagementPublishingSection extends StatelessWidget {
         ),
         if (postingPolicy != null) ...[
           WenyouSettingsLink(
-            contentPadding: EdgeInsets.zero,
             key: const Key('thread-management-posting-policy'),
             title: '主贴发言权限',
             value: postingPolicy!.label,
@@ -326,7 +335,6 @@ class ThreadManagementPublishingSection extends StatelessWidget {
                         await _showChoiceSheet<SubthreadPostingPolicy>(
                           context: context,
                           title: '主贴发言权限',
-                          supportingText: '仅影响主贴下的发言，子贴权限单独设置。',
                           selected: postingPolicy,
                           optionKeyPrefix:
                               'thread-management-posting-policy-choice',
@@ -356,6 +364,7 @@ class ThreadManagementPublishingSection extends StatelessWidget {
                   },
           ),
         ],
+        ?identitySetting,
       ],
     );
   }
@@ -367,7 +376,6 @@ Future<T?> _showChoiceSheet<T>({
   required T? selected,
   required String optionKeyPrefix,
   required List<WenyouFilterOption<T>> options,
-  String? supportingText,
   bool Function(T value)? isEnabled,
 }) {
   return showWenyouSheet<T>(
@@ -375,18 +383,6 @@ Future<T?> _showChoiceSheet<T>({
     builder: (sheetContext) => WenyouSheetBody(
       title: title,
       slivers: [
-        if (supportingText != null)
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.only(
-                bottom: sheetContext.wenyouTokens.space12,
-              ),
-              child: Text(
-                supportingText,
-                style: Theme.of(sheetContext).textTheme.wenyouCaption,
-              ),
-            ),
-          ),
         SliverList.separated(
           itemCount: options.length,
           separatorBuilder: (_, _) => const Divider(height: 1),

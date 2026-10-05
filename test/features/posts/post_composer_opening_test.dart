@@ -265,6 +265,7 @@ class _FakePostRepository with PostWindowFixture implements PostRepository {
     required String content,
     int? version,
     String? identityToken,
+    String? identityId,
     PostIdentityMode? identityMode,
   }) => throw UnimplementedError();
 }

@@ -8,6 +8,8 @@ import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
 import 'package:wenyousite_mobile/features/thread_identity/identity_models.dart';
 import '../../support/discussion_window_fixture.dart';
 
+import 'post_controller_dice_fixtures.dart';
+
 void main() {
   test('独立讨论首屏直接读取目标窗口，无须逐页扫描', () async {
     final repository = _FakePostRepository(
@@ -329,6 +331,7 @@ void main() {
       await controller.submit(
         identityMode: PostIdentityMode.rp,
         identityToken: 'rp-old',
+        identityId: 'role-old',
       ),
       isNull,
     );
@@ -337,6 +340,7 @@ void main() {
     final result = await controller.submit(
       identityMode: PostIdentityMode.account,
       identityToken: 'changed',
+      identityId: 'role-new',
     );
 
     expect(result?.content, '第一次提交');
@@ -348,6 +352,7 @@ void main() {
     expect(repository.createInputs.last.content, '第一次提交');
     expect(repository.createInputs.last.identityMode, PostIdentityMode.rp);
     expect(repository.createInputs.last.identityToken, 'rp-old');
+    expect(repository.createInputs.last.identityId, 'role-old');
     expect(repository.updateRequests, isEmpty);
     expect(controller.state.pendingCreate, isNull);
   });
@@ -373,10 +378,12 @@ void main() {
     await controller.submit(
       identityMode: PostIdentityMode.rp,
       identityToken: 'token-old',
+      identityId: 'restored-role',
       persistCreateIntent: () async {
         saved = PostPublishDraft(
           mode: PostIdentityMode.rp,
           identityToken: 'token-old',
+          identityId: 'restored-role',
           pending: controller.state.pendingCreate,
         ).toJson();
         expect(repository.createInputs, isEmpty);
@@ -396,6 +403,7 @@ void main() {
     expect(retryRepository.createInputs.single.content, '持久草稿');
     expect(retryRepository.createInputs.single.clientRequestId, 'stable');
     expect(retryRepository.createInputs.single.identityToken, 'token-old');
+    expect(retryRepository.createInputs.single.identityId, 'restored-role');
     expect(
       retryRepository.createInputs.single.identityMode,
       PostIdentityMode.rp,
@@ -527,7 +535,7 @@ void main() {
     expect(body.state.failure?.userMessage, '子贴正文需要包含文字，骰子可作为补充。');
     expect(repository.bodyRequests, isEmpty);
 
-    body.updateContent(_diceMarkdown(20));
+    body.updateContent(postControllerDiceMarkdown(20));
     expect(await body.submit(), isNull);
     expect(body.state.failure?.userMessage, '子贴正文需要包含文字，骰子可作为补充。');
     expect(repository.bodyRequests, isEmpty);
@@ -538,12 +546,12 @@ void main() {
     final body = PostComposerController(repository, _bodyTarget);
     addTearDown(body.dispose);
 
-    final maximum = '子贴文字 ${_diceMarkdown(20)}';
+    final maximum = '子贴文字 ${postControllerDiceMarkdown(20)}';
     body.updateContent(maximum);
     expect(await body.submit(), isNotNull);
     expect(repository.bodyRequests.single.content, maximum);
 
-    body.updateContent('子贴文字 ${_diceMarkdown(21)}');
+    body.updateContent('子贴文字 ${postControllerDiceMarkdown(21)}');
     expect(await body.submit(), isNull);
     expect(body.state.failure?.userMessage, '当前正文最多可插入 20 个骰子，请删除一个后重试。');
     expect(repository.bodyRequests, hasLength(1));
@@ -558,9 +566,9 @@ void main() {
     addTearDown(floor.dispose);
     addTearDown(reply.dispose);
 
-    body.updateContent('子贴文字 ${_diceMarkdown(20, namespace: 0)}');
-    floor.updateContent(_diceMarkdown(20, namespace: 1));
-    reply.updateContent(_diceMarkdown(20, namespace: 2));
+    body.updateContent('子贴文字 ${postControllerDiceMarkdown(20, namespace: 0)}');
+    floor.updateContent(postControllerDiceMarkdown(20, namespace: 1));
+    reply.updateContent(postControllerDiceMarkdown(20, namespace: 2));
 
     expect(await body.submit(), isNotNull);
     expect(await floor.submit(), isNotNull);
@@ -583,7 +591,7 @@ void main() {
       expect(composer.state.failure?.userMessage, '正文和骰子不能同时为空。');
       expect(repository.createInputs, isEmpty);
 
-      composer.updateContent(_diceMarkdown(21));
+      composer.updateContent(postControllerDiceMarkdown(21));
       expect(await composer.submit(), isNull);
       expect(composer.state.failure?.userMessage, '当前正文最多可插入 20 个骰子，请删除一个后重试。');
       expect(repository.createInputs, isEmpty);
@@ -595,15 +603,15 @@ void main() {
     final editor = PostComposerController(repository, _editTarget);
     addTearDown(editor.dispose);
 
-    editor.updateContent(_diceMarkdown(1));
+    editor.updateContent(postControllerDiceMarkdown(1));
     expect(await editor.submit(), isNotNull);
     expect(repository.updateRequests, hasLength(1));
 
-    editor.updateContent(_diceMarkdown(20));
+    editor.updateContent(postControllerDiceMarkdown(20));
     expect(await editor.submit(), isNotNull);
     expect(repository.updateRequests, hasLength(2));
 
-    editor.updateContent(_diceMarkdown(21));
+    editor.updateContent(postControllerDiceMarkdown(21));
     expect(await editor.submit(), isNull);
     expect(editor.state.failure?.userMessage, '当前正文最多可插入 20 个骰子，请删除一个后重试。');
     expect(repository.updateRequests, hasLength(2));
@@ -616,7 +624,7 @@ void main() {
     addTearDown(body.dispose);
     addTearDown(floor.dispose);
     final content =
-        '${_ignoredDiceMarkdown()}\n${_diceMarkdown(20, namespace: 5)}';
+        '${postControllerIgnoredDiceMarkdown()}\n${postControllerDiceMarkdown(20, namespace: 5)}';
 
     body.updateContent(content);
     floor.updateContent(content);
@@ -674,26 +682,6 @@ void main() {
 
 const _author = PostAuthor(id: 'author-1', username: '作者甲', level: 3);
 const _otherAuthor = PostAuthor(id: 'author-2', username: '作者乙', level: 2);
-
-String _diceMarkdown(int count, {int namespace = 0}) =>
-    List.generate(count, (index) {
-      final suffix = (namespace * 100 + index).toString().padLeft(12, '0');
-      return '[[dice:v1:00000000-0000-4000-8000-$suffix:1d6]]';
-    }).join(' ');
-
-String _ignoredDiceMarkdown() {
-  final nodes = _diceMarkdown(21);
-  return [
-    '可见文字',
-    '```text',
-    nodes,
-    '```',
-    '`${_diceMarkdown(1)}`',
-    r'\[[dice:v1:00000000-0000-4000-8000-000000000099:1d6]]',
-    '[[dice:v1:not-a-uuid:1d6]]',
-    '[[dice:v1:00000000-0000-4000-8000-000000000098:1d1]]',
-  ].join('\n');
-}
 
 PostItem _post(
   String id, {
@@ -865,6 +853,7 @@ class _FakePostRepository with PostWindowFixture implements PostRepository {
     required String content,
     int? version,
     String? identityToken,
+    String? identityId,
     PostIdentityMode? identityMode,
   }) async {
     bodyRequests.add((

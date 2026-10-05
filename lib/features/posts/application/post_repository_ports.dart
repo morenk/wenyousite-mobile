@@ -37,6 +37,7 @@ abstract interface class PostRepository {
     required String content,
     int? version,
     String? identityToken,
+    String? identityId,
     PostIdentityMode? identityMode,
   });
 
@@ -95,6 +96,7 @@ class _UnboundPostRepository implements PostRepository {
     required String content,
     int? version,
     String? identityToken,
+    String? identityId,
     PostIdentityMode? identityMode,
   }) {
     return Future.error(_error());

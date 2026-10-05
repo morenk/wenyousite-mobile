@@ -35,7 +35,7 @@ class ThreadPostAuthorLine extends StatelessWidget {
           key: avatarKey,
           username: author.displayName,
           avatarUrl: author.displayAvatarUrl,
-          semanticsLabel: scope?.available == true
+          semanticsLabel: scope?.available == true && author.rpIdentity != null
               ? '查看 ${author.displayName} 的帖内身份'
               : null,
           visualSize: size,

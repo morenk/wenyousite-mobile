@@ -9,6 +9,7 @@ import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/diagnostics/diagnostic_widgets.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_edit_button.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_sheet.dart';
@@ -468,7 +469,7 @@ class _CoverEditTarget extends StatelessWidget {
                 Positioned(
                   top: tokens.space8,
                   right: tokens.space8,
-                  child: const _MediaEditBadge(),
+                  child: const WenyouMediaEditBadge(),
                 ),
             ],
           ),
@@ -556,31 +557,15 @@ class _AvatarEditTarget extends StatelessWidget {
                     ),
                   ),
                 ),
-                const Positioned(right: 0, bottom: 0, child: _MediaEditBadge()),
+                const Positioned(
+                  right: 0,
+                  bottom: 0,
+                  child: WenyouMediaEditBadge(),
+                ),
               ],
             ),
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _MediaEditBadge extends StatelessWidget {
-  const _MediaEditBadge();
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = context.wenyouTokens;
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: tokens.panel,
-        shape: BoxShape.circle,
-        border: Border.all(color: tokens.border),
-      ),
-      child: const SizedBox.square(
-        dimension: 28,
-        child: Center(child: WenyouIcon(WenyouIconIds.actionEdit, size: 16)),
       ),
     );
   }

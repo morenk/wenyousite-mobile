@@ -9,16 +9,22 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart'
 Future<T?> showWenyouSheet<T>({
   required BuildContext context,
   required WidgetBuilder builder,
+  bool dismissible = true,
 }) => showModalBottomSheet<T>(
   context: context,
   isScrollControlled: true,
   useSafeArea: true,
-  showDragHandle: true,
+  isDismissible: dismissible,
+  enableDrag: dismissible,
+  showDragHandle: dismissible,
   constraints: BoxConstraints(
     maxWidth: context.wenyouTokens.pageContentMaxWidth,
   ),
   builder: (context) => Padding(
-    padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+    padding: EdgeInsets.only(
+      top: dismissible ? 0 : context.wenyouTokens.space12,
+      bottom: MediaQuery.viewInsetsOf(context).bottom,
+    ),
     child: SafeArea(
       top: false,
       child: LayoutBuilder(
@@ -38,6 +44,8 @@ class WenyouSheetBody extends StatelessWidget {
     required this.slivers,
     this.actions = const [],
     this.scrollKey,
+    this.onClose,
+    this.closeEnabled = true,
     super.key,
   });
 
@@ -45,6 +53,8 @@ class WenyouSheetBody extends StatelessWidget {
   final List<Widget> slivers;
   final List<Widget> actions;
   final Key? scrollKey;
+  final VoidCallback? onClose;
+  final bool closeEnabled;
 
   @override
   Widget build(BuildContext context) {
@@ -85,7 +95,9 @@ class WenyouSheetBody extends StatelessWidget {
                         ...actions,
                         IconButton(
                           tooltip: '关闭$title',
-                          onPressed: () => Navigator.of(context).pop(),
+                          onPressed: closeEnabled
+                              ? onClose ?? () => Navigator.of(context).pop()
+                              : null,
                           icon: const WenyouIcon(WenyouIconIds.actionClose),
                         ),
                       ],

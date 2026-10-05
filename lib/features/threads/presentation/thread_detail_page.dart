@@ -27,7 +27,6 @@ import 'package:wenyousite_mobile/features/posts/presentation/post_composer_shee
 import 'package:wenyousite_mobile/features/reports/domain/report_models.dart';
 import 'package:wenyousite_mobile/features/reports/presentation/report_widgets.dart';
 import 'package:wenyousite_mobile/features/social/application/thread_subscription_controller.dart';
-import 'package:wenyousite_mobile/features/thread_identity/identity_widgets.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_detail_controller.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_app_bar_actions.dart';
@@ -667,8 +666,6 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     required ThreadSubthreadModel? selectedSubthread,
   }) async {
     switch (action) {
-      case ThreadDetailAppBarAction.identity:
-        await showThreadIdentityEditor(context, widget.threadId);
       case ThreadDetailAppBarAction.editBody:
         if (selectedSubthread != null) {
           await _compose(threadDetailBodyTarget(detail, selectedSubthread));

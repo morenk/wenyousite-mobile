@@ -300,6 +300,7 @@ class _RecordingPostRepository extends PostRepliesPageTestFakePostRepository {
     required String content,
     int? version,
     String? identityToken,
+    String? identityId,
     PostIdentityMode? identityMode,
   }) async {
     saved.add(content);

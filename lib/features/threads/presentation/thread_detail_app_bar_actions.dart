@@ -11,14 +11,7 @@ import 'package:wenyousite_mobile/features/threads/application/thread_detail_con
 import 'package:wenyousite_mobile/features/threads/application/thread_detail_repository_ports.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.dart';
 
-enum ThreadDetailAppBarAction {
-  editBody,
-  manage,
-  tip,
-  report,
-  exitPlayer,
-  identity,
-}
+enum ThreadDetailAppBarAction { editBody, manage, tip, report, exitPlayer }
 
 List<Widget> buildThreadDetailAppBarActions({
   required String threadId,
@@ -45,17 +38,6 @@ List<Widget> buildThreadDetailAppBarActions({
         (!detail.isCurrentUserOwner || detail.canManageThread))
       WenyouAnchoredActionBubble<ThreadDetailAppBarAction>(
         actions: [
-          if (detail.rpIdentityEnabled == true &&
-              (detail.isCurrentUserOwner ||
-                  detail.canManageThread ||
-                  detail.isCurrentUserPlayer))
-            const WenyouPopoverAction(
-              value: ThreadDetailAppBarAction.identity,
-              icon: WenyouIconIds.actionEdit,
-              label: '设置帖内身份',
-              semanticsLabel: '设置帖内头像和昵称',
-              key: Key('thread-detail-identity'),
-            ),
           if (detail.canManageThread)
             WenyouPopoverAction(
               value: ThreadDetailAppBarAction.editBody,

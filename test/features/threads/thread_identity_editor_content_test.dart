@@ -1,10 +1,42 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_edit_button.dart';
 import 'package:wenyousite_mobile/features/thread_identity/identity_models.dart';
 import 'package:wenyousite_mobile/features/thread_identity/presentation/thread_identity_editor_content.dart';
 
 void main() {
+  testWidgets('头像整块可编辑，角标复用个人资料样式，忙碌时禁用', (tester) async {
+    var picks = 0;
+    final controller = TextEditingController(text: '白夜');
+    addTearDown(controller.dispose);
+    for (final busy in [false, true]) {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.light,
+          home: Scaffold(
+            body: ThreadIdentityEditorContent(
+              nicknameController: controller,
+              previewName: '白夜',
+              canEdit: true,
+              isBusy: busy,
+              onSelectAvatar: () => picks++,
+              onClearAvatar: () {},
+              onSave: () {},
+              onClear: () {},
+              onNicknameChanged: (_) {},
+            ),
+          ),
+        ),
+      );
+      final avatar = find.byKey(const Key('thread-identity-pick-avatar'));
+      expect(tester.getSize(avatar).shortestSide, greaterThanOrEqualTo(48));
+      expect(find.byType(WenyouMediaEditBadge), findsOneWidget);
+      expect(find.text('选择帖内头像'), findsNothing);
+      await tester.tap(avatar);
+      expect(picks, 1);
+    }
+  });
   test('昵称按Unicode字符计数并拒绝结构化提及分隔和控制字符', () {
     expect(validateThreadIdentityNickname('😀' * 24), isNull);
     expect(validateThreadIdentityNickname('😀' * 25), isNotNull);
@@ -32,7 +64,6 @@ void main() {
                 padding: const EdgeInsets.all(16),
                 child: ThreadIdentityEditorContent(
                   nicknameController: controller,
-                  accountName: '站内用户名',
                   previewName: controller.text,
                   canEdit: false,
                   isBusy: false,

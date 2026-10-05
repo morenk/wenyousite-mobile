@@ -10,7 +10,6 @@ import 'package:wenyousite_mobile/core/application/visibility_cache_invalidation
 import 'package:wenyousite_mobile/core/diagnostics/diagnostic_widgets.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
-import 'package:wenyousite_mobile/core/widgets/wenyou_composer_sheet.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/drafts/application/content_drafts_controller.dart';
@@ -23,48 +22,19 @@ import 'package:wenyousite_mobile/features/posts/application/post_identity_selec
 import 'package:wenyousite_mobile/features/posts/application/post_publish_draft.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
 import 'package:wenyousite_mobile/features/posts/presentation/post_composer_diagnostics.dart';
-import 'package:wenyousite_mobile/features/posts/presentation/post_composer_host.dart';
-import 'package:wenyousite_mobile/features/posts/presentation/post_composer_opening.dart';
 import 'package:wenyousite_mobile/features/posts/presentation/post_composer_sheet_layout.dart';
 import 'package:wenyousite_mobile/features/posts/presentation/post_identity_composer_bar.dart';
 import 'package:wenyousite_mobile/features/posts/presentation/post_identity_confirmation.dart';
 import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
 import 'package:wenyousite_mobile/features/stickers/presentation/sticker_widgets.dart';
+import 'package:wenyousite_mobile/features/thread_identity/identity_models.dart';
 import 'package:wenyousite_mobile/features/thread_identity/identity_ports.dart';
 import 'package:wenyousite_mobile/features/thread_identity/identity_widgets.dart';
 
 export 'package:wenyousite_mobile/features/posts/application/post_composer_draft.dart'
     show PostComposerDraft, setPostComposerDraft;
 
-Future<PostItem?> showPostComposerSheet({
-  required BuildContext context,
-  required PostComposerTarget target,
-  PostComposerDraft? initialDraft,
-  ValueChanged<PostComposerDraft?>? onDraftChanged,
-  bool supportsRpIdentity = false,
-}) {
-  return showWenyouComposerSheet<PostItem>(
-    context: context,
-    isDismissible: false,
-    builder: (context) => PostComposerOpening(
-      target: target,
-      initialDraft: initialDraft,
-      onDraftChanged: onDraftChanged,
-      builder: (context, composer) => PostComposerRouteHost(
-        initialInsertion:
-            target.kind == PostComposerKind.createFloor ||
-                target.kind == PostComposerKind.createReply
-            ? target.initialContent
-            : null,
-        supportsRpIdentity: supportsRpIdentity,
-        publishDraft: composer.publishDraft,
-        target: composer.target,
-        baseline: composer.baseline,
-        onDraftChanged: onDraftChanged,
-      ),
-    ),
-  );
-}
+export 'post_composer_launcher.dart' show showPostComposerSheet;
 
 String postComposerDraftKey(PostComposerTarget target) => [
   target.kind.name,
@@ -130,6 +100,7 @@ class PostComposerSheetState extends ConsumerState<PostComposerSheet>
   int _minimumHeightGeneration = 0;
   late final EditorPendingImages _pendingImages;
   PostIdentitySelection? _identitySelection;
+  final _newIdentityDraft = ThreadIdentityEditorDraft();
   bool _publishing = false;
   bool _initializingDraft = true;
   final _diagnostics = PostComposerDiagnostics();
@@ -150,6 +121,7 @@ class PostComposerSheetState extends ConsumerState<PostComposerSheet>
       _identitySelection!.restore(
         selected: widget.publishDraft?.mode,
         token: widget.publishDraft?.identityToken,
+        id: widget.publishDraft?.identityId,
       );
       _identitySelection!.addListener(_onIdentityChanged);
     }
@@ -183,6 +155,7 @@ class PostComposerSheetState extends ConsumerState<PostComposerSheet>
         _identitySelection?.restore(
           selected: restored.mode,
           token: restored.identityToken,
+          id: restored.identityId,
         );
         if (restored.pending case final pending?) {
           ref
@@ -294,6 +267,7 @@ class PostComposerSheetState extends ConsumerState<PostComposerSheet>
         _pendingImages.restoring ||
         _initializingDraft;
     final hasSupportContent =
+        _identitySelection != null ||
         state.failure != null ||
         state.hasAmbiguousCreate ||
         _editorSession.codecFailure != null ||
@@ -311,17 +285,18 @@ class PostComposerSheetState extends ConsumerState<PostComposerSheet>
         children: [
           PostComposerSheetHeader(
             label: widget.target.label,
+            identity: _identitySelection == null
+                ? null
+                : PostIdentityComposerBar(
+                    selection: _identitySelection!,
+                    locked: locked || state.hasAmbiguousCreate,
+                    onSettings: _editIdentity,
+                  ),
             expanded: widget.expanded,
             onResize: widget.onResize,
             onToggleExpanded: widget.onToggleExpanded,
           ),
           const Divider(height: 1),
-          if (_identitySelection case final selection?)
-            PostIdentityComposerBar(
-              selection: selection,
-              locked: locked || state.hasAmbiguousCreate,
-              onSettings: _editIdentity,
-            ),
           if (state.failure != null)
             Padding(
               padding: EdgeInsets.fromLTRB(
@@ -618,6 +593,9 @@ class PostComposerSheetState extends ConsumerState<PostComposerSheet>
     final result = await ref
         .read(postComposerControllerProvider(widget.target).notifier)
         .submit(
+          identityId: _identitySelection?.mode == PostIdentityMode.rp
+              ? _identitySelection?.identityId
+              : null,
           identityToken: _identitySelection?.acceptedToken,
           identityMode: _identitySelection?.mode,
           persistCreateIntent: _pendingImages.save,
@@ -772,6 +750,9 @@ class PostComposerSheetState extends ConsumerState<PostComposerSheet>
 
   PostPublishDraft _publishDraft() => PostPublishDraft(
     mode: _identitySelection?.mode,
+    identityId: _identitySelection?.mode == PostIdentityMode.rp
+        ? _identitySelection?.identityId
+        : null,
     identityToken: _identitySelection?.acceptedToken,
     pending: ref
         .read(postComposerControllerProvider(widget.target))
@@ -787,9 +768,18 @@ class PostComposerSheetState extends ConsumerState<PostComposerSheet>
     unawaited(_pendingImages.save());
   }
 
-  Future<void> _editIdentity() async {
-    await showThreadIdentityEditor(context, widget.target.threadId);
-    if (mounted && !_closing) await _identitySelection?.refresh();
+  Future<void> _editIdentity(String? identityId) async {
+    final saved = await showThreadIdentityEditor(
+      context,
+      widget.target.threadId,
+      identityId: identityId,
+      draft: identityId == null ? _newIdentityDraft : null,
+    );
+    if (!mounted || _closing) return;
+    if (saved != null) {
+      _identitySelection?.acceptSaved(saved, created: identityId == null);
+    }
+    await _identitySelection?.refresh();
   }
 
   Future<void> _openContentDrafts() async {

@@ -10,6 +10,7 @@ import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_settings_body.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_sheet.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/thread_identity/identity_widgets.dart';
@@ -123,7 +124,9 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
         if (!didPop) unawaited(_handlePopAttempt(state));
       },
       child: Scaffold(
+        backgroundColor: wenyouPersonalPageBackground(context),
         appBar: AppBar(
+          backgroundColor: wenyouPersonalPageBackground(context),
           title: const Text('管理主题'),
           actions: [
             if (_section == ThreadManagementSection.settings)
@@ -188,7 +191,6 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
     ThreadManagementState state,
     ThreadManagementBootstrap bootstrap,
   ) {
-    final tokens = context.wenyouTokens;
     final thread = bootstrap.thread;
     final locked = state.isDeleting;
     final showInvite =
@@ -196,120 +198,120 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
         thread.published &&
         thread.visibility == ThreadManagementVisibility.private &&
         _visibility == ThreadManagementVisibility.private;
-    return WenyouPageBody(
-      key: const Key('thread-management-settings-content'),
-      child: Form(
-        key: _formKey,
-        autovalidateMode: AutovalidateMode.onUserInteraction,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            ThreadManagementBasicsSection(
-              titleController: _titleController,
-              titleFocusNode: _titleFocusNode,
-              categories: bootstrap.categories,
-              categorySlug: _categorySlug,
-              tags: _tagNames,
-              enabled: !locked,
-              version: thread.version,
-              onTitleChanged: (_) => _autosave.schedule(),
-              onCategoryChanged: (value) {
-                setState(() => _categorySlug = value);
-                unawaited(_autosave.saveNow());
-              },
-              onEditTags: _editTags,
+    return Form(
+      key: _formKey,
+      autovalidateMode: AutovalidateMode.onUserInteraction,
+      child: WenyouSettingsBody(
+        key: const Key('thread-management-settings-content'),
+        children: [
+          ThreadManagementBasicsSection(
+            titleController: _titleController,
+            titleFocusNode: _titleFocusNode,
+            categories: bootstrap.categories,
+            categorySlug: _categorySlug,
+            tags: _tagNames,
+            enabled: !locked,
+            version: thread.version,
+            onTitleChanged: (_) => _autosave.schedule(),
+            onCategoryChanged: (value) {
+              setState(() => _categorySlug = value);
+              unawaited(_autosave.saveNow());
+            },
+            onEditTags: _editTags,
+          ),
+          ThreadManagementPublishingSection(
+            status: _status,
+            visibility: _visibility,
+            postingPolicy: thread.published ? _postingPolicy : null,
+            enabled: !locked,
+            canChangeVisibility: thread.isOwner,
+            onStatusChanged: (value) {
+              setState(() => _status = value);
+              unawaited(_autosave.saveNow());
+            },
+            onVisibilityChanged: (value) {
+              setState(() => _visibility = value);
+              unawaited(_autosave.saveNow());
+            },
+            onPostingPolicyChanged: (value) {
+              setState(() => _postingPolicy = value);
+              unawaited(_autosave.saveNow());
+            },
+            identitySetting: thread.isOwner && thread.rpIdentityEnabled != null
+                ? ThreadIdentitySettings(
+                    key: ValueKey('identity-settings-${widget.threadId}'),
+                    threadId: widget.threadId,
+                    initialEnabled: thread.rpIdentityEnabled!,
+                  )
+                : null,
+          ),
+          if (state.failure != null) ...[
+            WenyouStatusBanner(
+              key: const Key('thread-management-failure'),
+              tone: WenyouStatusTone.error,
+              message: state.failure!.userMessage,
+              detail: wenyouFailureDetail(state.failure, treatAsWrite: true),
+              action: state.conflict != null
+                  ? TextButton(
+                      key: const Key('thread-management-resolve-conflict'),
+                      onPressed: locked ? null : _resolveConflict,
+                      child: const Text('处理冲突'),
+                    )
+                  : _isDirty(state)
+                  ? TextButton(
+                      key: const Key('thread-management-autosave-retry'),
+                      onPressed: state.isBusy
+                          ? null
+                          : () => unawaited(_autosave.saveNow()),
+                      child: const Text('重试保存'),
+                    )
+                  : TextButton(
+                      key: const Key('thread-management-dismiss-failure'),
+                      onPressed: state.isBusy
+                          ? null
+                          : () => ref
+                                .read(
+                                  threadManagementControllerProvider(
+                                    widget.threadId,
+                                  ).notifier,
+                                )
+                                .clearFailure(),
+                      child: const Text('知道了'),
+                    ),
             ),
-            SizedBox(height: tokens.space16),
-            ThreadManagementPublishingSection(
-              status: _status,
-              visibility: _visibility,
-              postingPolicy: thread.published ? _postingPolicy : null,
-              enabled: !locked,
-              canChangeVisibility: thread.isOwner,
-              onStatusChanged: (value) {
-                setState(() => _status = value);
-                unawaited(_autosave.saveNow());
-              },
-              onVisibilityChanged: (value) {
-                setState(() => _visibility = value);
-                unawaited(_autosave.saveNow());
-              },
-              onPostingPolicyChanged: (value) {
-                setState(() => _postingPolicy = value);
-                unawaited(_autosave.saveNow());
-              },
-            ),
-            if (thread.isOwner && thread.rpIdentityEnabled != null)
-              ThreadIdentitySettings(
-                key: ValueKey('identity-settings-${widget.threadId}'),
-                threadId: widget.threadId,
-                initialEnabled: thread.rpIdentityEnabled!,
-              ),
-            if (state.failure != null) ...[
-              SizedBox(height: tokens.space12),
-              WenyouStatusBanner(
-                key: const Key('thread-management-failure'),
-                tone: WenyouStatusTone.error,
-                message: state.failure!.userMessage,
-                detail: wenyouFailureDetail(state.failure, treatAsWrite: true),
-                action: state.conflict != null
-                    ? TextButton(
-                        key: const Key('thread-management-resolve-conflict'),
-                        onPressed: locked ? null : _resolveConflict,
-                        child: const Text('处理冲突'),
-                      )
-                    : _isDirty(state)
-                    ? TextButton(
-                        key: const Key('thread-management-autosave-retry'),
-                        onPressed: state.isBusy
-                            ? null
-                            : () => unawaited(_autosave.saveNow()),
-                        child: const Text('重试保存'),
-                      )
-                    : TextButton(
-                        key: const Key('thread-management-dismiss-failure'),
-                        onPressed: state.isBusy
-                            ? null
-                            : () => ref
-                                  .read(
-                                    threadManagementControllerProvider(
-                                      widget.threadId,
-                                    ).notifier,
-                                  )
-                                  .clearFailure(),
-                        child: const Text('知道了'),
-                      ),
-              ),
-            ],
-            if (showInvite || thread.published) ...[
-              SizedBox(height: tokens.space16),
-              if (showInvite)
-                ThreadInviteLinkCopyRow(
-                  key: ValueKey(widget.threadId),
-                  threadId: widget.threadId,
-                  enabled: !locked,
-                  beforeCopy: _prepareInviteCopy,
-                ),
-              if (thread.published)
-                ThreadManagementActionRow(
-                  key: const Key('thread-management-export'),
-                  title: '导出档案',
-                  icon: WenyouIconIds.actionDownload,
-                  onTap: locked ? null : _exportArchive,
-                ),
-            ],
-            if (thread.isOwner) ...[
-              SizedBox(height: tokens.space16),
-              ThreadManagementActionRow(
-                key: const Key('thread-management-delete'),
-                title: '删除主题',
-                icon: WenyouIconIds.actionDelete,
-                destructive: true,
-                onTap: state.isBusy ? null : _confirmDelete,
-              ),
-            ],
           ],
-        ),
+          if (showInvite || thread.published)
+            WenyouSettingsGroup(
+              children: [
+                if (showInvite)
+                  ThreadInviteLinkCopyRow(
+                    key: ValueKey(widget.threadId),
+                    threadId: widget.threadId,
+                    enabled: !locked,
+                    beforeCopy: _prepareInviteCopy,
+                  ),
+                if (thread.published)
+                  ThreadManagementActionRow(
+                    key: const Key('thread-management-export'),
+                    title: '导出档案',
+                    icon: WenyouIconIds.actionDownload,
+                    onTap: locked ? null : _exportArchive,
+                  ),
+              ],
+            ),
+          if (thread.isOwner)
+            WenyouSettingsGroup(
+              children: [
+                ThreadManagementActionRow(
+                  key: const Key('thread-management-delete'),
+                  title: '删除主题',
+                  icon: WenyouIconIds.actionDelete,
+                  destructive: true,
+                  onTap: state.isBusy ? null : _confirmDelete,
+                ),
+              ],
+            ),
+        ],
       ),
     );
   }

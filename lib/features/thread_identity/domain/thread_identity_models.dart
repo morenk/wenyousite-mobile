@@ -33,3 +33,17 @@ class ThreadIdentityUpdate {
   final bool clearAvatar;
   final int? version;
 }
+
+/// 同一发表会话保留新建角色输入，网络结果不明时可先返回身份列表核对。
+class ThreadIdentityEditorDraft {
+  String nickname = '';
+  String? avatarMediaId;
+  String? avatarUrl;
+  bool uncertain = false;
+  void clear() {
+    nickname = '';
+    avatarMediaId = null;
+    avatarUrl = null;
+    uncertain = false;
+  }
+}
