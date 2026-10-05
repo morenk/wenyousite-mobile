@@ -236,3 +236,6 @@ Backend PR #43 已合并，管理入口 `deploy.sh --backend-only` 成功，精�
 `.rp-peer-legacy-compat-final.log` 53/53 通过，覆盖仓储、只走旧端点、无新增／DELETE、版本与 ID 冲突、空资料账号栏、精确历史卡、控制器与本地恢复、两类导航和生命周期。首次测试因旧路径断言写错及 Widget 中未用 runAsync 等待模拟 Dio 而中断，原日志保留；修正测试后完成上述集合，未屏蔽实际失败。最终应用全量分析仅发现重复 import，删除后对应文件分析零问题；架构和差异检查通过。
 
 这次加载修复前会话 28525 报 Lost connection，不能继续宣称 ready；之后手机保持前台仍无法附加旧 Dart VM。已实际观察为无正文的编辑器，收起后仅重启 Debug 进程，再次建立 machine 附加，未清应用数据或安装 APK。最终载入证据续记。随后负责人授权后端测试完成即上线新接口，Backend 原任务负责 PR44 合并及管理入口发布；客户端兼容修复与新后端验收分别登记。
+
+
+旧集合的账号行另与 RP 资料分离，避免恢复不存在的角色时确认框误用另一个 RP 称呼。最终相关 7 项及针对文件分析通过（`.rp-peer-legacy-account-final.log`、`.rp-peer-legacy-account-analyze.log`）。手机重新附加会话 30106／Flutter PID38944／App PID20840，热重启 6,708ms code=0，随后实际热重载 1/4677 libraries、1,754ms code=0，已加载摘要 `30279f2dbf6a69e78e40044d2cad1e28d1d5191fbf5b971ea30228fac13acb36`。随后该会话再次报告 Lost connection，登记为断连，不能把最后成功载入等同持续在线；后续恢复状态另记。手机前台截图确认过原错误与空白编辑器，未进行公网业务发表。

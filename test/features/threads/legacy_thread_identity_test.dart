@@ -97,6 +97,14 @@ void main() {
     expect(requests.single.path, endsWith('/threads/thread/identity'));
     expect(selection.mode, PostIdentityMode.account);
     expect(selection.displayName, '玛利亚');
+    expect(selection.collection!.account.hasRp, isFalse);
+    selection.restore(
+      selected: PostIdentityMode.rp,
+      id: 'archived',
+      token: 'old',
+    );
+    expect(selection.changed, isTrue);
+    expect(selection.identity!.hasRp, isFalse);
     expect(selection.collection!.limit, 1);
     expect(selection.collection!.identities.single.canDelete, isFalse);
     selection.select(PostIdentityMode.rp, id: 'role');

@@ -20,7 +20,15 @@ class ApiThreadIdentityRepository implements ThreadIdentityRepository {
       final state = await mine(threadId);
       final roles = [if (state.identityId != null) state];
       return ThreadIdentityCollection(
-        account: state,
+        account: ThreadIdentityState(
+          threadId: state.threadId,
+          userId: state.userId,
+          enabled: state.enabled,
+          eligible: state.eligible,
+          canEdit: state.canEdit,
+          accountName: state.accountName,
+          accountAvatarUrl: state.accountAvatarUrl,
+        ),
         identities: roles,
         // 旧接口没有原子新增/归档，仅保留已有身份维护。
         limit: roles.length,
