@@ -7,3 +7,5 @@
 客户端缺少 `rpIdentityProfileSupported` 时隐藏编辑字段且不发送新增字段。生成客户端省略 null，解绑必须发送 `clearProfilePost=true`；省略保留原绑定。本人 `identity.profilePostId` 与已按访客过滤的顶层 `profilePostId/profilePostStatus` 用途不同，不能用后者覆盖编辑资料。正文使用既有 `postsFindById` 授权接口，不存正文快照或访问任意 URL。
 
 本同步提交独立于应用候选；生成、契约来源及同步脚本检查证据随任务验收记录维护。最终应用、真机与跨端写入验收仍待完成，合并与部署另行决定。
+
+最终交付来源更新为 Backend `6d1228cd8c128f24860ef99747aa923c461a595a`（PR45）。标准同步只改变来源记录与资料绑定 Markdown 的格式错误说明（40000）；OpenAPI、fixtures 和生成 SDK 与 60273e5 一致，不重复生成。兼容后端尚未合并部署；消费者不将候选来源当作公网版本。
