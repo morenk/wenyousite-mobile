@@ -96,6 +96,14 @@ class _$MentionCandidateDtoRelationEnumSerializer
 
 class _$MentionCandidateDto extends MentionCandidateDto {
   @override
+  final String? candidateKey;
+  @override
+  final String? targetIdentityId;
+  @override
+  final String? mentionLabel;
+  @override
+  final String? mentionHref;
+  @override
   final RpIdentityResponseDto? rpIdentity;
   @override
   final MediaDisplayResponseDto? avatarDisplay;
@@ -113,6 +121,10 @@ class _$MentionCandidateDto extends MentionCandidateDto {
   ]) => (MentionCandidateDtoBuilder()..update(updates))._build();
 
   _$MentionCandidateDto._({
+    this.candidateKey,
+    this.targetIdentityId,
+    this.mentionLabel,
+    this.mentionHref,
     this.rpIdentity,
     this.avatarDisplay,
     required this.id,
@@ -133,6 +145,10 @@ class _$MentionCandidateDto extends MentionCandidateDto {
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
     return other is MentionCandidateDto &&
+        candidateKey == other.candidateKey &&
+        targetIdentityId == other.targetIdentityId &&
+        mentionLabel == other.mentionLabel &&
+        mentionHref == other.mentionHref &&
         rpIdentity == other.rpIdentity &&
         avatarDisplay == other.avatarDisplay &&
         id == other.id &&
@@ -144,6 +160,10 @@ class _$MentionCandidateDto extends MentionCandidateDto {
   @override
   int get hashCode {
     var _$hash = 0;
+    _$hash = $jc(_$hash, candidateKey.hashCode);
+    _$hash = $jc(_$hash, targetIdentityId.hashCode);
+    _$hash = $jc(_$hash, mentionLabel.hashCode);
+    _$hash = $jc(_$hash, mentionHref.hashCode);
     _$hash = $jc(_$hash, rpIdentity.hashCode);
     _$hash = $jc(_$hash, avatarDisplay.hashCode);
     _$hash = $jc(_$hash, id.hashCode);
@@ -157,6 +177,10 @@ class _$MentionCandidateDto extends MentionCandidateDto {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'MentionCandidateDto')
+          ..add('candidateKey', candidateKey)
+          ..add('targetIdentityId', targetIdentityId)
+          ..add('mentionLabel', mentionLabel)
+          ..add('mentionHref', mentionHref)
           ..add('rpIdentity', rpIdentity)
           ..add('avatarDisplay', avatarDisplay)
           ..add('id', id)
@@ -170,6 +194,23 @@ class _$MentionCandidateDto extends MentionCandidateDto {
 class MentionCandidateDtoBuilder
     implements Builder<MentionCandidateDto, MentionCandidateDtoBuilder> {
   _$MentionCandidateDto? _$v;
+
+  String? _candidateKey;
+  String? get candidateKey => _$this._candidateKey;
+  set candidateKey(String? candidateKey) => _$this._candidateKey = candidateKey;
+
+  String? _targetIdentityId;
+  String? get targetIdentityId => _$this._targetIdentityId;
+  set targetIdentityId(String? targetIdentityId) =>
+      _$this._targetIdentityId = targetIdentityId;
+
+  String? _mentionLabel;
+  String? get mentionLabel => _$this._mentionLabel;
+  set mentionLabel(String? mentionLabel) => _$this._mentionLabel = mentionLabel;
+
+  String? _mentionHref;
+  String? get mentionHref => _$this._mentionHref;
+  set mentionHref(String? mentionHref) => _$this._mentionHref = mentionHref;
 
   RpIdentityResponseDtoBuilder? _rpIdentity;
   RpIdentityResponseDtoBuilder get rpIdentity =>
@@ -207,6 +248,10 @@ class MentionCandidateDtoBuilder
   MentionCandidateDtoBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
+      _candidateKey = $v.candidateKey;
+      _targetIdentityId = $v.targetIdentityId;
+      _mentionLabel = $v.mentionLabel;
+      _mentionHref = $v.mentionHref;
       _rpIdentity = $v.rpIdentity?.toBuilder();
       _avatarDisplay = $v.avatarDisplay?.toBuilder();
       _id = $v.id;
@@ -237,6 +282,10 @@ class MentionCandidateDtoBuilder
       _$result =
           _$v ??
           _$MentionCandidateDto._(
+            candidateKey: candidateKey,
+            targetIdentityId: targetIdentityId,
+            mentionLabel: mentionLabel,
+            mentionHref: mentionHref,
             rpIdentity: _rpIdentity?.build(),
             avatarDisplay: _avatarDisplay?.build(),
             id: BuiltValueNullFieldError.checkNotNull(

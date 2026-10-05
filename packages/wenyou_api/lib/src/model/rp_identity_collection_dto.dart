@@ -22,7 +22,7 @@ part 'rp_identity_collection_dto.g.dart';
 /// * [activeCount] - 未删除身份数；清空资料仍占一个名额，删除释放名额
 /// * [limit]
 /// * [compatibilityIdentityId] - 旧 single 接口的明确锚点；首次角色绑定，删除后不自动接管
-/// * [defaultIdentityId] - 仅新空白编辑器初始化用；可用兼容角色优先，否则创建顺序第一个可用角色；不可覆盖恢复草稿
+/// * [defaultIdentityId] - 固定 null；新空白编辑器默认 ACCOUNT，不覆盖恢复的显式草稿
 /// * [identities]
 /// * [account]
 @BuiltValue()
@@ -54,7 +54,7 @@ abstract class RpIdentityCollectionDto implements Built<RpIdentityCollectionDto,
   @BuiltValueField(wireName: r'compatibilityIdentityId')
   String? get compatibilityIdentityId;
 
-  /// 仅新空白编辑器初始化用；可用兼容角色优先，否则创建顺序第一个可用角色；不可覆盖恢复草稿
+  /// 固定 null；新空白编辑器默认 ACCOUNT，不覆盖恢复的显式草稿
   @BuiltValueField(wireName: r'defaultIdentityId')
   String? get defaultIdentityId;
 

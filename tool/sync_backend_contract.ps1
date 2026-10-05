@@ -179,6 +179,8 @@ $contractFiles = @(
   @{ Source = 'contracts/markdown-inline-combinations-v1.schema.json'; Destination = 'markdown-inline-combinations-v1.schema.json' },
   @{ Source = $editorClipboardSource; Destination = (Split-Path -Leaf $editorClipboardSource) },
   @{ Source = 'contracts/markdown-v5-image-alignment-fixtures.json'; Destination = 'markdown-v5-image-alignment-fixtures.json' },
+  @{ Source = 'contracts/markdown-v6-role-mentions-fixtures.json'; Destination = 'markdown-v6-role-mentions-fixtures.json' },
+  @{ Source = 'docs/markdown-v6-role-mentions.md'; Destination = 'markdown-v6-role-mentions.md' },
   @{ Source = 'contracts/markdown-editor-newline-v1-fixtures.json'; Destination = 'markdown-editor-newline-v1-fixtures.json' },
   @{ Source = 'contracts/rich-text-behavior-v1-fixtures.json'; Destination = 'rich-text-behavior-v1-fixtures.json' },
   @{ Source = 'contracts/rich-text-behavior-v1.schema.json'; Destination = 'rich-text-behavior-v1.schema.json' },

@@ -20,7 +20,7 @@
 
 ## 4. 用户操作流程
 
-昵称和头像可分别留空。头像使用原裁切与 AVATAR 上传入口，保存仅写帖内资料。仅新空白编辑器按 defaultIdentityId 初始化，否则站内身份；已恢复草稿保留所选稳定 identityId，不随列表排序或默认值变化。新增成功明确选中新角色，编辑既有角色不切换。删除角色释放名额且 ID 不复用，关闭或撤权仍可删除本人角色。保存资料只影响后续发言，清除资料不清除旧快照。
+昵称和头像可分别留空。头像使用原裁切与 AVATAR 上传入口，保存仅写帖内资料。各 RP 身份平级，不设主身份。无历史选择的新编辑器使用站内身份；已恢复草稿保留所选稳定 identityId，不随列表排序、旧默认值或其他编辑会话变化。新增成功明确选中新角色，编辑既有角色不切换。删除角色释放名额且 ID 不复用，关闭或撤权仍可删除本人角色。保存资料只影响后续发言，清除资料不清除旧快照。
 
 关闭有未保存修改的资料表单时先确认；遮罩和拖拽不关闭表单，保存及头像处理期间锁定退出。连续点关闭只退出一次，不影响底层主题页面。主题关闭 RP 前说明全帖恢复站内展示、历史资料保留与重新开启的效果，取消不写入。
 
@@ -29,7 +29,7 @@
 ## 5. API operationId 与生成类型
 
 - `rpIdentitiesList` 返回 `RpIdentityCollectionDto`；`rpIdentitiesCreate/Find/Update/Remove` 返回 `RpIdentityStateDto`，Create/Update/Delete DTO 分别承载新建资料、version 更新与 JSON version 归档。
-- `threadIdentitiesMine`、`threadIdentitiesFindUser` 保留账号兼容主身份读取。
+- `threadIdentitiesMine`、`threadIdentitiesFindUser` 仅供旧接口和缺角色 ID 的旧 RP 草稿迁移读取，不作为新版默认、排序或账号代表。
 - `threadIdentitiesUpdate` 使用 `UpdateThreadIdentityDto`，独立清除标记和 version 防止误覆盖。
 - `threadIdentitiesClear` 清除本人资料；`threadIdentitiesSetEnabled` 使用 `SetThreadIdentityEnabledDto` 设置主题开关。
 - 作者消费可选 `RpIdentityResponseDto`，正文消费 `MentionIdentityDisplayDto`，操作目标 userId 保持账号含义；identityId 标识主题内稳定角色。
@@ -64,7 +64,7 @@ domain 只包含不可变 RP 展示值、身份模式和更新输入。applicati
 
 ## 13. 最近审查的契约版本和后端提交
 
-OpenAPI `5.34.0-dev.20261005.1`；Backend `fc44ed929edb909ebecec81f3159628509fd20e8`。Markdown 结构化提及保持账号链接，显示通过 userId + 原标签映射；字段缺失沿用站内资料。
+OpenAPI `5.35.0-dev.20261005.1`；Backend `2ba848a1dc835205a96887ee440c97428a74a5dd`。Markdown 结构化提及保持账号链接，显示通过 userId + 原标签映射；字段缺失沿用站内资料。
 
 ## 14. 相关代码与架构文档
 

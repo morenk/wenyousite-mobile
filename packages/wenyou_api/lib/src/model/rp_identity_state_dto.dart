@@ -26,7 +26,7 @@ part 'rp_identity_state_dto.g.dart';
 /// * [canDelete] - 本人可删除未归档角色，关闭功能或撤资格后也可删除
 /// * [identityId] - 稳定角色 ID，删除后不会复用
 /// * [deleted] - 已删除角色仅保留历史展示与账号；当前 display 为 null
-/// * [compatibilityIdentity] - 是否为旧 single 接口、作者目录和 @ 候选的兼容锚点
+/// * [compatibilityIdentity] - 仅旧 single 协议内部锚点；不是新端的默认或候选优先级
 @BuiltValue()
 abstract class RpIdentityStateDto implements Built<RpIdentityStateDto, RpIdentityStateDtoBuilder> {
   @BuiltValueField(wireName: r'threadId')
@@ -71,7 +71,7 @@ abstract class RpIdentityStateDto implements Built<RpIdentityStateDto, RpIdentit
   @BuiltValueField(wireName: r'deleted')
   bool get deleted;
 
-  /// 是否为旧 single 接口、作者目录和 @ 候选的兼容锚点
+  /// 仅旧 single 协议内部锚点；不是新端的默认或候选优先级
   @BuiltValueField(wireName: r'compatibilityIdentity')
   bool get compatibilityIdentity;
 

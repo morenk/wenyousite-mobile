@@ -11,11 +11,21 @@ part 'api_capabilities_response_dto.g.dart';
 /// ApiCapabilitiesResponseDto
 ///
 /// Properties:
+/// * [roleMentionsV6Supported] - 支持 header/DTO Markdown 6 能力协商、保源和旧读安全降级；缺失按 false
+/// * [roleMentionsV6WriteEnabled] - 允许创建新的显式 ACCOUNT / RP 提及节点；与全局 Markdown 激活版本独立，缺失按 false
 /// * [stickers]
 /// * [directMessages]
 /// * [pushNotifications]
 @BuiltValue()
 abstract class ApiCapabilitiesResponseDto implements Built<ApiCapabilitiesResponseDto, ApiCapabilitiesResponseDtoBuilder> {
+  /// 支持 header/DTO Markdown 6 能力协商、保源和旧读安全降级；缺失按 false
+  @BuiltValueField(wireName: r'roleMentionsV6Supported')
+  bool? get roleMentionsV6Supported;
+
+  /// 允许创建新的显式 ACCOUNT / RP 提及节点；与全局 Markdown 激活版本独立，缺失按 false
+  @BuiltValueField(wireName: r'roleMentionsV6WriteEnabled')
+  bool? get roleMentionsV6WriteEnabled;
+
   @BuiltValueField(wireName: r'stickers')
   bool get stickers;
 
@@ -48,6 +58,20 @@ class _$ApiCapabilitiesResponseDtoSerializer implements PrimitiveSerializer<ApiC
     ApiCapabilitiesResponseDto object, {
     FullType specifiedType = FullType.unspecified,
   }) sync* {
+    if (object.roleMentionsV6Supported != null) {
+      yield r'roleMentionsV6Supported';
+      yield serializers.serialize(
+        object.roleMentionsV6Supported,
+        specifiedType: const FullType(bool),
+      );
+    }
+    if (object.roleMentionsV6WriteEnabled != null) {
+      yield r'roleMentionsV6WriteEnabled';
+      yield serializers.serialize(
+        object.roleMentionsV6WriteEnabled,
+        specifiedType: const FullType(bool),
+      );
+    }
     yield r'stickers';
     yield serializers.serialize(
       object.stickers,
@@ -86,6 +110,20 @@ class _$ApiCapabilitiesResponseDtoSerializer implements PrimitiveSerializer<ApiC
       final key = serializedList[i] as String;
       final value = serializedList[i + 1];
       switch (key) {
+        case r'roleMentionsV6Supported':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(bool),
+          ) as bool;
+          result.roleMentionsV6Supported = valueDes;
+          break;
+        case r'roleMentionsV6WriteEnabled':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(bool),
+          ) as bool;
+          result.roleMentionsV6WriteEnabled = valueDes;
+          break;
         case r'stickers':
           final valueDes = serializers.deserialize(
             value,

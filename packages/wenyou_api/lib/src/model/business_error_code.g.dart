@@ -47,6 +47,11 @@ const BusinessErrorCode _$RP_MENTION_CHANGED = const BusinessErrorCode._(
 const BusinessErrorCode _$RP_IDENTITY_LIMIT = const BusinessErrorCode._(
   'RP_IDENTITY_LIMIT',
 );
+const BusinessErrorCode _$MARKDOWN_CAPABILITY_REQUIRED =
+    const BusinessErrorCode._('MARKDOWN_CAPABILITY_REQUIRED');
+const BusinessErrorCode _$ROLE_MENTIONS_DISABLED = const BusinessErrorCode._(
+  'ROLE_MENTIONS_DISABLED',
+);
 const BusinessErrorCode _$UNAUTHORIZED = const BusinessErrorCode._(
   'UNAUTHORIZED',
 );
@@ -304,6 +309,10 @@ BusinessErrorCode _$valueOf(String name) {
       return _$RP_MENTION_CHANGED;
     case 'RP_IDENTITY_LIMIT':
       return _$RP_IDENTITY_LIMIT;
+    case 'MARKDOWN_CAPABILITY_REQUIRED':
+      return _$MARKDOWN_CAPABILITY_REQUIRED;
+    case 'ROLE_MENTIONS_DISABLED':
+      return _$ROLE_MENTIONS_DISABLED;
     case 'UNAUTHORIZED':
       return _$UNAUTHORIZED;
     case 'TOKEN_EXPIRED':
@@ -488,6 +497,8 @@ final BuiltSet<BusinessErrorCode> _$values =
       _$RP_IDENTITY_CHANGED,
       _$RP_MENTION_CHANGED,
       _$RP_IDENTITY_LIMIT,
+      _$MARKDOWN_CAPABILITY_REQUIRED,
+      _$ROLE_MENTIONS_DISABLED,
       _$UNAUTHORIZED,
       _$TOKEN_EXPIRED,
       _$TOKEN_INVALID,
@@ -590,6 +601,9 @@ class _$BusinessErrorCodeMeta {
   BusinessErrorCode get RP_IDENTITY_CHANGED => _$RP_IDENTITY_CHANGED;
   BusinessErrorCode get RP_MENTION_CHANGED => _$RP_MENTION_CHANGED;
   BusinessErrorCode get RP_IDENTITY_LIMIT => _$RP_IDENTITY_LIMIT;
+  BusinessErrorCode get MARKDOWN_CAPABILITY_REQUIRED =>
+      _$MARKDOWN_CAPABILITY_REQUIRED;
+  BusinessErrorCode get ROLE_MENTIONS_DISABLED => _$ROLE_MENTIONS_DISABLED;
   BusinessErrorCode get UNAUTHORIZED => _$UNAUTHORIZED;
   BusinessErrorCode get TOKEN_EXPIRED => _$TOKEN_EXPIRED;
   BusinessErrorCode get TOKEN_INVALID => _$TOKEN_INVALID;
@@ -715,6 +729,8 @@ class _$BusinessErrorCodeSerializer
     'RP_IDENTITY_CHANGED': 40011,
     'RP_MENTION_CHANGED': 40012,
     'RP_IDENTITY_LIMIT': 40013,
+    'MARKDOWN_CAPABILITY_REQUIRED': 40014,
+    'ROLE_MENTIONS_DISABLED': 40015,
     'UNAUTHORIZED': 40100,
     'TOKEN_EXPIRED': 40101,
     'TOKEN_INVALID': 40102,
@@ -813,6 +829,8 @@ class _$BusinessErrorCodeSerializer
     40011: 'RP_IDENTITY_CHANGED',
     40012: 'RP_MENTION_CHANGED',
     40013: 'RP_IDENTITY_LIMIT',
+    40014: 'MARKDOWN_CAPABILITY_REQUIRED',
+    40015: 'ROLE_MENTIONS_DISABLED',
     40100: 'UNAUTHORIZED',
     40101: 'TOKEN_EXPIRED',
     40102: 'TOKEN_INVALID',

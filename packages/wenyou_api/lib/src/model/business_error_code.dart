@@ -57,6 +57,12 @@ class BusinessErrorCode extends EnumClass {
   @BuiltValueEnumConst(wireNumber: 40013)
   static const BusinessErrorCode RP_IDENTITY_LIMIT = _$RP_IDENTITY_LIMIT;
   /// 稳定业务错误码；名称和值来源于 ErrorCode
+  @BuiltValueEnumConst(wireNumber: 40014)
+  static const BusinessErrorCode MARKDOWN_CAPABILITY_REQUIRED = _$MARKDOWN_CAPABILITY_REQUIRED;
+  /// 稳定业务错误码；名称和值来源于 ErrorCode
+  @BuiltValueEnumConst(wireNumber: 40015)
+  static const BusinessErrorCode ROLE_MENTIONS_DISABLED = _$ROLE_MENTIONS_DISABLED;
+  /// 稳定业务错误码；名称和值来源于 ErrorCode
   @BuiltValueEnumConst(wireNumber: 40100)
   static const BusinessErrorCode UNAUTHORIZED = _$UNAUTHORIZED;
   /// 稳定业务错误码；名称和值来源于 ErrorCode

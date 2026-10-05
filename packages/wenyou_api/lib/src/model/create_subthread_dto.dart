@@ -12,6 +12,7 @@ part 'create_subthread_dto.g.dart';
 /// CreateSubthreadDto
 ///
 /// Properties:
+/// * [markdownContractVersion] - 声明编辑器支持 Markdown 6 角色提及源的无损读取/编辑。服务端 capabilities.roleMentionsV6Supported 为 true 时新端始终发送，包括删光旧节点；未声明而新/原正文含 v6 返回 409/40014。新节点还须 roleMentionsV6WriteEnabled。
 /// * [identityId] - 本次新发言选择的帖内身份 ID；新客户端 RP 模式必须与该身份 token 一起发送。省略仅兼容旧单身份客户端；ACCOUNT 忽略，编辑旧正文不改变原身份
 /// * [identityToken] - GET 帖内身份返回的确认 token；新建正文或发言时使用。身份变化返回 409/40011，保留草稿并重新确认
 /// * [identityMode] - 本次新发言身份；ACCOUNT 明确使用站内账号且不校验 RP token，RP 要求有效帖内身份和 identityToken。省略沿用旧确认规则；编辑已有正文忽略此字段
@@ -22,6 +23,11 @@ part 'create_subthread_dto.g.dart';
 /// * [postingPolicy] - PARTICIPANTS=所有参与人可发帖, COLLABORATORS=仅协作者可发帖, PLAYERS=仅被标记为玩家的参与人可发帖
 @BuiltValue()
 abstract class CreateSubthreadDto implements Built<CreateSubthreadDto, CreateSubthreadDtoBuilder> {
+  /// 声明编辑器支持 Markdown 6 角色提及源的无损读取/编辑。服务端 capabilities.roleMentionsV6Supported 为 true 时新端始终发送，包括删光旧节点；未声明而新/原正文含 v6 返回 409/40014。新节点还须 roleMentionsV6WriteEnabled。
+  @BuiltValueField(wireName: r'markdownContractVersion')
+  CreateSubthreadDtoMarkdownContractVersionEnum? get markdownContractVersion;
+  // enum markdownContractVersionEnum {  6,  };
+
   /// 本次新发言选择的帖内身份 ID；新客户端 RP 模式必须与该身份 token 一起发送。省略仅兼容旧单身份客户端；ACCOUNT 忽略，编辑旧正文不改变原身份
   @BuiltValueField(wireName: r'identityId')
   String? get identityId;
@@ -80,6 +86,13 @@ class _$CreateSubthreadDtoSerializer implements PrimitiveSerializer<CreateSubthr
     CreateSubthreadDto object, {
     FullType specifiedType = FullType.unspecified,
   }) sync* {
+    if (object.markdownContractVersion != null) {
+      yield r'markdownContractVersion';
+      yield serializers.serialize(
+        object.markdownContractVersion,
+        specifiedType: const FullType(CreateSubthreadDtoMarkdownContractVersionEnum),
+      );
+    }
     if (object.identityId != null) {
       yield r'identityId';
       yield serializers.serialize(
@@ -157,6 +170,13 @@ class _$CreateSubthreadDtoSerializer implements PrimitiveSerializer<CreateSubthr
       final key = serializedList[i] as String;
       final value = serializedList[i + 1];
       switch (key) {
+        case r'markdownContractVersion':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(CreateSubthreadDtoMarkdownContractVersionEnum),
+          ) as CreateSubthreadDtoMarkdownContractVersionEnum;
+          result.markdownContractVersion = valueDes;
+          break;
         case r'identityId':
           final valueDes = serializers.deserialize(
             value,
@@ -240,6 +260,23 @@ class _$CreateSubthreadDtoSerializer implements PrimitiveSerializer<CreateSubthr
     );
     return result.build();
   }
+}
+
+class CreateSubthreadDtoMarkdownContractVersionEnum extends EnumClass {
+
+  /// 声明编辑器支持 Markdown 6 角色提及源的无损读取/编辑。服务端 capabilities.roleMentionsV6Supported 为 true 时新端始终发送，包括删光旧节点；未声明而新/原正文含 v6 返回 409/40014。新节点还须 roleMentionsV6WriteEnabled。
+  @BuiltValueEnumConst(wireName: r'6')
+  static const CreateSubthreadDtoMarkdownContractVersionEnum n6 = _$createSubthreadDtoMarkdownContractVersionEnum_n6;
+  /// 声明编辑器支持 Markdown 6 角色提及源的无损读取/编辑。服务端 capabilities.roleMentionsV6Supported 为 true 时新端始终发送，包括删光旧节点；未声明而新/原正文含 v6 返回 409/40014。新节点还须 roleMentionsV6WriteEnabled。
+  @BuiltValueEnumConst(wireName: r'11184809', fallback: true)
+  static const CreateSubthreadDtoMarkdownContractVersionEnum unknownDefaultOpenApi = _$createSubthreadDtoMarkdownContractVersionEnum_unknownDefaultOpenApi;
+
+  static Serializer<CreateSubthreadDtoMarkdownContractVersionEnum> get serializer => _$createSubthreadDtoMarkdownContractVersionEnumSerializer;
+
+  const CreateSubthreadDtoMarkdownContractVersionEnum._(String name): super(name);
+
+  static BuiltSet<CreateSubthreadDtoMarkdownContractVersionEnum> get values => _$createSubthreadDtoMarkdownContractVersionEnumValues;
+  static CreateSubthreadDtoMarkdownContractVersionEnum valueOf(String name) => _$createSubthreadDtoMarkdownContractVersionEnumValueOf(name);
 }
 
 class CreateSubthreadDtoIdentityModeEnum extends EnumClass {

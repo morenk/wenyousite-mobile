@@ -6,6 +6,34 @@ part of 'upsert_body_dto.dart';
 // BuiltValueGenerator
 // **************************************************************************
 
+const UpsertBodyDtoMarkdownContractVersionEnum
+_$upsertBodyDtoMarkdownContractVersionEnum_n6 =
+    const UpsertBodyDtoMarkdownContractVersionEnum._('n6');
+const UpsertBodyDtoMarkdownContractVersionEnum
+_$upsertBodyDtoMarkdownContractVersionEnum_unknownDefaultOpenApi =
+    const UpsertBodyDtoMarkdownContractVersionEnum._('unknownDefaultOpenApi');
+
+UpsertBodyDtoMarkdownContractVersionEnum
+_$upsertBodyDtoMarkdownContractVersionEnumValueOf(String name) {
+  switch (name) {
+    case 'n6':
+      return _$upsertBodyDtoMarkdownContractVersionEnum_n6;
+    case 'unknownDefaultOpenApi':
+      return _$upsertBodyDtoMarkdownContractVersionEnum_unknownDefaultOpenApi;
+    default:
+      return _$upsertBodyDtoMarkdownContractVersionEnum_unknownDefaultOpenApi;
+  }
+}
+
+final BuiltSet<UpsertBodyDtoMarkdownContractVersionEnum>
+_$upsertBodyDtoMarkdownContractVersionEnumValues =
+    BuiltSet<UpsertBodyDtoMarkdownContractVersionEnum>(
+      const <UpsertBodyDtoMarkdownContractVersionEnum>[
+        _$upsertBodyDtoMarkdownContractVersionEnum_n6,
+        _$upsertBodyDtoMarkdownContractVersionEnum_unknownDefaultOpenApi,
+      ],
+    );
+
 const UpsertBodyDtoIdentityModeEnum _$upsertBodyDtoIdentityModeEnum_ACCOUNT =
     const UpsertBodyDtoIdentityModeEnum._('ACCOUNT');
 const UpsertBodyDtoIdentityModeEnum _$upsertBodyDtoIdentityModeEnum_RP =
@@ -38,9 +66,47 @@ _$upsertBodyDtoIdentityModeEnumValues = BuiltSet<UpsertBodyDtoIdentityModeEnum>(
   ],
 );
 
+Serializer<UpsertBodyDtoMarkdownContractVersionEnum>
+_$upsertBodyDtoMarkdownContractVersionEnumSerializer =
+    _$UpsertBodyDtoMarkdownContractVersionEnumSerializer();
 Serializer<UpsertBodyDtoIdentityModeEnum>
 _$upsertBodyDtoIdentityModeEnumSerializer =
     _$UpsertBodyDtoIdentityModeEnumSerializer();
+
+class _$UpsertBodyDtoMarkdownContractVersionEnumSerializer
+    implements PrimitiveSerializer<UpsertBodyDtoMarkdownContractVersionEnum> {
+  static const Map<String, Object> _toWire = const <String, Object>{
+    'n6': '6',
+    'unknownDefaultOpenApi': '11184809',
+  };
+  static const Map<Object, String> _fromWire = const <Object, String>{
+    '6': 'n6',
+    '11184809': 'unknownDefaultOpenApi',
+  };
+
+  @override
+  final Iterable<Type> types = const <Type>[
+    UpsertBodyDtoMarkdownContractVersionEnum,
+  ];
+  @override
+  final String wireName = 'UpsertBodyDtoMarkdownContractVersionEnum';
+
+  @override
+  Object serialize(
+    Serializers serializers,
+    UpsertBodyDtoMarkdownContractVersionEnum object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => _toWire[object.name] ?? object.name;
+
+  @override
+  UpsertBodyDtoMarkdownContractVersionEnum deserialize(
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => UpsertBodyDtoMarkdownContractVersionEnum.valueOf(
+    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
+  );
+}
 
 class _$UpsertBodyDtoIdentityModeEnumSerializer
     implements PrimitiveSerializer<UpsertBodyDtoIdentityModeEnum> {
@@ -79,6 +145,8 @@ class _$UpsertBodyDtoIdentityModeEnumSerializer
 
 class _$UpsertBodyDto extends UpsertBodyDto {
   @override
+  final UpsertBodyDtoMarkdownContractVersionEnum? markdownContractVersion;
+  @override
   final String? identityId;
   @override
   final String? identityToken;
@@ -93,6 +161,7 @@ class _$UpsertBodyDto extends UpsertBodyDto {
       (UpsertBodyDtoBuilder()..update(updates))._build();
 
   _$UpsertBodyDto._({
+    this.markdownContractVersion,
     this.identityId,
     this.identityToken,
     this.identityMode,
@@ -110,6 +179,7 @@ class _$UpsertBodyDto extends UpsertBodyDto {
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
     return other is UpsertBodyDto &&
+        markdownContractVersion == other.markdownContractVersion &&
         identityId == other.identityId &&
         identityToken == other.identityToken &&
         identityMode == other.identityMode &&
@@ -120,6 +190,7 @@ class _$UpsertBodyDto extends UpsertBodyDto {
   @override
   int get hashCode {
     var _$hash = 0;
+    _$hash = $jc(_$hash, markdownContractVersion.hashCode);
     _$hash = $jc(_$hash, identityId.hashCode);
     _$hash = $jc(_$hash, identityToken.hashCode);
     _$hash = $jc(_$hash, identityMode.hashCode);
@@ -132,6 +203,7 @@ class _$UpsertBodyDto extends UpsertBodyDto {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'UpsertBodyDto')
+          ..add('markdownContractVersion', markdownContractVersion)
           ..add('identityId', identityId)
           ..add('identityToken', identityToken)
           ..add('identityMode', identityMode)
@@ -144,6 +216,13 @@ class _$UpsertBodyDto extends UpsertBodyDto {
 class UpsertBodyDtoBuilder
     implements Builder<UpsertBodyDto, UpsertBodyDtoBuilder> {
   _$UpsertBodyDto? _$v;
+
+  UpsertBodyDtoMarkdownContractVersionEnum? _markdownContractVersion;
+  UpsertBodyDtoMarkdownContractVersionEnum? get markdownContractVersion =>
+      _$this._markdownContractVersion;
+  set markdownContractVersion(
+    UpsertBodyDtoMarkdownContractVersionEnum? markdownContractVersion,
+  ) => _$this._markdownContractVersion = markdownContractVersion;
 
   String? _identityId;
   String? get identityId => _$this._identityId;
@@ -174,6 +253,7 @@ class UpsertBodyDtoBuilder
   UpsertBodyDtoBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
+      _markdownContractVersion = $v.markdownContractVersion;
       _identityId = $v.identityId;
       _identityToken = $v.identityToken;
       _identityMode = $v.identityMode;
@@ -201,6 +281,7 @@ class UpsertBodyDtoBuilder
     final _$result =
         _$v ??
         _$UpsertBodyDto._(
+          markdownContractVersion: markdownContractVersion,
           identityId: identityId,
           identityToken: identityToken,
           identityMode: identityMode,

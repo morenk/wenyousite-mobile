@@ -8,6 +8,12 @@ part of 'mention_identity_display_dto.dart';
 
 class _$MentionIdentityDisplayDto extends MentionIdentityDisplayDto {
   @override
+  final String? sourceHref;
+  @override
+  final String? targetIdentityId;
+  @override
+  final String? threadId;
+  @override
   final String userId;
   @override
   final String label;
@@ -21,6 +27,9 @@ class _$MentionIdentityDisplayDto extends MentionIdentityDisplayDto {
   ]) => (MentionIdentityDisplayDtoBuilder()..update(updates))._build();
 
   _$MentionIdentityDisplayDto._({
+    this.sourceHref,
+    this.targetIdentityId,
+    this.threadId,
     required this.userId,
     required this.label,
     required this.displayName,
@@ -39,6 +48,9 @@ class _$MentionIdentityDisplayDto extends MentionIdentityDisplayDto {
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
     return other is MentionIdentityDisplayDto &&
+        sourceHref == other.sourceHref &&
+        targetIdentityId == other.targetIdentityId &&
+        threadId == other.threadId &&
         userId == other.userId &&
         label == other.label &&
         displayName == other.displayName &&
@@ -48,6 +60,9 @@ class _$MentionIdentityDisplayDto extends MentionIdentityDisplayDto {
   @override
   int get hashCode {
     var _$hash = 0;
+    _$hash = $jc(_$hash, sourceHref.hashCode);
+    _$hash = $jc(_$hash, targetIdentityId.hashCode);
+    _$hash = $jc(_$hash, threadId.hashCode);
     _$hash = $jc(_$hash, userId.hashCode);
     _$hash = $jc(_$hash, label.hashCode);
     _$hash = $jc(_$hash, displayName.hashCode);
@@ -59,6 +74,9 @@ class _$MentionIdentityDisplayDto extends MentionIdentityDisplayDto {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'MentionIdentityDisplayDto')
+          ..add('sourceHref', sourceHref)
+          ..add('targetIdentityId', targetIdentityId)
+          ..add('threadId', threadId)
           ..add('userId', userId)
           ..add('label', label)
           ..add('displayName', displayName)
@@ -71,6 +89,19 @@ class MentionIdentityDisplayDtoBuilder
     implements
         Builder<MentionIdentityDisplayDto, MentionIdentityDisplayDtoBuilder> {
   _$MentionIdentityDisplayDto? _$v;
+
+  String? _sourceHref;
+  String? get sourceHref => _$this._sourceHref;
+  set sourceHref(String? sourceHref) => _$this._sourceHref = sourceHref;
+
+  String? _targetIdentityId;
+  String? get targetIdentityId => _$this._targetIdentityId;
+  set targetIdentityId(String? targetIdentityId) =>
+      _$this._targetIdentityId = targetIdentityId;
+
+  String? _threadId;
+  String? get threadId => _$this._threadId;
+  set threadId(String? threadId) => _$this._threadId = threadId;
 
   String? _userId;
   String? get userId => _$this._userId;
@@ -95,6 +126,9 @@ class MentionIdentityDisplayDtoBuilder
   MentionIdentityDisplayDtoBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
+      _sourceHref = $v.sourceHref;
+      _targetIdentityId = $v.targetIdentityId;
+      _threadId = $v.threadId;
       _userId = $v.userId;
       _label = $v.label;
       _displayName = $v.displayName;
@@ -121,6 +155,9 @@ class MentionIdentityDisplayDtoBuilder
     final _$result =
         _$v ??
         _$MentionIdentityDisplayDto._(
+          sourceHref: sourceHref,
+          targetIdentityId: targetIdentityId,
+          threadId: threadId,
           userId: BuiltValueNullFieldError.checkNotNull(
             userId,
             r'MentionIdentityDisplayDto',

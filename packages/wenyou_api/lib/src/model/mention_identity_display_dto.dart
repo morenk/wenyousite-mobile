@@ -11,12 +11,27 @@ part 'mention_identity_display_dto.g.dart';
 /// MentionIdentityDisplayDto
 ///
 /// Properties:
+/// * [sourceHref] - 原始目标 href；与原 label 配对匹配节点，不以 occurrence 或 userId 单独匹配
+/// * [targetIdentityId] - 稳定目标角色 ID；ACCOUNT/legacy 为 null，不随关闭/归档丢失。仅声明 Markdown 6 的读取返回角色目标
+/// * [threadId] - 角色所属主题；跨页面身份卡读取使用，不能猜当前页面主题
 /// * [userId]
 /// * [label] - 正文 canonical mention 的原始标签（不含 @），与 userId 共同作为映射键
 /// * [displayName] - 此次阅读应显示的名字；关闭时为账号用户名
 /// * [identityId]
 @BuiltValue()
 abstract class MentionIdentityDisplayDto implements Built<MentionIdentityDisplayDto, MentionIdentityDisplayDtoBuilder> {
+  /// 原始目标 href；与原 label 配对匹配节点，不以 occurrence 或 userId 单独匹配
+  @BuiltValueField(wireName: r'sourceHref')
+  String? get sourceHref;
+
+  /// 稳定目标角色 ID；ACCOUNT/legacy 为 null，不随关闭/归档丢失。仅声明 Markdown 6 的读取返回角色目标
+  @BuiltValueField(wireName: r'targetIdentityId')
+  String? get targetIdentityId;
+
+  /// 角色所属主题；跨页面身份卡读取使用，不能猜当前页面主题
+  @BuiltValueField(wireName: r'threadId')
+  String? get threadId;
+
   @BuiltValueField(wireName: r'userId')
   String get userId;
 
@@ -54,6 +69,27 @@ class _$MentionIdentityDisplayDtoSerializer implements PrimitiveSerializer<Menti
     MentionIdentityDisplayDto object, {
     FullType specifiedType = FullType.unspecified,
   }) sync* {
+    if (object.sourceHref != null) {
+      yield r'sourceHref';
+      yield serializers.serialize(
+        object.sourceHref,
+        specifiedType: const FullType(String),
+      );
+    }
+    if (object.targetIdentityId != null) {
+      yield r'targetIdentityId';
+      yield serializers.serialize(
+        object.targetIdentityId,
+        specifiedType: const FullType.nullable(String),
+      );
+    }
+    if (object.threadId != null) {
+      yield r'threadId';
+      yield serializers.serialize(
+        object.threadId,
+        specifiedType: const FullType(String),
+      );
+    }
     yield r'userId';
     yield serializers.serialize(
       object.userId,
@@ -97,6 +133,28 @@ class _$MentionIdentityDisplayDtoSerializer implements PrimitiveSerializer<Menti
       final key = serializedList[i] as String;
       final value = serializedList[i + 1];
       switch (key) {
+        case r'sourceHref':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(String),
+          ) as String;
+          result.sourceHref = valueDes;
+          break;
+        case r'targetIdentityId':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(String),
+          ) as String?;
+          if (valueDes == null) continue;
+          result.targetIdentityId = valueDes;
+          break;
+        case r'threadId':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(String),
+          ) as String;
+          result.threadId = valueDes;
+          break;
         case r'userId':
           final valueDes = serializers.deserialize(
             value,
