@@ -202,6 +202,8 @@ $contractFiles = @(
   @{ Source = 'docs/discussion-navigation.md'; Destination = 'discussion-navigation.md' },
   @{ Source = 'contracts/thread-identity.v1.fixtures.json'; Destination = 'thread-identity.v1.fixtures.json' },
   @{ Source = 'docs/thread-identity.md'; Destination = 'thread-identity.md' },
+  @{ Source = 'contracts/rp-identity-profile-post.v1.fixtures.json'; Destination = 'rp-identity-profile-post.v1.fixtures.json' },
+  @{ Source = 'docs/rp-identity-profile-post.md'; Destination = 'rp-identity-profile-post.md' },
   @{ Source = 'contracts/CHANGELOG.md'; Destination = 'CHANGELOG.md' },
   @{ Source = 'docs/mobile-client-guide.md'; Destination = 'mobile-client-guide.md' },
   @{ Source = 'docs/mobile-release-operations.md'; Destination = 'mobile-release-operations.md' },

@@ -5,6 +5,7 @@
 // ignore_for_file: unused_element
 import 'package:wenyou_api/src/model/rp_identity_response_dto.dart';
 import 'package:wenyou_api/src/model/thread_identity_account_dto.dart';
+import 'package:built_collection/built_collection.dart';
 import 'package:wenyou_api/src/model/thread_identity_profile_dto.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
@@ -14,6 +15,8 @@ part 'rp_identity_state_dto.g.dart';
 /// RpIdentityStateDto
 ///
 /// Properties:
+/// * [profilePostStatus] - NONE：无可展示绑定（含身份关闭/归档/资格失效/空身份）；AVAILABLE：可读取当前资料；UNAVAILABLE：有效角色的绑定当前不可读。不可用不提供原因或目标 ID
+/// * [profilePostId] - 同一角色当前可读的资料楼层 ID；关闭、失去资格、空身份、归档、目标不可读时为 null。每次打开卡片重新读取，再调用 postsFindById，禁止缓存正文绕过授权
 /// * [threadId]
 /// * [userId]
 /// * [enabled]
@@ -29,6 +32,15 @@ part 'rp_identity_state_dto.g.dart';
 /// * [compatibilityIdentity] - 仅旧 single 协议内部锚点；不是新端的默认或候选优先级
 @BuiltValue()
 abstract class RpIdentityStateDto implements Built<RpIdentityStateDto, RpIdentityStateDtoBuilder> {
+  /// NONE：无可展示绑定（含身份关闭/归档/资格失效/空身份）；AVAILABLE：可读取当前资料；UNAVAILABLE：有效角色的绑定当前不可读。不可用不提供原因或目标 ID
+  @BuiltValueField(wireName: r'profilePostStatus')
+  RpIdentityStateDtoProfilePostStatusEnum? get profilePostStatus;
+  // enum profilePostStatusEnum {  NONE,  AVAILABLE,  UNAVAILABLE,  };
+
+  /// 同一角色当前可读的资料楼层 ID；关闭、失去资格、空身份、归档、目标不可读时为 null。每次打开卡片重新读取，再调用 postsFindById，禁止缓存正文绕过授权
+  @BuiltValueField(wireName: r'profilePostId')
+  String? get profilePostId;
+
   @BuiltValueField(wireName: r'threadId')
   String get threadId;
 
@@ -98,6 +110,20 @@ class _$RpIdentityStateDtoSerializer implements PrimitiveSerializer<RpIdentitySt
     RpIdentityStateDto object, {
     FullType specifiedType = FullType.unspecified,
   }) sync* {
+    if (object.profilePostStatus != null) {
+      yield r'profilePostStatus';
+      yield serializers.serialize(
+        object.profilePostStatus,
+        specifiedType: const FullType(RpIdentityStateDtoProfilePostStatusEnum),
+      );
+    }
+    if (object.profilePostId != null) {
+      yield r'profilePostId';
+      yield serializers.serialize(
+        object.profilePostId,
+        specifiedType: const FullType.nullable(String),
+      );
+    }
     yield r'threadId';
     yield serializers.serialize(
       object.threadId,
@@ -186,6 +212,21 @@ class _$RpIdentityStateDtoSerializer implements PrimitiveSerializer<RpIdentitySt
       final key = serializedList[i] as String;
       final value = serializedList[i + 1];
       switch (key) {
+        case r'profilePostStatus':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(RpIdentityStateDtoProfilePostStatusEnum),
+          ) as RpIdentityStateDtoProfilePostStatusEnum;
+          result.profilePostStatus = valueDes;
+          break;
+        case r'profilePostId':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(String),
+          ) as String?;
+          if (valueDes == null) continue;
+          result.profilePostId = valueDes;
+          break;
         case r'threadId':
           final valueDes = serializers.deserialize(
             value,
@@ -307,4 +348,27 @@ class _$RpIdentityStateDtoSerializer implements PrimitiveSerializer<RpIdentitySt
     );
     return result.build();
   }
+}
+
+class RpIdentityStateDtoProfilePostStatusEnum extends EnumClass {
+
+  /// NONE：无可展示绑定（含身份关闭/归档/资格失效/空身份）；AVAILABLE：可读取当前资料；UNAVAILABLE：有效角色的绑定当前不可读。不可用不提供原因或目标 ID
+  @BuiltValueEnumConst(wireName: r'NONE')
+  static const RpIdentityStateDtoProfilePostStatusEnum NONE = _$rpIdentityStateDtoProfilePostStatusEnum_NONE;
+  /// NONE：无可展示绑定（含身份关闭/归档/资格失效/空身份）；AVAILABLE：可读取当前资料；UNAVAILABLE：有效角色的绑定当前不可读。不可用不提供原因或目标 ID
+  @BuiltValueEnumConst(wireName: r'AVAILABLE')
+  static const RpIdentityStateDtoProfilePostStatusEnum AVAILABLE = _$rpIdentityStateDtoProfilePostStatusEnum_AVAILABLE;
+  /// NONE：无可展示绑定（含身份关闭/归档/资格失效/空身份）；AVAILABLE：可读取当前资料；UNAVAILABLE：有效角色的绑定当前不可读。不可用不提供原因或目标 ID
+  @BuiltValueEnumConst(wireName: r'UNAVAILABLE')
+  static const RpIdentityStateDtoProfilePostStatusEnum UNAVAILABLE = _$rpIdentityStateDtoProfilePostStatusEnum_UNAVAILABLE;
+  /// NONE：无可展示绑定（含身份关闭/归档/资格失效/空身份）；AVAILABLE：可读取当前资料；UNAVAILABLE：有效角色的绑定当前不可读。不可用不提供原因或目标 ID
+  @BuiltValueEnumConst(wireName: r'unknown_default_open_api', fallback: true)
+  static const RpIdentityStateDtoProfilePostStatusEnum unknownDefaultOpenApi = _$rpIdentityStateDtoProfilePostStatusEnum_unknownDefaultOpenApi;
+
+  static Serializer<RpIdentityStateDtoProfilePostStatusEnum> get serializer => _$rpIdentityStateDtoProfilePostStatusEnumSerializer;
+
+  const RpIdentityStateDtoProfilePostStatusEnum._(String name): super(name);
+
+  static BuiltSet<RpIdentityStateDtoProfilePostStatusEnum> get values => _$rpIdentityStateDtoProfilePostStatusEnumValues;
+  static RpIdentityStateDtoProfilePostStatusEnum valueOf(String name) => _$rpIdentityStateDtoProfilePostStatusEnumValueOf(name);
 }

@@ -8,6 +8,8 @@ part of 'api_capabilities_response_dto.dart';
 
 class _$ApiCapabilitiesResponseDto extends ApiCapabilitiesResponseDto {
   @override
+  final bool? rpIdentityProfileSupported;
+  @override
   final bool? roleMentionsV6Supported;
   @override
   final bool? roleMentionsV6WriteEnabled;
@@ -23,6 +25,7 @@ class _$ApiCapabilitiesResponseDto extends ApiCapabilitiesResponseDto {
   ]) => (ApiCapabilitiesResponseDtoBuilder()..update(updates))._build();
 
   _$ApiCapabilitiesResponseDto._({
+    this.rpIdentityProfileSupported,
     this.roleMentionsV6Supported,
     this.roleMentionsV6WriteEnabled,
     required this.stickers,
@@ -42,6 +45,7 @@ class _$ApiCapabilitiesResponseDto extends ApiCapabilitiesResponseDto {
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
     return other is ApiCapabilitiesResponseDto &&
+        rpIdentityProfileSupported == other.rpIdentityProfileSupported &&
         roleMentionsV6Supported == other.roleMentionsV6Supported &&
         roleMentionsV6WriteEnabled == other.roleMentionsV6WriteEnabled &&
         stickers == other.stickers &&
@@ -52,6 +56,7 @@ class _$ApiCapabilitiesResponseDto extends ApiCapabilitiesResponseDto {
   @override
   int get hashCode {
     var _$hash = 0;
+    _$hash = $jc(_$hash, rpIdentityProfileSupported.hashCode);
     _$hash = $jc(_$hash, roleMentionsV6Supported.hashCode);
     _$hash = $jc(_$hash, roleMentionsV6WriteEnabled.hashCode);
     _$hash = $jc(_$hash, stickers.hashCode);
@@ -64,6 +69,7 @@ class _$ApiCapabilitiesResponseDto extends ApiCapabilitiesResponseDto {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'ApiCapabilitiesResponseDto')
+          ..add('rpIdentityProfileSupported', rpIdentityProfileSupported)
           ..add('roleMentionsV6Supported', roleMentionsV6Supported)
           ..add('roleMentionsV6WriteEnabled', roleMentionsV6WriteEnabled)
           ..add('stickers', stickers)
@@ -77,6 +83,11 @@ class ApiCapabilitiesResponseDtoBuilder
     implements
         Builder<ApiCapabilitiesResponseDto, ApiCapabilitiesResponseDtoBuilder> {
   _$ApiCapabilitiesResponseDto? _$v;
+
+  bool? _rpIdentityProfileSupported;
+  bool? get rpIdentityProfileSupported => _$this._rpIdentityProfileSupported;
+  set rpIdentityProfileSupported(bool? rpIdentityProfileSupported) =>
+      _$this._rpIdentityProfileSupported = rpIdentityProfileSupported;
 
   bool? _roleMentionsV6Supported;
   bool? get roleMentionsV6Supported => _$this._roleMentionsV6Supported;
@@ -109,6 +120,7 @@ class ApiCapabilitiesResponseDtoBuilder
   ApiCapabilitiesResponseDtoBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
+      _rpIdentityProfileSupported = $v.rpIdentityProfileSupported;
       _roleMentionsV6Supported = $v.roleMentionsV6Supported;
       _roleMentionsV6WriteEnabled = $v.roleMentionsV6WriteEnabled;
       _stickers = $v.stickers;
@@ -136,6 +148,7 @@ class ApiCapabilitiesResponseDtoBuilder
     final _$result =
         _$v ??
         _$ApiCapabilitiesResponseDto._(
+          rpIdentityProfileSupported: rpIdentityProfileSupported,
           roleMentionsV6Supported: roleMentionsV6Supported,
           roleMentionsV6WriteEnabled: roleMentionsV6WriteEnabled,
           stickers: BuiltValueNullFieldError.checkNotNull(

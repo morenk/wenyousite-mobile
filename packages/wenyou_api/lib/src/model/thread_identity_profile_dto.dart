@@ -11,12 +11,17 @@ part 'thread_identity_profile_dto.g.dart';
 /// ThreadIdentityProfileDto
 ///
 /// Properties:
+/// * [profilePostId] - 本人保存的资料楼层绑定；不代表当前可读取。资料正文必须另经 postsFindById 授权读取
 /// * [id]
 /// * [nickname]
 /// * [avatarMediaId]
 /// * [version]
 @BuiltValue()
 abstract class ThreadIdentityProfileDto implements Built<ThreadIdentityProfileDto, ThreadIdentityProfileDtoBuilder> {
+  /// 本人保存的资料楼层绑定；不代表当前可读取。资料正文必须另经 postsFindById 授权读取
+  @BuiltValueField(wireName: r'profilePostId')
+  String? get profilePostId;
+
   @BuiltValueField(wireName: r'id')
   String get id;
 
@@ -52,6 +57,13 @@ class _$ThreadIdentityProfileDtoSerializer implements PrimitiveSerializer<Thread
     ThreadIdentityProfileDto object, {
     FullType specifiedType = FullType.unspecified,
   }) sync* {
+    if (object.profilePostId != null) {
+      yield r'profilePostId';
+      yield serializers.serialize(
+        object.profilePostId,
+        specifiedType: const FullType.nullable(String),
+      );
+    }
     yield r'id';
     yield serializers.serialize(
       object.id,
@@ -95,6 +107,14 @@ class _$ThreadIdentityProfileDtoSerializer implements PrimitiveSerializer<Thread
       final key = serializedList[i] as String;
       final value = serializedList[i + 1];
       switch (key) {
+        case r'profilePostId':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(String),
+          ) as String?;
+          if (valueDes == null) continue;
+          result.profilePostId = valueDes;
+          break;
         case r'id':
           final valueDes = serializers.deserialize(
             value,

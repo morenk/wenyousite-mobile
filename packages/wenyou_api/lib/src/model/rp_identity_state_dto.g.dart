@@ -6,7 +6,94 @@ part of 'rp_identity_state_dto.dart';
 // BuiltValueGenerator
 // **************************************************************************
 
+const RpIdentityStateDtoProfilePostStatusEnum
+_$rpIdentityStateDtoProfilePostStatusEnum_NONE =
+    const RpIdentityStateDtoProfilePostStatusEnum._('NONE');
+const RpIdentityStateDtoProfilePostStatusEnum
+_$rpIdentityStateDtoProfilePostStatusEnum_AVAILABLE =
+    const RpIdentityStateDtoProfilePostStatusEnum._('AVAILABLE');
+const RpIdentityStateDtoProfilePostStatusEnum
+_$rpIdentityStateDtoProfilePostStatusEnum_UNAVAILABLE =
+    const RpIdentityStateDtoProfilePostStatusEnum._('UNAVAILABLE');
+const RpIdentityStateDtoProfilePostStatusEnum
+_$rpIdentityStateDtoProfilePostStatusEnum_unknownDefaultOpenApi =
+    const RpIdentityStateDtoProfilePostStatusEnum._('unknownDefaultOpenApi');
+
+RpIdentityStateDtoProfilePostStatusEnum
+_$rpIdentityStateDtoProfilePostStatusEnumValueOf(String name) {
+  switch (name) {
+    case 'NONE':
+      return _$rpIdentityStateDtoProfilePostStatusEnum_NONE;
+    case 'AVAILABLE':
+      return _$rpIdentityStateDtoProfilePostStatusEnum_AVAILABLE;
+    case 'UNAVAILABLE':
+      return _$rpIdentityStateDtoProfilePostStatusEnum_UNAVAILABLE;
+    case 'unknownDefaultOpenApi':
+      return _$rpIdentityStateDtoProfilePostStatusEnum_unknownDefaultOpenApi;
+    default:
+      return _$rpIdentityStateDtoProfilePostStatusEnum_unknownDefaultOpenApi;
+  }
+}
+
+final BuiltSet<RpIdentityStateDtoProfilePostStatusEnum>
+_$rpIdentityStateDtoProfilePostStatusEnumValues =
+    BuiltSet<RpIdentityStateDtoProfilePostStatusEnum>(
+      const <RpIdentityStateDtoProfilePostStatusEnum>[
+        _$rpIdentityStateDtoProfilePostStatusEnum_NONE,
+        _$rpIdentityStateDtoProfilePostStatusEnum_AVAILABLE,
+        _$rpIdentityStateDtoProfilePostStatusEnum_UNAVAILABLE,
+        _$rpIdentityStateDtoProfilePostStatusEnum_unknownDefaultOpenApi,
+      ],
+    );
+
+Serializer<RpIdentityStateDtoProfilePostStatusEnum>
+_$rpIdentityStateDtoProfilePostStatusEnumSerializer =
+    _$RpIdentityStateDtoProfilePostStatusEnumSerializer();
+
+class _$RpIdentityStateDtoProfilePostStatusEnumSerializer
+    implements PrimitiveSerializer<RpIdentityStateDtoProfilePostStatusEnum> {
+  static const Map<String, Object> _toWire = const <String, Object>{
+    'NONE': 'NONE',
+    'AVAILABLE': 'AVAILABLE',
+    'UNAVAILABLE': 'UNAVAILABLE',
+    'unknownDefaultOpenApi': 'unknown_default_open_api',
+  };
+  static const Map<Object, String> _fromWire = const <Object, String>{
+    'NONE': 'NONE',
+    'AVAILABLE': 'AVAILABLE',
+    'UNAVAILABLE': 'UNAVAILABLE',
+    'unknown_default_open_api': 'unknownDefaultOpenApi',
+  };
+
+  @override
+  final Iterable<Type> types = const <Type>[
+    RpIdentityStateDtoProfilePostStatusEnum,
+  ];
+  @override
+  final String wireName = 'RpIdentityStateDtoProfilePostStatusEnum';
+
+  @override
+  Object serialize(
+    Serializers serializers,
+    RpIdentityStateDtoProfilePostStatusEnum object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => _toWire[object.name] ?? object.name;
+
+  @override
+  RpIdentityStateDtoProfilePostStatusEnum deserialize(
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => RpIdentityStateDtoProfilePostStatusEnum.valueOf(
+    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
+  );
+}
+
 class _$RpIdentityStateDto extends RpIdentityStateDto {
+  @override
+  final RpIdentityStateDtoProfilePostStatusEnum? profilePostStatus;
+  @override
+  final String? profilePostId;
   @override
   final String threadId;
   @override
@@ -39,6 +126,8 @@ class _$RpIdentityStateDto extends RpIdentityStateDto {
   ]) => (RpIdentityStateDtoBuilder()..update(updates))._build();
 
   _$RpIdentityStateDto._({
+    this.profilePostStatus,
+    this.profilePostId,
     required this.threadId,
     required this.userId,
     required this.enabled,
@@ -66,6 +155,8 @@ class _$RpIdentityStateDto extends RpIdentityStateDto {
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
     return other is RpIdentityStateDto &&
+        profilePostStatus == other.profilePostStatus &&
+        profilePostId == other.profilePostId &&
         threadId == other.threadId &&
         userId == other.userId &&
         enabled == other.enabled &&
@@ -84,6 +175,8 @@ class _$RpIdentityStateDto extends RpIdentityStateDto {
   @override
   int get hashCode {
     var _$hash = 0;
+    _$hash = $jc(_$hash, profilePostStatus.hashCode);
+    _$hash = $jc(_$hash, profilePostId.hashCode);
     _$hash = $jc(_$hash, threadId.hashCode);
     _$hash = $jc(_$hash, userId.hashCode);
     _$hash = $jc(_$hash, enabled.hashCode);
@@ -104,6 +197,8 @@ class _$RpIdentityStateDto extends RpIdentityStateDto {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'RpIdentityStateDto')
+          ..add('profilePostStatus', profilePostStatus)
+          ..add('profilePostId', profilePostId)
           ..add('threadId', threadId)
           ..add('userId', userId)
           ..add('enabled', enabled)
@@ -124,6 +219,18 @@ class _$RpIdentityStateDto extends RpIdentityStateDto {
 class RpIdentityStateDtoBuilder
     implements Builder<RpIdentityStateDto, RpIdentityStateDtoBuilder> {
   _$RpIdentityStateDto? _$v;
+
+  RpIdentityStateDtoProfilePostStatusEnum? _profilePostStatus;
+  RpIdentityStateDtoProfilePostStatusEnum? get profilePostStatus =>
+      _$this._profilePostStatus;
+  set profilePostStatus(
+    RpIdentityStateDtoProfilePostStatusEnum? profilePostStatus,
+  ) => _$this._profilePostStatus = profilePostStatus;
+
+  String? _profilePostId;
+  String? get profilePostId => _$this._profilePostId;
+  set profilePostId(String? profilePostId) =>
+      _$this._profilePostId = profilePostId;
 
   String? _threadId;
   String? get threadId => _$this._threadId;
@@ -192,6 +299,8 @@ class RpIdentityStateDtoBuilder
   RpIdentityStateDtoBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
+      _profilePostStatus = $v.profilePostStatus;
+      _profilePostId = $v.profilePostId;
       _threadId = $v.threadId;
       _userId = $v.userId;
       _enabled = $v.enabled;
@@ -229,6 +338,8 @@ class RpIdentityStateDtoBuilder
       _$result =
           _$v ??
           _$RpIdentityStateDto._(
+            profilePostStatus: profilePostStatus,
+            profilePostId: profilePostId,
             threadId: BuiltValueNullFieldError.checkNotNull(
               threadId,
               r'RpIdentityStateDto',

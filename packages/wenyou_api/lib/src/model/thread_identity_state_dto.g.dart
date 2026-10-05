@@ -6,7 +6,97 @@ part of 'thread_identity_state_dto.dart';
 // BuiltValueGenerator
 // **************************************************************************
 
+const ThreadIdentityStateDtoProfilePostStatusEnum
+_$threadIdentityStateDtoProfilePostStatusEnum_NONE =
+    const ThreadIdentityStateDtoProfilePostStatusEnum._('NONE');
+const ThreadIdentityStateDtoProfilePostStatusEnum
+_$threadIdentityStateDtoProfilePostStatusEnum_AVAILABLE =
+    const ThreadIdentityStateDtoProfilePostStatusEnum._('AVAILABLE');
+const ThreadIdentityStateDtoProfilePostStatusEnum
+_$threadIdentityStateDtoProfilePostStatusEnum_UNAVAILABLE =
+    const ThreadIdentityStateDtoProfilePostStatusEnum._('UNAVAILABLE');
+const ThreadIdentityStateDtoProfilePostStatusEnum
+_$threadIdentityStateDtoProfilePostStatusEnum_unknownDefaultOpenApi =
+    const ThreadIdentityStateDtoProfilePostStatusEnum._(
+      'unknownDefaultOpenApi',
+    );
+
+ThreadIdentityStateDtoProfilePostStatusEnum
+_$threadIdentityStateDtoProfilePostStatusEnumValueOf(String name) {
+  switch (name) {
+    case 'NONE':
+      return _$threadIdentityStateDtoProfilePostStatusEnum_NONE;
+    case 'AVAILABLE':
+      return _$threadIdentityStateDtoProfilePostStatusEnum_AVAILABLE;
+    case 'UNAVAILABLE':
+      return _$threadIdentityStateDtoProfilePostStatusEnum_UNAVAILABLE;
+    case 'unknownDefaultOpenApi':
+      return _$threadIdentityStateDtoProfilePostStatusEnum_unknownDefaultOpenApi;
+    default:
+      return _$threadIdentityStateDtoProfilePostStatusEnum_unknownDefaultOpenApi;
+  }
+}
+
+final BuiltSet<ThreadIdentityStateDtoProfilePostStatusEnum>
+_$threadIdentityStateDtoProfilePostStatusEnumValues =
+    BuiltSet<ThreadIdentityStateDtoProfilePostStatusEnum>(
+      const <ThreadIdentityStateDtoProfilePostStatusEnum>[
+        _$threadIdentityStateDtoProfilePostStatusEnum_NONE,
+        _$threadIdentityStateDtoProfilePostStatusEnum_AVAILABLE,
+        _$threadIdentityStateDtoProfilePostStatusEnum_UNAVAILABLE,
+        _$threadIdentityStateDtoProfilePostStatusEnum_unknownDefaultOpenApi,
+      ],
+    );
+
+Serializer<ThreadIdentityStateDtoProfilePostStatusEnum>
+_$threadIdentityStateDtoProfilePostStatusEnumSerializer =
+    _$ThreadIdentityStateDtoProfilePostStatusEnumSerializer();
+
+class _$ThreadIdentityStateDtoProfilePostStatusEnumSerializer
+    implements
+        PrimitiveSerializer<ThreadIdentityStateDtoProfilePostStatusEnum> {
+  static const Map<String, Object> _toWire = const <String, Object>{
+    'NONE': 'NONE',
+    'AVAILABLE': 'AVAILABLE',
+    'UNAVAILABLE': 'UNAVAILABLE',
+    'unknownDefaultOpenApi': 'unknown_default_open_api',
+  };
+  static const Map<Object, String> _fromWire = const <Object, String>{
+    'NONE': 'NONE',
+    'AVAILABLE': 'AVAILABLE',
+    'UNAVAILABLE': 'UNAVAILABLE',
+    'unknown_default_open_api': 'unknownDefaultOpenApi',
+  };
+
+  @override
+  final Iterable<Type> types = const <Type>[
+    ThreadIdentityStateDtoProfilePostStatusEnum,
+  ];
+  @override
+  final String wireName = 'ThreadIdentityStateDtoProfilePostStatusEnum';
+
+  @override
+  Object serialize(
+    Serializers serializers,
+    ThreadIdentityStateDtoProfilePostStatusEnum object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => _toWire[object.name] ?? object.name;
+
+  @override
+  ThreadIdentityStateDtoProfilePostStatusEnum deserialize(
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => ThreadIdentityStateDtoProfilePostStatusEnum.valueOf(
+    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
+  );
+}
+
 class _$ThreadIdentityStateDto extends ThreadIdentityStateDto {
+  @override
+  final ThreadIdentityStateDtoProfilePostStatusEnum? profilePostStatus;
+  @override
+  final String? profilePostId;
   @override
   final String threadId;
   @override
@@ -31,6 +121,8 @@ class _$ThreadIdentityStateDto extends ThreadIdentityStateDto {
   ]) => (ThreadIdentityStateDtoBuilder()..update(updates))._build();
 
   _$ThreadIdentityStateDto._({
+    this.profilePostStatus,
+    this.profilePostId,
     required this.threadId,
     required this.userId,
     required this.enabled,
@@ -54,6 +146,8 @@ class _$ThreadIdentityStateDto extends ThreadIdentityStateDto {
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
     return other is ThreadIdentityStateDto &&
+        profilePostStatus == other.profilePostStatus &&
+        profilePostId == other.profilePostId &&
         threadId == other.threadId &&
         userId == other.userId &&
         enabled == other.enabled &&
@@ -68,6 +162,8 @@ class _$ThreadIdentityStateDto extends ThreadIdentityStateDto {
   @override
   int get hashCode {
     var _$hash = 0;
+    _$hash = $jc(_$hash, profilePostStatus.hashCode);
+    _$hash = $jc(_$hash, profilePostId.hashCode);
     _$hash = $jc(_$hash, threadId.hashCode);
     _$hash = $jc(_$hash, userId.hashCode);
     _$hash = $jc(_$hash, enabled.hashCode);
@@ -84,6 +180,8 @@ class _$ThreadIdentityStateDto extends ThreadIdentityStateDto {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'ThreadIdentityStateDto')
+          ..add('profilePostStatus', profilePostStatus)
+          ..add('profilePostId', profilePostId)
           ..add('threadId', threadId)
           ..add('userId', userId)
           ..add('enabled', enabled)
@@ -100,6 +198,18 @@ class _$ThreadIdentityStateDto extends ThreadIdentityStateDto {
 class ThreadIdentityStateDtoBuilder
     implements Builder<ThreadIdentityStateDto, ThreadIdentityStateDtoBuilder> {
   _$ThreadIdentityStateDto? _$v;
+
+  ThreadIdentityStateDtoProfilePostStatusEnum? _profilePostStatus;
+  ThreadIdentityStateDtoProfilePostStatusEnum? get profilePostStatus =>
+      _$this._profilePostStatus;
+  set profilePostStatus(
+    ThreadIdentityStateDtoProfilePostStatusEnum? profilePostStatus,
+  ) => _$this._profilePostStatus = profilePostStatus;
+
+  String? _profilePostId;
+  String? get profilePostId => _$this._profilePostId;
+  set profilePostId(String? profilePostId) =>
+      _$this._profilePostId = profilePostId;
 
   String? _threadId;
   String? get threadId => _$this._threadId;
@@ -151,6 +261,8 @@ class ThreadIdentityStateDtoBuilder
   ThreadIdentityStateDtoBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
+      _profilePostStatus = $v.profilePostStatus;
+      _profilePostId = $v.profilePostId;
       _threadId = $v.threadId;
       _userId = $v.userId;
       _enabled = $v.enabled;
@@ -184,6 +296,8 @@ class ThreadIdentityStateDtoBuilder
       _$result =
           _$v ??
           _$ThreadIdentityStateDto._(
+            profilePostStatus: profilePostStatus,
+            profilePostId: profilePostId,
             threadId: BuiltValueNullFieldError.checkNotNull(
               threadId,
               r'ThreadIdentityStateDto',

@@ -11,6 +11,8 @@ part 'update_rp_identity_dto.g.dart';
 /// UpdateRpIdentityDto
 ///
 /// Properties:
+/// * [profilePostId] - 本主题内当前可读且可用的楼层、楼中楼或子贴正文 ID，可引用他人发言；省略保留，null 清除；不接受 URL
+/// * [clearProfilePost] - 显式解除资料绑定，供省略 null 的客户端使用；不能与非空 profilePostId 同时提供
 /// * [clearNickname] - 显式清除昵称，供省略 null 的客户端使用；不能与非空 nickname 同时提供
 /// * [clearAvatar] - 显式清除头像；不能与非空 avatarMediaId 同时提供
 /// * [nickname] - 允许重名、空格及标点；去除首尾空白，空字符串清除。不允许反斜线、方括号、HTML括号或控制字符
@@ -18,6 +20,14 @@ part 'update_rp_identity_dto.g.dart';
 /// * [version] - 所选角色版本；409/40002 时重新读取，不能覆盖另一角色
 @BuiltValue()
 abstract class UpdateRpIdentityDto implements Built<UpdateRpIdentityDto, UpdateRpIdentityDtoBuilder> {
+  /// 本主题内当前可读且可用的楼层、楼中楼或子贴正文 ID，可引用他人发言；省略保留，null 清除；不接受 URL
+  @BuiltValueField(wireName: r'profilePostId')
+  String? get profilePostId;
+
+  /// 显式解除资料绑定，供省略 null 的客户端使用；不能与非空 profilePostId 同时提供
+  @BuiltValueField(wireName: r'clearProfilePost')
+  bool? get clearProfilePost;
+
   /// 显式清除昵称，供省略 null 的客户端使用；不能与非空 nickname 同时提供
   @BuiltValueField(wireName: r'clearNickname')
   bool? get clearNickname;
@@ -61,6 +71,20 @@ class _$UpdateRpIdentityDtoSerializer implements PrimitiveSerializer<UpdateRpIde
     UpdateRpIdentityDto object, {
     FullType specifiedType = FullType.unspecified,
   }) sync* {
+    if (object.profilePostId != null) {
+      yield r'profilePostId';
+      yield serializers.serialize(
+        object.profilePostId,
+        specifiedType: const FullType.nullable(String),
+      );
+    }
+    if (object.clearProfilePost != null) {
+      yield r'clearProfilePost';
+      yield serializers.serialize(
+        object.clearProfilePost,
+        specifiedType: const FullType(bool),
+      );
+    }
     if (object.clearNickname != null) {
       yield r'clearNickname';
       yield serializers.serialize(
@@ -117,6 +141,21 @@ class _$UpdateRpIdentityDtoSerializer implements PrimitiveSerializer<UpdateRpIde
       final key = serializedList[i] as String;
       final value = serializedList[i + 1];
       switch (key) {
+        case r'profilePostId':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(String),
+          ) as String?;
+          if (valueDes == null) continue;
+          result.profilePostId = valueDes;
+          break;
+        case r'clearProfilePost':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(bool),
+          ) as bool;
+          result.clearProfilePost = valueDes;
+          break;
         case r'clearNickname':
           final valueDes = serializers.deserialize(
             value,

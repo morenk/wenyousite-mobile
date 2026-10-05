@@ -8,6 +8,8 @@ part of 'thread_identity_profile_dto.dart';
 
 class _$ThreadIdentityProfileDto extends ThreadIdentityProfileDto {
   @override
+  final String? profilePostId;
+  @override
   final String id;
   @override
   final String? nickname;
@@ -21,6 +23,7 @@ class _$ThreadIdentityProfileDto extends ThreadIdentityProfileDto {
   ]) => (ThreadIdentityProfileDtoBuilder()..update(updates))._build();
 
   _$ThreadIdentityProfileDto._({
+    this.profilePostId,
     required this.id,
     this.nickname,
     this.avatarMediaId,
@@ -39,6 +42,7 @@ class _$ThreadIdentityProfileDto extends ThreadIdentityProfileDto {
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
     return other is ThreadIdentityProfileDto &&
+        profilePostId == other.profilePostId &&
         id == other.id &&
         nickname == other.nickname &&
         avatarMediaId == other.avatarMediaId &&
@@ -48,6 +52,7 @@ class _$ThreadIdentityProfileDto extends ThreadIdentityProfileDto {
   @override
   int get hashCode {
     var _$hash = 0;
+    _$hash = $jc(_$hash, profilePostId.hashCode);
     _$hash = $jc(_$hash, id.hashCode);
     _$hash = $jc(_$hash, nickname.hashCode);
     _$hash = $jc(_$hash, avatarMediaId.hashCode);
@@ -59,6 +64,7 @@ class _$ThreadIdentityProfileDto extends ThreadIdentityProfileDto {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'ThreadIdentityProfileDto')
+          ..add('profilePostId', profilePostId)
           ..add('id', id)
           ..add('nickname', nickname)
           ..add('avatarMediaId', avatarMediaId)
@@ -71,6 +77,11 @@ class ThreadIdentityProfileDtoBuilder
     implements
         Builder<ThreadIdentityProfileDto, ThreadIdentityProfileDtoBuilder> {
   _$ThreadIdentityProfileDto? _$v;
+
+  String? _profilePostId;
+  String? get profilePostId => _$this._profilePostId;
+  set profilePostId(String? profilePostId) =>
+      _$this._profilePostId = profilePostId;
 
   String? _id;
   String? get id => _$this._id;
@@ -96,6 +107,7 @@ class ThreadIdentityProfileDtoBuilder
   ThreadIdentityProfileDtoBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
+      _profilePostId = $v.profilePostId;
       _id = $v.id;
       _nickname = $v.nickname;
       _avatarMediaId = $v.avatarMediaId;
@@ -122,6 +134,7 @@ class ThreadIdentityProfileDtoBuilder
     final _$result =
         _$v ??
         _$ThreadIdentityProfileDto._(
+          profilePostId: profilePostId,
           id: BuiltValueNullFieldError.checkNotNull(
             id,
             r'ThreadIdentityProfileDto',

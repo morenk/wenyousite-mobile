@@ -8,6 +8,10 @@ part of 'create_rp_identity_dto.dart';
 
 class _$CreateRpIdentityDto extends CreateRpIdentityDto {
   @override
+  final String? profilePostId;
+  @override
+  final bool? clearProfilePost;
+  @override
   final bool? clearNickname;
   @override
   final bool? clearAvatar;
@@ -21,6 +25,8 @@ class _$CreateRpIdentityDto extends CreateRpIdentityDto {
   ]) => (CreateRpIdentityDtoBuilder()..update(updates))._build();
 
   _$CreateRpIdentityDto._({
+    this.profilePostId,
+    this.clearProfilePost,
     this.clearNickname,
     this.clearAvatar,
     this.nickname,
@@ -39,6 +45,8 @@ class _$CreateRpIdentityDto extends CreateRpIdentityDto {
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
     return other is CreateRpIdentityDto &&
+        profilePostId == other.profilePostId &&
+        clearProfilePost == other.clearProfilePost &&
         clearNickname == other.clearNickname &&
         clearAvatar == other.clearAvatar &&
         nickname == other.nickname &&
@@ -48,6 +56,8 @@ class _$CreateRpIdentityDto extends CreateRpIdentityDto {
   @override
   int get hashCode {
     var _$hash = 0;
+    _$hash = $jc(_$hash, profilePostId.hashCode);
+    _$hash = $jc(_$hash, clearProfilePost.hashCode);
     _$hash = $jc(_$hash, clearNickname.hashCode);
     _$hash = $jc(_$hash, clearAvatar.hashCode);
     _$hash = $jc(_$hash, nickname.hashCode);
@@ -59,6 +69,8 @@ class _$CreateRpIdentityDto extends CreateRpIdentityDto {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'CreateRpIdentityDto')
+          ..add('profilePostId', profilePostId)
+          ..add('clearProfilePost', clearProfilePost)
           ..add('clearNickname', clearNickname)
           ..add('clearAvatar', clearAvatar)
           ..add('nickname', nickname)
@@ -70,6 +82,16 @@ class _$CreateRpIdentityDto extends CreateRpIdentityDto {
 class CreateRpIdentityDtoBuilder
     implements Builder<CreateRpIdentityDto, CreateRpIdentityDtoBuilder> {
   _$CreateRpIdentityDto? _$v;
+
+  String? _profilePostId;
+  String? get profilePostId => _$this._profilePostId;
+  set profilePostId(String? profilePostId) =>
+      _$this._profilePostId = profilePostId;
+
+  bool? _clearProfilePost;
+  bool? get clearProfilePost => _$this._clearProfilePost;
+  set clearProfilePost(bool? clearProfilePost) =>
+      _$this._clearProfilePost = clearProfilePost;
 
   bool? _clearNickname;
   bool? get clearNickname => _$this._clearNickname;
@@ -96,6 +118,8 @@ class CreateRpIdentityDtoBuilder
   CreateRpIdentityDtoBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
+      _profilePostId = $v.profilePostId;
+      _clearProfilePost = $v.clearProfilePost;
       _clearNickname = $v.clearNickname;
       _clearAvatar = $v.clearAvatar;
       _nickname = $v.nickname;
@@ -122,6 +146,8 @@ class CreateRpIdentityDtoBuilder
     final _$result =
         _$v ??
         _$CreateRpIdentityDto._(
+          profilePostId: profilePostId,
+          clearProfilePost: clearProfilePost,
           clearNickname: clearNickname,
           clearAvatar: clearAvatar,
           nickname: nickname,
