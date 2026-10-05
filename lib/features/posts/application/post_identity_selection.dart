@@ -39,13 +39,9 @@ class PostIdentitySelection extends ChangeNotifier {
       if (_disposed || epoch != _epoch) return false;
       collection = value;
       if (mode == null) {
-        identityId = value.defaultIdentityId;
-        mode = value.find(identityId)?.hasRp == true
-            ? PostIdentityMode.rp
-            : PostIdentityMode.account;
-        acceptedToken = mode == PostIdentityMode.rp
-            ? identity?.identityToken
-            : null;
+        identityId = null;
+        mode = PostIdentityMode.account;
+        acceptedToken = null;
       }
       // 旧 RP 草稿只迁移到明确的兼容身份，绝不猜另一个角色。
       if (_resolveLegacy) {
@@ -67,7 +63,7 @@ class PostIdentitySelection extends ChangeNotifier {
   }
 
   void select(PostIdentityMode next, {String? id}) {
-    final candidate = id ?? identityId ?? collection?.defaultIdentityId;
+    final candidate = id ?? identityId;
     if (next == PostIdentityMode.rp &&
         collection?.find(candidate)?.hasRp != true) {
       return;

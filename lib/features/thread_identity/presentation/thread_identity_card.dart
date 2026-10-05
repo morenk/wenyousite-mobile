@@ -12,6 +12,7 @@ Future<void> showThreadIdentityCard({
   required String threadId,
   required String userId,
   RpIdentity? historical,
+  String? identityId,
   bool fromPost = false,
   String? roleLabel,
 }) async {
@@ -19,11 +20,12 @@ Future<void> showThreadIdentityCard({
     context: context,
     builder: (context) => Consumer(
       builder: (context, ref, _) {
-        final provider = historical != null
+        final targetId = historical?.id ?? identityId;
+        final provider = targetId != null
             ? rpIdentityCardProvider((
                 threadId: threadId,
                 userId: userId,
-                identityId: historical.id,
+                identityId: targetId,
               ))
             : threadIdentityCardProvider((threadId: threadId, userId: userId));
         final state = ref.watch(provider);

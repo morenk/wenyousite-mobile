@@ -8,6 +8,90 @@ import 'package:wenyousite_mobile/features/editor/data/mention_candidate_reposit
 import 'package:wenyousite_mobile/features/editor/domain/mention_models.dart';
 
 void main() {
+  test('同账号同名的账号和两个角色保持三个独立候选', () async {
+    final api = _MockUsersApi();
+    const roleA = 'c00000000000000000000000a';
+    const roleB = 'c00000000000000000000000b';
+    MentionCandidateDto candidate(String? role) =>
+        _candidate(
+          id: 'user-peer',
+          username: '同名',
+          relation: MentionCandidateDtoRelationEnum.PLAYER,
+        ).rebuild(
+          (b) => b
+            ..candidateKey = role == null ? 'ACCOUNT:user-peer' : 'RP:$role'
+            ..targetIdentityId = role
+            ..avatar = 'https://wenyou.site/account.webp'
+            ..rpIdentity = role == null
+                ? null
+                : RpIdentityResponseDto(
+                    (r) => r
+                      ..id = role
+                      ..nickname = '同名'
+                      ..avatar = 'https://wenyou.site/$role.webp',
+                  ).toBuilder()
+            ..mentionLabel = '同名'
+            ..mentionHref =
+                '/users/user-peer?${role == null ? 'identityMode=ACCOUNT' : 'rpIdentityId=$role'}',
+        );
+    when(
+      () => api.usersMentionCandidates(
+        threadId: 'thread',
+        q: '同名',
+        includeIdentities: true,
+      ),
+    ).thenAnswer(
+      (_) async => _response(
+        users: [
+          candidate(null),
+          candidate(roleA),
+          candidate(roleB),
+          candidate(roleB),
+        ],
+      ),
+    );
+    final result = await ApiMentionCandidateRepository(
+      api,
+      roleMentionsSupported: true,
+      roleMentionsWriteEnabled: true,
+    ).findCandidates(threadId: 'thread', query: '同名');
+    expect(result.users.map((v) => v.key), [
+      'ACCOUNT:user-peer',
+      'RP:$roleA',
+      'RP:$roleB',
+    ]);
+    expect(result.users.map((v) => v.label), everyElement('@同名'));
+    expect(result.users.map((value) => value.avatarUrl), [
+      'https://wenyou.site/account.webp',
+      'https://wenyou.site/$roleA.webp',
+      'https://wenyou.site/$roleB.webp',
+    ]);
+    expect(result.users.first.isExplicitAccount, isTrue);
+    expect(result.users.last.isRole, isTrue);
+    expect(
+      result.users.last.sourceHref,
+      '/users/user-peer?rpIdentityId=$roleB',
+    );
+  });
+
+  test('新写关闭仍声明平级候选，不回退旧单身份选人', () async {
+    final api = _MockUsersApi();
+    when(
+      () => api.usersMentionCandidates(
+        threadId: 'thread',
+        includeIdentities: true,
+      ),
+    ).thenAnswer((_) async => _response(users: [], canMentionAllPlayers: true));
+    final result = await ApiMentionCandidateRepository(
+      api,
+      roleMentionsSupported: true,
+    ).findCandidates(threadId: 'thread', query: '');
+    expect(result.users, isEmpty);
+    expect(result.identitiesUnavailable, isTrue);
+    expect(result.canMentionAllPlayers, isTrue);
+    verifyNever(() => api.usersMentionCandidates(threadId: 'thread'));
+  });
+
   test('候选查询只映射服务端授权的关注用户与标记玩家', () async {
     final api = _MockUsersApi();
     when(

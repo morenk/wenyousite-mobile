@@ -5,6 +5,7 @@ import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/markdown/local_image_marker.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_mention_target.dart';
 import 'package:wenyousite_mobile/core/media/media_display.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_reference.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_body_divider.dart';
@@ -106,8 +107,9 @@ class _MentionEmbedBuilder extends EmbedBuilder {
   Widget build(BuildContext context, EmbedContext embedContext) {
     final payload = _payload(embedContext);
     final original = payload?['label']?.toString() ?? '@用户';
-    final label = original.startsWith('@') ? original.substring(1) : original;
-    final projected = mentionLabels['${payload?['userId']}\u0000$label'];
+    final projected = payload == null
+        ? null
+        : MarkdownMentionTarget.projectedLabel(payload, mentionLabels);
     final display = projected == null ? original : '@$projected';
     return Semantics(
       key: const Key('editor-mention'),

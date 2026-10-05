@@ -323,6 +323,7 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
                           customLeadingBlockBuilder:
                               wenyouEditorLeadingBlockBuilder(context),
                           embedBuilders: wenyouEditorEmbedBuilders(
+                            mentionLabels: _editorSession.mentionLabels,
                             mediaDisplays: _editorSession.mediaDisplays,
                             pendingImages: _pendingImages,
                           ),
@@ -492,6 +493,7 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
       _tagsController.text = state.tags.join(' ');
       _editorSession.applyExternalMarkdown(
         state.body,
+        mentionLabels: state.remoteDraft?.mentionLabels ?? const {},
         mediaDisplays: state.mediaDisplays,
       );
       ref

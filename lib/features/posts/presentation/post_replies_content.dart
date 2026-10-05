@@ -452,6 +452,7 @@ class _PostCard extends ConsumerWidget {
           write: () => ref.read(readerMarkdownClipboardWriterProvider)(
             markdown: post.content,
             diceLabels: _postDiceLabels(post.diceRolls),
+            mentionLabels: post.mentionLabels,
             scope: ref.read(sessionScopeProvider),
           ),
         );

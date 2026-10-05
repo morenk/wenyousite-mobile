@@ -1,6 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyou_api/wenyou_api.dart';
+import 'package:wenyousite_mobile/app/app_capabilities.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_write_guard.dart';
 import 'package:wenyousite_mobile/core/models/discussion_window.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
@@ -16,7 +18,9 @@ export 'package:wenyousite_mobile/features/posts/application/post_repository_por
     show PostRepository, postRepositoryProvider;
 
 class ApiPostRepository implements PostRepository {
-  ApiPostRepository(this._api);
+  ApiPostRepository(this._api, {this.roleMentionsSupported = false});
+
+  final bool roleMentionsSupported;
 
   final PostsApi _api;
   static const _writeMessages = {
@@ -133,8 +137,15 @@ class ApiPostRepository implements PostRepository {
   @override
   Future<PostItem> create(PostCreateInput input) async {
     try {
+      requireMentionWriteSupport(
+        input.content,
+        supported: roleMentionsSupported,
+      );
       final payload = CreatePostDto((builder) {
         builder
+          ..markdownContractVersion = roleMentionsSupported
+              ? CreatePostDtoMarkdownContractVersionEnum.number6
+              : null
           ..content = input.content
           ..identityId = input.identityId
           ..identityToken = input.identityToken
@@ -179,8 +190,12 @@ class ApiPostRepository implements PostRepository {
     required int version,
   }) async {
     try {
+      requireMentionWriteSupport(content, supported: roleMentionsSupported);
       final payload = UpdatePostDto(
         (builder) => builder
+          ..markdownContractVersion = roleMentionsSupported
+              ? UpdatePostDtoMarkdownContractVersionEnum.number6
+              : null
           ..content = content
           ..version = version,
       );
@@ -212,7 +227,11 @@ class ApiPostRepository implements PostRepository {
     PostIdentityMode? identityMode,
   }) async {
     try {
+      requireMentionWriteSupport(content, supported: roleMentionsSupported);
       final payload = UpsertBodyDto((builder) {
+        builder.markdownContractVersion = roleMentionsSupported
+            ? UpsertBodyDtoMarkdownContractVersionEnum.number6
+            : null;
         builder.content = content;
         builder.identityId = identityId;
         builder.identityToken = identityToken;
@@ -518,5 +537,10 @@ class ApiPostRepository implements PostRepository {
 }
 
 final apiPostRepositoryProvider = Provider<PostRepository>((ref) {
-  return ApiPostRepository(ref.watch(wenyouApiProvider).getPostsApi());
+  return ApiPostRepository(
+    ref.watch(wenyouApiProvider).getPostsApi(),
+    roleMentionsSupported: ref
+        .watch(appCapabilitiesProvider)
+        .roleMentionsSupported,
+  );
 });

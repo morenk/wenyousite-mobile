@@ -93,173 +93,191 @@ void main() {
     expect(page.items.single.diceRolls.single.results, [6]);
   });
 
-  test('创建、编辑、正文 upsert 与删除严格透传幂等和版本载荷', () async {
-    final api = _MockPostsApi();
-    late CreatePostDto createPayload;
-    late UpdatePostDto updatePayload;
-    late UpsertBodyDto bodyPayload;
-    when(
-      () => api.postsCreate(
-        subthreadId: 'subthread',
-        extra: ApiRequestPolicy.idempotentCreate.extra,
-        createPostDto: any(named: 'createPostDto'),
-      ),
-    ).thenAnswer((invocation) async {
-      createPayload =
-          invocation.namedArguments[#createPostDto]! as CreatePostDto;
-      return _response(
-        '/api/v1/subthreads/subthread/posts',
-        PostsCreate201Response(
-          (builder) => builder
-            ..code = ApiSuccessEnvelopeCodeEnum.number0
-            ..message = 'ok'
-            ..data.replace(
-              _postDto(
-                id: 'created',
-                parentPostId: 'floor',
-                replyToPostId: 'reply-target',
-                clientRequestId: '123e4567-e89b-42d3-a456-426614174000',
+  for (final supports in [false, true]) {
+    test('创建、编辑、正文 upsert 与删除严格透传幂等和版本载荷 $supports', () async {
+      final api = _MockPostsApi();
+      late CreatePostDto createPayload;
+      late UpdatePostDto updatePayload;
+      late UpsertBodyDto bodyPayload;
+      when(
+        () => api.postsCreate(
+          subthreadId: 'subthread',
+          extra: ApiRequestPolicy.idempotentCreate.extra,
+          createPostDto: any(named: 'createPostDto'),
+        ),
+      ).thenAnswer((invocation) async {
+        createPayload =
+            invocation.namedArguments[#createPostDto]! as CreatePostDto;
+        return _response(
+          '/api/v1/subthreads/subthread/posts',
+          PostsCreate201Response(
+            (builder) => builder
+              ..code = ApiSuccessEnvelopeCodeEnum.number0
+              ..message = 'ok'
+              ..data.replace(
+                _postDto(
+                  id: 'created',
+                  parentPostId: 'floor',
+                  replyToPostId: 'reply-target',
+                  clientRequestId: '123e4567-e89b-42d3-a456-426614174000',
+                ),
               ),
-            ),
+          ),
+        );
+      });
+      when(
+        () => api.postsUpdate(
+          id: 'created',
+          extra: ApiRequestPolicy.authenticatedNonReplayable.extra,
+          updatePostDto: any(named: 'updatePostDto'),
+        ),
+      ).thenAnswer((invocation) async {
+        updatePayload =
+            invocation.namedArguments[#updatePostDto]! as UpdatePostDto;
+        return _response(
+          '/api/v1/posts/created',
+          PostsUpdate200Response(
+            (builder) => builder
+              ..code = ApiSuccessEnvelopeCodeEnum.number0
+              ..message = 'ok'
+              ..data.replace(_postDto(id: 'created', version: 4)),
+          ),
+        );
+      });
+      when(
+        () => api.postsUpsertBody(
+          subthreadId: 'subthread',
+          extra: ApiRequestPolicy.authenticatedNonReplayable.extra,
+          upsertBodyDto: any(named: 'upsertBodyDto'),
+        ),
+      ).thenAnswer((invocation) async {
+        bodyPayload =
+            invocation.namedArguments[#upsertBodyDto]! as UpsertBodyDto;
+        return _response(
+          '/api/v1/subthreads/subthread/body',
+          PostsUpsertBody200Response(
+            (builder) => builder
+              ..code = ApiSuccessEnvelopeCodeEnum.number0
+              ..message = 'ok'
+              ..data.replace(_postDto(id: 'body', body: true, version: 9)),
+          ),
+        );
+      });
+      when(() => api.postsRemove(id: 'created')).thenAnswer(
+        (_) async => _response(
+          '/api/v1/posts/created',
+          PostsRemove200Response(
+            (builder) => builder
+              ..code = ApiSuccessEnvelopeCodeEnum.number0
+              ..message = 'ok'
+              ..data.update((data) => data.message = '已删除'),
+          ),
         ),
       );
-    });
-    when(
-      () => api.postsUpdate(
-        id: 'created',
-        extra: ApiRequestPolicy.authenticatedNonReplayable.extra,
-        updatePostDto: any(named: 'updatePostDto'),
-      ),
-    ).thenAnswer((invocation) async {
-      updatePayload =
-          invocation.namedArguments[#updatePostDto]! as UpdatePostDto;
-      return _response(
-        '/api/v1/posts/created',
-        PostsUpdate200Response(
-          (builder) => builder
-            ..code = ApiSuccessEnvelopeCodeEnum.number0
-            ..message = 'ok'
-            ..data.replace(_postDto(id: 'created', version: 4)),
+      when(
+        () => api.postsPin(
+          id: 'created',
+          extra: ApiRequestPolicy.authenticatedNonReplayable.extra,
+        ),
+      ).thenAnswer(
+        (_) async => _response(
+          '/api/v1/posts/created/pin',
+          PostsPin200Response(
+            (builder) => builder
+              ..code = ApiSuccessEnvelopeCodeEnum.number0
+              ..message = 'ok'
+              ..data.update((data) => data.message = '已置顶'),
+          ),
         ),
       );
-    });
-    when(
-      () => api.postsUpsertBody(
-        subthreadId: 'subthread',
-        extra: ApiRequestPolicy.authenticatedNonReplayable.extra,
-        upsertBodyDto: any(named: 'upsertBodyDto'),
-      ),
-    ).thenAnswer((invocation) async {
-      bodyPayload = invocation.namedArguments[#upsertBodyDto]! as UpsertBodyDto;
-      return _response(
-        '/api/v1/subthreads/subthread/body',
-        PostsUpsertBody200Response(
-          (builder) => builder
-            ..code = ApiSuccessEnvelopeCodeEnum.number0
-            ..message = 'ok'
-            ..data.replace(_postDto(id: 'body', body: true, version: 9)),
+      when(() => api.postsUnpin(id: 'created')).thenAnswer(
+        (_) async => _response(
+          '/api/v1/posts/created/pin',
+          PostsUnpin200Response(
+            (builder) => builder
+              ..code = ApiSuccessEnvelopeCodeEnum.number0
+              ..message = 'ok'
+              ..data.update((data) => data.message = '已取消置顶'),
+          ),
         ),
       );
-    });
-    when(() => api.postsRemove(id: 'created')).thenAnswer(
-      (_) async => _response(
-        '/api/v1/posts/created',
-        PostsRemove200Response(
-          (builder) => builder
-            ..code = ApiSuccessEnvelopeCodeEnum.number0
-            ..message = 'ok'
-            ..data.update((data) => data.message = '已删除'),
-        ),
-      ),
-    );
-    when(
-      () => api.postsPin(
-        id: 'created',
-        extra: ApiRequestPolicy.authenticatedNonReplayable.extra,
-      ),
-    ).thenAnswer(
-      (_) async => _response(
-        '/api/v1/posts/created/pin',
-        PostsPin200Response(
-          (builder) => builder
-            ..code = ApiSuccessEnvelopeCodeEnum.number0
-            ..message = 'ok'
-            ..data.update((data) => data.message = '已置顶'),
-        ),
-      ),
-    );
-    when(() => api.postsUnpin(id: 'created')).thenAnswer(
-      (_) async => _response(
-        '/api/v1/posts/created/pin',
-        PostsUnpin200Response(
-          (builder) => builder
-            ..code = ApiSuccessEnvelopeCodeEnum.number0
-            ..message = 'ok'
-            ..data.update((data) => data.message = '已取消置顶'),
-        ),
-      ),
-    );
-    final repository = ApiPostRepository(api);
+      final repository = ApiPostRepository(
+        api,
+        roleMentionsSupported: supports,
+      );
 
-    final created = await repository.create(
-      const PostCreateInput(
+      final created = await repository.create(
+        const PostCreateInput(
+          subthreadId: 'subthread',
+          content: '新回复',
+          identityMode: PostIdentityMode.rp,
+          identityToken: 'identity-old',
+          identityId: 'role-selected',
+          clientRequestId: '123e4567-e89b-42d3-a456-426614174000',
+          parentPostId: 'floor',
+          replyToPostId: 'reply-target',
+        ),
+      );
+      final updated = await repository.update(
+        postId: created.id,
+        content: '编辑后的内容',
+        version: 3,
+      );
+      final body = await repository.upsertBody(
         subthreadId: 'subthread',
-        content: '新回复',
-        identityMode: PostIdentityMode.rp,
-        identityToken: 'identity-old',
-        identityId: 'role-selected',
-        clientRequestId: '123e4567-e89b-42d3-a456-426614174000',
-        parentPostId: 'floor',
-        replyToPostId: 'reply-target',
-      ),
-    );
-    final updated = await repository.update(
-      postId: created.id,
-      content: '编辑后的内容',
-      version: 3,
-    );
-    final body = await repository.upsertBody(
-      subthreadId: 'subthread',
-      content: '子贴正文',
-      version: 8,
-      identityMode: PostIdentityMode.account,
-    );
-    await repository.remove(created.id);
-    await repository.setPinned(created.id, pinned: true);
-    await repository.setPinned(created.id, pinned: false);
+        content: '子贴正文',
+        version: 8,
+        identityMode: PostIdentityMode.account,
+      );
+      await repository.remove(created.id);
+      await repository.setPinned(created.id, pinned: true);
+      await repository.setPinned(created.id, pinned: false);
 
-    expect(createPayload.content, '新回复');
-    expect(createPayload.identityMode, CreatePostDtoIdentityModeEnum.RP);
-    expect(createPayload.identityToken, 'identity-old');
-    expect(createPayload.identityId, 'role-selected');
-    expect(
-      createPayload.clientRequestId,
-      '123e4567-e89b-42d3-a456-426614174000',
-    );
-    expect(createPayload.parentPostId, 'floor');
-    expect(createPayload.replyToPostId, 'reply-target');
-    expect(updatePayload.content, '编辑后的内容');
-    expect(updatePayload.version, 3);
-    expect(updated.version, 4);
-    expect(created.diceRolls.single.notation, '1d20');
-    expect(updated.diceRolls.single.total, 16);
-    expect(bodyPayload.content, '子贴正文');
-    expect(bodyPayload.identityMode, UpsertBodyDtoIdentityModeEnum.ACCOUNT);
-    expect(bodyPayload.version, 8);
-    expect(body.isBody, isTrue);
-    expect(
-      body.diceRolls.single.nodeId,
-      '550e8400-e29b-41d4-a716-446655440002',
-    );
-    verify(() => api.postsRemove(id: 'created')).called(1);
-    verify(
-      () => api.postsPin(
-        id: 'created',
-        extra: ApiRequestPolicy.authenticatedNonReplayable.extra,
-      ),
-    ).called(1);
-    verify(() => api.postsUnpin(id: 'created')).called(1);
-  });
+      expect(createPayload.content, '新回复');
+      expect(createPayload.identityMode, CreatePostDtoIdentityModeEnum.RP);
+      expect(createPayload.identityToken, 'identity-old');
+      expect(createPayload.identityId, 'role-selected');
+      expect(
+        createPayload.clientRequestId,
+        '123e4567-e89b-42d3-a456-426614174000',
+      );
+      expect(createPayload.parentPostId, 'floor');
+      expect(createPayload.replyToPostId, 'reply-target');
+      expect(updatePayload.content, '编辑后的内容');
+      expect(updatePayload.version, 3);
+      expect(updated.version, 4);
+      expect(created.diceRolls.single.notation, '1d20');
+      expect(updated.diceRolls.single.total, 16);
+      expect(bodyPayload.content, '子贴正文');
+      expect(bodyPayload.identityMode, UpsertBodyDtoIdentityModeEnum.ACCOUNT);
+      expect(bodyPayload.version, 8);
+      expect(body.isBody, isTrue);
+      expect(
+        body.diceRolls.single.nodeId,
+        '550e8400-e29b-41d4-a716-446655440002',
+      );
+      expect(
+        createPayload.markdownContractVersion,
+        supports ? CreatePostDtoMarkdownContractVersionEnum.number6 : null,
+      );
+      expect(
+        updatePayload.markdownContractVersion,
+        supports ? UpdatePostDtoMarkdownContractVersionEnum.number6 : null,
+      );
+      expect(
+        bodyPayload.markdownContractVersion,
+        supports ? UpsertBodyDtoMarkdownContractVersionEnum.number6 : null,
+      );
+      verify(() => api.postsRemove(id: 'created')).called(1);
+      verify(
+        () => api.postsPin(
+          id: 'created',
+          extra: ApiRequestPolicy.authenticatedNonReplayable.extra,
+        ),
+      ).called(1);
+      verify(() => api.postsUnpin(id: 'created')).called(1);
+    });
+  }
 
   test('对齐 marker 在创建 DTO、创建结果、详情和回复映射中原样透传', () async {
     final api = _MockPostsApi();

@@ -7,6 +7,8 @@ class AppCapabilities {
     this.pushNotifications = false,
     this.markdownAlignment = false,
     this.markdownImageAlignment = false,
+    this.roleMentionsSupported = false,
+    this.roleMentionsWriteEnabled = false,
   });
 
   final bool stickers;
@@ -14,6 +16,8 @@ class AppCapabilities {
   final bool pushNotifications;
   final bool markdownAlignment;
   final bool markdownImageAlignment;
+  final bool roleMentionsSupported;
+  final bool roleMentionsWriteEnabled;
 }
 
 /// Application composition supplies the server-advertised capability set.

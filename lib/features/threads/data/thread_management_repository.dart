@@ -1,7 +1,9 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyou_api/wenyou_api.dart';
+import 'package:wenyousite_mobile/app/app_capabilities.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_write_guard.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
@@ -15,7 +17,13 @@ export 'package:wenyousite_mobile/features/threads/application/thread_management
     show ThreadManagementRepository, threadManagementRepositoryProvider;
 
 class ApiThreadManagementRepository implements ThreadManagementRepository {
-  ApiThreadManagementRepository(this._threadsApi, this._categories);
+  ApiThreadManagementRepository(
+    this._threadsApi,
+    this._categories, {
+    this.roleMentionsSupported = false,
+  });
+
+  final bool roleMentionsSupported;
 
   final ThreadsApi _threadsApi;
   final ThreadCategoryCatalogRepository _categories;
@@ -81,6 +89,10 @@ class ApiThreadManagementRepository implements ThreadManagementRepository {
     required ThreadManagementDraft draft,
   }) async {
     try {
+      requireMentionWriteSupport(
+        current.body,
+        supported: roleMentionsSupported,
+      );
       final normalizedTitle = draft.title.trim();
       if (current.defaultSubthreadId == null ||
           current.defaultSubthreadVersion <= 0) {
@@ -90,6 +102,9 @@ class ApiThreadManagementRepository implements ThreadManagementRepository {
         id: current.id,
         saveThreadAggregateDto: SaveThreadAggregateDto((builder) {
           builder
+            ..markdownContractVersion = roleMentionsSupported
+                ? SaveThreadAggregateDtoMarkdownContractVersionEnum.number6
+                : null
             ..version = current.version
             ..defaultSubthreadVersion = current.defaultSubthreadVersion
             ..content = MarkdownContent.normalize(current.body)
@@ -303,5 +318,8 @@ final apiThreadManagementRepositoryProvider =
       return ApiThreadManagementRepository(
         api.getThreadsApi(),
         ref.watch(threadCategoryCatalogRepositoryProvider),
+        roleMentionsSupported: ref
+            .watch(appCapabilitiesProvider)
+            .roleMentionsSupported,
       );
     });

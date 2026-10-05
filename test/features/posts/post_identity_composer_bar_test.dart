@@ -86,6 +86,12 @@ void main() {
     expect(find.text('编辑资料'), findsNothing);
     await tester.tap(find.byKey(const Key('post-composer-identity-mode')));
     await tester.pumpAndSettle();
+    expect(selection.mode, PostIdentityMode.account);
+    await tester.tap(find.byKey(const Key('post-identity-option-rp-rp')));
+    await tester.pumpAndSettle();
+    expect(selection.mode, PostIdentityMode.rp);
+    await tester.tap(find.byKey(const Key('post-composer-identity-mode')));
+    await tester.pumpAndSettle();
     expect(find.text('帖内身份'), findsOneWidget);
     expect(find.text('站内身份'), findsOneWidget);
     await tester.tap(find.byKey(const Key('post-identity-option-account')));

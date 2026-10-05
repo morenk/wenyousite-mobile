@@ -25,12 +25,13 @@ void main() {
     final markdownVersion = int.parse(metadata['markdownContractVersion']!);
     expect(markdownVersion, 4);
     expect(environment.supportedMarkdownContractVersion, 5);
-    expect(environment.supportedMarkdownContractVersions, {3, 4, 5});
+    expect(environment.supportedMarkdownContractVersions, {3, 4, 5, 6});
     expect(environment.supportsMarkdown(3), isTrue);
     expect(environment.supportsMarkdown(4), isTrue);
     expect(environment.supportsMarkdown(2), isFalse);
     expect(environment.supportsMarkdown(5), isTrue);
-    expect(environment.supportsMarkdown(6), isFalse);
+    expect(environment.supportsMarkdown(6), isTrue);
+    expect(environment.supportsMarkdown(7), isFalse);
     expect(environment.supportsMarkdown(4.5), isFalse);
   });
 }

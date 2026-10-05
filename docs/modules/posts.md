@@ -89,7 +89,7 @@ GIF 上传插入修复（2026-09-13，负责人验收通过）：子贴正文、
 - 写入：`postsCreate`、`postsUpdate`、`postsUpsertBody`、`postsRemove`、`postsPin`、`postsUnpin`；置顶写入成功后从当前子贴首屏重读置顶时间字段，提及候选复用 editor 的 `usersMentionCandidates`，社区举报复用 reports 的 `reportsCreate`。
 - 主要生成类型：`FloorResponseDto`、`ReplyResponseDto`、`PostDetailResponseDto`、`PostResponseDto`、`LatestThreadPostResponseDto`、`CreatePostDto`、`UpdatePostDto`、`UpsertBodyDto`、`ApiPaginationMeta`。
 
-新发言按每账号每主题最多十个 RP 身份选择；草稿和未知结果发表请求冻结 identityMode、identityId、identityToken，恢复时不套用新默认角色，删除后须确认改用账号。历史 RP 卡按该条快照的同一 identityId 对照，站内身份头像直接进入账号主页；提及、筛选与订阅继续按账号。
+新发言按每账号每主题最多十个 RP 身份选择；草稿和未知结果发表请求冻结 identityMode、identityId、identityToken，恢复时不套用新默认角色，删除后须确认改用账号。历史 RP 卡按该条快照的同一 identityId 对照，站内身份头像直接进入账号主页；角色提及保留原标签与明确身份目标；筛选、订阅和通知去重继续按账号。
 
 ## 6. 状态模型和数据流
 

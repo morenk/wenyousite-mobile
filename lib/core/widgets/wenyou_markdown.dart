@@ -11,6 +11,7 @@ import 'package:wenyousite_mobile/core/markdown/markdown_empty_paragraphs.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_image_occurrence_syntax.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_inline_boundary.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_inline_compatibility_syntax.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_mention_target.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_quote_line_syntax.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_reader_paragraph_syntax.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_source_protection.dart';
@@ -548,16 +549,15 @@ bool _isUnambiguousPlainText(String data) {
 
 class _UserMentionInlineSyntax extends md.InlineSyntax {
   _UserMentionInlineSyntax()
-    : super(
-        r'\[(@[^\]\r\n]{1,48})\]\(/users/([a-zA-Z0-9_-]+)\)',
-        startCharacter: 0x5b,
-      );
+    : super(MarkdownMentionTarget.nodePattern, startCharacter: 0x5b);
 
   @override
   bool onMatch(md.InlineParser parser, Match match) {
+    final target = MarkdownMentionTarget.parse(match.group(2)!);
+    if (target == null || !target.acceptsLabel(match.group(1)!)) return false;
     parser.addNode(
       md.Element.text('wenyou-mention', match.group(1)!)
-        ..attributes['location'] = '/users/${match.group(2)!}',
+        ..attributes['location'] = target.sourceHref,
     );
     return true;
   }
@@ -596,8 +596,10 @@ class _MentionMarkdownBuilder extends WenyouMarkdownInlineBuilder {
           location.pathSegments.length == 2 &&
           location.pathSegments.first == 'users' &&
           label.startsWith('@')) {
-        final display =
-            values['${location.pathSegments.last}\u0000${label.substring(1)}'];
+        final target = MarkdownMentionTarget.parse(location.toString());
+        final display = target == null
+            ? null
+            : values[target.projectionKey(label.substring(1))];
         if (display != null) label = '@$display';
       }
       if (location == null || location.path.isEmpty) {

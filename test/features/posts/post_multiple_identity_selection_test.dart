@@ -51,6 +51,18 @@ void main() {
   });
   tearDown(() => selection.dispose());
 
+  test('新草稿默认站内账号，忽略角色顺序和旧默认提示且不隐式选择角色', () async {
+    await selection.refresh();
+    expect(selection.mode, PostIdentityMode.account);
+    expect(selection.identityId, isNull);
+    expect(selection.acceptedToken, isNull);
+    current = roles([role('b'), role('a')], initial: 'b');
+    await selection.refresh();
+    selection.select(PostIdentityMode.rp);
+    expect(selection.mode, PostIdentityMode.account);
+    expect(selection.identityId, isNull);
+  });
+
   test('新建成功后列表失败仍保存新 ID，恢复读取后不会误用旧角色', () async {
     await selection.refresh();
     selection.acceptSaved(role('new'), created: true);
@@ -68,6 +80,7 @@ void main() {
 
   test('明确保存当前角色接受新资料，编辑其他角色不切换 ACCOUNT 或 RP', () async {
     await selection.refresh();
+    selection.select(PostIdentityMode.rp, id: 'a');
     selection.acceptSaved(role('b', token: 'new-b'), created: false);
     expect(selection.identityId, 'a');
     selection.acceptSaved(role('a', token: 'new-a'), created: false);
@@ -101,6 +114,7 @@ void main() {
   test('清空两项资料的身份不能选择，也不顶替失效草稿', () async {
     current = roles([role('a', usable: false), role('b')], initial: 'b');
     await selection.refresh();
+    selection.select(PostIdentityMode.rp, id: 'b');
     selection.select(PostIdentityMode.rp, id: 'a');
     expect(selection.identityId, 'b');
   });

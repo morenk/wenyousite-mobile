@@ -267,6 +267,12 @@ class ApiFailure implements Exception {
       return '内容过大，请缩小范围或减少图片后重试。';
     }
     switch (businessCode) {
+      case 40012:
+        return '提及对象已发生变化，请重新选择；草稿已保留。';
+      case 40014:
+        return '暂时无法保存这段提及，草稿已保留。';
+      case 40015:
+        return '暂时无法添加这段提及，草稿已保留。';
       case 40101:
         return '登录状态已续期，请手动重试这次操作。';
       case 40007:

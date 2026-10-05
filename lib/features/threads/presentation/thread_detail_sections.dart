@@ -229,6 +229,7 @@ class ThreadSubthreadBody extends ConsumerWidget {
                 write: () => ref.read(readerMarkdownClipboardWriterProvider)(
                   markdown: body.markdown,
                   diceLabels: threadDiceLabels(body.diceRolls),
+                  mentionLabels: body.mentionLabels,
                   scope: ref.read(sessionScopeProvider),
                 ),
               ),
@@ -536,6 +537,7 @@ class ThreadFloorCard extends ConsumerWidget {
           write: () => ref.read(readerMarkdownClipboardWriterProvider)(
             markdown: floor.body.markdown,
             diceLabels: threadDiceLabels(floor.body.diceRolls),
+            mentionLabels: floor.body.mentionLabels,
             scope: ref.read(sessionScopeProvider),
           ),
         );

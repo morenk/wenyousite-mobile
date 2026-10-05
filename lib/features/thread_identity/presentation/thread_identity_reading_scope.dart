@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_mention_target.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_link.dart';
 import 'package:wenyousite_mobile/features/thread_identity/identity_models.dart';
 import 'package:wenyousite_mobile/features/thread_identity/presentation/thread_identity_card.dart';
@@ -24,6 +25,7 @@ class ThreadIdentityReadingScope extends InheritedWidget {
     BuildContext context,
     String userId, {
     RpIdentity? historical,
+    String? identityId,
     bool fromPost = true,
     String? roleLabel,
   }) {
@@ -36,6 +38,7 @@ class ThreadIdentityReadingScope extends InheritedWidget {
       threadId: threadId,
       userId: userId,
       historical: historical,
+      identityId: identityId,
       fromPost: fromPost,
       roleLabel: roleLabel,
     );
@@ -48,14 +51,17 @@ class ThreadIdentityReadingScope extends InheritedWidget {
       ownerId != oldWidget.ownerId;
 }
 
-/// 帖内用户链接先展示身份卡，其他站内链接保持既有导航行为。
+/// 角色链接读取精确 ID；显式账号提及直接进入主页。
 void openThreadReadingLink(BuildContext context, Uri uri) {
   final scope = ThreadIdentityReadingScope.maybeOf(context);
-  if (scope?.available == true &&
-      !uri.hasAuthority &&
-      uri.pathSegments.length == 2 &&
-      uri.pathSegments.first == 'users') {
-    scope!.open(context, uri.pathSegments.last, fromPost: false);
+  final target = MarkdownMentionTarget.parse(uri.toString());
+  if (scope?.available == true && target != null && !target.isAccount) {
+    scope!.open(
+      context,
+      target.userId,
+      identityId: target.identityId,
+      fromPost: false,
+    );
   } else {
     openInternalWenyouLink(context, uri);
   }

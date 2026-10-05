@@ -5,12 +5,72 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
 import 'package:wenyousite_mobile/features/editor/data/mention_candidate_repository.dart';
 import 'package:wenyousite_mobile/features/editor/domain/mention_models.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/mention_suggestions.dart';
 import '../../support/deterministic_test_fonts.dart';
 
 void main() {
+  for (final dark in [false, true]) {
+    testWidgets('同名角色明暗菜单只插入第二个稳定目标 $dark', (tester) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(360, 640);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.view.resetPhysicalSize);
+      const roleA = 'c00000000000000000000000a';
+      const roleB = 'c00000000000000000000000b';
+      final repository = _FakeRepository(
+        result: MentionCandidatesResult(
+          users: [
+            for (final role in [roleA, roleB])
+              MentionCandidate(
+                id: 'user-peer',
+                username: '站内用户',
+                relation: MentionCandidateRelation.player,
+                candidateKey: 'RP:$role',
+                targetIdentityId: role,
+                mentionLabel: '同名',
+                mentionHref: '/users/user-peer?rpIdentityId=$role',
+              ),
+          ],
+          canMentionAllPlayers: false,
+        ),
+      );
+      final controller = _controller('@');
+      final focusNode = FocusNode();
+      addTearDown(controller.dispose);
+      addTearDown(focusNode.dispose);
+      await _pumpPanel(
+        tester,
+        repository: repository,
+        controller: controller,
+        focusNode: focusNode,
+        threadId: 'thread-1',
+        dark: dark,
+      );
+      await tester.pump(const Duration(milliseconds: 2));
+      expect(find.text('@同名'), findsNWidgets(2));
+      expect(find.byType(WenyouAvatar), findsNWidgets(2));
+      expect(find.text('1/2'), findsOneWidget);
+      expect(find.text('2/2'), findsOneWidget);
+      await expectLater(
+        find.byKey(const Key('mention-floating-panel')),
+        matchesGoldenFile(
+          'goldens/mention_peers_360_${dark ? 'dark' : 'light'}.png',
+        ),
+      );
+      await tester.tap(
+        find.byKey(const Key('mention-user-RP:c00000000000000000000000b')),
+      );
+      await tester.pump();
+      expect(
+        MarkdownDeltaCodec.encode(controller.document.toDelta()),
+        '[@同名](/users/user-peer?rpIdentityId=$roleB) ',
+      );
+    });
+  }
+
   setUpAll(loadDeterministicTestFonts);
 
   testWidgets('长 RP 名称按 Unicode 字符查询并保留前文插入账号节点', (tester) async {
@@ -42,7 +102,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 2));
 
     expect(repository.queries, [('thread-1', nickname)]);
-    expect(find.text('真实账号 · 帖内玩家'), findsOneWidget);
+    expect(find.text('@真实账号 · 帖内玩家'), findsOneWidget);
     await tester.tap(find.byKey(const Key('mention-user-user-rp')));
     await tester.pump();
     expect(
@@ -357,6 +417,7 @@ Future<void> _pumpPanel(
   required FocusNode focusNode,
   required String? threadId,
   bool withEditorCanvas = false,
+  bool dark = false,
   TextScaler textScaler = TextScaler.noScaling,
 }) async {
   await tester.pumpWidget(
@@ -366,7 +427,7 @@ Future<void> _pumpPanel(
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
-        theme: AppTheme.light,
+        theme: dark ? AppTheme.dark : AppTheme.light,
         home: MediaQuery(
           data: MediaQueryData.fromView(
             tester.view,

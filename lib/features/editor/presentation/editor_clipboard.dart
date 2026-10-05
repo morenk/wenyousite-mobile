@@ -37,8 +37,10 @@ class WenyouEditorClipboardStore {
   final Duration maximumAge;
   _EditorClipboardPayload? _payload;
 
-  static String visibleText(Delta delta) =>
-      MarkdownClipboardText.projectDelta(delta);
+  static String visibleText(
+    Delta delta, {
+    Map<String, String> mentionLabels = const {},
+  }) => MarkdownClipboardText.projectDelta(delta, mentionLabels: mentionLabels);
 
   void clear() => _payload = null;
 

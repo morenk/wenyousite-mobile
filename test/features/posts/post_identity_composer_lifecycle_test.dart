@@ -41,6 +41,7 @@ void main() {
     final selection = PostIdentitySelection(repo, 'thread');
     addTearDown(selection.dispose);
     await selection.refresh();
+    selection.select(PostIdentityMode.rp, id: 'rp');
     await tester.pumpWidget(
       MaterialApp(
         theme: AppTheme.light,

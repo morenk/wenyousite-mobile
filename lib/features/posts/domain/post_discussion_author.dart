@@ -24,10 +24,8 @@ class PostDiscussionAuthor {
   final String username;
   final String? avatarUrl;
   final RpIdentity? rpIdentity;
-  String get displayName => rpIdentity?.nickname ?? username;
-  String? get displayAvatarUrl =>
-      rpIdentity != null ? rpIdentity!.avatarUrl : avatarUrl;
-  String get supportingLabel =>
-      rpIdentity != null ? '$username · ${role.label}' : role.label;
+  String get displayName => username;
+  String? get displayAvatarUrl => avatarUrl;
+  String get supportingLabel => role.label;
   final PostDiscussionAuthorRole role;
 }

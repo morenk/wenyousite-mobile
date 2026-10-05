@@ -128,6 +128,7 @@ class PostComposerSheetState extends ConsumerState<PostComposerSheet>
     _editorSession = RichEditorSession(
       initialMarkdown: widget.target.initialContent,
       initialMediaDisplays: widget.baseline.mediaDisplays,
+      mentionLabels: widget.baseline.mentionLabels,
       clipboardScope: _openedSessionScope,
       blockAlignment: ref.read(appCapabilitiesProvider).markdownAlignment,
       imageAlignment: ref.read(appCapabilitiesProvider).markdownImageAlignment,

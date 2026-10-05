@@ -292,11 +292,7 @@ class _PlayerSubscriptionSheet extends ConsumerWidget {
                 title: Text(candidate.displayName),
                 subtitle: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (candidate.rpIdentity != null)
-                      Text('@${candidate.username}'),
-                    WenyouLevelBadge(level: candidate.level),
-                  ],
+                  children: [WenyouLevelBadge(level: candidate.level)],
                 ),
                 trailing: OutlinedButton(
                   key: ValueKey('thread-subscription-user-${candidate.userId}'),

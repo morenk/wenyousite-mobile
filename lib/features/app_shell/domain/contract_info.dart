@@ -10,6 +10,8 @@ class ContractInfo {
     this.stickersEnabled = false,
     this.directMessagesEnabled = false,
     this.pushNotificationsEnabled = false,
+    this.roleMentionsSupported = false,
+    this.roleMentionsWriteEnabled = false,
   });
 
   final String contractVersion;
@@ -20,6 +22,8 @@ class ContractInfo {
   final bool stickersEnabled;
   final bool directMessagesEnabled;
   final bool pushNotificationsEnabled;
+  final bool roleMentionsSupported;
+  final bool roleMentionsWriteEnabled;
 
   MobilePlatformPolicy policyFor(MobileClientPlatform platform) {
     return switch (platform) {

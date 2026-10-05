@@ -331,5 +331,7 @@ AppCapabilities appCapabilitiesForContract(ContractInfo? contract) {
     pushNotifications: contract?.pushNotificationsEnabled ?? false,
     markdownAlignment: (contract?.markdownContractVersion ?? 0) >= 4,
     markdownImageAlignment: (contract?.markdownContractVersion ?? 0) >= 5,
+    roleMentionsSupported: contract?.roleMentionsSupported ?? false,
+    roleMentionsWriteEnabled: contract?.roleMentionsWriteEnabled ?? false,
   );
 }

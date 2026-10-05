@@ -32,7 +32,7 @@ ThreadIdentityState _identity({
 );
 
 void main() {
-  test('新编辑器优先RP，选择原身份只在当前草稿保留', () async {
+  test('新编辑器使用站内身份，显式选择角色只在当前草稿保留', () async {
     final repo = _Repository();
     when(() => repo.mine('thread')).thenAnswer((_) async => _identity());
     final first = PostIdentitySelection(repo, 'thread');
@@ -40,10 +40,10 @@ void main() {
     addTearDown(first.dispose);
     addTearDown(second.dispose);
     await first.refresh();
-    expect(first.mode, PostIdentityMode.rp);
-    first.select(PostIdentityMode.account);
+    expect(first.mode, PostIdentityMode.account);
+    first.select(PostIdentityMode.rp, id: 'rp');
     await second.refresh();
-    expect(second.mode, PostIdentityMode.rp);
+    expect(second.mode, PostIdentityMode.account);
     final draft =
         const PostComposerBaseline(
           content: '',
@@ -53,6 +53,7 @@ void main() {
           '',
           publishDraft: PostPublishDraft(
             mode: first.mode,
+            identityId: first.identityId,
             identityToken: first.acceptedToken,
           ),
         );
@@ -68,7 +69,8 @@ void main() {
       ),
       PostComposerDraftResolution.restore,
     );
-    expect(draft!.publishDraft!.mode, PostIdentityMode.account);
+    expect(draft!.publishDraft!.mode, PostIdentityMode.rp);
+    expect(draft.publishDraft!.identityId, 'rp');
   });
 
   test('改名刷新不会接受新token，用户确认后才继续RP', () async {
@@ -78,6 +80,7 @@ void main() {
     final selection = PostIdentitySelection(repo, 'thread');
     addTearDown(selection.dispose);
     await selection.refresh();
+    selection.select(PostIdentityMode.rp, id: 'rp');
     identity = _identity(token: 'two');
     await selection.refresh();
     expect(selection.changed, isTrue);

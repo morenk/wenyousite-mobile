@@ -4,8 +4,22 @@ import 'package:mocktail/mocktail.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/features/posts/data/post_discussion_author_repository.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_discussion_author.dart';
+import 'package:wenyousite_mobile/features/thread_identity/identity_models.dart';
 
 void main() {
+  test('账号筛选忽略旧目录的单角色投影，仍按账号聚合', () {
+    const author = PostDiscussionAuthor(
+      userId: 'account',
+      username: '站内用户',
+      avatarUrl: 'account-avatar',
+      role: PostDiscussionAuthorRole.player,
+      rpIdentity: RpIdentity(id: 'legacy-role', nickname: '首个角色'),
+    );
+    expect(author.displayName, '站内用户');
+    expect(author.displayAvatarUrl, 'account-avatar');
+    expect(author.supportingLabel, '玩家');
+  });
+
   test('主楼作者目录按子贴读取并保持服务端顺序', () async {
     final api = _MockPostsApi();
     when(

@@ -42,6 +42,8 @@
 
 ## 6. 状态模型和数据流
 
+支持角色提及时，创建和更新云草稿均声明数字 markdownContractVersion=6，即使正文已删光角色节点也保留能力声明。遇到旧服务时，本地恢复或粘贴出的显式角色／账号节点在发送前拦截并保留草稿；不静默降级或改写原称呼。
+
 完整展示（负责人已验收）：授权云草稿响应的 mediaDisplays 随恢复动作先替换编辑会话映射再恢复正文，持久 Markdown 不写展示 URL。线程本地快照与动态草稿的可选 display 损坏逐项丢弃，保留原内容／身份，旧无字段数据仍可读。见[全场景验收记录](../architecture/animation-webp-all-surfaces.md)。
 
 块边界候选经真实 Drift 快照写入、读取和 RichEditorSession 恢复验证：Markdown v5 独立块对齐与可见行保持，Delta 来源属性仅留在内存，持久化仍写完整 Markdown。共享 fixture revision 2 已接入，负责人验收仍待完成。

@@ -33,7 +33,6 @@ class ThreadSubscriptionCandidate {
   final String? avatarUrl;
   final RpIdentity? rpIdentity;
 
-  String get displayName => rpIdentity?.nickname ?? username;
-  String? get displayAvatarUrl =>
-      rpIdentity == null ? avatarUrl : rpIdentity!.avatarUrl;
+  String get displayName => username;
+  String? get displayAvatarUrl => avatarUrl;
 }

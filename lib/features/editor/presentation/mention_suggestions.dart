@@ -8,6 +8,7 @@ import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_feedback.dart';
 import 'package:wenyousite_mobile/features/editor/application/mention_candidates_controller.dart';
 import 'package:wenyousite_mobile/features/editor/domain/mention_models.dart';
@@ -143,6 +144,7 @@ class _MentionSuggestionsState extends ConsumerState<MentionSuggestions> {
         'kind': 'user',
         'userId': candidate.id,
         'label': candidate.label,
+        if (candidate.mentionHref != null) 'sourceHref': candidate.sourceHref,
       }),
     );
   }
@@ -473,10 +475,10 @@ class _MentionResults extends StatelessWidget {
         (query.isEmpty || '全体玩家'.startsWith(query));
     final count = result.users.length + (showAllPlayers ? 1 : 0);
     if (count == 0) {
-      return const _MentionStatus(
-        key: Key('mention-empty'),
-        icon: WenyouIcon(WenyouIconIds.actionMention),
-        message: '暂无匹配的可提及用户。',
+      return _MentionStatus(
+        key: const Key('mention-empty'),
+        icon: const WenyouIcon(WenyouIconIds.actionMention),
+        message: result.identitiesUnavailable ? '暂时无法提及用户' : '暂无匹配的可提及用户。',
       );
     }
     return ConstrainedBox(
@@ -497,18 +499,47 @@ class _MentionResults extends StatelessWidget {
             );
           }
           final candidate = result.users[index - (showAllPlayers ? 1 : 0)];
-          return ListTile(
-            key: ValueKey('mention-user-${candidate.id}'),
-            minTileHeight: context.wenyouTokens.minimumTouchTarget,
-            leading: const WenyouIcon(WenyouIconIds.actionMention),
-            title: Text(candidate.label),
-            subtitle: candidate.rpNickname == null
-                ? null
-                : Text(candidate.supportingLabel),
-            trailing: candidate.rpNickname == null
-                ? Text(candidate.relationLabel)
+          final sameNames = result.users
+              .where(
+                (value) =>
+                    value.isRole &&
+                    value.id == candidate.id &&
+                    value.displayName == candidate.displayName,
+              )
+              .toList();
+          final sameVisual =
+              sameNames
+                  .where((value) => value.avatarUrl == candidate.avatarUrl)
+                  .length >
+              1;
+          final ordinal = sameNames.indexOf(candidate) + 1;
+          return Semantics(
+            label: candidate.isRole && sameNames.length > 1
+                ? '同名角色 $ordinal，共 ${sameNames.length} 个'
                 : null,
-            onTap: () => onUser(candidate),
+            child: ListTile(
+              key: ValueKey('mention-user-${candidate.key}'),
+              minTileHeight: context.wenyouTokens.minimumTouchTarget,
+              leading: WenyouAvatar(
+                username: candidate.displayName,
+                avatarUrl: candidate.avatarUrl,
+                size: context.wenyouTokens.space32,
+              ),
+              title: Text(candidate.label),
+              subtitle: !candidate.isRole
+                  ? null
+                  : Text(candidate.supportingLabel),
+              trailing: candidate.isRole && sameVisual
+                  ? Text('$ordinal/${sameNames.length}')
+                  : !candidate.isRole
+                  ? Text(
+                      candidate.isExplicitAccount
+                          ? '站内身份'
+                          : candidate.relationLabel,
+                    )
+                  : null,
+              onTap: () => onUser(candidate),
+            ),
           );
         },
       ),

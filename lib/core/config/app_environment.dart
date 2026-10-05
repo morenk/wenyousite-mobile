@@ -2,7 +2,7 @@ class AppEnvironment {
   const AppEnvironment({
     required this.apiBaseUrl,
     this.supportedContractMajor = 5,
-    this.supportedMarkdownContractVersions = const {3, 4, 5},
+    this.supportedMarkdownContractVersions = const {3, 4, 5, 6},
     this.previewSession = '',
     this.previewSnapshotAt = '',
     this.previewSourceKind = '',

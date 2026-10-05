@@ -381,7 +381,7 @@ class ApiThreadDetailRepository implements ThreadDetailRepository {
       rpIdentityEnabled: dto.rpIdentityEnabled,
       id: dto.id,
       title: dto.title?.trim().isNotEmpty == true ? dto.title!.trim() : '未命名主题',
-      owner: _mapAuthor(dto.owner),
+      owner: _mapAuthor(dto.owner, accountOnly: true),
       categorySlug: dto.category,
       status: _mapStatus(dto.status),
       isPrivate: dto.visibility != ThreadDetailResponseDtoVisibilityEnum.PUBLIC,
@@ -499,11 +499,14 @@ class ApiThreadDetailRepository implements ThreadDetailRepository {
     );
   }
 
-  ThreadAuthorModel _mapAuthor(PostAuthorResponseDto dto) {
+  ThreadAuthorModel _mapAuthor(
+    PostAuthorResponseDto dto, {
+    bool accountOnly = false,
+  }) {
     return ThreadAuthorModel(
       id: dto.id,
       username: dto.username,
-      rpIdentity: mapRpIdentity(dto.rpIdentity),
+      rpIdentity: accountOnly ? null : mapRpIdentity(dto.rpIdentity),
       avatarUrl: _safeHttpUrl(
         mapAvatarDisplayUrl(dto.avatar, dto.avatarDisplay),
       ),

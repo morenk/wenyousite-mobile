@@ -1,4 +1,5 @@
 import 'package:wenyou_api/wenyou_api.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_mention_target.dart';
 import 'package:wenyousite_mobile/core/network/media_display_mapper.dart';
 import 'package:wenyousite_mobile/features/thread_identity/identity_models.dart';
 
@@ -10,10 +11,22 @@ RpIdentity? mapRpIdentity(RpIdentityResponseDto? dto) => dto == null
         avatarUrl: mapAvatarDisplayUrl(dto.avatar, dto.avatarDisplay),
       );
 
-/// 同一账号可以在正文中有多个历史称呼；不能只按账号覆盖。
+/// 原链接与原称呼共同定位节点；同账号同名的多个角色不可互相覆盖。
 Map<String, String> mapMentionIdentityLabels(
   Iterable<MentionIdentityDisplayDto>? values,
-) => Map.unmodifiable({
-  for (final value in values ?? const <MentionIdentityDisplayDto>[])
-    '${value.userId}\u0000${value.label}': value.displayName,
-});
+) {
+  final result = <String, String>{};
+  for (final value in values ?? const <MentionIdentityDisplayDto>[]) {
+    final target = MarkdownMentionTarget.parse(
+      value.sourceHref ?? '/users/${value.userId}',
+    );
+    if (target == null ||
+        target.userId != value.userId ||
+        (value.sourceHref != null &&
+            target.identityId != value.targetIdentityId)) {
+      continue;
+    }
+    result[target.projectionKey(value.label)] = value.displayName;
+  }
+  return Map.unmodifiable(result);
+}

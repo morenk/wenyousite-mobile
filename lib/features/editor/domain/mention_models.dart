@@ -6,17 +6,33 @@ class MentionCandidate {
     required this.username,
     required this.relation,
     this.rpNickname,
+    this.candidateKey,
+    this.targetIdentityId,
+    this.mentionHref,
+    this.mentionLabel,
+    this.avatarUrl,
   });
 
   final String id;
   final String username;
   final MentionCandidateRelation relation;
   final String? rpNickname;
+  final String? candidateKey;
+  final String? targetIdentityId;
+  final String? mentionHref;
+  final String? mentionLabel;
+  final String? avatarUrl;
 
-  String get displayName => rpNickname ?? username;
+  String get key => candidateKey ?? id;
+  String get sourceHref => mentionHref ?? '/users/$id';
+  bool get isRole => targetIdentityId != null || rpNickname != null;
+  bool get isExplicitAccount =>
+      mentionHref?.endsWith('?identityMode=ACCOUNT') == true;
+
+  String get displayName => mentionLabel ?? rpNickname ?? username;
   String get label => '@$displayName';
   String get supportingLabel =>
-      rpNickname == null ? relationLabel : '$username · $relationLabel';
+      isRole ? '@$username · $relationLabel' : relationLabel;
 
   String get relationLabel => switch (relation) {
     MentionCandidateRelation.following => '我关注的人',
@@ -30,14 +46,17 @@ class MentionCandidatesResult {
   const MentionCandidatesResult({
     required this.users,
     required this.canMentionAllPlayers,
+    this.identitiesUnavailable = false,
   });
 
   const MentionCandidatesResult.empty()
     : users = const [],
+      identitiesUnavailable = false,
       canMentionAllPlayers = false;
 
   final List<MentionCandidate> users;
   final bool canMentionAllPlayers;
+  final bool identitiesUnavailable;
 }
 
 class ActiveMentionQuery {
