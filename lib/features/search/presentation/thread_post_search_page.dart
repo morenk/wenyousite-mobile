@@ -229,7 +229,7 @@ class _ThreadSearchResultCard extends StatelessWidget {
             ),
             SizedBox(height: tokens.space12),
             Text(
-              '${item.authorName} · '
+              '${item.authorLabel} · '
               '${item.floorNumber == null ? '楼中楼' : '#${item.floorNumber}'}',
               style: Theme.of(context).textTheme.wenyouCaption,
             ),

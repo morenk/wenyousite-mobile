@@ -7,6 +7,7 @@ import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_composer_draft.dart';
+import 'package:wenyousite_mobile/features/posts/application/post_publish_draft.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_repository_ports.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
 
@@ -138,6 +139,7 @@ class _PostComposerOpeningState extends ConsumerState<PostComposerOpening> {
         : PostComposerBaseline(
             content: latest.content,
             mediaDisplays: latest.mediaDisplays,
+            mentionLabels: latest.mentionLabels,
             postId: latest.id,
             version: latest.version,
           );
@@ -158,7 +160,13 @@ class _PostComposerOpeningState extends ConsumerState<PostComposerOpening> {
     if (resolution == PostComposerDraftResolution.saved) {
       widget.onDraftChanged?.call(null);
     }
-    _open(content: content, baseline: baseline);
+    _open(
+      content: content,
+      baseline: baseline,
+      publishDraft: resolution == PostComposerDraftResolution.restore
+          ? widget.initialDraft?.publishDraft
+          : null,
+    );
   }
 
   void _useLatest() {
@@ -172,17 +180,23 @@ class _PostComposerOpeningState extends ConsumerState<PostComposerOpening> {
     final baseline = _divergedBaseline;
     final draft = widget.initialDraft;
     if (baseline == null || draft == null) return;
-    _open(content: draft.content, baseline: baseline);
+    _open(
+      content: draft.content,
+      baseline: baseline,
+      publishDraft: draft.publishDraft,
+    );
   }
 
   void _open({
     required String content,
     required PostComposerBaseline baseline,
+    PostPublishDraft? publishDraft,
   }) {
     setState(() {
       _loading = false;
       _divergedBaseline = null;
       _prepared = PreparedPostComposer(
+        publishDraft: publishDraft,
         target: postComposerTargetWithBaseline(
           target: widget.target,
           content: content,
@@ -191,6 +205,7 @@ class _PostComposerOpeningState extends ConsumerState<PostComposerOpening> {
         ),
         baseline: PostComposerBaseline(
           content: baseline.content,
+          mentionLabels: baseline.mentionLabels,
           postId: baseline.postId,
           version: baseline.version,
           mediaDisplays: {

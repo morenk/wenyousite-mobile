@@ -54,9 +54,12 @@ import 'package:wenyousite_mobile/features/moments/data/moment_bookmark_reposito
 import 'package:wenyousite_mobile/features/moments/data/moment_draft_store.dart';
 import 'package:wenyousite_mobile/features/moments/data/moment_repository.dart';
 import 'package:wenyousite_mobile/features/notifications/data/notification_repository.dart';
+import 'package:wenyousite_mobile/features/posts/application/post_identity_preference_ports.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_thread_context_ports.dart';
 import 'package:wenyousite_mobile/features/posts/data/post_discussion_author_repository.dart';
 import 'package:wenyousite_mobile/features/posts/data/post_repository.dart';
+import 'package:wenyousite_mobile/features/posts/data/shared_preferences_post_identity_store.dart';
+import 'package:wenyousite_mobile/features/posts/presentation/post_identity_profile_preview.dart';
 import 'package:wenyousite_mobile/features/reports/data/report_repository.dart';
 import 'package:wenyousite_mobile/features/search/data/search_repository.dart';
 import 'package:wenyousite_mobile/features/settings/application/settings_repository_ports.dart';
@@ -75,6 +78,9 @@ import 'package:wenyousite_mobile/features/thread_feed/application/cover_animati
 import 'package:wenyousite_mobile/features/thread_feed/data/device_cover_animation_source.dart';
 import 'package:wenyousite_mobile/features/thread_feed/data/thread_category_catalog_repository.dart';
 import 'package:wenyousite_mobile/features/thread_feed/thread_feed_catalog.dart';
+import 'package:wenyousite_mobile/features/thread_identity/data/thread_identity_repository.dart';
+import 'package:wenyousite_mobile/features/thread_identity/identity_ports.dart';
+import 'package:wenyousite_mobile/features/thread_identity/identity_profile.dart';
 import 'package:wenyousite_mobile/features/threads/data/subthread_management_repository.dart';
 import 'package:wenyousite_mobile/features/threads/data/thread_compose_repository.dart';
 import 'package:wenyousite_mobile/features/threads/data/thread_detail_repository.dart';
@@ -91,6 +97,9 @@ import 'package:wenyousite_mobile/features/users/data/public_user_repository.dar
 import 'package:wenyousite_mobile/features/wallet/data/wallet_repository.dart';
 
 List<Override> productionProviderOverrides() => [
+  postIdentityPreferenceStoreProvider.overrideWith(
+    (ref) => SharedPreferencesPostIdentityStore(),
+  ),
   mobileUpdateNoticeStoreProvider.overrideWithValue(
     const SharedPreferencesMobileUpdateNoticeStore(),
   ),
@@ -214,6 +223,8 @@ List<Override> productionProviderOverrides() => [
       return PostThreadContext(
         isPrivate: detail.isPrivate,
         canManageThread: detail.canManageThread,
+        supportsRpIdentity: detail.supportsRpIdentity,
+        ownerId: detail.owner.id,
       );
     };
   }),
@@ -259,6 +270,26 @@ List<Override> productionProviderOverrides() => [
   ),
   threadDetailRepositoryProvider.overrideWith(
     (ref) => ref.watch(apiThreadDetailRepositoryProvider),
+  ),
+  threadIdentityRepositoryProvider.overrideWith(
+    (ref) => ref.watch(apiThreadIdentityRepositoryProvider),
+  ),
+  identityProfilePostLookupProvider.overrideWith((ref) {
+    final repository = ref.watch(postRepositoryProvider);
+    return (postId) async {
+      final post = await repository.fetchPost(postId);
+      return post.isDeleted
+          ? null
+          : IdentityProfilePostTarget(id: post.id, threadId: post.threadId);
+    };
+  }),
+  identityProfilePreviewBuilderProvider.overrideWithValue(
+    ({required threadId, required postId, required onOpenPost}) =>
+        PostIdentityProfilePreview(
+          threadId: threadId,
+          postId: postId,
+          onOpenPost: onOpenPost,
+        ),
   ),
   postDiscussionAuthorDirectoryProvider.overrideWith(
     (ref) => ref.watch(apiPostDiscussionAuthorDirectoryProvider),
@@ -324,5 +355,11 @@ AppCapabilities appCapabilitiesForContract(ContractInfo? contract) {
     pushNotifications: contract?.pushNotificationsEnabled ?? false,
     markdownAlignment: (contract?.markdownContractVersion ?? 0) >= 4,
     markdownImageAlignment: (contract?.markdownContractVersion ?? 0) >= 5,
+    // 仅已知的单身份契约使用旧入口，集合请求失败不能触发降级。
+    legacySingleThreadIdentity:
+        contract?.contractVersion.startsWith('5.33.') ?? false,
+    roleMentionsSupported: contract?.roleMentionsSupported ?? false,
+    roleMentionsWriteEnabled: contract?.roleMentionsWriteEnabled ?? false,
+    rpIdentityProfileSupported: contract?.rpIdentityProfileSupported ?? false,
   );
 }

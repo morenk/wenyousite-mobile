@@ -3,6 +3,7 @@
 //
 
 // ignore_for_file: unused_element
+import 'package:wenyou_api/src/model/rp_identity_response_dto.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:wenyou_api/src/model/notification_liker_response_dto.dart';
 import 'package:built_value/built_value.dart';
@@ -13,6 +14,7 @@ part 'notification_payload_response_dto.g.dart';
 /// NotificationPayloadResponseDto
 ///
 /// Properties:
+/// * [rpIdentity] - 有权限查看的帖内历史身份；通知账号名称不变
 /// * [schemaVersion]
 /// * [action]
 /// * [actorId]
@@ -36,6 +38,10 @@ part 'notification_payload_response_dto.g.dart';
 /// * [experience]
 @BuiltValue()
 abstract class NotificationPayloadResponseDto implements Built<NotificationPayloadResponseDto, NotificationPayloadResponseDtoBuilder> {
+  /// 有权限查看的帖内历史身份；通知账号名称不变
+  @BuiltValueField(wireName: r'rpIdentity')
+  RpIdentityResponseDto? get rpIdentity;
+
   @BuiltValueField(wireName: r'schemaVersion')
   NotificationPayloadResponseDtoSchemaVersionEnum get schemaVersion;
   // enum schemaVersionEnum {  1,  };
@@ -125,6 +131,13 @@ class _$NotificationPayloadResponseDtoSerializer implements PrimitiveSerializer<
     NotificationPayloadResponseDto object, {
     FullType specifiedType = FullType.unspecified,
   }) sync* {
+    if (object.rpIdentity != null) {
+      yield r'rpIdentity';
+      yield serializers.serialize(
+        object.rpIdentity,
+        specifiedType: const FullType.nullable(RpIdentityResponseDto),
+      );
+    }
     yield r'schemaVersion';
     yield serializers.serialize(
       object.schemaVersion,
@@ -293,6 +306,14 @@ class _$NotificationPayloadResponseDtoSerializer implements PrimitiveSerializer<
       final key = serializedList[i] as String;
       final value = serializedList[i + 1];
       switch (key) {
+        case r'rpIdentity':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(RpIdentityResponseDto),
+          ) as RpIdentityResponseDto?;
+          if (valueDes == null) continue;
+          result.rpIdentity.replace(valueDes);
+          break;
         case r'schemaVersion':
           final valueDes = serializers.deserialize(
             value,

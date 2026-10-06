@@ -43,7 +43,10 @@ final refreshDioProvider = Provider<Dio>((ref) {
       receiveTimeout: const Duration(seconds: 12),
       sendTimeout: const Duration(seconds: 12),
       responseType: ResponseType.json,
-      headers: {'Accept': 'application/json'},
+      headers: {
+        'Accept': 'application/json',
+        'X-Markdown-Contract-Version': '6',
+      },
     ),
   );
   dio.interceptors.addAll([
@@ -88,7 +91,10 @@ final dioProvider = Provider<Dio>((ref) {
       receiveTimeout: const Duration(seconds: 15),
       sendTimeout: const Duration(seconds: 15),
       responseType: ResponseType.json,
-      headers: {'Accept': 'application/json'},
+      headers: {
+        'Accept': 'application/json',
+        'X-Markdown-Contract-Version': '6',
+      },
     ),
   );
   dio.interceptors.addAll([

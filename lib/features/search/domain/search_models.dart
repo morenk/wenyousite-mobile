@@ -1,5 +1,6 @@
 import 'package:wenyousite_mobile/core/media/media_display.dart';
 import 'package:wenyousite_mobile/features/thread_feed/thread_feed_models.dart';
+import 'package:wenyousite_mobile/features/thread_identity/identity_models.dart';
 
 enum SearchResultTab {
   overview('综合', '一次查看主题、用户和正文摘要'),
@@ -38,6 +39,7 @@ class SearchPostResult {
     required this.preview,
     required this.authorId,
     required this.authorName,
+    this.rpIdentity,
     required this.threadId,
     required this.threadTitle,
     required this.subthreadId,
@@ -55,6 +57,10 @@ class SearchPostResult {
   final String preview;
   final String authorId;
   final String authorName;
+  final RpIdentity? rpIdentity;
+  String get authorDisplayName => rpIdentity?.nickname ?? authorName;
+  String get authorLabel =>
+      rpIdentity == null ? authorName : '${rpIdentity!.nickname}（$authorName）';
   final String threadId;
   final String threadTitle;
   final String subthreadId;

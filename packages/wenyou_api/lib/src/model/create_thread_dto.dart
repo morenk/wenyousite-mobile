@@ -12,6 +12,7 @@ part 'create_thread_dto.g.dart';
 /// CreateThreadDto
 ///
 /// Properties:
+/// * [markdownContractVersion] - 声明编辑器支持 Markdown 6 角色提及源的无损读取/编辑。服务端 capabilities.roleMentionsV6Supported 为 true 时新端始终发送，包括删光旧节点；未声明而新/原正文含 v6 返回 409/40014。新节点还须 roleMentionsV6WriteEnabled。
 /// * [clientRequestId] - 客户端创建幂等键；同一次提交和网络重试必须复用
 /// * [title] - 主题帖标题（可为空，发布时校验）
 /// * [category] - 管理员配置的主题帖分类 slug；服务端会去除首尾空白并转为大写，草稿可暂不选择
@@ -21,6 +22,11 @@ part 'create_thread_dto.g.dart';
 /// * [visibility] - 可见性
 @BuiltValue()
 abstract class CreateThreadDto implements Built<CreateThreadDto, CreateThreadDtoBuilder> {
+  /// 声明编辑器支持 Markdown 6 角色提及源的无损读取/编辑。服务端 capabilities.roleMentionsV6Supported 为 true 时新端始终发送，包括删光旧节点；未声明而新/原正文含 v6 返回 409/40014。新节点还须 roleMentionsV6WriteEnabled。
+  @BuiltValueField(wireName: r'markdownContractVersion')
+  CreateThreadDtoMarkdownContractVersionEnum? get markdownContractVersion;
+  // enum markdownContractVersionEnum {  6,  };
+
   /// 客户端创建幂等键；同一次提交和网络重试必须复用
   @BuiltValueField(wireName: r'clientRequestId')
   String? get clientRequestId;
@@ -74,6 +80,13 @@ class _$CreateThreadDtoSerializer implements PrimitiveSerializer<CreateThreadDto
     CreateThreadDto object, {
     FullType specifiedType = FullType.unspecified,
   }) sync* {
+    if (object.markdownContractVersion != null) {
+      yield r'markdownContractVersion';
+      yield serializers.serialize(
+        object.markdownContractVersion,
+        specifiedType: const FullType(CreateThreadDtoMarkdownContractVersionEnum),
+      );
+    }
     if (object.clientRequestId != null) {
       yield r'clientRequestId';
       yield serializers.serialize(
@@ -146,6 +159,13 @@ class _$CreateThreadDtoSerializer implements PrimitiveSerializer<CreateThreadDto
       final key = serializedList[i] as String;
       final value = serializedList[i + 1];
       switch (key) {
+        case r'markdownContractVersion':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(CreateThreadDtoMarkdownContractVersionEnum),
+          ) as CreateThreadDtoMarkdownContractVersionEnum;
+          result.markdownContractVersion = valueDes;
+          break;
         case r'clientRequestId':
           final valueDes = serializers.deserialize(
             value,
@@ -222,6 +242,23 @@ class _$CreateThreadDtoSerializer implements PrimitiveSerializer<CreateThreadDto
     );
     return result.build();
   }
+}
+
+class CreateThreadDtoMarkdownContractVersionEnum extends EnumClass {
+
+  /// 声明编辑器支持 Markdown 6 角色提及源的无损读取/编辑。服务端 capabilities.roleMentionsV6Supported 为 true 时新端始终发送，包括删光旧节点；未声明而新/原正文含 v6 返回 409/40014。新节点还须 roleMentionsV6WriteEnabled。
+  @BuiltValueEnumConst(wireNumber: 6)
+  static const CreateThreadDtoMarkdownContractVersionEnum number6 = _$createThreadDtoMarkdownContractVersionEnum_number6;
+  /// 声明编辑器支持 Markdown 6 角色提及源的无损读取/编辑。服务端 capabilities.roleMentionsV6Supported 为 true 时新端始终发送，包括删光旧节点；未声明而新/原正文含 v6 返回 409/40014。新节点还须 roleMentionsV6WriteEnabled。
+  @BuiltValueEnumConst(wireNumber: 11184809, fallback: true)
+  static const CreateThreadDtoMarkdownContractVersionEnum unknownDefaultOpenApi = _$createThreadDtoMarkdownContractVersionEnum_unknownDefaultOpenApi;
+
+  static Serializer<CreateThreadDtoMarkdownContractVersionEnum> get serializer => _$createThreadDtoMarkdownContractVersionEnumSerializer;
+
+  const CreateThreadDtoMarkdownContractVersionEnum._(String name): super(name);
+
+  static BuiltSet<CreateThreadDtoMarkdownContractVersionEnum> get values => _$createThreadDtoMarkdownContractVersionEnumValues;
+  static CreateThreadDtoMarkdownContractVersionEnum valueOf(String name) => _$createThreadDtoMarkdownContractVersionEnumValueOf(name);
 }
 
 class CreateThreadDtoVisibilityEnum extends EnumClass {

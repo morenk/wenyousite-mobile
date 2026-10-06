@@ -20,8 +20,8 @@ const eventsFile = path.join(directory, 'events.jsonl');
 function event(type, fields = {}) { fs.appendFileSync(eventsFile, `${JSON.stringify({ at: new Date().toISOString(), type, ...fields })}\n`, { mode: 0o600 }); }
 function visible(state) {
   if (!state) return { status: 'stopped', worktree };
-  const { status, task, sessionId, runId, device, package: appPackage, source, loadedSource, snapshotAt, borrowedTunnel, changedAt, failure, progress, flutterAppId, installedApp } = state;
-  return { status, task, sessionId, runId, device, package: appPackage, source, loadedSource, snapshotAt, borrowedTunnel, changedAt, failure, progress, flutterAppId, installedApp, worktree, eventsFile };
+  const { status, task, sessionId, runId, device, package: appPackage, source, loadedSource, snapshotAt, snapshotSourceKind, borrowedTunnel, changedAt, failure, progress, flutterAppId, installedApp } = state;
+  return { status, task, sessionId, runId, device, package: appPackage, source, loadedSource, snapshotAt, snapshotSourceKind, borrowedTunnel, changedAt, failure, progress, flutterAppId, installedApp, worktree, eventsFile };
 }
 function taskName() {
   const branch = run('git', ['branch', '--show-current'], { cwd: worktree });
@@ -107,7 +107,7 @@ async function cliLocked(action, values) {
   privateDirectory(directory);
   const lockFile = path.join(root, `${hash(`${device}:${PACKAGE}`).slice(0, 24)}.lock.json`);
   const token = randomBytes(32).toString('hex');
-  const state = { ...owner, token, lockFile, descriptorFile, runId: descriptor.runId, snapshotAt: descriptor.snapshot.capturedAt, status: 'starting', pid: process.pid, processStarted: processIdentity(process.pid), adb, source: sourceEvidence(worktree), children: [], reverse: [], contractSha: CONTRACT_SHA, changedAt: new Date().toISOString() };
+  const state = { ...owner, token, lockFile, descriptorFile, runId: descriptor.runId, snapshotAt: descriptor.snapshot.capturedAt, snapshotSourceKind: descriptor.snapshot.sourceKind ?? null, status: 'starting', pid: process.pid, processStarted: processIdentity(process.pid), adb, source: sourceEvidence(worktree), children: [], reverse: [], contractSha: CONTRACT_SHA, changedAt: new Date().toISOString() };
   acquireLock(lockFile, state);
   try {
     writeJson(stateFile, state);
@@ -216,6 +216,7 @@ async function daemon(launchToken, launchRunId) {
       `--dart-define=WENYOU_PREVIEW_SESSION=${descriptor.sessionId}`,
       `--dart-define=WENYOU_PREVIEW_RUN=${descriptor.runId}`,
       `--dart-define=WENYOU_PREVIEW_SNAPSHOT_AT=${descriptor.snapshot.capturedAt}`,
+      `--dart-define=WENYOU_PREVIEW_SOURCE_KIND=${descriptor.snapshot.sourceKind ?? ""}`,
       `--dart-define=WENYOU_PREVIEW_SNAPSHOT_SHA=${descriptor.snapshot.sha256}`,
       `--dart-define=WENYOU_PREVIEW_MEDIA_ORIGIN=${descriptor.media.origin}`,
     ], { cwd: worktree, env: guardedSdk.environment });

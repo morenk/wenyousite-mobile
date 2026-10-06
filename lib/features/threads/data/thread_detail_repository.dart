@@ -7,6 +7,7 @@ import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/discussion_window_mapper.dart';
 import 'package:wenyousite_mobile/core/network/media_display_mapper.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/features/thread_identity/identity_mapping.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_detail_repository_ports.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.dart';
 
@@ -357,6 +358,12 @@ class ApiThreadDetailRepository implements ThreadDetailRepository {
                     ? null
                     : ThreadBodyModel(
                         markdown: item.bodyPost!.content,
+                        author: item.bodyPost!.author == null
+                            ? null
+                            : _mapAuthor(item.bodyPost!.author!),
+                        mentionLabels: mapMentionIdentityLabels(
+                          item.bodyPost!.mentionIdentities,
+                        ),
                         mediaDisplays: mapMarkdownMediaDisplays(
                           item.bodyPost!.mediaDisplays,
                         ),
@@ -371,9 +378,10 @@ class ApiThreadDetailRepository implements ThreadDetailRepository {
             .toList()
           ..sort((left, right) => left.sortOrder.compareTo(right.sortOrder));
     return ThreadDetailModel(
+      rpIdentityEnabled: dto.rpIdentityEnabled,
       id: dto.id,
       title: dto.title?.trim().isNotEmpty == true ? dto.title!.trim() : '未命名主题',
-      owner: _mapAuthor(dto.owner),
+      owner: _mapAuthor(dto.owner, accountOnly: true),
       categorySlug: dto.category,
       status: _mapStatus(dto.status),
       isPrivate: dto.visibility != ThreadDetailResponseDtoVisibilityEnum.PUBLIC,
@@ -416,6 +424,7 @@ class ApiThreadDetailRepository implements ThreadDetailRepository {
       body: ThreadBodyModel(
         markdown: dto.content,
         mediaDisplays: mapMarkdownMediaDisplays(dto.mediaDisplays),
+        mentionLabels: mapMentionIdentityLabels(dto.mentionIdentities),
         diceRolls: dto.diceRolls.map(_mapDiceRoll).toList(growable: false),
       ),
       createdAt: dto.createdAt,
@@ -431,6 +440,9 @@ class ApiThreadDetailRepository implements ThreadDetailRepository {
               body: ThreadBodyModel(
                 markdown: reply.content,
                 mediaDisplays: mapMarkdownMediaDisplays(reply.mediaDisplays),
+                mentionLabels: mapMentionIdentityLabels(
+                  reply.mentionIdentities,
+                ),
                 diceRolls: reply.diceRolls
                     .map(_mapDiceRoll)
                     .toList(growable: false),
@@ -438,7 +450,9 @@ class ApiThreadDetailRepository implements ThreadDetailRepository {
               createdAt: reply.createdAt,
               isDeleted: reply.deletedAt != null,
               version: reply.version.toInt(),
-              replyToUsername: reply.replyToPost?.author.username,
+              replyToUsername: reply.replyToPost == null
+                  ? null
+                  : _mapAuthor(reply.replyToPost!.author).displayName,
             ),
           )
           .toList(growable: false),
@@ -456,6 +470,7 @@ class ApiThreadDetailRepository implements ThreadDetailRepository {
       body: ThreadBodyModel(
         markdown: dto.content,
         mediaDisplays: mapMarkdownMediaDisplays(dto.mediaDisplays),
+        mentionLabels: mapMentionIdentityLabels(dto.mentionIdentities),
         diceRolls: dto.diceRolls.map(_mapDiceRoll).toList(growable: false),
       ),
       createdAt: dto.createdAt,
@@ -474,6 +489,7 @@ class ApiThreadDetailRepository implements ThreadDetailRepository {
       body: ThreadBodyModel(
         markdown: dto.content,
         mediaDisplays: mapMarkdownMediaDisplays(dto.mediaDisplays),
+        mentionLabels: mapMentionIdentityLabels(dto.mentionIdentities),
         diceRolls: dto.diceRolls.map(_mapDiceRoll).toList(growable: false),
       ),
       createdAt: dto.createdAt,
@@ -483,10 +499,14 @@ class ApiThreadDetailRepository implements ThreadDetailRepository {
     );
   }
 
-  ThreadAuthorModel _mapAuthor(PostAuthorResponseDto dto) {
+  ThreadAuthorModel _mapAuthor(
+    PostAuthorResponseDto dto, {
+    bool accountOnly = false,
+  }) {
     return ThreadAuthorModel(
       id: dto.id,
       username: dto.username,
+      rpIdentity: accountOnly ? null : mapRpIdentity(dto.rpIdentity),
       avatarUrl: _safeHttpUrl(
         mapAvatarDisplayUrl(dto.avatar, dto.avatarDisplay),
       ),

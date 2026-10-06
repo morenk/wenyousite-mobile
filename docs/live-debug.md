@@ -6,6 +6,8 @@
 
 Backend 管理入口准备当天快照与独立预览实例后，将无密钥 `consumer.json` 交给本任务。协议固定版本见 `contracts/dev-preview-session-source.json`；只接受 ready 描述和真实身份匹配的实例。所有数据和邮件收件箱留在 VPS，Windows 不获取线上数据库或存储凭据。
 
+私有预览协议固定 Backend `bc00ae8a86ba35fe9f1b2aad942db59477496cb9`。可选 `snapshot.sourceKind` 只接受 `synthetic-downloads` 和 `synthetic-thread-identities`；这些批次在会话状态保留来源，并通过启动参数显示“合成数据预览”，不能计为当天真实快照或真机验收。无此字段的既有快照仍兼容，资源身份与端口核验不放宽。
+
 ```powershell
 npm run dev:start -- --session C:\private\consumer.json
 npm run dev:status

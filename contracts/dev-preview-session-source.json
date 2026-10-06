@@ -1,8 +1,8 @@
 {
   "repository": "https://github.com/morenk/wenyousite-backend",
-  "revision": "5d02f6cf0d927f83f122c71ffcf53dc7c15bcc1b",
+  "revision": "bc00ae8a86ba35fe9f1b2aad942db59477496cb9",
   "files": {
-    "dev-preview-session.schema.json": "c7512543e9f7ee4e6f998657f820f80e3a76ad245aaeda916417be801895233a",
-    "dev-preview-session.md": "b3edc29b5a29a59eb582a7d25b91a04056b831d71c6f854012e4d5968a4fe188"
+    "dev-preview-session.schema.json": "21abbfffca47b037b00f07bcce30581b84053a156773715f2f2bd91378ec170b",
+    "dev-preview-session.md": "4de3408cf881226de1085db67c8f6aef7b1bed78a57618904a6d75b90bb25d2c"
   }
 }

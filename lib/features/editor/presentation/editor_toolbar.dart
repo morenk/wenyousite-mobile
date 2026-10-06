@@ -79,6 +79,7 @@ class WenyouEditorToolbar extends StatefulWidget {
     this.editorFocusNode,
     this.onInteractionChanged,
     this.onSubmit,
+    this.submitEnabled,
     this.isSubmitting = false,
     this.submitLabel = '发送',
     this.characterCount,
@@ -99,6 +100,9 @@ class WenyouEditorToolbar extends StatefulWidget {
   final FocusNode? editorFocusNode;
   final ValueChanged<bool>? onInteractionChanged;
   final FutureOr<void> Function()? onSubmit;
+
+  /// 冻结正文的重试场景仍可使用原发表按钮，格式操作继续禁用。
+  final bool? submitEnabled;
   final bool isSubmitting;
   final String submitLabel;
   final int? characterCount;
@@ -312,7 +316,7 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
                             ),
                           if (widget.onSubmit != null)
                             WenyouEditorSubmitButton(
-                              enabled: widget.enabled,
+                              enabled: widget.submitEnabled ?? widget.enabled,
                               loading: widget.isSubmitting,
                               label: widget.submitLabel,
                               onPressed: widget.onSubmit!,

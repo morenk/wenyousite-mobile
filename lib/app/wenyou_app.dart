@@ -110,7 +110,7 @@ class _WenyouMaterialApp extends ConsumerWidget {
                         child: Material(
                           color: theme.colorScheme.secondaryContainer,
                           child: Text(
-                            '开发预览 · ${environment.previewSnapshotAt}',
+                            '${environment.previewLabel} · ${environment.previewSnapshotAt}',
                             textAlign: TextAlign.center,
                             style: theme.textTheme.wenyouCaption,
                           ),

@@ -2,22 +2,16 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
-import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
-import 'package:wenyousite_mobile/core/navigation/internal_link.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
-import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_content_action_menu.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_discussion_reply_card.dart';
-import 'package:wenyousite_mobile/core/widgets/wenyou_level_badge.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_markdown.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_overflow_content.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_pagination.dart';
-import 'package:wenyousite_mobile/core/widgets/wenyou_time_text.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_transient_target_frame.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/editor/editor.dart';
@@ -26,9 +20,11 @@ import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
 import 'package:wenyousite_mobile/features/reports/domain/report_models.dart';
 import 'package:wenyousite_mobile/features/reports/presentation/report_widgets.dart';
 import 'package:wenyousite_mobile/features/stickers/presentation/sticker_widgets.dart';
+import 'package:wenyousite_mobile/features/thread_identity/identity_widgets.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_detail_controller.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_dice_presentation.dart';
+import 'package:wenyousite_mobile/features/threads/presentation/thread_post_author_line.dart';
 
 class ThreadDetailLoadingState extends StatelessWidget {
   const ThreadDetailLoadingState({super.key});
@@ -143,6 +139,10 @@ class ThreadSubthreadBody extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          if (body?.author case final author?) ...[
+            ThreadPostAuthorLine(author: author, compact: true),
+            SizedBox(height: tokens.space8),
+          ],
           if (body == null || body.markdown.trim().isEmpty)
             Row(
               children: [
@@ -170,6 +170,7 @@ class ThreadSubthreadBody extends ConsumerWidget {
               key: Key('thread-body-${subthread.id}'),
               data: body.markdown,
               mediaDisplays: body.mediaDisplays,
+              mentionLabels: body.mentionLabels,
               diceLabels: threadDiceLabels(body.diceRolls),
               diceSemantics: threadDiceSemantics(body.diceRolls),
               diceDetails: threadDiceDetails(body.diceRolls),
@@ -191,6 +192,7 @@ class ThreadSubthreadBody extends ConsumerWidget {
               ),
               data: body.markdown,
               mediaDisplays: body.mediaDisplays,
+              mentionLabels: body.mentionLabels,
               diceLabels: threadDiceLabels(body.diceRolls),
               diceSemantics: threadDiceSemantics(body.diceRolls),
               diceDetails: threadDiceDetails(body.diceRolls),
@@ -227,6 +229,7 @@ class ThreadSubthreadBody extends ConsumerWidget {
                 write: () => ref.read(readerMarkdownClipboardWriterProvider)(
                   markdown: body.markdown,
                   diceLabels: threadDiceLabels(body.diceRolls),
+                  mentionLabels: body.mentionLabels,
                   scope: ref.read(sessionScopeProvider),
                 ),
               ),
@@ -435,48 +438,35 @@ class ThreadFloorCard extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _AuthorLine(
-                          key: Key('thread-floor-author-${floor.id}'),
-                          author: floor.author,
-                          time: floor.createdAt,
-                          compact: true,
-                          avatarKey: Key(
-                            'thread-floor-author-avatar-${floor.id}',
-                          ),
-                        ),
-                      ),
-                      SizedBox(width: tokens.space8),
-                      DefaultTextStyle.merge(
-                        style: Theme.of(context).textTheme.wenyouCaption
-                            .copyWith(color: tokens.mutedText),
-                        child: Row(
+                  ThreadPostAuthorLine(
+                    key: Key('thread-floor-author-${floor.id}'),
+                    author: floor.author,
+                    time: floor.createdAt,
+                    compact: true,
+                    avatarKey: Key('thread-floor-author-avatar-${floor.id}'),
+                    metadata: [
+                      if (floor.isPinned)
+                        Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            if (floor.isPinned) ...[
-                              const WenyouIcon(
-                                WenyouIconIds.statusPinned,
-                                size: 14,
-                              ),
-                              SizedBox(width: tokens.space4),
-                              Text(
-                                '置顶',
-                                key: Key('thread-floor-pinned-${floor.id}'),
-                              ),
-                              SizedBox(width: tokens.space8),
-                            ],
+                            const WenyouIcon(
+                              WenyouIconIds.statusPinned,
+                              size: 14,
+                            ),
+                            SizedBox(width: tokens.space4),
                             Text(
-                              floor.floorNumber == null
-                                  ? '楼层'
-                                  : '#${floor.floorNumber}',
-                              key: Key('thread-floor-number-${floor.id}'),
+                              '置顶',
+                              key: Key('thread-floor-pinned-${floor.id}'),
                             ),
                           ],
                         ),
-                      ),
                     ],
+                    trailing: Text(
+                      floor.floorNumber == null
+                          ? '楼层'
+                          : '#${floor.floorNumber}',
+                      key: Key('thread-floor-number-${floor.id}'),
+                    ),
                   ),
                   SizedBox(height: tokens.space8),
                   if (floor.isDeleted)
@@ -492,6 +482,7 @@ class ThreadFloorCard extends ConsumerWidget {
                       galleryTarget: galleryTarget,
                       data: floor.body.markdown,
                       mediaDisplays: floor.body.mediaDisplays,
+                      mentionLabels: floor.body.mentionLabels,
                       diceLabels: threadDiceLabels(floor.body.diceRolls),
                       diceSemantics: threadDiceSemantics(floor.body.diceRolls),
                       diceDetails: threadDiceDetails(floor.body.diceRolls),
@@ -533,6 +524,7 @@ class ThreadFloorCard extends ConsumerWidget {
           write: () => ref.read(readerMarkdownClipboardWriterProvider)(
             markdown: floor.body.markdown,
             diceLabels: threadDiceLabels(floor.body.diceRolls),
+            mentionLabels: floor.body.mentionLabels,
             scope: ref.read(sessionScopeProvider),
           ),
         );
@@ -636,14 +628,14 @@ class _FloorInlineReplyCard extends StatelessWidget {
     final tokens = context.wenyouTokens;
     return WenyouDiscussionReplyCard(
       key: Key('thread-floor-reply-$floorId-${reply.id}'),
-      semanticsLabel: '${reply.author.username} 的楼中楼回复',
+      semanticsLabel: '${reply.author.displayName} 的楼中楼回复',
       enabled: enabled,
       onTap: onReply,
       tapHint: '点击回复这条回复',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _AuthorLine(
+          ThreadPostAuthorLine(
             author: reply.author,
             time: reply.createdAt,
             compact: true,
@@ -676,6 +668,7 @@ class _FloorInlineReplyCard extends StatelessWidget {
               ),
               data: reply.body.markdown,
               mediaDisplays: reply.body.mediaDisplays,
+              mentionLabels: reply.body.mentionLabels,
               diceLabels: threadDiceLabels(reply.body.diceRolls),
               diceSemantics: threadDiceSemantics(reply.body.diceRolls),
               diceDetails: threadDiceDetails(reply.body.diceRolls),
@@ -729,66 +722,6 @@ class ThreadFloorsFooter extends StatelessWidget {
   }
 }
 
-class _AuthorLine extends StatelessWidget {
-  const _AuthorLine({
-    required this.author,
-    required this.time,
-    this.compact = false,
-    this.avatarKey,
-    super.key,
-  });
-
-  final ThreadAuthorModel author;
-  final DateTime time;
-  final bool compact;
-  final Key? avatarKey;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = context.wenyouTokens;
-    final size = compact ? 32.0 : 36.0;
-    return Row(
-      children: [
-        WenyouAvatarButton(
-          key: avatarKey,
-          username: author.username,
-          avatarUrl: author.avatarUrl,
-          visualSize: size,
-          onTap: () => context.push(AppRouteLocations.user(author.id)),
-        ),
-        SizedBox(width: tokens.space8),
-        Expanded(
-          child: Row(
-            children: [
-              Flexible(
-                child: Text(
-                  author.username,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.wenyouLabel,
-                ),
-              ),
-              SizedBox(width: tokens.space4),
-              WenyouLevelBadge(level: author.level),
-              SizedBox(width: tokens.space8),
-              Flexible(
-                child: WenyouTimeText(
-                  value: time,
-                  semanticsPrefix: '发布时间：',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.wenyouUtilityCaption
-                      .copyWith(color: tokens.mutedText),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
 PostComposerTarget threadDetailBodyTarget(
   ThreadDetailModel detail,
   ThreadSubthreadModel subthread,
@@ -821,7 +754,7 @@ PostComposerTarget threadDetailReplyFloorTarget(
     replyToPostId: floor.id,
     version: null,
     initialContent: '',
-    label: '回复 @${floor.author.username}',
+    label: '回复 @${floor.author.displayName}',
   );
 }
 
@@ -840,7 +773,7 @@ PostComposerTarget threadDetailReplyInlineTarget(
     replyToPostId: reply.id,
     version: null,
     initialContent: '',
-    label: '回复 @${reply.author.username}',
+    label: '回复 @${reply.author.displayName}',
   );
 }
 
@@ -880,5 +813,5 @@ PostComposerTarget threadDetailEditFloorTarget(
 }
 
 void _showInternalLinkNotice(BuildContext context, Uri uri) {
-  openInternalWenyouLink(context, uri);
+  openThreadReadingLink(context, uri);
 }

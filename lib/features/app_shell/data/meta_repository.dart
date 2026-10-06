@@ -36,6 +36,12 @@ class ApiMetaRepository implements MetaRepository {
         stickersEnabled: data.capabilities.stickers,
         directMessagesEnabled: data.capabilities.directMessages,
         pushNotificationsEnabled: data.capabilities.pushNotifications,
+        roleMentionsSupported:
+            data.capabilities.roleMentionsV6Supported ?? false,
+        roleMentionsWriteEnabled:
+            data.capabilities.roleMentionsV6WriteEnabled ?? false,
+        rpIdentityProfileSupported:
+            data.capabilities.rpIdentityProfileSupported ?? false,
       );
     } on DioException catch (error) {
       if (kDebugMode) {

@@ -206,24 +206,21 @@ void main() {
       ),
     );
 
-    final popup = tester.widget<PopupMenuButton<int>>(
+    final trigger = tester.widget<InkWell>(
       find.descendant(
         of: find.byKey(const Key('test-dropdown-filter')),
-        matching: find.byType(PopupMenuButton<int>),
+        matching: find.byType(InkWell),
       ),
     );
     final expectedRadius = BorderRadius.circular(
       WenyouThemeTokens.light.radiusPanel,
     );
-    expect(popup.borderRadius, expectedRadius);
+    expect(trigger.borderRadius, expectedRadius);
     expect(
       (AppTheme.light.popupMenuTheme.shape! as RoundedRectangleBorder)
           .borderRadius,
       expectedRadius,
     );
-    expect(popup.clipBehavior, Clip.antiAlias);
-    expect(popup.constraints?.minWidth, 224);
-    expect(popup.constraints?.maxWidth, 224);
     expect(
       tester.getSize(find.byKey(const Key('test-dropdown-filter'))).height,
       WenyouThemeTokens.light.minimumTouchTarget,
@@ -235,6 +232,13 @@ void main() {
       (widget) => widget is PopupMenuItem<int>,
     );
     expect(menuItems, findsNWidgets(2));
+    final menuSurface = tester
+        .widgetList<Material>(
+          find.ancestor(of: menuItems.first, matching: find.byType(Material)),
+        )
+        .first;
+    expect(menuSurface.clipBehavior, Clip.antiAlias);
+    expect(tester.getSize(find.byWidget(menuSurface)).width, 224);
     for (final element in menuItems.evaluate()) {
       expect(
         tester.getSize(find.byWidget(element.widget)).height,

@@ -3,6 +3,7 @@
 //
 
 // ignore_for_file: unused_element
+import 'package:wenyou_api/src/model/rp_identity_response_dto.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:wenyou_api/src/model/media_display_response_dto.dart';
 import 'package:built_value/built_value.dart';
@@ -13,6 +14,7 @@ part 'discussion_author_response_dto.g.dart';
 /// DiscussionAuthorResponseDto
 ///
 /// Properties:
+/// * [rpIdentity] - 仅帖内上下文返回；账号字段不变，展示优先使用此身份
 /// * [avatarDisplay] - 头像完整 WebP 展示资源；avatar 保留来源身份
 /// * [id]
 /// * [username]
@@ -22,6 +24,10 @@ part 'discussion_author_response_dto.g.dart';
 /// * [playerMarked] - 是否为当前主题帖已标记玩家
 @BuiltValue()
 abstract class DiscussionAuthorResponseDto implements Built<DiscussionAuthorResponseDto, DiscussionAuthorResponseDtoBuilder> {
+  /// 仅帖内上下文返回；账号字段不变，展示优先使用此身份
+  @BuiltValueField(wireName: r'rpIdentity')
+  RpIdentityResponseDto? get rpIdentity;
+
   /// 头像完整 WebP 展示资源；avatar 保留来源身份
   @BuiltValueField(wireName: r'avatarDisplay')
   MediaDisplayResponseDto? get avatarDisplay;
@@ -69,6 +75,13 @@ class _$DiscussionAuthorResponseDtoSerializer implements PrimitiveSerializer<Dis
     DiscussionAuthorResponseDto object, {
     FullType specifiedType = FullType.unspecified,
   }) sync* {
+    if (object.rpIdentity != null) {
+      yield r'rpIdentity';
+      yield serializers.serialize(
+        object.rpIdentity,
+        specifiedType: const FullType.nullable(RpIdentityResponseDto),
+      );
+    }
     if (object.avatarDisplay != null) {
       yield r'avatarDisplay';
       yield serializers.serialize(
@@ -129,6 +142,14 @@ class _$DiscussionAuthorResponseDtoSerializer implements PrimitiveSerializer<Dis
       final key = serializedList[i] as String;
       final value = serializedList[i + 1];
       switch (key) {
+        case r'rpIdentity':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(RpIdentityResponseDto),
+          ) as RpIdentityResponseDto?;
+          if (valueDes == null) continue;
+          result.rpIdentity.replace(valueDes);
+          break;
         case r'avatarDisplay':
           final valueDes = serializers.deserialize(
             value,

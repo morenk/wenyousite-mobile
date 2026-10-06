@@ -42,6 +42,12 @@ void main() {
 
     expect(candidates.map((item) => item.userId), ['player-1']);
     expect(candidates.single.username, '骰子猫');
+    expect(candidates.single.displayName, '骰子猫');
+    expect(candidates.single.rpIdentity?.id, 'role-player-1');
+    expect(
+      candidates.single.displayAvatarUrl,
+      'https://cdn.example.com/player-1-avatar.webp',
+    );
     expect(
       candidates.single.avatarUrl,
       'https://cdn.example.com/player-1-avatar.webp',
@@ -252,6 +258,13 @@ ThreadMemberResponseDto _member(
         if (userId == 'player-1') {
           user
             ..avatar = 'https://cdn.example.com/player-1-avatar.gif'
+            ..rpIdentity.replace(
+              RpIdentityResponseDto(
+                (rp) => rp
+                  ..id = 'role-player-1'
+                  ..nickname = '白鸦',
+              ),
+            )
             ..avatarDisplay.replace(_avatarDisplay());
         }
       }),

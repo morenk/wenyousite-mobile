@@ -226,6 +226,8 @@ class _$NotificationPayloadResponseDtoNewRoleEnumSerializer
 
 class _$NotificationPayloadResponseDto extends NotificationPayloadResponseDto {
   @override
+  final RpIdentityResponseDto? rpIdentity;
+  @override
   final NotificationPayloadResponseDtoSchemaVersionEnum schemaVersion;
   @override
   final String? action;
@@ -273,6 +275,7 @@ class _$NotificationPayloadResponseDto extends NotificationPayloadResponseDto {
   ]) => (NotificationPayloadResponseDtoBuilder()..update(updates))._build();
 
   _$NotificationPayloadResponseDto._({
+    this.rpIdentity,
     required this.schemaVersion,
     this.action,
     this.actorId,
@@ -308,6 +311,7 @@ class _$NotificationPayloadResponseDto extends NotificationPayloadResponseDto {
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
     return other is NotificationPayloadResponseDto &&
+        rpIdentity == other.rpIdentity &&
         schemaVersion == other.schemaVersion &&
         action == other.action &&
         actorId == other.actorId &&
@@ -334,6 +338,7 @@ class _$NotificationPayloadResponseDto extends NotificationPayloadResponseDto {
   @override
   int get hashCode {
     var _$hash = 0;
+    _$hash = $jc(_$hash, rpIdentity.hashCode);
     _$hash = $jc(_$hash, schemaVersion.hashCode);
     _$hash = $jc(_$hash, action.hashCode);
     _$hash = $jc(_$hash, actorId.hashCode);
@@ -362,6 +367,7 @@ class _$NotificationPayloadResponseDto extends NotificationPayloadResponseDto {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'NotificationPayloadResponseDto')
+          ..add('rpIdentity', rpIdentity)
           ..add('schemaVersion', schemaVersion)
           ..add('action', action)
           ..add('actorId', actorId)
@@ -394,6 +400,12 @@ class NotificationPayloadResponseDtoBuilder
           NotificationPayloadResponseDtoBuilder
         > {
   _$NotificationPayloadResponseDto? _$v;
+
+  RpIdentityResponseDtoBuilder? _rpIdentity;
+  RpIdentityResponseDtoBuilder get rpIdentity =>
+      _$this._rpIdentity ??= RpIdentityResponseDtoBuilder();
+  set rpIdentity(RpIdentityResponseDtoBuilder? rpIdentity) =>
+      _$this._rpIdentity = rpIdentity;
 
   NotificationPayloadResponseDtoSchemaVersionEnum? _schemaVersion;
   NotificationPayloadResponseDtoSchemaVersionEnum? get schemaVersion =>
@@ -499,6 +511,7 @@ class NotificationPayloadResponseDtoBuilder
   NotificationPayloadResponseDtoBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
+      _rpIdentity = $v.rpIdentity?.toBuilder();
       _schemaVersion = $v.schemaVersion;
       _action = $v.action;
       _actorId = $v.actorId;
@@ -544,6 +557,7 @@ class NotificationPayloadResponseDtoBuilder
       _$result =
           _$v ??
           _$NotificationPayloadResponseDto._(
+            rpIdentity: _rpIdentity?.build(),
             schemaVersion: BuiltValueNullFieldError.checkNotNull(
               schemaVersion,
               r'NotificationPayloadResponseDto',
@@ -573,6 +587,9 @@ class NotificationPayloadResponseDtoBuilder
     } catch (_) {
       late String _$failedField;
       try {
+        _$failedField = 'rpIdentity';
+        _rpIdentity?.build();
+
         _$failedField = 'likers';
         _likers?.build();
       } catch (e) {
