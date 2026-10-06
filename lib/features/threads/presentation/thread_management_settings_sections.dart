@@ -62,15 +62,10 @@ class ThreadManagementBasicsSection extends StatelessWidget {
               decoration: InputDecoration(
                 hintText: '输入主题标题',
                 counterText: '',
-                filled: false,
+                filled: true,
+                fillColor: tokens.softPanel,
                 isDense: true,
-                contentPadding: EdgeInsets.symmetric(vertical: tokens.space8),
-                border: InputBorder.none,
-                enabledBorder: InputBorder.none,
-                focusedBorder: InputBorder.none,
-                disabledBorder: InputBorder.none,
-                errorBorder: InputBorder.none,
-                focusedErrorBorder: InputBorder.none,
+                contentPadding: EdgeInsets.all(tokens.space12),
               ),
               onChanged: onTitleChanged,
               validator: (value) {
@@ -91,6 +86,7 @@ class ThreadManagementBasicsSection extends StatelessWidget {
             children: [
               WenyouSettingsLink(
                 key: const Key('thread-management-category'),
+                icon: WenyouIconIds.contentCategory,
                 title: '所在分区',
                 value: selectedCategory == null
                     ? '请选择'
@@ -168,6 +164,7 @@ class _ThreadManagementTags extends StatelessWidget {
     if (tags.isEmpty) {
       return WenyouSettingsLink(
         key: const Key('thread-management-edit-tags'),
+        icon: WenyouIconIds.contentTag,
         title: '主题标签',
         value: '添加标签',
         enabled: enabled,
@@ -196,6 +193,11 @@ class _ThreadManagementTags extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
+                    WenyouSettingsIcon(
+                      WenyouIconIds.contentTag,
+                      color: enabled ? null : Theme.of(context).disabledColor,
+                    ),
+                    SizedBox(width: tokens.space12),
                     Expanded(
                       child: Text(
                         '主题标签',
@@ -207,19 +209,22 @@ class _ThreadManagementTags extends StatelessWidget {
                   ],
                 ),
               ),
-              Wrap(
-                key: const Key('thread-management-tag-summary'),
-                spacing: tokens.space12,
-                runSpacing: tokens.space8,
-                children: [
-                  for (final tag in tags)
-                    Text(
-                      WenyouElementContract.topicTagPrefix + tag,
-                      style: Theme.of(context).textTheme.wenyouLabel.copyWith(
-                        color: tokens.brandForeground,
+              Padding(
+                padding: EdgeInsets.only(left: tokens.space32 + tokens.space12),
+                child: Wrap(
+                  key: const Key('thread-management-tag-summary'),
+                  spacing: tokens.space12,
+                  runSpacing: tokens.space8,
+                  children: [
+                    for (final tag in tags)
+                      Text(
+                        WenyouElementContract.topicTagPrefix + tag,
+                        style: Theme.of(context).textTheme.wenyouLabel.copyWith(
+                          color: tokens.brandForeground,
+                        ),
                       ),
-                    ),
-                ],
+                  ],
+                ),
               ),
             ],
           ),
@@ -260,6 +265,7 @@ class ThreadManagementPublishingSection extends StatelessWidget {
       children: [
         WenyouSettingsLink(
           key: const Key('thread-management-status'),
+          icon: WenyouIconIds.identityMembers,
           title: '招募状态',
           value: status.label,
           enabled: enabled,
@@ -291,6 +297,7 @@ class ThreadManagementPublishingSection extends StatelessWidget {
         ),
         WenyouSettingsLink(
           key: const Key('thread-management-visibility'),
+          icon: WenyouIconIds.actionShow,
           title: '可见范围',
           value: canChangeVisibility
               ? visibility.label
@@ -325,6 +332,7 @@ class ThreadManagementPublishingSection extends StatelessWidget {
         if (postingPolicy != null) ...[
           WenyouSettingsLink(
             key: const Key('thread-management-posting-policy'),
+            icon: WenyouIconIds.contentThread,
             title: '主贴发言权限',
             value: postingPolicy!.label,
             enabled: enabled,

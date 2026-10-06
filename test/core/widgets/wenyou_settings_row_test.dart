@@ -19,6 +19,7 @@ void main() {
           children: [
             WenyouSettingsToggle(
               title: '帖内身份',
+              icon: WenyouIconIds.contentRoleplay,
               value: value,
               onChanged: (next) => value = next,
             ),
@@ -56,6 +57,7 @@ void main() {
             scale: 2,
             child: WenyouSettingsLink(
               title: '主题标签',
+              icon: WenyouIconIds.contentTag,
               value: value,
               onTap: () => taps++,
             ),
@@ -105,6 +107,26 @@ void main() {
     await tester.tap(find.text('所在分区'));
     await tester.tap(find.text('可见范围'));
     expect(taps, 0);
+  });
+
+  testWidgets('设置图标与空白区域属于整行操作且不增加副标题', (tester) async {
+    var taps = 0;
+    await tester.pumpWidget(
+      _app(
+        child: WenyouSettingsLink(
+          title: '编辑资料',
+          icon: WenyouIconIds.actionEdit,
+          onTap: () => taps++,
+        ),
+      ),
+    );
+    final row = find.byType(WenyouSettingsLink);
+    final tile = tester.widget<ListTile>(find.byType(ListTile));
+    expect(tile.subtitle, isNull);
+    expect(tester.getSize(row).height, greaterThanOrEqualTo(48));
+    await tester.tap(find.byType(WenyouSettingsIcon));
+    await tester.tapAt(tester.getBottomRight(row) - const Offset(40, 8));
+    expect(taps, 2);
   });
 
   testWidgets('整行选择提供选中和禁用语义，点击空白处也能选择', (tester) async {

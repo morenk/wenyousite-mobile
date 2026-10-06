@@ -107,7 +107,11 @@ class _DirectMessagesPageState extends ConsumerState<DirectMessagesPage> {
     );
     if (widget.embedded) return body;
     return Scaffold(
-      appBar: AppBar(title: const Text('私聊')),
+      backgroundColor: wenyouBrowsePageBackground(context),
+      appBar: AppBar(
+        backgroundColor: wenyouBrowsePageBackground(context),
+        title: const Text('私聊'),
+      ),
       body: body,
     );
   }
@@ -224,13 +228,38 @@ class _DirectConversationList extends StatelessWidget {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: _pagePadding(context),
         itemCount: state.items.length + 1,
-        separatorBuilder: (_, _) => const Divider(height: 1),
+        separatorBuilder: (context, index) {
+          final tokens = context.wenyouTokens;
+          if (index == state.items.length - 1) {
+            return SizedBox(height: tokens.space12);
+          }
+          return WenyouConstrainedWidth(
+            child: ColoredBox(
+              color: tokens.panel,
+              child: Divider(
+                height: 1,
+                color: tokens.border,
+                indent: tokens.space12,
+                endIndent: tokens.space12,
+              ),
+            ),
+          );
+        },
         itemBuilder: (context, index) {
           if (index < state.items.length) {
             final item = state.items[index];
-            return _DirectConversationCard(
-              conversation: item,
-              onTap: () => onOpen(item),
+            final radius = Radius.circular(context.wenyouTokens.radiusCard);
+            return WenyouConstrainedWidth(
+              child: _DirectConversationCard(
+                conversation: item,
+                borderRadius: BorderRadius.vertical(
+                  top: index == 0 ? radius : Radius.zero,
+                  bottom: index == state.items.length - 1
+                      ? radius
+                      : Radius.zero,
+                ),
+                onTap: () => onOpen(item),
+              ),
             );
           }
           return WenyouPaginationFooter(
@@ -251,10 +280,12 @@ class _DirectConversationList extends StatelessWidget {
 class _DirectConversationCard extends StatelessWidget {
   const _DirectConversationCard({
     required this.conversation,
+    required this.borderRadius,
     required this.onTap,
   });
 
   final DirectConversation conversation;
+  final BorderRadius borderRadius;
   final VoidCallback onTap;
 
   @override
@@ -272,11 +303,13 @@ class _DirectConversationCard extends StatelessWidget {
           '${unread ? '，${conversation.unreadCount} 条未读' : ''}',
       child: Material(
         key: ValueKey('direct-conversation-${conversation.id}'),
-        color: tokens.background,
+        color: tokens.panel,
+        borderRadius: borderRadius,
+        clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: onTap,
           child: Padding(
-            padding: EdgeInsets.symmetric(vertical: tokens.space12),
+            padding: EdgeInsets.all(tokens.space12),
             child: Row(
               children: [
                 DirectMessageAvatar(user: conversation.otherUser),
@@ -377,7 +410,11 @@ class _DirectMessagesUnavailablePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('私聊')),
+      backgroundColor: wenyouBrowsePageBackground(context),
+      appBar: AppBar(
+        backgroundColor: wenyouBrowsePageBackground(context),
+        title: const Text('私聊'),
+      ),
       body: const WenyouPageBody(
         maxWidth: 600,
         child: WenyouPanel(
@@ -396,7 +433,7 @@ EdgeInsets _pagePadding(BuildContext context) {
   final horizontal = wenyouHorizontalPagePadding(context);
   return EdgeInsets.fromLTRB(
     horizontal,
-    tokens.space12,
+    tokens.space8,
     horizontal,
     tokens.space32,
   );

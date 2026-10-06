@@ -50,10 +50,13 @@ void main() {
         matching: find.byType(ListTile),
       ),
     );
-    expect(
-      (tile.leading! as WenyouIcon).semanticId,
-      WenyouIconIds.actionCopyAll,
+    final leadingIcon = tester.widget<WenyouIcon>(
+      find.descendant(
+        of: find.byWidget(tile.leading!),
+        matching: find.byType(WenyouIcon),
+      ),
     );
+    expect(leadingIcon.semanticId, WenyouIconIds.actionCopyAll);
     expect(
       (tile.trailing! as WenyouIcon).semanticId,
       WenyouIconIds.navigationNext,

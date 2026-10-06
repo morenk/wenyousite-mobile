@@ -276,7 +276,8 @@ void main() {
       ),
     );
     expect(find.text('主题标题'), findsNothing);
-    expect(titleField.decoration?.border, InputBorder.none);
+    expect(titleField.decoration?.border, isA<OutlineInputBorder>());
+    expect(titleField.decoration?.filled, isTrue);
     final rowTitle = DefaultTextStyle.of(
       tester.element(find.text('所在分区')),
     ).style;

@@ -56,7 +56,9 @@ class _MessageCenterPageState extends ConsumerState<MessageCenterPage> {
         : null;
 
     return Scaffold(
+      backgroundColor: wenyouBrowsePageBackground(context),
       appBar: AppBar(
+        backgroundColor: wenyouBrowsePageBackground(context),
         title: const Text('消息'),
         actions: [
           if (selected == MessageCenterSections.notifications &&
@@ -211,7 +213,11 @@ class _MessageCenterLoginPrompt extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('消息')),
+      backgroundColor: wenyouBrowsePageBackground(context),
+      appBar: AppBar(
+        backgroundColor: wenyouBrowsePageBackground(context),
+        title: const Text('消息'),
+      ),
       body: WenyouPageBody(
         maxWidth: 600,
         child: WenyouPanel(

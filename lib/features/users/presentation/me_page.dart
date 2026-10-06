@@ -543,6 +543,7 @@ class _MeDashboardState extends ConsumerState<_MeDashboard> {
                 keyPrefix: 'me-content',
                 semanticsLabel: '我的主页内容',
                 placement: WenyouTabPlacement.page,
+                backgroundColor: context.wenyouTokens.panel,
                 options: [
                   for (final tab in MeContentTab.values)
                     WenyouFilterOption(value: tab, label: tab.label),

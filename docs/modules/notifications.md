@@ -12,6 +12,8 @@
 
 ## 3. 页面、入口和导航关系
 
+轻表面（2026-10-07 负责人确认合并）：消息中心和游客引导使用浏览页柔和底色；通知列表保持连续 panel 内容表面，首尾圆角、内部轻分隔和既有未读／删除入口，不把每条通知做成独立卡片。 详见[候选记录](../architecture/mobile-soft-surfaces-acceptance.md)。
+
 每条通知尾部直接显示共享删除图标按钮，不再为唯一删除操作增加更多菜单；点按后仍执行原二次确认，取消不删除、不标记已读或跳转，在途与权限禁用规则保持。分页结束不占一行提示，加载更多、失败重试、全部已读与分类行为保持。
 
 “消息”是底部主分支，规范路由使用 `/notifications`；“私聊”页签写入 `/notifications?section=directMessages`，旧 `/messages` 仅作兼容重定向。游客留在分支内看到登录引导并携带同一路径回跳。通知项按 `target.kind` 导航：主楼层使用 `/threads/:threadId?post=:postId`，楼中楼回复使用 `/threads/:threadId/posts/:parentPostId/replies?post=:postId`，thread 使用 `/threads/:threadId`，user 使用 `/users/:userId`，moment 使用 `/moments/:momentId`；动态评论目标附加 `?comment=:momentCommentId`，由详情重新读取权威上下文。未知类型、无目标和已删除目标只展示安全正文。

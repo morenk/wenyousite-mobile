@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
 import 'package:wenyousite_mobile/core/application/visibility_cache_invalidation.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
@@ -38,6 +39,7 @@ class _ThreadIdentitySettingsState
     children: [
       WenyouSettingsToggle(
         title: '帖内身份',
+        icon: WenyouIconIds.contentRoleplay,
         value: _enabled,
         onChanged: _busy ? null : _change,
       ),

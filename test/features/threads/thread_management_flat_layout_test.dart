@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_settings_body.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_settings_row.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_tag_chip.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_management_models.dart';
 import '../../support/deterministic_test_fonts.dart';
@@ -113,7 +113,7 @@ void main() {
             final tile = tester.widget<ListTile>(
               find.descendant(of: row, matching: find.byType(ListTile)),
             );
-            expect(tile.leading, isA<WenyouIcon>());
+            expect(tile.leading, isA<WenyouSettingsIcon>());
             if (key == 'thread-management-delete') {
               final context = tester.element(row);
               expect(
