@@ -330,11 +330,10 @@ class PostComposerController extends StateNotifier<PostComposerState> {
     return null;
   }
 
-  /// 明确的身份冲突不曾写入；只有用户确认新身份后才建立新的发表操作。
-  void confirmIdentityChange() {
+  /// 明确的身份冲突不曾写入；下一次点击发表使用更新后的身份。
+  void prepareIdentityRetry() {
     if (state.isSubmitting || state.pendingCreate != null) return;
     _requestId = _createRequestId();
-    state = state.copyWith(failure: null);
   }
 
   void restorePendingCreate(PendingPostCreate pending) {

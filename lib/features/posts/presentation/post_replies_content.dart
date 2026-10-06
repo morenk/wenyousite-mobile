@@ -14,7 +14,6 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_content_action_menu.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_content_item_divider.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_discussion_scroll_policy.dart';
-import 'package:wenyousite_mobile/core/widgets/wenyou_level_badge.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_time_text.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_transient_target_frame.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
@@ -494,9 +493,8 @@ class _PostAuthorLine extends StatelessWidget {
     final role = scope?.roleLabelFor(post.author.id);
     return WenyouAuthorHeader(
       name: post.author.displayName,
-      nameStyle: root
-          ? Theme.of(context).textTheme.wenyouRowTitle
-          : Theme.of(context).textTheme.wenyouLabel,
+      level: post.author.level,
+      levelKey: Key('post-level-${post.id}'),
       avatar: WenyouAvatarButton(
         key: Key('post-author-avatar-${post.id}'),
         username: post.author.displayName,
@@ -520,10 +518,6 @@ class _PostAuthorLine extends StatelessWidget {
         },
       ),
       metadata: [
-        WenyouLevelBadge(
-          key: Key('post-level-${post.id}'),
-          level: post.author.level,
-        ),
         if (role != null) Text(role),
         WenyouTimeText(
           value: post.createdAt,

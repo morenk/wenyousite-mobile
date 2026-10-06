@@ -25,7 +25,7 @@ import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
 import 'package:wenyousite_mobile/features/posts/presentation/post_composer_diagnostics.dart';
 import 'package:wenyousite_mobile/features/posts/presentation/post_composer_sheet_layout.dart';
 import 'package:wenyousite_mobile/features/posts/presentation/post_identity_composer_bar.dart';
-import 'package:wenyousite_mobile/features/posts/presentation/post_identity_confirmation.dart';
+import 'package:wenyousite_mobile/features/posts/presentation/post_identity_submission.dart';
 import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
 import 'package:wenyousite_mobile/features/stickers/presentation/sticker_widgets.dart';
 import 'package:wenyousite_mobile/features/thread_identity/identity_models.dart';
@@ -278,7 +278,6 @@ class PostComposerSheetState extends ConsumerState<PostComposerSheet>
     final hasSupportContent =
         _identitySelection != null ||
         state.failure != null ||
-        state.hasAmbiguousCreate ||
         _editorSession.codecFailure != null ||
         _editorSession.operationFailure != null ||
         _editorSession.issues.isNotEmpty ||
@@ -318,6 +317,8 @@ class PostComposerSheetState extends ConsumerState<PostComposerSheet>
                 key: const Key('post-composer-failure'),
                 message: state.failure!.reason == FailureReason.localPersistence
                     ? '本机草稿保存失败，尚未发表，请重试。'
+                    : state.failure!.businessCode == 40011
+                    ? '发表失败，请重试。'
                     : state.failure!.userMessage,
                 detail: _requestDetail(state.failure),
                 tone: WenyouStatusTone.error,
@@ -345,23 +346,6 @@ class PostComposerSheetState extends ConsumerState<PostComposerSheet>
                         label: const Text('用当前正文覆盖最新版'),
                       ),
                   ],
-                ),
-              ),
-            ),
-          if (state.hasAmbiguousCreate)
-            Padding(
-              padding: EdgeInsets.fromLTRB(
-                tokens.space12,
-                tokens.space12,
-                tokens.space12,
-                0,
-              ),
-              child: WenyouStatusBanner(
-                message: '本次发表需要确认。',
-                detail: '正文和身份已保留。重试会确认同一次发表，不会重复发布。',
-                action: TextButton(
-                  onPressed: locked ? null : _submit,
-                  child: const Text('重试确认发表'),
                 ),
               ),
             ),
@@ -446,11 +430,12 @@ class PostComposerSheetState extends ConsumerState<PostComposerSheet>
                   ? _pendingImages.localSaveLabel
                   : contentDraftsState.autoSaveToolbarLabel,
               onSubmit: _submit,
+              submitEnabled: !locked && _editorSession.codecFailure == null,
               isSubmitting: state.isSubmitting || _publishing,
               submitLabel: _publishing
                   ? '正在发布…'
                   : state.hasAmbiguousCreate
-                  ? '重试确认发表'
+                  ? '重试发表'
                   : _submitLabel(widget.target.kind),
               characterCount: _editorSession.characterCount,
               characterLimit: 10000,
@@ -592,7 +577,7 @@ class PostComposerSheetState extends ConsumerState<PostComposerSheet>
         .pendingCreate;
     final selection = _identitySelection;
     if (pending == null && selection != null) {
-      if (!await confirmPostIdentity(context, selection)) return;
+      if (!await preparePostIdentity(context, selection)) return;
       if (!mounted ||
           _closing ||
           ref.read(sessionScopeProvider) != _openedSessionScope) {
@@ -621,12 +606,9 @@ class PostComposerSheetState extends ConsumerState<PostComposerSheet>
           .failure
           ?.businessCode;
       if (code == 40011 && selection != null) {
-        if (await confirmPostIdentity(context, selection, force: true) &&
-            mounted) {
-          controller.confirmIdentityChange();
-          await _pendingImages.save();
-          if (mounted) showWenyouSnackBar(context, '身份已确认，请再次点击发表。');
-        }
+        controller.prepareIdentityRetry();
+        await preparePostIdentity(context, selection, force: true);
+        if (mounted && !_closing) await _pendingImages.save();
       } else if (code == 40012) {
         showWenyouSnackBar(context, '提及对象已发生变化，请重新选择；草稿已保留。');
       }

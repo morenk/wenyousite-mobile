@@ -1,22 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_level_badge.dart';
 
-/// 昵称独占首行，次要信息可换行，编号始终位于次行右侧。
+/// 昵称与紧凑等级共用首行，次要信息可换行，编号位于次行右侧。
 class WenyouAuthorHeader extends StatelessWidget {
   const WenyouAuthorHeader({
     required this.avatar,
     required this.name,
+    required this.level,
     required this.metadata,
-    this.nameStyle,
+    this.levelKey,
     this.trailing,
     super.key,
   });
 
   final Widget avatar;
   final String name;
+  final int level;
   final List<Widget> metadata;
-  final TextStyle? nameStyle;
+  final Key? levelKey;
   final Widget? trailing;
 
   @override
@@ -33,11 +36,27 @@ class WenyouAuthorHeader extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(
-                name,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: nameStyle ?? textTheme.wenyouLabel,
+              Row(
+                children: [
+                  Flexible(
+                    child: Text(
+                      name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: textTheme.wenyouCaption.copyWith(
+                        color: tokens.text,
+                      ),
+                    ),
+                  ),
+                  if (level > 0) ...[
+                    SizedBox(width: tokens.space4),
+                    WenyouLevelBadge(
+                      key: levelKey,
+                      level: level,
+                      compact: true,
+                    ),
+                  ],
+                ],
               ),
               if (metadata.isNotEmpty || trailing != null) ...[
                 SizedBox(height: tokens.space4),

@@ -49,8 +49,11 @@ void main() {
           ),
         );
         final name = tester.getRect(find.text('来自群山的白夜与尚未抵达的漫长旅程'));
+        final badge = tester.getRect(find.byType(WenyouLevelBadge));
         final number = tester.getRect(find.text('#9999'));
-        expect(name.right, 308);
+        expect(badge.right, 308);
+        expect(name.right, badge.left - 4);
+        expect(name.center.dy, badge.center.dy);
         expect(number.right, 308);
         expect(number.top, greaterThanOrEqualTo(name.bottom));
         expect(
@@ -68,7 +71,7 @@ void main() {
     }
   }
 
-  testWidgets('长昵称独占头像右侧首行，等级和时间不挤占名字', (tester) async {
+  testWidgets('昵称与小号等级共用首行，时间不挤占名字', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
         theme: AppTheme.light,
@@ -89,12 +92,13 @@ void main() {
       ),
     );
     final name = tester.getRect(find.text('断首的斩姬·玛利亚'));
-    expect(name.right, 336);
-    expect(name.width, 280);
-    expect(
-      tester.getTopLeft(find.byType(WenyouLevelBadge)).dy,
-      greaterThanOrEqualTo(name.bottom),
-    );
+    final badge = tester.getRect(find.byType(WenyouLevelBadge));
+    expect(badge.left, name.right + 4);
+    expect(badge.right, lessThanOrEqualTo(336));
+    expect(badge.center.dy, name.center.dy);
+    final style = tester.widget<Text>(find.text('断首的斩姬·玛利亚')).style!;
+    expect(style.fontSize, 12);
+    expect(style.fontWeight, FontWeight.w400);
     expect(tester.getSize(find.byType(ThreadPostAuthorLine)).height, 48);
     expect(tester.takeException(), isNull);
   });

@@ -112,7 +112,7 @@ class PostIdentitySelection extends ChangeNotifier {
     notifyListeners();
   }
 
-  void confirmCurrent() {
+  void useCurrentIdentity() {
     if (_disposed) return;
     if (collection?.find(identityId)?.hasRp != true) {
       mode = PostIdentityMode.account;

@@ -266,7 +266,9 @@ void main() {
     await tester.tap(find.text('打开'));
     await postRepliesPageTestPumpUi(tester);
     expect(tester.takeException(), isNull);
-    expect(find.text('重试确认发表'), findsWidgets);
+    expect(find.byTooltip('重试发表'), findsOneWidget);
+    expect(find.text('本次发表需要确认。'), findsNothing);
+    expect(find.text('重试确认发表'), findsNothing);
     final dropdown = tester.widget<WenyouSelectionMenu>(
       find.byKey(const Key('post-composer-identity-mode')),
     );

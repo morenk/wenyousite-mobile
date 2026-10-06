@@ -73,7 +73,7 @@ void main() {
     expect(draft.publishDraft!.identityId, 'rp');
   });
 
-  test('改名刷新不会接受新token，用户确认后才继续RP', () async {
+  test('改名刷新保留草稿token，发表准备同步同一角色的新token', () async {
     final repo = _Repository();
     var identity = _identity();
     when(() => repo.mine('thread')).thenAnswer((_) async => identity);
@@ -85,14 +85,14 @@ void main() {
     await selection.refresh();
     expect(selection.changed, isTrue);
     expect(selection.acceptedToken, 'one');
-    selection.confirmCurrent();
+    selection.useCurrentIdentity();
     expect(selection.changed, isFalse);
     expect(selection.mode, PostIdentityMode.rp);
     expect(selection.acceptedToken, 'two');
   });
 
   for (final revoked in [false, true]) {
-    test('${revoked ? '撤权' : '关闭'}保留RP草稿选择，确认才改为原身份', () async {
+    test('${revoked ? '撤权' : '关闭'}保留RP草稿选择，发表准备回到账号', () async {
       final repo = _Repository();
       when(() => repo.mine('thread')).thenAnswer(
         (_) async => _identity(enabled: revoked, eligible: !revoked),
@@ -103,7 +103,7 @@ void main() {
       await selection.refresh();
       expect(selection.mode, PostIdentityMode.rp);
       expect(selection.changed, isTrue);
-      selection.confirmCurrent();
+      selection.useCurrentIdentity();
       expect(selection.mode, PostIdentityMode.account);
       expect(selection.changed, isFalse);
     });

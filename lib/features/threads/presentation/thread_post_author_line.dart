@@ -5,7 +5,6 @@ import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_author_header.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
-import 'package:wenyousite_mobile/core/widgets/wenyou_level_badge.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_time_text.dart';
 import 'package:wenyousite_mobile/features/thread_identity/identity_widgets.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.dart';
@@ -36,6 +35,7 @@ class ThreadPostAuthorLine extends StatelessWidget {
     final role = scope?.roleLabelFor(author.id);
     return WenyouAuthorHeader(
       name: author.displayName,
+      level: author.level,
       trailing: trailing,
       avatar: WenyouAvatarButton(
         key: avatarKey,
@@ -59,7 +59,6 @@ class ThreadPostAuthorLine extends StatelessWidget {
         },
       ),
       metadata: [
-        WenyouLevelBadge(level: author.level),
         if (role != null) Text(role),
         if (time != null)
           WenyouTimeText(

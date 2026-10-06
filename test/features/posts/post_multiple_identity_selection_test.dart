@@ -99,7 +99,7 @@ void main() {
     expect(selection.acceptedToken, 'token-b');
     expect(selection.changed, isFalse);
   });
-  test('已恢复草稿忽略新默认角色，删除原角色后等待确认再回到账号', () async {
+  test('已恢复草稿忽略其他角色，发表准备同步已删除角色时回到账号', () async {
     selection.restore(selected: PostIdentityMode.rp, id: 'b', token: 'token-b');
     await selection.refresh();
     current = roles([role('a')]);
@@ -107,7 +107,7 @@ void main() {
     expect(selection.identityId, 'b');
     expect(selection.mode, PostIdentityMode.rp);
     expect(selection.changed, isTrue);
-    selection.confirmCurrent();
+    selection.useCurrentIdentity();
     expect(selection.identityId, isNull);
     expect(selection.mode, PostIdentityMode.account);
   });
