@@ -175,6 +175,8 @@ v5 图片在写入 `postsUpdate`、`postsUpsertBody` 或创建接口前会规范
 
 ## 11. 测试场景与验收条件
 
+站内超链接候选／待负责人验收：`test/features/posts/post_hyperlink_edit_test.dart` 通过真实回复页面的打开编辑、输入“你好”、链接面板插入合法楼层地址、保存、阅读和重开编辑核对原子传送门与可见文字；仓储为内存替身，不访问线上。真机原始主题详情场景仍由负责人复验，见[超链接候选记录](../architecture/editor-hyperlink-acceptance.md)。
+
 - 自适应滑块候选覆盖真实手指快滑唤醒、慢滑／惯性／程序滚动／回弹不误触、收细中续展开、抓取无跳位与反向跟手、正常松手及取消区别、作用域与路由清理、无障碍及四种形态 Golden；保留长帖、分页、图片增长与深链回归。实际执行清单及未验证的真机手感、TalkBack 和 Profile 见[验收记录](../architecture/adaptive-reading-scroll-acceptance.md)。
 
 楼中楼聚焦候选覆盖慢请求、远端回复、后续分页、删除、回复操作、清除坐标和返回路径；真机页面开头与读屏顺序待负责人复验。
