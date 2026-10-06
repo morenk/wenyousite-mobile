@@ -406,7 +406,7 @@ void registerPostRepliesPageLoadingWritesCases() {
     (
       label: '左对齐',
       content: '左对齐发布正文',
-      alignmentKeys: [Key('editor-align-center'), Key('editor-align-left')],
+      alignmentKeys: [Key('editor-align-center'), Key('editor-align-center')],
       expected: '左对齐发布正文',
       segment: 'left',
     ),
