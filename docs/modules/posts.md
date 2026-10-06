@@ -315,5 +315,6 @@ v5 图片在写入 `postsUpdate`、`postsUpsertBody` 或创建接口前会规范
 
 帖子端口与状态：`lib/features/posts/application/`；API 适配器：`lib/features/posts/data/`；页面：`lib/features/posts/presentation/`；主题内楼层入口：`lib/features/threads/`。参见[主题与子贴](threads.md)、[编辑器](editor.md)、[Foundation 实现审计](../architecture/foundation-compliance-audit.md)、[主题帖测试审计](../architecture/thread-detail-test-audit.md)、[媒体](media.md)、[社区举报](reports.md)、[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)、[语义图标](../architecture/icons.md)、[Foundation v6.9.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.9.0/docs/platforms/mobile.md)。
 
+独立讨论的主楼层和回复使用共享显式链接复制端口，系统复制成功立即由应用壳记录事件，切出返回不反向提示；普通正文／富文本复制保持原有协议。此行为为待真机复验候选，见[验收记录](../architecture/clipboard-own-link-acceptance.md)。
 
 已知 5.33 单身份环境的首次楼层／回复／BODY 在创建冻结请求前省略 wire identityId，正文、模式、token 和 UUID 继续冻结；草稿外层仍保留所选角色 ID。恢复未知结果后，即使服务已升级，也发送原冻结载荷，不能补上 ID 变成另一请求。

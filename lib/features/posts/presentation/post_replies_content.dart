@@ -433,7 +433,7 @@ class _PostCard extends ConsumerWidget {
           ),
         );
       case PostCardAction.copyLink:
-        await copyPostCardValue(context, _publicLink(), '楼层链接已复制');
+        await copyPostCardLink(context, _publicLink(), '楼层链接已复制');
       case PostCardAction.togglePin:
         onTogglePin?.call();
       case PostCardAction.edit:

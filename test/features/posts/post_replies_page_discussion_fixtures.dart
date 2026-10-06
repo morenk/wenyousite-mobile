@@ -11,6 +11,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/app/app_capabilities.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
+import 'package:wenyousite_mobile/core/navigation/navigation_link_writer.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/network/session_remote.dart';
 import 'package:wenyousite_mobile/core/storage/token_store.dart';
@@ -40,6 +41,7 @@ Future<ProviderContainer> postRepliesPageTestPostContainer(
   String? userId,
   PostRepliesPageTestFakeStickerRepository? stickerRepository,
   ReaderMarkdownClipboardWriter? clipboardWriter,
+  NavigationLinkWriter? linkWriter,
   bool markdownAlignment = false,
   bool markdownImageAlignment = false,
   ThreadIdentityRepository? identityRepository,
@@ -79,6 +81,8 @@ Future<ProviderContainer> postRepliesPageTestPostContainer(
         (_) async =>
             const PostThreadContext(isPrivate: false, canManageThread: false),
       ),
+      if (linkWriter != null)
+        navigationLinkWriterProvider.overrideWithValue(linkWriter),
       if (clipboardWriter != null)
         readerMarkdownClipboardWriterProvider.overrideWithValue(
           clipboardWriter,

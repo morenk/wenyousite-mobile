@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
+import 'package:wenyousite_mobile/core/navigation/navigation_link_writer.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/network/session_controller.dart';
@@ -74,6 +75,26 @@ void main() {
     expect(repository.ensureCalls, 3);
     expect(repository.resetCalls, 0);
     expect(copied, List.filled(3, _link.url.toString()));
+  });
+
+  testWidgets('取得当前邀请后通过共享复制入口登记每次复制', (tester) async {
+    clipboardFails = true;
+    final repository = _Repository();
+    final sharedCopies = <String>[];
+    await _pumpRow(
+      tester,
+      repository,
+      linkWriter: (text) async => sharedCopies.add(text),
+    );
+    for (var i = 0; i < 2; i++) {
+      await tester.tap(find.byKey(_copyKey));
+      await tester.pumpAndSettle();
+    }
+    expect(repository.ensureCalls, 2);
+    expect(repository.resetCalls, 0);
+    expect(sharedCopies, List.filled(2, _link.url.toString()));
+    expect(copied, isEmpty);
+    expect(find.byKey(_valueKey), findsNothing);
   });
 
   testWidgets('获取失败只提示重试，不重置或展示旧链接', (tester) async {
@@ -226,6 +247,7 @@ void main() {
 Future<ProviderContainer> _pumpRow(
   WidgetTester tester,
   ThreadInvitationRepository repository, {
+  NavigationLinkWriter? linkWriter,
   Future<bool> Function()? beforeCopy,
   ValueNotifier<(String, bool)>? props,
   GlobalKey<NavigatorState>? navigator,
@@ -233,6 +255,8 @@ Future<ProviderContainer> _pumpRow(
   final container = ProviderContainer(
     overrides: [
       threadInvitationRepositoryProvider.overrideWithValue(repository),
+      if (linkWriter != null)
+        navigationLinkWriterProvider.overrideWithValue(linkWriter),
       sessionScopeProvider.overrideWith((ref) => ref.watch(_scope)),
     ],
   );

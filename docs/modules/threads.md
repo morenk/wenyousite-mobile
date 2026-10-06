@@ -372,3 +372,5 @@ GIF 上传插入修复（2026-09-13，负责人验收通过）：新主题正文
 ## 14. 相关代码与架构文档
 
 主题创建、阅读、管理端口与状态：`lib/features/threads/application/`；API 适配器：`lib/features/threads/data/`；页面：`lib/features/threads/presentation/`；通用编辑会话与工具栏：`lib/features/editor/`；标签代码：`lib/features/tags/`。参见[编辑器](editor.md)、[Foundation 实现审计](../architecture/foundation-compliance-audit.md)、[主题帖测试审计](../architecture/thread-detail-test-audit.md)、[草稿](drafts.md)、[楼层与回复](posts.md)、[标签](tags.md)、[温油钱包](wallet.md)、[社区举报](reports.md)、[导航](../architecture/navigation.md)、[语义图标](../architecture/icons.md)、[Foundation v6.9.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.9.0/docs/platforms/mobile.md)。
+
+主题／子贴正文、楼层以及每次取得当前邀请后的复制使用共享显式链接复制端口，系统复制成功立即由应用壳记录事件，切出返回不反向提示；邀请继续保留先保存、复核权限、PUT 复用与剪贴板失败手动复制，普通正文／富文本复制保持原有协议。负责人已于 2026-10-05 批准交付与合并，未提供额外设备复验细节，见[验收记录](../architecture/clipboard-own-link-acceptance.md)。

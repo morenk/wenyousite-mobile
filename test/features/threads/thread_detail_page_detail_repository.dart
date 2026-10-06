@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
+import 'package:wenyousite_mobile/core/navigation/navigation_link_writer.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/editor/editor.dart';
@@ -281,6 +282,7 @@ Widget threadDetailPageTestDetailApp(
   double? textScale,
   bool enableRenderDiagnostics = false,
   ReaderMarkdownClipboardWriter? clipboardWriter,
+  NavigationLinkWriter? linkWriter,
 }) {
   final page = ThreadDetailPage(
     threadId: 'thread-1',
@@ -298,6 +300,8 @@ Widget threadDetailPageTestDetailApp(
         authorDirectory ??
             ThreadDetailPageTestFakePostDiscussionAuthorDirectory(),
       ),
+      if (linkWriter != null)
+        navigationLinkWriterProvider.overrideWithValue(linkWriter),
       if (clipboardWriter != null)
         readerMarkdownClipboardWriterProvider.overrideWithValue(
           clipboardWriter,
