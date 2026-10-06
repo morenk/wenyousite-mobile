@@ -11,6 +11,11 @@ _$mentionCandidateDtoRelationEnum_FOLLOWING =
     const MentionCandidateDtoRelationEnum._('FOLLOWING');
 const MentionCandidateDtoRelationEnum _$mentionCandidateDtoRelationEnum_PLAYER =
     const MentionCandidateDtoRelationEnum._('PLAYER');
+const MentionCandidateDtoRelationEnum _$mentionCandidateDtoRelationEnum_OWNER =
+    const MentionCandidateDtoRelationEnum._('OWNER');
+const MentionCandidateDtoRelationEnum
+_$mentionCandidateDtoRelationEnum_COLLABORATOR =
+    const MentionCandidateDtoRelationEnum._('COLLABORATOR');
 const MentionCandidateDtoRelationEnum
 _$mentionCandidateDtoRelationEnum_unknownDefaultOpenApi =
     const MentionCandidateDtoRelationEnum._('unknownDefaultOpenApi');
@@ -23,6 +28,10 @@ MentionCandidateDtoRelationEnum _$mentionCandidateDtoRelationEnumValueOf(
       return _$mentionCandidateDtoRelationEnum_FOLLOWING;
     case 'PLAYER':
       return _$mentionCandidateDtoRelationEnum_PLAYER;
+    case 'OWNER':
+      return _$mentionCandidateDtoRelationEnum_OWNER;
+    case 'COLLABORATOR':
+      return _$mentionCandidateDtoRelationEnum_COLLABORATOR;
     case 'unknownDefaultOpenApi':
       return _$mentionCandidateDtoRelationEnum_unknownDefaultOpenApi;
     default:
@@ -36,6 +45,8 @@ _$mentionCandidateDtoRelationEnumValues =
       const <MentionCandidateDtoRelationEnum>[
         _$mentionCandidateDtoRelationEnum_FOLLOWING,
         _$mentionCandidateDtoRelationEnum_PLAYER,
+        _$mentionCandidateDtoRelationEnum_OWNER,
+        _$mentionCandidateDtoRelationEnum_COLLABORATOR,
         _$mentionCandidateDtoRelationEnum_unknownDefaultOpenApi,
       ],
     );
@@ -49,11 +60,15 @@ class _$MentionCandidateDtoRelationEnumSerializer
   static const Map<String, Object> _toWire = const <String, Object>{
     'FOLLOWING': 'FOLLOWING',
     'PLAYER': 'PLAYER',
+    'OWNER': 'OWNER',
+    'COLLABORATOR': 'COLLABORATOR',
     'unknownDefaultOpenApi': 'unknown_default_open_api',
   };
   static const Map<Object, String> _fromWire = const <Object, String>{
     'FOLLOWING': 'FOLLOWING',
     'PLAYER': 'PLAYER',
+    'OWNER': 'OWNER',
+    'COLLABORATOR': 'COLLABORATOR',
     'unknown_default_open_api': 'unknownDefaultOpenApi',
   };
 
@@ -81,6 +96,16 @@ class _$MentionCandidateDtoRelationEnumSerializer
 
 class _$MentionCandidateDto extends MentionCandidateDto {
   @override
+  final String? candidateKey;
+  @override
+  final String? targetIdentityId;
+  @override
+  final String? mentionLabel;
+  @override
+  final String? mentionHref;
+  @override
+  final RpIdentityResponseDto? rpIdentity;
+  @override
   final MediaDisplayResponseDto? avatarDisplay;
   @override
   final String id;
@@ -96,6 +121,11 @@ class _$MentionCandidateDto extends MentionCandidateDto {
   ]) => (MentionCandidateDtoBuilder()..update(updates))._build();
 
   _$MentionCandidateDto._({
+    this.candidateKey,
+    this.targetIdentityId,
+    this.mentionLabel,
+    this.mentionHref,
+    this.rpIdentity,
     this.avatarDisplay,
     required this.id,
     required this.username,
@@ -115,6 +145,11 @@ class _$MentionCandidateDto extends MentionCandidateDto {
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
     return other is MentionCandidateDto &&
+        candidateKey == other.candidateKey &&
+        targetIdentityId == other.targetIdentityId &&
+        mentionLabel == other.mentionLabel &&
+        mentionHref == other.mentionHref &&
+        rpIdentity == other.rpIdentity &&
         avatarDisplay == other.avatarDisplay &&
         id == other.id &&
         username == other.username &&
@@ -125,6 +160,11 @@ class _$MentionCandidateDto extends MentionCandidateDto {
   @override
   int get hashCode {
     var _$hash = 0;
+    _$hash = $jc(_$hash, candidateKey.hashCode);
+    _$hash = $jc(_$hash, targetIdentityId.hashCode);
+    _$hash = $jc(_$hash, mentionLabel.hashCode);
+    _$hash = $jc(_$hash, mentionHref.hashCode);
+    _$hash = $jc(_$hash, rpIdentity.hashCode);
     _$hash = $jc(_$hash, avatarDisplay.hashCode);
     _$hash = $jc(_$hash, id.hashCode);
     _$hash = $jc(_$hash, username.hashCode);
@@ -137,6 +177,11 @@ class _$MentionCandidateDto extends MentionCandidateDto {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'MentionCandidateDto')
+          ..add('candidateKey', candidateKey)
+          ..add('targetIdentityId', targetIdentityId)
+          ..add('mentionLabel', mentionLabel)
+          ..add('mentionHref', mentionHref)
+          ..add('rpIdentity', rpIdentity)
           ..add('avatarDisplay', avatarDisplay)
           ..add('id', id)
           ..add('username', username)
@@ -149,6 +194,29 @@ class _$MentionCandidateDto extends MentionCandidateDto {
 class MentionCandidateDtoBuilder
     implements Builder<MentionCandidateDto, MentionCandidateDtoBuilder> {
   _$MentionCandidateDto? _$v;
+
+  String? _candidateKey;
+  String? get candidateKey => _$this._candidateKey;
+  set candidateKey(String? candidateKey) => _$this._candidateKey = candidateKey;
+
+  String? _targetIdentityId;
+  String? get targetIdentityId => _$this._targetIdentityId;
+  set targetIdentityId(String? targetIdentityId) =>
+      _$this._targetIdentityId = targetIdentityId;
+
+  String? _mentionLabel;
+  String? get mentionLabel => _$this._mentionLabel;
+  set mentionLabel(String? mentionLabel) => _$this._mentionLabel = mentionLabel;
+
+  String? _mentionHref;
+  String? get mentionHref => _$this._mentionHref;
+  set mentionHref(String? mentionHref) => _$this._mentionHref = mentionHref;
+
+  RpIdentityResponseDtoBuilder? _rpIdentity;
+  RpIdentityResponseDtoBuilder get rpIdentity =>
+      _$this._rpIdentity ??= RpIdentityResponseDtoBuilder();
+  set rpIdentity(RpIdentityResponseDtoBuilder? rpIdentity) =>
+      _$this._rpIdentity = rpIdentity;
 
   MediaDisplayResponseDtoBuilder? _avatarDisplay;
   MediaDisplayResponseDtoBuilder get avatarDisplay =>
@@ -180,6 +248,11 @@ class MentionCandidateDtoBuilder
   MentionCandidateDtoBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
+      _candidateKey = $v.candidateKey;
+      _targetIdentityId = $v.targetIdentityId;
+      _mentionLabel = $v.mentionLabel;
+      _mentionHref = $v.mentionHref;
+      _rpIdentity = $v.rpIdentity?.toBuilder();
       _avatarDisplay = $v.avatarDisplay?.toBuilder();
       _id = $v.id;
       _username = $v.username;
@@ -209,6 +282,11 @@ class MentionCandidateDtoBuilder
       _$result =
           _$v ??
           _$MentionCandidateDto._(
+            candidateKey: candidateKey,
+            targetIdentityId: targetIdentityId,
+            mentionLabel: mentionLabel,
+            mentionHref: mentionHref,
+            rpIdentity: _rpIdentity?.build(),
             avatarDisplay: _avatarDisplay?.build(),
             id: BuiltValueNullFieldError.checkNotNull(
               id,
@@ -230,6 +308,8 @@ class MentionCandidateDtoBuilder
     } catch (_) {
       late String _$failedField;
       try {
+        _$failedField = 'rpIdentity';
+        _rpIdentity?.build();
         _$failedField = 'avatarDisplay';
         _avatarDisplay?.build();
       } catch (e) {

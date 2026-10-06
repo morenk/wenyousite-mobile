@@ -19,6 +19,7 @@ class ThreadMemberManagementMember {
     required this.playerMarked,
     required this.joinedAt,
     this.avatarUrl,
+    this.rpNickname,
   });
 
   final String id;
@@ -26,6 +27,7 @@ class ThreadMemberManagementMember {
   final String username;
   final int level;
   final String? avatarUrl;
+  final String? rpNickname;
   final ThreadMemberManagementRole role;
   final bool playerMarked;
   final DateTime joinedAt;

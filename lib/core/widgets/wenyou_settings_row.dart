@@ -12,6 +12,7 @@ class WenyouSettingsLink extends StatelessWidget {
     this.value,
     this.destructive = false,
     this.enabled = true,
+    this.isBusy = false,
     this.contentPadding,
     super.key,
   });
@@ -22,12 +23,13 @@ class WenyouSettingsLink extends StatelessWidget {
   final String? value;
   final bool destructive;
   final bool enabled;
+  final bool isBusy;
   final EdgeInsetsGeometry? contentPadding;
 
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
-    final actionable = enabled && onTap != null;
+    final actionable = enabled && !isBusy && onTap != null;
     final color = !enabled
         ? Theme.of(context).disabledColor
         : destructive
@@ -68,7 +70,12 @@ class WenyouSettingsLink extends StatelessWidget {
           ],
         ],
       ),
-      trailing: actionable
+      trailing: isBusy
+          ? SizedBox.square(
+              dimension: tokens.space20,
+              child: const CircularProgressIndicator(strokeWidth: 2),
+            )
+          : actionable
           ? WenyouIcon(WenyouIconIds.navigationNext, color: color)
           : null,
       onTap: actionable ? onTap : null,
@@ -80,9 +87,9 @@ class WenyouSettingsLink extends StatelessWidget {
 class WenyouSettingsToggle extends StatelessWidget {
   const WenyouSettingsToggle({
     required this.title,
-    required this.help,
     required this.value,
     required this.onChanged,
+    this.help,
     this.toggleKey,
     this.icon,
     this.showHelpButton = true,
@@ -90,7 +97,7 @@ class WenyouSettingsToggle extends StatelessWidget {
   });
 
   final String title;
-  final String help;
+  final String? help;
   final bool value;
   final ValueChanged<bool>? onChanged;
   final Key? toggleKey;
@@ -99,9 +106,10 @@ class WenyouSettingsToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final hasHelp = help != null && help!.isNotEmpty;
     final toggle = SwitchListTile(
       key: toggleKey,
-      title: showHelpButton
+      title: showHelpButton || !hasHelp
           ? Text(
               title,
               style: Theme.of(
@@ -109,7 +117,7 @@ class WenyouSettingsToggle extends StatelessWidget {
               ).textTheme.wenyouRowTitle.copyWith(fontWeight: FontWeight.w400),
             )
           : Tooltip(
-              message: help,
+              message: help!,
               child: Text(
                 title,
                 style: Theme.of(context).textTheme.wenyouRowTitle.copyWith(
@@ -123,7 +131,7 @@ class WenyouSettingsToggle extends StatelessWidget {
       value: value,
       onChanged: onChanged,
     );
-    if (!showHelpButton) return toggle;
+    if (!showHelpButton || !hasHelp) return toggle;
     return Row(
       children: [
         // 说明按钮放在 SwitchListTile 的 MergeSemantics 之外，避免读屏将
@@ -137,7 +145,7 @@ class WenyouSettingsToggle extends StatelessWidget {
             builder: (context) => AlertDialog(
               scrollable: true,
               title: Text(title),
-              content: Text(help),
+              content: Text(help!),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(),

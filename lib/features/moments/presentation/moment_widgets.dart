@@ -7,11 +7,11 @@ import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/navigation/wenyou_page_transitions.dart';
 import 'package:wenyousite_mobile/core/widgets/content_image_viewer_page.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_author_header.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_image_viewer_page.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_interaction_toggle.dart';
-import 'package:wenyousite_mobile/core/widgets/wenyou_level_badge.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_time_text.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/media/reading_gallery.dart';
@@ -229,49 +229,31 @@ class MomentAuthorLine extends StatelessWidget {
             onTap: onTap!,
           )
         : MomentAvatar(key: avatarKey, author: author, size: 32);
-    final content = Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        avatar,
-        SizedBox(width: tokens.space8),
-        Flexible(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Flexible(
-                    child: Text(
-                      author.username,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.wenyouLabel,
-                    ),
-                  ),
-                  SizedBox(width: tokens.space4),
-                  WenyouLevelBadge(level: author.level),
-                ],
-              ),
-              if (createdAt != null)
-                WenyouTimeText(
-                  value: createdAt!,
-                  semanticsPrefix: '发布时间：',
-                  style: Theme.of(context).textTheme.wenyouUtilityCaption
-                      .copyWith(color: tokens.mutedText),
-                ),
-            ],
+    final content = WenyouAuthorHeader(
+      avatar: avatar,
+      name: author.username,
+      level: author.level,
+      metadata: [
+        if (createdAt != null)
+          WenyouTimeText(
+            value: createdAt!,
+            semanticsPrefix: '发布时间：',
+            style: Theme.of(
+              context,
+            ).textTheme.wenyouUtilityCaption.copyWith(color: tokens.mutedText),
           ),
-        ),
       ],
     );
     if (onTap == null || avatarOnlyTap) return content;
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(tokens.radiusPill),
-      child: Padding(
-        padding: EdgeInsets.symmetric(vertical: tokens.space4),
-        child: content,
+    return ConstrainedBox(
+      constraints: BoxConstraints(minHeight: tokens.minimumTouchTarget),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(tokens.radiusPill),
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: tokens.space4),
+          child: content,
+        ),
       ),
     );
   }

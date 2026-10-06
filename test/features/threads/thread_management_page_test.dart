@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_settings_body.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_management_models.dart';
 
@@ -199,7 +200,7 @@ void main() {
     await tester.tap(status);
     await tester.pumpAndSettle();
     expect(find.text('选择招募状态'), findsOneWidget);
-    expect(find.textContaining('不会限制发言'), findsOneWidget);
+    expect(find.textContaining('不会限制发言'), findsNothing);
 
     final closed = find.byKey(
       const ValueKey('thread-management-status-choice-closed'),
@@ -268,7 +269,14 @@ void main() {
       ThreadManagementTestRepository(initial: threadManagementTestBootstrap()),
     );
 
-    final fieldLabel = tester.widget<Text>(find.text('主题标题'));
+    final titleField = tester.widget<TextField>(
+      find.descendant(
+        of: find.byKey(const Key('thread-management-title')),
+        matching: find.byType(TextField),
+      ),
+    );
+    expect(find.text('主题标题'), findsNothing);
+    expect(titleField.decoration?.border, InputBorder.none);
     final rowTitle = DefaultTextStyle.of(
       tester.element(find.text('所在分区')),
     ).style;
@@ -289,12 +297,13 @@ void main() {
         of: find.byKey(const Key('thread-management-settings-content')),
         matching: find.byType(Divider),
       ),
-      findsNothing,
+      findsWidgets,
     );
     final platformFamily = ThemeData.light().textTheme.bodyLarge!.fontFamily;
+    expect(find.byType(WenyouSettingsGroup), findsNWidgets(4));
     expect(pageTitle.fontFamily, platformFamily);
-    expect(fieldLabel.style?.fontFamily, platformFamily);
-    expect(fieldLabel.style?.fontSize, 16);
+    expect(titleField.style?.fontFamily, platformFamily);
+    expect(titleField.style?.fontSize, 16);
     expect(rowTitle.fontFamily, platformFamily);
     expect(rowTitle.fontSize, 16);
     expect(currentValue.style?.fontFamily, platformFamily);

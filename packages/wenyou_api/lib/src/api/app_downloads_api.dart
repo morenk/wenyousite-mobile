@@ -28,6 +28,7 @@ class AppDownloadsApi {
   /// * [buildNumber]
   /// * [range] - 仅单段 bytes=start-end、start- 或 -suffix；非法/多段为 416
   /// * [ifRange] - 匹配 ETag 或 Last-Modified 才应用 Range；不匹配发送完整文件
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -41,6 +42,7 @@ class AppDownloadsApi {
     required int buildNumber,
     String? range,
     String? ifRange,
+    int? xMarkdownContractVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -55,6 +57,7 @@ class AppDownloadsApi {
       headers: <String, dynamic>{
         if (range != null) r'Range': range,
         if (ifRange != null) r'If-Range': ifRange,
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -107,6 +110,7 @@ class AppDownloadsApi {
   /// * [buildNumber]
   /// * [range] - 仅单段 bytes=start-end、start- 或 -suffix；非法/多段为 416
   /// * [ifRange] - 匹配 ETag 或 Last-Modified 才应用 Range；不匹配发送完整文件
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -120,6 +124,7 @@ class AppDownloadsApi {
     required int buildNumber,
     String? range,
     String? ifRange,
+    int? xMarkdownContractVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -134,6 +139,7 @@ class AppDownloadsApi {
       headers: <String, dynamic>{
         if (range != null) r'Range': range,
         if (ifRange != null) r'If-Range': ifRange,
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -183,6 +189,7 @@ class AppDownloadsApi {
   /// release/status 表示全局发布及缓存可用性，不因当前访客次数耗尽改为 paused；不扣下载次数。可签发/续签随机浏览器 Cookie，需同源携带；客户端不自行生成标识。旧 APP 无需新增此调用，直接 HEAD/GET 保持兼容。
   ///
   /// Parameters:
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -193,6 +200,7 @@ class AppDownloadsApi {
   /// Returns a [Future] containing a [Response] with a [AppDownloadsInfo200Response] as data
   /// Throws [DioException] if API call or serialization fails
   Future<Response<AppDownloadsInfo200Response>> appDownloadsInfo({
+    int? xMarkdownContractVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -204,6 +212,7 @@ class AppDownloadsApi {
     final _options = Options(
       method: r'GET',
       headers: <String, dynamic>{
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         ...?headers,
       },
       extra: <String, dynamic>{

@@ -1,8 +1,10 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
+import 'package:wenyousite_mobile/core/application/visibility_cache_invalidation.dart';
 import 'package:wenyousite_mobile/core/diagnostics/debug_diagnostic_console.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/discussion_author_filter_restore.dart';
@@ -241,6 +243,14 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
       unawaited(ref.read(provider.notifier).retryFloors());
     });
     final state = ref.watch(provider);
+    ref.listen(provider.select((value) => value.detail?.rpIdentityEnabled), (
+      previous,
+      next,
+    ) {
+      if (previous != null && next != null && previous != next) {
+        ref.read(visibilityCacheInvalidatorProvider)();
+      }
+    });
     _quickScroll.synchronize(
       contentRevision: (state.floors, state.selectedSubthread?.body),
       scope: (
@@ -619,6 +629,10 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
   }
 
   Future<void> _refreshDetail() async {
+    final selected = ref.read(_detailProvider).selectedSubthreadId;
+    if (selected != null) {
+      ref.invalidate(postFloorDiscussionAuthorsProvider(selected));
+    }
     final routeTarget = widget.entryTarget.postId;
     if (routeTarget != null && _navigation.targetId == null) {
       ref.invalidate(threadPostTargetProvider(routeTarget));
@@ -742,6 +756,8 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     final draftKey = postComposerDraftKey(target);
     final openedSessionScope = ref.read(sessionScopeProvider);
     final result = await showPostComposerSheet(
+      supportsRpIdentity:
+          ref.read(_detailProvider).detail?.supportsRpIdentity ?? false,
       context: context,
       target: target,
       initialDraft: _composerDrafts[draftKey],

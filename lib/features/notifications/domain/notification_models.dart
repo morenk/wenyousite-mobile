@@ -1,3 +1,5 @@
+import 'package:wenyousite_mobile/features/thread_identity/identity_models.dart';
+
 enum NotificationKind {
   reply,
   mention,
@@ -41,6 +43,7 @@ class NotificationPayload {
   const NotificationPayload({
     this.action,
     this.actorName,
+    this.rpIdentity,
     this.replyTargetUserId,
     this.replyTargetName,
     this.preview,
@@ -52,6 +55,7 @@ class NotificationPayload {
 
   final String? action;
   final String? actorName;
+  final RpIdentity? rpIdentity;
   final String? replyTargetUserId;
   final String? replyTargetName;
   final String? preview;
