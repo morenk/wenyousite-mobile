@@ -32,7 +32,7 @@ ThreadIdentityState _identity({
 );
 
 void main() {
-  test('新编辑器使用站内身份，显式选择角色只在当前草稿保留', () async {
+  test('无历史偏好的新编辑器使用站内身份，选择只改变当前编辑会话', () async {
     final repo = _Repository();
     when(() => repo.mine('thread')).thenAnswer((_) async => _identity());
     final first = PostIdentitySelection(repo, 'thread');

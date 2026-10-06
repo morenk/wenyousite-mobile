@@ -54,9 +54,11 @@ import 'package:wenyousite_mobile/features/moments/data/moment_bookmark_reposito
 import 'package:wenyousite_mobile/features/moments/data/moment_draft_store.dart';
 import 'package:wenyousite_mobile/features/moments/data/moment_repository.dart';
 import 'package:wenyousite_mobile/features/notifications/data/notification_repository.dart';
+import 'package:wenyousite_mobile/features/posts/application/post_identity_preference_ports.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_thread_context_ports.dart';
 import 'package:wenyousite_mobile/features/posts/data/post_discussion_author_repository.dart';
 import 'package:wenyousite_mobile/features/posts/data/post_repository.dart';
+import 'package:wenyousite_mobile/features/posts/data/shared_preferences_post_identity_store.dart';
 import 'package:wenyousite_mobile/features/posts/presentation/post_identity_profile_preview.dart';
 import 'package:wenyousite_mobile/features/reports/data/report_repository.dart';
 import 'package:wenyousite_mobile/features/search/data/search_repository.dart';
@@ -95,6 +97,9 @@ import 'package:wenyousite_mobile/features/users/data/public_user_repository.dar
 import 'package:wenyousite_mobile/features/wallet/data/wallet_repository.dart';
 
 List<Override> productionProviderOverrides() => [
+  postIdentityPreferenceStoreProvider.overrideWith(
+    (ref) => SharedPreferencesPostIdentityStore(),
+  ),
   mobileUpdateNoticeStoreProvider.overrideWithValue(
     const SharedPreferencesMobileUpdateNoticeStore(),
   ),

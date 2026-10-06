@@ -18,6 +18,7 @@ import 'package:wenyousite_mobile/features/editor/editor.dart';
 import 'package:wenyousite_mobile/features/media/presentation/editor_image_crop_dialog.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_composer_draft.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_controllers.dart';
+import 'package:wenyousite_mobile/features/posts/application/post_identity_preference_ports.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_identity_selection.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_publish_draft.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
@@ -117,6 +118,8 @@ class PostComposerSheetState extends ConsumerState<PostComposerSheet>
       _identitySelection = PostIdentitySelection(
         ref.read(threadIdentityRepositoryProvider),
         widget.target.threadId,
+        preferences: ref.read(postIdentityPreferenceStoreProvider),
+        accountId: ref.read(sessionScopeProvider).accountId,
       );
       _identitySelection!.restore(
         selected: widget.publishDraft?.mode,
@@ -213,7 +216,12 @@ class PostComposerSheetState extends ConsumerState<PostComposerSheet>
           _editorSession.onMarkdownChanged(content);
         }
       }
-      await _identitySelection?.refresh();
+      await _identitySelection?.refresh(
+        useRecentChoice:
+            restoredContent.trim().isEmpty &&
+            !_pendingImages.hasPending &&
+            !state.hasAmbiguousCreate,
+      );
     } finally {
       if (mounted) setState(() => _initializingDraft = false);
     }
@@ -627,6 +635,7 @@ class PostComposerSheetState extends ConsumerState<PostComposerSheet>
     if (_closing || ref.read(sessionScopeProvider) != _openedSessionScope) {
       return;
     }
+    selection?.rememberPublishedIdentity(result.author.rpIdentity?.id);
     final cleaned = await _pendingImages.clear();
     if (!mounted) return;
     if (!cleaned) showWenyouSnackBar(context, _pendingImages.saveFailure!);

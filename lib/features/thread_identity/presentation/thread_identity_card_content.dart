@@ -76,21 +76,18 @@ class ThreadIdentityCardContent extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (hasRp)
+        account,
+        if (hasRp) ...[
+          Divider(height: 1, color: tokens.border),
+          SizedBox(height: tokens.space16),
           ThreadIdentitySummary(
             name: name,
             avatarUrl: avatar,
             avatarSize: 48,
             nameBadge: roleLabel,
             supportingText: '帖内身份',
-          )
-        else
-          account,
-        if (hasRp) ...[
+          ),
           if (profile != null) ...[SizedBox(height: tokens.space16), profile!],
-          SizedBox(height: tokens.space16),
-          Divider(height: 1, color: tokens.border),
-          account,
         ],
       ],
     );

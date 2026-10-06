@@ -66,6 +66,12 @@ void main() {
     expect(find.text('小明'), findsOneWidget);
     expect(find.text('楼主'), findsOneWidget);
     expect(find.text('站内账号：小明'), findsNothing);
+    expect(
+      tester
+          .getBottomLeft(find.byKey(const Key('thread-identity-open-account')))
+          .dy,
+      lessThan(tester.getTopLeft(find.text('白夜')).dy),
+    );
   });
 
   testWidgets('无顶部标题与X，外部点击、下滑、系统返回和无障碍均可关闭', (tester) async {
@@ -166,9 +172,9 @@ void main() {
           .widgetList<ThreadIdentitySummary>(find.byType(ThreadIdentitySummary))
           .toList();
       expect(summaries, hasLength(2));
-      expect(summaries.first.avatarUrl, 'https://example.invalid/old.png');
-      expect(summaries[1].avatarUrl, 'https://example.invalid/account.png');
-      expect(summaries[1].label, isNull);
+      expect(summaries.first.avatarUrl, 'https://example.invalid/account.png');
+      expect(summaries[1].avatarUrl, 'https://example.invalid/old.png');
+      expect(summaries.first.label, isNull);
       expect(find.text('当前使用站内资料'), findsNothing);
       expect(find.text('小明'), findsOneWidget);
     }

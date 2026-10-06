@@ -5,6 +5,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_selection_menu.dart';
+import 'package:wenyousite_mobile/features/posts/application/post_identity_preference_ports.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_identity_selection.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_publish_draft.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
@@ -24,6 +25,97 @@ class _IdentityRepository extends Mock implements ThreadIdentityRepository {
 }
 
 void main() {
+  testWidgets('关闭后重新打开其他发表入口沿用选择，站内选择也会覆盖记忆', (tester) async {
+    final repo = _IdentityRepository();
+    when(() => repo.mine('thread')).thenAnswer(
+      (_) async => const ThreadIdentityState(
+        threadId: 'thread',
+        userId: 'author-1',
+        enabled: true,
+        eligible: true,
+        canEdit: true,
+        accountName: '站内用户',
+        identityToken: 'current-token',
+        display: RpIdentity(id: 'rp', nickname: '白夜'),
+      ),
+    );
+    final container = await postRepliesPageTestPostContainer(
+      PostRepliesPageTestFakePostRepository(),
+      userId: 'author-1',
+      identityRepository: repo,
+    );
+    addTearDown(container.dispose);
+    var opening = 0;
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: Scaffold(
+            body: Builder(
+              builder: (context) => TextButton(
+                onPressed: () {
+                  opening++;
+                  showPostComposerSheet(
+                    context: context,
+                    supportsRpIdentity: true,
+                    target: (
+                      kind: PostComposerKind.createFloor,
+                      threadId: 'thread',
+                      subthreadId: 'subthread-${opening == 1 ? 1 : 2}',
+                      postId: null,
+                      parentPostId: null,
+                      replyToPostId: null,
+                      version: null,
+                      initialContent: '',
+                      label: '发表楼层',
+                    ),
+                  );
+                },
+                child: const Text('打开'),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    Future<void> open() async {
+      await tester.tap(find.text('打开'));
+      await postRepliesPageTestPumpUi(tester);
+    }
+
+    Future<void> choose(String option) async {
+      await tester.tap(find.byKey(const Key('post-composer-identity-mode')));
+      await postRepliesPageTestPumpUi(tester);
+      await tester.tap(find.byKey(Key('post-identity-option-$option')));
+      await postRepliesPageTestPumpUi(tester);
+    }
+
+    PostIdentitySelection currentSelection() => tester
+        .widget<PostIdentityComposerBar>(find.byType(PostIdentityComposerBar))
+        .selection;
+    await open();
+    await choose('rp-rp');
+    await postRepliesPageTestDismissPostComposerFromOutside(tester);
+    await open();
+    expect(currentSelection().identityId, 'rp');
+    expect(currentSelection().acceptedToken, 'current-token');
+    await choose('account');
+    await postRepliesPageTestDismissPostComposerFromOutside(tester);
+    // 再回到第一个入口，其空白本机草稿不能把最新的站内选择改回 RP。
+    opening = 0;
+    await open();
+    expect(currentSelection().mode, PostIdentityMode.account);
+    expect(
+      await container
+          .read(postIdentityPreferenceStoreProvider)
+          .read('author-1', 'thread'),
+      isNull,
+    );
+    expect(tester.takeException(), isNull);
+    await postRepliesPageTestDismissPostComposerFromOutside(tester);
+  });
+
   const sameNameIdentity = ThreadIdentityState(
     threadId: 'thread',
     userId: 'author-1',

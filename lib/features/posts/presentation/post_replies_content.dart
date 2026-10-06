@@ -9,6 +9,7 @@ import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/discussion_sliver_list.dart';
 import 'package:wenyousite_mobile/core/widgets/reading_quick_scroll.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_author_header.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_content_action_menu.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_content_item_divider.dart';
@@ -489,105 +490,72 @@ class _PostAuthorLine extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
-    final avatarSize = root ? 36.0 : 28.0;
     final scope = ThreadIdentityReadingScope.maybeOf(context);
     final role = scope?.roleLabelFor(post.author.id);
-    return Row(
-      children: [
-        WenyouAvatarButton(
-          key: Key('post-author-avatar-${post.id}'),
-          username: post.author.displayName,
-          avatarUrl: post.author.displayAvatarUrl,
-          semanticsLabel:
-              scope?.available == true && post.author.rpIdentity != null
-              ? '查看 ${post.author.displayName} 的帖内身份'
-              : null,
-          visualSize: avatarSize,
-          onTap: () {
-            if (scope?.available == true) {
-              scope!.open(
-                context,
-                post.author.id,
-                historical: post.author.rpIdentity,
-                roleLabel: role,
-              );
-            } else {
-              context.push(AppRouteLocations.user(post.author.id));
-            }
-          },
+    return WenyouAuthorHeader(
+      name: post.author.displayName,
+      nameStyle: root
+          ? Theme.of(context).textTheme.wenyouRowTitle
+          : Theme.of(context).textTheme.wenyouLabel,
+      avatar: WenyouAvatarButton(
+        key: Key('post-author-avatar-${post.id}'),
+        username: post.author.displayName,
+        avatarUrl: post.author.displayAvatarUrl,
+        semanticsLabel:
+            scope?.available == true && post.author.rpIdentity != null
+            ? '查看 ${post.author.displayName} 的帖内身份'
+            : null,
+        visualSize: root ? 36 : 28,
+        onTap: () {
+          if (scope?.available == true) {
+            scope!.open(
+              context,
+              post.author.id,
+              historical: post.author.rpIdentity,
+              roleLabel: role,
+            );
+          } else {
+            context.push(AppRouteLocations.user(post.author.id));
+          }
+        },
+      ),
+      metadata: [
+        WenyouLevelBadge(
+          key: Key('post-level-${post.id}'),
+          level: post.author.level,
         ),
-        SizedBox(width: tokens.space8),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        if (role != null) Text(role),
+        WenyouTimeText(
+          value: post.createdAt,
+          reference: timeReference,
+          semanticsPrefix: [
+            if (root) '楼层 ${post.floorNumber ?? '-'}',
+            if (!root && post.replyNumber != null) '回复编号 ${post.replyNumber}',
+            if (!root && post.replyToAuthor != null)
+              '回复 ${post.replyToAuthor!.displayName}'
+            else if (!root)
+              '回复',
+            '发布时间：',
+          ].join('，'),
+          style: Theme.of(
+            context,
+          ).textTheme.wenyouCaption.copyWith(color: tokens.mutedText),
+        ),
+        if (root && post.isPinned)
+          Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Row(
-                children: [
-                  Flexible(
-                    child: Text(
-                      post.author.displayName,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: root
-                          ? Theme.of(context).textTheme.wenyouRowTitle
-                          : Theme.of(context).textTheme.wenyouLabel,
-                    ),
-                  ),
-                  SizedBox(width: tokens.space4),
-                  WenyouLevelBadge(
-                    key: Key('post-level-${post.id}'),
-                    level: post.author.level,
-                  ),
-                  if (role != null) ...[
-                    SizedBox(width: tokens.space4),
-                    Text(
-                      role,
-                      style: Theme.of(context).textTheme.wenyouCaption,
-                    ),
-                  ],
-                  if (root && post.isPinned) ...[
-                    SizedBox(width: tokens.space8),
-                    const WenyouIcon(WenyouIconIds.statusPinned, size: 14),
-                    SizedBox(width: tokens.space4),
-                    Text(
-                      '置顶',
-                      key: Key('post-pinned-${post.id}'),
-                      style: Theme.of(context).textTheme.wenyouCaption,
-                    ),
-                  ],
-                ],
-              ),
-              SizedBox(height: tokens.space4 / 2),
-              WenyouTimeText(
-                value: post.createdAt,
-                reference: timeReference,
-                semanticsPrefix: [
-                  if (root) '楼层 ${post.floorNumber ?? '-'}',
-                  if (!root && post.replyNumber != null)
-                    '回复编号 ${post.replyNumber}',
-                  if (!root && post.replyToAuthor != null)
-                    '回复 ${post.replyToAuthor!.displayName}'
-                  else if (!root)
-                    '回复',
-                  '发布时间：',
-                ].join('，'),
-                prefix: [
-                  if (root) '#${post.floorNumber ?? '-'}',
-                  if (!root && post.replyNumber != null) '#${post.replyNumber}',
-                  if (!root && post.replyToAuthor != null)
-                    '回复 @${post.replyToAuthor!.displayName}'
-                  else if (!root)
-                    '回复',
-                  '',
-                ].join(' · '),
-                style: Theme.of(
-                  context,
-                ).textTheme.wenyouCaption.copyWith(color: tokens.mutedText),
-              ),
+              const WenyouIcon(WenyouIconIds.statusPinned, size: 14),
+              SizedBox(width: tokens.space4),
+              Text('置顶', key: Key('post-pinned-${post.id}')),
             ],
           ),
-        ),
+        if (!root && post.replyToAuthor != null)
+          Text('回复 @${post.replyToAuthor!.displayName}'),
       ],
+      trailing: root || post.replyNumber != null
+          ? Text('#${root ? post.floorNumber ?? '-' : post.replyNumber}')
+          : null,
     );
   }
 }

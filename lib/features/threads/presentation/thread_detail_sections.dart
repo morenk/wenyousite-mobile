@@ -438,48 +438,35 @@ class ThreadFloorCard extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: ThreadPostAuthorLine(
-                          key: Key('thread-floor-author-${floor.id}'),
-                          author: floor.author,
-                          time: floor.createdAt,
-                          compact: true,
-                          avatarKey: Key(
-                            'thread-floor-author-avatar-${floor.id}',
-                          ),
-                        ),
-                      ),
-                      SizedBox(width: tokens.space8),
-                      DefaultTextStyle.merge(
-                        style: Theme.of(context).textTheme.wenyouCaption
-                            .copyWith(color: tokens.mutedText),
-                        child: Row(
+                  ThreadPostAuthorLine(
+                    key: Key('thread-floor-author-${floor.id}'),
+                    author: floor.author,
+                    time: floor.createdAt,
+                    compact: true,
+                    avatarKey: Key('thread-floor-author-avatar-${floor.id}'),
+                    metadata: [
+                      if (floor.isPinned)
+                        Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            if (floor.isPinned) ...[
-                              const WenyouIcon(
-                                WenyouIconIds.statusPinned,
-                                size: 14,
-                              ),
-                              SizedBox(width: tokens.space4),
-                              Text(
-                                '置顶',
-                                key: Key('thread-floor-pinned-${floor.id}'),
-                              ),
-                              SizedBox(width: tokens.space8),
-                            ],
+                            const WenyouIcon(
+                              WenyouIconIds.statusPinned,
+                              size: 14,
+                            ),
+                            SizedBox(width: tokens.space4),
                             Text(
-                              floor.floorNumber == null
-                                  ? '楼层'
-                                  : '#${floor.floorNumber}',
-                              key: Key('thread-floor-number-${floor.id}'),
+                              '置顶',
+                              key: Key('thread-floor-pinned-${floor.id}'),
                             ),
                           ],
                         ),
-                      ),
                     ],
+                    trailing: Text(
+                      floor.floorNumber == null
+                          ? '楼层'
+                          : '#${floor.floorNumber}',
+                      key: Key('thread-floor-number-${floor.id}'),
+                    ),
                   ),
                   SizedBox(height: tokens.space8),
                   if (floor.isDeleted)
