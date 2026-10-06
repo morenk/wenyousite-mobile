@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_composer_draft.dart';
+import 'package:wenyousite_mobile/features/posts/application/post_publish_draft.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
 import 'package:wenyousite_mobile/features/posts/presentation/post_composer_sheet.dart';
 
@@ -13,10 +14,16 @@ class ExpandablePostComposer extends StatefulWidget {
     required this.onClose,
     required this.onRequestClose,
     this.onDraftChanged,
+    this.supportsRpIdentity = false,
+    this.publishDraft,
+    this.initialInsertion,
   });
 
   final PostComposerTarget target;
   final PostComposerBaseline baseline;
+  final bool supportsRpIdentity;
+  final PostPublishDraft? publishDraft;
+  final String? initialInsertion;
   final ValueChanged<PostComposerDraft?>? onDraftChanged;
   final GlobalKey composerKey;
   final VoidCallback onRequestClose;
@@ -88,6 +95,9 @@ class ExpandablePostComposerState extends State<ExpandablePostComposer> {
                     child: Material(
                       color: Theme.of(context).scaffoldBackgroundColor,
                       child: PostComposerSheet(
+                        supportsRpIdentity: widget.supportsRpIdentity,
+                        publishDraft: widget.publishDraft,
+                        initialInsertion: widget.initialInsertion,
                         key: widget.composerKey,
                         target: widget.target,
                         baseline: widget.baseline,

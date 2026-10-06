@@ -7,13 +7,13 @@ import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/core/widgets/discussion_sliver_list.dart';
 import 'package:wenyousite_mobile/core/widgets/reading_quick_scroll.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_author_header.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_content_action_menu.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_content_item_divider.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_discussion_scroll_policy.dart';
-import 'package:wenyousite_mobile/core/widgets/wenyou_level_badge.dart';
-import 'package:wenyousite_mobile/core/widgets/wenyou_markdown.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_time_text.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_transient_target_frame.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
@@ -24,14 +24,17 @@ import 'package:wenyousite_mobile/features/posts/domain/post_discussion_author.d
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
 import 'package:wenyousite_mobile/features/posts/presentation/post_composer_targets.dart';
 import 'package:wenyousite_mobile/features/posts/presentation/post_discussion_states.dart';
+import 'package:wenyousite_mobile/features/posts/presentation/post_reading_body.dart';
 import 'package:wenyousite_mobile/features/posts/presentation/post_reply_filters.dart';
 import 'package:wenyousite_mobile/features/reports/domain/report_models.dart';
 import 'package:wenyousite_mobile/features/reports/reports.dart';
-import 'package:wenyousite_mobile/features/stickers/stickers.dart';
+import 'package:wenyousite_mobile/features/thread_identity/identity_widgets.dart';
 
 class PostDiscussionList extends StatelessWidget {
   const PostDiscussionList({
     required this.state,
+    this.countKey,
+    this.onLocate,
     required this.actions,
     required this.viewerId,
     required this.authenticated,
@@ -51,10 +54,14 @@ class PostDiscussionList extends StatelessWidget {
     required this.onCompose,
     required this.onDelete,
     required this.onTogglePin,
+    this.supportsRpIdentity = false,
+    this.ownerId,
     super.key,
   });
 
   final PostDiscussionState state;
+  final Key? countKey;
+  final VoidCallback? onLocate;
   final PostActionState actions;
   final String? viewerId;
   final bool authenticated;
@@ -74,6 +81,8 @@ class PostDiscussionList extends StatelessWidget {
   final ValueChanged<PostComposerTarget> onCompose;
   final void Function(PostItem post, bool root) onDelete;
   final ValueChanged<PostItem> onTogglePin;
+  final bool supportsRpIdentity;
+  final String? ownerId;
 
   @override
   Widget build(BuildContext context) {
@@ -90,7 +99,7 @@ class PostDiscussionList extends StatelessWidget {
         ),
         SizedBox(height: tokens.space12),
       ],
-      DiscussionKeepAlive(
+      KeyedSubtree(
         child: ReadingPositionAnchor(
           controller: quickScroll,
           label: '原楼层',
@@ -122,6 +131,8 @@ class PostDiscussionList extends StatelessWidget {
       ),
       SizedBox(height: tokens.space12),
       PostReplyFilters(
+        key: countKey,
+        onLocate: onLocate,
         state: state,
         replyCount: root.replyCount,
         authors: authors,
@@ -145,132 +156,146 @@ class PostDiscussionList extends StatelessWidget {
         SizedBox(height: tokens.space12),
       ],
     ];
-    return CustomScrollView(
-      key: const Key('post-replies-list'),
-      controller: scrollController,
-      scrollCacheExtent: discussionScrollCacheExtent,
-      physics: ReadingQuickScrollPhysics(
-        controller: quickScroll,
-        parent: const AlwaysScrollableScrollPhysics(),
-      ),
-      slivers: [
-        SliverPadding(
-          padding: EdgeInsets.fromLTRB(
-            horizontal,
-            tokens.space8,
-            horizontal,
-            0,
-          ),
-          sliver: SliverList.list(
-            children: [
-              for (final child in leadingWidgets)
-                WenyouConstrainedWidth(child: child),
-            ],
-          ),
+    return ThreadIdentityReadingScope(
+      threadId: root.threadId,
+      available: supportsRpIdentity,
+      ownerId: ownerId,
+      child: CustomScrollView(
+        key: const Key('post-replies-list'),
+        controller: scrollController,
+        scrollCacheExtent: discussionScrollCacheExtent,
+        physics: ReadingQuickScrollPhysics(
+          controller: quickScroll,
+          parent: const AlwaysScrollableScrollPhysics(),
         ),
-        if (state.replies.isEmpty)
+        slivers: [
           SliverPadding(
-            padding: EdgeInsets.symmetric(horizontal: horizontal),
-            sliver: const SliverToBoxAdapter(
-              child: WenyouConstrainedWidth(
-                child: WenyouEmptyState(
-                  icon: WenyouIconIds.metricReplies,
-                  title: '还没有回复',
+            padding: EdgeInsets.fromLTRB(
+              horizontal,
+              tokens.space8,
+              horizontal,
+              0,
+            ),
+            sliver: SliverList.list(
+              children: [
+                for (final child in leadingWidgets)
+                  WenyouConstrainedWidth(child: child),
+              ],
+            ),
+          ),
+          if (state.replies.isEmpty)
+            SliverPadding(
+              padding: EdgeInsets.symmetric(horizontal: horizontal),
+              sliver: const SliverToBoxAdapter(
+                child: WenyouConstrainedWidth(
+                  child: WenyouEmptyState(
+                    icon: WenyouIconIds.metricReplies,
+                    title: '还没有回复',
+                  ),
+                ),
+              ),
+            )
+          else
+            SliverPadding(
+              padding: EdgeInsets.symmetric(horizontal: horizontal),
+              sliver: DiscussionSliverList(
+                key: itemListKey,
+                scope: (root.id, state.order, state.authorId),
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                    final reply = state.replies[index];
+                    return KeyedSubtree(
+                      key: ValueKey('post-reply-item-${reply.id}'),
+                      child: WenyouConstrainedWidth(
+                        child: Column(
+                          children: [
+                            if (index > 0)
+                              WenyouContentItemDivider(
+                                key: ValueKey('post-reply-divider-${reply.id}'),
+                              ),
+                            ReadingPositionAnchor(
+                              controller: quickScroll,
+                              postId: reply.id,
+                              number: reply.replyNumber,
+                              label: reply.replyNumber == null
+                                  ? '${reply.author.displayName}的回复附近'
+                                  : '第 ${reply.replyNumber} 条回复附近',
+                              child: _PostCard(
+                                key: Key('post-reply-${reply.id}'),
+                                post: reply,
+                                galleryTarget: ReadingGalleryTarget(
+                                  scope: ReadingGalleryScope.postReplies,
+                                  scopeId: root.id,
+                                  authorId: state.authorId,
+                                  order: state.order == PostReplyOrder.newest
+                                      ? ReadingGalleryOrder.newest
+                                      : ReadingGalleryOrder.oldest,
+                                ),
+                                timeReference: timeReference,
+                                focused: reply.id == focusedReplyId,
+                                targetFrameKey: reply.id == focusedReplyId
+                                    ? targetKey
+                                    : null,
+                                canEdit: reply.isAuthoredBy(viewerId),
+                                canDelete:
+                                    reply.isAuthoredBy(viewerId) ||
+                                    canManageThread,
+                                pending: actions.pendingPostId == reply.id,
+                                reportReturnTo:
+                                    canReport &&
+                                        !reply.isDeleted &&
+                                        !reply.isAuthoredBy(viewerId)
+                                    ? _reportLocation(root, reply.id)
+                                    : null,
+                                onReply: authenticated
+                                    ? () => onCompose(
+                                        postReplyTarget(root, reply),
+                                      )
+                                    : null,
+                                onEdit: () =>
+                                    onCompose(postEditTarget(reply, '编辑回复')),
+                                onDelete: () => onDelete(reply, false),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                  childCount: state.replies.length,
+                  findChildIndexCallback: (key) {
+                    final value = key is ValueKey<String> ? key.value : null;
+                    if (value == null ||
+                        !value.startsWith('post-reply-item-')) {
+                      return null;
+                    }
+                    final replyId = value.substring('post-reply-item-'.length);
+                    final index = state.replies.indexWhere(
+                      (reply) => reply.id == replyId,
+                    );
+                    return index < 0 ? null : index;
+                  },
                 ),
               ),
             ),
-          )
-        else
           SliverPadding(
-            padding: EdgeInsets.symmetric(horizontal: horizontal),
-            sliver: SliverList.builder(
-              key: itemListKey,
-              itemCount: state.replies.length,
-              itemBuilder: (context, index) {
-                final reply = state.replies[index];
-                return DiscussionKeepAlive(
-                  key: ValueKey('post-reply-item-${reply.id}'),
-                  child: WenyouConstrainedWidth(
-                    child: Column(
-                      children: [
-                        if (index > 0)
-                          WenyouContentItemDivider(
-                            key: ValueKey('post-reply-divider-${reply.id}'),
-                          ),
-                        ReadingPositionAnchor(
-                          controller: quickScroll,
-                          label: reply.floorNumber == null
-                              ? '${reply.author.username}的回复附近'
-                              : '第 ${reply.floorNumber} 楼回复附近',
-                          child: _PostCard(
-                            key: Key('post-reply-${reply.id}'),
-                            post: reply,
-                            galleryTarget: ReadingGalleryTarget(
-                              scope: ReadingGalleryScope.postReplies,
-                              scopeId: root.id,
-                              authorId: state.authorId,
-                              order: state.order == PostReplyOrder.newest
-                                  ? ReadingGalleryOrder.newest
-                                  : ReadingGalleryOrder.oldest,
-                            ),
-                            timeReference: timeReference,
-                            focused: reply.id == focusedReplyId,
-                            targetFrameKey: reply.id == focusedReplyId
-                                ? targetKey
-                                : null,
-                            canEdit: reply.isAuthoredBy(viewerId),
-                            canDelete:
-                                reply.isAuthoredBy(viewerId) || canManageThread,
-                            pending: actions.pendingPostId == reply.id,
-                            reportReturnTo:
-                                canReport &&
-                                    !reply.isDeleted &&
-                                    !reply.isAuthoredBy(viewerId)
-                                ? _reportLocation(root, reply.id)
-                                : null,
-                            onReply: authenticated
-                                ? () => onCompose(postReplyTarget(root, reply))
-                                : null,
-                            onEdit: () =>
-                                onCompose(postEditTarget(reply, '编辑回复')),
-                            onDelete: () => onDelete(reply, false),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-              findChildIndexCallback: (key) {
-                final value = key is ValueKey<String> ? key.value : null;
-                if (value == null || !value.startsWith('post-reply-item-')) {
-                  return null;
-                }
-                final replyId = value.substring('post-reply-item-'.length);
-                final index = state.replies.indexWhere(
-                  (reply) => reply.id == replyId,
-                );
-                return index < 0 ? null : index;
-              },
+            padding: EdgeInsets.fromLTRB(
+              horizontal,
+              state.hasMore ? tokens.space12 : 0,
+              horizontal,
+              tokens.minimumTouchTarget + tokens.space32 + tokens.space16,
             ),
-          ),
-        SliverPadding(
-          padding: EdgeInsets.fromLTRB(
-            horizontal,
-            state.hasMore ? tokens.space12 : 0,
-            horizontal,
-            tokens.minimumTouchTarget + tokens.space32 + tokens.space16,
-          ),
-          sliver: SliverToBoxAdapter(
-            child: WenyouConstrainedWidth(
-              child: PostDiscussionPaginationStatus(
-                state: state,
-                onRetry: onRetry,
+            sliver: SliverToBoxAdapter(
+              child: WenyouConstrainedWidth(
+                child: PostDiscussionPaginationStatus(
+                  state: state,
+                  onRetry: onRetry,
+                ),
               ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -348,30 +373,9 @@ class _PostCard extends ConsumerWidget {
                 ).textTheme.wenyouCompactBody.copyWith(color: tokens.mutedText),
               )
             else
-              StickerPostMarkdown(
-                postId: post.id,
-                postVersion: post.version,
+              PostReadingBody(
+                post: post,
                 galleryTarget: galleryTarget,
-                data: post.content,
-                mediaDisplays: post.mediaDisplays,
-                diceLabels: _postDiceLabels(post.diceRolls),
-                diceSemantics: {
-                  for (final roll in post.diceRolls)
-                    roll.nodeId: formatWenyouDiceSemantics(
-                      notation: roll.notation,
-                      results: roll.results,
-                      total: roll.total,
-                    ),
-                },
-                diceDetails: {
-                  for (final roll in post.diceRolls)
-                    roll.nodeId.toLowerCase(): WenyouDiceRollDetail(
-                      results: roll.results,
-                      total: roll.total,
-                    ),
-                },
-                bodyFontSize: 17,
-                bodyHeight: 1.8,
                 onTapText: canTapReply ? onReply : null,
                 onLongPressNonText: openActions,
               ),
@@ -424,11 +428,12 @@ class _PostCard extends ConsumerWidget {
           write: () => ref.read(readerMarkdownClipboardWriterProvider)(
             markdown: post.content,
             diceLabels: _postDiceLabels(post.diceRolls),
+            mentionLabels: post.mentionLabels,
             scope: ref.read(sessionScopeProvider),
           ),
         );
       case PostCardAction.copyLink:
-        await copyPostCardValue(context, _publicLink(), '楼层链接已复制');
+        await copyPostCardLink(context, _publicLink(), '楼层链接已复制');
       case PostCardAction.togglePin:
         onTogglePin?.call();
       case PostCardAction.edit:
@@ -484,78 +489,67 @@ class _PostAuthorLine extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
-    final avatarSize = root ? 36.0 : 28.0;
-    return Row(
-      children: [
-        WenyouAvatarButton(
-          key: Key('post-author-avatar-${post.id}'),
-          username: post.author.username,
-          avatarUrl: post.author.avatarUrl,
-          visualSize: avatarSize,
-          onTap: () => context.push(AppRouteLocations.user(post.author.id)),
+    final scope = ThreadIdentityReadingScope.maybeOf(context);
+    final role = scope?.roleLabelFor(post.author.id);
+    return WenyouAuthorHeader(
+      name: post.author.displayName,
+      level: post.author.level,
+      levelKey: Key('post-level-${post.id}'),
+      avatar: WenyouAvatarButton(
+        key: Key('post-author-avatar-${post.id}'),
+        username: post.author.displayName,
+        avatarUrl: post.author.displayAvatarUrl,
+        semanticsLabel:
+            scope?.available == true && post.author.rpIdentity != null
+            ? '查看 ${post.author.displayName} 的帖内身份'
+            : null,
+        visualSize: root ? 36 : 28,
+        onTap: () {
+          if (scope?.available == true) {
+            scope!.open(
+              context,
+              post.author.id,
+              historical: post.author.rpIdentity,
+              roleLabel: role,
+            );
+          } else {
+            context.push(AppRouteLocations.user(post.author.id));
+          }
+        },
+      ),
+      metadata: [
+        if (role != null) Text(role),
+        WenyouTimeText(
+          value: post.createdAt,
+          reference: timeReference,
+          semanticsPrefix: [
+            if (root) '楼层 ${post.floorNumber ?? '-'}',
+            if (!root && post.replyNumber != null) '回复编号 ${post.replyNumber}',
+            if (!root && post.replyToAuthor != null)
+              '回复 ${post.replyToAuthor!.displayName}'
+            else if (!root)
+              '回复',
+            '发布时间：',
+          ].join('，'),
+          style: Theme.of(
+            context,
+          ).textTheme.wenyouCaption.copyWith(color: tokens.mutedText),
         ),
-        SizedBox(width: tokens.space8),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        if (root && post.isPinned)
+          Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Row(
-                children: [
-                  Flexible(
-                    child: Text(
-                      post.author.username,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: root
-                          ? Theme.of(context).textTheme.wenyouRowTitle
-                          : Theme.of(context).textTheme.wenyouLabel,
-                    ),
-                  ),
-                  SizedBox(width: tokens.space4),
-                  WenyouLevelBadge(
-                    key: Key('post-level-${post.id}'),
-                    level: post.author.level,
-                  ),
-                  if (root && post.isPinned) ...[
-                    SizedBox(width: tokens.space8),
-                    const WenyouIcon(WenyouIconIds.statusPinned, size: 14),
-                    SizedBox(width: tokens.space4),
-                    Text(
-                      '置顶',
-                      key: Key('post-pinned-${post.id}'),
-                      style: Theme.of(context).textTheme.wenyouCaption,
-                    ),
-                  ],
-                ],
-              ),
-              SizedBox(height: tokens.space4 / 2),
-              WenyouTimeText(
-                value: post.createdAt,
-                reference: timeReference,
-                semanticsPrefix: [
-                  if (root) '楼层 ${post.floorNumber ?? '-'}',
-                  if (!root && post.replyToAuthor != null)
-                    '回复 ${post.replyToAuthor!.username}'
-                  else if (!root)
-                    '回复',
-                  '发布时间：',
-                ].join('，'),
-                prefix: [
-                  if (root) '#${post.floorNumber ?? '-'}',
-                  if (!root && post.replyToAuthor != null)
-                    '回复 @${post.replyToAuthor!.username}'
-                  else if (!root)
-                    '回复',
-                  '',
-                ].join(' · '),
-                style: Theme.of(
-                  context,
-                ).textTheme.wenyouCaption.copyWith(color: tokens.mutedText),
-              ),
+              const WenyouIcon(WenyouIconIds.statusPinned, size: 14),
+              SizedBox(width: tokens.space4),
+              Text('置顶', key: Key('post-pinned-${post.id}')),
             ],
           ),
-        ),
+        if (!root && post.replyToAuthor != null)
+          Text('回复 @${post.replyToAuthor!.displayName}'),
       ],
+      trailing: root || post.replyNumber != null
+          ? Text('#${root ? post.floorNumber ?? '-' : post.replyNumber}')
+          : null,
     );
   }
 }

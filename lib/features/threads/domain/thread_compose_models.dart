@@ -58,6 +58,7 @@ class ThreadRemoteDraft {
     required this.tags,
     required this.body,
     this.bodyVersion,
+    this.mentionLabels = const {},
   });
 
   final String id;
@@ -65,6 +66,7 @@ class ThreadRemoteDraft {
   final String defaultSubthreadId;
   final int defaultSubthreadVersion;
   final int? bodyVersion;
+  final Map<String, String> mentionLabels;
   final String title;
   final Map<String, MediaDisplay> mediaDisplays;
   final String? categorySlug;
@@ -198,6 +200,7 @@ class ThreadSnapshotMetadata {
           'defaultSubthreadId': remote.defaultSubthreadId,
           'defaultSubthreadVersion': remote.defaultSubthreadVersion,
           'bodyVersion': remote.bodyVersion,
+          'mentionLabels': remote.mentionLabels,
         },
     });
   }
@@ -244,6 +247,12 @@ class ThreadSnapshotMetadata {
             visibility: ThreadComposeVisibility.fromWireValue(visibility),
             tags: List<String>.unmodifiable(tags.cast<String>()),
             body: '',
+            mentionLabels: {
+              if (remote['mentionLabels'] case final Map labels)
+                for (final entry in labels.entries)
+                  if (entry.key is String && entry.value is String)
+                    entry.key as String: entry.value as String,
+            },
           );
         }
       }

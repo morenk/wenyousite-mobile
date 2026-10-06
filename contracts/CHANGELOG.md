@@ -1,5 +1,69 @@
 # API 合同变更
 
+## 5.36.0-dev.20261005.1
+
+RP 身份新增同主题资料楼层引用，可显式设置/解绑，原省略字段保持；当前可读引用与本人原绑定分离，不修改历史快照。新增 rpIdentityProfileSupported 能力、profilePostStatus 状态与独立作者版本；角色和帖子详情禁止缓存复用权限。接口、错误码和 Markdown 版本保持兼容，详见 [资料引用契约](../docs/rp-identity-profile-post.md)。
+
+## 5.35.0-dev.20261005.1
+
+新增平级角色/显式账号提及、可选header/DTO能力、独立新写开关、稳定target与安全旧读/写保护。Markdown激活仍5；账号范围不再默认投影RP，空白编辑器默认ACCOUNT。详见[Markdown6扩展](../docs/markdown-v6-role-mentions.md)。
+
+## 5.34.0-dev.20261005.1
+
+- 新增每账号每主题最多十个 RP 身份集合 CRUD 和按稳定 identityId 的当前身份卡；已有角色迁移为兼容主身份。
+- 四创建 DTO 增加可选 identityId；新客户端冻结 ACCOUNT/RP、角色 ID 与 token。旧省略 ID 只选择兼容主身份，原提及源和 Markdown5 不变。
+- 新增 RP_IDENTITY_LIMIT=40013；归档释放名额并保留历史/媒体。角色 B 更新不使 A token 失效；新增全空资料拒绝，逐项清空保留不可发表的角色。
+- defaultIdentityId 只初始化无草稿编辑器；历史卡按同一角色查询，删除后不显示另一角色。
+
+## 5.33.0-dev.20261005.1
+
+- 新发言支持逐条 identityMode=ACCOUNT/RP；明确账号模式不受 RP token 变化影响，RP 必须有效身份确认。
+- 幂等请求冻结 mode，编辑历史发言不切换身份；ThreadDetail 的可选开关去除生成器会提升为必填的 schema default。
+
+## 5.32.0-dev.20261003.1
+
+- 下载文件 GET 兼容增加服务端持久次数限制，默认随机浏览器标识每天 3 次、单 IP 每天 10 次，北京时间日界、跨构建累计。有效 GET 在最后阶段同时预占次数与字节，Range/中断/主动重试不豁免；HEAD 预检但不扣次数，公开 info 仍表示全局可用性。
+- 429 增加 `X-Download-Limit-Reason` 与 `Retry-After` 响应契约；可选 `Set-Cookie` 签发第一方随机签名标识。保留所有路径、operationId、DTO、旧 APP 元数据与无 Cookie 直接 HEAD/GET；无有效 Cookie 仅保证 IP 总次数限制，不宣称物理设备唯一。
+- 出站 SQLite v1 必须显式离线升级到 v2，保留既有日/月字节与时钟；密钥持久化、轮换宽限、次数保留及回滚边界见 [下载网关](../docs/app-download-gateway.md)。无 Prisma schema 变化，无协议删除。消费者同步固定提交后处理限额原因，旧客户端可按既有 429/Retry-After 兜底。
+
+## 5.31.0-dev.20261003.1
+
+- 合并已发布的讨论定位基线与匿名下载契约，共 238 个操作；下载 DTO、operationId、路径和响应语义与 5.30.0-dev.20261002.2 一致。Web/Mobile 从本版完整 OpenAPI 重新生成，不覆盖讨论窗口与 replyNumber。
+- 交付独立网关、持久预算、私有预热、制品位置登记和合成预览；允许仅在发布私有配置中复用现有存储凭据，不改变其云端权限。
+
+## 5.30.0-dev.20261002.2
+
+- 下载 DTO、路径、operationId 与前版一致；HEAD 在 GET 之前注册，兼容主 API 默认 Fastify 自动 HEAD 行为，避免重复路由阻止启动。生成文档方法顺序相应调整。
+- 本提交只修正路由注册与机器文档顺序；独立预算、预热、位置登记和合成下载预览随后在同分支交付。
+
+## 5.30.0-dev.20261002.1
+
+- 兼容新增匿名下载信息 `appDownloadsInfo` 与固定构建 GET/HEAD `appDownloadsFile` / `appDownloadsHead`；DTO、Range、状态码与旧 APP metadata 见 [下载网关契约](../docs/app-download-gateway.md)。
+- Android meta 的 updateUrl 允许本站固定构建文件 URL；旧源站发布身份与审计原文保留。先兼容网关/发布工具和预热，再切换消费者，关闭 APK 公共读需独立评审。
+
+## 5.30.0-dev.20261001.1
+
+- 兼容新增固定 replyNumber、主楼/楼中楼有界双向窗口及筛选排除专用错误40010，保留旧分页和帖子ID深链。语义见 [讨论定位](../docs/discussion-navigation.md)。
+
+## 5.29.0-dev.20261001.1
+
+- 兼容新增 PUT /threads/{id}/invite-link（threadsEnsureInviteLink），无请求体、200、现有 InviteLinkResponseDto。仅已发布私帖楼主可用，原子取得或首次创建；重复和并发复制不刷新 token。
+- 既有 POST 与 threadsCreateInviteLink 保持主动重置语义；旧链接对所有人统一失效，已有成员仍可从帖子入口访问。无迁移、无成员变更或旧接口弃用。
+- Web / Windows Mobile 从已提交契约生成客户端；当前邀请入口只保留点击即复制，每次使用 PUT，只有剪贴板失败才就地显示手动复制链接。当前消费端不提供独立标题、常驻说明、重置 UI 或正常态链接正文；接口失败不调用 POST。POST 继续兼容旧客户端重置，其结果不明时不得自动重发，可通过 PUT 取回当前链接。先后端兼容、再消费者，Foundation 仅同步交互说明。
+- 本轮邀请入口简化只修订消费文档；HTTP/OpenAPI、operationId、DTO、版本及旧客户端成员规则均保持，不新增迁移或 API 版本。
+
+## 5.28.0-dev.20260929.1
+
+- PostBaseResponseDto 兼容新增可选 nullable date-time `editedAt`，覆盖楼层、内嵌楼中楼、回复分页、详情与编辑响应；历史与未编辑帖子为 null。
+- 只在规范化持久正文实际改变的成功编辑事务中写入服务端时间；无改动保存、失败、置顶、删除恢复及发布骰子结算不改变编辑记录。BODY 写入使用相同语义。
+- Web / Mobile 楼层与楼中楼有 `editedAt` 时仅显示“编辑于…”及该时间，否则沿用 `createdAt`；时间格式、排序、`updatedAt` 与乐观锁语义不变。先发布兼容后端，再发布消费者；不删除旧字段。
+
+## 5.27.1-dev.20260928.1
+
+- 修正本人、登录公开及游客公开资料的 `_count.following` / `_count.followers`：排除已注销账号，与同一查看者的关系列表使用相同过滤，保留双向拉黑语义和历史关系。
+- 字段、类型、接口与权限不变；OpenAPI 补充计数口径及游客最长五分钟缓存说明，按仓库产物版本门禁递增 PATCH。旧游客缓存自然过期生效，不要求生产清缓存。
+- 无数据库迁移或字段弃用。Web / Windows Flutter 同步精确提交的契约快照，继续消费刷新后的计数；无需新增补偿请求或 Foundation 包版本。
+
 ## 5.27.0-dev.20260927.1
 
 - 新增公开已发布历史/详情，以及后台草稿、revision 编辑、SUPER_ADMIN 确认接口；纯文本 summary/items，OpenAPI 为机器事实源。
@@ -499,3 +563,7 @@
 - 新增独立 32 种 marks / 1,024 个有序邻接组合语义 fixture 与 schema，保留 v7 原有 48 条操作。
 - 允许行内代码外层组合粗体、斜体、删除线与链接，覆盖边界、字面定界符、实体、空格与反向选择。
 - API/OpenAPI、Markdown v5 编号和 Foundation Token 均无变化，不生成新 SDK。
+
+## 5.33.0-dev.20261004.1
+
+新增帖内 RP 身份 v1、独立身份设置和角色卡、历史发言和提及快照、409 身份确认及兼容头像引用；见 [接口语义](../docs/thread-identity.md)。

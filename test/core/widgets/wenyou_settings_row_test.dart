@@ -10,6 +10,36 @@ import '../../support/deterministic_test_fonts.dart';
 void main() {
   setUpAll(loadDeterministicTestFonts);
 
+  testWidgets('无说明的设置直接切换，忙碌操作不重复触发', (tester) async {
+    var value = false;
+    var actions = 0;
+    await tester.pumpWidget(
+      _app(
+        child: Column(
+          children: [
+            WenyouSettingsToggle(
+              title: '帖内身份',
+              icon: WenyouIconIds.contentRoleplay,
+              value: value,
+              onChanged: (next) => value = next,
+            ),
+            WenyouSettingsLink(
+              title: '导出档案',
+              isBusy: true,
+              onTap: () => actions++,
+            ),
+          ],
+        ),
+      ),
+    );
+    expect(find.byType(Tooltip), findsNothing);
+    await tester.tap(find.text('帖内身份'));
+    expect(value, isTrue);
+    await tester.tap(find.text('导出档案'));
+    expect(actions, 0);
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+  });
+
   for (final dark in [false, true]) {
     for (final width in [320.0, 360.0, 600.0]) {
       testWidgets('设置长值在 $width 宽两倍字号 ${dark ? '黑夜' : '浅色'} 完整换行', (
@@ -27,6 +57,7 @@ void main() {
             scale: 2,
             child: WenyouSettingsLink(
               title: '主题标签',
+              icon: WenyouIconIds.contentTag,
               value: value,
               onTap: () => taps++,
             ),
@@ -76,6 +107,26 @@ void main() {
     await tester.tap(find.text('所在分区'));
     await tester.tap(find.text('可见范围'));
     expect(taps, 0);
+  });
+
+  testWidgets('设置图标与空白区域属于整行操作且不增加副标题', (tester) async {
+    var taps = 0;
+    await tester.pumpWidget(
+      _app(
+        child: WenyouSettingsLink(
+          title: '编辑资料',
+          icon: WenyouIconIds.actionEdit,
+          onTap: () => taps++,
+        ),
+      ),
+    );
+    final row = find.byType(WenyouSettingsLink);
+    final tile = tester.widget<ListTile>(find.byType(ListTile));
+    expect(tile.subtitle, isNull);
+    expect(tester.getSize(row).height, greaterThanOrEqualTo(48));
+    await tester.tap(find.byType(WenyouSettingsIcon));
+    await tester.tapAt(tester.getBottomRight(row) - const Offset(40, 8));
+    expect(taps, 2);
   });
 
   testWidgets('整行选择提供选中和禁用语义，点击空白处也能选择', (tester) async {

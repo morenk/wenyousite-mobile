@@ -8,6 +8,11 @@ class DeviceClipboardNavigationGateway implements ClipboardNavigationGateway {
   static const _channel = MethodChannel('site.wenyou.app/clipboard_navigation');
 
   @override
+  Future<String?> writeText(String text) async => _normalizeToken(
+    await _channel.invokeMethod<String>('writeText', {'text': text}),
+  );
+
+  @override
   Future<String?> readChangeToken() async {
     try {
       return _normalizeToken(

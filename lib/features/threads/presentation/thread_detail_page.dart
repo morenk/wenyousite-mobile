@@ -1,12 +1,19 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
+import 'package:wenyousite_mobile/core/application/visibility_cache_invalidation.dart';
 import 'package:wenyousite_mobile/core/diagnostics/debug_diagnostic_console.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/discussion_author_filter_restore.dart';
+import 'package:wenyousite_mobile/core/widgets/discussion_navigation.dart';
+import 'package:wenyousite_mobile/core/widgets/discussion_navigation_feedback.dart';
+import 'package:wenyousite_mobile/core/widgets/discussion_position_button.dart';
+import 'package:wenyousite_mobile/core/widgets/discussion_selection_scope.dart';
 import 'package:wenyousite_mobile/core/widgets/discussion_target_cover.dart';
+import 'package:wenyousite_mobile/core/widgets/discussion_window_prefetch.dart';
 import 'package:wenyousite_mobile/core/widgets/reading_quick_scroll.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_discussion_scroll_policy.dart';
@@ -53,6 +60,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
   final _pageInstanceToken = Object();
   final _subthreadScroll = ThreadDetailSubthreadScrollCoordinator();
   final _targetKey = GlobalKey();
+  final _countKey = GlobalKey();
   final _itemListKey = GlobalKey();
   final _composerDrafts = <String, PostComposerDraft>{};
   final _entryTargetCoordinator = ThreadDetailEntryTargetCoordinator();
@@ -64,8 +72,90 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     },
   );
   String? _lastOpenedReplyTargetId;
-  final _targetFilterRestore = ThreadTargetFilterRestoreCoordinator();
-  final _prefetchScheduler = DiscussionPrefetchScheduler();
+  final _selection = DiscussionSelectionController();
+  late final _prefetch = DiscussionWindowPrefetch(
+    reading: _quickScroll,
+    isMounted: () => mounted,
+    canMutate: () =>
+        !_selection.active && ModalRoute.of(context)?.isCurrent == true,
+  );
+  ThreadPostTargetModel? _numberTarget;
+  ThreadDetailEntryTarget get _entryTarget => _navigation.targetId == null
+      ? widget.entryTarget
+      : ThreadDetailEntryTarget.post(_navigation.targetId!);
+  late final _navigation =
+      DiscussionNavigation<
+          ({String subthreadId, ThreadFloorOrder order, String? authorId})
+        >(
+          reading: _quickScroll,
+          currentScope: () {
+            final state = ref.read(_detailProvider);
+            return (
+              subthreadId: state.selectedSubthreadId!,
+              order: state.floorOrder,
+              authorId: state.floorAuthorId,
+            );
+          },
+          locate: ({number, postId, required scope, required active}) => ref
+              .read(_detailProvider.notifier)
+              .locate(
+                number: number,
+                postId: postId,
+                subthreadId: scope.subthreadId,
+                order: scope.order,
+                authorId: scope.authorId,
+                active: active,
+              ),
+        )
+        ..addListener(_onLocated);
+  void _onLocated() {
+    if (!mounted) return;
+    final state = ref.read(_detailProvider);
+    final floor = state.floors
+        .where((item) => item.id == _navigation.targetId)
+        .firstOrNull;
+    if (floor == null) return;
+    setState(() {
+      _numberTarget = ThreadPostTargetModel(
+        requestedPostId: floor.id,
+        threadId: widget.threadId,
+        subthreadId: state.selectedSubthreadId!,
+        floor: floor,
+      );
+      _targetAttempt++;
+      _targetRevealed = false;
+      _entryTargetCoordinator.rearmForRetry();
+    });
+  }
+
+  void _readingChanged() {
+    if (mounted) {
+      ref.read(_detailProvider.notifier).visibleFloorId =
+          _quickScroll.visibleBookmark?.id;
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _quickScroll.addListener(_readingChanged);
+    _selection.addListener(() => _prefetch.resume());
+  }
+
+  void _openNumber() => unawaited(
+    showDiscussionNavigation(
+      context: context,
+      navigation: _navigation,
+      replies: false,
+      maxNumber: ref.read(_detailProvider).maxNumber,
+    ),
+  );
+  void _cancelNumberNavigation() {
+    _navigation.clear();
+    _numberTarget = null;
+    _entryTargetCoordinator.cancelForUserSelection();
+  }
+
   final _authorFilterRestore =
       DiscussionAuthorFilterRestoreCoordinator<PostDiscussionAuthor>(
         authorIdOf: (author) => author.userId,
@@ -90,6 +180,9 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
 
   @override
   void dispose() {
+    _selection.dispose();
+    _prefetch.dispose();
+    _navigation.dispose();
     _quickScroll.dispose();
     _renderGeometry.dispose();
     _subthreadScroll.dispose();
@@ -102,7 +195,8 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     if (oldWidget.threadId != widget.threadId ||
         oldWidget.entryTarget != widget.entryTarget) {
       _lastOpenedReplyTargetId = null;
-      _targetFilterRestore.reset();
+      _navigation.clear();
+      _numberTarget = null;
       _targetAttempt += 1;
       _targetRevealed = false;
       final postId = widget.entryTarget.postId;
@@ -127,15 +221,17 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     final sessionScope = ref.watch(sessionScopeProvider);
     _entryTargetCoordinator.synchronize(
       threadId: widget.threadId,
-      target: widget.entryTarget,
+      target: _entryTarget,
       sessionScope: sessionScope,
     );
-    final targetPostId = widget.entryTarget.postId;
+    final targetPostId = _entryTarget.postId;
     final isPostTarget =
         targetPostId != null && _entryTargetCoordinator.allowsTargetEffects;
     ref.listen(sessionScopeProvider, (previous, next) {
       if (previous == null || previous == next) return;
       _composerDrafts.clear();
+      _navigation.clear();
+      _numberTarget = null;
       _targetAttempt += 1;
       _targetRevealed = false;
     });
@@ -147,6 +243,14 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
       unawaited(ref.read(provider.notifier).retryFloors());
     });
     final state = ref.watch(provider);
+    ref.listen(provider.select((value) => value.detail?.rpIdentityEnabled), (
+      previous,
+      next,
+    ) {
+      if (previous != null && next != null && previous != next) {
+        ref.read(visibilityCacheInvalidatorProvider)();
+      }
+    });
     _quickScroll.synchronize(
       contentRevision: (state.floors, state.selectedSubthread?.body),
       scope: (
@@ -178,16 +282,21 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
         isMounted: () => mounted,
       );
     }
-    _prefetchScheduler.schedule(
-      shouldPrefetch:
+    final controller = ref.read(provider.notifier);
+    controller.canApplyPage = () => _prefetch.canApply;
+    controller.beforeWindowApply = _quickScroll.preserveVisiblePosition;
+    _prefetch.update(
+      ids: state.floors.map((item) => item.id).toList(),
+      ready:
           (!isPostTarget || _targetRevealed) &&
           state.phase == ThreadDetailPhase.ready &&
           !state.isLoadingFloors &&
           !state.isPrefetchingFloors &&
-          state.transientFailure == null &&
-          state.hasMore,
-      isMounted: () => mounted,
-      prefetch: () => ref.read(provider.notifier).prefetchRemainingFloors(),
+          !state.isRefreshing &&
+          state.transientFailure == null,
+      hasBefore: state.hasBefore,
+      hasAfter: state.hasMore,
+      load: (before) => controller.loadAdjacent(before: before),
     );
     final session = ref.watch(sessionControllerProvider);
     final viewerId = ref.read(sessionControllerProvider.notifier).currentUserId;
@@ -214,6 +323,8 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     );
     final target = targetPostId == null
         ? null
+        : _numberTarget != null
+        ? AsyncValue<ThreadPostTargetModel>.data(_numberTarget!)
         : ref.watch(threadPostTargetProvider(targetPostId));
     final resolvedTarget = resolvedThreadPostTarget(target);
     _applyEntryTarget(
@@ -223,28 +334,6 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     final effectiveTarget = _entryTargetCoordinator.allowsTargetEffects
         ? resolvedTarget
         : null;
-    _targetFilterRestore.scheduleIfNeeded(
-      state: state,
-      target: effectiveTarget,
-      threadId: widget.threadId,
-      onRestore: (authorId, subthreadId) async {
-        if (!mounted) return;
-        final current = ref.read(provider);
-        if (current.floorAuthorId != authorId ||
-            current.selectedSubthreadId != subthreadId) {
-          return;
-        }
-        await ref
-            .read(provider.notifier)
-            .applyFloorFilters(order: current.floorOrder, authorId: null);
-        if (!context.mounted) return;
-        showWenyouSnackBar(
-          context,
-          '已取消发言者筛选，以显示目标楼层。',
-          pacing: WenyouSnackBarPacing.extended,
-        );
-      },
-    );
     _openReplyTargetWhenReady(state, effectiveTarget);
     final targetIndex = effectiveTarget == null
         ? -1
@@ -300,6 +389,9 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
                 quickScroll: _quickScroll,
                 targetKey: _targetKey,
                 itemListKey: _itemListKey,
+                countKey: _countKey,
+                onLocate: state.maxNumber > 0 ? _openNumber : null,
+                onFilterChanged: _cancelNumberNavigation,
                 onSelectSubthread: (id) =>
                     _selectSubthreadFromUser(id, provider),
                 onCompose: _compose,
@@ -338,7 +430,8 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
             itemCount: state.floors.length,
             canLocate: canLocateTarget,
             isLoadingPage: state.isLoadingFloors || state.isPrefetchingFloors,
-            hasMore: state.hasMore,
+            hasMore: state.window != null,
+            targetOffset: _navigation.targetOffset,
             onLoadMore: () => unawaited(
               ref
                   .read(provider.notifier)
@@ -371,21 +464,31 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
         ),
         actions: isPostTarget && !_targetRevealed
             ? const []
-            : buildThreadDetailAppBarActions(
-                threadId: widget.threadId,
-                state: state,
-                onSearch: () => context.pushNamed(
-                  'thread-post-search',
-                  pathParameters: {'threadId': widget.threadId},
+            : [
+                if (state.phase == ThreadDetailPhase.ready &&
+                    state.maxNumber > 0)
+                  DiscussionPositionButton(
+                    reading: _quickScroll,
+                    entryKey: _countKey,
+                    onPressed: _openNumber,
+                    replies: false,
+                  ),
+                ...buildThreadDetailAppBarActions(
+                  threadId: widget.threadId,
+                  state: state,
+                  onSearch: () => context.pushNamed(
+                    'thread-post-search',
+                    pathParameters: {'threadId': widget.threadId},
+                  ),
+                  onLatestTarget: _openLatestPost,
+                  onSelected: (action) => _handleThreadAction(
+                    action,
+                    state.detail!,
+                    provider,
+                    selectedSubthread: state.selectedSubthread,
+                  ),
                 ),
-                onLatestTarget: _openLatestPost,
-                onSelected: (action) => _handleThreadAction(
-                  action,
-                  state.detail!,
-                  provider,
-                  selectedSubthread: state.selectedSubthread,
-                ),
-              ),
+              ],
       ),
       body: ReadingProgressViewport(
         controller: _quickScroll,
@@ -396,7 +499,10 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
             (!isPostTarget || _targetRevealed) &&
             state.transientFailure != null &&
             state.retryAction == ThreadDetailRetryAction.loadMore,
-        child: readingWithTarget,
+        child: DiscussionSelectionScope(
+          controller: _selection,
+          child: readingWithTarget,
+        ),
       ),
       bottomNavigationBar: state.phase == ThreadDetailPhase.ready
           ? Column(
@@ -483,7 +589,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
         message: '目标内容已不可见',
       );
     }
-    if (target.requestedPostId != widget.entryTarget.postId ||
+    if (target.requestedPostId != _entryTarget.postId ||
         (target.focusedReplyId == null &&
             target.floor.id != target.requestedPostId)) {
       return WenyouStatusBanner(
@@ -523,13 +629,13 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
   }
 
   Future<void> _refreshDetail() async {
-    final targetPostId = widget.entryTarget.postId;
-    if (targetPostId != null) {
-      setState(() {
-        _targetAttempt += 1;
-        _targetRevealed = false;
-      });
-      ref.invalidate(threadPostTargetProvider(targetPostId));
+    final selected = ref.read(_detailProvider).selectedSubthreadId;
+    if (selected != null) {
+      ref.invalidate(postFloorDiscussionAuthorsProvider(selected));
+    }
+    final routeTarget = widget.entryTarget.postId;
+    if (routeTarget != null && _navigation.targetId == null) {
+      ref.invalidate(threadPostTargetProvider(routeTarget));
     }
     await ref.read(_detailProvider.notifier).refresh();
   }
@@ -621,7 +727,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     provider,
   ) {
     _quickScroll.close();
-    _entryTargetCoordinator.cancelForUserSelection();
+    _cancelNumberNavigation();
     return ref.read(provider.notifier).selectSubthread(subthreadId);
   }
 
@@ -650,6 +756,8 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     final draftKey = postComposerDraftKey(target);
     final openedSessionScope = ref.read(sessionScopeProvider);
     final result = await showPostComposerSheet(
+      supportsRpIdentity:
+          ref.read(_detailProvider).detail?.supportsRpIdentity ?? false,
       context: context,
       target: target,
       initialDraft: _composerDrafts[draftKey],
@@ -660,6 +768,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
         setPostComposerDraft(_composerDrafts, draftKey, draft);
       },
     );
+    _prefetch.resume();
     if (result == null ||
         !mounted ||
         ref.read(sessionScopeProvider) != openedSessionScope) {
@@ -707,7 +816,8 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
       return;
     }
     if (widget.entryTarget.postId == target.id) {
-      _targetFilterRestore.reset();
+      _navigation.clear();
+      _numberTarget = null;
       _retryEntryTarget();
       return;
     }
@@ -732,17 +842,19 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
         .remove(threadFloorAsPost(detail, subthread, floor));
     if (!removed || !mounted) return;
     showWenyouSnackBar(context, '楼层已删除。', tone: WenyouSnackBarTone.success);
-    final targetId = widget.entryTarget.postId;
+    final targetId = _entryTarget.postId;
     final target = targetId == null
         ? null
         : resolvedThreadPostTarget(
             ref.read(threadPostTargetProvider(targetId)),
           );
     if (targetId == floor.id || target?.floor.id == floor.id) {
+      setState(_cancelNumberNavigation);
       context.replace(
         AppRouteLocations.thread(widget.threadId, subthreadId: subthread.id),
       );
     }
+    _quickScroll.preserveVisiblePosition();
     ref.invalidate(threadPostTargetProvider(floor.id));
     ref.invalidate(postFloorDiscussionAuthorsProvider(subthread.id));
     await ref.read(_detailProvider.notifier).removeDeletedFloor(floor.id);

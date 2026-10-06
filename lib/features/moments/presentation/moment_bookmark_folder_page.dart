@@ -65,7 +65,9 @@ class _MomentBookmarkFolderPageState
     );
     if (widget.embedded) return body;
     return Scaffold(
+      backgroundColor: wenyouBrowsePageBackground(context),
       appBar: AppBar(
+        backgroundColor: wenyouBrowsePageBackground(context),
         title: Text(folderName ?? widget.initialFolderName ?? '动态收藏夹'),
       ),
       body: body,

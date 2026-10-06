@@ -1,7 +1,10 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyou_api/wenyou_api.dart';
+import 'package:wenyousite_mobile/app/app_capabilities.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_mention_target.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/network/media_display_mapper.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/editor/application/mention_candidate_repository_ports.dart';
 import 'package:wenyousite_mobile/features/editor/domain/mention_models.dart';
@@ -10,9 +13,15 @@ export 'package:wenyousite_mobile/features/editor/application/mention_candidate_
     show MentionCandidateRepository, mentionCandidateRepositoryProvider;
 
 class ApiMentionCandidateRepository implements MentionCandidateRepository {
-  ApiMentionCandidateRepository(this._api);
+  ApiMentionCandidateRepository(
+    this._api, {
+    this.roleMentionsSupported = false,
+    this.roleMentionsWriteEnabled = false,
+  });
 
   final UsersApi _api;
+  final bool roleMentionsSupported;
+  final bool roleMentionsWriteEnabled;
 
   static final _stableId = RegExp(r'^[A-Za-z0-9_-]+$');
   static final _username = RegExp(r'^[A-Za-z0-9\u4e00-\u9fff]{2,24}$');
@@ -31,6 +40,7 @@ class ApiMentionCandidateRepository implements MentionCandidateRepository {
       final response = await _api.usersMentionCandidates(
         threadId: normalizedThreadId,
         q: normalizedQuery.isEmpty ? null : normalizedQuery,
+        includeIdentities: roleMentionsSupported ? true : null,
       );
       final data = response.data?.data;
       if (data == null) {
@@ -44,12 +54,36 @@ class ApiMentionCandidateRepository implements MentionCandidateRepository {
             MentionCandidateRelation.following,
           MentionCandidateDtoRelationEnum.PLAYER =>
             MentionCandidateRelation.player,
+          MentionCandidateDtoRelationEnum.OWNER =>
+            MentionCandidateRelation.owner,
+          MentionCandidateDtoRelationEnum.COLLABORATOR =>
+            MentionCandidateRelation.collaborator,
           _ => null,
         };
         if (relation == null ||
             !_stableId.hasMatch(candidate.id) ||
-            !_username.hasMatch(candidate.username) ||
-            !seen.add(candidate.id)) {
+            !_username.hasMatch(candidate.username)) {
+          continue;
+        }
+        if (roleMentionsSupported) {
+          final target = MarkdownMentionTarget.parse(
+            candidate.mentionHref ?? '',
+          );
+          final expectedKey = candidate.targetIdentityId == null
+              ? 'ACCOUNT:${candidate.id}'
+              : 'RP:${candidate.targetIdentityId}';
+          if (target == null ||
+              target.isLegacy ||
+              target.userId != candidate.id ||
+              target.identityId != candidate.targetIdentityId ||
+              candidate.candidateKey != expectedKey ||
+              !target.acceptsLabel('@${candidate.mentionLabel ?? ''}')) {
+            continue;
+          }
+        }
+        if (!seen.add(
+          roleMentionsSupported ? candidate.candidateKey! : candidate.id,
+        )) {
           continue;
         }
         users.add(
@@ -57,12 +91,30 @@ class ApiMentionCandidateRepository implements MentionCandidateRepository {
             id: candidate.id,
             username: candidate.username,
             relation: relation,
+            rpNickname: candidate.rpIdentity?.nickname,
+            avatarUrl: candidate.rpIdentity != null
+                ? mapAvatarDisplayUrl(
+                    candidate.rpIdentity!.avatar,
+                    candidate.rpIdentity!.avatarDisplay,
+                  )
+                : mapAvatarDisplayUrl(
+                    candidate.avatar,
+                    candidate.avatarDisplay,
+                  ),
+            candidateKey: roleMentionsSupported ? candidate.candidateKey : null,
+            targetIdentityId: roleMentionsSupported
+                ? candidate.targetIdentityId
+                : null,
+            mentionHref: roleMentionsSupported ? candidate.mentionHref : null,
+            mentionLabel: roleMentionsSupported ? candidate.mentionLabel : null,
           ),
         );
       }
       return MentionCandidatesResult(
         users: List.unmodifiable(users.take(20)),
         canMentionAllPlayers: data.canMentionAllPlayers,
+        identitiesUnavailable:
+            roleMentionsSupported && !roleMentionsWriteEnabled,
       );
     } on DioException catch (error) {
       throw ApiFailure.fromDio(error);
@@ -74,5 +126,11 @@ final apiMentionCandidateRepositoryProvider =
     Provider<MentionCandidateRepository>(
       (ref) => ApiMentionCandidateRepository(
         ref.watch(wenyouApiProvider).getUsersApi(),
+        roleMentionsSupported: ref
+            .watch(appCapabilitiesProvider)
+            .roleMentionsSupported,
+        roleMentionsWriteEnabled: ref
+            .watch(appCapabilitiesProvider)
+            .roleMentionsWriteEnabled,
       ),
     );

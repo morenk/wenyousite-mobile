@@ -12,6 +12,10 @@ part 'save_thread_aggregate_dto.g.dart';
 /// SaveThreadAggregateDto
 ///
 /// Properties:
+/// * [markdownContractVersion] - 声明编辑器支持 Markdown 6 角色提及源的无损读取/编辑。服务端 capabilities.roleMentionsV6Supported 为 true 时新端始终发送，包括删光旧节点；未声明而新/原正文含 v6 返回 409/40014。新节点还须 roleMentionsV6WriteEnabled。
+/// * [identityId] - 本次新发言选择的帖内身份 ID；新客户端 RP 模式必须与该身份 token 一起发送。省略仅兼容旧单身份客户端；ACCOUNT 忽略，编辑旧正文不改变原身份
+/// * [identityToken] - GET 帖内身份返回的确认 token；新建正文或发言时使用。身份变化返回 409/40011，保留草稿并重新确认
+/// * [identityMode] - 本次新发言身份；ACCOUNT 明确使用站内账号且不校验 RP token，RP 要求有效帖内身份和 identityToken。省略沿用旧确认规则；编辑已有正文忽略此字段
 /// * [title]
 /// * [category] - 管理员配置的分类 slug；服务端会去除首尾空白并转为大写
 /// * [status]
@@ -25,6 +29,24 @@ part 'save_thread_aggregate_dto.g.dart';
 /// * [tagNames]
 @BuiltValue()
 abstract class SaveThreadAggregateDto implements Built<SaveThreadAggregateDto, SaveThreadAggregateDtoBuilder> {
+  /// 声明编辑器支持 Markdown 6 角色提及源的无损读取/编辑。服务端 capabilities.roleMentionsV6Supported 为 true 时新端始终发送，包括删光旧节点；未声明而新/原正文含 v6 返回 409/40014。新节点还须 roleMentionsV6WriteEnabled。
+  @BuiltValueField(wireName: r'markdownContractVersion')
+  SaveThreadAggregateDtoMarkdownContractVersionEnum? get markdownContractVersion;
+  // enum markdownContractVersionEnum {  6,  };
+
+  /// 本次新发言选择的帖内身份 ID；新客户端 RP 模式必须与该身份 token 一起发送。省略仅兼容旧单身份客户端；ACCOUNT 忽略，编辑旧正文不改变原身份
+  @BuiltValueField(wireName: r'identityId')
+  String? get identityId;
+
+  /// GET 帖内身份返回的确认 token；新建正文或发言时使用。身份变化返回 409/40011，保留草稿并重新确认
+  @BuiltValueField(wireName: r'identityToken')
+  String? get identityToken;
+
+  /// 本次新发言身份；ACCOUNT 明确使用站内账号且不校验 RP token，RP 要求有效帖内身份和 identityToken。省略沿用旧确认规则；编辑已有正文忽略此字段
+  @BuiltValueField(wireName: r'identityMode')
+  SaveThreadAggregateDtoIdentityModeEnum? get identityMode;
+  // enum identityModeEnum {  ACCOUNT,  RP,  };
+
   @BuiltValueField(wireName: r'title')
   String? get title;
 
@@ -91,6 +113,34 @@ class _$SaveThreadAggregateDtoSerializer implements PrimitiveSerializer<SaveThre
     SaveThreadAggregateDto object, {
     FullType specifiedType = FullType.unspecified,
   }) sync* {
+    if (object.markdownContractVersion != null) {
+      yield r'markdownContractVersion';
+      yield serializers.serialize(
+        object.markdownContractVersion,
+        specifiedType: const FullType(SaveThreadAggregateDtoMarkdownContractVersionEnum),
+      );
+    }
+    if (object.identityId != null) {
+      yield r'identityId';
+      yield serializers.serialize(
+        object.identityId,
+        specifiedType: const FullType(String),
+      );
+    }
+    if (object.identityToken != null) {
+      yield r'identityToken';
+      yield serializers.serialize(
+        object.identityToken,
+        specifiedType: const FullType(String),
+      );
+    }
+    if (object.identityMode != null) {
+      yield r'identityMode';
+      yield serializers.serialize(
+        object.identityMode,
+        specifiedType: const FullType(SaveThreadAggregateDtoIdentityModeEnum),
+      );
+    }
     if (object.title != null) {
       yield r'title';
       yield serializers.serialize(
@@ -183,6 +233,34 @@ class _$SaveThreadAggregateDtoSerializer implements PrimitiveSerializer<SaveThre
       final key = serializedList[i] as String;
       final value = serializedList[i + 1];
       switch (key) {
+        case r'markdownContractVersion':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(SaveThreadAggregateDtoMarkdownContractVersionEnum),
+          ) as SaveThreadAggregateDtoMarkdownContractVersionEnum;
+          result.markdownContractVersion = valueDes;
+          break;
+        case r'identityId':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(String),
+          ) as String;
+          result.identityId = valueDes;
+          break;
+        case r'identityToken':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(String),
+          ) as String;
+          result.identityToken = valueDes;
+          break;
+        case r'identityMode':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(SaveThreadAggregateDtoIdentityModeEnum),
+          ) as SaveThreadAggregateDtoIdentityModeEnum;
+          result.identityMode = valueDes;
+          break;
         case r'title':
           final valueDes = serializers.deserialize(
             value,
@@ -287,6 +365,43 @@ class _$SaveThreadAggregateDtoSerializer implements PrimitiveSerializer<SaveThre
     );
     return result.build();
   }
+}
+
+class SaveThreadAggregateDtoMarkdownContractVersionEnum extends EnumClass {
+
+  /// 声明编辑器支持 Markdown 6 角色提及源的无损读取/编辑。服务端 capabilities.roleMentionsV6Supported 为 true 时新端始终发送，包括删光旧节点；未声明而新/原正文含 v6 返回 409/40014。新节点还须 roleMentionsV6WriteEnabled。
+  @BuiltValueEnumConst(wireNumber: 6)
+  static const SaveThreadAggregateDtoMarkdownContractVersionEnum number6 = _$saveThreadAggregateDtoMarkdownContractVersionEnum_number6;
+  /// 声明编辑器支持 Markdown 6 角色提及源的无损读取/编辑。服务端 capabilities.roleMentionsV6Supported 为 true 时新端始终发送，包括删光旧节点；未声明而新/原正文含 v6 返回 409/40014。新节点还须 roleMentionsV6WriteEnabled。
+  @BuiltValueEnumConst(wireNumber: 11184809, fallback: true)
+  static const SaveThreadAggregateDtoMarkdownContractVersionEnum unknownDefaultOpenApi = _$saveThreadAggregateDtoMarkdownContractVersionEnum_unknownDefaultOpenApi;
+
+  static Serializer<SaveThreadAggregateDtoMarkdownContractVersionEnum> get serializer => _$saveThreadAggregateDtoMarkdownContractVersionEnumSerializer;
+
+  const SaveThreadAggregateDtoMarkdownContractVersionEnum._(String name): super(name);
+
+  static BuiltSet<SaveThreadAggregateDtoMarkdownContractVersionEnum> get values => _$saveThreadAggregateDtoMarkdownContractVersionEnumValues;
+  static SaveThreadAggregateDtoMarkdownContractVersionEnum valueOf(String name) => _$saveThreadAggregateDtoMarkdownContractVersionEnumValueOf(name);
+}
+
+class SaveThreadAggregateDtoIdentityModeEnum extends EnumClass {
+
+  /// 本次新发言身份；ACCOUNT 明确使用站内账号且不校验 RP token，RP 要求有效帖内身份和 identityToken。省略沿用旧确认规则；编辑已有正文忽略此字段
+  @BuiltValueEnumConst(wireName: r'ACCOUNT')
+  static const SaveThreadAggregateDtoIdentityModeEnum ACCOUNT = _$saveThreadAggregateDtoIdentityModeEnum_ACCOUNT;
+  /// 本次新发言身份；ACCOUNT 明确使用站内账号且不校验 RP token，RP 要求有效帖内身份和 identityToken。省略沿用旧确认规则；编辑已有正文忽略此字段
+  @BuiltValueEnumConst(wireName: r'RP')
+  static const SaveThreadAggregateDtoIdentityModeEnum RP = _$saveThreadAggregateDtoIdentityModeEnum_RP;
+  /// 本次新发言身份；ACCOUNT 明确使用站内账号且不校验 RP token，RP 要求有效帖内身份和 identityToken。省略沿用旧确认规则；编辑已有正文忽略此字段
+  @BuiltValueEnumConst(wireName: r'unknown_default_open_api', fallback: true)
+  static const SaveThreadAggregateDtoIdentityModeEnum unknownDefaultOpenApi = _$saveThreadAggregateDtoIdentityModeEnum_unknownDefaultOpenApi;
+
+  static Serializer<SaveThreadAggregateDtoIdentityModeEnum> get serializer => _$saveThreadAggregateDtoIdentityModeEnumSerializer;
+
+  const SaveThreadAggregateDtoIdentityModeEnum._(String name): super(name);
+
+  static BuiltSet<SaveThreadAggregateDtoIdentityModeEnum> get values => _$saveThreadAggregateDtoIdentityModeEnumValues;
+  static SaveThreadAggregateDtoIdentityModeEnum valueOf(String name) => _$saveThreadAggregateDtoIdentityModeEnumValueOf(name);
 }
 
 class SaveThreadAggregateDtoStatusEnum extends EnumClass {

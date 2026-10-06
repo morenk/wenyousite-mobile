@@ -29,7 +29,9 @@ class _MomentFeedPageState extends ConsumerState<MomentFeedPage> {
   Widget build(BuildContext context) {
     final session = ref.watch(sessionControllerProvider);
     return Scaffold(
+      backgroundColor: wenyouBrowsePageBackground(context),
       appBar: AppBar(
+        backgroundColor: wenyouBrowsePageBackground(context),
         title: const Text('动态'),
         actions: [
           IconButton(
@@ -130,7 +132,11 @@ class MomentCollectionPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(title)),
+      backgroundColor: wenyouBrowsePageBackground(context),
+      appBar: AppBar(
+        backgroundColor: wenyouBrowsePageBackground(context),
+        title: Text(title),
+      ),
       body: MomentFeedList(
         target: target,
         emptyTitle: emptyTitle,
@@ -225,7 +231,7 @@ class _MomentFeedListState extends ConsumerState<MomentFeedList> {
         SliverPadding(
           padding: EdgeInsets.fromLTRB(
             _feedHorizontalPadding(context),
-            context.wenyouTokens.space4,
+            context.wenyouTokens.space8,
             _feedHorizontalPadding(context),
             context.wenyouTokens.space24,
           ),
@@ -293,7 +299,7 @@ class _MomentFeedListState extends ConsumerState<MomentFeedList> {
       SliverPadding(
         padding: EdgeInsets.fromLTRB(
           _feedHorizontalPadding(context),
-          context.wenyouTokens.space4,
+          context.wenyouTokens.space8,
           _feedHorizontalPadding(context),
           0,
         ),

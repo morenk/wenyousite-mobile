@@ -14,8 +14,10 @@ import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
 import 'package:wenyousite_mobile/features/social/data/thread_interaction_repository.dart';
 import 'package:wenyousite_mobile/features/social/data/thread_subscription_repository.dart';
 import 'package:wenyousite_mobile/features/social/domain/thread_subscription_models.dart';
+import 'package:wenyousite_mobile/features/thread_identity/identity_models.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.dart';
 
+import '../../support/discussion_window_fixture.dart';
 import 'thread_detail_page_content_fixtures.dart';
 
 class ThreadDetailPageTestFakePostDiscussionAuthorDirectory
@@ -334,7 +336,9 @@ class ThreadDetailPageTestFakeThreadInteractionRepository
   Future<int> unlike(String threadId) async => 12;
 }
 
-class ThreadDetailPageTestFakePostRepository implements PostRepository {
+class ThreadDetailPageTestFakePostRepository
+    with PostWindowFixture
+    implements PostRepository {
   final List<String> removedIds = [];
   final List<({String postId, bool pinned})> pinRequests = [];
 
@@ -389,10 +393,15 @@ class ThreadDetailPageTestFakePostRepository implements PostRepository {
     required String subthreadId,
     required String content,
     int? version,
+    String? identityToken,
+    String? identityId,
+    PostIdentityMode? identityMode,
   }) => throw UnsupportedError('unused');
 }
 
-class ThreadDetailPageTestCreatingPostRepository implements PostRepository {
+class ThreadDetailPageTestCreatingPostRepository
+    with PostWindowFixture
+    implements PostRepository {
   final List<PostCreateInput> createInputs = [];
 
   @override
@@ -447,6 +456,9 @@ class ThreadDetailPageTestCreatingPostRepository implements PostRepository {
     required String subthreadId,
     required String content,
     int? version,
+    String? identityToken,
+    String? identityId,
+    PostIdentityMode? identityMode,
   }) => throw UnsupportedError('unused');
 }
 

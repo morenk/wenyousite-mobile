@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -8,10 +7,14 @@ import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/core/navigation/wenyou_page_transitions.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/discussion_author_filter_restore.dart';
+import 'package:wenyousite_mobile/core/widgets/discussion_navigation.dart';
+import 'package:wenyousite_mobile/core/widgets/discussion_navigation_feedback.dart';
+import 'package:wenyousite_mobile/core/widgets/discussion_position_button.dart';
+import 'package:wenyousite_mobile/core/widgets/discussion_selection_scope.dart';
 import 'package:wenyousite_mobile/core/widgets/discussion_target_cover.dart';
+import 'package:wenyousite_mobile/core/widgets/discussion_window_prefetch.dart';
 import 'package:wenyousite_mobile/core/widgets/reading_quick_scroll.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
-import 'package:wenyousite_mobile/core/widgets/wenyou_discussion_scroll_policy.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_controllers.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_discussion_author_directory_ports.dart';
@@ -44,6 +47,7 @@ class PostRepliesPage extends ConsumerStatefulWidget {
 
 class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
   final _targetKey = GlobalKey();
+  final _countKey = GlobalKey();
   final _itemListKey = GlobalKey();
   final _scrollController = ScrollController();
   final _composerDrafts = <String, PostComposerDraft>{};
@@ -61,7 +65,67 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
   var _targetRevealed = false;
   var _targetCancelled = false;
   var _navigationRevision = 0;
-  final _prefetchScheduler = DiscussionPrefetchScheduler();
+  final _selection = DiscussionSelectionController();
+  late final _prefetch = DiscussionWindowPrefetch(
+    reading: _quickScroll,
+    isMounted: () => mounted,
+    canMutate: () =>
+        !_selection.active && ModalRoute.of(context)?.isCurrent == true,
+  );
+  late final _navigation =
+      DiscussionNavigation<({PostReplyOrder order, String? authorId})>(
+        reading: _quickScroll,
+        currentScope: () {
+          final state = ref.read(_provider);
+          return (order: state.order, authorId: state.authorId);
+        },
+        locate: ({number, postId, required scope, required active}) => ref
+            .read(_provider.notifier)
+            .locate(
+              number: number,
+              postId: postId,
+              order: scope.order,
+              authorId: scope.authorId,
+              active: active,
+            ),
+      )..addListener(_onLocated);
+  PostDiscussionControllerProvider get _provider =>
+      postDiscussionControllerProvider((
+        rootPostId: rootPostId,
+        focusedReplyId: widget.focusedReplyId,
+      ));
+  void _onLocated() {
+    if (mounted) {
+      setState(() {
+        _targetAttempt++;
+        _targetRevealed = false;
+        _targetCancelled = false;
+      });
+    }
+  }
+
+  void _readingChanged() {
+    if (mounted) {
+      ref.read(_provider.notifier).visibleReplyId =
+          _quickScroll.visibleBookmark?.id;
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _quickScroll.addListener(_readingChanged);
+    _selection.addListener(() => _prefetch.resume());
+  }
+
+  void _openNumber() => unawaited(
+    showDiscussionNavigation(
+      context: context,
+      navigation: _navigation,
+      replies: true,
+      maxNumber: ref.read(_provider).maxNumber,
+    ),
+  );
   final _authorFilterRestore =
       DiscussionAuthorFilterRestoreCoordinator<PostDiscussionAuthor>(
         authorIdOf: (author) => author.userId,
@@ -69,17 +133,17 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
 
   String get threadId => widget.threadId;
   String get rootPostId => widget.rootPostId;
-  String? get focusedReplyId => widget.focusedReplyId;
+  String? get focusedReplyId => _navigation.targetId ?? widget.focusedReplyId;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (_didInvalidateFocusedEntry || focusedReplyId == null) return;
+    if (_didInvalidateFocusedEntry || widget.focusedReplyId == null) return;
     _didInvalidateFocusedEntry = true;
     ref.invalidate(
       postDiscussionControllerProvider((
         rootPostId: rootPostId,
-        focusedReplyId: focusedReplyId,
+        focusedReplyId: widget.focusedReplyId,
       )),
     );
   }
@@ -90,6 +154,7 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
     if (oldWidget.focusedReplyId != widget.focusedReplyId ||
         oldWidget.rootPostId != widget.rootPostId ||
         oldWidget.threadId != widget.threadId) {
+      _navigation.clear();
       _targetAttempt += 1;
       _targetRevealed = false;
       _targetCancelled = false;
@@ -97,7 +162,7 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
         ref.invalidate(
           postDiscussionControllerProvider((
             rootPostId: rootPostId,
-            focusedReplyId: focusedReplyId,
+            focusedReplyId: widget.focusedReplyId,
           )),
         );
       }
@@ -106,6 +171,9 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
 
   @override
   void dispose() {
+    _selection.dispose();
+    _prefetch.dispose();
+    _navigation.dispose();
     _quickScroll.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -113,13 +181,13 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
 
   @override
   Widget build(BuildContext context) {
-    final target = (rootPostId: rootPostId, focusedReplyId: focusedReplyId);
-    final provider = postDiscussionControllerProvider(target);
+    final provider = _provider;
     final actionsProvider = postActionControllerProvider(threadId);
     final authorsProvider = postReplyDiscussionAuthorsProvider(rootPostId);
     ref.listen(sessionScopeProvider, (previous, next) {
       if (previous == null || previous == next) return;
       _composerDrafts.clear();
+      _navigation.clear();
       _targetAttempt += 1;
       _targetRevealed = false;
       _targetCancelled = false;
@@ -145,16 +213,20 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
           state.root?.threadId == threadId &&
           MediaQuery.viewInsetsOf(context).bottom == 0,
     );
-    _prefetchScheduler.schedule(
-      shouldPrefetch:
+    final controller = ref.read(provider.notifier);
+    controller.canApplyPage = () => _prefetch.canApply;
+    controller.beforeWindowApply = _quickScroll.preserveVisiblePosition;
+    _prefetch.update(
+      ids: state.replies.map((item) => item.id).toList(),
+      ready:
           (!isTargetEntry || _targetRevealed) &&
           state.phase == PostDiscussionPhase.ready &&
           !state.isRefreshing &&
           !state.isPrefetchingReplies &&
-          state.transientFailure == null &&
-          state.hasMore,
-      isMounted: () => mounted,
-      prefetch: () => ref.read(provider.notifier).prefetchRemainingReplies(),
+          state.transientFailure == null,
+      hasBefore: state.hasBefore,
+      hasAfter: state.hasMore,
+      load: (before) => controller.loadAdjacent(before: before),
     );
     final actions = ref.watch(actionsProvider);
     final discussionAuthors = ref.watch(authorsProvider);
@@ -224,7 +296,12 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
             : RefreshIndicator(
                 onRefresh: () => _refreshDiscussion(provider),
                 child: PostDiscussionList(
+                  ownerId: threadContext?.ownerId,
+                  supportsRpIdentity:
+                      threadContext?.supportsRpIdentity ?? false,
                   state: state,
+                  countKey: _countKey,
+                  onLocate: state.maxNumber > 0 ? _openNumber : null,
                   actions: actions,
                   viewerId: viewerId,
                   authenticated: session.isAuthenticated,
@@ -288,7 +365,8 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
             itemCount: state.replies.length,
             canLocate: canLocateTarget,
             isLoadingPage: state.isPrefetchingReplies,
-            hasMore: state.hasMore,
+            hasMore: state.window != null,
+            targetOffset: _navigation.targetOffset,
             navigationRevision: _navigationRevision,
             onLoadMore: () => unawaited(
               ref.read(provider.notifier).locateReply(focusedReplyId!),
@@ -322,7 +400,18 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
           title: readyRoot == null
               ? const Text('楼中楼讨论')
               : PostDiscussionTitle(root: readyRoot),
-          actions: [_returnToRootAction(context)],
+          actions: [
+            if (readyRoot != null &&
+                state.maxNumber > 0 &&
+                (!isTargetEntry || _targetRevealed))
+              DiscussionPositionButton(
+                reading: _quickScroll,
+                entryKey: _countKey,
+                onPressed: _openNumber,
+                replies: true,
+              ),
+            _returnToRootAction(context),
+          ],
         ),
         body: ReadingProgressViewport(
           controller: _quickScroll,
@@ -334,7 +423,10 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
               state.transientFailure != null &&
               state.retryAction == PostDiscussionRetryAction.loadMore,
           bottomObstructionKey: _composeObstructionKey,
-          child: readingWithTarget,
+          child: DiscussionSelectionScope(
+            controller: _selection,
+            child: readingWithTarget,
+          ),
         ),
         // 保持测量节点稳定，避免切号期间 Scaffold 同时保留新旧发表入口。
         floatingActionButton: KeyedSubtree(
@@ -384,16 +476,13 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
   Future<void> _refreshDiscussion(
     PostDiscussionControllerProvider provider,
   ) async {
-    if (focusedReplyId != null && !_targetCancelled) {
-      setState(() {
-        _targetAttempt += 1;
-        _targetRevealed = false;
-      });
-    }
+    ref.invalidate(postReplyDiscussionAuthorsProvider(rootPostId));
+    ref.invalidate(postThreadContextProvider(threadId));
     await ref.read(provider.notifier).refresh();
   }
 
   void _cancelTargetForUserFilter() {
+    _navigation.clear();
     if (focusedReplyId == null || _targetCancelled) return;
     setState(() => _targetCancelled = true);
   }
@@ -435,6 +524,12 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
     final openedSessionScope = ref.read(sessionScopeProvider);
     try {
       final result = await showPostComposerSheet(
+        supportsRpIdentity:
+            ref
+                .read(postThreadContextProvider(target.threadId))
+                .valueOrNull
+                ?.supportsRpIdentity ??
+            false,
         context: context,
         target: target,
         initialDraft: _composerDrafts[draftKey],
@@ -455,6 +550,7 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
       }
     } finally {
       _openingComposer = false;
+      _prefetch.resume();
       if (mounted) setState(() {});
     }
   }
@@ -483,7 +579,12 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
       context.go(AppRouteLocations.thread(threadId));
     } else {
       ref.invalidate(postReplyDiscussionAuthorsProvider(rootPostId));
-      await _refreshDiscussion(provider);
+      if (focusedReplyId == post.id) {
+        _navigation.cancelTarget();
+        setState(() => _targetCancelled = true);
+      }
+      _quickScroll.preserveVisiblePosition();
+      await ref.read(provider.notifier).removeDeletedReply(post.id);
     }
   }
 

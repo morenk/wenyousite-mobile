@@ -19,6 +19,7 @@ Future<void> pumpThreadManagementTestPage(
   ThreadManagementRepository repository, {
   ThreadInvitationRepository? invitationRepository,
   SubthreadManagementRepository? subthreadRepository,
+  bool dark = false,
 }) async {
   final container = ProviderContainer(
     overrides: [
@@ -68,7 +69,11 @@ Future<void> pumpThreadManagementTestPage(
   await tester.pumpWidget(
     UncontrolledProviderScope(
       container: container,
-      child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
+      child: MaterialApp.router(
+        debugShowCheckedModeBanner: false,
+        theme: dark ? AppTheme.dark : AppTheme.light,
+        routerConfig: router,
+      ),
     ),
   );
   await tester.pumpAndSettle();
@@ -171,6 +176,7 @@ ThreadManagementBootstrap threadManagementTestBootstrap({
   SubthreadPostingPolicy postingPolicy = SubthreadPostingPolicy.participants,
   ThreadManagementVisibility visibility = ThreadManagementVisibility.public,
   List<String> tagNames = const [],
+  bool? rpIdentityEnabled,
 }) {
   return ThreadManagementBootstrap(
     thread: ThreadManagementSnapshot(
@@ -185,6 +191,7 @@ ThreadManagementBootstrap threadManagementTestBootstrap({
       canManage: canManage,
       isOwner: isOwner,
       tagNames: tagNames,
+      rpIdentityEnabled: rpIdentityEnabled,
     ),
     categories: const [
       ThreadManagementCategory(
@@ -205,8 +212,21 @@ ThreadManagementBootstrap threadManagementTestBootstrap({
 
 class ThreadManagementTestInvitationRepository
     implements ThreadInvitationRepository {
+  int ensureCalls = 0;
   @override
-  Future<ThreadInvitationLink> generateLink(String threadId) {
+  Future<ThreadInvitationLink> ensureLink(String threadId) async {
+    ensureCalls++;
+    return ThreadInvitationLink(
+      id: 'invite',
+      threadId: threadId,
+      token: 'Abcd_1234-efGh56',
+      url: Uri.parse('https://wenyou.site/join/Abcd_1234-efGh56'),
+      createdAt: DateTime.utc(2026),
+    );
+  }
+
+  @override
+  Future<ThreadInvitationLink> resetLink(String threadId) {
     throw UnimplementedError();
   }
 

@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -12,12 +11,14 @@ import 'package:wenyousite_mobile/core/markdown/markdown_empty_paragraphs.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_image_occurrence_syntax.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_inline_boundary.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_inline_compatibility_syntax.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_mention_target.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_quote_line_syntax.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_reader_paragraph_syntax.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_source_protection.dart';
 import 'package:wenyousite_mobile/core/media/media_display.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_link.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_reference.dart';
+import 'package:wenyousite_mobile/core/widgets/discussion_selection_scope.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_body_divider.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_dice_node.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_inline_text_elements.dart';
@@ -42,6 +43,7 @@ class WenyouMarkdown extends StatefulWidget {
     required this.data,
     this.diceLabels = const {},
     this.mediaDisplays = const {},
+    this.mentionLabels = const {},
     this.diceSemantics = const {},
     this.diceDetails = const {},
     this.onInternalLink,
@@ -58,6 +60,7 @@ class WenyouMarkdown extends StatefulWidget {
 
   final String data;
   final Map<String, MediaDisplay> mediaDisplays;
+  final Map<String, String> mentionLabels;
   final Map<String, String> diceLabels;
   final Map<String, String> diceSemantics;
   final Map<String, WenyouDiceRollDetail> diceDetails;
@@ -75,9 +78,14 @@ class WenyouMarkdown extends StatefulWidget {
   State<WenyouMarkdown> createState() => _WenyouMarkdownState();
 }
 
-class _WenyouMarkdownState extends State<WenyouMarkdown> {
+class _WenyouMarkdownState extends State<WenyouMarkdown>
+    with AutomaticKeepAliveClientMixin {
+  DiscussionSelectionController? _selectionScope;
+  @override
+  bool get wantKeepAlive => _hasSelection;
   final _selectionAreaKey = GlobalKey<SelectionAreaState>();
   late final ValueNotifier<Map<String, String>> _diceLabels;
+  late final ValueNotifier<Map<String, String>> _mentionLabels;
   late final ValueNotifier<Map<String, String>> _diceSemantics;
   late final ValueNotifier<Map<String, WenyouDiceRollDetail>> _diceDetails;
   late String _normalizedData;
@@ -93,6 +101,7 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
   void initState() {
     super.initState();
     _diceLabels = ValueNotifier(Map.unmodifiable(widget.diceLabels));
+    _mentionLabels = ValueNotifier(Map.unmodifiable(widget.mentionLabels));
     _diceSemantics = ValueNotifier(Map.unmodifiable(widget.diceSemantics));
     _diceDetails = ValueNotifier(Map.unmodifiable(widget.diceDetails));
     _prepareData();
@@ -101,6 +110,7 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    _selectionScope = DiscussionSelectionScope.of(context);
     _styleSheet = _createStyleSheet(context);
     _renderedBody = null;
   }
@@ -119,6 +129,9 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
     }
     if (!mapEquals(oldWidget.mediaDisplays, widget.mediaDisplays)) {
       _renderedBody = null;
+    }
+    if (!mapEquals(oldWidget.mentionLabels, widget.mentionLabels)) {
+      _mentionLabels.value = Map.unmodifiable(widget.mentionLabels);
     }
     if (oldWidget.data != widget.data ||
         oldWidget.enablePlainTextFastPath != widget.enablePlainTextFastPath) {
@@ -141,14 +154,19 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
 
   @override
   void dispose() {
+    _selectionScope?.update(this, false);
     _diceLabels.dispose();
+    _mentionLabels.dispose();
     _diceSemantics.dispose();
     _diceDetails.dispose();
     super.dispose();
   }
 
   @override
-  Widget build(BuildContext context) => _renderedBody ??= _buildBody();
+  Widget build(BuildContext context) {
+    super.build(context);
+    return _renderedBody ??= _buildBody();
+  }
 
   Widget _buildBody() {
     final Widget body;
@@ -369,6 +387,7 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
       ),
       'wenyou-mention': _MentionMarkdownBuilder(
         (location) => _openInternalLocation(context, location),
+        _mentionLabels,
       ),
       'code': _InlineCodeMarkdownBuilder(),
       'hr': _HorizontalRuleMarkdownBuilder(fontSize: widget.bodyFontSize),
@@ -386,6 +405,8 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
 
   void _handleSelectionChanged(SelectedContent? content) {
     _hasSelection = content?.plainText.isNotEmpty == true;
+    _selectionScope?.update(this, _hasSelection);
+    updateKeepAlive();
   }
 
   void _handleNonTextLongPress() {
@@ -404,6 +425,8 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
     selectableRegion?.hideToolbar();
     selectableRegion?.clearSelection();
     _hasSelection = false;
+    _selectionScope?.update(this, false);
+    updateKeepAlive();
   }
 
   Future<String> _addImageToStickers(Uri uri) =>
@@ -526,16 +549,15 @@ bool _isUnambiguousPlainText(String data) {
 
 class _UserMentionInlineSyntax extends md.InlineSyntax {
   _UserMentionInlineSyntax()
-    : super(
-        r'\[(@[^\]\r\n]{1,32})\]\(/users/([a-zA-Z0-9_-]+)\)',
-        startCharacter: 0x5b,
-      );
+    : super(MarkdownMentionTarget.nodePattern, startCharacter: 0x5b);
 
   @override
   bool onMatch(md.InlineParser parser, Match match) {
+    final target = MarkdownMentionTarget.parse(match.group(2)!);
+    if (target == null || !target.acceptsLabel(match.group(1)!)) return false;
     parser.addNode(
       md.Element.text('wenyou-mention', match.group(1)!)
-        ..attributes['location'] = '/users/${match.group(2)!}',
+        ..attributes['location'] = target.sourceHref,
     );
     return true;
   }
@@ -553,9 +575,10 @@ class _AllPlayersMentionInlineSyntax extends md.InlineSyntax {
 }
 
 class _MentionMarkdownBuilder extends WenyouMarkdownInlineBuilder {
-  _MentionMarkdownBuilder(this.onTap);
+  _MentionMarkdownBuilder(this.onTap, this.labels);
 
   final ValueChanged<Uri> onTap;
+  final ValueListenable<Map<String, String>> labels;
 
   @override
   Widget? buildInlineContent(
@@ -563,19 +586,32 @@ class _MentionMarkdownBuilder extends WenyouMarkdownInlineBuilder {
     md.Element element,
     TextStyle? preferredStyle,
     TextStyle? parentStyle,
-  ) {
-    final label = element.textContent;
-    final style = preferredStyle ?? parentStyle;
-    final location = Uri.tryParse(element.attributes['location'] ?? '');
-    if (location == null || location.path.isEmpty) {
-      return WenyouMentionSurface(label: label, style: style);
-    }
-    return WenyouMentionLink(
-      label: label,
-      style: style,
-      onTap: () => onTap(location),
-    );
-  }
+  ) => ValueListenableBuilder<Map<String, String>>(
+    valueListenable: labels,
+    builder: (context, values, _) {
+      var label = element.textContent;
+      final style = preferredStyle ?? parentStyle;
+      final location = Uri.tryParse(element.attributes['location'] ?? '');
+      if (location != null &&
+          location.pathSegments.length == 2 &&
+          location.pathSegments.first == 'users' &&
+          label.startsWith('@')) {
+        final target = MarkdownMentionTarget.parse(location.toString());
+        final display = target == null
+            ? null
+            : values[target.projectionKey(label.substring(1))];
+        if (display != null) label = '@$display';
+      }
+      if (location == null || location.path.isEmpty) {
+        return WenyouMentionSurface(label: label, style: style);
+      }
+      return WenyouMentionLink(
+        label: label,
+        style: style,
+        onTap: () => onTap(location),
+      );
+    },
+  );
 }
 
 class _InlineCodeMarkdownBuilder extends WenyouMarkdownInlineBuilder {

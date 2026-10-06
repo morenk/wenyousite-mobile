@@ -30,6 +30,7 @@ class WalletApi {
   ///
   ///
   /// Parameters:
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -40,6 +41,7 @@ class WalletApi {
   /// Returns a [Future] containing a [Response] with a [EconomyCheckIn200Response] as data
   /// Throws [DioException] if API call or serialization fails
   Future<Response<EconomyCheckIn200Response>> economyCheckIn({
+    int? xMarkdownContractVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -51,6 +53,7 @@ class WalletApi {
     final _options = Options(
       method: r'POST',
       headers: <String, dynamic>{
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -109,6 +112,7 @@ class WalletApi {
   ///
   ///
   /// Parameters:
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -119,6 +123,7 @@ class WalletApi {
   /// Returns a [Future] containing a [Response] with a [EconomyGetWallet200Response] as data
   /// Throws [DioException] if API call or serialization fails
   Future<Response<EconomyGetWallet200Response>> economyGetWallet({
+    int? xMarkdownContractVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -130,6 +135,7 @@ class WalletApi {
     final _options = Options(
       method: r'GET',
       headers: <String, dynamic>{
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -190,6 +196,7 @@ class WalletApi {
   /// Parameters:
   /// * [id]
   /// * [tipRequestDto]
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -202,6 +209,7 @@ class WalletApi {
   Future<Response<EconomyTipMoment201Response>> economyTipMoment({
     required String id,
     required TipRequestDto tipRequestDto,
+    int? xMarkdownContractVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -213,6 +221,7 @@ class WalletApi {
     final _options = Options(
       method: r'POST',
       headers: <String, dynamic>{
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -293,6 +302,7 @@ class WalletApi {
   /// Parameters:
   /// * [id]
   /// * [tipRequestDto]
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -305,6 +315,7 @@ class WalletApi {
   Future<Response<EconomyTipThread201Response>> economyTipThread({
     required String id,
     required TipRequestDto tipRequestDto,
+    int? xMarkdownContractVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -316,6 +327,7 @@ class WalletApi {
     final _options = Options(
       method: r'POST',
       headers: <String, dynamic>{
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -396,6 +408,7 @@ class WalletApi {
   /// Parameters:
   /// * [id]
   /// * [tipRequestDto]
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -408,6 +421,7 @@ class WalletApi {
   Future<Response<EconomyTipUser201Response>> economyTipUser({
     required String id,
     required TipRequestDto tipRequestDto,
+    int? xMarkdownContractVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -419,6 +433,7 @@ class WalletApi {
     final _options = Options(
       method: r'POST',
       headers: <String, dynamic>{
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -499,6 +514,7 @@ class WalletApi {
   /// Parameters:
   /// * [cursor] - 服务端返回的不透明分页游标；首次请求不传，后续必须原样回传
   /// * [limit] - 每页条数（默认 20，最大 50）
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -511,6 +527,7 @@ class WalletApi {
   Future<Response<EconomyTransactions200Response>> economyTransactions({
     String? cursor,
     num? limit = 20,
+    int? xMarkdownContractVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -522,6 +539,7 @@ class WalletApi {
     final _options = Options(
       method: r'GET',
       headers: <String, dynamic>{
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         ...?headers,
       },
       extra: <String, dynamic>{

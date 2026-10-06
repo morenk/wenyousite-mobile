@@ -5,6 +5,7 @@ import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/markdown/local_image_marker.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_mention_target.dart';
 import 'package:wenyousite_mobile/core/media/media_display.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_reference.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_body_divider.dart';
@@ -18,9 +19,10 @@ import 'package:wenyousite_mobile/features/editor/presentation/editor_pending_im
 List<EmbedBuilder> wenyouEditorEmbedBuilders({
   Map<String, MediaDisplay> mediaDisplays = const {},
   EditorPendingImages? pendingImages,
+  Map<String, String> mentionLabels = const {},
 }) => [
   _InternalReferenceEmbedBuilder(),
-  _MentionEmbedBuilder(),
+  _MentionEmbedBuilder(mentionLabels),
   _DiceEmbedBuilder(),
   _StickerEmbedBuilder(mediaDisplays),
   _ImageEmbedBuilder(mediaDisplays, pendingImages),
@@ -79,7 +81,8 @@ Map<String, dynamic>? _payload(EmbedContext context) {
 }
 
 class _MentionEmbedBuilder extends EmbedBuilder {
-  const _MentionEmbedBuilder();
+  const _MentionEmbedBuilder(this.mentionLabels);
+  final Map<String, String> mentionLabels;
 
   @override
   String get key => MarkdownDeltaCodec.mentionEmbed;
@@ -103,12 +106,17 @@ class _MentionEmbedBuilder extends EmbedBuilder {
   @override
   Widget build(BuildContext context, EmbedContext embedContext) {
     final payload = _payload(embedContext);
+    final original = payload?['label']?.toString() ?? '@用户';
+    final projected = payload == null
+        ? null
+        : MarkdownMentionTarget.projectedLabel(payload, mentionLabels);
+    final display = projected == null ? original : '@$projected';
     return Semantics(
       key: const Key('editor-mention'),
-      label: '提及 ${payload?['label'] ?? '用户'}',
+      label: '提及 $display',
       excludeSemantics: true,
       child: WenyouMentionSurface(
-        label: payload?['label']?.toString() ?? '@用户',
+        label: display,
         style: embedContext.textStyle,
       ),
     );

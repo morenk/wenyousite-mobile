@@ -73,6 +73,8 @@ class _$PostResponseDtoKindEnumSerializer
 
 class _$PostResponseDto extends PostResponseDto {
   @override
+  final BuiltList<MentionIdentityDisplayDto>? mentionIdentities;
+  @override
   final BuiltList<MarkdownMediaDisplayResponseDto>? mediaDisplays;
   @override
   final String id;
@@ -86,6 +88,8 @@ class _$PostResponseDto extends PostResponseDto {
   final PostResponseDtoKindEnum kind;
   @override
   final num? floorNumber;
+  @override
+  final num? replyNumber;
   @override
   final String? parentPostId;
   @override
@@ -103,6 +107,8 @@ class _$PostResponseDto extends PostResponseDto {
   @override
   final DateTime updatedAt;
   @override
+  final DateTime? editedAt;
+  @override
   final DateTime? pinnedAt;
   @override
   final DateTime? deletedAt;
@@ -113,6 +119,7 @@ class _$PostResponseDto extends PostResponseDto {
       (PostResponseDtoBuilder()..update(updates))._build();
 
   _$PostResponseDto._({
+    this.mentionIdentities,
     this.mediaDisplays,
     required this.id,
     required this.threadId,
@@ -120,6 +127,7 @@ class _$PostResponseDto extends PostResponseDto {
     required this.authorId,
     required this.kind,
     this.floorNumber,
+    this.replyNumber,
     this.parentPostId,
     this.replyToPostId,
     this.clientRequestId,
@@ -128,6 +136,7 @@ class _$PostResponseDto extends PostResponseDto {
     required this.version,
     required this.createdAt,
     required this.updatedAt,
+    this.editedAt,
     this.pinnedAt,
     this.deletedAt,
     required this.author,
@@ -143,6 +152,7 @@ class _$PostResponseDto extends PostResponseDto {
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
     return other is PostResponseDto &&
+        mentionIdentities == other.mentionIdentities &&
         mediaDisplays == other.mediaDisplays &&
         id == other.id &&
         threadId == other.threadId &&
@@ -150,6 +160,7 @@ class _$PostResponseDto extends PostResponseDto {
         authorId == other.authorId &&
         kind == other.kind &&
         floorNumber == other.floorNumber &&
+        replyNumber == other.replyNumber &&
         parentPostId == other.parentPostId &&
         replyToPostId == other.replyToPostId &&
         clientRequestId == other.clientRequestId &&
@@ -158,6 +169,7 @@ class _$PostResponseDto extends PostResponseDto {
         version == other.version &&
         createdAt == other.createdAt &&
         updatedAt == other.updatedAt &&
+        editedAt == other.editedAt &&
         pinnedAt == other.pinnedAt &&
         deletedAt == other.deletedAt &&
         author == other.author;
@@ -166,6 +178,7 @@ class _$PostResponseDto extends PostResponseDto {
   @override
   int get hashCode {
     var _$hash = 0;
+    _$hash = $jc(_$hash, mentionIdentities.hashCode);
     _$hash = $jc(_$hash, mediaDisplays.hashCode);
     _$hash = $jc(_$hash, id.hashCode);
     _$hash = $jc(_$hash, threadId.hashCode);
@@ -173,6 +186,7 @@ class _$PostResponseDto extends PostResponseDto {
     _$hash = $jc(_$hash, authorId.hashCode);
     _$hash = $jc(_$hash, kind.hashCode);
     _$hash = $jc(_$hash, floorNumber.hashCode);
+    _$hash = $jc(_$hash, replyNumber.hashCode);
     _$hash = $jc(_$hash, parentPostId.hashCode);
     _$hash = $jc(_$hash, replyToPostId.hashCode);
     _$hash = $jc(_$hash, clientRequestId.hashCode);
@@ -181,6 +195,7 @@ class _$PostResponseDto extends PostResponseDto {
     _$hash = $jc(_$hash, version.hashCode);
     _$hash = $jc(_$hash, createdAt.hashCode);
     _$hash = $jc(_$hash, updatedAt.hashCode);
+    _$hash = $jc(_$hash, editedAt.hashCode);
     _$hash = $jc(_$hash, pinnedAt.hashCode);
     _$hash = $jc(_$hash, deletedAt.hashCode);
     _$hash = $jc(_$hash, author.hashCode);
@@ -191,6 +206,7 @@ class _$PostResponseDto extends PostResponseDto {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'PostResponseDto')
+          ..add('mentionIdentities', mentionIdentities)
           ..add('mediaDisplays', mediaDisplays)
           ..add('id', id)
           ..add('threadId', threadId)
@@ -198,6 +214,7 @@ class _$PostResponseDto extends PostResponseDto {
           ..add('authorId', authorId)
           ..add('kind', kind)
           ..add('floorNumber', floorNumber)
+          ..add('replyNumber', replyNumber)
           ..add('parentPostId', parentPostId)
           ..add('replyToPostId', replyToPostId)
           ..add('clientRequestId', clientRequestId)
@@ -206,6 +223,7 @@ class _$PostResponseDto extends PostResponseDto {
           ..add('version', version)
           ..add('createdAt', createdAt)
           ..add('updatedAt', updatedAt)
+          ..add('editedAt', editedAt)
           ..add('pinnedAt', pinnedAt)
           ..add('deletedAt', deletedAt)
           ..add('author', author))
@@ -216,6 +234,13 @@ class _$PostResponseDto extends PostResponseDto {
 class PostResponseDtoBuilder
     implements Builder<PostResponseDto, PostResponseDtoBuilder> {
   _$PostResponseDto? _$v;
+
+  ListBuilder<MentionIdentityDisplayDto>? _mentionIdentities;
+  ListBuilder<MentionIdentityDisplayDto> get mentionIdentities =>
+      _$this._mentionIdentities ??= ListBuilder<MentionIdentityDisplayDto>();
+  set mentionIdentities(
+    ListBuilder<MentionIdentityDisplayDto>? mentionIdentities,
+  ) => _$this._mentionIdentities = mentionIdentities;
 
   ListBuilder<MarkdownMediaDisplayResponseDto>? _mediaDisplays;
   ListBuilder<MarkdownMediaDisplayResponseDto> get mediaDisplays =>
@@ -247,6 +272,10 @@ class PostResponseDtoBuilder
   num? _floorNumber;
   num? get floorNumber => _$this._floorNumber;
   set floorNumber(num? floorNumber) => _$this._floorNumber = floorNumber;
+
+  num? _replyNumber;
+  num? get replyNumber => _$this._replyNumber;
+  set replyNumber(num? replyNumber) => _$this._replyNumber = replyNumber;
 
   String? _parentPostId;
   String? get parentPostId => _$this._parentPostId;
@@ -284,6 +313,10 @@ class PostResponseDtoBuilder
   DateTime? get updatedAt => _$this._updatedAt;
   set updatedAt(DateTime? updatedAt) => _$this._updatedAt = updatedAt;
 
+  DateTime? _editedAt;
+  DateTime? get editedAt => _$this._editedAt;
+  set editedAt(DateTime? editedAt) => _$this._editedAt = editedAt;
+
   DateTime? _pinnedAt;
   DateTime? get pinnedAt => _$this._pinnedAt;
   set pinnedAt(DateTime? pinnedAt) => _$this._pinnedAt = pinnedAt;
@@ -304,6 +337,7 @@ class PostResponseDtoBuilder
   PostResponseDtoBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
+      _mentionIdentities = $v.mentionIdentities?.toBuilder();
       _mediaDisplays = $v.mediaDisplays?.toBuilder();
       _id = $v.id;
       _threadId = $v.threadId;
@@ -311,6 +345,7 @@ class PostResponseDtoBuilder
       _authorId = $v.authorId;
       _kind = $v.kind;
       _floorNumber = $v.floorNumber;
+      _replyNumber = $v.replyNumber;
       _parentPostId = $v.parentPostId;
       _replyToPostId = $v.replyToPostId;
       _clientRequestId = $v.clientRequestId;
@@ -319,6 +354,7 @@ class PostResponseDtoBuilder
       _version = $v.version;
       _createdAt = $v.createdAt;
       _updatedAt = $v.updatedAt;
+      _editedAt = $v.editedAt;
       _pinnedAt = $v.pinnedAt;
       _deletedAt = $v.deletedAt;
       _author = $v.author.toBuilder();
@@ -346,6 +382,7 @@ class PostResponseDtoBuilder
       _$result =
           _$v ??
           _$PostResponseDto._(
+            mentionIdentities: _mentionIdentities?.build(),
             mediaDisplays: _mediaDisplays?.build(),
             id: BuiltValueNullFieldError.checkNotNull(
               id,
@@ -373,6 +410,7 @@ class PostResponseDtoBuilder
               'kind',
             ),
             floorNumber: floorNumber,
+            replyNumber: replyNumber,
             parentPostId: parentPostId,
             replyToPostId: replyToPostId,
             clientRequestId: clientRequestId,
@@ -397,6 +435,7 @@ class PostResponseDtoBuilder
               r'PostResponseDto',
               'updatedAt',
             ),
+            editedAt: editedAt,
             pinnedAt: pinnedAt,
             deletedAt: deletedAt,
             author: author.build(),
@@ -404,6 +443,8 @@ class PostResponseDtoBuilder
     } catch (_) {
       late String _$failedField;
       try {
+        _$failedField = 'mentionIdentities';
+        _mentionIdentities?.build();
         _$failedField = 'mediaDisplays';
         _mediaDisplays?.build();
 

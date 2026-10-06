@@ -1,6 +1,6 @@
 import { readJson, portOpen, jobSpawn, sleep, run, processIdentity } from './runtime.mjs';
 
-export const CONTRACT_SHA = '5d02f6cf0d927f83f122c71ffcf53dc7c15bcc1b';
+export const CONTRACT_SHA = 'bc00ae8a86ba35fe9f1b2aad942db59477496cb9';
 const forbiddenPorts = new Set([3000, 3001, 5432, 6379]);
 export function validateDescriptor(value) {
   if (!value || value.version !== 1 || value.kind !== 'wenyou-dev-preview' || value.state !== 'ready'
@@ -11,6 +11,10 @@ export function validateDescriptor(value) {
     || typeof value.source?.worktree !== 'string' || !Number.isInteger(value.ownership?.uid) || value.ownership.uid < 1
     || value.ownership?.resourceId !== value.runId || value.identity?.header !== 'X-Wenyou-Preview-Run' || value.identity.value !== value.runId) {
     throw new Error('开发预览描述缺失或不符合已固定的 Backend 协议；禁止回退线上。');
+  }
+  if (Object.hasOwn(value.snapshot, 'sourceKind')
+    && !['synthetic-downloads', 'synthetic-thread-identities'].includes(value.snapshot.sourceKind)) {
+    throw new Error('开发预览快照来源不符合已固定的协议。');
   }
   const ports = new Set();
   for (const role of ['backend', 'media', 'web']) {

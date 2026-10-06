@@ -4,12 +4,58 @@ import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/app_shell/application/mobile_release_controller.dart';
 import 'package:wenyousite_mobile/features/app_shell/application/mobile_release_ports.dart';
 import 'package:wenyousite_mobile/features/app_shell/application/mobile_update_controller.dart';
+import 'package:wenyousite_mobile/features/app_shell/application/startup_controller.dart';
 import 'package:wenyousite_mobile/features/app_shell/domain/mobile_update.dart';
 
 import '../../app_shell_fixtures.dart';
 import 'mobile_release_test_support.dart';
 
 void main() {
+  for (final message in ['下载请求较多，请稍后重试。', '安装包暂时无法下载，请稍后重试。']) {
+    test('下载前目标复核保留临时失败提示：$message', () async {
+      final service = AppShellTestFakeMobileUpdateService(
+        build: 97,
+        releaseAvailable: false,
+        availabilityMessage: message,
+      );
+      final container = ProviderContainer(
+        overrides: [
+          mobileUpdateServiceProvider.overrideWithValue(service),
+          metaRepositoryProvider.overrideWithValue(
+            AppShellTestFixedMetaRepository(
+              contractVersion: '5.30.0',
+              android: const MobilePlatformPolicy(
+                recommendedBuild: 100,
+                updateUrl:
+                    'https://download.invalid/api/v1/app-downloads/android/100/file',
+              ),
+            ),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+      final controller = container.read(
+        mobileUpdateControllerProvider.notifier,
+      );
+      await controller.start(
+        const MobileUpdateInfo(
+          kind: MobileUpdateKind.recommended,
+          platform: MobileClientPlatform.android,
+          currentVersion: '0.8.0',
+          currentBuild: 97,
+          targetBuild: 100,
+          targetVersion: '0.9.0',
+        ),
+        refreshTarget: () =>
+            container.read(availableMobileReleaseUpdateProvider.future),
+      );
+      final state = container.read(mobileUpdateControllerProvider);
+      expect(state.status, MobileUpdateActionStatus.failed);
+      expect(state.message, message);
+      expect(service.launchCalls, 0);
+    });
+  }
+
   test('说明和当前安装版均要求平台、版本名、构建号精确一致', () {
     final release = releaseFixture();
     for (final target in [

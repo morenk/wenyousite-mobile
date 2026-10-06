@@ -31,6 +31,7 @@ class AdminCampaignsApi {
   /// Parameters:
   /// * [id]
   /// * [xCSRFToken] - 管理后台写操作必填
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -43,6 +44,7 @@ class AdminCampaignsApi {
   Future<Response<NotificationCampaignCancel200Response>> notificationCampaignCancel({
     required String id,
     String? xCSRFToken,
+    int? xMarkdownContractVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -55,6 +57,7 @@ class AdminCampaignsApi {
       method: r'DELETE',
       headers: <String, dynamic>{
         if (xCSRFToken != null) r'X-CSRF-Token': xCSRFToken,
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -121,6 +124,7 @@ class AdminCampaignsApi {
   /// Parameters:
   /// * [createNotificationCampaignDto]
   /// * [xCSRFToken] - 管理后台写操作必填
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -133,6 +137,7 @@ class AdminCampaignsApi {
   Future<Response<NotificationCampaignCreate201Response>> notificationCampaignCreate({
     required CreateNotificationCampaignDto createNotificationCampaignDto,
     String? xCSRFToken,
+    int? xMarkdownContractVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -145,6 +150,7 @@ class AdminCampaignsApi {
       method: r'POST',
       headers: <String, dynamic>{
         if (xCSRFToken != null) r'X-CSRF-Token': xCSRFToken,
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -235,6 +241,7 @@ class AdminCampaignsApi {
   /// * [q] - 标题或正文关键词
   /// * [status]
   /// * [destination] - 是否配置主题帖跳转目标
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -251,6 +258,7 @@ class AdminCampaignsApi {
     String? q,
     String? status,
     String? destination,
+    int? xMarkdownContractVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -263,6 +271,7 @@ class AdminCampaignsApi {
       method: r'GET',
       headers: <String, dynamic>{
         if (xCSRFToken != null) r'X-CSRF-Token': xCSRFToken,
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -338,6 +347,7 @@ class AdminCampaignsApi {
   /// Parameters:
   /// * [notificationAudienceDto]
   /// * [xCSRFToken] - 管理后台写操作必填
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -350,6 +360,7 @@ class AdminCampaignsApi {
   Future<Response<NotificationCampaignPreview200Response>> notificationCampaignPreview({
     required NotificationAudienceDto notificationAudienceDto,
     String? xCSRFToken,
+    int? xMarkdownContractVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -362,6 +373,7 @@ class AdminCampaignsApi {
       method: r'POST',
       headers: <String, dynamic>{
         if (xCSRFToken != null) r'X-CSRF-Token': xCSRFToken,
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         ...?headers,
       },
       extra: <String, dynamic>{

@@ -33,7 +33,11 @@ class BookmarkListPage extends ConsumerWidget {
     final title =
         state.folderById(folderId)?.name ?? initialFolderName ?? '收藏夹';
     return Scaffold(
-      appBar: AppBar(title: Text(title)),
+      backgroundColor: wenyouBrowsePageBackground(context),
+      appBar: AppBar(
+        backgroundColor: wenyouBrowsePageBackground(context),
+        title: Text(title),
+      ),
       body: BookmarkListView(folderId: folderId),
     );
   }

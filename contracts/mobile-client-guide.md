@@ -1,5 +1,9 @@
 # Flutter / 原生移动端接入
 
+Android `/meta.updateUrl` 将兼容迁移到本站固定构建 APK 路由，保留旧 APP HEAD 校验 metadata；不指向 HTML 下载页。Windows 迁移、发布 CLI 与灰度顺序见 [下载网关契约](app-download-gateway.md)，VPS 不代表移动端门禁已执行。
+
+下载次数兼容：默认同一有效浏览器标识每天 3 次、单 IP 总计每天 10 次，按北京时间重置并跨构建累计。现有 APP 无需增加 info 调用、Cookie 或改变文件 URL，可继续直接 HEAD/GET；没有有效 Cookie 时只能按 IP 总次数约束，不等于验证设备唯一。HEAD 可能提前返回 429，GET 仍会最终判定；按 `Retry-After` 等待，`X-Download-Limit-Reason` 可区分 `device_daily_limit`、`ip_daily_limit` 与既有预算/频率限制。获准后中断、Range 和主动重试都计尝试，不能自动无限重试。Windows Flutter 消费端需基于固定契约同步；此文档不代表已执行真机门禁。
+
 本文定义原生移动客户端需要遵循的 HTTP、安全、重试和推送生命周期。字段与端点以 [`contracts/openapi.json`](../contracts/openapi.json) 为机器事实源；移动端 V1 范围与黄金旅程分别以 [`mobile-v1-operation-coverage.json`](../contracts/mobile-v1-operation-coverage.json) 和 [`mobile-v1-golden-fixtures.json`](../contracts/mobile-v1-golden-fixtures.json) 为准；动态分类、Markdown、站内传送门与 FCM data 继续使用各自独立 fixtures/schema。
 
 界面、字体、文字缩放和页面状态由公开 `wenyousite-foundation` 维护；仓库边界与入口见 [`mobile-ui-contract.md`](./mobile-ui-contract.md)，实际版本以 Flutter 客户端的 `foundation.lock.json` 为准。
@@ -245,14 +249,38 @@ Flutter 代码、类型生成和设备回归仅在 Windows 执行；本后端 PR
 
 仅移除粉丝二次确认；同一行写入期间禁用所有关系按钮。确认成功后移出对应列表并失效本人和对方资料、列表及计数；粉丝列表取消关注保留原行。超时先读回核对，不能自行重放删除。切换账号丢弃旧响应；回关、取消关注、移除粉丝统一复用 Foundation 的细描边操作按钮。
 
+资料中的关注/粉丝数排除已注销账号，并沿用同一查看者的双向拉黑过滤，与关系列表口径一致。同步 `5.27.1-dev.20260928.1` 精确提交的 OpenAPI；此次纠错不改字段或类型，不需要移动端增加补偿请求，继续消费刷新后的 `_count`。游客公开资料保留最长五分钟缓存，详见上述契约说明。
+
 ## 全屏图片连续浏览
 
 兼容契约 5.26.0-dev.20260922.3 新增 [图片图集查询](image-gallery.md)。Mobile 先显示点击图片，再接入双向分页；Web 保留原查看交互，新增契约只同步类型与夹具。共享位置测试见 `contracts/gallery-image-occurrences.json`，重复 URL 按位置保留，贴纸仅按 title 前缀排除。权限丢失 404 必须清除对应缓存图，40900 重新打开会话，40926 保留当前图片并提示稍后再试。
 
-## Android 更新说明与历史
+## Android 更新前与升级后提醒
 
-本节新增接口兼容现有 `/meta`，版本策略仍完全由 `/meta.mobileCompatibility.android` 决定。推荐横幅可以读目标 build 的 summary，“查看更新”展示完整 items 和现有下载操作；强制页展示完整说明。历史页使用 `GET /mobile-releases?platform=android` 的不透明游标，按构建号倒序；以实际安装 build 标记当前版本，下载/更新操作只对 `/meta` 的实际可更新目标开放，不从历史猜测更新策略。
+移动端消费语义以 [Foundation 更新提醒规范（72d4785）](https://github.com/morenk/wenyousite-foundation/blob/72d4785860d96ff0e2b336bc3f0f355ff908f77e/docs/mobile-releases.md) 为准。本次将 App 展示目标调整为更新前与升级后的一次性弹窗，移除独立“查看更新”按钮、说明／版本历史页面及设置与游客“我的”中的历史入口；旧页面地址安全回退。这是客户端接入要求，不代表新交互已上线或完成真机验收。
 
-公开 DTO：`platform, versionName, buildNumber, summary, items, revision, publishedAt`。详情路径 `GET /mobile-releases/android/{buildNumber}`。未发布/不存在都是 404，空历史显示空态，读取失败可以重试但不阻断启动或破坏强制升级流程。说明是纯文本，禁止 Markdown/HTML 渲染；没有升级后的自动弹窗。不得从 Git 提交自动拼接缺失说明。
+版本策略仍完全由 `/meta.mobileCompatibility.android` 决定。更新前弹窗按实际升级目标 build 读取并显示版本身份、summary 和完整 items，保留现有更新／下载动作。推荐按目标平台与 build 在本机持久去重，完整说明实际可见后才记为已提示，允许关闭及原生返回，已有忽略记录继续有效。强制更新保持不可关闭的阻断弹窗／启动门禁；推荐已提示、旧忽略、说明失败或任何一次性记录都不能解除强制约束。更新动作执行前重新核对策略与目标，不从说明或历史推断下载资格。
+
+升级后弹窗按设备实际安装的平台、build 和对应版本名读取已发布说明，不取服务器最新说明替代。优先恢复已有本机安装基线；构建号上升时仅为本次安装版建立待提示，跨过多版不补播中间版本。无本机记录的首次迁移，仅在有效 Android 安装／更新时间证明发生过覆盖安装时建立当前版本待提示，使用“已安装当前版本”，不推测旧 build；时间相同按首次安装处理，缺失、无效或逆序时也只建立基线。已有基线后，同构建覆盖安装不新增提示；卸载或清除数据后的记录丢失不能保证继续去重，具体边界遵循上述 Foundation 规范。
+
+安装基线、待提示和已展示记录相互独立，均由客户端本机持久保存，不随登录切换清除。升级后按平台与 build 一次，版本名或 revision 修正不重弹；只有正确版本的完整说明实际可见才记为已展示，基线更新不能清掉待提示。弹窗可关闭，不提供已安装版本的再次下载入口。所有提醒串行协调：强制优先；应用可用且处于安全前台时先处理升级后待提示，推荐留到其结束后的下一次安全前台机会，不在关闭回调中接弹或叠窗。
+
+公开 DTO 保持 `platform, versionName, buildNumber, summary, items, revision, publishedAt`；详情路径仍为 `GET /mobile-releases/android/{buildNumber}`。未发布／不存在均为 404，只有明确无记录才显示“此版本暂无更新说明”。推荐与升级后说明读取失败可关闭、可重试，不阻断普通启动、不误记已展示，也不在同一前台会话自动循环弹出；强制说明失败仍保留更新动作、重试入口和阻断。说明是纯文本，禁止 Markdown/HTML 渲染，不得从 Git 提交自动拼接缺失说明。
+
+`GET /mobile-releases?platform=android` 的公开历史、倒序分页与不透明游标继续兼容，空列表仍返回空数组。App 历史入口移除不删除该接口、详情接口、后台管理能力或历史数据；HTTP/OpenAPI、数据库及契约版本 `5.27.0-dev.20260927.1` 均不变，不新增服务端已读状态。
 
 管理接口和精确长度、错误码见 [API 契约](api-contract.md#android-版本说明兼容增量)。发布工具的受限说明预检与确认 revision 绑定见 [发布运维](mobile-release-operations.md)，构建-only 不要求后台说明，真实晋级必须以最终受限通道契约校验。本次不新增 iOS 发布或 FCM 消息。
+
+## 私帖邀请链接重复分享
+
+契约 `5.29.0-dev.20261001.1` 新增无请求体的 `PUT /threads/{id}/invite-link`（`threadsEnsureInviteLink`），返回 200 与现有 `InviteLinkResponseDto`；认证与归属沿用敏感写操作，仅已发布私帖楼主可用。重复、并发及跨设备取得同一个当前 token；不存在时才原子创建，不修改成员。
+
+当前 Web / App 只保留点击即复制的“复制邀请链接”操作，每次向服务端调用 PUT 取得当前链接；不显示独立标题、常驻说明、重置按钮或重置确认，正常态和复制成功后不展示链接正文。接口失败仅提示获取失败，不调用 POST；剪贴板失败才就地展示本次已取得的链接供手动复制，区分接口错误与复制失败。
+
+请求期间禁止重复操作；开始新请求、关闭、切号、离开或失去分享资格时清理内存中的邀请凭据，不写日志或独立持久缓存。Web 与 Windows Mobile 按精确提交记录接入文档来源；HTTP/OpenAPI、DTO 和契约版本仍为 `5.29.0-dev.20261001.1`，本轮交互简化不要求新增机器契约或生成物。Foundation 只补充交互说明，不发布组件或 Token 版本。
+
+`POST` / `threadsCreateInviteLink` 继续兼容旧客户端主动重置，本轮不删除接口或改变其语义；当前消费端不提供该操作。旧客户端重置结果不明时不得自动重发 POST，可通过 PUT 取回当前链接。重置后旧链接预览、加入对所有人均失效；已有成员仍从帖子入口访问。
+
+## 大讨论串定位
+
+固定编号、有界双向窗口、置顶去重与筛选错误语义见 [讨论定位契约](discussion-navigation.md)。

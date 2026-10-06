@@ -6,7 +6,76 @@ part of 'update_post_dto.dart';
 // BuiltValueGenerator
 // **************************************************************************
 
+const UpdatePostDtoMarkdownContractVersionEnum
+_$updatePostDtoMarkdownContractVersionEnum_number6 =
+    const UpdatePostDtoMarkdownContractVersionEnum._('number6');
+const UpdatePostDtoMarkdownContractVersionEnum
+_$updatePostDtoMarkdownContractVersionEnum_unknownDefaultOpenApi =
+    const UpdatePostDtoMarkdownContractVersionEnum._('unknownDefaultOpenApi');
+
+UpdatePostDtoMarkdownContractVersionEnum
+_$updatePostDtoMarkdownContractVersionEnumValueOf(String name) {
+  switch (name) {
+    case 'number6':
+      return _$updatePostDtoMarkdownContractVersionEnum_number6;
+    case 'unknownDefaultOpenApi':
+      return _$updatePostDtoMarkdownContractVersionEnum_unknownDefaultOpenApi;
+    default:
+      return _$updatePostDtoMarkdownContractVersionEnum_unknownDefaultOpenApi;
+  }
+}
+
+final BuiltSet<UpdatePostDtoMarkdownContractVersionEnum>
+_$updatePostDtoMarkdownContractVersionEnumValues =
+    BuiltSet<UpdatePostDtoMarkdownContractVersionEnum>(
+      const <UpdatePostDtoMarkdownContractVersionEnum>[
+        _$updatePostDtoMarkdownContractVersionEnum_number6,
+        _$updatePostDtoMarkdownContractVersionEnum_unknownDefaultOpenApi,
+      ],
+    );
+
+Serializer<UpdatePostDtoMarkdownContractVersionEnum>
+_$updatePostDtoMarkdownContractVersionEnumSerializer =
+    _$UpdatePostDtoMarkdownContractVersionEnumSerializer();
+
+class _$UpdatePostDtoMarkdownContractVersionEnumSerializer
+    implements PrimitiveSerializer<UpdatePostDtoMarkdownContractVersionEnum> {
+  static const Map<String, Object> _toWire = const <String, Object>{
+    'number6': 6,
+    'unknownDefaultOpenApi': 11184809,
+  };
+  static const Map<Object, String> _fromWire = const <Object, String>{
+    6: 'number6',
+    11184809: 'unknownDefaultOpenApi',
+  };
+
+  @override
+  final Iterable<Type> types = const <Type>[
+    UpdatePostDtoMarkdownContractVersionEnum,
+  ];
+  @override
+  final String wireName = 'UpdatePostDtoMarkdownContractVersionEnum';
+
+  @override
+  Object serialize(
+    Serializers serializers,
+    UpdatePostDtoMarkdownContractVersionEnum object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => _toWire[object.name] ?? object.name;
+
+  @override
+  UpdatePostDtoMarkdownContractVersionEnum deserialize(
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => UpdatePostDtoMarkdownContractVersionEnum.valueOf(
+    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
+  );
+}
+
 class _$UpdatePostDto extends UpdatePostDto {
+  @override
+  final UpdatePostDtoMarkdownContractVersionEnum? markdownContractVersion;
   @override
   final String content;
   @override
@@ -15,7 +84,11 @@ class _$UpdatePostDto extends UpdatePostDto {
   factory _$UpdatePostDto([void Function(UpdatePostDtoBuilder)? updates]) =>
       (UpdatePostDtoBuilder()..update(updates))._build();
 
-  _$UpdatePostDto._({required this.content, required this.version}) : super._();
+  _$UpdatePostDto._({
+    this.markdownContractVersion,
+    required this.content,
+    required this.version,
+  }) : super._();
   @override
   UpdatePostDto rebuild(void Function(UpdatePostDtoBuilder) updates) =>
       (toBuilder()..update(updates)).build();
@@ -27,6 +100,7 @@ class _$UpdatePostDto extends UpdatePostDto {
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
     return other is UpdatePostDto &&
+        markdownContractVersion == other.markdownContractVersion &&
         content == other.content &&
         version == other.version;
   }
@@ -34,6 +108,7 @@ class _$UpdatePostDto extends UpdatePostDto {
   @override
   int get hashCode {
     var _$hash = 0;
+    _$hash = $jc(_$hash, markdownContractVersion.hashCode);
     _$hash = $jc(_$hash, content.hashCode);
     _$hash = $jc(_$hash, version.hashCode);
     _$hash = $jf(_$hash);
@@ -43,6 +118,7 @@ class _$UpdatePostDto extends UpdatePostDto {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'UpdatePostDto')
+          ..add('markdownContractVersion', markdownContractVersion)
           ..add('content', content)
           ..add('version', version))
         .toString();
@@ -52,6 +128,13 @@ class _$UpdatePostDto extends UpdatePostDto {
 class UpdatePostDtoBuilder
     implements Builder<UpdatePostDto, UpdatePostDtoBuilder> {
   _$UpdatePostDto? _$v;
+
+  UpdatePostDtoMarkdownContractVersionEnum? _markdownContractVersion;
+  UpdatePostDtoMarkdownContractVersionEnum? get markdownContractVersion =>
+      _$this._markdownContractVersion;
+  set markdownContractVersion(
+    UpdatePostDtoMarkdownContractVersionEnum? markdownContractVersion,
+  ) => _$this._markdownContractVersion = markdownContractVersion;
 
   String? _content;
   String? get content => _$this._content;
@@ -68,6 +151,7 @@ class UpdatePostDtoBuilder
   UpdatePostDtoBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
+      _markdownContractVersion = $v.markdownContractVersion;
       _content = $v.content;
       _version = $v.version;
       _$v = null;
@@ -92,6 +176,7 @@ class UpdatePostDtoBuilder
     final _$result =
         _$v ??
         _$UpdatePostDto._(
+          markdownContractVersion: markdownContractVersion,
           content: BuiltValueNullFieldError.checkNotNull(
             content,
             r'UpdatePostDto',

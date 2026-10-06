@@ -2,9 +2,10 @@ class AppEnvironment {
   const AppEnvironment({
     required this.apiBaseUrl,
     this.supportedContractMajor = 5,
-    this.supportedMarkdownContractVersions = const {3, 4, 5},
+    this.supportedMarkdownContractVersions = const {3, 4, 5, 6},
     this.previewSession = '',
     this.previewSnapshotAt = '',
+    this.previewSourceKind = '',
     this.previewRun = '',
     this.previewSnapshotSha = '',
     this.previewMediaOrigin = '',
@@ -18,6 +19,7 @@ class AppEnvironment {
       ),
       previewSession: String.fromEnvironment('WENYOU_PREVIEW_SESSION'),
       previewSnapshotAt: String.fromEnvironment('WENYOU_PREVIEW_SNAPSHOT_AT'),
+      previewSourceKind: String.fromEnvironment('WENYOU_PREVIEW_SOURCE_KIND'),
       previewRun: String.fromEnvironment('WENYOU_PREVIEW_RUN'),
       previewSnapshotSha: String.fromEnvironment('WENYOU_PREVIEW_SNAPSHOT_SHA'),
       previewMediaOrigin: String.fromEnvironment('WENYOU_PREVIEW_MEDIA_ORIGIN'),
@@ -36,11 +38,13 @@ class AppEnvironment {
   final Set<int> supportedMarkdownContractVersions;
   final String previewSession;
   final String previewSnapshotAt;
+  final String previewSourceKind;
   final String previewRun;
   final String previewSnapshotSha;
   final String previewMediaOrigin;
 
   bool get isPreview => previewSession.isNotEmpty;
+  String get previewLabel => previewSourceKind.isEmpty ? '开发预览' : '合成数据预览';
 
   /// 旧环境仍使用原键和原目录；预览批次不读取或迁移旧数据。
   String storageName(String original) =>
@@ -50,6 +54,7 @@ class AppEnvironment {
     if (!isPreview) {
       if (previewRun.isNotEmpty ||
           previewSnapshotAt.isNotEmpty ||
+          previewSourceKind.isNotEmpty ||
           previewSnapshotSha.isNotEmpty ||
           previewMediaOrigin.isNotEmpty) {
         throw StateError('请重新启动开发预览后再试。');
@@ -59,6 +64,11 @@ class AppEnvironment {
     final uri = apiBaseUri;
     final media = Uri.tryParse(previewMediaOrigin);
     if (!isDebugMode ||
+        !{
+          '',
+          'synthetic-downloads',
+          'synthetic-thread-identities',
+        }.contains(previewSourceKind) ||
         !RegExp(r'^[a-z][a-z0-9-]{2,47}$').hasMatch(previewSession) ||
         !RegExp(r'^preview_[a-f0-9]{24}$').hasMatch(previewRun) ||
         !RegExp(r'^[a-f0-9]{64}$').hasMatch(previewSnapshotSha) ||

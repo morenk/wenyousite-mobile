@@ -5,6 +5,7 @@
 // ignore_for_file: unused_element
 import 'package:wenyou_api/src/model/markdown_media_display_response_dto.dart';
 import 'package:built_collection/built_collection.dart';
+import 'package:wenyou_api/src/model/mention_identity_display_dto.dart';
 import 'package:wenyou_api/src/model/search_author_response_dto.dart';
 import 'package:wenyou_api/src/model/search_subthread_reference_response_dto.dart';
 import 'package:wenyou_api/src/model/search_thread_reference_response_dto.dart';
@@ -16,6 +17,7 @@ part 'search_post_response_dto.g.dart';
 /// SearchPostResponseDto
 ///
 /// Properties:
+/// * [mentionIdentities]
 /// * [mediaDisplays] - 已授权正文的精确来源映射
 /// * [kind] - BODY 为正文，FLOOR 为主楼层或楼中楼
 /// * [id] - 帖子 ID
@@ -28,6 +30,9 @@ part 'search_post_response_dto.g.dart';
 /// * [subthread] - 所属子贴
 @BuiltValue()
 abstract class SearchPostResponseDto implements Built<SearchPostResponseDto, SearchPostResponseDtoBuilder> {
+  @BuiltValueField(wireName: r'mentionIdentities')
+  BuiltList<MentionIdentityDisplayDto>? get mentionIdentities;
+
   /// 已授权正文的精确来源映射
   @BuiltValueField(wireName: r'mediaDisplays')
   BuiltList<MarkdownMediaDisplayResponseDto>? get mediaDisplays;
@@ -92,6 +97,13 @@ class _$SearchPostResponseDtoSerializer implements PrimitiveSerializer<SearchPos
     SearchPostResponseDto object, {
     FullType specifiedType = FullType.unspecified,
   }) sync* {
+    if (object.mentionIdentities != null) {
+      yield r'mentionIdentities';
+      yield serializers.serialize(
+        object.mentionIdentities,
+        specifiedType: const FullType(BuiltList, [FullType(MentionIdentityDisplayDto)]),
+      );
+    }
     if (object.mediaDisplays != null) {
       yield r'mediaDisplays';
       yield serializers.serialize(
@@ -167,6 +179,13 @@ class _$SearchPostResponseDtoSerializer implements PrimitiveSerializer<SearchPos
       final key = serializedList[i] as String;
       final value = serializedList[i + 1];
       switch (key) {
+        case r'mentionIdentities':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(BuiltList, [FullType(MentionIdentityDisplayDto)]),
+          ) as BuiltList<MentionIdentityDisplayDto>;
+          result.mentionIdentities.replace(valueDes);
+          break;
         case r'mediaDisplays':
           final valueDes = serializers.deserialize(
             value,

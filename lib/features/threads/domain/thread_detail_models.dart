@@ -1,4 +1,5 @@
 import 'package:wenyousite_mobile/core/media/media_display.dart';
+import 'package:wenyousite_mobile/features/thread_identity/identity_models.dart';
 
 class ThreadAuthorModel {
   const ThreadAuthorModel({
@@ -6,12 +7,17 @@ class ThreadAuthorModel {
     required this.username,
     required this.level,
     this.avatarUrl,
+    this.rpIdentity,
   });
 
   final String id;
   final String username;
   final int level;
   final String? avatarUrl;
+  final RpIdentity? rpIdentity;
+  String get displayName => rpIdentity?.nickname ?? username;
+  String? get displayAvatarUrl =>
+      rpIdentity != null ? rpIdentity!.avatarUrl : avatarUrl;
 }
 
 enum ThreadDetailStatus {
@@ -43,6 +49,8 @@ class ThreadBodyModel {
   const ThreadBodyModel({
     required this.markdown,
     this.mediaDisplays = const {},
+    this.mentionLabels = const {},
+    this.author,
     this.postId,
     this.version,
     this.diceRolls = const [],
@@ -50,6 +58,8 @@ class ThreadBodyModel {
 
   final String markdown;
   final Map<String, MediaDisplay> mediaDisplays;
+  final Map<String, String> mentionLabels;
+  final ThreadAuthorModel? author;
   final String? postId;
   final int? version;
   final List<ThreadDiceRollModel> diceRolls;
@@ -110,6 +120,7 @@ class ThreadDetailModel {
     this.currentUserId,
     this.categorySlug,
     this.defaultSubthreadId,
+    this.rpIdentityEnabled,
   });
 
   final String id;
@@ -136,6 +147,8 @@ class ThreadDetailModel {
   final List<ThreadTagModel> tags;
   final List<ThreadSubthreadModel> subthreads;
   final String? defaultSubthreadId;
+  final bool? rpIdentityEnabled;
+  bool get supportsRpIdentity => rpIdentityEnabled != null;
   final DateTime createdAt;
   final DateTime updatedAt;
 

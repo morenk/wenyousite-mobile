@@ -11,9 +11,52 @@ import 'package:wenyousite_mobile/features/direct_messages/data/direct_message_r
 import 'package:wenyousite_mobile/features/direct_messages/domain/direct_message_models.dart';
 import 'package:wenyousite_mobile/features/direct_messages/presentation/direct_messages_page.dart';
 
+import '../../support/deterministic_test_fonts.dart';
 import '../../support/foundation_icon_finder.dart';
 
 void main() {
+  setUpAll(loadDeterministicTestFonts);
+
+  for (final dark in [false, true]) {
+    for (final narrow in [false, true]) {
+      final suffix =
+          '${dark ? 'dark' : 'light'}_${narrow ? '320_2x' : '360_1x'}';
+      testWidgets('私聊列表轻表面 $suffix', (tester) async {
+        tester.view.devicePixelRatio = 1;
+        tester.view.physicalSize = Size(narrow ? 320 : 360, 800);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        addTearDown(tester.view.resetPhysicalSize);
+        const visualKey = Key('direct-list-soft-surface');
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: _overrides(_FakeRepository()),
+            child: MaterialApp(
+              theme: dark ? AppTheme.dark : AppTheme.light,
+              builder: (context, child) => MediaQuery(
+                data: MediaQuery.of(
+                  context,
+                ).copyWith(textScaler: TextScaler.linear(narrow ? 2 : 1)),
+                child: child!,
+              ),
+              home: const RepaintBoundary(
+                key: visualKey,
+                child: DirectMessagesPage(),
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('direct-messages-load-more')));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        await expectLater(
+          find.byKey(visualKey),
+          matchesGoldenFile('goldens/direct_list_soft_$suffix.png'),
+        );
+      });
+    }
+  }
+
   testWidgets('私信中心展示三类列表、精简预览并进入稳定会话路由', (tester) async {
     final repository = _FakeRepository();
     final router = _router();

@@ -3,6 +3,35 @@ import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 
+/// 设置入口的语义图标保持轻底色，不独立成为可点击控件。
+class WenyouSettingsIcon extends StatelessWidget {
+  const WenyouSettingsIcon(this.icon, {this.color, super.key});
+
+  final String icon;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.wenyouTokens;
+    return ExcludeSemantics(
+      child: Container(
+        width: tokens.space32,
+        height: tokens.space32,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: tokens.softPanel,
+          borderRadius: BorderRadius.circular(tokens.radiusControl),
+        ),
+        child: WenyouIcon(
+          icon,
+          size: WenyouIconContract.defaultSize,
+          color: color ?? tokens.mutedText,
+        ),
+      ),
+    );
+  }
+}
+
 /// 设置入口只展示名称和当前值，操作后果由目标页面说明。
 class WenyouSettingsLink extends StatelessWidget {
   const WenyouSettingsLink({
@@ -12,6 +41,7 @@ class WenyouSettingsLink extends StatelessWidget {
     this.value,
     this.destructive = false,
     this.enabled = true,
+    this.isBusy = false,
     this.contentPadding,
     super.key,
   });
@@ -22,12 +52,13 @@ class WenyouSettingsLink extends StatelessWidget {
   final String? value;
   final bool destructive;
   final bool enabled;
+  final bool isBusy;
   final EdgeInsetsGeometry? contentPadding;
 
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
-    final actionable = enabled && onTap != null;
+    final actionable = enabled && !isBusy && onTap != null;
     final color = !enabled
         ? Theme.of(context).disabledColor
         : destructive
@@ -37,12 +68,12 @@ class WenyouSettingsLink extends StatelessWidget {
       enabled: enabled,
       contentPadding: contentPadding,
       minTileHeight: tokens.minimumTouchTarget + tokens.space8,
+      minLeadingWidth: tokens.space32,
+      horizontalTitleGap: tokens.space12,
       titleTextStyle: Theme.of(
         context,
       ).textTheme.wenyouRowTitle.copyWith(fontWeight: FontWeight.w400),
-      leading: icon == null
-          ? null
-          : WenyouIcon(icon!, color: color ?? tokens.mutedText),
+      leading: icon == null ? null : WenyouSettingsIcon(icon!, color: color),
       title: Row(
         children: [
           Expanded(
@@ -68,7 +99,12 @@ class WenyouSettingsLink extends StatelessWidget {
           ],
         ],
       ),
-      trailing: actionable
+      trailing: isBusy
+          ? SizedBox.square(
+              dimension: tokens.space20,
+              child: const CircularProgressIndicator(strokeWidth: 2),
+            )
+          : actionable
           ? WenyouIcon(WenyouIconIds.navigationNext, color: color)
           : null,
       onTap: actionable ? onTap : null,
@@ -80,9 +116,9 @@ class WenyouSettingsLink extends StatelessWidget {
 class WenyouSettingsToggle extends StatelessWidget {
   const WenyouSettingsToggle({
     required this.title,
-    required this.help,
     required this.value,
     required this.onChanged,
+    this.help,
     this.toggleKey,
     this.icon,
     this.showHelpButton = true,
@@ -90,7 +126,7 @@ class WenyouSettingsToggle extends StatelessWidget {
   });
 
   final String title;
-  final String help;
+  final String? help;
   final bool value;
   final ValueChanged<bool>? onChanged;
   final Key? toggleKey;
@@ -99,31 +135,42 @@ class WenyouSettingsToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final toggle = SwitchListTile(
-      key: toggleKey,
-      title: showHelpButton
-          ? Text(
-              title,
-              style: Theme.of(
-                context,
-              ).textTheme.wenyouRowTitle.copyWith(fontWeight: FontWeight.w400),
-            )
-          : Tooltip(
-              message: help,
-              child: Text(
+    final tokens = context.wenyouTokens;
+    final hasHelp = help != null && help!.isNotEmpty;
+    final toggle = ListTileTheme.merge(
+      minLeadingWidth: tokens.space32,
+      horizontalTitleGap: tokens.space12,
+      child: SwitchListTile(
+        key: toggleKey,
+        title: showHelpButton || !hasHelp
+            ? Text(
                 title,
                 style: Theme.of(context).textTheme.wenyouRowTitle.copyWith(
                   fontWeight: FontWeight.w400,
                 ),
+              )
+            : Tooltip(
+                message: help!,
+                child: Text(
+                  title,
+                  style: Theme.of(context).textTheme.wenyouRowTitle.copyWith(
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
               ),
-            ),
-      secondary: icon == null
-          ? null
-          : WenyouIcon(icon!, color: context.wenyouTokens.mutedText),
-      value: value,
-      onChanged: onChanged,
+        secondary: icon == null
+            ? null
+            : WenyouSettingsIcon(
+                icon!,
+                color: onChanged == null
+                    ? Theme.of(context).disabledColor
+                    : null,
+              ),
+        value: value,
+        onChanged: onChanged,
+      ),
     );
-    if (!showHelpButton) return toggle;
+    if (!showHelpButton || !hasHelp) return toggle;
     return Row(
       children: [
         // 说明按钮放在 SwitchListTile 的 MergeSemantics 之外，避免读屏将
@@ -137,7 +184,7 @@ class WenyouSettingsToggle extends StatelessWidget {
             builder: (context) => AlertDialog(
               scrollable: true,
               title: Text(title),
-              content: Text(help),
+              content: Text(help!),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(),

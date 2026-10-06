@@ -489,7 +489,8 @@ void registerPostRepliesPageSessionEditingCases() {
 
     expect(repository.updateRequests.single.version, 1);
     expect(find.text('编辑后的新回复'), findsOneWidget);
-    expect(authorDirectory.replyCalls, 2);
+    // 完成编辑后的阅读刷新也重新投影当前身份目录。
+    expect(authorDirectory.replyCalls, 3);
 
     await tester.ensureVisible(find.byKey(const Key('post-reply-created')));
     await postRepliesPageTestLongPressPostMetadata(tester, 'created');
@@ -502,7 +503,7 @@ void registerPostRepliesPageSessionEditingCases() {
 
     expect(repository.removedIds, ['created']);
     expect(find.text('编辑后的新回复'), findsNothing);
-    expect(authorDirectory.replyCalls, 3);
+    expect(authorDirectory.replyCalls, 4);
     expect(tester.takeException(), isNull);
   });
 }

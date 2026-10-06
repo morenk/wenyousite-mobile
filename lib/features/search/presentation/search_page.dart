@@ -63,7 +63,11 @@ class _SearchPageState extends ConsumerState<SearchPage> {
       }
     });
     return Scaffold(
-      appBar: AppBar(title: const Text('搜索')),
+      backgroundColor: wenyouBrowsePageBackground(context),
+      appBar: AppBar(
+        backgroundColor: wenyouBrowsePageBackground(context),
+        title: const Text('搜索'),
+      ),
       body: Column(
         children: [
           Padding(
@@ -621,7 +625,7 @@ class _PostResultCard extends StatelessWidget {
             ),
             SizedBox(height: tokens.space12),
             Text(
-              '${item.authorName} · '
+              '${item.authorLabel} · '
               '${item.floorNumber == null ? '楼中楼' : '#${item.floorNumber}'}',
               style: Theme.of(context).textTheme.wenyouCaption,
             ),

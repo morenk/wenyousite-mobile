@@ -2,11 +2,16 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_controllers.dart';
+import 'package:wenyousite_mobile/features/posts/application/post_publish_draft.dart';
 import 'package:wenyousite_mobile/features/posts/data/post_repository.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
+import 'package:wenyousite_mobile/features/thread_identity/identity_models.dart';
+import '../../support/discussion_window_fixture.dart';
+
+import 'post_controller_dice_fixtures.dart';
 
 void main() {
-  test('独立讨论验证首屏外目标并沿真实 cursor 页定位', () async {
+  test('独立讨论首屏直接读取目标窗口，无须逐页扫描', () async {
     final repository = _FakePostRepository(
       posts: {'root': _post('root'), 'focus': _reply('focus', minute: 2)},
       onReplies: ({cursor, required order, authorId}) async {
@@ -31,14 +36,10 @@ void main() {
 
     await controller.load();
 
-    expect(controller.state.replies.map((item) => item.id), ['reply-1']);
+    expect(controller.state.replies.map((item) => item.id), ['focus']);
     expect(repository.postRequests, ['root', 'focus']);
     await controller.locateReply('focus');
-    expect(controller.state.replies.map((item) => item.id), [
-      'reply-1',
-      'focus',
-      'reply-2',
-    ]);
+    expect(controller.state.replies.map((item) => item.id), ['focus']);
 
     await controller.setOrder(PostReplyOrder.newest);
     expect(controller.state.order, PostReplyOrder.newest);
@@ -126,10 +127,10 @@ void main() {
     await controller.load();
     expect(repository.postRequests, ['root', 'focus', 'root', 'focus']);
     expect(controller.state.phase, PostDiscussionPhase.ready);
-    expect(controller.state.replies.map((reply) => reply.id), ['reply-1']);
+    expect(controller.state.replies.map((reply) => reply.id), ['focus']);
   });
 
-  test('独立讨论首屏完成后串行预取剩余全部文字回复', () async {
+  test('独立讨论每次邻近预取只加载一页', () async {
     var activeRequests = 0;
     var maximumActiveRequests = 0;
     final repository = _FakePostRepository(
@@ -172,19 +173,17 @@ void main() {
     expect(controller.state.replies.map((item) => item.id), [
       'reply-1',
       'reply-2',
-      'reply-3',
     ]);
-    expect(controller.state.hasMore, isFalse);
+    expect(controller.state.hasMore, isTrue);
     expect(controller.state.isPrefetchingReplies, isFalse);
     expect(maximumActiveRequests, 1);
     expect(repository.replyRequests.map((request) => request.cursor), [
       null,
       'page-2',
-      'page-3',
     ]);
   });
 
-  test('回复分页 cursor 连续失效时只重载一次首页并提供重试', () async {
+  test('回复分页 cursor 失效只重取当前位置窗口一次', () async {
     var firstPage = 0;
     final repository = _FakePostRepository(
       posts: {'root': _post('root')},
@@ -211,8 +210,7 @@ void main() {
 
     expect(firstPage, 2);
     expect(controller.state.replies.single.id, 'fresh-2');
-    expect(controller.state.transientFailure?.isInvalidCursor, isTrue);
-    expect(controller.state.retryAction, PostDiscussionRetryAction.loadMore);
+    expect(controller.state.transientFailure, isNull);
     expect(controller.state.isPrefetchingReplies, isFalse);
   });
 
@@ -307,7 +305,7 @@ void main() {
     expect(repository.replyRequests.last.order, PostReplyOrder.newest);
   });
 
-  test('创建结果不明确时复用幂等键，确认后补写用户的新内容', () async {
+  test('创建结果不明确时冻结正文、身份与幂等键，重试只确认原发表', () async {
     var createCalls = 0;
     final repository = _FakePostRepository(
       onCreate: (input) async {
@@ -329,20 +327,110 @@ void main() {
     addTearDown(controller.dispose);
     controller.updateContent('第一次提交');
 
-    expect(await controller.submit(), isNull);
+    expect(
+      await controller.submit(
+        identityMode: PostIdentityMode.rp,
+        identityToken: 'rp-old',
+        identityId: 'role-old',
+      ),
+      isNull,
+    );
     expect(controller.state.hasAmbiguousCreate, isTrue);
     controller.updateContent('断线后继续编辑');
-    final result = await controller.submit();
+    final result = await controller.submit(
+      identityMode: PostIdentityMode.account,
+      identityToken: 'changed',
+      identityId: 'role-new',
+    );
 
-    expect(result?.content, '断线后继续编辑');
+    expect(result?.content, '第一次提交');
     expect(repository.createInputs, hasLength(2));
     expect(
       repository.createInputs.map((input) => input.clientRequestId).toSet(),
       {'request-stable'},
     );
     expect(repository.createInputs.last.content, '第一次提交');
-    expect(repository.updateRequests.single.content, '断线后继续编辑');
+    expect(repository.createInputs.last.identityMode, PostIdentityMode.rp);
+    expect(repository.createInputs.last.identityToken, 'rp-old');
+    expect(repository.createInputs.last.identityId, 'role-old');
+    expect(repository.updateRequests, isEmpty);
     expect(controller.state.pendingCreate, isNull);
+  });
+
+  test('先持久化发表意图再发送，重新打开仍复用原身份和请求键', () async {
+    Map<String, Object?>? saved;
+    final repository = _FakePostRepository(
+      onCreate: (input) async {
+        expect(saved, isNotNull);
+        expect(
+          PostPublishDraft.fromJson(saved)?.pending?.input.clientRequestId,
+          input.clientRequestId,
+        );
+        throw const ApiFailure(userMessage: '连接中断');
+      },
+    );
+    final controller = PostComposerController(
+      repository,
+      _createFloorTarget,
+      createRequestId: () => 'stable',
+    );
+    controller.updateContent('持久草稿');
+    await controller.submit(
+      identityMode: PostIdentityMode.rp,
+      identityToken: 'token-old',
+      identityId: 'restored-role',
+      persistCreateIntent: () async {
+        saved = PostPublishDraft(
+          mode: PostIdentityMode.rp,
+          identityToken: 'token-old',
+          identityId: 'restored-role',
+          pending: controller.state.pendingCreate,
+        ).toJson();
+        expect(repository.createInputs, isEmpty);
+        return true;
+      },
+    );
+    controller.dispose();
+    final retryRepository = _FakePostRepository();
+    final reopened = PostComposerController(
+      retryRepository,
+      _createFloorTarget,
+      createRequestId: () => 'must-not-use',
+    );
+    addTearDown(reopened.dispose);
+    reopened.restorePendingCreate(PostPublishDraft.fromJson(saved)!.pending!);
+    await reopened.submit(identityMode: PostIdentityMode.account);
+    expect(retryRepository.createInputs.single.content, '持久草稿');
+    expect(retryRepository.createInputs.single.clientRequestId, 'stable');
+    expect(retryRepository.createInputs.single.identityToken, 'token-old');
+    expect(retryRepository.createInputs.single.identityId, 'restored-role');
+    expect(
+      retryRepository.createInputs.single.identityMode,
+      PostIdentityMode.rp,
+    );
+  });
+
+  test('发表意图保存失败不发送请求，可原样重试', () async {
+    final repository = _FakePostRepository();
+    final controller = PostComposerController(
+      repository,
+      _createFloorTarget,
+      createRequestId: () => 'stable',
+    );
+    addTearDown(controller.dispose);
+    controller.updateContent('草稿');
+    expect(
+      await controller.submit(persistCreateIntent: () async => false),
+      isNull,
+    );
+    expect(repository.createInputs, isEmpty);
+    expect(controller.state.isSubmitting, isFalse);
+    expect(controller.state.pendingCreate?.input.clientRequestId, 'stable');
+    expect(
+      await controller.submit(persistCreateIntent: () async => true),
+      isNotNull,
+    );
+    expect(repository.createInputs.single.clientRequestId, 'stable');
   });
 
   test('编辑版本冲突读取最新版并只在确认后以新版本覆盖', () async {
@@ -447,7 +535,7 @@ void main() {
     expect(body.state.failure?.userMessage, '子贴正文需要包含文字，骰子可作为补充。');
     expect(repository.bodyRequests, isEmpty);
 
-    body.updateContent(_diceMarkdown(20));
+    body.updateContent(postControllerDiceMarkdown(20));
     expect(await body.submit(), isNull);
     expect(body.state.failure?.userMessage, '子贴正文需要包含文字，骰子可作为补充。');
     expect(repository.bodyRequests, isEmpty);
@@ -458,12 +546,12 @@ void main() {
     final body = PostComposerController(repository, _bodyTarget);
     addTearDown(body.dispose);
 
-    final maximum = '子贴文字 ${_diceMarkdown(20)}';
+    final maximum = '子贴文字 ${postControllerDiceMarkdown(20)}';
     body.updateContent(maximum);
     expect(await body.submit(), isNotNull);
     expect(repository.bodyRequests.single.content, maximum);
 
-    body.updateContent('子贴文字 ${_diceMarkdown(21)}');
+    body.updateContent('子贴文字 ${postControllerDiceMarkdown(21)}');
     expect(await body.submit(), isNull);
     expect(body.state.failure?.userMessage, '当前正文最多可插入 20 个骰子，请删除一个后重试。');
     expect(repository.bodyRequests, hasLength(1));
@@ -478,9 +566,9 @@ void main() {
     addTearDown(floor.dispose);
     addTearDown(reply.dispose);
 
-    body.updateContent('子贴文字 ${_diceMarkdown(20, namespace: 0)}');
-    floor.updateContent(_diceMarkdown(20, namespace: 1));
-    reply.updateContent(_diceMarkdown(20, namespace: 2));
+    body.updateContent('子贴文字 ${postControllerDiceMarkdown(20, namespace: 0)}');
+    floor.updateContent(postControllerDiceMarkdown(20, namespace: 1));
+    reply.updateContent(postControllerDiceMarkdown(20, namespace: 2));
 
     expect(await body.submit(), isNotNull);
     expect(await floor.submit(), isNotNull);
@@ -503,7 +591,7 @@ void main() {
       expect(composer.state.failure?.userMessage, '正文和骰子不能同时为空。');
       expect(repository.createInputs, isEmpty);
 
-      composer.updateContent(_diceMarkdown(21));
+      composer.updateContent(postControllerDiceMarkdown(21));
       expect(await composer.submit(), isNull);
       expect(composer.state.failure?.userMessage, '当前正文最多可插入 20 个骰子，请删除一个后重试。');
       expect(repository.createInputs, isEmpty);
@@ -515,15 +603,15 @@ void main() {
     final editor = PostComposerController(repository, _editTarget);
     addTearDown(editor.dispose);
 
-    editor.updateContent(_diceMarkdown(1));
+    editor.updateContent(postControllerDiceMarkdown(1));
     expect(await editor.submit(), isNotNull);
     expect(repository.updateRequests, hasLength(1));
 
-    editor.updateContent(_diceMarkdown(20));
+    editor.updateContent(postControllerDiceMarkdown(20));
     expect(await editor.submit(), isNotNull);
     expect(repository.updateRequests, hasLength(2));
 
-    editor.updateContent(_diceMarkdown(21));
+    editor.updateContent(postControllerDiceMarkdown(21));
     expect(await editor.submit(), isNull);
     expect(editor.state.failure?.userMessage, '当前正文最多可插入 20 个骰子，请删除一个后重试。');
     expect(repository.updateRequests, hasLength(2));
@@ -536,7 +624,7 @@ void main() {
     addTearDown(body.dispose);
     addTearDown(floor.dispose);
     final content =
-        '${_ignoredDiceMarkdown()}\n${_diceMarkdown(20, namespace: 5)}';
+        '${postControllerIgnoredDiceMarkdown()}\n${postControllerDiceMarkdown(20, namespace: 5)}';
 
     body.updateContent(content);
     floor.updateContent(content);
@@ -594,26 +682,6 @@ void main() {
 
 const _author = PostAuthor(id: 'author-1', username: '作者甲', level: 3);
 const _otherAuthor = PostAuthor(id: 'author-2', username: '作者乙', level: 2);
-
-String _diceMarkdown(int count, {int namespace = 0}) =>
-    List.generate(count, (index) {
-      final suffix = (namespace * 100 + index).toString().padLeft(12, '0');
-      return '[[dice:v1:00000000-0000-4000-8000-$suffix:1d6]]';
-    }).join(' ');
-
-String _ignoredDiceMarkdown() {
-  final nodes = _diceMarkdown(21);
-  return [
-    '可见文字',
-    '```text',
-    nodes,
-    '```',
-    '`${_diceMarkdown(1)}`',
-    r'\[[dice:v1:00000000-0000-4000-8000-000000000099:1d6]]',
-    '[[dice:v1:not-a-uuid:1d6]]',
-    '[[dice:v1:00000000-0000-4000-8000-000000000098:1d1]]',
-  ].join('\n');
-}
 
 PostItem _post(
   String id, {
@@ -714,7 +782,7 @@ typedef _UpdateHandler =
       required int version,
     });
 
-class _FakePostRepository implements PostRepository {
+class _FakePostRepository with PostWindowFixture implements PostRepository {
   _FakePostRepository({
     this.posts = const {},
     this.onFetchPost,
@@ -784,6 +852,9 @@ class _FakePostRepository implements PostRepository {
     required String subthreadId,
     required String content,
     int? version,
+    String? identityToken,
+    String? identityId,
+    PostIdentityMode? identityMode,
   }) async {
     bodyRequests.add((
       subthreadId: subthreadId,

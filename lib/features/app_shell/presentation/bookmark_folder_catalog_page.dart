@@ -47,7 +47,9 @@ class _BookmarkFolderCatalogPageState
     final notifier = ref.read(provider.notifier);
     final selectedFolder = _selectedFolder(state);
     return Scaffold(
+      backgroundColor: wenyouBrowsePageBackground(context),
       appBar: AppBar(
+        backgroundColor: wenyouBrowsePageBackground(context),
         title: const Text('我的收藏'),
         actions: [
           if (selectedFolder != null && !selectedFolder.isDefault)

@@ -49,6 +49,7 @@ class RichEditorSession extends ChangeNotifier {
   RichEditorSession({
     required String initialMarkdown,
     Map<String, MediaDisplay> initialMediaDisplays = const {},
+    this.mentionLabels = const {},
     required this.onMarkdownChanged,
     this.codecDebounce = const Duration(milliseconds: 120),
     this.maximumSerializedLength = 10000,
@@ -101,6 +102,7 @@ class RichEditorSession extends ChangeNotifier {
   }
 
   final Duration codecDebounce;
+  Map<String, String> mentionLabels;
   final int maximumSerializedLength;
   final Object? clipboardScope;
   final bool blockAlignment;
@@ -281,7 +283,10 @@ class RichEditorSession extends ChangeNotifier {
     final marker = const Uuid().v4();
     final fallback = _clipboardStore.capture(
       delta: delta,
-      plainTextFallback: WenyouEditorClipboardStore.visibleText(delta),
+      plainTextFallback: WenyouEditorClipboardStore.visibleText(
+        delta,
+        mentionLabels: mentionLabels,
+      ),
       operation: cut
           ? WenyouEditorClipboardOperation.cut
           : WenyouEditorClipboardOperation.copy,
@@ -344,11 +349,15 @@ class RichEditorSession extends ChangeNotifier {
 
   void applyExternalMarkdown(
     String markdown, {
+    Map<String, String>? mentionLabels,
     Map<String, MediaDisplay>? mediaDisplays,
     RichEditorSelectionPlacement selection =
         RichEditorSelectionPlacement.preserve,
   }) {
     _codecTimer?.cancel();
+    if (mentionLabels != null) {
+      this.mentionLabels = Map.unmodifiable(mentionLabels);
+    }
     if (mediaDisplays != null) _mediaDisplays = Map.unmodifiable(mediaDisplays);
     _applyingDocument = true;
     _documentGeneration += 1;
