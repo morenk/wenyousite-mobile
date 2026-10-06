@@ -3,6 +3,7 @@
 //
 
 // ignore_for_file: unused_element
+import 'package:wenyou_api/src/model/rp_identity_response_dto.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 
@@ -11,10 +12,14 @@ part 'search_author_response_dto.g.dart';
 /// SearchAuthorResponseDto
 ///
 /// Properties:
+/// * [rpIdentity]
 /// * [id] - 用户 ID
 /// * [username] - 用户名
 @BuiltValue()
 abstract class SearchAuthorResponseDto implements Built<SearchAuthorResponseDto, SearchAuthorResponseDtoBuilder> {
+  @BuiltValueField(wireName: r'rpIdentity')
+  RpIdentityResponseDto? get rpIdentity;
+
   /// 用户 ID
   @BuiltValueField(wireName: r'id')
   String get id;
@@ -46,6 +51,13 @@ class _$SearchAuthorResponseDtoSerializer implements PrimitiveSerializer<SearchA
     SearchAuthorResponseDto object, {
     FullType specifiedType = FullType.unspecified,
   }) sync* {
+    if (object.rpIdentity != null) {
+      yield r'rpIdentity';
+      yield serializers.serialize(
+        object.rpIdentity,
+        specifiedType: const FullType.nullable(RpIdentityResponseDto),
+      );
+    }
     yield r'id';
     yield serializers.serialize(
       object.id,
@@ -79,6 +91,14 @@ class _$SearchAuthorResponseDtoSerializer implements PrimitiveSerializer<SearchA
       final key = serializedList[i] as String;
       final value = serializedList[i + 1];
       switch (key) {
+        case r'rpIdentity':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(RpIdentityResponseDto),
+          ) as RpIdentityResponseDto?;
+          if (valueDes == null) continue;
+          result.rpIdentity.replace(valueDes);
+          break;
         case r'id':
           final valueDes = serializers.deserialize(
             value,

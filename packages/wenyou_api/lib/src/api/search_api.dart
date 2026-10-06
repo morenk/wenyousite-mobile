@@ -30,6 +30,7 @@ class SearchApi {
   ///
   /// Parameters:
   /// * [q] - 搜索关键词，首尾空白会被移除
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -41,6 +42,7 @@ class SearchApi {
   /// Throws [DioException] if API call or serialization fails
   Future<Response<SearchSearch200Response>> searchSearch({
     required String q,
+    int? xMarkdownContractVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -52,6 +54,7 @@ class SearchApi {
     final _options = Options(
       method: r'GET',
       headers: <String, dynamic>{
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -118,6 +121,7 @@ class SearchApi {
   /// * [q] - 搜索关键词，首尾空白会被移除
   /// * [cursor] - 上一页返回的不透明游标
   /// * [limit] - 每页条数，默认及最大均为 20
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -131,6 +135,7 @@ class SearchApi {
     required String q,
     String? cursor,
     num? limit = 20,
+    int? xMarkdownContractVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -142,6 +147,7 @@ class SearchApi {
     final _options = Options(
       method: r'GET',
       headers: <String, dynamic>{
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -211,6 +217,7 @@ class SearchApi {
   /// * [cursor] - 上一页返回的不透明游标
   /// * [limit] - 每页条数，默认及最大均为 20
   /// * [includeBody] - 同时搜索主贴与子贴正文；省略时兼容旧客户端，仅返回楼层
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -225,6 +232,7 @@ class SearchApi {
     String? cursor,
     num? limit = 20,
     bool? includeBody = false,
+    int? xMarkdownContractVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -236,6 +244,7 @@ class SearchApi {
     final _options = Options(
       method: r'GET',
       headers: <String, dynamic>{
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -305,6 +314,7 @@ class SearchApi {
   /// * [q] - 搜索关键词，首尾空白会被移除
   /// * [cursor] - 上一页返回的不透明游标
   /// * [limit] - 每页条数；旧客户端省略时保持最多 50 条，新客户端建议显式传 20
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -318,6 +328,7 @@ class SearchApi {
     required String q,
     String? cursor,
     num? limit = 50,
+    int? xMarkdownContractVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -329,6 +340,7 @@ class SearchApi {
     final _options = Options(
       method: r'GET',
       headers: <String, dynamic>{
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -395,6 +407,7 @@ class SearchApi {
   ///
   /// Parameters:
   /// * [q] - 搜索关键词，首尾空白会被移除
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -406,6 +419,7 @@ class SearchApi {
   /// Throws [DioException] if API call or serialization fails
   Future<Response<SearchSearchUsers200Response>> searchSearchUsers({
     required String q,
+    int? xMarkdownContractVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -417,6 +431,7 @@ class SearchApi {
     final _options = Options(
       method: r'GET',
       headers: <String, dynamic>{
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -485,6 +500,7 @@ class SearchApi {
   /// * [cursor] - 上一页返回的不透明游标
   /// * [limit] - 每页条数，默认及最大均为 20
   /// * [includeBody] - 同时搜索主贴与子贴正文；省略时兼容旧客户端，仅返回楼层
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -500,6 +516,7 @@ class SearchApi {
     String? cursor,
     num? limit = 20,
     bool? includeBody = false,
+    int? xMarkdownContractVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -511,6 +528,7 @@ class SearchApi {
     final _options = Options(
       method: r'GET',
       headers: <String, dynamic>{
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         ...?headers,
       },
       extra: <String, dynamic>{

@@ -53,9 +53,9 @@ class PostReplyFilters extends StatelessWidget {
         for (final author in authors)
           WenyouDiscussionAuthorOption(
             id: author.userId,
-            label: author.username,
-            supportingLabel: author.role.label,
-            avatarUrl: author.avatarUrl,
+            label: author.displayName,
+            supportingLabel: author.supportingLabel,
+            avatarUrl: author.displayAvatarUrl,
           ),
       ],
       authorsLoading: authorsLoading,

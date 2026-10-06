@@ -6,6 +6,7 @@
 import 'package:wenyou_api/src/model/markdown_media_display_response_dto.dart';
 import 'package:wenyou_api/src/model/dice_roll_response_dto.dart';
 import 'package:built_collection/built_collection.dart';
+import 'package:wenyou_api/src/model/mention_identity_display_dto.dart';
 import 'package:wenyou_api/src/model/reply_target_response_dto.dart';
 import 'package:wenyou_api/src/model/post_author_response_dto.dart';
 import 'package:built_value/built_value.dart';
@@ -16,6 +17,7 @@ part 'reply_response_dto.g.dart';
 /// ReplyResponseDto
 ///
 /// Properties:
+/// * [mentionIdentities] - 渲染 canonical mention 的按 userId + 原始 label 映射，编辑继续保存原正文
 /// * [mediaDisplays] - 仅此次已授权正文中的精确来源映射；编辑保存继续使用 sourceUrl
 /// * [id]
 /// * [threadId]
@@ -39,6 +41,10 @@ part 'reply_response_dto.g.dart';
 /// * [replyToPost]
 @BuiltValue()
 abstract class ReplyResponseDto implements Built<ReplyResponseDto, ReplyResponseDtoBuilder> {
+  /// 渲染 canonical mention 的按 userId + 原始 label 映射，编辑继续保存原正文
+  @BuiltValueField(wireName: r'mentionIdentities')
+  BuiltList<MentionIdentityDisplayDto>? get mentionIdentities;
+
   /// 仅此次已授权正文中的精确来源映射；编辑保存继续使用 sourceUrl
   @BuiltValueField(wireName: r'mediaDisplays')
   BuiltList<MarkdownMediaDisplayResponseDto>? get mediaDisplays;
@@ -134,6 +140,13 @@ class _$ReplyResponseDtoSerializer implements PrimitiveSerializer<ReplyResponseD
     ReplyResponseDto object, {
     FullType specifiedType = FullType.unspecified,
   }) sync* {
+    if (object.mentionIdentities != null) {
+      yield r'mentionIdentities';
+      yield serializers.serialize(
+        object.mentionIdentities,
+        specifiedType: const FullType(BuiltList, [FullType(MentionIdentityDisplayDto)]),
+      );
+    }
     if (object.mediaDisplays != null) {
       yield r'mediaDisplays';
       yield serializers.serialize(
@@ -270,6 +283,13 @@ class _$ReplyResponseDtoSerializer implements PrimitiveSerializer<ReplyResponseD
       final key = serializedList[i] as String;
       final value = serializedList[i + 1];
       switch (key) {
+        case r'mentionIdentities':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(BuiltList, [FullType(MentionIdentityDisplayDto)]),
+          ) as BuiltList<MentionIdentityDisplayDto>;
+          result.mentionIdentities.replace(valueDes);
+          break;
         case r'mediaDisplays':
           final valueDes = serializers.deserialize(
             value,

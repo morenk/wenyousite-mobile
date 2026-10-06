@@ -50,10 +50,13 @@ void main() {
         matching: find.byType(ListTile),
       ),
     );
-    expect(tile.leading, isNull);
+    expect(
+      (tile.leading! as WenyouIcon).semanticId,
+      WenyouIconIds.actionCopyAll,
+    );
     expect(
       (tile.trailing! as WenyouIcon).semanticId,
-      WenyouIconIds.actionCopyAll,
+      WenyouIconIds.navigationNext,
     );
   });
 

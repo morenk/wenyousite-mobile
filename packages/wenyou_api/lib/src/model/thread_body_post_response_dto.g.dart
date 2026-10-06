@@ -8,6 +8,10 @@ part of 'thread_body_post_response_dto.dart';
 
 class _$ThreadBodyPostResponseDto extends ThreadBodyPostResponseDto {
   @override
+  final PostAuthorResponseDto? author;
+  @override
+  final BuiltList<MentionIdentityDisplayDto>? mentionIdentities;
+  @override
   final BuiltList<MarkdownMediaDisplayResponseDto>? mediaDisplays;
   @override
   final String id;
@@ -23,6 +27,8 @@ class _$ThreadBodyPostResponseDto extends ThreadBodyPostResponseDto {
   ]) => (ThreadBodyPostResponseDtoBuilder()..update(updates))._build();
 
   _$ThreadBodyPostResponseDto._({
+    this.author,
+    this.mentionIdentities,
     this.mediaDisplays,
     required this.id,
     required this.content,
@@ -42,6 +48,8 @@ class _$ThreadBodyPostResponseDto extends ThreadBodyPostResponseDto {
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
     return other is ThreadBodyPostResponseDto &&
+        author == other.author &&
+        mentionIdentities == other.mentionIdentities &&
         mediaDisplays == other.mediaDisplays &&
         id == other.id &&
         content == other.content &&
@@ -52,6 +60,8 @@ class _$ThreadBodyPostResponseDto extends ThreadBodyPostResponseDto {
   @override
   int get hashCode {
     var _$hash = 0;
+    _$hash = $jc(_$hash, author.hashCode);
+    _$hash = $jc(_$hash, mentionIdentities.hashCode);
     _$hash = $jc(_$hash, mediaDisplays.hashCode);
     _$hash = $jc(_$hash, id.hashCode);
     _$hash = $jc(_$hash, content.hashCode);
@@ -64,6 +74,8 @@ class _$ThreadBodyPostResponseDto extends ThreadBodyPostResponseDto {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'ThreadBodyPostResponseDto')
+          ..add('author', author)
+          ..add('mentionIdentities', mentionIdentities)
           ..add('mediaDisplays', mediaDisplays)
           ..add('id', id)
           ..add('content', content)
@@ -77,6 +89,18 @@ class ThreadBodyPostResponseDtoBuilder
     implements
         Builder<ThreadBodyPostResponseDto, ThreadBodyPostResponseDtoBuilder> {
   _$ThreadBodyPostResponseDto? _$v;
+
+  PostAuthorResponseDtoBuilder? _author;
+  PostAuthorResponseDtoBuilder get author =>
+      _$this._author ??= PostAuthorResponseDtoBuilder();
+  set author(PostAuthorResponseDtoBuilder? author) => _$this._author = author;
+
+  ListBuilder<MentionIdentityDisplayDto>? _mentionIdentities;
+  ListBuilder<MentionIdentityDisplayDto> get mentionIdentities =>
+      _$this._mentionIdentities ??= ListBuilder<MentionIdentityDisplayDto>();
+  set mentionIdentities(
+    ListBuilder<MentionIdentityDisplayDto>? mentionIdentities,
+  ) => _$this._mentionIdentities = mentionIdentities;
 
   ListBuilder<MarkdownMediaDisplayResponseDto>? _mediaDisplays;
   ListBuilder<MarkdownMediaDisplayResponseDto> get mediaDisplays =>
@@ -110,6 +134,8 @@ class ThreadBodyPostResponseDtoBuilder
   ThreadBodyPostResponseDtoBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
+      _author = $v.author?.toBuilder();
+      _mentionIdentities = $v.mentionIdentities?.toBuilder();
       _mediaDisplays = $v.mediaDisplays?.toBuilder();
       _id = $v.id;
       _content = $v.content;
@@ -139,6 +165,8 @@ class ThreadBodyPostResponseDtoBuilder
       _$result =
           _$v ??
           _$ThreadBodyPostResponseDto._(
+            author: _author?.build(),
+            mentionIdentities: _mentionIdentities?.build(),
             mediaDisplays: _mediaDisplays?.build(),
             id: BuiltValueNullFieldError.checkNotNull(
               id,
@@ -160,6 +188,10 @@ class ThreadBodyPostResponseDtoBuilder
     } catch (_) {
       late String _$failedField;
       try {
+        _$failedField = 'author';
+        _author?.build();
+        _$failedField = 'mentionIdentities';
+        _mentionIdentities?.build();
         _$failedField = 'mediaDisplays';
         _mediaDisplays?.build();
 

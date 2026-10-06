@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -27,6 +28,9 @@ import 'package:wenyousite_mobile/features/posts/presentation/post_replies_page.
 import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
 import 'package:wenyousite_mobile/features/stickers/application/sticker_repository_ports.dart';
 import 'package:wenyousite_mobile/features/stickers/domain/sticker_models.dart';
+import 'package:wenyousite_mobile/features/thread_identity/identity_models.dart';
+import 'package:wenyousite_mobile/features/thread_identity/identity_ports.dart';
+
 import '../../support/button_finder.dart';
 import '../../support/discussion_window_fixture.dart';
 import '../../support/memory_pending_media_file_store.dart';
@@ -40,9 +44,12 @@ Future<ProviderContainer> postRepliesPageTestPostContainer(
   NavigationLinkWriter? linkWriter,
   bool markdownAlignment = false,
   bool markdownImageAlignment = false,
+  ThreadIdentityRepository? identityRepository,
 }) async {
   final container = ProviderContainer(
     overrides: [
+      if (identityRepository != null)
+        threadIdentityRepositoryProvider.overrideWithValue(identityRepository),
       memoryPendingMediaFileStoreOverride(),
       appCapabilitiesProvider.overrideWithValue(
         AppCapabilities(
@@ -313,6 +320,9 @@ class PostRepliesPageTestFakePostRepository
     required String subthreadId,
     required String content,
     int? version,
+    String? identityToken,
+    String? identityId,
+    PostIdentityMode? identityMode,
   }) {
     throw UnsupportedError('not used');
   }

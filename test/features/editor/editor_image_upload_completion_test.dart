@@ -19,6 +19,7 @@ import 'package:wenyousite_mobile/features/posts/data/post_repository.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
 import 'package:wenyousite_mobile/features/posts/presentation/post_composer_sheet.dart';
 import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
+import 'package:wenyousite_mobile/features/thread_identity/identity_models.dart';
 
 import '../../support/button_finder.dart';
 import '../../support/deterministic_test_fonts.dart';
@@ -298,6 +299,9 @@ class _RecordingPostRepository extends PostRepliesPageTestFakePostRepository {
     required String subthreadId,
     required String content,
     int? version,
+    String? identityToken,
+    String? identityId,
+    PostIdentityMode? identityMode,
   }) async {
     saved.add(content);
     return latest;

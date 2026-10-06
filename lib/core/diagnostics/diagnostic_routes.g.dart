@@ -139,6 +139,7 @@ const diagnosticApiRoutes = <String, String>{
   'DELETE /api/v1/subthreads/{id}': 'subthreadsRemove',
   'DELETE /api/v1/threads/{id}': 'threadsRemove',
   'DELETE /api/v1/threads/{id}/like': 'threadsUnlike',
+  'DELETE /api/v1/threads/{threadId}/identity': 'threadIdentitiesClear',
   'DELETE /api/v1/threads/{threadId}/members/me': 'threadMembersExitMember',
   'DELETE /api/v1/users/follow/{id}': 'usersFollowUnfollow',
   'DELETE /api/v1/users/me/block/{id}': 'usersFollowUnblock',
@@ -170,8 +171,10 @@ const diagnosticApiRoutes = <String, String>{
   'GET /api/v1/tags/{id}': 'tagsGetById',
   'GET /api/v1/threads/join-by-link/{token}': 'threadsPreviewInviteLink',
   'GET /api/v1/threads/{id}': 'threadsFindById',
+  'GET /api/v1/threads/{threadId}/identity': 'threadIdentitiesMine',
   'GET /api/v1/threads/{threadId}/members': 'threadMembersFindAll',
   'GET /api/v1/threads/{threadId}/posts/latest': 'postsFindLatestInThread',
+  'GET /api/v1/threads/{threadId}/rp-identities': 'rpIdentitiesList',
   'GET /api/v1/threads/{threadId}/search/posts': 'threadSearchSearchPosts',
   'GET /api/v1/threads/{threadId}/subthreads': 'subthreadsFindAll',
   'GET /api/v1/threads/{threadId}/tags': 'threadTagsFindAll',
@@ -207,6 +210,8 @@ const diagnosticApiRoutes = <String, String>{
   'PATCH /api/v1/subthreads/{id}': 'subthreadsUpdate',
   'PATCH /api/v1/threads/{id}': 'threadsUpdate',
   'PATCH /api/v1/threads/{id}/aggregate': 'threadsSaveAggregate',
+  'PATCH /api/v1/threads/{threadId}/identity-settings':
+      'threadIdentitiesSetEnabled',
   'POST /api/v1/admin-invitations/{token}/accept':
       'adminInviteAcceptanceAccept',
   'POST /api/v1/admin/appeals/{id}/resolve': 'adminModerationAppealsResolve',
@@ -232,6 +237,7 @@ const diagnosticApiRoutes = <String, String>{
   'POST /api/v1/threads/{id}/like': 'threadsLike',
   'POST /api/v1/threads/{id}/tips': 'economyTipThread',
   'POST /api/v1/threads/{threadId}/members/join': 'threadMembersJoin',
+  'POST /api/v1/threads/{threadId}/rp-identities': 'rpIdentitiesCreate',
   'POST /api/v1/threads/{threadId}/subthreads': 'subthreadsCreate',
   'POST /api/v1/threads/{threadId}/tags': 'threadTagsAdd',
   'POST /api/v1/users/follow/{id}': 'usersFollowFollow',
@@ -239,8 +245,11 @@ const diagnosticApiRoutes = <String, String>{
   'POST /api/v1/users/{id}/tips': 'economyTipUser',
   'PUT /api/v1/subthreads/{subthreadId}/body': 'postsUpsertBody',
   'PUT /api/v1/threads/{id}/invite-link': 'threadsEnsureInviteLink',
+  'PUT /api/v1/threads/{threadId}/identity': 'threadIdentitiesUpdate',
   'PUT /api/v1/threads/{threadId}/subthreads/reorder': 'subthreadsReorder',
   'DELETE /api/v1/moments/{id}/comments/{commentId}': 'momentsRemoveComment',
+  'DELETE /api/v1/threads/{threadId}/rp-identities/{identityId}':
+      'rpIdentitiesRemove',
   'DELETE /api/v1/threads/{threadId}/tags/{tagId}': 'threadTagsRemove',
   'GET /api/v1/admin/content/{type}/{id}': 'adminContentDetail',
   'GET /api/v1/mobile-releases/{platform}/{buildNumber}':
@@ -248,6 +257,10 @@ const diagnosticApiRoutes = <String, String>{
   'GET /api/v1/moments/{id}/comments/{commentId}/context':
       'momentsCommentContext',
   'GET /api/v1/moments/{id}/comments/{commentId}/replies': 'momentsReplies',
+  'GET /api/v1/threads/{threadId}/identities/{userId}':
+      'threadIdentitiesFindUser',
+  'GET /api/v1/threads/{threadId}/rp-identities/{identityId}':
+      'rpIdentitiesFind',
   'PATCH /api/v1/threads/{threadId}/members/{userId}':
       'threadMembersUpdateMember',
   'POST /api/v1/admin/content/{type}/{id}/hide': 'adminModerationHideContent',
@@ -255,4 +268,6 @@ const diagnosticApiRoutes = <String, String>{
       'adminModerationRestoreContent',
   'POST /api/v1/moderation/content/{type}/{id}/hide':
       'clientContentModerationHide',
+  'PUT /api/v1/threads/{threadId}/rp-identities/{identityId}':
+      'rpIdentitiesUpdate',
 };

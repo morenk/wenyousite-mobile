@@ -55,6 +55,7 @@ class ThreadManagementSnapshot {
     this.bodyVersion,
     this.body = '',
     this.tagNames = const [],
+    this.rpIdentityEnabled,
   });
 
   final String id;
@@ -73,6 +74,7 @@ class ThreadManagementSnapshot {
   final int? bodyVersion;
   final String body;
   final List<String> tagNames;
+  final bool? rpIdentityEnabled;
 }
 
 class ThreadManagementBootstrap {

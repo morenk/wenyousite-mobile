@@ -37,6 +37,19 @@ test('身份探测逐一核验 backend/media 且禁止重定向', async () => {
   await verifyIdentity(value, async (url, options) => { assert.equal(options.redirect, 'manual'); const role = url === value.backend.identityUrl ? 'backend' : 'media'; visited.push(role); return identityResponse(value, role); });
   assert.deepEqual(visited, ['backend', 'media']);
 });
+
+test('显式合成来源仅接受固定枚举，仍核验隔离地址', () => {
+  for (const sourceKind of ['synthetic-downloads', 'synthetic-thread-identities']) {
+    const value = descriptor(); value.snapshot.sourceKind = sourceKind;
+    assert.equal(validateDescriptor(value).snapshot.sourceKind, sourceKind);
+    value.backend.origin = 'https://wenyou.site';
+    assert.throws(() => validateDescriptor(value));
+  }
+  for (const sourceKind of ['', null, 'production', 'synthetic-other', {}]) {
+    const value = descriptor(); value.snapshot.sourceKind = sourceKind;
+    assert.throws(() => validateDescriptor(value));
+  }
+});
 test('v1消费者兼容单活动批次的固定入口且保留旧安全端口描述', () => {
   const value = descriptor();
   for (const [role, port] of Object.entries({ backend: 14311, media: 14312, web: 14310 })) {

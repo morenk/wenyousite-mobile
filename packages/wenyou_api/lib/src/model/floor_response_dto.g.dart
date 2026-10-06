@@ -74,6 +74,8 @@ class _$FloorResponseDtoKindEnumSerializer
 
 class _$FloorResponseDto extends FloorResponseDto {
   @override
+  final BuiltList<MentionIdentityDisplayDto>? mentionIdentities;
+  @override
   final BuiltList<MarkdownMediaDisplayResponseDto>? mediaDisplays;
   @override
   final String id;
@@ -123,6 +125,7 @@ class _$FloorResponseDto extends FloorResponseDto {
   ]) => (FloorResponseDtoBuilder()..update(updates))._build();
 
   _$FloorResponseDto._({
+    this.mentionIdentities,
     this.mediaDisplays,
     required this.id,
     required this.threadId,
@@ -158,6 +161,7 @@ class _$FloorResponseDto extends FloorResponseDto {
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
     return other is FloorResponseDto &&
+        mentionIdentities == other.mentionIdentities &&
         mediaDisplays == other.mediaDisplays &&
         id == other.id &&
         threadId == other.threadId &&
@@ -185,6 +189,7 @@ class _$FloorResponseDto extends FloorResponseDto {
   @override
   int get hashCode {
     var _$hash = 0;
+    _$hash = $jc(_$hash, mentionIdentities.hashCode);
     _$hash = $jc(_$hash, mediaDisplays.hashCode);
     _$hash = $jc(_$hash, id.hashCode);
     _$hash = $jc(_$hash, threadId.hashCode);
@@ -214,6 +219,7 @@ class _$FloorResponseDto extends FloorResponseDto {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'FloorResponseDto')
+          ..add('mentionIdentities', mentionIdentities)
           ..add('mediaDisplays', mediaDisplays)
           ..add('id', id)
           ..add('threadId', threadId)
@@ -243,6 +249,13 @@ class _$FloorResponseDto extends FloorResponseDto {
 class FloorResponseDtoBuilder
     implements Builder<FloorResponseDto, FloorResponseDtoBuilder> {
   _$FloorResponseDto? _$v;
+
+  ListBuilder<MentionIdentityDisplayDto>? _mentionIdentities;
+  ListBuilder<MentionIdentityDisplayDto> get mentionIdentities =>
+      _$this._mentionIdentities ??= ListBuilder<MentionIdentityDisplayDto>();
+  set mentionIdentities(
+    ListBuilder<MentionIdentityDisplayDto>? mentionIdentities,
+  ) => _$this._mentionIdentities = mentionIdentities;
 
   ListBuilder<MarkdownMediaDisplayResponseDto>? _mediaDisplays;
   ListBuilder<MarkdownMediaDisplayResponseDto> get mediaDisplays =>
@@ -350,6 +363,7 @@ class FloorResponseDtoBuilder
   FloorResponseDtoBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
+      _mentionIdentities = $v.mentionIdentities?.toBuilder();
       _mediaDisplays = $v.mediaDisplays?.toBuilder();
       _id = $v.id;
       _threadId = $v.threadId;
@@ -396,6 +410,7 @@ class FloorResponseDtoBuilder
       _$result =
           _$v ??
           _$FloorResponseDto._(
+            mentionIdentities: _mentionIdentities?.build(),
             mediaDisplays: _mediaDisplays?.build(),
             id: BuiltValueNullFieldError.checkNotNull(
               id,
@@ -458,6 +473,8 @@ class FloorResponseDtoBuilder
     } catch (_) {
       late String _$failedField;
       try {
+        _$failedField = 'mentionIdentities';
+        _mentionIdentities?.build();
         _$failedField = 'mediaDisplays';
         _mediaDisplays?.build();
 

@@ -176,6 +176,7 @@ ThreadManagementBootstrap threadManagementTestBootstrap({
   SubthreadPostingPolicy postingPolicy = SubthreadPostingPolicy.participants,
   ThreadManagementVisibility visibility = ThreadManagementVisibility.public,
   List<String> tagNames = const [],
+  bool? rpIdentityEnabled,
 }) {
   return ThreadManagementBootstrap(
     thread: ThreadManagementSnapshot(
@@ -190,6 +191,7 @@ ThreadManagementBootstrap threadManagementTestBootstrap({
       canManage: canManage,
       isOwner: isOwner,
       tagNames: tagNames,
+      rpIdentityEnabled: rpIdentityEnabled,
     ),
     categories: const [
       ThreadManagementCategory(

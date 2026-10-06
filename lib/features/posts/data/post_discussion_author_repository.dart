@@ -6,6 +6,7 @@ import 'package:wenyousite_mobile/core/network/media_display_mapper.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_discussion_author_directory_ports.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_discussion_author.dart';
+import 'package:wenyousite_mobile/features/thread_identity/identity_mapping.dart';
 
 export 'package:wenyousite_mobile/features/posts/application/post_discussion_author_directory_ports.dart'
     show PostDiscussionAuthorDirectory, postDiscussionAuthorDirectoryProvider;
@@ -65,12 +66,15 @@ class ApiPostDiscussionAuthorDirectory
       DiscussionAuthorResponseDtoRoleEnum.PARTICIPANT
           when author.playerMarked =>
         PostDiscussionAuthorRole.player,
+      DiscussionAuthorResponseDtoRoleEnum.PARTICIPANT =>
+        PostDiscussionAuthorRole.participant,
       _ => null,
     };
     if (role == null) return null;
     return PostDiscussionAuthor(
       userId: author.id,
       username: author.username,
+      rpIdentity: mapRpIdentity(author.rpIdentity),
       avatarUrl: mapAvatarDisplayUrl(author.avatar, author.avatarDisplay),
       role: role,
     );

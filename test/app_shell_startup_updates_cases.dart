@@ -360,7 +360,7 @@ void registerAppShellStartupUpdatesCases() {
           metaRepositoryProvider.overrideWithValue(
             AppShellTestFixedMetaRepository(
               contractVersion: '5.15.0',
-              markdownContractVersion: 6,
+              markdownContractVersion: 7,
             ),
           ),
           tokenStoreProvider.overrideWithValue(AppShellTestMemoryTokenStore()),

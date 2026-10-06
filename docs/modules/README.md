@@ -29,3 +29,4 @@ Bug 的完成结论必须有项目负责人亲自复验原场景并明确通过�
 | wallet | in_progress | 钱包与加油主闭环已交付；公网账务联调待补齐 | [温油钱包](wallet.md) |
 | social | in_progress | 双收藏夹、订阅与关系主闭环已交付；切号及可见性自动回归已补齐，真机联调待完成 | [社交关系](social.md) |
 | settings | in_progress | 账号设置主闭环已交付；部分资料能力仍有限制 | [设置](settings.md) |
+| thread-identity | in_progress | 帖内资料、历史投影与逐条选择候选已接入，视觉和真机待验收 | [帖内身份](thread-identity.md) |

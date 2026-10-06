@@ -109,6 +109,18 @@ Route<T> _wenyouFullscreenRoute<T>({
   );
 }
 
+/// 已由外层 Sheet 管理过渡的嵌套任务路由，保持透明且不重复动画。
+Route<T> wenyouSheetContentRoute<T>({
+  required RouteSettings settings,
+  required WidgetBuilder builder,
+}) => PageRouteBuilder<T>(
+  settings: settings,
+  opaque: false,
+  transitionDuration: Duration.zero,
+  reverseTransitionDuration: Duration.zero,
+  pageBuilder: (context, _, _) => builder(context),
+);
+
 bool get _platformAnimationsDisabled => WidgetsBinding
     .instance
     .platformDispatcher

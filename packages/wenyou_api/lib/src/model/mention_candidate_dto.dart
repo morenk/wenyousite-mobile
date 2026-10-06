@@ -3,6 +3,7 @@
 //
 
 // ignore_for_file: unused_element
+import 'package:wenyou_api/src/model/rp_identity_response_dto.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:wenyou_api/src/model/media_display_response_dto.dart';
 import 'package:built_value/built_value.dart';
@@ -13,6 +14,11 @@ part 'mention_candidate_dto.g.dart';
 /// MentionCandidateDto
 ///
 /// Properties:
+/// * [candidateKey] - includeIdentities=true 时的稳定候选键；ACCOUNT:userId 或 RP:identityId，禁止按 userId 去重
+/// * [targetIdentityId] - 选中的稳定角色 ID；账号候选为 null
+/// * [mentionLabel] - 插入时称呼；原样保存在源码，不用后续当前昵称替换
+/// * [mentionHref] - 规范 Markdown 链接目标；ACCOUNT 带 identityMode=ACCOUNT，角色带 rpIdentityId
+/// * [rpIdentity] - 仅帖内上下文返回；账号字段不变，展示优先使用此身份
 /// * [avatarDisplay] - 头像完整 WebP 展示资源；avatar 保留来源身份
 /// * [id]
 /// * [username]
@@ -20,6 +26,26 @@ part 'mention_candidate_dto.g.dart';
 /// * [relation]
 @BuiltValue()
 abstract class MentionCandidateDto implements Built<MentionCandidateDto, MentionCandidateDtoBuilder> {
+  /// includeIdentities=true 时的稳定候选键；ACCOUNT:userId 或 RP:identityId，禁止按 userId 去重
+  @BuiltValueField(wireName: r'candidateKey')
+  String? get candidateKey;
+
+  /// 选中的稳定角色 ID；账号候选为 null
+  @BuiltValueField(wireName: r'targetIdentityId')
+  String? get targetIdentityId;
+
+  /// 插入时称呼；原样保存在源码，不用后续当前昵称替换
+  @BuiltValueField(wireName: r'mentionLabel')
+  String? get mentionLabel;
+
+  /// 规范 Markdown 链接目标；ACCOUNT 带 identityMode=ACCOUNT，角色带 rpIdentityId
+  @BuiltValueField(wireName: r'mentionHref')
+  String? get mentionHref;
+
+  /// 仅帖内上下文返回；账号字段不变，展示优先使用此身份
+  @BuiltValueField(wireName: r'rpIdentity')
+  RpIdentityResponseDto? get rpIdentity;
+
   /// 头像完整 WebP 展示资源；avatar 保留来源身份
   @BuiltValueField(wireName: r'avatarDisplay')
   MediaDisplayResponseDto? get avatarDisplay;
@@ -35,7 +61,7 @@ abstract class MentionCandidateDto implements Built<MentionCandidateDto, Mention
 
   @BuiltValueField(wireName: r'relation')
   MentionCandidateDtoRelationEnum get relation;
-  // enum relationEnum {  FOLLOWING,  PLAYER,  };
+  // enum relationEnum {  FOLLOWING,  PLAYER,  OWNER,  COLLABORATOR,  };
 
   MentionCandidateDto._();
 
@@ -60,6 +86,41 @@ class _$MentionCandidateDtoSerializer implements PrimitiveSerializer<MentionCand
     MentionCandidateDto object, {
     FullType specifiedType = FullType.unspecified,
   }) sync* {
+    if (object.candidateKey != null) {
+      yield r'candidateKey';
+      yield serializers.serialize(
+        object.candidateKey,
+        specifiedType: const FullType(String),
+      );
+    }
+    if (object.targetIdentityId != null) {
+      yield r'targetIdentityId';
+      yield serializers.serialize(
+        object.targetIdentityId,
+        specifiedType: const FullType.nullable(String),
+      );
+    }
+    if (object.mentionLabel != null) {
+      yield r'mentionLabel';
+      yield serializers.serialize(
+        object.mentionLabel,
+        specifiedType: const FullType(String),
+      );
+    }
+    if (object.mentionHref != null) {
+      yield r'mentionHref';
+      yield serializers.serialize(
+        object.mentionHref,
+        specifiedType: const FullType(String),
+      );
+    }
+    if (object.rpIdentity != null) {
+      yield r'rpIdentity';
+      yield serializers.serialize(
+        object.rpIdentity,
+        specifiedType: const FullType.nullable(RpIdentityResponseDto),
+      );
+    }
     if (object.avatarDisplay != null) {
       yield r'avatarDisplay';
       yield serializers.serialize(
@@ -110,6 +171,43 @@ class _$MentionCandidateDtoSerializer implements PrimitiveSerializer<MentionCand
       final key = serializedList[i] as String;
       final value = serializedList[i + 1];
       switch (key) {
+        case r'candidateKey':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(String),
+          ) as String;
+          result.candidateKey = valueDes;
+          break;
+        case r'targetIdentityId':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(String),
+          ) as String?;
+          if (valueDes == null) continue;
+          result.targetIdentityId = valueDes;
+          break;
+        case r'mentionLabel':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(String),
+          ) as String;
+          result.mentionLabel = valueDes;
+          break;
+        case r'mentionHref':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(String),
+          ) as String;
+          result.mentionHref = valueDes;
+          break;
+        case r'rpIdentity':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(RpIdentityResponseDto),
+          ) as RpIdentityResponseDto?;
+          if (valueDes == null) continue;
+          result.rpIdentity.replace(valueDes);
+          break;
         case r'avatarDisplay':
           final valueDes = serializers.deserialize(
             value,
@@ -182,6 +280,10 @@ class MentionCandidateDtoRelationEnum extends EnumClass {
   static const MentionCandidateDtoRelationEnum FOLLOWING = _$mentionCandidateDtoRelationEnum_FOLLOWING;
   @BuiltValueEnumConst(wireName: r'PLAYER')
   static const MentionCandidateDtoRelationEnum PLAYER = _$mentionCandidateDtoRelationEnum_PLAYER;
+  @BuiltValueEnumConst(wireName: r'OWNER')
+  static const MentionCandidateDtoRelationEnum OWNER = _$mentionCandidateDtoRelationEnum_OWNER;
+  @BuiltValueEnumConst(wireName: r'COLLABORATOR')
+  static const MentionCandidateDtoRelationEnum COLLABORATOR = _$mentionCandidateDtoRelationEnum_COLLABORATOR;
   @BuiltValueEnumConst(wireName: r'unknown_default_open_api', fallback: true)
   static const MentionCandidateDtoRelationEnum unknownDefaultOpenApi = _$mentionCandidateDtoRelationEnum_unknownDefaultOpenApi;
 

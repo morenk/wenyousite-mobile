@@ -2,6 +2,35 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_compose_models.dart';
 
 void main() {
+  test('主题草稿快照保留精确角色显示投影', () {
+    const key = '/users/player?rpIdentityId=caaaaaaaaaaaaaaaaaaaaaaaa\u0000旧角色';
+    const metadata = ThreadSnapshotMetadata(
+      ownerId: 'owner',
+      title: '标题',
+      categorySlug: null,
+      visibility: ThreadComposeVisibility.public,
+      tags: [],
+      remoteDraft: ThreadRemoteDraft(
+        id: 'thread',
+        version: 1,
+        defaultSubthreadId: 'subthread',
+        defaultSubthreadVersion: 1,
+        title: '标题',
+        categorySlug: null,
+        visibility: ThreadComposeVisibility.public,
+        tags: [],
+        body: '正文',
+        mentionLabels: {key: '站内用户'},
+      ),
+    );
+    expect(
+      ThreadSnapshotMetadata.fromJson(
+        metadata.toJson(),
+      )!.remoteDraft!.mentionLabels,
+      {key: '站内用户'},
+    );
+  });
+
   test('主题草稿允许空正文和纯骰子，发布时要求可见非骰子内容', () {
     for (final body in ['', _diceMarkdown(1), _diceMarkdown(20)]) {
       expect(

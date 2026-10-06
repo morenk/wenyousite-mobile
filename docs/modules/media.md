@@ -18,6 +18,8 @@
 
 ## 4. 用户操作流程
 
+帖内身份头像复用本模块的选图、裁剪和媒体上传，仅把 mediaId 交给主题身份设置端点，不更新站内头像。历史头像引用与治理移除由后端管理；阅读获得明确 RP 投影但头像为空时保留空头像，不擅自换成用户今天的站内头像。候选与人工验收见[身份候选验收](../architecture/rp-identity-acceptance.md)。
+
 2026-09-26 图片首帧定位修复（负责人验收通过）：图集异步补齐及前插分页时，按当前图片身份同步实际画面位置，保留缩放状态；点击靠后的图片不再需要第二次点按来对齐画面。修正与原场景见[图片首帧定位验收](../architecture/image-viewer-anchor-acceptance.md)。
 
 2026-09-21 能力一致性候选／待负责人验收：本模块输入边界、附件生命周期或权限入口与固定后端契约对齐；已证实偏差、逐入口证据、回归及未验证边界见[能力一致性盘查](../architecture/capability-consistency-audit.md)。长度按后端 Unicode 码点计算，编辑光标仍使用原有 UTF16 偏移；密码保持原始内容，用户名与标签白名单不扩展。
@@ -131,6 +133,13 @@ galleryList：读取 GalleryList200Response / GalleryPageDto / GalleryImageDto�
 服务端用户 DTO 未提供头像或主页背景的 thumbnail/medium 字段，因此资料页只使用明确原地址。原图、预览、取景框与失败上传输入只在当前页面/autoDispose 生命周期内短暂保留，也不提供后台队列；页面释放、主动取消后需重新选择，进程在 Android 系统选图期间被终止时仅保底恢复富正文、动态/评论和私聊的待选文件，头像与主页背景仍需重新选择。`flutter_image_compress` 没有取消在途 native 编码的接口：用户取消后不会开始对象存储上传且迟到结果会被丢弃，但已经进入平台编码的任务仍可能运行到返回；当前以全局单路准备、像素上限和 Debug 分阶段计时控制与观测风险，是否进一步降低像素阈值需以 Profile/Release 大图数据决定。当前 `flutter_image_compress_common` 仍由插件应用 Kotlin Gradle Plugin，Flutter 已提示未来需迁移到 Built-in Kotlin；现有可解析版本尚未提供该迁移，后续按上游兼容版本单独处理。契约 5.4 的 `mediaReissueUploadUrl` 尚未接入；同一 `mediaId` 的对象缺失恢复、重签地址、重传、再次确认和取消边界作为独立高风险上传切片实现。契约 5.26 新增内容图片图集查询，但当前查看器仍只浏览调用页面已经加载的图片；跨页双向游标、锚点失效与索引未就绪恢复需在独立媒体切片接入。相册文件访问由 `image_picker` 与 Android 系统 Photo Picker 管理。
 
 ## 13. 最近审查的契约版本和后端提交
+
+本轮共享契约复核：OpenAPI `5.36.0-dev.20261005.1`，Backend `a624bed0eb2b118701bd593fbce2aabf3dea7321`。新增帖内多角色集合及可选发表 identityId，Markdown 5 与本模块既有消费保持；实际部署与设备验收另行登记，相关行为见[帖内身份](thread-identity.md)。
+
+
+2026-10-05 逐条身份补充契约：固定 Backend `ff1a84178b37fabd7f8fd77e53989b4842b4d42f`／`5.33.0-dev.20261005.1`。四个新发言／首次正文写入增加可选 `identityMode: ACCOUNT|RP`；ACCOUNT 明确沿用站内资料，RP 需本人确认，旧正文编辑保留原身份。此 chore 只同步固定契约和生成 SDK，产品接入与验收另行记录。
+
+2026-10-05 帖内身份契约同步：Backend `473738d25405828932f2e307f38ff82bbf50c2a4`／`5.33.0-dev.20261004.1`，新增五个可选身份操作及历史显示投影。本 chore 仅同步固定来源和生成 SDK，原模块行为及验收边界保持；后续业务接入另行记录，见[契约同步](../architecture/rp-identity-contract-sync.md)。
 
 2026-10-04 部署来源审查：Backend `3748cc8c85a73f400fa4e237a8d7dd6eecd1853e` 已合并并部署，契约仍为 `5.32.0-dev.20261003.1`；33 个导出文件及受限发布 CLI 与原候选一致，仅 revision 更新。Mobile 公网来源与主题列表兼容门禁通过，本模块实现与原有验收边界不变，见[同步记录](../architecture/private-apk-contract-sync.md)。
 

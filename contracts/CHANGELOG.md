@@ -1,5 +1,25 @@
 # API 合同变更
 
+## 5.36.0-dev.20261005.1
+
+RP 身份新增同主题资料楼层引用，可显式设置/解绑，原省略字段保持；当前可读引用与本人原绑定分离，不修改历史快照。新增 rpIdentityProfileSupported 能力、profilePostStatus 状态与独立作者版本；角色和帖子详情禁止缓存复用权限。接口、错误码和 Markdown 版本保持兼容，详见 [资料引用契约](../docs/rp-identity-profile-post.md)。
+
+## 5.35.0-dev.20261005.1
+
+新增平级角色/显式账号提及、可选header/DTO能力、独立新写开关、稳定target与安全旧读/写保护。Markdown激活仍5；账号范围不再默认投影RP，空白编辑器默认ACCOUNT。详见[Markdown6扩展](../docs/markdown-v6-role-mentions.md)。
+
+## 5.34.0-dev.20261005.1
+
+- 新增每账号每主题最多十个 RP 身份集合 CRUD 和按稳定 identityId 的当前身份卡；已有角色迁移为兼容主身份。
+- 四创建 DTO 增加可选 identityId；新客户端冻结 ACCOUNT/RP、角色 ID 与 token。旧省略 ID 只选择兼容主身份，原提及源和 Markdown5 不变。
+- 新增 RP_IDENTITY_LIMIT=40013；归档释放名额并保留历史/媒体。角色 B 更新不使 A token 失效；新增全空资料拒绝，逐项清空保留不可发表的角色。
+- defaultIdentityId 只初始化无草稿编辑器；历史卡按同一角色查询，删除后不显示另一角色。
+
+## 5.33.0-dev.20261005.1
+
+- 新发言支持逐条 identityMode=ACCOUNT/RP；明确账号模式不受 RP token 变化影响，RP 必须有效身份确认。
+- 幂等请求冻结 mode，编辑历史发言不切换身份；ThreadDetail 的可选开关去除生成器会提升为必填的 schema default。
+
 ## 5.32.0-dev.20261003.1
 
 - 下载文件 GET 兼容增加服务端持久次数限制，默认随机浏览器标识每天 3 次、单 IP 每天 10 次，北京时间日界、跨构建累计。有效 GET 在最后阶段同时预占次数与字节，Range/中断/主动重试不豁免；HEAD 预检但不扣次数，公开 info 仍表示全局可用性。
@@ -543,3 +563,7 @@
 - 新增独立 32 种 marks / 1,024 个有序邻接组合语义 fixture 与 schema，保留 v7 原有 48 条操作。
 - 允许行内代码外层组合粗体、斜体、删除线与链接，覆盖边界、字面定界符、实体、空格与反向选择。
 - API/OpenAPI、Markdown v5 编号和 Foundation Token 均无变化，不生成新 SDK。
+
+## 5.33.0-dev.20261004.1
+
+新增帖内 RP 身份 v1、独立身份设置和角色卡、历史发言和提及快照、409 身份确认及兼容头像引用；见 [接口语义](../docs/thread-identity.md)。

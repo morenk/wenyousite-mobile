@@ -120,6 +120,7 @@ class ApiThreadMemberManagementRepository
       id: dto.id,
       userId: dto.userId,
       username: dto.user.username,
+      rpNickname: dto.user.rpIdentity?.nickname,
       level: dto.user.level.toInt(),
       avatarUrl: mapAvatarDisplayUrl(dto.user.avatar, dto.user.avatarDisplay),
       role: switch (dto.role) {
