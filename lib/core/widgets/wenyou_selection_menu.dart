@@ -37,6 +37,9 @@ class WenyouSelectionMenu<T> extends StatefulWidget {
     this.menuSummary,
     this.matchAnchorWidth = false,
     this.showScrollIndicator = false,
+    this.optionLeadingBuilder,
+    this.optionTrailingBuilder,
+    this.optionMaxLines,
     super.key,
   });
 
@@ -51,6 +54,9 @@ class WenyouSelectionMenu<T> extends StatefulWidget {
   final String? menuSummary;
   final bool matchAnchorWidth;
   final bool showScrollIndicator;
+  final Widget Function(BuildContext context, T value)? optionLeadingBuilder;
+  final Widget? Function(BuildContext context, T value)? optionTrailingBuilder;
+  final int? optionMaxLines;
 
   @override
   State<WenyouSelectionMenu<T>> createState() => _WenyouSelectionMenuState<T>();
@@ -73,7 +79,9 @@ class _WenyouSelectionMenuState<T> extends State<WenyouSelectionMenu<T>> {
         media.size.width - media.padding.horizontal - tokens.space24,
       ),
     );
-    final style = Theme.of(context).textTheme.wenyouCompactBody;
+    final style = Theme.of(
+      context,
+    ).textTheme.wenyouCompactBody.copyWith(fontWeight: FontWeight.w600);
     double measure(String label) {
       final painter = TextPainter(
         text: TextSpan(text: label, style: style),
@@ -95,7 +103,16 @@ class _WenyouSelectionMenuState<T> extends State<WenyouSelectionMenu<T>> {
       final trailingWidth = option.trailingLabel == null
           ? 0.0
           : measure(option.trailingLabel!) + tokens.space12;
-      width = math.max(width, labelWidth + trailingWidth + 68);
+      final leadingWidth = widget.optionLeadingBuilder == null
+          ? 0
+          : 32 + tokens.space12;
+      final actionWidth = widget.optionTrailingBuilder == null
+          ? 0
+          : tokens.minimumTouchTarget + tokens.space8;
+      width = math.max(
+        width,
+        labelWidth + trailingWidth + leadingWidth + actionWidth + 68,
+      );
     }
     if (widget.menuTitle != null) {
       width = math.max(
@@ -116,94 +133,230 @@ class _WenyouSelectionMenuState<T> extends State<WenyouSelectionMenu<T>> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final menuWidth = _menuWidth(context, constraints);
-        return Material(
-          type: MaterialType.transparency,
-          child: PopupMenuButton<T>(
-            tooltip: widget.tooltip,
-            enabled: enabled,
-            // 不传 initialValue：Flutter 会据此把已选行移到锚点上，破坏下拉定位。
-            position: PopupMenuPosition.under,
-            offset: Offset(0, tokens.space4),
-            borderRadius: BorderRadius.circular(tokens.radiusPanel),
+        // Scaffold 的正文会移除已避让的键盘 inset；浮层应读取 Navigator 的窗口。
+        final media = MediaQuery.of(Navigator.of(context).context);
+        final preferredHeight = math.max(
+          tokens.minimumTouchTarget,
+          math.min(
+            media.size.height * 0.5,
+            media.size.height -
+                media.viewInsets.bottom -
+                media.padding.vertical -
+                tokens.space24,
+          ),
+        );
+        List<PopupMenuEntry<T>> items(BuildContext context, double menuHeight) {
+          final items = <PopupMenuEntry<T>>[
+            if (widget.menuTitle case final title?)
+              PopupMenuItem<T>(
+                enabled: false,
+                padding: EdgeInsets.symmetric(horizontal: tokens.space12),
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: tokens.space8),
+                  child: Wrap(
+                    spacing: tokens.space12,
+                    runSpacing: tokens.space4,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      Text(
+                        title,
+                        style: Theme.of(context).textTheme.wenyouCompactTitle,
+                      ),
+                      if (widget.menuSummary case final summary?)
+                        Text(
+                          summary,
+                          style: Theme.of(context).textTheme.wenyouCaption,
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            for (final option in widget.options)
+              if (widget.optionTrailingBuilder != null)
+                _SelectionActionEntry<T>(
+                  key: widget.optionKeyPrefix == null || option.keyValue == null
+                      ? null
+                      : Key('${widget.optionKeyPrefix}-${option.keyValue}'),
+                  option: option,
+                  selected: option.value == widget.selected,
+                  leadingBuilder: widget.optionLeadingBuilder,
+                  actionBuilder: widget.optionTrailingBuilder!,
+                  maxLines: widget.optionMaxLines,
+                )
+              else
+                PopupMenuItem<T>(
+                  key: widget.optionKeyPrefix == null || option.keyValue == null
+                      ? null
+                      : Key('${widget.optionKeyPrefix}-${option.keyValue}'),
+                  value: option.value,
+                  height: tokens.minimumTouchTarget,
+                  padding: EdgeInsets.zero,
+                  child: WenyouSelectionRow(
+                    leading: widget.optionLeadingBuilder == null
+                        ? null
+                        : SizedBox.square(
+                            dimension: 32,
+                            child: widget.optionLeadingBuilder!(
+                              context,
+                              option.value,
+                            ),
+                          ),
+                    label: option.label,
+                    supportingLabel: option.supportingLabel,
+                    trailingLabel: option.trailingLabel,
+                    selected: option.value == widget.selected,
+                    maxLines: widget.optionMaxLines,
+                  ),
+                ),
+          ];
+          if (!widget.showScrollIndicator) return items;
+          return [
+            _ScrollableSelectionEntries<T>(
+              width: menuWidth,
+              maxHeight: menuHeight - tokens.space16,
+              children: items,
+            ),
+          ];
+        }
+
+        Future<void> open() async {
+          if (_open || !enabled) return;
+          final button = context.findRenderObject()! as RenderBox;
+          final overlay =
+              Navigator.of(context).overlay!.context.findRenderObject()!
+                  as RenderBox;
+          final anchor =
+              button.localToGlobal(Offset.zero, ancestor: overlay) &
+              button.size;
+          final safeBottom =
+              media.size.height -
+              math.max(media.viewInsets.bottom, media.padding.bottom);
+          final belowTop = anchor.bottom + tokens.space4;
+          final belowHeight = safeBottom - belowTop - tokens.space8;
+          final canOpenBelow =
+              belowHeight >= tokens.minimumTouchTarget + tokens.space16;
+          final menuHeight = canOpenBelow
+              ? math.min(preferredHeight, belowHeight)
+              : preferredHeight;
+          final top = canOpenBelow
+              ? belowTop
+              : math.max(
+                  media.padding.top + tokens.space8,
+                  anchor.top - menuHeight - tokens.space4,
+                );
+          _setOpen(true);
+          final value = await showMenu<T>(
+            context: context,
+            position: RelativeRect.fromRect(
+              Rect.fromLTWH(anchor.left, top, anchor.width, 0),
+              Offset.zero & overlay.size,
+            ),
+            constraints: BoxConstraints(
+              minWidth: menuWidth,
+              maxWidth: menuWidth,
+              maxHeight: menuHeight,
+            ),
             clipBehavior: Clip.antiAlias,
             popUpAnimationStyle: wenyouAnimationsDisabled(context)
                 ? AnimationStyle.noAnimation
                 : null,
-            constraints: BoxConstraints(
-              minWidth: menuWidth,
-              maxWidth: menuWidth,
-              maxHeight: MediaQuery.sizeOf(context).height * 0.5,
-            ),
-            onOpened: () => _setOpen(true),
-            onCanceled: () => _setOpen(false),
-            onSelected: (value) {
-              _setOpen(false);
-              // 重选只收起菜单，不重新加载列表或重复提交字段。
-              if (value != widget.selected) widget.onSelected(value);
-            },
-            itemBuilder: (context) {
-              final items = <PopupMenuEntry<T>>[
-                if (widget.menuTitle case final title?)
-                  PopupMenuItem<T>(
-                    enabled: false,
-                    padding: EdgeInsets.symmetric(horizontal: tokens.space12),
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(vertical: tokens.space8),
-                      child: Wrap(
-                        spacing: tokens.space12,
-                        runSpacing: tokens.space4,
-                        crossAxisAlignment: WrapCrossAlignment.center,
-                        children: [
-                          Text(
-                            title,
-                            style: Theme.of(
-                              context,
-                            ).textTheme.wenyouCompactTitle,
-                          ),
-                          if (widget.menuSummary case final summary?)
-                            Text(
-                              summary,
-                              style: Theme.of(context).textTheme.wenyouCaption,
-                            ),
-                        ],
-                      ),
-                    ),
-                  ),
-                for (final option in widget.options)
-                  PopupMenuItem<T>(
-                    key:
-                        widget.optionKeyPrefix == null ||
-                            option.keyValue == null
-                        ? null
-                        : Key('${widget.optionKeyPrefix}-${option.keyValue}'),
-                    value: option.value,
-                    height: tokens.minimumTouchTarget,
-                    padding: EdgeInsets.zero,
-                    child: WenyouSelectionRow(
-                      label: option.label,
-                      supportingLabel: option.supportingLabel,
-                      trailingLabel: option.trailingLabel,
-                      selected: option.value == widget.selected,
-                    ),
-                  ),
-              ];
-              if (!widget.showScrollIndicator) return items;
-              return [
-                _ScrollableSelectionEntries<T>(
-                  width: menuWidth,
-                  maxHeight:
-                      MediaQuery.sizeOf(context).height * 0.5 - tokens.space8,
-                  children: items,
-                ),
-              ];
-            },
-            child: Semantics(
-              expanded: _open,
-              child: widget.anchorBuilder(context, _open),
+            items: items(context, menuHeight),
+          );
+          if (!mounted) return;
+          _setOpen(false);
+          if (value != null && value != widget.selected) {
+            widget.onSelected(value);
+          }
+        }
+
+        return Material(
+          type: MaterialType.transparency,
+          child: Tooltip(
+            message: widget.tooltip,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(tokens.radiusPanel),
+              onTap: enabled ? open : null,
+              child: Semantics(
+                button: true,
+                enabled: enabled,
+                expanded: _open,
+                child: widget.anchorBuilder(context, _open),
+              ),
             ),
           ),
         );
       },
+    );
+  }
+}
+
+/// 同一视觉行中的选择和次要动作分别可聚焦，不合并读屏点击语义。
+class _SelectionActionEntry<T> extends PopupMenuEntry<T> {
+  const _SelectionActionEntry({
+    required this.option,
+    required this.selected,
+    required this.actionBuilder,
+    this.leadingBuilder,
+    this.maxLines,
+    super.key,
+  });
+  final WenyouFilterOption<T> option;
+  final bool selected;
+  final Widget Function(BuildContext, T)? leadingBuilder;
+  final Widget? Function(BuildContext, T) actionBuilder;
+  final int? maxLines;
+  @override
+  double get height => 48;
+  @override
+  bool represents(T? value) => option.value == value;
+  @override
+  State<_SelectionActionEntry<T>> createState() =>
+      _SelectionActionEntryState<T>();
+}
+
+class _SelectionActionEntryState<T> extends State<_SelectionActionEntry<T>> {
+  @override
+  Widget build(BuildContext context) {
+    final option = widget.option;
+    final tokens = context.wenyouTokens;
+    final action = widget.actionBuilder(context, option.value);
+    final row = WenyouSelectionRow(
+      label: option.label,
+      supportingLabel: option.supportingLabel,
+      trailingLabel: option.trailingLabel,
+      selected: widget.selected,
+      maxLines: widget.maxLines,
+      leading: widget.leadingBuilder == null
+          ? null
+          : SizedBox.square(
+              dimension: 32,
+              child: widget.leadingBuilder!(context, option.value),
+            ),
+    );
+    if (action == null) {
+      return PopupMenuItem<T>(
+        value: option.value,
+        padding: EdgeInsets.zero,
+        child: row,
+      );
+    }
+    return Row(
+      children: [
+        Expanded(
+          child: Semantics(
+            container: true,
+            button: true,
+            selected: widget.selected,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(tokens.radiusControl),
+              onTap: () => Navigator.of(context).pop(option.value),
+              child: row,
+            ),
+          ),
+        ),
+        action,
+        SizedBox(width: tokens.space4),
+      ],
     );
   }
 }
@@ -274,6 +427,7 @@ class WenyouSelectionRow extends StatelessWidget {
     this.leading,
     this.enabled = true,
     this.emphasizeSelected = true,
+    this.maxLines,
     super.key,
   });
 
@@ -284,6 +438,7 @@ class WenyouSelectionRow extends StatelessWidget {
   final Widget? leading;
   final bool enabled;
   final bool emphasizeSelected;
+  final int? maxLines;
 
   @override
   Widget build(BuildContext context) {
@@ -316,6 +471,10 @@ class WenyouSelectionRow extends StatelessWidget {
                     children: [
                       Text(
                         label,
+                        maxLines: maxLines,
+                        overflow: maxLines == null
+                            ? null
+                            : TextOverflow.ellipsis,
                         style: theme.wenyouCompactBody.copyWith(
                           color: !enabled
                               ? Theme.of(context).disabledColor
@@ -365,6 +524,7 @@ class WenyouSelectionTile extends StatelessWidget {
     this.supportingLabel,
     this.leading,
     this.emphasizeSelected = true,
+    this.maxLines,
     super.key,
   });
 
@@ -374,6 +534,7 @@ class WenyouSelectionTile extends StatelessWidget {
   final String? supportingLabel;
   final Widget? leading;
   final bool emphasizeSelected;
+  final int? maxLines;
 
   @override
   Widget build(BuildContext context) => Semantics(
@@ -389,6 +550,7 @@ class WenyouSelectionTile extends StatelessWidget {
         supportingLabel: supportingLabel,
         leading: leading,
         emphasizeSelected: emphasizeSelected,
+        maxLines: maxLines,
       ),
     ),
   );

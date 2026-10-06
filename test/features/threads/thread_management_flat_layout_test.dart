@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_settings_body.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_tag_chip.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_management_models.dart';
 import '../../support/deterministic_test_fonts.dart';
@@ -47,7 +49,7 @@ void main() {
       for (final scale in [1.0, 2.0]) {
         final variant =
             '${width.toInt()}_${dark ? 'dark' : 'light'}_${scale.toInt()}x';
-        testWidgets('扁平主题设置完整标签与操作 $variant', (tester) async {
+        testWidgets('设置分组保留完整标签与操作且没有嵌套卡片 $variant', (tester) async {
           tester.view.devicePixelRatio = 1;
           tester.view.physicalSize = Size(width, 1000);
           tester.platformDispatcher.textScaleFactorTestValue = scale;
@@ -68,7 +70,17 @@ void main() {
           );
           expect(tester.takeException(), isNull);
           expect(find.text('添加标签'), findsNothing);
-          expect(find.byType(Card), findsNothing);
+          expect(find.byType(WenyouSettingsGroup), findsNWidgets(4));
+          for (final card in find.byType(Card).evaluate()) {
+            expect(
+              find.descendant(
+                of: find.byWidget(card.widget),
+                matching: find.byType(Card),
+              ),
+              findsNothing,
+            );
+          }
+          expect(find.text('主题标题'), findsNothing);
           expect(find.text('私密邀请'), findsNothing);
           for (final tag in tags) {
             final label = tester.widget<Text>(find.text('#$tag'));
@@ -81,8 +93,8 @@ void main() {
           final category = tester.getRect(
             find.byKey(const Key('thread-management-category')),
           );
-          expect(summary.left, category.left);
-          expect(summary.width, category.width);
+          expect(summary.left, tester.getRect(find.text('所在分区')).left);
+          expect(summary.right, lessThan(category.right));
           await expectLater(
             find.byType(Scaffold).last,
             matchesGoldenFile('goldens/thread_management_flat_$variant.png'),
@@ -101,11 +113,11 @@ void main() {
             final tile = tester.widget<ListTile>(
               find.descendant(of: row, matching: find.byType(ListTile)),
             );
-            expect(tile.leading, isNull);
+            expect(tile.leading, isA<WenyouIcon>());
             if (key == 'thread-management-delete') {
               final context = tester.element(row);
               expect(
-                (tile.title! as Text).style?.color,
+                tester.widget<Text>(find.text('删除主题')).style?.color,
                 Theme.of(context).colorScheme.error,
               );
             }

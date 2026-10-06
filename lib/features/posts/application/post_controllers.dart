@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
@@ -12,6 +13,7 @@ import 'package:wenyousite_mobile/features/posts/application/post_discussion_con
 import 'package:wenyousite_mobile/features/posts/application/post_repository_ports.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_states.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
+import 'package:wenyousite_mobile/features/thread_identity/identity_models.dart';
 
 export 'package:wenyousite_mobile/features/posts/application/post_discussion_controller.dart';
 export 'package:wenyousite_mobile/features/posts/application/post_states.dart';
@@ -31,7 +33,7 @@ class PostComposerController extends StateNotifier<PostComposerState> {
   String _requestId;
 
   void updateContent(String content) {
-    if (state.isSubmitting) return;
+    if (state.isSubmitting || state.pendingCreate != null) return;
     state = state.copyWith(
       content: content,
       failure: null,
@@ -41,7 +43,7 @@ class PostComposerController extends StateNotifier<PostComposerState> {
   }
 
   void restoreContent(String content) {
-    if (state.isSubmitting) return;
+    if (state.isSubmitting || state.pendingCreate != null) return;
     state = state.copyWith(
       content: MarkdownContent.normalize(content),
       documentRevision: state.documentRevision + 1,
@@ -51,7 +53,13 @@ class PostComposerController extends StateNotifier<PostComposerState> {
     );
   }
 
-  Future<PostItem?> submit() async {
+  Future<PostItem?> submit({
+    String? identityToken,
+    String? identityId,
+    PostIdentityMode? identityMode,
+    Future<bool> Function()? persistCreateIntent,
+    bool legacySingleIdentity = false,
+  }) async {
     if (state.isSubmitting) return null;
     final validation = _validate(state.content);
     if (validation != null) {
@@ -66,12 +74,23 @@ class PostComposerController extends StateNotifier<PostComposerState> {
     }
     return switch (target.kind) {
       PostComposerKind.createFloor ||
-      PostComposerKind.createReply => _submitCreate(),
+      PostComposerKind.createReply => _submitCreate(
+        identityToken: identityToken,
+        identityId: legacySingleIdentity ? null : identityId,
+        identityMode: identityMode,
+        persistCreateIntent: persistCreateIntent,
+      ),
       PostComposerKind.editPost => _submitEdit(
         postId: target.postId!,
         version: target.version!,
       ),
-      PostComposerKind.upsertBody => _submitBody(version: target.version),
+      PostComposerKind.upsertBody => _submitBody(
+        version: target.version,
+        identityToken: identityToken,
+        identityId: legacySingleIdentity ? null : identityId,
+        identityMode: identityMode,
+        persistCreateIntent: persistCreateIntent,
+      ),
     };
   }
 
@@ -87,7 +106,12 @@ class PostComposerController extends StateNotifier<PostComposerState> {
     );
   }
 
-  Future<PostItem?> _submitCreate() async {
+  Future<PostItem?> _submitCreate({
+    String? identityToken,
+    String? identityId,
+    PostIdentityMode? identityMode,
+    Future<bool> Function()? persistCreateIntent,
+  }) async {
     final pending = state.pendingCreate;
     final input =
         pending?.input ??
@@ -97,19 +121,30 @@ class PostComposerController extends StateNotifier<PostComposerState> {
           clientRequestId: _requestId,
           parentPostId: target.parentPostId,
           replyToPostId: target.replyToPostId,
+          identityToken: identityToken,
+          identityId: identityId,
+          identityMode: identityMode,
         );
-    state = state.copyWith(isSubmitting: true, failure: null, conflict: null);
-    PostItem? created;
+    // 请求发出前保存相同正文、身份和幂等键，异常退出后仍确认同一次发表。
+    state = state.copyWith(
+      isSubmitting: true,
+      failure: null,
+      conflict: null,
+      pendingCreate: PendingPostCreate(input: input),
+    );
     try {
-      created = await _repository.create(input);
-      var result = created;
-      if (state.content != input.content) {
-        result = await _repository.update(
-          postId: created.id,
-          content: state.content,
-          version: created.version,
+      if (persistCreateIntent != null && !await persistCreateIntent()) {
+        if (!mounted) return null;
+        state = state.copyWith(
+          isSubmitting: false,
+          failure: const ApiFailure.localWrite(
+            diagnosticCode: 'post_draft_save_failed',
+          ),
         );
+        return null;
       }
+      if (!mounted) return null;
+      final result = await _repository.create(input);
       if (!mounted) return null;
       state = state.copyWith(
         isSubmitting: false,
@@ -120,9 +155,6 @@ class PostComposerController extends StateNotifier<PostComposerState> {
     } on Object catch (error) {
       if (!mounted) return null;
       final failure = _asFailure(error, '内容没有发布成功，请稍后重试。');
-      if (created != null && _isConflict(failure)) {
-        return _resolveConflict(created.id, state.content, failure);
-      }
       final ambiguous = _isAmbiguous(failure);
       if (failure.businessCode == 40912) {
         _requestId = _createRequestId();
@@ -166,16 +198,65 @@ class PostComposerController extends StateNotifier<PostComposerState> {
     }
   }
 
-  Future<PostItem?> _submitBody({required int? version}) async {
-    state = state.copyWith(isSubmitting: true, failure: null, conflict: null);
+  Future<PostItem?> _submitBody({
+    required int? version,
+    String? identityToken,
+    String? identityId,
+    PostIdentityMode? identityMode,
+    Future<bool> Function()? persistCreateIntent,
+  }) async {
+    final creating = target.postId == null && version == null;
+    final pending = creating
+        ? state.pendingCreate ??
+              PendingPostCreate(
+                input: PostCreateInput(
+                  subthreadId: target.subthreadId,
+                  content: state.content,
+                  clientRequestId: _requestId,
+                  identityToken: identityToken,
+                  identityId: identityId,
+                  identityMode: identityMode,
+                ),
+              )
+        : null;
+    state = state.copyWith(
+      isSubmitting: true,
+      failure: null,
+      conflict: null,
+      pendingCreate: pending,
+    );
     try {
+      if (creating &&
+          persistCreateIntent != null &&
+          !await persistCreateIntent()) {
+        if (!mounted) return null;
+        state = state.copyWith(
+          isSubmitting: false,
+          failure: const ApiFailure.localWrite(
+            diagnosticCode: 'post_draft_save_failed',
+          ),
+        );
+        return null;
+      }
+      if (!mounted) return null;
       final result = await _repository.upsertBody(
         subthreadId: target.subthreadId,
-        content: state.content,
+        content: pending?.input.content ?? state.content,
         version: version,
+        identityId: pending != null ? pending.input.identityId : identityId,
+        identityToken: pending != null
+            ? pending.input.identityToken
+            : identityToken,
+        identityMode: pending != null
+            ? pending.input.identityMode
+            : identityMode,
       );
       if (!mounted) return null;
-      state = state.copyWith(isSubmitting: false, result: result);
+      state = state.copyWith(
+        isSubmitting: false,
+        result: result,
+        pendingCreate: null,
+      );
       return result;
     } on Object catch (error) {
       if (!mounted) return null;
@@ -183,7 +264,11 @@ class PostComposerController extends StateNotifier<PostComposerState> {
       if (_isConflict(failure) && target.postId != null) {
         return _resolveConflict(target.postId!, state.content, failure);
       } else {
-        state = state.copyWith(isSubmitting: false, failure: failure);
+        state = state.copyWith(
+          isSubmitting: false,
+          failure: failure,
+          pendingCreate: creating && _isAmbiguous(failure) ? pending : null,
+        );
       }
       return null;
     }
@@ -243,6 +328,34 @@ class PostComposerController extends StateNotifier<PostComposerState> {
     }
     if (content.runes.length > 10000) return '正文超过 10000 字符，请精简后重试。';
     return null;
+  }
+
+  /// 明确的身份冲突不曾写入；下一次点击发表使用更新后的身份。
+  void prepareIdentityRetry() {
+    if (state.isSubmitting || state.pendingCreate != null) return;
+    _requestId = _createRequestId();
+  }
+
+  void restorePendingCreate(PendingPostCreate pending) {
+    if (target.kind != PostComposerKind.createFloor &&
+        target.kind != PostComposerKind.createReply &&
+        !(target.kind == PostComposerKind.upsertBody &&
+            target.postId == null)) {
+      return;
+    }
+    final input = pending.input;
+    if (state.isSubmitting ||
+        input.subthreadId != target.subthreadId ||
+        input.parentPostId != target.parentPostId ||
+        input.replyToPostId != target.replyToPostId) {
+      return;
+    }
+    _requestId = input.clientRequestId;
+    state = state.copyWith(
+      content: input.content,
+      documentRevision: state.documentRevision + 1,
+      pendingCreate: pending,
+    );
   }
 
   bool _isAmbiguous(ApiFailure failure) {

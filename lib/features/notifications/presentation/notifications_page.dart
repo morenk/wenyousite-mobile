@@ -372,6 +372,17 @@ class _NotificationBody extends StatelessWidget {
             ),
           ),
         ],
+        if (item.payload?.rpIdentity case final identity?) ...[
+          SizedBox(height: tokens.space4),
+          Text(
+            '帖内身份：${identity.nickname}',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(
+              context,
+            ).textTheme.wenyouCaption.copyWith(color: tokens.mutedText),
+          ),
+        ],
         SizedBox(height: tokens.space4),
         WenyouTimeText(
           value: item.createdAt,

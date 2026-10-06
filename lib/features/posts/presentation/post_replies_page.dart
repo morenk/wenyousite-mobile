@@ -296,6 +296,9 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
             : RefreshIndicator(
                 onRefresh: () => _refreshDiscussion(provider),
                 child: PostDiscussionList(
+                  ownerId: threadContext?.ownerId,
+                  supportsRpIdentity:
+                      threadContext?.supportsRpIdentity ?? false,
                   state: state,
                   countKey: _countKey,
                   onLocate: state.maxNumber > 0 ? _openNumber : null,
@@ -473,6 +476,8 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
   Future<void> _refreshDiscussion(
     PostDiscussionControllerProvider provider,
   ) async {
+    ref.invalidate(postReplyDiscussionAuthorsProvider(rootPostId));
+    ref.invalidate(postThreadContextProvider(threadId));
     await ref.read(provider.notifier).refresh();
   }
 
@@ -519,6 +524,12 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
     final openedSessionScope = ref.read(sessionScopeProvider);
     try {
       final result = await showPostComposerSheet(
+        supportsRpIdentity:
+            ref
+                .read(postThreadContextProvider(target.threadId))
+                .valueOrNull
+                ?.supportsRpIdentity ??
+            false,
         context: context,
         target: target,
         initialDraft: _composerDrafts[draftKey],

@@ -169,6 +169,7 @@ class ThreadDetailController extends StateNotifier<ThreadDetailState> {
 
   Future<void> refresh() async {
     final previousSelectedId = state.selectedSubthreadId;
+    final previousIdentityEnabled = state.detail?.rpIdentityEnabled;
     var metadataVerified = false;
     final refreshId = visibleFloorId ?? state.floors.firstOrNull?.id;
     final epoch = ++_requestEpoch;
@@ -186,7 +187,9 @@ class ThreadDetailController extends StateNotifier<ThreadDetailState> {
       final selectionChanged = selectedId != previousSelectedId;
       metadataVerified = true;
       state = state.copyWith(detail: detail, failure: null);
-      if (selectionChanged || state.window == null) {
+      if (selectionChanged ||
+          state.window == null ||
+          detail.rpIdentityEnabled != previousIdentityEnabled) {
         state = state.copyWith(
           selectedSubthreadId: selectedId,
           floorAuthorId: selectionChanged ? null : state.floorAuthorId,
@@ -260,6 +263,7 @@ class ThreadDetailController extends StateNotifier<ThreadDetailState> {
   /// mutation so the reader's scroll position remains stable.
   Future<void> refreshMetadata() async {
     final previousSelectedId = state.selectedSubthreadId;
+    final previousIdentityEnabled = state.detail?.rpIdentityEnabled;
     final wasLoadingFloors = state.isLoadingFloors;
     final epoch = ++_requestEpoch;
     state = state.copyWith(
@@ -274,7 +278,10 @@ class ThreadDetailController extends StateNotifier<ThreadDetailState> {
       final selectedId = detail.preferredSubthreadId(previousSelectedId);
       final selectionChanged = selectedId != previousSelectedId;
       final shouldReloadFloors =
-          selectedId != null && (selectionChanged || wasLoadingFloors);
+          selectedId != null &&
+          (selectionChanged ||
+              wasLoadingFloors ||
+              detail.rpIdentityEnabled != previousIdentityEnabled);
       state = state.copyWith(
         phase: ThreadDetailPhase.ready,
         detail: detail,

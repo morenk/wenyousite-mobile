@@ -197,6 +197,7 @@ lib/src/model/create_moment_dto.dart
 lib/src/model/create_notification_campaign_dto.dart
 lib/src/model/create_post_dto.dart
 lib/src/model/create_report_dto.dart
+lib/src/model/create_rp_identity_dto.dart
 lib/src/model/create_subscription_dto.dart
 lib/src/model/create_subthread_dto.dart
 lib/src/model/create_tag_dto.dart
@@ -209,6 +210,7 @@ lib/src/model/daily_check_in_response_dto.dart
 lib/src/model/date.dart
 lib/src/model/delete_bookmark_folder_response_dto.dart
 lib/src/model/delete_draft_response_dto.dart
+lib/src/model/delete_rp_identity_dto.dart
 lib/src/model/dice_roll_response_dto.dart
 lib/src/model/direct_conversation_lookup_response_dto.dart
 lib/src/model/direct_conversation_response_dto.dart
@@ -287,6 +289,7 @@ lib/src/model/media_reissue_upload_url200_response.dart
 lib/src/model/media_response_dto.dart
 lib/src/model/mention_candidate_dto.dart
 lib/src/model/mention_candidates_response_dto.dart
+lib/src/model/mention_identity_display_dto.dart
 lib/src/model/message_response_dto.dart
 lib/src/model/meta_get_meta200_response.dart
 lib/src/model/mobile_compatibility_dto.dart
@@ -418,6 +421,14 @@ lib/src/model/resolve_moderation_case_dto.dart
 lib/src/model/resolve_report_dto.dart
 lib/src/model/revoke_sanction_dto.dart
 lib/src/model/revoke_session_response_dto.dart
+lib/src/model/rp_identities_create201_response.dart
+lib/src/model/rp_identities_find200_response.dart
+lib/src/model/rp_identities_list200_response.dart
+lib/src/model/rp_identities_remove200_response.dart
+lib/src/model/rp_identities_update200_response.dart
+lib/src/model/rp_identity_collection_dto.dart
+lib/src/model/rp_identity_response_dto.dart
+lib/src/model/rp_identity_state_dto.dart
 lib/src/model/sanction_user_dto.dart
 lib/src/model/save_thread_aggregate_dto.dart
 lib/src/model/search_author_response_dto.dart
@@ -438,6 +449,7 @@ lib/src/model/set_avatar_dto.dart
 lib/src/model/set_direct_conversation_archive_dto.dart
 lib/src/model/set_profile_cover_dto.dart
 lib/src/model/set_read_status_dto.dart
+lib/src/model/set_thread_identity_enabled_dto.dart
 lib/src/model/site_operational_settings_get200_response.dart
 lib/src/model/site_operational_settings_response_dto.dart
 lib/src/model/site_operational_settings_update200_response.dart
@@ -481,6 +493,15 @@ lib/src/model/thread_cover_media_response_dto.dart
 lib/src/model/thread_cover_preview_variant_response_dto.dart
 lib/src/model/thread_detail_response_dto.dart
 lib/src/model/thread_export_dto.dart
+lib/src/model/thread_identities_clear200_response.dart
+lib/src/model/thread_identities_find_user200_response.dart
+lib/src/model/thread_identities_mine200_response.dart
+lib/src/model/thread_identities_set_enabled200_response.dart
+lib/src/model/thread_identities_update200_response.dart
+lib/src/model/thread_identity_account_dto.dart
+lib/src/model/thread_identity_profile_dto.dart
+lib/src/model/thread_identity_settings_dto.dart
+lib/src/model/thread_identity_state_dto.dart
 lib/src/model/thread_like_response_dto.dart
 lib/src/model/thread_list_count_response_dto.dart
 lib/src/model/thread_list_default_subthread_response_dto.dart
@@ -523,10 +544,12 @@ lib/src/model/update_managed_tag_dto.dart
 lib/src/model/update_mobile_release_dto.dart
 lib/src/model/update_moment_dto.dart
 lib/src/model/update_post_dto.dart
+lib/src/model/update_rp_identity_dto.dart
 lib/src/model/update_site_settings_dto.dart
 lib/src/model/update_subthread_dto.dart
 lib/src/model/update_thread_category_dto.dart
 lib/src/model/update_thread_dto.dart
+lib/src/model/update_thread_identity_dto.dart
 lib/src/model/update_user_dto.dart
 lib/src/model/upload_url_response_dto.dart
 lib/src/model/upsert_body_dto.dart

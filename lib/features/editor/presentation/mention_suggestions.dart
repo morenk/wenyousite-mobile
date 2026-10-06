@@ -8,7 +8,9 @@ import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_feedback.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_selection_menu.dart';
 import 'package:wenyousite_mobile/features/editor/application/mention_candidates_controller.dart';
 import 'package:wenyousite_mobile/features/editor/domain/mention_models.dart';
 
@@ -143,6 +145,7 @@ class _MentionSuggestionsState extends ConsumerState<MentionSuggestions> {
         'kind': 'user',
         'userId': candidate.id,
         'label': candidate.label,
+        if (candidate.mentionHref != null) 'sourceHref': candidate.sourceHref,
       }),
     );
   }
@@ -195,10 +198,9 @@ class _MentionSuggestionsState extends ConsumerState<MentionSuggestions> {
   }
 
   ActiveMentionQuery? _detectQueryAt(int cursor) {
-    // A valid query contains at most 24 characters. Reading one extra
-    // character before `@` is enough to validate the boundary without
-    // materializing the complete document for every key event.
-    final windowStart = cursor > 26 ? cursor - 26 : 0;
+    // 24 个 Unicode 字符最多占 48 个 UTF-16 单元，另保留 @ 和前边界。
+    // 只读取末尾窗口，避免每次输入都展开整篇正文。
+    final windowStart = cursor > 50 ? cursor - 50 : 0;
     final text = widget.controller.document.getPlainText(
       windowStart,
       cursor - windowStart,
@@ -290,7 +292,7 @@ class _MentionSuggestionsState extends ConsumerState<MentionSuggestions> {
         state.phase == MentionCandidatesPhase.loading;
     return _MentionPanel(
       key: const Key('mention-suggestions'),
-      title: active.query.isEmpty ? '选择要提及的人' : '查找“${active.query}”',
+      title: '提及',
       onDismiss: _dismiss,
       child: loading
           ? const _MentionStatus(
@@ -356,9 +358,9 @@ class _MentionPanel extends StatelessWidget {
           clipBehavior: Clip.antiAlias,
           child: Padding(
             padding: EdgeInsets.fromLTRB(
-              tokens.space12,
+              tokens.space8,
               0,
-              tokens.space4,
+              tokens.space8,
               tokens.space8,
             ),
             child: Column(
@@ -474,37 +476,70 @@ class _MentionResults extends StatelessWidget {
         (query.isEmpty || '全体玩家'.startsWith(query));
     final count = result.users.length + (showAllPlayers ? 1 : 0);
     if (count == 0) {
-      return const _MentionStatus(
-        key: Key('mention-empty'),
-        icon: WenyouIcon(WenyouIconIds.actionMention),
-        message: '暂无匹配的可提及用户。',
+      return _MentionStatus(
+        key: const Key('mention-empty'),
+        icon: const WenyouIcon(WenyouIconIds.actionMention),
+        message: result.identitiesUnavailable ? '暂时无法提及用户' : '暂无匹配的可提及用户。',
       );
     }
     return ConstrainedBox(
       constraints: const BoxConstraints(maxHeight: 144),
       child: ListView.builder(
         key: const Key('mention-results'),
+        padding: EdgeInsets.zero,
+        primary: false,
         shrinkWrap: true,
         itemCount: count,
         itemBuilder: (context, index) {
           if (showAllPlayers && index == 0) {
-            return ListTile(
+            return WenyouSelectionTile(
               key: const Key('mention-all-players'),
-              minTileHeight: context.wenyouTokens.minimumTouchTarget,
-              leading: const WenyouIcon(WenyouIconIds.identityMembers),
-              title: const Text('@全体玩家'),
-              trailing: const Text('仅楼主/协作者'),
+              selected: false,
+              leading: const SizedBox.square(
+                dimension: 40,
+                child: Center(child: WenyouIcon(WenyouIconIds.identityMembers)),
+              ),
+              label: '全体玩家',
+              supportingLabel: '仅楼主/协作者',
               onTap: onAllPlayers,
             );
           }
           final candidate = result.users[index - (showAllPlayers ? 1 : 0)];
-          return ListTile(
-            key: ValueKey('mention-user-${candidate.id}'),
-            minTileHeight: context.wenyouTokens.minimumTouchTarget,
-            leading: const WenyouIcon(WenyouIconIds.actionMention),
-            title: Text(candidate.label),
-            trailing: Text(candidate.relationLabel),
-            onTap: () => onUser(candidate),
+          final sameNames = result.users
+              .where(
+                (value) =>
+                    value.isRole &&
+                    value.id == candidate.id &&
+                    value.displayName == candidate.displayName,
+              )
+              .toList();
+          final sameVisual =
+              sameNames
+                  .where((value) => value.avatarUrl == candidate.avatarUrl)
+                  .length >
+              1;
+          final ordinal = sameNames.indexOf(candidate) + 1;
+          return Semantics(
+            label: candidate.isRole && sameNames.length > 1
+                ? '同名角色 $ordinal，共 ${sameNames.length} 个'
+                : null,
+            child: WenyouSelectionTile(
+              key: ValueKey('mention-user-${candidate.key}'),
+              selected: false,
+              maxLines: 1,
+              leading: WenyouAvatar(
+                username: candidate.displayName,
+                avatarUrl: candidate.avatarUrl,
+                size: 40,
+              ),
+              label: candidate.displayName,
+              supportingLabel: candidate.isRole
+                  ? '${candidate.supportingLabel}${sameVisual ? ' · $ordinal/${sameNames.length}' : ''}'
+                  : candidate.isExplicitAccount
+                  ? '站内身份'
+                  : candidate.relationLabel,
+              onTap: () => onUser(candidate),
+            ),
           );
         },
       ),

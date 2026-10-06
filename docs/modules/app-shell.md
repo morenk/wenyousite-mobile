@@ -52,6 +52,11 @@ Android 后台消息提醒默认开启，可在账号设置按设备关闭，选
 
 ## 6. 状态模型和数据流
 
+可选 `rpIdentityProfileSupported` 从 `/meta` 映射到应用能力，缺失默认 false；资料编辑与读取 UI 按此能力启用，不从版本字符串或现有多角色支持推断。角色提及的支持／新写开关继续独立控制。
+
+
+角色提及通过 `/meta` 的可选 `roleMentionsV6Supported` 和 `roleMentionsV6WriteEnabled` 分别判断可读写协议与新增写开关，缺失均为 false。全局 Markdown 仍为 5，客户端额外支持 6；API 统一发送读取能力头，关闭新增写不阻塞普通正文和已存节点的编辑。
+
 更新说明使用独立 repository、按平台／版本名／构建号绑定的 FutureProvider 和单一展示协调者。强制优先；应用可用、处于前台且没有其他模态时，先处理实际安装版的待提示，再择后处理推荐。安装版先取得完整说明并重新确认安装身份才打开弹窗，内容缺失或加载失败时静默保留待提示，下一安全前台重新请求；不会反复显示“此版本暂无更新说明”空壳，也不阻挡可用的推荐提示。成功内容快照直接交给弹窗，只有实际可见后消费一次记录。请求途中切后台、被模态遮挡、强制抢占或宿主卸载均不补弹迟到响应。升级后关闭不会立即接弹；下一次安全前台先评估推荐。该重复弹窗修复已于 2026-09-28 负责人验收通过，原真机失败与当前证据见[一次说明验收](../architecture/mobile-update-once-dialogs-acceptance.md)。更新前重新复核 `/meta` 和 APK 元数据，失效目标刷新或退出；说明不能决定下载地址或升级资格。
 
 首次观察先保存实际安装基线；可信旧 build 上升时建立当前实际安装版待提示并显示“已更新”。无本机基线但 Android PackageManager 的有效 `lastUpdateTime > firstInstallTime` 时，仅建立当前版待提示并显示“已安装当前版本”，不推断旧 build；时间相同、缺失、逆序或无效时只建立基线。待提示与基线分开持久化，失败、强制抢占及重启不会提前清空；跨多版只显示实际安装版，降级不补弹。摘要和条目只作纯文本，按负责人字号反馈统一使用已发布 `wenyouCompactBody`（14sp／1.45），保留系统缩放；revision 或版本名修订不重置平台/build 去重。
@@ -159,6 +164,13 @@ Android 的 Debug、Profile 和 Release 均仅支持 `arm64-v8a`，使用 ARM64 
 
 ## 13. 最近审查的契约版本和后端提交
 
+本轮共享契约复核：OpenAPI `5.36.0-dev.20261005.1`，Backend `a624bed0eb2b118701bd593fbce2aabf3dea7321`。新增帖内多角色集合及可选发表 identityId，Markdown 5 与本模块既有消费保持；实际部署与设备验收另行登记，相关行为见[帖内身份](thread-identity.md)。
+
+
+2026-10-05 逐条身份补充契约：固定 Backend `ff1a84178b37fabd7f8fd77e53989b4842b4d42f`／`5.33.0-dev.20261005.1`。四个新发言／首次正文写入增加可选 `identityMode: ACCOUNT|RP`；ACCOUNT 明确沿用站内资料，RP 需本人确认，旧正文编辑保留原身份。此 chore 只同步固定契约和生成 SDK，产品接入与验收另行记录。
+
+2026-10-05 帖内身份契约同步：Backend `473738d25405828932f2e307f38ff82bbf50c2a4`／`5.33.0-dev.20261004.1`，新增五个可选身份操作及历史显示投影。本 chore 仅同步固定来源和生成 SDK，原模块行为及验收边界保持；后续业务接入另行记录，见[契约同步](../architecture/rp-identity-contract-sync.md)。
+
 2026-10-04 部署来源审查：Backend `3748cc8c85a73f400fa4e237a8d7dd6eecd1853e` 已合并并部署，契约仍为 `5.32.0-dev.20261003.1`；33 个导出文件及受限发布 CLI 与原候选一致，仅 revision 更新。Mobile 公网来源与主题列表兼容门禁通过，本模块实现与原有验收边界不变，见[同步记录](../architecture/private-apk-contract-sync.md)。
 
 2026-10-03 每日下载次数契约同步：Backend `10b7819ad4a15777490dad5ab9abb7ae961422fc`／`5.32.0-dev.20261003.1`，238 个操作；仅下载 429 原因头、可选 Cookie 与计次说明兼容扩展，原生无 Cookie HEAD/GET 继续保留。本模块其他行为及原验收边界不变，见[契约同步](../architecture/private-apk-contract-sync.md)。
@@ -236,3 +248,6 @@ Android 的 Debug、Profile 和 Release 均仅支持 `arm64-v8a`，使用 ARM64 
 后台执行入口：`lib/core/application/background_execution.dart`、`lib/core/platform/android_background_execution_gateway.dart`、`lib/features/app_shell/application/background_reminder_runtime.dart`，Android 原生实现为 `BackgroundExecutionChannel.kt` 与 `WenyouBackgroundReminderService.kt`；设备偏好为 `lib/core/application/background_reminder_preference.dart`，候选验收见[常驻与横幅记录](../architecture/background-reminders-acceptance.md)。
 
 代码入口：`lib/app/app_theme.dart`、`lib/app/app_router.dart`、`lib/app/wenyou_app.dart`、`lib/core/application/background_online_reminders.dart`、`lib/features/app_shell/application/background_online_poller.dart`、`lib/features/app_shell/application/background_online_reminder_coordinator.dart`、`lib/features/app_shell/presentation/app_scaffold.dart`、`lib/features/app_shell/presentation/startup_gate.dart`、`lib/core/platform/android_background_notification_gateway.dart`、`lib/main.dart`、`android/app/src/main/`、`ios/Runner/Assets.xcassets/`、`test/features/app_shell/`、`integration_test/performance_test.dart`、`tool/windows/Measure-WenyouAndroidPerformance.ps1`、`tool/release-mobile-from-local.sh`。参见[设置](settings.md)、[私有发布运维](../../contracts/mobile-release-operations.md)、[Foundation v6.9.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.9.0/docs/platforms/mobile.md)、[移动端性能基线](../architecture/performance.md)、[语义图标](../architecture/icons.md)、[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)、[温油钱包](wallet.md)和[站内私聊](direct-messages.md)。
+
+
+5.33 单身份兼容由已读取的精确契约系列识别，映射到内部 legacySingleThreadIdentity；未知契约不猜测支持，不以集合端点错误或 roleMentions 新写关闭替代版本事实。
