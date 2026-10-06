@@ -58,7 +58,9 @@ class _PublicUserPageState extends ConsumerState<PublicUserPage> {
             (meState?.phase == MeProfilePhase.ready &&
                 meState!.profile!.id != state.profile!.id));
     return Scaffold(
+      backgroundColor: wenyouBrowsePageBackground(context),
       appBar: AppBar(
+        backgroundColor: wenyouBrowsePageBackground(context),
         title: const Text('用户主页'),
         actions: [
           if (canTip)
@@ -107,6 +109,7 @@ class _PublicUserPageState extends ConsumerState<PublicUserPage> {
                       keyPrefix: 'public-user',
                       semanticsLabel: '用户公开内容',
                       placement: WenyouTabPlacement.page,
+                      backgroundColor: context.wenyouTokens.panel,
                       options: [
                         const WenyouFilterOption(
                           value: 'created',

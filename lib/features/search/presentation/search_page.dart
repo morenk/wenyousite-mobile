@@ -63,7 +63,11 @@ class _SearchPageState extends ConsumerState<SearchPage> {
       }
     });
     return Scaffold(
-      appBar: AppBar(title: const Text('搜索')),
+      backgroundColor: wenyouBrowsePageBackground(context),
+      appBar: AppBar(
+        backgroundColor: wenyouBrowsePageBackground(context),
+        title: const Text('搜索'),
+      ),
       body: Column(
         children: [
           Padding(

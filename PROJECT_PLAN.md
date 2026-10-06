@@ -4,6 +4,8 @@
 
 ## 当前基线
 
+- 2026-10-07：轻表面、顶部页签及消息列表已获负责人明确验收并授权合并，准备 Android `0.9.0+98`。本轮仅准备签名包和发布说明，不上传、不晋级、不打正式 Tag；后续状态见[发布准备](docs/architecture/mobile-0.9.0-release-preparation.md)。以下旧批次条目保留各自验收边界，线上即时推荐版本以只读 `/meta` 为准。
+
 - 2026-09-27 正式版发布准备：负责人指定 `0.8.0+97` 并已在后台确认更新说明；保持 build 97、移除开发版后缀，纳入更新前／升级后一次说明弹窗。最终完整门禁、签名包与负责人真机冒烟按[发布记录](docs/architecture/mobile-0.8.0-release-acceptance.md)绑定；尚未上传、晋级或打 Tag，既有未验收项目仍保留。
 
 - 2026-09-26 自适应阅读滑块候选：`0.8.0-dev.2+97` 合并主题详情、独立楼中楼和动态详情的进度提示与手动快翻；Foundation 已授权发布，移动端手感／真机及 Profile 仍待验收，见[候选记录](docs/architecture/adaptive-reading-scroll-acceptance.md)。不改变线上推荐版本。

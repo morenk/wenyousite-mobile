@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_settings_row.dart';
 
 /// 私人资源入口独立于资料操作，避免与公开内容或编辑资料混为一组。
 class MePersonalTools extends StatelessWidget {
@@ -41,21 +42,15 @@ class MePersonalTools extends StatelessWidget {
       label: '个人工具',
       child: Material(
         color: tokens.panel,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: tokens.space16,
-                vertical: tokens.space8,
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [for (final entry in entries) Expanded(child: entry)],
-              ),
-            ),
-            Divider(height: 1, thickness: 1, color: tokens.border),
-          ],
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: tokens.space16,
+            vertical: tokens.space8,
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [for (final entry in entries) Expanded(child: entry)],
+          ),
         ),
       ),
     );
@@ -88,7 +83,7 @@ class _ToolEntry extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            WenyouIcon(icon),
+            WenyouSettingsIcon(icon, color: tokens.text),
             SizedBox(height: tokens.space4),
             Text(
               label,

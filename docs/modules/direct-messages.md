@@ -14,6 +14,8 @@
 
 ## 3. 页面、入口和导航关系
 
+轻表面（2026-10-07 负责人确认合并）：私聊会话列表沿用消息中心柔和页底，连续 panel 内容表面使用首尾圆角和内部轻分隔；保留会话／请求／归档筛选、摘要和角标。聊天正文与输入区保持既有样式。 详见[候选记录](../architecture/mobile-soft-surfaces-acceptance.md)。
+
 会话归档与移回操作使用统一锚点菜单，保留既有状态和确认／恢复行为。新建会话失败按钮统一为“重试”，错误与输入不会丢失。
 
 私聊列表的规范路径是底部“消息”分支内的 `/notifications?section=directMessages`；旧 `/messages` 兼容重定向到该地址。新私聊继续使用 `/messages/new/:userId`，会话继续使用 `/messages/:conversationId`。其他用户主页在确认当前登录身份且 capability 开启后展示“发私聊”。已有 ACCEPTED/PENDING 联系从新私聊页替换到原会话；DECLINED/CANCELED/UNAVAILABLE 按服务端 `canInitiate` 展示重新建立或受限说明，不猜测新目标。

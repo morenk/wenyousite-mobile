@@ -122,6 +122,7 @@ class WenyouContentTabs<T> extends StatelessWidget {
     required this.onSelected,
     required this.semanticsLabel,
     required this.placement,
+    this.backgroundColor,
     this.keyPrefix = 'content-tab',
     this.enabled = true,
     super.key,
@@ -132,6 +133,7 @@ class WenyouContentTabs<T> extends StatelessWidget {
   final ValueChanged<T> onSelected;
   final String semanticsLabel;
   final WenyouTabPlacement placement;
+  final Color? backgroundColor;
   final String keyPrefix;
   final bool enabled;
 
@@ -145,10 +147,17 @@ class WenyouContentTabs<T> extends StatelessWidget {
       keyPrefix: keyPrefix,
       enabled: enabled,
     );
-    if (placement == WenyouTabPlacement.embedded) return tabs;
+    if (placement == WenyouTabPlacement.embedded) {
+      return backgroundColor == null
+          ? tabs
+          : ColoredBox(color: backgroundColor!, child: tabs);
+    }
 
     return ColoredBox(
-      color: context.wenyouTokens.panel,
+      color:
+          backgroundColor ??
+          Scaffold.maybeOf(context)?.widget.backgroundColor ??
+          Theme.of(context).scaffoldBackgroundColor,
       child: WenyouContentFrame(child: tabs),
     );
   }
@@ -245,7 +254,9 @@ class _WenyouSwipeTabRegionState<T> extends State<WenyouSwipeTabRegion<T>>
       },
       child: ClipRect(
         child: ColoredBox(
-          color: Theme.of(context).scaffoldBackgroundColor,
+          color:
+              Scaffold.maybeOf(context)?.widget.backgroundColor ??
+              Theme.of(context).scaffoldBackgroundColor,
           child: SlideTransition(position: position, child: widget.child),
         ),
       ),
@@ -293,7 +304,7 @@ class _WenyouAdaptiveTabBarState<T> extends State<_WenyouAdaptiveTabBar<T>> {
     final tokens = context.wenyouTokens;
     final labelStyle = Theme.of(
       context,
-    ).textTheme.wenyouLabel.copyWith(fontWeight: FontWeight.w700);
+    ).textTheme.wenyouLabel.copyWith(fontWeight: FontWeight.w600);
     final labelWidths = [
       for (final option in widget.options)
         _measureLabel(context, option.label, labelStyle),
@@ -306,71 +317,54 @@ class _WenyouAdaptiveTabBarState<T> extends State<_WenyouAdaptiveTabBar<T>> {
       container: true,
       explicitChildNodes: true,
       label: widget.semanticsLabel,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: tokens.panel,
-          border: Border(bottom: BorderSide(color: tokens.border)),
-        ),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final optionCount = widget.options.length;
-            final horizontalPadding = optionCount == 4
-                ? tokens.space8
-                : tokens.space12;
-            final canFill =
-                optionCount >= 2 &&
-                optionCount <= 4 &&
-                constraints.maxWidth.isFinite &&
-                labelWidths.every(
-                  (width) =>
-                      width + horizontalPadding * 2 <=
-                      constraints.maxWidth / optionCount,
-                );
-            if (canFill) {
-              return Row(
-                children: [
-                  for (var index = 0; index < optionCount; index++)
-                    Expanded(
-                      child: _buildButton(
-                        index,
-                        labelWidths[index],
-                        horizontalPadding,
-                      ),
-                    ),
-                ],
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final optionCount = widget.options.length;
+          final horizontalPadding = optionCount == 4
+              ? tokens.space8
+              : tokens.space12;
+          final canFill =
+              optionCount >= 2 &&
+              optionCount <= 4 &&
+              constraints.maxWidth.isFinite &&
+              labelWidths.every(
+                (width) =>
+                    width + horizontalPadding * 2 <=
+                    constraints.maxWidth / optionCount,
               );
-            }
-            _scheduleReveal(buttonWidths, constraints.maxWidth);
-            return SingleChildScrollView(
-              controller: _scrollController,
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  for (var index = 0; index < optionCount; index++)
-                    SizedBox(
-                      width: buttonWidths[index],
-                      child: _buildButton(
-                        index,
-                        labelWidths[index],
-                        tokens.space12,
-                      ),
-                    ),
-                ],
-              ),
+          if (canFill) {
+            return Row(
+              children: [
+                for (var index = 0; index < optionCount; index++)
+                  Expanded(child: _buildButton(index, horizontalPadding)),
+              ],
             );
-          },
-        ),
+          }
+          _scheduleReveal(buttonWidths, constraints.maxWidth);
+          return SingleChildScrollView(
+            controller: _scrollController,
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (var index = 0; index < optionCount; index++)
+                  SizedBox(
+                    width: buttonWidths[index],
+                    child: _buildButton(index, tokens.space12),
+                  ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
 
-  Widget _buildButton(int index, double labelWidth, double horizontalPadding) {
+  Widget _buildButton(int index, double horizontalPadding) {
     final option = widget.options[index];
     return _ContentTabButton<T>(
       key: ValueKey('${widget.keyPrefix}-${option.keyValue ?? option.value}'),
       option: option,
-      labelWidth: labelWidth,
       horizontalPadding: horizontalPadding,
       selected: option.value == widget.selected,
       onSelected: widget.onSelected,
@@ -419,7 +413,6 @@ class _WenyouAdaptiveTabBarState<T> extends State<_WenyouAdaptiveTabBar<T>> {
 class _ContentTabButton<T> extends StatelessWidget {
   const _ContentTabButton({
     required this.option,
-    required this.labelWidth,
     required this.horizontalPadding,
     required this.selected,
     required this.onSelected,
@@ -428,7 +421,6 @@ class _ContentTabButton<T> extends StatelessWidget {
   });
 
   final WenyouFilterOption<T> option;
-  final double labelWidth;
   final double horizontalPadding;
   final bool selected;
   final ValueChanged<T> onSelected;
@@ -451,7 +443,7 @@ class _ContentTabButton<T> extends StatelessWidget {
           child: LayoutBuilder(
             builder: (context, constraints) {
               final indicatorWidth = math.min(
-                labelWidth + tokens.space8,
+                tokens.space24,
                 math.max(0.0, constraints.maxWidth - tokens.space16),
               );
               return Stack(
@@ -471,8 +463,8 @@ class _ContentTabButton<T> extends StatelessWidget {
                             ? tokens.brandForeground
                             : tokens.mutedText,
                         fontWeight: selected
-                            ? FontWeight.w700
-                            : FontWeight.w500,
+                            ? FontWeight.w600
+                            : FontWeight.w400,
                       ),
                     ),
                   ),

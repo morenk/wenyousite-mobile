@@ -57,7 +57,11 @@ class _ThreadPostSearchPageState extends ConsumerState<ThreadPostSearchPage> {
       }
     });
     return Scaffold(
-      appBar: AppBar(title: const Text('主题内搜索')),
+      backgroundColor: wenyouBrowsePageBackground(context),
+      appBar: AppBar(
+        backgroundColor: wenyouBrowsePageBackground(context),
+        title: const Text('主题内搜索'),
+      ),
       body: RefreshIndicator(
         onRefresh: state.isQueryValid
             ? () => ref.read(provider.notifier).retry()

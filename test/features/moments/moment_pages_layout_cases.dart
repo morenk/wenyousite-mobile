@@ -12,6 +12,24 @@ import 'moment_pages_test_support.dart';
 
 void registerMomentPagesLayoutCases() {
   setUpAll(loadDeterministicTestFonts);
+  for (final dark in [false, true]) {
+    final tone = dark ? 'dark' : 'light';
+    testWidgets('320dp 动态轻表面 $tone 无溢出', (tester) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(320, 760);
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(
+        momentPagesTestFeedApp(MomentPagesTestPageRepository(), dark: dark),
+      );
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      await expectLater(
+        find.byKey(const Key('moment-feed-visual')),
+        matchesGoldenFile('goldens/moment_soft_surfaces_320_$tone.png'),
+      );
+    });
+  }
+
   testWidgets('360dp 键盘态动态发布页保持主操作可见且语义明确', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(360, 760);
