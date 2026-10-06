@@ -300,3 +300,15 @@ Backend 最终来源通过标准同步更新为 `6d1228cd8c128f24860ef99747aa923
 最终应用全量分析 .rp-profile-analyze-complete.log 零问题；文档与架构再次通过。最后运行改动仅为子贴触发器高度和旧路径本地守卫，按实际影响完成上述补验，没有将早先完整 Flutter 入口重写为全绿。最终应用摘要 `93b77a52787c21c3ede4c522d508680d6f9dad73e116ed060455c6fc9bd90f7d`。独立只读审查核对新能力、绑定输入、当前访问投影、切号缓存、正文复用与来源导航，未发现阻断。
 
 本批仍为视觉候选／待负责人验收。手机未连接，未加载此摘要，未生成或安装 APK。Backend PR45、Mobile PR85、Web PR54 和 Foundation PR31 按各自检查证据交付，不自动合并或部署，也不以合成 Golden 或本地回归代替手机确认。
+
+### 负责人要求重编译并恢复真机调试
+
+2026-10-06 按负责人明确要求，在已提交应用 `b4404aed72f4fabccc210745a5a7360ae3ff65ad` 上运行正常 `flutter run --machine --debug --no-dds --no-devtools --no-pub`，构建并覆盖安装 `site.wenyou.app.debug`。版本 `0.8.0-debug`／97，APK 151,088,249 字节，SHA-256 `a044efd907f60367572c9c6c494d00f6d3886eb41829fea2cf7ddbebdc699a9d`；设备内 base.apk 摘要一致，安装时间为北京时间 18:27:55，未清除应用数据。
+
+machine 会话25140确认 app.started，应用源码摘要仍 `93b77a52787c21c3ede4c522d508680d6f9dad73e116ed060455c6fc9bd90f7d`；一次无源码变化的热重载为0 libraries／2039ms／code=0。之后USB断连，原会话明确退出，不以此前成功记录声称始终在线。私有运行登记保留于本机 `%LOCALAPPDATA%/Wenyou/rp-identity-public-debug`。
+
+负责人随后报告输入 @ 只出现全体玩家。只读核对线上 meta 为5.35／58f4526、roleMentionsV6Supported=true、roleMentionsV6WriteEnabled=false；对应已部署候选实现明确在 opt-in 新写关闭时返回 users=[]。因此该现象是发布开关尚未激活，不是APK未安装或名单被昵称过滤。先前“Debug已可直接验收”的描述不完整；不通过伪造能力、回退旧单身份候选或公网自动发帖来掩盖。
+
+负责人已明确授权合并部署 Backend PR45、Web PR54并启用新版提及，不要求发布正式APK或强制升级。PR45已合并为 `eb9ff12c770b14501eb1d9daa19f4d823728eba6`，机器契约与候选6d1228完全相同；标准同步仅改变来源记录，22模块文档复核通过。正式发布因实时依赖审计被阻止，尚未切换线上服务；最终运行SHA、只读复验和手机恢复结果另记，不把合并当作部署成功。
+
+USB再次授权后，machine会话54713／Flutter PID33772附加成功并确认app.started；原调试端口日志已轮换，仅在截图确认当前为阅读页、无打开编辑器后重启本任务Debug进程，没有清除数据或重新安装。未在该次附加后重新热重载；已安装APK与应用摘要仍如上。随后负责人明确“我先断开adb，你把其余工作先完成吧”，会话已退出，私有记录为disconnected-by-user。真机工作暂停，不以最后附加成功声称持续在线或验收通过；Backend/Web发布准备继续进行。
