@@ -312,3 +312,15 @@ machine 会话25140确认 app.started，应用源码摘要仍 `93b77a52787c21c3e
 负责人已明确授权合并部署 Backend PR45、Web PR54并启用新版提及，不要求发布正式APK或强制升级。PR45已合并为 `eb9ff12c770b14501eb1d9daa19f4d823728eba6`，机器契约与候选6d1228完全相同；标准同步仅改变来源记录，22模块文档复核通过。正式发布因实时依赖审计被阻止，尚未切换线上服务；最终运行SHA、只读复验和手机恢复结果另记，不把合并当作部署成功。
 
 USB再次授权后，machine会话54713／Flutter PID33772附加成功并确认app.started；原调试端口日志已轮换，仅在截图确认当前为阅读页、无打开编辑器后重启本任务Debug进程，没有清除数据或重新安装。未在该次附加后重新热重载；已安装APK与应用摘要仍如上。随后负责人明确“我先断开adb，你把其余工作先完成吧”，会话已退出，私有记录为disconnected-by-user。真机工作暂停，不以最后附加成功声称持续在线或验收通过；Backend/Web发布准备继续进行。
+
+### 资料兼容后端正式上线后的核验
+
+必要安全补丁Backend PR46经负责人明确批准合并，最终实际运行版本为 `a624bed0eb2b118701bd593fbce2aabf3dea7321`／API `5.36.0-dev.20261005.1`。Mobile通过标准入口同步该已合并提交，只改变来源及文档元数据，机器契约、生成SDK、应用与原生源码保持不变；固定语料来源及22模块文档检查通过。
+
+`npm run api:verify:production` 退出0（`.rp-profile-release-production.log`），公网API／bundle、精确build SHA和GET /threads Schema全部兼容；此前候选5.36与线上5.35不同的阻塞已解除。独立公网meta确认rpIdentityProfileSupported=true，兼容后端就绪时角色提及新写仍false，待Web实际发布健康后启用。原部署入口末尾公网curl遭代理TLS reset退出1，管理入口保持TLS校验直连复验与运行数据安全检查通过，未重跑已成功迁移；原失败结果保留，不改写成整次脚本退出0。
+
+这些同步和核验没有改变已安装Debug的应用摘要，无需重新构建APK。ADB按负责人要求保持断开；手机画面和原 @ 场景仍须负责人后续复验，公网自动检查仅执行只读接口。
+
+Web PR54已实际发布 `b60ea8172ef230d595debddb69e2075fc7d81ec0`，健康与匿名只读烟雾通过后，管理入口于2026-10-06北京时间20:17:44开启角色提及新写。Windows独立公网meta断言确认Backend仍为a624／API5.36，rpIdentityProfileSupported、roleMentionsV6Supported和roleMentionsV6WriteEnabled均true。全局Markdown保持5，旧客户端读投影和旧编辑保护继续保留；没有发布正式Mobile客户端或强制升级。
+
+负责人后续将现有Debug切回前台可触发启动能力刷新，再重新打开回复框输入 @ 复验候选名单。此次服务端启用不依赖ADB或新的APK；原用户场景和最新卡片观感仍为待负责人验收，不把能力检查或隔离回归当作真机确认。
