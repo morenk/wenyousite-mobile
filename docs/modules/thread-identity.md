@@ -70,6 +70,8 @@ domain 只包含不可变 RP 展示值、身份模式和更新输入。applicati
 
 ## 13. 最近审查的契约版本和后端提交
 
+2026-10-10 合并来源复核：通过官方同步入口固定到实际部署 Backend `b5f0e3bb0b99a3f9763b31e3080cb4d4f2e64045`，OpenAPI 仍为 `5.36.0-dev.20261005.1`。相对退役实施提交，机器契约、共享语料、生成客户端及本模块行为不变；仅来源登记更新，详见[退役验收记录](../architecture/retire-development-preview-acceptance.md)。
+
 OpenAPI `5.36.0-dev.20261005.1`；Backend `a624bed0eb2b118701bd593fbce2aabf3dea7321`（已部署兼容契约，公网精确核验通过）。Markdown 6 为可选扩展，结构化提及按原 sourceHref + 原标签映射；账号、角色和旧裸链接各自保持语义。全局 Markdown 仍为 5，新增提及写开关默认关闭，运行状态由启动能力读取。
 
 ## 14. 相关代码与架构文档
