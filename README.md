@@ -2,7 +2,7 @@
 
 温油站的 Flutter 原生客户端。正式、Debug 和 Profile APK 均仅支持 Android 8+（API 26）的 ARM64 设备，手机竖屏优先。共享 Dart 代码保持 iOS 兼容，但当前不做 iOS 验收。
 
-当前版本：`0.9.0+99`。浏览、设置、消息与顶部页签的本批视觉改动已获负责人确认合并；build 98 的后台版本名误填后改用 build 99，发布依据见[0.9.0 发布准备](docs/architecture/mobile-0.9.0-release-preparation.md)。普通应用构建连接公网 API `https://wenyou.site/api/v1`；开发反馈默认使用下方的隔离预览与持续 Debug，线上自动化只读。
+当前版本：`0.9.0+99`。浏览、设置、消息与顶部页签的本批视觉改动已获负责人确认合并；build 98 的后台版本名误填后改用 build 99，发布依据见[0.9.0 发布准备](docs/architecture/mobile-0.9.0-release-preparation.md)。普通应用构建连接公网 API `https://wenyou.site/api/v1`；开发反馈使用普通 Flutter Debug 与热重载，线上自动化只读。
 
 ## 技术基线
 
@@ -37,19 +37,17 @@ flutter pub get
 npm ci
 ```
 
-默认开发反馈使用隔离预览与持续 Debug。Agent 在任务 Worktree 内执行：
+日常开发不需要 Backend 快照、consumer 或预览控制器。在当前任务 Worktree 内启动普通 Flutter Debug：
 
 ```powershell
-npm run dev:start -- --session C:\private\preview-consumer.json
-npm run dev:status
-npm run dev:reload
-npm run dev:restart
-npm run dev:stop
+npm run dev -- -d <设备序号>
+# 使用已有开发 API 时显式指定；地址不可用会报错，不会切回公网。
+npm run dev -- -d <设备序号> --dart-define=API_BASE_URL=https://dev.example.test/api/v1
 ```
 
-第一次启动会编译并安装 `site.wenyou.app.debug`；后续颜色、间距与布局修改执行热重载，保留当前页面。初始化变化热重启，依赖／资源／原生变化按需重启或构建。无需每轮 APK、安装或全量门禁。多设备显式传 `--device`。描述来自 Backend 已提交的私有开发协议，实际身份不符立即停止，没有线上默认值。完整使用、故障恢复与验收记录见 [持续 Debug 开发](docs/live-debug.md)。
+此薄入口直接执行 `flutter run --debug`，透传 Flutter 参数与交互输入，只保留 Debug 包名核验和 ADB 防卸载保护。`dev:start/status/list/reload/restart/stop` 已退役。首次运行编译并覆盖安装 `site.wenyou.app.debug`，随后在原终端按 `r` 热重载、`R` 热重启、`q` 退出；不用逐轮构建 APK。API 编译配置变化需退出后重启。完整说明见 [Debug 开发](docs/live-debug.md)。
 
-原有普通应用构建仍默认使用公网 API；线上自动化只读，写入仅使用隔离预览。Windows 的 Backend 只读镜像只允许 fetch/show/diff 或契约同步，不在 Windows 修改或运行 Backend。
+未指定 API 时保持原默认公网地址 `https://wenyou.site/api/v1`。公网与 Tailnet 开发环境仍按线上保护，代理自动化只读；写入 E2E 必须使用已核验的独立环境，不能把普通 Debug 入口当作隔离证明。代理启动还须核对登录恢复、自动签到等启动副作用；不能证明只读时交由负责人自行启动，详见上述 Debug 文档。Windows 的 Backend 只读镜像只允许 fetch/show/diff 或契约同步，不在 Windows 修改或运行 Backend。
 
 ## 契约同步
 

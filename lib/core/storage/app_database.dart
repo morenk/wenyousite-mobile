@@ -5,7 +5,6 @@ import 'package:drift/native.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
-import 'package:wenyousite_mobile/core/config/app_environment.dart';
 import 'package:wenyousite_mobile/core/models/editor_models.dart';
 
 part 'app_database.g.dart';
@@ -38,13 +37,8 @@ class PendingCreateOperations extends Table {
 
 @DriftDatabase(tables: [LocalEditorSnapshots, PendingCreateOperations])
 class AppDatabase extends _$AppDatabase {
-  AppDatabase({AppEnvironment? environment, Directory? rootDirectory})
-    : super(
-        _openConnection(
-          environment ?? AppEnvironment.fromDefines(),
-          rootDirectory,
-        ),
-      );
+  AppDatabase({Directory? rootDirectory})
+    : super(_openConnection(rootDirectory));
 
   AppDatabase.forTesting(super.executor);
 
@@ -148,15 +142,10 @@ final appDatabaseProvider = Provider<AppDatabase>((ref) {
   return database;
 });
 
-LazyDatabase _openConnection(
-  AppEnvironment environment,
-  Directory? rootDirectory,
-) {
+LazyDatabase _openConnection(Directory? rootDirectory) {
   return LazyDatabase(() async {
     final directory = rootDirectory ?? await getApplicationSupportDirectory();
-    final file = File(
-      p.join(directory.path, environment.storageName('wenyou_mobile.sqlite')),
-    );
+    final file = File(p.join(directory.path, 'wenyou_mobile.sqlite'));
     return NativeDatabase.createInBackground(file);
   });
 }

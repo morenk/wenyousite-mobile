@@ -62,7 +62,7 @@
 
 ## 8. 本地存储、缓存及失效规则
 
-开发预览按 Backend runId 隔离 Token、偏好、Drift 草稿／待确认操作、图片草稿和缓存；同名批次 reset 后使用新命名空间。原线上路径与数据保留，不向预览迁移身份或待提交操作。网络与上传先验证当前批次实际资源身份；预览仅 Debug 启用。详见 [持续 Debug](../live-debug.md)。
+普通 Debug 使用原有 Token、偏好、Drift 草稿／待确认操作、图片草稿和缓存路径。专用隔离开发预览已退役；旧批次数据保留在原键／文件，不自动读取、导入或删除。详情见 [Debug 开发](../live-debug.md)。
 
 `local_editor_snapshots` 以稳定 ID `thread:new:<ownerId>` upsert，保存上下文、Markdown、JSON 元数据、`clientRequestId` 和更新时间；`pending_create_operations` 保存操作类型、规范化载荷、状态和更新时间。主题首次创建在发送前原子写入当前快照与待确认载荷，并从落盘开始阻止重复提交；确认远端主题后，关联远端版本和删除待确认记录在同一事务内完成。发布确认后仅清理关联快照，迟到防抖保存不得复活已发布内容。
 

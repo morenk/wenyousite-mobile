@@ -70,7 +70,7 @@ galleryList：读取 GalleryList200Response / GalleryPageDto / GalleryImageDto�
 
 ## 8. 本地存储、缓存及失效规则
 
-开发预览按 Backend runId 隔离 Token、偏好、Drift 草稿／待确认操作、图片草稿和缓存；同名批次 reset 后使用新命名空间。原线上路径与数据保留，不向预览迁移身份或待提交操作。网络与上传先验证当前批次实际资源身份；预览仅 Debug 启用。详见 [持续 Debug](../live-debug.md)。
+普通 Debug 使用原有 Token、偏好、Drift 草稿／待确认操作、图片草稿和缓存路径。专用隔离开发预览已退役；旧批次数据保留在原键／文件，不自动读取、导入或删除。详情见 [Debug 开发](../live-debug.md)。
 
 选图恢复属于可选启动步骤。恢复上下文读取、系统选择读取或上下文清理失败时返回安全重选提示，不阻止应用启动，不自动上传。
 
