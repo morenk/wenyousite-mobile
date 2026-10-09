@@ -70,7 +70,7 @@ galleryList：读取 GalleryList200Response / GalleryPageDto / GalleryImageDto�
 
 ## 8. 本地存储、缓存及失效规则
 
-开发预览按 Backend runId 隔离 Token、偏好、Drift 草稿／待确认操作、图片草稿和缓存；同名批次 reset 后使用新命名空间。原线上路径与数据保留，不向预览迁移身份或待提交操作。网络与上传先验证当前批次实际资源身份；预览仅 Debug 启用。详见 [持续 Debug](../live-debug.md)。
+普通 Debug 使用原有 Token、偏好、Drift 草稿／待确认操作、图片草稿和缓存路径。专用隔离开发预览已退役；旧批次数据保留在原键／文件，不自动读取、导入或删除。详情见 [Debug 开发](../live-debug.md)。
 
 选图恢复属于可选启动步骤。恢复上下文读取、系统选择读取或上下文清理失败时返回安全重选提示，不阻止应用启动，不自动上传。
 
@@ -133,6 +133,8 @@ galleryList：读取 GalleryList200Response / GalleryPageDto / GalleryImageDto�
 服务端用户 DTO 未提供头像或主页背景的 thumbnail/medium 字段，因此资料页只使用明确原地址。原图、预览、取景框与失败上传输入只在当前页面/autoDispose 生命周期内短暂保留，也不提供后台队列；页面释放、主动取消后需重新选择，进程在 Android 系统选图期间被终止时仅保底恢复富正文、动态/评论和私聊的待选文件，头像与主页背景仍需重新选择。`flutter_image_compress` 没有取消在途 native 编码的接口：用户取消后不会开始对象存储上传且迟到结果会被丢弃，但已经进入平台编码的任务仍可能运行到返回；当前以全局单路准备、像素上限和 Debug 分阶段计时控制与观测风险，是否进一步降低像素阈值需以 Profile/Release 大图数据决定。当前 `flutter_image_compress_common` 仍由插件应用 Kotlin Gradle Plugin，Flutter 已提示未来需迁移到 Built-in Kotlin；现有可解析版本尚未提供该迁移，后续按上游兼容版本单独处理。契约 5.4 的 `mediaReissueUploadUrl` 尚未接入；同一 `mediaId` 的对象缺失恢复、重签地址、重传、再次确认和取消边界作为独立高风险上传切片实现。契约 5.26 新增内容图片图集查询，但当前查看器仍只浏览调用页面已经加载的图片；跨页双向游标、锚点失效与索引未就绪恢复需在独立媒体切片接入。相册文件访问由 `image_picker` 与 Android 系统 Photo Picker 管理。
 
 ## 13. 最近审查的契约版本和后端提交
+
+2026-10-10 合并来源复核：通过官方同步入口固定到实际部署 Backend `b5f0e3bb0b99a3f9763b31e3080cb4d4f2e64045`，OpenAPI 仍为 `5.36.0-dev.20261005.1`。相对退役实施提交，机器契约、共享语料、生成客户端及本模块行为不变；仅来源登记更新，详见[退役验收记录](../architecture/retire-development-preview-acceptance.md)。
 
 本轮共享契约复核：OpenAPI `5.36.0-dev.20261005.1`，Backend `a624bed0eb2b118701bd593fbce2aabf3dea7321`。新增帖内多角色集合及可选发表 identityId，Markdown 5 与本模块既有消费保持；实际部署与设备验收另行登记，相关行为见[帖内身份](thread-identity.md)。
 

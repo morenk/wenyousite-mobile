@@ -5,7 +5,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 
-// Flutter installApp 会在 install -r 失败后卸载旧包；持续预览必须保留本机数据。
+// Flutter installApp 会在 install -r 失败后卸载旧包；Debug 调试必须保留本机数据。
 public static class WenyouAdbGuard {
   static string Quote(string value) {
     var result=new StringBuilder("\""); int slashes=0;
@@ -21,7 +21,7 @@ public static class WenyouAdbGuard {
     catch(IOException) {} catch(UnauthorizedAccessException) {}
     foreach(var arg in args) {
       if(Regex.IsMatch(arg,@"(^|[\s;])(uninstall(?:-multiple)?|clear)([\s;]|$)",RegexOptions.IgnoreCase)) {
-        Console.Error.WriteLine("Preview ADB refuses uninstall/clear; existing app data is preserved.");
+        Console.Error.WriteLine("Debug ADB refuses uninstall/clear; existing app data is preserved.");
         return 73;
       }
     }
@@ -39,6 +39,6 @@ public static class WenyouAdbGuard {
         child.StandardOutput.BaseStream.CopyTo(Console.OpenStandardOutput());
         child.WaitForExit(); error.Join(); return child.ExitCode;
       }
-    } catch { Console.Error.WriteLine("Preview ADB target is unavailable."); return 74; }
+    } catch { Console.Error.WriteLine("Debug ADB target is unavailable."); return 74; }
   }
 }

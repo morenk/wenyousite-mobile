@@ -17,7 +17,7 @@ import 'package:wenyousite_mobile/features/media/data/system_image_picker_config
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  AppEnvironment.fromDefines(); // 在任何存储读取与网络启动前拒绝非法预览配置。
+  AppEnvironment.fromDefines(); // 在任何存储读取与网络启动前拒绝已退役的配置。
   await initializeFailureDiagnostics();
   if (wenyouFieldDiagnosticsEnabled) installWenyouDebugDiagnostics();
   configureSystemImagePicker();

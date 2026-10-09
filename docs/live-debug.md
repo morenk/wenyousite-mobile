@@ -1,47 +1,44 @@
-# 持续 Debug 与隔离开发预览
+# Flutter Debug 开发
 
-开发反馈顺序为：agent 启动预览 → 改样式 → 热重载查看 → 连续反馈 → 收敛后交付门禁。同一批次使用同一任务、Worktree 和 PR。交互式预览不是一次性 E2E，不在每次反馈后删除数据。
+日常开发直接使用 Flutter Debug、已有 API 和热重载。Backend 快照、consumer、预览批次和后台控制器已退役，不再是启动条件。
 
-## 启动与控制
+## 启动与反馈
 
-Backend 管理入口准备当天快照与独立预览实例后，将无密钥 `consumer.json` 交给本任务。协议固定版本见 `contracts/dev-preview-session-source.json`；只接受 ready 描述和真实身份匹配的实例。所有数据和邮件收件箱留在 VPS，Windows 不获取线上数据库或存储凭据。
-
-私有预览协议固定 Backend `bc00ae8a86ba35fe9f1b2aad942db59477496cb9`。可选 `snapshot.sourceKind` 只接受 `synthetic-downloads` 和 `synthetic-thread-identities`；这些批次在会话状态保留来源，并通过启动参数显示“合成数据预览”，不能计为当天真实快照或真机验收。无此字段的既有快照仍兼容，资源身份与端口核验不放宽。
+在本任务 Windows Worktree 中确认 SDK、依赖和设备。先检查其他任务或 IDE 是否正在使用同一设备的 `site.wenyou.app.debug`；已有本任务会话直接复用，其他任务占用时保留现场。
 
 ```powershell
-npm run dev:start -- --session C:\private\consumer.json
-npm run dev:status
-npm run dev:list -- --json
-npm run dev:reload
-npm run dev:restart
-npm run dev:stop
+flutter devices
+npm run dev -- -d <设备序号>
+# 需要连接已有开发 API 时显式指定真实地址。
+npm run dev -- -d <设备序号> --dart-define=API_BASE_URL=https://dev.example.test/api/v1
 ```
 
-- 默认识别唯一已连接 ARM64 真机；多个设备时添加 `--device <序号>`。SDK 从环境变量与本机约定路径发现，Flutter 使用 SDK 内的 Dart 与 flutter_tools.snapshot。
-- `start` 幂等，同一任务与 runId 复用现有会话。首次 `flutter run --machine --debug` 编译并安装 `site.wenyou.app.debug`；普通热重载不再次安装，不更改正式包或其数据。
-- `reload` 调用 `app.restart(fullRestart: false)`；`restart` 使用 `true`。初始化、Provider 装配或全局状态变更用热重启；依赖、资源、生成代码变化先执行对应获取／生成，必要时停止再启动；原生变化重新构建。
-- 进程隐藏运行，控制地址只监听 loopback，状态目录为 `%LOCALAPPDATA%\Wenyou\live-debug`。ACL 仅当前用户与 SYSTEM 可读；重复启动只在所有者、完整访问规则和继承状态逐项一致时复用目录，其他情况仍重新设置严格 ACL 或停止；控制 token 不输出到状态展示、事件或源码。不要分享私有状态文件。
-- 同设备 Debug 包一把独占锁，控制器绑定任务分支、绝对 Worktree、设备、runId、PID 与进程开始时间。不能从另一个 Worktree 接管。`status` 可从新终端调用；异常退出在原 Worktree 执行 `stop` 按登记恢复清理。
-- 启动、恢复与停止共享 Windows Named Mutex，持锁后重新读取归属；系统在控制进程异常退出时释放互斥。daemon 必须核对本次启动 token、runId 和 PID 后才能领取状态，迟到的旧 daemon 不能控制新批次。
-- `dev:start` 还与治理桥接共用 `%LOCALAPPDATA%\Wenyou\preview-control\transition.lock`，避免治理检查无人使用后又有 Mobile 接入旧批次。锁不可重入，只能回收确认 PID 已退出的普通锁文件；活 PID、权限失败、坏锁和遗留 recovery 锁均保留并拒绝本次启动。start 发布初始状态与设备锁后，后台启动继续受会话登记保护。
-- `dev:list` 只读当前用户全部 Worktree 的登记，不启动 SDK、ADB 或 Flutter，不输出控制凭据。它核验控制器开始时间、设备锁及 authenticated status，区分已核验活动会话、干净停止的历史会话和归属不明的阻塞项。治理在共同过渡锁内调用 `node tool/dev/list.mjs --json`；绑定旧 run 的 `active` 或 `blocked` 条目阻止暂停、断开共享桥接及切换。需要释放时由原任务执行 `dev:stop`，不能从治理接管其他任务设备。完整输出协议见 [Mobile 会话查询协议](../contracts/mobile-dev-session-list.md)。
-- Flutter 与自有 SSH 使用 Windows Job Object：挂起创建进程，登记 Job 后才继续运行，并绑定 daemon 的实际进程句柄。daemon、根进程或 wrapper 被强杀都会回收全部后代，覆盖子进程尚未写入状态文件的窗口；不能证明后代归属的旧状态保留设备锁，不宣称清理完成。
-- 首次安装通过任务私有 SDK 视图内的 ADB guard；共享 Android SDK 与 Flutter 配置不修改。guard 保留参数、二进制管道及退出码，拒绝 `uninstall`／`pm clear`，阻止 Flutter 覆盖安装失败后自动卸载旧包。启动前以真实 `flutter devices --machine` 核验 guard 确实被使用；不能核验或安装失败则停止，保留旧登录态和草稿。
+`npm run dev` 是 `flutter run --debug` 的薄入口，透传标准 Flutter 参数和终端输入。它只核验 Debug 包名并使用任务目录内的 ADB guard：Flutter 覆盖安装失败后尝试卸载时会被拒绝，保留旧登录态和草稿。它不启动 Backend、数据库、SSH、ADB reverse 或后台会话服务，不改共享 SDK 或全局 Flutter 配置。普通 `flutter run --debug` 的开发方式仍可使用，但 Flutter 本身可能在覆盖安装失败后自动卸载旧包；代理安装含用户数据的 Debug 包必须经过此保护入口。
 
-## 网络与持久化边界
+- 同一反馈批次保留原终端：`r` 热重载，`R` 热重启，`q` 停止。也可使用 Flutter machine 协议，但不再有专用 `dev:*` 控制命令。
+- 展示变动先热重载；初始化、Provider、路由、全局／静态状态变动热重启。
+- API 的 Dart defines 变动必须退出并重启。依赖、资源、字体、代码生成变动执行相应获取／生成并重启；插件、Manifest、Gradle 或原生代码变动重新构建。
+- 启动前后核对 `site.wenyou.app.debug`、设备、应用更新时间；首次安装核对 APK SHA-256。安装失败时停止，不卸载、不清数据、不降级覆盖正式包。
+- 热重载画面记录当前源码 SHA、含未提交变化的内容摘要、Worktree、设备、API、会话及 reload 结果。首次 APK 哈希不能代表热重载后的画面。
 
-SSH 只转发本批次 API 与媒体端口到 `wenyou-dev-vps` 的 loopback，ADB reverse 保持相同端口，预签名 URL 不改写。已有同端口隧道只有实际 backend/media 身份全部匹配才借用；仅本任务创建的隧道和 reverse 会在 stop 时清理。Web/Mobile 联合批次先由治理桥接持有共享隧道，Mobile 再借用；Mobile 自建隧道只供当前 Mobile 会话。不要在反馈批次中关闭治理共享隧道。
+同一会话的纯展示热重载沿用既有核验，不机械重建环境，仍不得触发线上业务写入。
 
-服务器的新入口统一使用 Web `14310`、API `14311`、媒体 `14312`，同时仅运行一个交互批次；Mobile 继续消费 v1 的安全 loopback 描述，兼容尚未迁移的旧端口。固定地址切换不改变 App 编译时的 runId：旧页面每次请求重新探测身份，错误批次或暂停立即拒绝请求，原 run 恢复后才重新放行。Token、待确认写操作及图片草稿按 runId 保留，切换端口不会把旧草稿或旧会话传给新批次。不要手工覆盖 consumer 描述来热重载不同 run；停止原 Debug 后由目标任务重新启动。
+本入口无后台登记／控制器；任务自行保留终端与归属记录，不接管其他会话。退出 Flutter 不清除应用数据，也不停止其他任务的进程或隧道。
 
-启动和运行期间检查服务实际 PostgreSQL／Redis／媒体身份；App 在登录、API 请求及直传前重新核验双方身份。API 加 `X-Wenyou-Preview-Run`，直传保留原签名。拒绝重定向、错误批次、线上端口和未知上传 origin。失败停止请求，绝不回落到线上 `3000` 或公网 API。Backend／媒体暂不可用时控制器标记 unavailable，保留 Flutter 与当前页面，正确身份恢复后自动回 ready；设备、自有 SSH 或 Flutter 退出才停止调试。
+## API 与数据边界
 
-Token、Drift、图片草稿、持久偏好、诊断与图片缓存按 runId 分离。线上继续使用原键和原文件；切换环境不自动复制或删除数据。系统选图只恢复属于当前命名空间的选择。预览关闭 Sentry；页面显示开发预览及快照时间；Release/Profile 拒绝预览 defines。
+没有显式 `API_BASE_URL` 时保持应用原默认值 `https://wenyou.site/api/v1`。自定义地址不可用时报告错误，不静默切回默认值。公网与 Tailnet 开发环境仍按线上保护，代理自动化只读；不会因为本机 Debug 或 loopback 地址而变成隔离环境。负责人在应用内的手动使用不等同于授权代理线上写入。应用恢复登录后可能自动签到或执行后台写入，因此代理启动、复用或热重启前必须核对实际 API、现有登录态与启动副作用；不能仅以不点击写入按钮认定只读。无法证明只读时停在构建／离线组件验证，交由负责人自行启动使用，或使用已核验的独立写入 E2E 环境。
 
-## 反馈和验收证据
+写入 E2E 继续要求独立 PostgreSQL、Redis、上传路径与账号，关闭真实邮件、推送及外部存储写入。登录／写入前核验资源身份和实际 API 目标；失败立即停止，登记 runId、资源归属及清理结果。详见[治理 E2E 数据隔离规范](https://github.com/morenk/wenyousite-workspace/blob/main/docs/e2e-data-isolation.md)。
 
-开发中只执行直接相关测试，不因每次保存执行完整门禁。`events.jsonl` 记录每次成功启动、热重载／热重启的源码 SHA、包含未提交修改的 SHA-256、runId、设备、Flutter appId、Android 进程与包更新时间；初装另核对设备 APK 哈希；不得把最初 APK 哈希作为热重载画面版本。源码在热重载期间又发生变化时必须重试，失败不覆盖上次成功证据。
+普通构建沿用既有 Token、偏好、Drift、待确认操作、图片草稿、诊断和缓存路径。`API_BASE_URL` 本身不分区本地账号和草稿；不要把当前账号或待提交内容带到另一环境。需要操作不同环境时先明确数据边界，不自动复制、清空或迁移用户数据。
 
-反馈收敛后对最终源码执行仓库规定门禁。网络／认证／持久化等高风险改动首次候选仍需完整门禁与构建；本工具只改善后续反馈节奏，不取消交付检查。独立 APK 仅在需要离开 Debug 会话验收或构建条件变化时生成。视觉结果仍由负责人确认；自动检查不替代真机画面与交互验收。
+## 旧方案退役
 
-管理快照尚未审核启用时，只能用已核验隔离样本验证连接，必须注明“真实数据登录／图片链路待验收”，不能以 mock 身份端点证明隔离成功。停止保留后端数据，显式 reset/cleanup 按 Backend 归属门禁执行，Mobile 不自动重置批次。
+`dev:start/status/list/reload/restart/stop`、consumer 私有协议、身份探测与预览横幅已移除。残留 `WENYOU_PREVIEW_*` Dart defines 会显式拒绝启动，须移除后重新确认 API，不能复用旧 consumer 启动新客户端。
+
+旧 `preview_<run>.…` 安全存储键、偏好、数据库、图片草稿与缓存保留在原处。普通客户端不再读取这些数据；需要找回时使用旧版本的对应任务现场按原归属显式导出，不能直接导入普通账号。此次退役不执行设备清理、旧会话停止或 `%LOCALAPPDATA%\Wenyou\live-debug` 清理。仍在运行的旧会话由其原任务、旧版本工具处理。
+
+## 检查与验收
+
+开发反馈运行直接相关测试；反馈收敛后按仓库风险分层完成静态检查和交付门禁。需要脱离会话使用时才生成独立 APK。网络、认证、持久化等高风险变更仍须完整门禁与构建；取消预览不降低检查或负责人验收要求。环境或设备未就绪时报告具体阻塞，Widget/Golden 只作辅助证据。

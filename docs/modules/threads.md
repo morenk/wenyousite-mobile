@@ -293,6 +293,8 @@ GIF 上传插入修复（2026-09-13，负责人验收通过）：新主题正文
 
 ## 13. 最近审查的契约版本和后端提交
 
+2026-10-10 合并来源复核：通过官方同步入口固定到实际部署 Backend `b5f0e3bb0b99a3f9763b31e3080cb4d4f2e64045`，OpenAPI 仍为 `5.36.0-dev.20261005.1`。相对退役实施提交，机器契约、共享语料、生成客户端及本模块行为不变；仅来源登记更新，详见[退役验收记录](../architecture/retire-development-preview-acceptance.md)。
+
 2026-10-05 逐条身份补充契约：固定 Backend `a624bed0eb2b118701bd593fbce2aabf3dea7321`／`5.36.0-dev.20261005.1`。四个新发言／首次正文写入增加可选 `identityMode: ACCOUNT|RP`；ACCOUNT 明确沿用站内资料，RP 需本人确认，旧正文编辑保留原身份。此 chore 只同步固定契约和生成 SDK，产品接入与验收另行记录。
 
 2026-10-05 帖内身份契约同步：Backend `473738d25405828932f2e307f38ff82bbf50c2a4`／`5.33.0-dev.20261004.1`，新增五个可选身份操作及历史显示投影。本 chore 仅同步固定来源和生成 SDK，原模块行为及验收边界保持；后续业务接入另行记录，见[契约同步](../architecture/rp-identity-contract-sync.md)。
