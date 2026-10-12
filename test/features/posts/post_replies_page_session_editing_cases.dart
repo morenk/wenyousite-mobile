@@ -392,8 +392,9 @@ void registerPostRepliesPageSessionEditingCases() {
 
     await tester.tap(find.byKey(const Key('post-reply-compose')));
     await tester.pump();
-    expect(find.byKey(const Key('post-composer-sheet')), findsOneWidget);
+    expect(find.byKey(const Key('post-composer-opening')), findsOneWidget);
     await tester.pumpAndSettle();
+    expect(find.byKey(const Key('post-composer-sheet')), findsOneWidget);
     expect(find.text('回复 @楼层作者'), findsWidgets);
     expect(find.text('回复会平级挂在当前主楼层下。'), findsNothing);
     expect(

@@ -50,7 +50,6 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
   final _countKey = GlobalKey();
   final _itemListKey = GlobalKey();
   final _scrollController = ScrollController();
-  final _composerDrafts = <String, PostComposerDraft>{};
   final _composeObstructionKey = GlobalKey();
   late final _quickScroll = ReadingQuickScrollController(
     scrollController: _scrollController,
@@ -186,7 +185,6 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
     final authorsProvider = postReplyDiscussionAuthorsProvider(rootPostId);
     ref.listen(sessionScopeProvider, (previous, next) {
       if (previous == null || previous == next) return;
-      _composerDrafts.clear();
       _navigation.clear();
       _targetAttempt += 1;
       _targetRevealed = false;
@@ -520,7 +518,6 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
     _quickScroll.close();
     if (_openingComposer) return;
     _openingComposer = true;
-    final draftKey = postComposerDraftKey(target);
     final openedSessionScope = ref.read(sessionScopeProvider);
     try {
       final result = await showPostComposerSheet(
@@ -532,17 +529,10 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
             false,
         context: context,
         target: target,
-        initialDraft: _composerDrafts[draftKey],
-        onDraftChanged: (draft) {
-          if (!mounted) return;
-          if (ref.read(sessionScopeProvider) != openedSessionScope) return;
-          setPostComposerDraft(_composerDrafts, draftKey, draft);
-        },
       );
       if (!mounted) return;
       if (ref.read(sessionScopeProvider) != openedSessionScope) return;
       if (result != null) {
-        _composerDrafts.remove(draftKey);
         if (target.kind == PostComposerKind.createReply) {
           ref.invalidate(postReplyDiscussionAuthorsProvider(rootPostId));
         }
