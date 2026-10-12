@@ -71,6 +71,8 @@ dependencies:
   sentry: 9.29.0
   package_info_plus: ^10.2.1
   http: ^1.6.0
+  webview_flutter: 4.14.1
+  webview_flutter_android: 4.14.1
 
 dev_dependencies:
   flutter_cache_manager: 3.4.2
@@ -91,6 +93,7 @@ dev_dependencies:
   mocktail: ^1.0.5
   built_collection: ^5.1.1
   analyzer: 13.0.0
+  webview_flutter_platform_interface: ^2.15.1
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

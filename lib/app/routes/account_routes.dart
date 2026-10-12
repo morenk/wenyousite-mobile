@@ -19,12 +19,33 @@ import 'package:wenyousite_mobile/features/social/domain/user_relation_list_mode
 import 'package:wenyousite_mobile/features/social/presentation/bookmark_list_page.dart';
 import 'package:wenyousite_mobile/features/social/presentation/user_relation_list_page.dart';
 import 'package:wenyousite_mobile/features/stickers/presentation/sticker_collection_page.dart';
+import 'package:wenyousite_mobile/features/toolbox/domain/text_tool.dart';
+import 'package:wenyousite_mobile/features/toolbox/presentation/text_tool_page.dart';
+import 'package:wenyousite_mobile/features/toolbox/presentation/toolbox_page.dart';
 import 'package:wenyousite_mobile/features/users/presentation/me_content_dashboard.dart';
 import 'package:wenyousite_mobile/features/users/presentation/me_page.dart';
 import 'package:wenyousite_mobile/features/users/presentation/public_user_page.dart';
 import 'package:wenyousite_mobile/features/wallet/presentation/wallet_page.dart';
 
 List<RouteBase> buildAccountRoutes(Ref ref) => [
+  GoRoute(
+    path: AppRoutePaths.toolbox,
+    name: AppRouteNames.toolbox,
+    builder: (context, state) => const ToolboxPage(),
+    routes: [
+      GoRoute(
+        path: AppRoutePaths.textToolSegment,
+        name: AppRouteNames.textTool,
+        redirect: (context, state) =>
+            TextTool.fromId(state.pathParameters['toolId']) == null
+            ? AppRouteLocations.toolbox
+            : null,
+        builder: (context, state) => TextToolPage(
+          tool: TextTool.fromId(state.pathParameters['toolId'])!,
+        ),
+      ),
+    ],
+  ),
   // 旧地址只安全回到可用入口，不保留隐藏的说明或历史页面。
   GoRoute(
     path: AppRoutePaths.retiredMobileReleases,

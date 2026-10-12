@@ -68,6 +68,7 @@ class _GuestMePage extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: wenyouPersonalPageBackground(context),
         title: const Text('我的'),
+        actions: const [_ToolboxAction()],
       ),
       body: WenyouPageBody(
         maxWidth: 600,
@@ -135,6 +136,7 @@ class _AuthenticatedMePage extends ConsumerWidget {
         backgroundColor: wenyouPersonalPageBackground(context),
         title: const Text('我的'),
         actions: [
+          const _ToolboxAction(),
           IconButton(
             key: const Key('me-open-settings'),
             tooltip: '账号设置',
@@ -409,6 +411,17 @@ class MeSettingsPage extends ConsumerWidget {
     );
     return WenyouSettingsTypography(child: page);
   }
+}
+
+class _ToolboxAction extends StatelessWidget {
+  const _ToolboxAction();
+
+  @override
+  Widget build(BuildContext context) => TextButton(
+    key: const Key('me-open-toolbox'),
+    onPressed: () => context.pushNamed(AppRouteNames.toolbox),
+    child: const Text('工具箱'),
+  );
 }
 
 class _AppearanceSettingsPanel extends ConsumerWidget {

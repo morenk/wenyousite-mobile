@@ -11,6 +11,7 @@ abstract final class AppRouteLocations {
   static const search = AppRoutePaths.search;
   static const diagnostics = AppRoutePaths.diagnostics;
   static const appearance = AppRoutePaths.appearance;
+  static const toolbox = AppRoutePaths.toolbox;
   static const moderationAppeals = AppRoutePaths.moderationAppeals;
   static const composeThread = AppRoutePaths.composeThread;
   static const composeMoment = AppRoutePaths.composeMoment;
@@ -110,6 +111,8 @@ abstract final class AppRoutePaths {
   static const search = '/search';
   static const diagnostics = '/diagnostics';
   static const appearance = '/appearance';
+  static const toolbox = '/tools';
+  static const textToolSegment = ':toolId';
   static const moderationAppeals = '/appeals';
   static const momentBookmarks = '/moments/bookmarks';
   static const momentEdit = '/moments/:momentId/edit';
@@ -168,6 +171,8 @@ abstract final class AppRouteNames {
   static const search = 'search';
   static const diagnostics = 'diagnostics';
   static const appearance = 'appearance';
+  static const toolbox = 'toolbox';
+  static const textTool = 'text-tool';
   static const moderationAppeals = 'moderation-appeals';
   static const momentBookmarks = 'moment-bookmarks';
   static const momentEdit = 'moment-edit';
