@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_selection_menu.dart';
@@ -33,17 +34,17 @@ class ToolSelect<T> extends StatelessWidget {
     required this.value,
     required this.options,
     required this.onChanged,
+    this.stacked = false,
     super.key,
   });
   final String label;
   final T value;
   final Map<T, String> options;
   final ValueChanged<T> onChanged;
+  final bool stacked;
   @override
-  Widget build(BuildContext context) => WenyouSettingsLink(
-    title: label,
-    value: options[value],
-    onTap: () async {
+  Widget build(BuildContext context) {
+    Future<void> select() async {
       FocusManager.instance.primaryFocus?.unfocus();
       final next = await showWenyouSheet<T>(
         context: context,
@@ -67,8 +68,37 @@ class ToolSelect<T> extends StatelessWidget {
         ),
       );
       if (context.mounted && next != null) onChanged(next);
-    },
-  );
+    }
+
+    if (!stacked) {
+      return WenyouSettingsLink(
+        title: label,
+        value: options[value],
+        onTap: select,
+      );
+    }
+    return ListTile(
+      minTileHeight: context.wenyouTokens.minimumTouchTarget,
+      title: Padding(
+        padding: EdgeInsets.symmetric(vertical: context.wenyouTokens.space8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(label, style: Theme.of(context).textTheme.wenyouRowTitle),
+            SizedBox(height: context.wenyouTokens.space4),
+            Text(
+              options[value] ?? '',
+              style: Theme.of(context).textTheme.wenyouCompactBody.copyWith(
+                color: context.wenyouTokens.mutedText,
+              ),
+            ),
+          ],
+        ),
+      ),
+      trailing: const WenyouIcon(WenyouIconIds.navigationNext),
+      onTap: select,
+    );
+  }
 }
 
 class ToolNumber extends StatelessWidget {
