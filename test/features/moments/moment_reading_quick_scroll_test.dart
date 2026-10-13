@@ -72,14 +72,9 @@ void main() {
       await tester.pumpAndSettle();
       quick.endDrag(1);
       await tester.pumpAndSettle();
-      expect(repository.commentCalls, 1);
+      expect(repository.commentCalls, 2);
       expect(quick.scrollController.position.extentAfter, lessThanOrEqualTo(1));
-      expect(
-        find.byKey(const Key('moment-comments-load-more')),
-        findsOneWidget,
-      );
-      await tester.tap(find.byKey(const Key('moment-comments-load-more')));
-      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('moment-comments-load-more')), findsNothing);
       expect(repository.commentCalls, 2);
       expect(tester.takeException(), isNull);
     });
