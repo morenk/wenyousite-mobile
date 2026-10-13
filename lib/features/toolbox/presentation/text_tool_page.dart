@@ -6,6 +6,7 @@ import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
+import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/toolbox/domain/text_tool.dart';
 import 'package:wenyousite_mobile/features/toolbox/domain/toolbox_location_policy.dart';
@@ -176,40 +177,64 @@ class _TextToolPageState extends State<TextToolPage> {
   @override
   Widget build(BuildContext context) => Theme(
     data: _openingTheme ?? Theme.of(context),
-    child: Scaffold(
-      appBar: AppBar(
-        title: Text(_currentTool.title),
-        leading: IconButton(
-          tooltip: '返回工具箱',
-          icon: const WenyouIcon(WenyouIconIds.navigationBack),
-          onPressed: _returnToDirectory,
-        ),
-      ),
-      body: SafeArea(
-        child: _failed
-            ? WenyouPageBody(
-                child: WenyouEmptyState(
-                  icon: WenyouIconIds.statusOffline,
-                  title: '工具加载失败',
-                  message: '请检查网络后重试。',
-                  action: FilledButton(
-                    onPressed: _load,
-                    child: const Text('重试'),
+    child: Builder(
+      builder: (context) => Scaffold(
+        body: SafeArea(
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              if (_controller != null && _policy != null)
+                ExcludeSemantics(
+                  excluding: _loading || _failed,
+                  child: IgnorePointer(
+                    ignoring: _loading || _failed,
+                    child: WebViewWidget(controller: _controller!),
                   ),
                 ),
-              )
-            : Stack(
-                children: [
-                  if (_controller != null && _policy != null)
-                    WebViewWidget(controller: _controller!),
-                  if (_loading)
-                    const Positioned.fill(
-                      child: WenyouPageBody(
-                        child: WenyouDetailSkeleton(label: '正在打开工具'),
+              if (_loading || _failed)
+                ColoredBox(
+                  key: const Key('toolbox-state-overlay'),
+                  color: Theme.of(context).scaffoldBackgroundColor,
+                  child: Column(
+                    children: [
+                      AppBar(
+                        primary: false,
+                        title: Text(_currentTool.title),
+                        leading: IconButton(
+                          tooltip: '返回工具箱',
+                          icon: const WenyouIcon(WenyouIconIds.navigationBack),
+                          onPressed: _returnToDirectory,
+                        ),
                       ),
-                    ),
-                ],
-              ),
+                      Expanded(
+                        child: Center(
+                          child: _failed
+                              ? WenyouPageBody(
+                                  child: WenyouEmptyState(
+                                    icon: WenyouIconIds.statusOffline,
+                                    title: '工具加载失败',
+                                    message: '请检查网络后重试。',
+                                    action: FilledButton(
+                                      onPressed: _load,
+                                      child: const Text('重试'),
+                                    ),
+                                  ),
+                                )
+                              : SizedBox.square(
+                                  dimension: context.wenyouTokens.space24,
+                                  child: const CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    semanticsLabel: '正在打开工具',
+                                  ),
+                                ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+        ),
       ),
     ),
   );

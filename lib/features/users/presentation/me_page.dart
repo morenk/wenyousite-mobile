@@ -68,7 +68,6 @@ class _GuestMePage extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: wenyouPersonalPageBackground(context),
         title: const Text('我的'),
-        actions: const [_ToolboxAction()],
       ),
       body: WenyouPageBody(
         maxWidth: 600,
@@ -91,6 +90,8 @@ class _GuestMePage extends StatelessWidget {
                 ),
               ),
             ),
+            SizedBox(height: context.wenyouTokens.space12),
+            const _ToolboxEntry(),
             SizedBox(height: context.wenyouTokens.space12),
             const WenyouSettingsGroup(
               title: '偏好',
@@ -136,7 +137,6 @@ class _AuthenticatedMePage extends ConsumerWidget {
         backgroundColor: wenyouPersonalPageBackground(context),
         title: const Text('我的'),
         actions: [
-          const _ToolboxAction(),
           IconButton(
             key: const Key('me-open-settings'),
             tooltip: '账号设置',
@@ -146,11 +146,15 @@ class _AuthenticatedMePage extends ConsumerWidget {
         ],
       ),
       body: switch (state.phase) {
-        MeProfilePhase.loading => const WenyouPageBody(
-          child: WenyouDetailSkeleton(label: '正在加载个人资料'),
+        MeProfilePhase.loading => const _MePageList(
+          children: [
+            _ToolboxEntry(),
+            WenyouDetailSkeleton(label: '正在加载个人资料'),
+          ],
         ),
         MeProfilePhase.failed => _MePageList(
           children: [
+            const _ToolboxEntry(),
             WenyouPanel(
               child: WenyouEmptyState(
                 icon: WenyouIconIds.statusOffline,
@@ -413,14 +417,19 @@ class MeSettingsPage extends ConsumerWidget {
   }
 }
 
-class _ToolboxAction extends StatelessWidget {
-  const _ToolboxAction();
+class _ToolboxEntry extends StatelessWidget {
+  const _ToolboxEntry();
 
   @override
-  Widget build(BuildContext context) => TextButton(
-    key: const Key('me-open-toolbox'),
-    onPressed: () => context.pushNamed(AppRouteNames.toolbox),
-    child: const Text('工具箱'),
+  Widget build(BuildContext context) => WenyouSettingsGroup(
+    children: [
+      WenyouSettingsLink(
+        key: const Key('me-open-toolbox'),
+        icon: WenyouIconIds.contentCategory,
+        title: '工具箱',
+        onTap: () => context.pushNamed(AppRouteNames.toolbox),
+      ),
+    ],
   );
 }
 

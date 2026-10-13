@@ -85,15 +85,21 @@ void main() {
       'https://wenyou.site/tools/embed/morse?theme=light',
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('返回工具箱'));
+    expect(find.byType(AppBar), findsNothing);
+    await platform.navigation.navigate(
+      const NavigationRequest(
+        url: 'https://wenyou.site/tools/embed?theme=light',
+        isMainFrame: true,
+      ),
+    );
     await tester.pumpAndSettle();
-    expect(find.text('温油工具箱'), findsOneWidget);
+    expect(find.text('工具箱'), findsOneWidget);
   });
 
   testWidgets('未知工具安全回目录', (tester) async {
     await pumpRoutes(tester, path: '/tools/unknown');
     await tester.pumpAndSettle();
-    expect(find.text('温油工具箱'), findsOneWidget);
+    expect(find.text('工具箱'), findsOneWidget);
     expect(platform.controllers, isEmpty);
   });
 
@@ -101,14 +107,62 @@ void main() {
     final semantics = tester.ensureSemantics();
     await pumpTool(tester, theme: AppTheme.dark);
     final controller = platform.controllers.single;
+    final webviewElement = tester.element(
+      find.byKey(const Key('fake-toolbox-webview')),
+    );
     expect(controller.loads.single.uri.queryParameters, {'theme': 'dark'});
     expect(find.bySemanticsLabel('正在打开工具'), findsOneWidget);
+    expect(find.byType(AppBar), findsOneWidget);
+    expect(find.semantics.byLabel('工具网页'), findsNothing);
+    expect(
+      find.byKey(const Key('fake-toolbox-webview')).hitTestable(),
+      findsNothing,
+    );
     platform.navigation.finished(controller.loads.single.uri.toString());
     await tester.pumpAndSettle();
     await pumpTool(tester, theme: AppTheme.light);
     expect(controller.loads, hasLength(1));
     expect(find.bySemanticsLabel('正在打开工具'), findsNothing);
+    expect(find.byType(AppBar), findsNothing);
+    expect(find.semantics.byLabel('工具网页'), findsOneWidget);
     expect(find.byKey(const Key('fake-toolbox-webview')), findsOneWidget);
+    expect(
+      tester.element(find.byKey(const Key('fake-toolbox-webview'))),
+      same(webviewElement),
+    );
+    platform.navigation.started(
+      'https://wenyou.site/tools/embed/fancy?theme=dark',
+    );
+    await tester.pump();
+    expect(find.semantics.byLabel('工具网页'), findsNothing);
+    expect(
+      tester.element(find.byKey(const Key('fake-toolbox-webview'))),
+      same(webviewElement),
+    );
+    platform.navigation.resourceError(
+      const WebResourceError(
+        errorCode: -2,
+        description: 'offline fixture',
+        isForMainFrame: true,
+      ),
+    );
+    await tester.pump();
+    expect(find.semantics.byLabel('工具网页'), findsNothing);
+    expect(
+      tester.element(find.byKey(const Key('fake-toolbox-webview'))),
+      same(webviewElement),
+    );
+    await tester.tap(find.text('重试'));
+    await tester.pump();
+    expect(platform.controllers, hasLength(2));
+    expect(
+      platform.controllers.last.loads.single.uri.toString(),
+      'https://wenyou.site/tools/embed/fancy?theme=dark',
+    );
+    platform.navigation.finished(
+      'https://wenyou.site/tools/embed/fancy?theme=dark',
+    );
+    await tester.pumpAndSettle();
     semantics.dispose();
   });
 
@@ -125,6 +179,10 @@ void main() {
     oldNavigation.finished('https://wenyou.site/tools/embed/vertical');
     await tester.pumpAndSettle();
     expect(find.text('工具加载失败'), findsOneWidget);
+    expect(
+      find.byKey(const Key('fake-toolbox-webview')).hitTestable(),
+      findsNothing,
+    );
     expect(find.textContaining('sensitive'), findsNothing);
     await tester.tap(find.text('重试'));
     await tester.pump();
@@ -218,11 +276,13 @@ void main() {
     platform.navigation.started(
       'https://wenyou.site/tools/embed/names?theme=light',
     );
+    await tester.pump();
+    expect(find.widgetWithText(AppBar, '起名工具'), findsOneWidget);
     platform.navigation.finished(
       'https://wenyou.site/tools/embed/names?theme=light',
     );
     await tester.pumpAndSettle();
-    expect(find.widgetWithText(AppBar, '起名工具'), findsOneWidget);
+    expect(find.byType(AppBar), findsNothing);
     expect(
       await platform.navigation.navigate(
         const NavigationRequest(
@@ -233,7 +293,42 @@ void main() {
       NavigationDecision.prevent,
     );
     await tester.pumpAndSettle();
-    expect(find.text('温油工具箱'), findsOneWidget);
+    expect(find.text('工具箱'), findsOneWidget);
+  });
+
+  testWidgets('加载中可以直接返回目录，迟到回调不再操作页面', (tester) async {
+    await pumpRoutes(tester, path: '/tools/vertical');
+    final navigation = platform.navigation;
+    await tester.tap(find.byTooltip('返回工具箱'));
+    await tester.pumpAndSettle();
+    navigation.finished('https://wenyou.site/tools/embed/vertical');
+    await tester.pumpAndSettle();
+    expect(find.text('工具箱'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('失败时原生返回与就绪后系统返回均进入目录', (tester) async {
+    await pumpRoutes(tester, path: '/tools/vertical');
+    platform.navigation.resourceError(
+      const WebResourceError(
+        errorCode: -2,
+        description: 'offline fixture',
+        isForMainFrame: true,
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('返回工具箱'));
+    await tester.pumpAndSettle();
+    expect(find.text('工具箱'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('toolbox-morse')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    platform.navigation.finished('https://wenyou.site/tools/embed/morse');
+    await tester.pumpAndSettle();
+    expect(find.byType(AppBar), findsNothing);
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.text('工具箱'), findsOneWidget);
   });
 
   for (final theme in [AppTheme.light, AppTheme.dark]) {
@@ -246,6 +341,13 @@ void main() {
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
       expect(find.text('起名工具'), findsOneWidget);
+      for (final tool in TextTool.values) {
+        expect(
+          tester.getSize(find.byKey(ValueKey('toolbox-${tool.id}'))).height,
+          greaterThanOrEqualTo(48),
+        );
+      }
+      expect(find.textContaining('首次打开'), findsNothing);
       await expectLater(
         find.byType(Scaffold).last,
         matchesGoldenFile('goldens/toolbox_400_${theme.brightness.name}.png'),
@@ -262,6 +364,10 @@ void main() {
       await pumpRoutes(tester, theme: theme);
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
+      expect(
+        find.byKey(const Key('toolbox-names')).hitTestable(),
+        findsOneWidget,
+      );
       await expectLater(
         find.byType(Scaffold).last,
         matchesGoldenFile(
