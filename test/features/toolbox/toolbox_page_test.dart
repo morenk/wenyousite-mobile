@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
-import 'package:webview_flutter_platform_interface/webview_flutter_platform_interface.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 import 'package:wenyousite_mobile/app/app_route_access.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/app/routes/account_routes.dart';
@@ -11,16 +12,9 @@ import 'package:wenyousite_mobile/features/toolbox/presentation/text_tool_page.d
 import 'package:wenyousite_mobile/features/users/presentation/me_page.dart';
 
 import '../../support/deterministic_test_fonts.dart';
-import 'fake_toolbox_webview.dart';
 
 void main() {
   setUpAll(loadDeterministicTestFonts);
-  late FakeToolboxWebView platform;
-  setUp(() {
-    platform = FakeToolboxWebView();
-    WebViewPlatform.instance = platform;
-  });
-
   Future<void> pumpRoutes(
     WidgetTester tester, {
     String path = '/tools',
@@ -48,289 +42,191 @@ void main() {
         ),
       ),
     );
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pumpAndSettle();
   }
 
-  Future<void> pumpTool(WidgetTester tester, {ThemeData? theme}) async {
+  Future<void> pumpTool(
+    WidgetTester tester,
+    TextTool tool, {
+    ThemeData? theme,
+  }) async {
     await tester.pumpWidget(
       MaterialApp(
         theme: theme ?? AppTheme.light,
-        home: const TextToolPage(tool: TextTool.vertical),
+        home: TextToolPage(tool: tool),
       ),
     );
-    await tester.pump();
+    await tester.pumpAndSettle();
   }
 
-  testWidgets('游客我的页进入目录，四种工具可打开且不要求认证', (tester) async {
+  Future<void> generate(WidgetTester tester) async {
+    await tester.ensureVisible(find.byKey(const Key('tool-generate')));
+    await tester.tap(find.byKey(const Key('tool-generate')));
+    await tester.pumpAndSettle();
+  }
+
+  testWidgets('游客四工具目录公开，进入工具即有原生表单，不创建网页', (tester) async {
     await pumpRoutes(tester, path: '/me');
     await tester.tap(find.byKey(const Key('me-open-toolbox')));
     await tester.pumpAndSettle();
     for (final tool in TextTool.values) {
-      expect(find.text(tool.title), findsOneWidget);
       expect(
         AppRouteAccessPolicy.forLocation('/tools/${tool.id}'),
         AppRouteAccess.public,
       );
+      await tester.tap(find.byKey(ValueKey('toolbox-${tool.id}')));
+      await tester.pumpAndSettle();
+      expect(find.widgetWithText(AppBar, tool.title), findsOneWidget);
+      expect(find.byType(WebViewWidget), findsNothing);
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+      expect(find.byKey(const Key('tool-generate')), findsOneWidget);
+      await tester.tap(find.byTooltip('返回工具箱'));
+      await tester.pumpAndSettle();
     }
-    await tester.tap(find.byKey(const Key('toolbox-morse')));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 500));
-    expect(
-      platform.controllers.single.loads.single.uri.toString(),
-      'https://wenyou.site/tools/embed/morse?theme=light',
-    );
-    expect(platform.controllers.single.loads.single.headers, isEmpty);
-    platform.navigation.finished(
-      'https://wenyou.site/tools/embed/morse?theme=light',
-    );
-    await tester.pumpAndSettle();
-    expect(find.byType(AppBar), findsNothing);
-    await platform.navigation.navigate(
-      const NavigationRequest(
-        url: 'https://wenyou.site/tools/embed?theme=light',
-        isMainFrame: true,
-      ),
-    );
-    await tester.pumpAndSettle();
-    expect(find.text('工具箱'), findsOneWidget);
   });
-
-  testWidgets('未知工具安全回目录', (tester) async {
+  testWidgets('未知工具回目录，退出不保留输入结果', (tester) async {
     await pumpRoutes(tester, path: '/tools/unknown');
-    await tester.pumpAndSettle();
-    expect(find.text('工具箱'), findsOneWidget);
-    expect(platform.controllers, isEmpty);
-  });
-
-  testWidgets('亮暗主题在打开时传入，系统变化不重载或清空输入', (tester) async {
-    final semantics = tester.ensureSemantics();
-    await pumpTool(tester, theme: AppTheme.dark);
-    final controller = platform.controllers.single;
-    final webviewElement = tester.element(
-      find.byKey(const Key('fake-toolbox-webview')),
-    );
-    expect(controller.loads.single.uri.queryParameters, {'theme': 'dark'});
-    expect(find.bySemanticsLabel('正在打开工具'), findsOneWidget);
-    expect(find.byType(AppBar), findsOneWidget);
-    expect(find.semantics.byLabel('工具网页'), findsNothing);
-    expect(
-      find.byKey(const Key('fake-toolbox-webview')).hitTestable(),
-      findsNothing,
-    );
-    platform.navigation.finished(controller.loads.single.uri.toString());
-    await tester.pumpAndSettle();
-    await pumpTool(tester, theme: AppTheme.light);
-    expect(controller.loads, hasLength(1));
-    expect(find.bySemanticsLabel('正在打开工具'), findsNothing);
-    expect(find.byType(AppBar), findsNothing);
-    expect(find.semantics.byLabel('工具网页'), findsOneWidget);
-    expect(find.byKey(const Key('fake-toolbox-webview')), findsOneWidget);
-    expect(
-      tester.element(find.byKey(const Key('fake-toolbox-webview'))),
-      same(webviewElement),
-    );
-    platform.navigation.started(
-      'https://wenyou.site/tools/embed/fancy?theme=dark',
-    );
-    await tester.pump();
-    expect(find.semantics.byLabel('工具网页'), findsNothing);
-    expect(
-      tester.element(find.byKey(const Key('fake-toolbox-webview'))),
-      same(webviewElement),
-    );
-    platform.navigation.resourceError(
-      const WebResourceError(
-        errorCode: -2,
-        description: 'offline fixture',
-        isForMainFrame: true,
-      ),
-    );
-    await tester.pump();
-    expect(find.semantics.byLabel('工具网页'), findsNothing);
-    expect(
-      tester.element(find.byKey(const Key('fake-toolbox-webview'))),
-      same(webviewElement),
-    );
-    await tester.tap(find.text('重试'));
-    await tester.pump();
-    expect(platform.controllers, hasLength(2));
-    expect(
-      platform.controllers.last.loads.single.uri.toString(),
-      'https://wenyou.site/tools/embed/fancy?theme=dark',
-    );
-    platform.navigation.finished(
-      'https://wenyou.site/tools/embed/fancy?theme=dark',
-    );
-    await tester.pumpAndSettle();
-    semantics.dispose();
-  });
-
-  testWidgets('主文档错误显示重试；迟到完成事件不掩盖错误', (tester) async {
-    await pumpTool(tester);
-    final oldNavigation = platform.navigation;
-    oldNavigation.resourceError(
-      const WebResourceError(
-        errorCode: -2,
-        description: 'sensitive URL deliberately not displayed',
-        isForMainFrame: true,
-      ),
-    );
-    oldNavigation.finished('https://wenyou.site/tools/embed/vertical');
-    await tester.pumpAndSettle();
-    expect(find.text('工具加载失败'), findsOneWidget);
-    expect(
-      find.byKey(const Key('fake-toolbox-webview')).hitTestable(),
-      findsNothing,
-    );
-    expect(find.textContaining('sensitive'), findsNothing);
-    await tester.tap(find.text('重试'));
-    await tester.pump();
-    expect(platform.controllers, hasLength(2));
-    oldNavigation.resourceError(
-      const WebResourceError(
-        errorCode: -2,
-        description: 'old',
-        isForMainFrame: true,
-      ),
-    );
-    platform.navigation.finished('https://wenyou.site/tools/embed/vertical');
-    await tester.pumpAndSettle();
-    expect(find.text('工具加载失败'), findsNothing);
-  });
-
-  testWidgets('资源错误由网页处理，主文档404提供重试', (tester) async {
-    await pumpTool(tester);
-    platform.navigation.resourceError(
-      const WebResourceError(
-        errorCode: -2,
-        description: 'dictionary',
-        isForMainFrame: false,
-      ),
-    );
-    platform.navigation.httpError(
-      HttpResponseError(
-        request: WebResourceRequest(
-          uri: Uri.parse('https://wenyou.site/assets/names.js'),
-        ),
-      ),
-    );
-    platform.navigation.finished('https://wenyou.site/tools/embed/vertical');
-    await tester.pumpAndSettle();
-    expect(find.text('工具加载失败'), findsNothing);
-    platform.navigation.httpError(
-      HttpResponseError(
-        request: WebResourceRequest(
-          uri: Uri.parse(
-            'https://wenyou.site/tools/embed/vertical?theme=light',
-          ),
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
-    expect(find.text('工具加载失败'), findsOneWidget);
-  });
-
-  testWidgets('超时终止加载并可重试', (tester) async {
-    await pumpTool(tester);
-    await tester.pump(const Duration(seconds: 26));
-    expect(find.text('工具加载失败'), findsOneWidget);
-    expect(platform.controllers.single.stops, 1);
-  });
-
-  testWidgets('WKWebView未提供request的HTTP错误仍显示恢复入口', (tester) async {
-    await pumpTool(tester);
-    platform.navigation.httpError(
-      const HttpResponseError(
-        response: WebResourceResponse(uri: null, statusCode: 503),
-      ),
-    );
-    await tester.pumpAndSettle();
-    expect(find.text('工具加载失败'), findsOneWidget);
-    expect(find.text('重试'), findsOneWidget);
-  });
-
-  testWidgets('外部scheme和登录重定向被阻止，目录链接返回原生目录', (tester) async {
-    await pumpRoutes(tester, path: '/tools/fancy');
-    for (final url in [
-      'https://evil.test/',
-      'https://wenyou.site/login',
-      'intent://open',
-    ]) {
-      expect(
-        await platform.navigation.navigate(
-          NavigationRequest(url: url, isMainFrame: true),
-        ),
-        NavigationDecision.prevent,
-      );
-    }
-    expect(
-      await platform.navigation.navigate(
-        const NavigationRequest(
-          url: 'https://wenyou.site/tools/embed/names?theme=light',
-          isMainFrame: true,
-        ),
-      ),
-      NavigationDecision.navigate,
-    );
-    platform.navigation.started(
-      'https://wenyou.site/tools/embed/names?theme=light',
-    );
-    await tester.pump();
-    expect(find.widgetWithText(AppBar, '起名工具'), findsOneWidget);
-    platform.navigation.finished(
-      'https://wenyou.site/tools/embed/names?theme=light',
-    );
-    await tester.pumpAndSettle();
-    expect(find.byType(AppBar), findsNothing);
-    expect(
-      await platform.navigation.navigate(
-        const NavigationRequest(
-          url: 'https://wenyou.site/tools/embed?theme=light',
-          isMainFrame: true,
-        ),
-      ),
-      NavigationDecision.prevent,
-    );
-    await tester.pumpAndSettle();
-    expect(find.text('工具箱'), findsOneWidget);
-  });
-
-  testWidgets('加载中可以直接返回目录，迟到回调不再操作页面', (tester) async {
-    await pumpRoutes(tester, path: '/tools/vertical');
-    final navigation = platform.navigation;
-    await tester.tap(find.byTooltip('返回工具箱'));
-    await tester.pumpAndSettle();
-    navigation.finished('https://wenyou.site/tools/embed/vertical');
-    await tester.pumpAndSettle();
-    expect(find.text('工具箱'), findsOneWidget);
-    expect(tester.takeException(), isNull);
-  });
-
-  testWidgets('失败时原生返回与就绪后系统返回均进入目录', (tester) async {
-    await pumpRoutes(tester, path: '/tools/vertical');
-    platform.navigation.resourceError(
-      const WebResourceError(
-        errorCode: -2,
-        description: 'offline fixture',
-        isForMainFrame: true,
-      ),
-    );
-    await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('返回工具箱'));
-    await tester.pumpAndSettle();
     expect(find.text('工具箱'), findsOneWidget);
     await tester.tap(find.byKey(const Key('toolbox-morse')));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 500));
-    platform.navigation.finished('https://wenyou.site/tools/embed/morse');
     await tester.pumpAndSettle();
-    expect(find.byType(AppBar), findsNothing);
+    await tester.enterText(find.byKey(const Key('tool-input')), 'SOS');
+    await generate(tester);
+    expect(find.text('... --- ...'), findsOneWidget);
     await tester.binding.handlePopRoute();
     await tester.pumpAndSettle();
-    expect(find.text('工具箱'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('toolbox-morse')));
+    await tester.pumpAndSettle();
+    expect(
+      tester
+          .widget<TextField>(find.byKey(const Key('tool-input')))
+          .controller!
+          .text,
+      isEmpty,
+    );
+    expect(find.byKey(const Key('tool-result-text')), findsNothing);
   });
-
+  testWidgets('主题变化保留输入，转换与错误恢复', (tester) async {
+    await pumpTool(tester, TextTool.morse);
+    await tester.enterText(find.byKey(const Key('tool-input')), '中文');
+    await generate(tester);
+    expect(find.textContaining('国际摩斯不支持'), findsOneWidget);
+    await tester.enterText(find.byKey(const Key('tool-input')), 'SOS');
+    await pumpTool(tester, TextTool.morse, theme: AppTheme.dark);
+    expect(
+      tester
+          .widget<TextField>(find.byKey(const Key('tool-input')))
+          .controller!
+          .text,
+      'SOS',
+    );
+    await generate(tester);
+    expect(find.text('... --- ...'), findsOneWidget);
+    expect(find.textContaining('国际摩斯不支持'), findsNothing);
+  });
+  testWidgets('花体默认粗体有样例，超限粘贴可看见和修改', (tester) async {
+    await pumpTool(tester, TextTool.fancy);
+    expect(find.text('粗体  𝐀𝐛𝐜'), findsOneWidget);
+    await tester.enterText(find.byKey(const Key('tool-input')), 'Az09中文');
+    await generate(tester);
+    expect(find.text('𝐀𝐳𝟎𝟗中文'), findsOneWidget);
+    await tester.enterText(find.byKey(const Key('tool-input')), 'x' * 10001);
+    expect(
+      tester
+          .widget<TextField>(find.byKey(const Key('tool-input')))
+          .controller!
+          .text
+          .length,
+      10001,
+    );
+    await generate(tester);
+    expect(find.text('输入最多 10,000 个字符'), findsWidgets);
+    expect(find.byKey(const Key('tool-result-text')), findsNothing);
+  });
+  testWidgets('默认竖排从右侧显示，复制保留所有首尾空白', (tester) async {
+    String? clipboard;
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      (call) async {
+        if (call.method == 'Clipboard.setData') {
+          clipboard = (call.arguments as Map)['text'] as String;
+        }
+        return null;
+      },
+    );
+    addTearDown(
+      () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        null,
+      ),
+    );
+    await pumpTool(tester, TextTool.vertical);
+    expect(find.text('从右向左'), findsOneWidget);
+    await tester.enterText(find.byKey(const Key('tool-input')), '甲');
+    await generate(tester);
+    final result = tester
+        .widget<SelectableText>(find.byKey(const Key('tool-result-text')))
+        .data!;
+    expect(result.split('\n').length, 20);
+    expect(result.startsWith(' ' * 36), isTrue);
+    expect(result.endsWith(' ' * 38), isTrue);
+    final horizontal = tester
+        .widgetList<SingleChildScrollView>(find.byType(SingleChildScrollView))
+        .singleWhere((widget) => widget.scrollDirection == Axis.horizontal);
+    expect(horizontal.reverse, isTrue);
+    await tester.ensureVisible(find.byKey(const Key('tool-copy')));
+    await tester.tap(find.byKey(const Key('tool-copy')));
+    await tester.pumpAndSettle();
+    expect(clipboard, result);
+  });
+  testWidgets('外文姓氏要求中文写法，生成和复制明确双语', (tester) async {
+    await pumpTool(tester, TextTool.names);
+    await tester.tap(find.text('中国'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('英国').last);
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('name-surname')), 'Newfamily');
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('name-surname-zh')), findsOneWidget);
+    await generate(tester);
+    expect(find.text('请填写姓氏中文写法'), findsOneWidget);
+    await tester.ensureVisible(find.byKey(const Key('name-surname-zh')));
+    await tester.enterText(find.byKey(const Key('name-surname-zh')), '纽法米利');
+    await generate(tester);
+    expect(find.text('复制原文'), findsOneWidget);
+    expect(find.text('复制中文'), findsOneWidget);
+    expect(find.text('复制全部'), findsOneWidget);
+    final results = tester.widgetList<SelectableText>(
+      find.byType(SelectableText),
+    );
+    expect(results.length, 10);
+    expect(
+      results.every((text) => text.textSpan!.toPlainText().contains('纽法米利')),
+      isTrue,
+    );
+  });
+  testWidgets('自定义分隔符不受隐藏的无效空格数阻断', (tester) async {
+    await pumpTool(tester, TextTool.vertical);
+    await tester.enterText(find.byKey(const Key('tool-input')), '甲');
+    final gap = find.byWidgetPredicate(
+      (widget) =>
+          widget is TextField && widget.decoration?.labelText == '空格数（0–10）',
+    );
+    await tester.ensureVisible(gap);
+    await tester.enterText(gap, '99');
+    await tester.tap(find.text('空格'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('自定义').last);
+    await tester.pumpAndSettle();
+    final separator = find.byWidgetPredicate(
+      (widget) =>
+          widget is TextField && widget.decoration?.labelText == '分隔符（最多 20 字）',
+    );
+    await tester.ensureVisible(separator);
+    await tester.enterText(separator, '|');
+    await generate(tester);
+    expect(find.byKey(const Key('tool-result-text')), findsOneWidget);
+    expect(find.textContaining('列间空格须'), findsNothing);
+  });
   for (final theme in [AppTheme.light, AppTheme.dark]) {
     testWidgets('完整工具目录视觉 ${theme.brightness.name}', (tester) async {
       tester.view.physicalSize = const Size(400, 860);
@@ -338,23 +234,19 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
       await pumpRoutes(tester, theme: theme);
-      await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
-      expect(find.text('起名工具'), findsOneWidget);
       for (final tool in TextTool.values) {
         expect(
           tester.getSize(find.byKey(ValueKey('toolbox-${tool.id}'))).height,
           greaterThanOrEqualTo(48),
         );
       }
-      expect(find.textContaining('首次打开'), findsNothing);
       await expectLater(
         find.byType(Scaffold).last,
         matchesGoldenFile('goldens/toolbox_400_${theme.brightness.name}.png'),
       );
     });
-
-    testWidgets('目录窄屏与大字无溢出 ${theme.brightness.name}', (tester) async {
+    testWidgets('目录窄屏大字 ${theme.brightness.name}', (tester) async {
       tester.view.physicalSize = const Size(320, 640);
       tester.view.devicePixelRatio = 1;
       tester.platformDispatcher.textScaleFactorTestValue = 2;
@@ -362,12 +254,7 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
       addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
       await pumpRoutes(tester, theme: theme);
-      await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
-      expect(
-        find.byKey(const Key('toolbox-names')).hitTestable(),
-        findsOneWidget,
-      );
       await expectLater(
         find.byType(Scaffold).last,
         matchesGoldenFile(
