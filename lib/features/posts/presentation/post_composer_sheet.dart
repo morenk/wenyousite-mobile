@@ -17,6 +17,7 @@ import 'package:wenyousite_mobile/features/drafts/presentation/content_drafts_sh
 import 'package:wenyousite_mobile/features/editor/editor.dart';
 import 'package:wenyousite_mobile/features/media/presentation/editor_image_crop_dialog.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_composer_draft.dart';
+import 'package:wenyousite_mobile/features/posts/application/post_composer_drafts.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_controllers.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_identity_preference_ports.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_identity_selection.dart';
@@ -37,15 +38,6 @@ export 'package:wenyousite_mobile/features/posts/application/post_composer_draft
 
 export 'post_composer_launcher.dart' show showPostComposerSheet;
 
-String postComposerDraftKey(PostComposerTarget target) => [
-  target.kind.name,
-  target.threadId,
-  target.subthreadId,
-  target.postId ?? '',
-  target.parentPostId ?? '',
-  target.replyToPostId ?? '',
-].join(':');
-
 typedef PostComposerToolbarInteractionChanged =
     void Function(bool open, double requiredHeight);
 
@@ -57,6 +49,7 @@ class PostComposerSheet extends ConsumerStatefulWidget {
     this.onDraftChanged,
     this.supportsRpIdentity = false,
     this.publishDraft,
+    this.localDraftTarget,
     this.initialInsertion,
     this.expanded = false,
     this.onResize,
@@ -70,6 +63,7 @@ class PostComposerSheet extends ConsumerStatefulWidget {
   final PostComposerTarget target;
   final bool supportsRpIdentity;
   final PostPublishDraft? publishDraft;
+  final String? localDraftTarget;
   final String? initialInsertion;
   final PostComposerBaseline baseline;
   final ValueChanged<PostItem?> onClose;
@@ -169,7 +163,9 @@ class PostComposerSheetState extends ConsumerState<PostComposerSheet>
       },
       ref: ref,
       editor: _editorSession,
-      target: 'post:${postComposerDraftKey(widget.target)}',
+      target:
+          widget.localDraftTarget ??
+          'post:${postComposerDraftKey(widget.target)}',
       baseline: widget.target.postId == null
           ? null
           : jsonEncode([

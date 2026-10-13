@@ -13,6 +13,7 @@ class PostComposerRouteHost extends StatefulWidget {
     this.onDraftChanged,
     this.supportsRpIdentity = false,
     this.publishDraft,
+    this.localDraftTarget,
     this.initialInsertion,
     super.key,
   });
@@ -21,6 +22,7 @@ class PostComposerRouteHost extends StatefulWidget {
   final PostComposerBaseline baseline;
   final bool supportsRpIdentity;
   final PostPublishDraft? publishDraft;
+  final String? localDraftTarget;
   final String? initialInsertion;
   final ValueChanged<PostComposerDraft?>? onDraftChanged;
 
@@ -60,6 +62,7 @@ class _PostComposerRouteHostState extends State<PostComposerRouteHost> {
         builder: (context) => ExpandablePostComposer(
           supportsRpIdentity: widget.supportsRpIdentity,
           publishDraft: widget.publishDraft,
+          localDraftTarget: widget.localDraftTarget,
           initialInsertion: widget.initialInsertion,
           target: widget.target,
           baseline: widget.baseline,

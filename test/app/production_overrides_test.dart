@@ -5,6 +5,7 @@ import 'package:wenyousite_mobile/app/production_overrides.dart';
 import 'package:wenyousite_mobile/core/application/profile_cache_invalidation.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/network/session_controller.dart';
+import 'package:wenyousite_mobile/features/app_shell/application/mobile_update_controller.dart';
 import 'package:wenyousite_mobile/features/app_shell/application/startup_controller.dart';
 import 'package:wenyousite_mobile/features/app_shell/domain/contract_info.dart';
 import 'package:wenyousite_mobile/features/auth/application/auth_ports.dart';
@@ -117,7 +118,20 @@ void main() {
   });
   test('生产组合根绑定启动、公开浏览、创作与消息必需端口', () {
     final container = ProviderContainer(
-      overrides: productionProviderOverrides(),
+      overrides: [
+        ...productionProviderOverrides(),
+        // 本用例验证端口绑定，不启动网络检查，避免销毁后的异步回调。
+        startupControllerProvider.overrideWith(
+          (ref) => StartupController(
+            ref.watch(metaRepositoryProvider),
+            ref.watch(appEnvironmentProvider),
+            ref.read(sessionControllerProvider.notifier),
+            mobileUpdateService: ref.watch(mobileUpdateServiceProvider),
+            dismissStore: ref.watch(recommendedUpdateDismissStoreProvider),
+            autoStart: false,
+          ),
+        ),
+      ],
     );
     addTearDown(container.dispose);
     final mandatoryPorts = <ProviderListenable<Object?>>[

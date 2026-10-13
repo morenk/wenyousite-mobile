@@ -60,11 +60,15 @@ class PreparedPostComposer {
     required this.target,
     required this.baseline,
     this.publishDraft,
+    this.localDraftTarget,
+    this.isolatedLegacyDraft = false,
   });
 
   final PostComposerTarget target;
   final PostComposerBaseline baseline;
   final PostPublishDraft? publishDraft;
+  final String? localDraftTarget;
+  final bool isolatedLegacyDraft;
 }
 
 void setPostComposerDraft(

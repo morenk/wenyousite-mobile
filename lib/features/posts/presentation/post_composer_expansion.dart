@@ -16,6 +16,7 @@ class ExpandablePostComposer extends StatefulWidget {
     this.onDraftChanged,
     this.supportsRpIdentity = false,
     this.publishDraft,
+    this.localDraftTarget,
     this.initialInsertion,
   });
 
@@ -23,6 +24,7 @@ class ExpandablePostComposer extends StatefulWidget {
   final PostComposerBaseline baseline;
   final bool supportsRpIdentity;
   final PostPublishDraft? publishDraft;
+  final String? localDraftTarget;
   final String? initialInsertion;
   final ValueChanged<PostComposerDraft?>? onDraftChanged;
   final GlobalKey composerKey;
@@ -97,6 +99,7 @@ class ExpandablePostComposerState extends State<ExpandablePostComposer> {
                       child: PostComposerSheet(
                         supportsRpIdentity: widget.supportsRpIdentity,
                         publishDraft: widget.publishDraft,
+                        localDraftTarget: widget.localDraftTarget,
                         initialInsertion: widget.initialInsertion,
                         key: widget.composerKey,
                         target: widget.target,
