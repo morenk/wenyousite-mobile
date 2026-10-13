@@ -19,6 +19,8 @@ enum MomentLoadPhase { loading, ready, failed }
 
 enum MomentFeedRetryAction { refresh, loadMore }
 
+enum _MomentCommentRetryAction { detail, comments, nextPage }
+
 const _unset = Object();
 
 class MomentFeedState {
@@ -323,6 +325,7 @@ class MomentDetailState {
     this.hasMoreComments = false,
     this.isRefreshing = false,
     this.isLoadingMoreComments = false,
+    this.commentPageFailure,
     this.replyPages = const {},
     this.pendingMomentAction,
     this.busyCommentIds = const {},
@@ -339,6 +342,7 @@ class MomentDetailState {
   final bool hasMoreComments;
   final bool isRefreshing;
   final bool isLoadingMoreComments;
+  final ApiFailure? commentPageFailure;
   final Map<String, MomentReplyPageState> replyPages;
   final MomentInteractionAction? pendingMomentAction;
   final Set<String> busyCommentIds;
@@ -355,6 +359,7 @@ class MomentDetailState {
     bool? hasMoreComments,
     bool? isRefreshing,
     bool? isLoadingMoreComments,
+    Object? commentPageFailure = _unset,
     Map<String, MomentReplyPageState>? replyPages,
     Object? pendingMomentAction = _unset,
     Set<String>? busyCommentIds,
@@ -374,6 +379,9 @@ class MomentDetailState {
       isRefreshing: isRefreshing ?? this.isRefreshing,
       isLoadingMoreComments:
           isLoadingMoreComments ?? this.isLoadingMoreComments,
+      commentPageFailure: identical(commentPageFailure, _unset)
+          ? this.commentPageFailure
+          : commentPageFailure as ApiFailure?,
       replyPages: replyPages ?? this.replyPages,
       pendingMomentAction: identical(pendingMomentAction, _unset)
           ? this.pendingMomentAction
@@ -410,14 +418,25 @@ class MomentDetailController extends StateNotifier<MomentDetailState> {
   var _epoch = 0;
   var _interactionRevision = 0;
 
+  var _commentRetryAction = _MomentCommentRetryAction.nextPage;
+  var _recoveringInvalidCommentCursor = false;
+  final _consumedCommentCursors = <String>{};
+
   Future<void> load() async {
     if (state.pendingMomentAction != null) return;
     final epoch = ++_epoch;
+    _commentRetryAction = _MomentCommentRetryAction.detail;
+    _recoveringInvalidCommentCursor = false;
+    _consumedCommentCursors.clear();
     final interactionRevision = _interactionRevision;
     final retained = state.detail;
     state = state.copyWith(
       phase: retained == null ? MomentLoadPhase.loading : MomentLoadPhase.ready,
       isRefreshing: retained != null,
+      isLoadingMoreComments: false,
+      commentCursor: null,
+      hasMoreComments: false,
+      commentPageFailure: null,
       failure: null,
       transientFailure: null,
     );
@@ -442,6 +461,7 @@ class MomentDetailController extends StateNotifier<MomentDetailState> {
         );
       }
       final page = values[1] as CursorPage<MomentRootComment>;
+      _commentRetryAction = _MomentCommentRetryAction.nextPage;
       state = state.copyWith(
         phase: MomentLoadPhase.ready,
         detail: detail,
@@ -449,6 +469,7 @@ class MomentDetailController extends StateNotifier<MomentDetailState> {
         commentCursor: page.cursor,
         hasMoreComments: page.hasMore,
         isRefreshing: false,
+        isLoadingMoreComments: false,
         replyPages: const {},
       );
     } on Object catch (error) {
@@ -460,6 +481,7 @@ class MomentDetailController extends StateNotifier<MomentDetailState> {
             : MomentLoadPhase.ready,
         isRefreshing: false,
         failure: retained == null ? failure : null,
+        commentPageFailure: retained == null ? null : failure,
         transientFailure: retained == null ? null : failure,
       );
     }
@@ -471,17 +493,47 @@ class MomentDetailController extends StateNotifier<MomentDetailState> {
     await _reloadComments();
   }
 
-  Future<void> loadMoreComments() async {
-    if (state.isLoadingMoreComments || !state.hasMoreComments) return;
+  Future<void> loadMoreComments({bool retry = false}) async {
+    if (state.phase != MomentLoadPhase.ready ||
+        state.isRefreshing ||
+        state.isLoadingMoreComments ||
+        (!retry && state.commentPageFailure != null)) {
+      return;
+    }
+    if (retry) _recoveringInvalidCommentCursor = false;
+    if (_commentRetryAction != _MomentCommentRetryAction.nextPage) {
+      if (retry) {
+        await (_commentRetryAction == _MomentCommentRetryAction.detail
+            ? load()
+            : _reloadComments());
+      }
+      return;
+    }
+    if (!state.hasMoreComments) return;
     final epoch = _epoch;
-    state = state.copyWith(isLoadingMoreComments: true, transientFailure: null);
+    final cursor = state.commentCursor;
+    state = state.copyWith(
+      isLoadingMoreComments: true,
+      commentPageFailure: null,
+    );
     try {
+      if (cursor == null) {
+        throw const ApiFailure(userMessage: '评论加载失败，请重试。');
+      }
       final page = await _repository.fetchComments(
         momentId: momentId,
         order: state.commentOrder,
-        cursor: state.commentCursor,
+        cursor: cursor,
       );
       if (!mounted || epoch != _epoch) return;
+      // 自动分页不能反复请求不前进或循环的游标；保留原位置供明确重试。
+      if (page.hasMore &&
+          (page.cursor == null ||
+              page.cursor == cursor ||
+              _consumedCommentCursors.contains(page.cursor))) {
+        throw const ApiFailure(userMessage: '评论加载失败，请重试。');
+      }
+      _consumedCommentCursors.add(cursor);
       state = state.copyWith(
         comments: mergeUniqueBy(
           state.comments,
@@ -494,19 +546,19 @@ class MomentDetailController extends StateNotifier<MomentDetailState> {
       );
     } on ApiFailure catch (failure) {
       if (!mounted || epoch != _epoch) return;
-      if (failure.isInvalidCursor) {
-        await _reloadComments();
+      if (failure.isInvalidCursor && !_recoveringInvalidCommentCursor) {
+        await _reloadComments(recoveringInvalidCursor: true);
         return;
       }
       state = state.copyWith(
         isLoadingMoreComments: false,
-        transientFailure: failure,
+        commentPageFailure: failure,
       );
     } on Object catch (error) {
       if (!mounted || epoch != _epoch) return;
       state = state.copyWith(
         isLoadingMoreComments: false,
-        transientFailure: _asFailure(error, '加载更多评论失败，请重试。'),
+        commentPageFailure: _asFailure(error, '评论加载失败，请重试。'),
       );
     }
   }
@@ -697,15 +749,26 @@ class MomentDetailController extends StateNotifier<MomentDetailState> {
     }
   }
 
-  Future<void> _reloadComments() async {
+  Future<void> _reloadComments({bool recoveringInvalidCursor = false}) async {
     final epoch = ++_epoch;
-    state = state.copyWith(isLoadingMoreComments: true, transientFailure: null);
+    _commentRetryAction = _MomentCommentRetryAction.comments;
+    _recoveringInvalidCommentCursor = recoveringInvalidCursor;
+    _consumedCommentCursors.clear();
+    state = state.copyWith(
+      isRefreshing: false,
+      isLoadingMoreComments: true,
+      commentCursor: null,
+      hasMoreComments: false,
+      commentPageFailure: null,
+      transientFailure: null,
+    );
     try {
       final page = await _repository.fetchComments(
         momentId: momentId,
         order: state.commentOrder,
       );
       if (!mounted || epoch != _epoch) return;
+      _commentRetryAction = _MomentCommentRetryAction.nextPage;
       state = state.copyWith(
         comments: page.items,
         commentCursor: page.cursor,
@@ -715,9 +778,11 @@ class MomentDetailController extends StateNotifier<MomentDetailState> {
       );
     } on Object catch (error) {
       if (!mounted || epoch != _epoch) return;
+      final failure = _asFailure(error, '评论列表加载失败，请重试。');
       state = state.copyWith(
         isLoadingMoreComments: false,
-        transientFailure: _asFailure(error, '评论列表加载失败，请重试。'),
+        commentPageFailure: failure,
+        transientFailure: failure,
       );
     }
   }
