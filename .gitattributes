@@ -2,6 +2,8 @@
 # renormalizing every extensionless or platform-owned file in the repository.
 *.dart text eol=lf
 *.json text eol=lf
+# 词库许可证参与已提交源摘要，检出时必须保留原始 LF。
+contracts/toolbox/*.txt text eol=lf
 *.yaml text eol=lf
 *.yml text eol=lf
 *.md text eol=lf
