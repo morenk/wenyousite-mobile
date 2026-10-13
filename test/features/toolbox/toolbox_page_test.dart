@@ -7,6 +7,8 @@ import 'package:webview_flutter/webview_flutter.dart';
 import 'package:wenyousite_mobile/app/app_route_access.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/app/routes/account_routes.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_selection_menu.dart';
 import 'package:wenyousite_mobile/features/toolbox/domain/text_tool.dart';
 import 'package:wenyousite_mobile/features/toolbox/presentation/text_tool_page.dart';
 import 'package:wenyousite_mobile/features/users/presentation/me_page.dart';
@@ -207,25 +209,55 @@ void main() {
   testWidgets('自定义分隔符不受隐藏的无效空格数阻断', (tester) async {
     await pumpTool(tester, TextTool.vertical);
     await tester.enterText(find.byKey(const Key('tool-input')), '甲');
-    final gap = find.byWidgetPredicate(
-      (widget) =>
-          widget is TextField && widget.decoration?.labelText == '空格数（0–10）',
-    );
+    final gap = find.byKey(const Key('vertical-gap'));
     await tester.ensureVisible(gap);
     await tester.enterText(gap, '99');
     await tester.tap(find.text('空格'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('自定义').last);
     await tester.pumpAndSettle();
-    final separator = find.byWidgetPredicate(
-      (widget) =>
-          widget is TextField && widget.decoration?.labelText == '分隔符（最多 20 字）',
-    );
+    final separator = find.byKey(const Key('vertical-separator'));
     await tester.ensureVisible(separator);
     await tester.enterText(separator, '|');
     await generate(tester);
     expect(find.byKey(const Key('tool-result-text')), findsOneWidget);
     expect(find.textContaining('列间空格须'), findsNothing);
+  });
+  testWidgets('工具参数、操作、标题及选择浮层使用常规字重', (tester) async {
+    await pumpTool(tester, TextTool.names);
+    final theme = Theme.of(tester.element(find.byType(AppBar)));
+    expect(theme.appBarTheme.titleTextStyle!.fontWeight, FontWeight.w400);
+    expect(theme.textTheme.wenyouRowTitle.fontWeight, FontWeight.w400);
+    expect(
+      theme.filledButtonTheme.style!.textStyle!.resolve({})!.fontWeight,
+      FontWeight.w400,
+    );
+    expect(
+      theme.textButtonTheme.style!.textStyle!.resolve({})!.fontWeight,
+      FontWeight.w400,
+    );
+    final field = tester.widget<TextField>(find.byKey(const Key('name-count')));
+    expect(field.decoration!.labelText, isNull);
+    expect(field.decoration!.border, InputBorder.none);
+    expect(field.style!.fontWeight, FontWeight.w400);
+    expect(
+      tester.getSize(find.byKey(const Key('name-count'))).height,
+      greaterThanOrEqualTo(48),
+    );
+    await tester.tap(find.text('中国'));
+    await tester.pumpAndSettle();
+    final selected = tester
+        .widgetList<WenyouSelectionRow>(find.byType(WenyouSelectionRow))
+        .singleWhere((row) => row.selected);
+    expect(selected.emphasizeSelected, isFalse);
+    expect(
+      tester.widget<Text>(find.text('中国').last).style!.fontWeight,
+      FontWeight.w400,
+    );
+    await tester.tap(find.text('英国').last);
+    await tester.pumpAndSettle();
+    expect(find.text('英国'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
   for (final theme in [AppTheme.light, AppTheme.dark]) {
     testWidgets('完整工具目录视觉 ${theme.brightness.name}', (tester) async {

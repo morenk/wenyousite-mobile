@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_selection_menu.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_sheet.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/toolbox/application/text_transformers.dart';
+import 'package:wenyousite_mobile/features/toolbox/presentation/tool_typography.dart';
 
 class ToolSection extends StatelessWidget {
   const ToolSection({required this.children, super.key});
@@ -15,37 +18,11 @@ class ToolSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         for (var i = 0; i < children.length; i++) ...[
-          if (i > 0) SizedBox(height: context.wenyouTokens.space16),
+          if (i > 0) SizedBox(height: context.wenyouTokens.space8),
           children[i],
         ],
       ],
     ),
-  );
-}
-
-class ToolFields extends StatelessWidget {
-  const ToolFields({required this.children, super.key});
-  final List<Widget> children;
-  @override
-  Widget build(BuildContext context) => LayoutBuilder(
-    builder: (context, constraints) {
-      final gap = context.wenyouTokens.space12;
-      final minimumWidth = MediaQuery.textScalerOf(context).scale(126);
-      final columns = (constraints.maxWidth / (minimumWidth + gap))
-          .floor()
-          .clamp(1, children.length);
-      return Wrap(
-        spacing: gap,
-        runSpacing: gap,
-        children: [
-          for (final child in children)
-            SizedBox(
-              width: (constraints.maxWidth - gap * (columns - 1)) / columns,
-              child: child,
-            ),
-        ],
-      );
-    },
   );
 }
 
@@ -62,47 +39,135 @@ class ToolSelect<T> extends StatelessWidget {
   final Map<T, String> options;
   final ValueChanged<T> onChanged;
   @override
-  Widget build(BuildContext context) => DropdownButtonFormField<T>(
-    key: ValueKey('$label-$value'),
-    initialValue: value,
-    isExpanded: true,
-    decoration: InputDecoration(labelText: label),
-    itemHeight: null,
-    items: [
-      for (final entry in options.entries)
-        DropdownMenuItem(
-          value: entry.key,
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              minHeight: context.wenyouTokens.minimumTouchTarget,
-            ),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Text(entry.value),
-            ),
+  Widget build(BuildContext context) => WenyouSettingsLink(
+    title: label,
+    value: options[value],
+    onTap: () async {
+      FocusManager.instance.primaryFocus?.unfocus();
+      final next = await showWenyouSheet<T>(
+        context: context,
+        builder: (context) => ToolTypography(
+          child: WenyouSheetBody(
+            title: label,
+            slivers: [
+              SliverList.list(
+                children: [
+                  for (final entry in options.entries)
+                    WenyouSelectionTile(
+                      label: entry.value,
+                      selected: entry.key == value,
+                      emphasizeSelected: false,
+                      onTap: () => Navigator.of(context).pop(entry.key),
+                    ),
+                ],
+              ),
+            ],
           ),
         ),
-    ],
-    onChanged: (next) {
-      if (next != null) onChanged(next);
+      );
+      if (context.mounted && next != null) onChanged(next);
     },
   );
 }
 
 class ToolNumber extends StatelessWidget {
-  const ToolNumber({required this.label, required this.controller, super.key});
+  const ToolNumber({
+    required this.label,
+    required this.controller,
+    this.fieldKey,
+    this.unit,
+    super.key,
+  });
   final String label;
   final TextEditingController controller;
+  final Key? fieldKey;
+  final String? unit;
   @override
-  Widget build(BuildContext context) => TextField(
+  Widget build(BuildContext context) => ToolInlineInput(
+    label: label,
+    fieldKey: fieldKey,
     controller: controller,
     keyboardType: TextInputType.number,
     inputFormatters: [
       FilteringTextInputFormatter.digitsOnly,
       LengthLimitingTextInputFormatter(3),
     ],
-    decoration: InputDecoration(labelText: label),
+    unit: unit,
   );
+}
+
+class ToolInlineInput extends StatelessWidget {
+  const ToolInlineInput({
+    required this.label,
+    required this.controller,
+    this.fieldKey,
+    this.hint,
+    this.unit,
+    this.onChanged,
+    this.keyboardType,
+    this.inputFormatters,
+    super.key,
+  });
+  final String label;
+  final TextEditingController controller;
+  final Key? fieldKey;
+  final String? hint;
+  final String? unit;
+  final ValueChanged<String>? onChanged;
+  final TextInputType? keyboardType;
+  final List<TextInputFormatter>? inputFormatters;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.wenyouTokens;
+    final text = Theme.of(context).textTheme;
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: tokens.space16),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(minHeight: tokens.minimumTouchTarget),
+        child: Row(
+          children: [
+            Expanded(flex: 2, child: Text(label, style: text.wenyouRowTitle)),
+            SizedBox(width: tokens.space12),
+            Expanded(
+              flex: 3,
+              child: Semantics(
+                label: label,
+                child: TextField(
+                  key: fieldKey,
+                  controller: controller,
+                  textAlign: TextAlign.end,
+                  style: text.wenyouCompactBody.copyWith(
+                    color: tokens.mutedText,
+                  ),
+                  onChanged: onChanged,
+                  keyboardType: keyboardType,
+                  inputFormatters: inputFormatters,
+                  decoration: InputDecoration(
+                    hintText: hint,
+                    suffixText: unit == null ? null : ' $unit',
+                    suffixStyle: text.wenyouCompactBody.copyWith(
+                      color: tokens.mutedText,
+                    ),
+                    filled: false,
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    contentPadding: EdgeInsets.symmetric(
+                      vertical: tokens.space12,
+                    ),
+                    constraints: BoxConstraints(
+                      minHeight: tokens.minimumTouchTarget,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class ToolTextInput extends StatelessWidget {
@@ -116,16 +181,41 @@ class ToolTextInput extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ValueListenableBuilder(
     valueListenable: controller,
-    builder: (context, value, _) => TextField(
-      key: const Key('tool-input'),
-      controller: controller,
-      minLines: 3,
-      maxLines: 7,
-      keyboardType: TextInputType.multiline,
-      // 不吞掉超限粘贴；保留输入供用户删改，转换前仍验证 UTF-16 上限。
-      decoration: InputDecoration(
-        labelText: label,
-        errorText: value.text.length > toolTextLimit ? '输入最多 10,000 个字符' : null,
+    builder: (context, value, _) => Semantics(
+      label: label,
+      child: TextField(
+        key: const Key('tool-input'),
+        controller: controller,
+        minLines: 3,
+        maxLines: 7,
+        keyboardType: TextInputType.multiline,
+        // 不吞掉超限粘贴；保留输入供用户删改，转换前仍验证 UTF-16 上限。
+        decoration: InputDecoration(
+          hintText: label,
+          filled: true,
+          fillColor: context.wenyouTokens.panel,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(
+              context.wenyouTokens.radiusPanel,
+            ),
+            borderSide: BorderSide.none,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(
+              context.wenyouTokens.radiusPanel,
+            ),
+            borderSide: BorderSide.none,
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(
+              context.wenyouTokens.radiusPanel,
+            ),
+            borderSide: BorderSide.none,
+          ),
+          errorText: value.text.length > toolTextLimit
+              ? '输入最多 10,000 个字符'
+              : null,
+        ),
       ),
     ),
   );
@@ -157,6 +247,7 @@ class ToolActions extends StatelessWidget {
       TextButton(
         style: TextButton.styleFrom(
           minimumSize: Size(0, context.wenyouTokens.minimumTouchTarget),
+          foregroundColor: context.wenyouTokens.mutedText,
         ),
         onPressed: onClear,
         child: const Text('清空'),

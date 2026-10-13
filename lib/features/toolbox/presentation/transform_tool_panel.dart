@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_settings_body.dart';
 import 'package:wenyousite_mobile/features/toolbox/application/text_transformers.dart';
 import 'package:wenyousite_mobile/features/toolbox/domain/text_tool.dart';
 import 'package:wenyousite_mobile/features/toolbox/presentation/tool_controls.dart';
@@ -47,7 +48,7 @@ class _TransformToolPanelState extends State<TransformToolPanel> {
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
-      ToolSection(
+      WenyouSettingsGroup(
         children: [
           if (widget.tool == TextTool.fancy)
             ToolSelect(
@@ -74,20 +75,22 @@ class _TransformToolPanelState extends State<TransformToolPanel> {
                 _error = null;
               }),
             ),
-          ToolTextInput(controller: _input, label: _decode ? '输入摩斯编码' : '输入文字'),
-          if (_decode) const Text('空格分隔字符，/ 分隔单词'),
-          if (_error != null && _input.text.length <= toolTextLimit)
-            ToolError(_error),
-          ToolActions(
-            label: '转换',
-            onGenerate: _generate,
-            onClear: () => setState(() {
-              _input.clear();
-              _result = null;
-              _error = null;
-            }),
-          ),
         ],
+      ),
+      SizedBox(height: context.wenyouTokens.space12),
+      ToolTextInput(controller: _input, label: _decode ? '输入摩斯编码' : '输入文字'),
+      SizedBox(height: context.wenyouTokens.space12),
+      if (_decode) const Text('空格分隔字符，/ 分隔单词'),
+      if (_error != null && _input.text.length <= toolTextLimit)
+        ToolError(_error),
+      ToolActions(
+        label: '转换',
+        onGenerate: _generate,
+        onClear: () => setState(() {
+          _input.clear();
+          _result = null;
+          _error = null;
+        }),
       ),
       if (_result != null && _result!.isNotEmpty) ...[
         SizedBox(height: context.wenyouTokens.space12),

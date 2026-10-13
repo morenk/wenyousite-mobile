@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_settings_body.dart';
 import 'package:wenyousite_mobile/features/toolbox/application/name_generator.dart';
 import 'package:wenyousite_mobile/features/toolbox/presentation/name_tool_results.dart';
 import 'package:wenyousite_mobile/features/toolbox/presentation/tool_controls.dart';
@@ -63,43 +64,39 @@ class _NameToolPanelState extends State<NameToolPanel> {
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
-      ToolSection(
+      WenyouSettingsGroup(
         children: [
-          ToolFields(
-            children: [
-              ToolSelect(
-                label: '国家',
-                value: _country,
-                options: nameCountries,
-                onChanged: (value) => setState(() {
-                  _country = value;
-                  _style = NameStyle.common;
-                  _surname.clear();
-                  _surnameZh.clear();
-                  _resetResults();
-                }),
-              ),
-              ToolSelect(
-                label: '性别',
-                value: _sex,
-                options: const {
-                  NameSex.any: '不限',
-                  NameSex.female: '女',
-                  NameSex.male: '男',
-                },
-                onChanged: (value) => setState(() {
-                  _sex = value;
-                  _resetResults();
-                }),
-              ),
-            ],
+          ToolSelect(
+            label: '国家',
+            value: _country,
+            options: nameCountries,
+            onChanged: (value) => setState(() {
+              _country = value;
+              _style = NameStyle.common;
+              _surname.clear();
+              _surnameZh.clear();
+              _resetResults();
+            }),
+          ),
+          ToolSelect(
+            label: '性别',
+            value: _sex,
+            options: const {
+              NameSex.any: '不限',
+              NameSex.female: '女',
+              NameSex.male: '男',
+            },
+            onChanged: (value) => setState(() {
+              _sex = value;
+              _resetResults();
+            }),
           ),
           if (_country == 'cn')
             ToolSelect(
               label: '风格',
               value: _style,
               options: const {
-                NameStyle.common: '常见姓名',
+                NameStyle.common: '常见',
                 NameStyle.classical: '古风',
                 NameStyle.fantasy: '幻想',
               },
@@ -108,35 +105,41 @@ class _NameToolPanelState extends State<NameToolPanel> {
                 _resetResults();
               }),
             ),
-          TextField(
-            key: const Key('name-surname'),
+          ToolInlineInput(
+            fieldKey: const Key('name-surname'),
             controller: _surname,
-            decoration: const InputDecoration(labelText: '姓氏（选填）'),
+            label: '姓氏',
+            hint: '选填',
             onChanged: (_) => setState(() {
               _surnameZh.clear();
               _resetResults();
             }),
           ),
           if (_generator.needsSurnameZh(_country, _surname.text))
-            TextField(
-              key: const Key('name-surname-zh'),
+            ToolInlineInput(
+              fieldKey: const Key('name-surname-zh'),
               controller: _surnameZh,
-              decoration: const InputDecoration(labelText: '姓氏中文写法'),
+              label: '中文姓氏',
               onChanged: (_) => setState(_resetResults),
             ),
-          if (_country == 'ru' && _surname.text.trim().isNotEmpty)
-            const Text('固定姓氏按输入保留，不随性别变形'),
-          ToolNumber(label: '数量（1–50）', controller: _count),
-          if (_error != null) ToolError(_error),
-          ToolActions(
-            onGenerate: _generate,
-            onClear: () => setState(() {
-              _surname.clear();
-              _surnameZh.clear();
-              _resetResults();
-            }),
+          ToolNumber(
+            label: '数量',
+            controller: _count,
+            fieldKey: const Key('name-count'),
           ),
         ],
+      ),
+      SizedBox(height: context.wenyouTokens.space12),
+      if (_country == 'ru' && _surname.text.trim().isNotEmpty)
+        const Text('固定姓氏按输入保留，不随性别变形'),
+      if (_error != null) ToolError(_error),
+      ToolActions(
+        onGenerate: _generate,
+        onClear: () => setState(() {
+          _surname.clear();
+          _surnameZh.clear();
+          _resetResults();
+        }),
       ),
       if (_results.isNotEmpty) ...[
         SizedBox(height: context.wenyouTokens.space12),

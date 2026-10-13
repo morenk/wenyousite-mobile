@@ -47,13 +47,16 @@ class NameToolResults extends StatelessWidget {
             children: [
               TextSpan(
                 text: name.original,
-                style: Theme.of(context).textTheme.wenyouRowTitle,
+                style: Theme.of(
+                  context,
+                ).textTheme.wenyouBody.copyWith(fontWeight: FontWeight.w400),
               ),
               if (name.zh != name.original)
                 TextSpan(
                   text: '\n${name.zh}',
                   style: Theme.of(context).textTheme.wenyouCompactBody.copyWith(
                     color: context.wenyouTokens.mutedText,
+                    fontWeight: FontWeight.w400,
                   ),
                 ),
             ],
@@ -66,6 +69,7 @@ class NameToolResults extends StatelessWidget {
       TextButton(
         style: TextButton.styleFrom(
           minimumSize: Size(0, context.wenyouTokens.minimumTouchTarget),
+          foregroundColor: context.wenyouTokens.mutedText,
         ),
         onPressed: () => copyToolText(context, text),
         child: Text(label),

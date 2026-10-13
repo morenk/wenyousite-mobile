@@ -3,9 +3,9 @@ import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_settings_body.dart';
-import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/toolbox/domain/text_tool.dart';
 import 'package:wenyousite_mobile/features/toolbox/presentation/name_tool_panel.dart';
+import 'package:wenyousite_mobile/features/toolbox/presentation/tool_typography.dart';
 import 'package:wenyousite_mobile/features/toolbox/presentation/transform_tool_panel.dart';
 import 'package:wenyousite_mobile/features/toolbox/presentation/vertical_tool_panel.dart';
 
@@ -26,7 +26,7 @@ class _TextToolPageState extends State<TextToolPage> {
   }
 
   @override
-  Widget build(BuildContext context) => WenyouSettingsTypography(
+  Widget build(BuildContext context) => ToolTypography(
     child: Scaffold(
       backgroundColor: wenyouPersonalPageBackground(context),
       appBar: AppBar(

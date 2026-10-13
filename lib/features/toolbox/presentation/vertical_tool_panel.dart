@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_settings_body.dart';
 import 'package:wenyousite_mobile/features/toolbox/application/text_transformers.dart';
 import 'package:wenyousite_mobile/features/toolbox/presentation/tool_controls.dart';
 
@@ -58,14 +59,21 @@ class _VerticalToolPanelState extends State<VerticalToolPanel> {
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
-      ToolSection(
+      ToolTextInput(controller: _input),
+      SizedBox(height: context.wenyouTokens.space12),
+      WenyouSettingsGroup(
         children: [
-          ToolTextInput(controller: _input),
-          ToolFields(
-            children: [
-              ToolNumber(label: '页宽（1–100）', controller: _width),
-              ToolNumber(label: '页高（1–100）', controller: _height),
-            ],
+          ToolNumber(
+            label: '页宽',
+            controller: _width,
+            unit: '列',
+            fieldKey: const Key('vertical-width'),
+          ),
+          ToolNumber(
+            label: '页高',
+            controller: _height,
+            unit: '字',
+            fieldKey: const Key('vertical-height'),
           ),
           ToolSelect(
             label: '阅读顺序',
@@ -76,34 +84,37 @@ class _VerticalToolPanelState extends State<VerticalToolPanel> {
             },
             onChanged: (value) => setState(() => _direction = value),
           ),
-          ToolFields(
-            children: [
-              ToolSelect(
-                label: '列间分隔',
-                value: _customSeparator,
-                options: const {false: '空格', true: '自定义'},
-                onChanged: (value) => setState(() => _customSeparator = value),
-              ),
-              if (_customSeparator)
-                TextField(
-                  controller: _separator,
-                  decoration: const InputDecoration(labelText: '分隔符（最多 20 字）'),
-                )
-              else
-                ToolNumber(label: '空格数（0–10）', controller: _gap),
-            ],
+          ToolSelect(
+            label: '列间分隔',
+            value: _customSeparator,
+            options: const {false: '空格', true: '自定义'},
+            onChanged: (value) => setState(() => _customSeparator = value),
           ),
-          if (_error != null && _input.text.length <= toolTextLimit)
-            ToolError(_error),
-          ToolActions(
-            onGenerate: _generate,
-            onClear: () => setState(() {
-              _input.clear();
-              _result = null;
-              _error = null;
-            }),
-          ),
+          if (_customSeparator)
+            ToolInlineInput(
+              fieldKey: const Key('vertical-separator'),
+              controller: _separator,
+              label: '分隔符',
+              hint: '最多 20 字',
+            )
+          else
+            ToolNumber(
+              label: '空格数',
+              controller: _gap,
+              fieldKey: const Key('vertical-gap'),
+            ),
         ],
+      ),
+      SizedBox(height: context.wenyouTokens.space12),
+      if (_error != null && _input.text.length <= toolTextLimit)
+        ToolError(_error),
+      ToolActions(
+        onGenerate: _generate,
+        onClear: () => setState(() {
+          _input.clear();
+          _result = null;
+          _error = null;
+        }),
       ),
       if (_result != null && _result!.isNotEmpty) ...[
         SizedBox(height: context.wenyouTokens.space12),

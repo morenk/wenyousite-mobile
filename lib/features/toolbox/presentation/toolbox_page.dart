@@ -5,12 +5,13 @@ import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_settings_body.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/toolbox/domain/text_tool.dart';
+import 'package:wenyousite_mobile/features/toolbox/presentation/tool_typography.dart';
 
 class ToolboxPage extends StatelessWidget {
   const ToolboxPage({super.key});
 
   @override
-  Widget build(BuildContext context) => WenyouSettingsTypography(
+  Widget build(BuildContext context) => ToolTypography(
     child: Scaffold(
       backgroundColor: wenyouPersonalPageBackground(context),
       appBar: AppBar(

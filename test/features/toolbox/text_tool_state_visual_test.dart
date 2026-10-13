@@ -37,6 +37,12 @@ void main() {
             ),
           );
           await tester.pumpAndSettle();
+          expect(
+            Theme.of(
+              tester.element(find.byType(AppBar)),
+            ).appBarTheme.titleTextStyle!.fontWeight,
+            FontWeight.w400,
+          );
           expect(find.byTooltip('返回工具箱').hitTestable(), findsOneWidget);
           expect(tester.takeException(), isNull);
           await expectLater(

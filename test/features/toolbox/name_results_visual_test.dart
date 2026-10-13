@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_settings_body.dart';
-import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/toolbox/application/name_generator.dart';
 import 'package:wenyousite_mobile/features/toolbox/presentation/name_tool_results.dart';
+import 'package:wenyousite_mobile/features/toolbox/presentation/tool_typography.dart';
 
 import '../../support/deterministic_test_fonts.dart';
 
@@ -38,7 +38,7 @@ void main() {
             ).copyWith(textScaler: TextScaler.linear(narrow ? 2 : 1)),
             child: child!,
           ),
-          home: WenyouSettingsTypography(
+          home: ToolTypography(
             child: Builder(
               builder: (context) => RepaintBoundary(
                 key: const Key('results-visual'),
@@ -69,6 +69,13 @@ void main() {
         expect(find.text(label).hitTestable(), findsOneWidget);
       }
       expect(find.byType(SelectableText), findsNWidgets(3));
+      for (final result in tester.widgetList<SelectableText>(
+        find.byType(SelectableText),
+      )) {
+        for (final span in result.textSpan!.children!.cast<TextSpan>()) {
+          expect(span.style!.fontWeight, FontWeight.w400);
+        }
+      }
       await expectLater(
         find.byKey(const Key('results-visual')),
         matchesGoldenFile(
