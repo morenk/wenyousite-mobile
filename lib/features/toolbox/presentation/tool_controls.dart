@@ -6,6 +6,7 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_selection_menu.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_sheet.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/toolbox/application/text_transformers.dart';
+import 'package:wenyousite_mobile/features/toolbox/presentation/tool_result_viewport.dart';
 import 'package:wenyousite_mobile/features/toolbox/presentation/tool_typography.dart';
 
 class ToolSection extends StatelessWidget {
@@ -300,14 +301,16 @@ class ToolResult extends StatelessWidget {
     required this.text,
     this.fixedLayout = false,
     this.fromRight = false,
+    this.revision,
     super.key,
   });
   final String text;
   final bool fixedLayout;
   final bool fromRight;
+  final int? revision;
   @override
   Widget build(BuildContext context) {
-    final content = SelectableText(
+    final content = Text(
       text,
       key: const Key('tool-result-text'),
       style: Theme.of(context).textTheme.wenyouBody.copyWith(
@@ -327,16 +330,13 @@ class ToolResult extends StatelessWidget {
             child: const Text('复制结果'),
           ),
         ),
-        ConstrainedBox(
-          constraints: const BoxConstraints(maxHeight: 400),
-          child: SingleChildScrollView(
-            child: fixedLayout
-                ? SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    reverse: fromRight,
-                    child: content,
-                  )
-                : content,
+        // 选择区域放在滚动视口外，让触屏横向拖动优先交给滚动器。
+        SelectionArea(
+          child: ToolResultViewport(
+            resetToken: revision ?? text,
+            horizontal: fixedLayout,
+            fromRight: fromRight,
+            child: content,
           ),
         ),
       ],

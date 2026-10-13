@@ -166,7 +166,7 @@ void main() {
     await tester.enterText(find.byKey(const Key('tool-input')), '甲');
     await generate(tester);
     final result = tester
-        .widget<SelectableText>(find.byKey(const Key('tool-result-text')))
+        .widget<Text>(find.byKey(const Key('tool-result-text')))
         .data!;
     expect(result.split('\n').length, 20);
     expect(result.startsWith(' ' * 36), isTrue);

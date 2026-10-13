@@ -20,6 +20,7 @@ class _VerticalToolPanelState extends State<VerticalToolPanel> {
   var _customSeparator = false;
   String? _result;
   String? _error;
+  var _resultRevision = 0;
   var _resultDirection = ReadingDirection.right;
   @override
   void dispose() {
@@ -43,6 +44,7 @@ class _VerticalToolPanelState extends State<VerticalToolPanel> {
       );
       setState(() {
         _result = result;
+        _resultRevision++;
         _resultDirection = _direction;
         _error = null;
       });
@@ -120,6 +122,7 @@ class _VerticalToolPanelState extends State<VerticalToolPanel> {
         SizedBox(height: context.wenyouTokens.space12),
         ToolResult(
           text: _result!,
+          revision: _resultRevision,
           fixedLayout: true,
           fromRight: _resultDirection == ReadingDirection.right,
         ),

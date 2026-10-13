@@ -18,6 +18,7 @@ class _TransformToolPanelState extends State<TransformToolPanel> {
   var _style = FancyStyle.bold;
   String? _result;
   String? _error;
+  var _resultRevision = 0;
   @override
   void dispose() {
     _input.dispose();
@@ -33,6 +34,7 @@ class _TransformToolPanelState extends State<TransformToolPanel> {
           : encodeMorse(_input.text);
       setState(() {
         _result = result;
+        _resultRevision++;
         _error = null;
       });
       FocusManager.instance.primaryFocus?.unfocus();
@@ -94,7 +96,7 @@ class _TransformToolPanelState extends State<TransformToolPanel> {
       ),
       if (_result != null && _result!.isNotEmpty) ...[
         SizedBox(height: context.wenyouTokens.space12),
-        ToolResult(text: _result!),
+        ToolResult(text: _result!, revision: _resultRevision),
       ],
     ],
   );

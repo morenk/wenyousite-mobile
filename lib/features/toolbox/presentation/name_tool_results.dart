@@ -3,6 +3,7 @@ import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/features/toolbox/application/name_generator.dart';
 import 'package:wenyousite_mobile/features/toolbox/presentation/tool_controls.dart';
+import 'package:wenyousite_mobile/features/toolbox/presentation/tool_result_viewport.dart';
 
 class NameToolResults extends StatelessWidget {
   const NameToolResults({
@@ -41,27 +42,39 @@ class NameToolResults extends StatelessWidget {
         ],
       ),
       if (names.length < requestedCount) Text('已生成 ${names.length} 个不同姓名'),
-      for (final name in names)
-        SelectableText.rich(
-          TextSpan(
-            children: [
-              TextSpan(
-                text: name.original,
-                style: Theme.of(
-                  context,
-                ).textTheme.wenyouBody.copyWith(fontWeight: FontWeight.w400),
-              ),
-              if (name.zh != name.original)
+      ToolResultViewport(
+        resetToken: names,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            for (var index = 0; index < names.length; index++) ...[
+              if (index > 0) SizedBox(height: context.wenyouTokens.space8),
+              SelectableText.rich(
                 TextSpan(
-                  text: '\n${name.zh}',
-                  style: Theme.of(context).textTheme.wenyouCompactBody.copyWith(
-                    color: context.wenyouTokens.mutedText,
-                    fontWeight: FontWeight.w400,
-                  ),
+                  children: [
+                    TextSpan(
+                      text: names[index].original,
+                      style: Theme.of(context).textTheme.wenyouBody.copyWith(
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                    if (names[index].zh != names[index].original)
+                      TextSpan(
+                        text: '\n${names[index].zh}',
+                        style: Theme.of(context).textTheme.wenyouCompactBody
+                            .copyWith(
+                              color: context.wenyouTokens.mutedText,
+                              fontWeight: FontWeight.w400,
+                            ),
+                      ),
+                  ],
                 ),
+                scrollPhysics: const NeverScrollableScrollPhysics(),
+              ),
             ],
-          ),
+          ],
         ),
+      ),
     ],
   );
 

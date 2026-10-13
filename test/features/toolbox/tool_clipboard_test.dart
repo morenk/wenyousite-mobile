@@ -73,6 +73,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('复制成功'), findsNothing);
     expect(find.text('复制失败，请长按选择文字'), findsOneWidget);
-    expect(find.byType(SelectableText), findsOneWidget);
+    expect(find.byType(SelectionArea), findsOneWidget);
+    expect(find.byKey(const Key('tool-result-text')), findsOneWidget);
   });
 }
