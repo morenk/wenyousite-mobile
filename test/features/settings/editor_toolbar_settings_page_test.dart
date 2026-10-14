@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -19,7 +20,7 @@ import '../../support/editor_toolbar_store.dart';
 void main() {
   setUpAll(loadDeterministicTestFonts);
 
-  testWidgets('偏好入口可打开，分组移动和排序跨页面恢复并可恢复默认', (tester) async {
+  testWidgets('偏好入口可打开，连续调整跨页面保留并可恢复默认', (tester) async {
     final store = TestEditorToolbarStore();
     final router = GoRouter(
       routes: [
@@ -48,65 +49,177 @@ void main() {
       AppRouteAccessPolicy.forLocation(AppRouteLocations.editorToolbar),
       AppRouteAccess.public,
     );
-    await _menu(tester, EditorTool.heading, '下移');
+    await _select(tester, EditorTool.heading);
+    expect(store.writes, 0);
+    await tester.tap(find.byTooltip('后移'));
+    await tester.pumpAndSettle();
     expect(store.saved.primary.take(2), [EditorTool.bold, EditorTool.heading]);
-    await _menu(tester, EditorTool.image, '移到展开栏');
-    expect(store.saved.primary, isNot(contains(EditorTool.image)));
+    await tester.tap(find.byTooltip('后移'));
+    await tester.pumpAndSettle();
+    expect(store.saved.primary[2], EditorTool.heading);
+    await tester.tap(find.byTooltip('前移'));
+    await tester.pumpAndSettle();
+    expect(store.saved.primary[1], EditorTool.heading);
+    await _select(tester, EditorTool.image);
+    await tester.tap(find.byTooltip('移到展开栏'));
+    await tester.pumpAndSettle();
     expect(store.saved.expanded.last, EditorTool.image);
+    expect(find.byTooltip('移到主栏'), findsOneWidget);
     router.pop();
     await tester.pumpAndSettle();
     await tester.ensureVisible(entry);
     await tester.tap(entry);
     await tester.pumpAndSettle();
-    final group = tester.widget<ReorderableListView>(
-      find.byKey(const ValueKey('toolbar-layout-primary')),
-    );
-    expect(group.itemCount, store.saved.primary.length);
-    await tester.ensureVisible(
-      find.byKey(const Key('editor-toolbar-layout-reset')),
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('toolbar-layout-expanded')),
+        matching: find.byKey(const ValueKey('toolbar-layout-image')),
+      ),
+      findsOneWidget,
     );
     await tester.tap(find.byKey(const Key('editor-toolbar-layout-reset')));
     await tester.pumpAndSettle();
     expect(store.saved.isDefault, isTrue);
+    expect(find.byType(ReorderableListView), findsNothing);
     expect(find.text('无序列表'), findsNothing);
     expect(find.text('有序列表'), findsNothing);
     expect(find.text('音频'), findsNothing);
   });
 
-  testWidgets('拖动手柄重排，同组菜单提供读屏上移与下移', (tester) async {
-    tester.view.devicePixelRatio = 1;
-    tester.view.physicalSize = const Size(320, 900);
-    addTearDown(tester.view.resetDevicePixelRatio);
-    addTearDown(tester.view.resetPhysicalSize);
+  testWidgets('图标点选和操作条支持真实读屏tap，固定控件不可拖动', (tester) async {
     final semantics = tester.ensureSemantics();
     try {
       final store = TestEditorToolbarStore();
       await tester.pumpWidget(_app(store));
+      final icon = tester.getSemantics(_iconButton(EditorTool.heading));
+      expect(icon.getSemanticsData().hasAction(SemanticsAction.tap), isTrue);
+      icon.owner!.performAction(icon.id, SemanticsAction.tap);
       await tester.pumpAndSettle();
-      final handle = find.descendant(
-        of: find.byKey(const ValueKey('toolbar-layout-heading')),
-        matching: find.byType(ReorderableDragStartListener),
-      );
-      await tester.drag(handle, const Offset(0, 105));
+      expect(store.writes, 0);
+      final next = tester.getSemantics(find.byTooltip('后移'));
+      expect(next.getSemanticsData().hasAction(SemanticsAction.tap), isTrue);
+      next.owner!.performAction(next.id, SemanticsAction.tap);
       await tester.pumpAndSettle();
-      expect(store.saved.isDefault, isFalse);
-      expect(store.saved.primary.first, isNot(EditorTool.heading));
-      final menu = tester.getSemantics(
-        find.descendant(
-          of: find.byKey(const ValueKey('toolbar-layout-menu-heading')),
-          matching: find.byType(IconButton),
-        ),
-      );
-      expect(menu.getSemanticsData().hasAction(SemanticsAction.tap), isTrue);
-      menu.owner!.performAction(menu.id, SemanticsAction.tap);
-      await tester.pumpAndSettle();
-      expect(find.text('上移'), findsOneWidget);
-      await tester.tap(find.text('上移'));
-      await tester.pumpAndSettle();
-      expect(tester.takeException(), isNull);
+      expect(store.saved.primary[1], EditorTool.heading);
+      expect(find.byTooltip('前移'), findsOneWidget);
+      expect(find.byType(LongPressDraggable<EditorTool>), findsNWidgets(14));
+      for (final key in [
+        'toolbar-layout-fixed-more',
+        'toolbar-layout-fixed-submit',
+      ]) {
+        expect(
+          find.ancestor(
+            of: find.byKey(Key(key)),
+            matching: find.byType(LongPressDraggable<EditorTool>),
+          ),
+          findsNothing,
+        );
+      }
+      expect(find.byTooltip('收起更多（固定按钮）'), findsOneWidget);
+      expect(find.byTooltip('发送（固定按钮）'), findsOneWidget);
     } finally {
       semantics.dispose();
     }
+  });
+
+  testWidgets('长按拖放提供插入反馈并保存准确顺序，取消不写入', (tester) async {
+    _viewport(tester, const Size(320, 640));
+    final store = TestEditorToolbarStore();
+    await tester.pumpWidget(_app(store));
+    final drag = await _startDrag(tester, EditorTool.heading);
+    await drag.moveTo(
+      tester.getCenter(find.byKey(const ValueKey('toolbar-drop-primary-2'))),
+    );
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.byKey(const Key('toolbar-drop-indicator')), findsOneWidget);
+    expect(store.writes, 0);
+    await drag.up();
+    await tester.pumpAndSettle();
+    expect(store.saved.primary.take(3), [
+      EditorTool.bold,
+      EditorTool.heading,
+      EditorTool.italic,
+    ]);
+    final writes = store.writes;
+    final cancel = await _startDrag(tester, EditorTool.bold);
+    await cancel.moveTo(const Offset(20, 600));
+    await tester.pump();
+    await cancel.up();
+    await tester.pumpAndSettle();
+    expect(store.writes, writes);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('空展开栏可接收拖放，主栏横滑及边缘拖动不改写保存归属', (tester) async {
+    _viewport(tester, const Size(320, 640));
+    final saved = EditorToolbarLayout.custom(
+      primary: EditorTool.values,
+      expanded: [],
+    );
+    final store = TestEditorToolbarStore()..saved = saved;
+    await tester.pumpWidget(_app(store));
+    await tester.drag(
+      find.byKey(const Key('toolbar-layout-primary')),
+      const Offset(-180, 0),
+    );
+    await tester.pumpAndSettle();
+    expect(store.writes, 0);
+    expect(store.saved, saved);
+    expect(
+      find.byKey(const ValueKey('toolbar-empty-expanded')),
+      findsOneWidget,
+    );
+
+    await _select(tester, EditorTool.heading);
+    final drag = await _startDrag(tester, EditorTool.heading);
+    final viewport = tester.getRect(
+      find.byKey(const Key('toolbar-layout-primary')),
+    );
+    final scroll = tester
+        .widget<SingleChildScrollView>(
+          find.byKey(const Key('toolbar-layout-primary')),
+        )
+        .controller!;
+    await drag.moveTo(Offset(viewport.right - 4, viewport.center.dy));
+    await tester.pump(const Duration(milliseconds: 240));
+    expect(scroll.offset, greaterThan(0));
+    expect(store.writes, 0);
+    await drag.moveTo(
+      tester.getCenter(find.byKey(const ValueKey('toolbar-empty-expanded'))),
+    );
+    await tester.pump();
+    await drag.up();
+    await tester.pumpAndSettle();
+    expect(store.saved.expanded, [EditorTool.heading]);
+    expect(
+      store.saved.primary,
+      EditorTool.values.where((tool) => tool != EditorTool.heading),
+    );
+    expect(find.byTooltip('移到主栏'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('空主栏也可直接接收拖放，更多可收起并重新展开', (tester) async {
+    final store = TestEditorToolbarStore()
+      ..saved = EditorToolbarLayout.custom(
+        primary: [],
+        expanded: EditorTool.values,
+      );
+    await tester.pumpWidget(_app(store));
+    final drag = await _startDrag(tester, EditorTool.sticker);
+    await drag.moveTo(
+      tester.getCenter(find.byKey(const ValueKey('toolbar-empty-primary'))),
+    );
+    await tester.pump();
+    await drag.up();
+    await tester.pumpAndSettle();
+    expect(store.saved.primary, [EditorTool.sticker]);
+    await tester.tap(find.byKey(const Key('toolbar-layout-fixed-more')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('toolbar-layout-expanded')), findsNothing);
+    await tester.tap(find.byKey(const Key('toolbar-layout-fixed-more')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('toolbar-layout-expanded')), findsOneWidget);
   });
 
   testWidgets('保存中禁用，失败恢复原布局并重试', (tester) async {
@@ -114,17 +227,19 @@ void main() {
       ..failWrite = true
       ..pendingWrite = Completer<void>();
     await tester.pumpWidget(_app(store));
-    await tester.tap(find.byKey(const ValueKey('toolbar-layout-menu-heading')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('下移'));
+    await _select(tester, EditorTool.heading);
+    await tester.tap(find.byTooltip('后移'));
     await tester.pump();
     expect(
       tester
-          .widget<PopupMenuButton<String>>(
-            find.byKey(const ValueKey('toolbar-layout-menu-heading')),
+          .widget<IconButton>(
+            find.descendant(
+              of: find.byKey(const Key('toolbar-layout-next')),
+              matching: find.byType(IconButton),
+            ),
           )
-          .enabled,
-      isFalse,
+          .onPressed,
+      isNull,
     );
     store.pendingWrite!.complete();
     await tester.pumpAndSettle();
@@ -138,20 +253,15 @@ void main() {
 
   for (final dark in [false, true]) {
     for (final width in [320, 360]) {
-      testWidgets('${width}dp ${dark ? 'dark' : 'light'} 偏好设置实际画面', (
+      testWidgets('${width}dp ${dark ? 'dark' : 'light'} 图标摆放实际画面', (
         tester,
       ) async {
-        tester.view.devicePixelRatio = 1;
-        tester.view.physicalSize = Size(width.toDouble(), 1100);
-        addTearDown(tester.view.resetDevicePixelRatio);
-        addTearDown(tester.view.resetPhysicalSize);
-        await tester.pumpWidget(
-          _app(
-            TestEditorToolbarStore()..saved = customEditorToolbarTestLayout(),
-            dark: dark,
-          ),
-        );
-        await tester.pumpAndSettle();
+        _viewport(tester, Size(width.toDouble(), 640));
+        final store = TestEditorToolbarStore()
+          ..saved = customEditorToolbarTestLayout();
+        await tester.pumpWidget(_app(store, dark: dark));
+        await _select(tester, EditorTool.sticker);
+        expect(store.writes, 0);
         expect(tester.takeException(), isNull);
         await expectLater(
           find.byType(Scaffold),
@@ -161,29 +271,45 @@ void main() {
         );
       });
     }
-    testWidgets('320dp ${dark ? 'dark' : 'light'} 两倍字号可滚动并移动到主栏', (
-      tester,
-    ) async {
-      tester.view.devicePixelRatio = 1;
-      tester.view.physicalSize = const Size(320, 800);
-      addTearDown(tester.view.resetDevicePixelRatio);
-      addTearDown(tester.view.resetPhysicalSize);
+    testWidgets('320dp ${dark ? 'dark' : 'light'} 两倍字号操作条可换栏', (tester) async {
+      _viewport(tester, const Size(320, 640));
       final store = TestEditorToolbarStore();
       await tester.pumpWidget(_app(store, dark: dark, scale: 2));
-      await _menu(tester, EditorTool.dice, '移到主栏');
+      await _select(tester, EditorTool.dice);
+      await tester.tap(find.byTooltip('移到主栏'));
+      await tester.pumpAndSettle();
       expect(store.saved.primary.last, EditorTool.dice);
+      expect(_iconButton(EditorTool.dice).hitTestable(), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
   }
 }
 
-Future<void> _menu(WidgetTester tester, EditorTool tool, String choice) async {
-  final menu = find.byKey(ValueKey('toolbar-layout-menu-${tool.id}'));
-  await tester.ensureVisible(menu);
-  await tester.tap(menu);
+void _viewport(WidgetTester tester, Size size) {
+  tester.view.devicePixelRatio = 1;
+  tester.view.physicalSize = size;
+  addTearDown(tester.view.resetDevicePixelRatio);
+  addTearDown(tester.view.resetPhysicalSize);
+}
+
+Finder _iconButton(EditorTool tool) => find.descendant(
+  of: find.byKey(ValueKey('toolbar-layout-${tool.id}')),
+  matching: find.byType(IconButton),
+);
+
+Future<void> _select(WidgetTester tester, EditorTool tool) async {
+  await tester.ensureVisible(_iconButton(tool));
+  await tester.tap(_iconButton(tool));
   await tester.pumpAndSettle();
-  await tester.tap(find.text(choice));
-  await tester.pumpAndSettle();
+}
+
+Future<TestGesture> _startDrag(WidgetTester tester, EditorTool tool) async {
+  await tester.ensureVisible(_iconButton(tool));
+  final gesture = await tester.startGesture(
+    tester.getCenter(_iconButton(tool)),
+  );
+  await tester.pump(kLongPressTimeout + const Duration(milliseconds: 50));
+  return gesture;
 }
 
 Widget _app(
