@@ -44,7 +44,7 @@ void main() {
       expect(
         fancyText(
           item['input']! as String,
-          FancyStyle.values.byName(item['style']! as String),
+          FancyStyle.byId(item['style']! as String),
         ),
         item['expected'],
       );

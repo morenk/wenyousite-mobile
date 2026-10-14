@@ -1,7 +1,7 @@
 enum TextTool {
   vertical('vertical', '文字竖排'),
   morse('morse', '摩斯编码'),
-  fancy('fancy', '花体英文'),
+  fancy('fancy', '花体字'),
   names('names', '起名工具');
 
   const TextTool(this.id, this.title);

@@ -26,6 +26,8 @@ class AdvancedNameStyle {
       country = json['country']! as String,
       mode = json['mode']! as String,
       label = json['label']! as String,
+      periodFrom = (json['period'] as Map<String, Object?>?)?['from'] as int?,
+      periodTo = (json['period'] as Map<String, Object?>?)?['to'] as int?,
       defaultStructureId = json['defaultStructureId']! as String,
       structures = (json['structures']! as List<Object?>)
           .map((item) => AdvancedNameStructure(item! as Map<String, Object?>))
@@ -43,6 +45,8 @@ class AdvancedNameStyle {
   final String country;
   final String mode;
   final String label;
+  final int? periodFrom;
+  final int? periodTo;
   final String defaultStructureId;
   final List<AdvancedNameStructure> structures;
   final Map<String, List<HistoricalPart>> given;
@@ -83,6 +87,28 @@ class AdvancedNameCatalog {
   List<AdvancedNameStyle> forCountry(String country, String mode) => styles
       .where((style) => style.country == country && style.mode == mode)
       .toList();
+
+  /// 只排序显示选项；默认选择与生成器仍使用原始词库顺序。
+  List<AdvancedNameStyle> chronologicalOptions(String country, String mode) {
+    final indexed = forCountry(country, mode).indexed.toList();
+    indexed.sort((left, right) {
+      final (_, a) = left;
+      final (_, b) = right;
+      if (a.periodFrom == null && b.periodFrom == null) {
+        return left.$1.compareTo(right.$1);
+      }
+      if (a.periodFrom == null) return 1;
+      if (b.periodFrom == null) return -1;
+      final from = a.periodFrom!.compareTo(b.periodFrom!);
+      if (from != 0) return from;
+      final to = (a.periodTo ?? a.periodFrom!).compareTo(
+        b.periodTo ?? b.periodFrom!,
+      );
+      return to != 0 ? to : left.$1.compareTo(right.$1);
+    });
+    return indexed.map((entry) => entry.$2).toList();
+  }
+
   AdvancedNameStyle? style(String id) =>
       styles.where((style) => style.id == id).firstOrNull;
 }

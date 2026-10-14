@@ -35,6 +35,7 @@ class ToolSelect<T> extends StatelessWidget {
     required this.options,
     required this.onChanged,
     this.stacked = false,
+    this.spaciousText = false,
     super.key,
   });
   final String label;
@@ -42,28 +43,40 @@ class ToolSelect<T> extends StatelessWidget {
   final Map<T, String> options;
   final ValueChanged<T> onChanged;
   final bool stacked;
+  final bool spaciousText;
   @override
   Widget build(BuildContext context) {
     Future<void> select() async {
       FocusManager.instance.primaryFocus?.unfocus();
       final next = await showWenyouSheet<T>(
         context: context,
-        builder: (context) => ToolTypography(
-          child: WenyouSheetBody(
-            title: label,
-            slivers: [
-              SliverList.list(
-                children: [
-                  for (final entry in options.entries)
-                    WenyouSelectionTile(
-                      label: entry.value,
-                      selected: entry.key == value,
-                      emphasizeSelected: false,
-                      onTap: () => Navigator.of(context).pop(entry.key),
-                    ),
-                ],
-              ),
-            ],
+        builder: (context) => Theme(
+          data: spaciousText
+              ? Theme.of(context).copyWith(
+                  textTheme: Theme.of(context).textTheme.copyWith(
+                    bodyMedium: Theme.of(
+                      context,
+                    ).textTheme.wenyouCompactBody.copyWith(height: 2),
+                  ),
+                )
+              : Theme.of(context),
+          child: ToolTypography(
+            child: WenyouSheetBody(
+              title: label,
+              slivers: [
+                SliverList.list(
+                  children: [
+                    for (final entry in options.entries)
+                      WenyouSelectionTile(
+                        label: entry.value,
+                        selected: entry.key == value,
+                        emphasizeSelected: false,
+                        onTap: () => Navigator.of(context).pop(entry.key),
+                      ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       );
@@ -90,6 +103,7 @@ class ToolSelect<T> extends StatelessWidget {
               options[value] ?? '',
               style: Theme.of(context).textTheme.wenyouCompactBody.copyWith(
                 color: context.wenyouTokens.mutedText,
+                height: spaciousText ? 2 : null,
               ),
             ),
           ],
@@ -332,12 +346,14 @@ class ToolResult extends StatelessWidget {
     this.fixedLayout = false,
     this.fromRight = false,
     this.revision,
+    this.protectCombiningMarks = false,
     super.key,
   });
   final String text;
   final bool fixedLayout;
   final bool fromRight;
   final int? revision;
+  final bool protectCombiningMarks;
   @override
   Widget build(BuildContext context) {
     final content = Text(
@@ -345,6 +361,7 @@ class ToolResult extends StatelessWidget {
       key: const Key('tool-result-text'),
       style: Theme.of(context).textTheme.wenyouBody.copyWith(
         fontFamily: fixedLayout ? 'monospace' : null,
+        height: protectCombiningMarks ? 2 : null,
       ),
     );
     return ToolSection(
@@ -366,7 +383,14 @@ class ToolResult extends StatelessWidget {
             resetToken: revision ?? text,
             horizontal: fixedLayout,
             fromRight: fromRight,
-            child: content,
+            child: protectCombiningMarks
+                ? Padding(
+                    padding: EdgeInsets.symmetric(
+                      vertical: context.wenyouTokens.space8,
+                    ),
+                    child: content,
+                  )
+                : content,
           ),
         ),
       ],

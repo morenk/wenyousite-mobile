@@ -128,7 +128,7 @@ void main() {
   });
   testWidgets('花体默认粗体有样例，超限粘贴可看见和修改', (tester) async {
     await pumpTool(tester, TextTool.fancy);
-    expect(find.text('粗体  𝐀𝐛𝐜'), findsOneWidget);
+    expect(find.text('粗体\n𝐇𝐞𝐥𝐥𝐨 𝐖𝐞𝐧𝐲𝐨𝐮'), findsOneWidget);
     await tester.enterText(find.byKey(const Key('tool-input')), 'Az09中文');
     await generate(tester);
     expect(find.text('𝐀𝐳𝟎𝟗中文'), findsOneWidget);

@@ -15,6 +15,7 @@ Future<void> pumpNames(
   WidgetTester tester, {
   bool dark = false,
   bool narrow = false,
+  ThemeData? theme,
 }) async {
   tester.view.devicePixelRatio = 1;
   tester.view.physicalSize = Size(narrow ? 320 : 400, 860);
@@ -22,7 +23,8 @@ Future<void> pumpNames(
   addTearDown(tester.view.resetPhysicalSize);
   await tester.pumpWidget(
     MaterialApp(
-      theme: dark ? AppTheme.dark : AppTheme.light,
+      debugShowCheckedModeBanner: false,
+      theme: theme ?? (dark ? AppTheme.dark : AppTheme.light),
       builder: (context, child) => MediaQuery(
         data: MediaQuery.of(
           context,

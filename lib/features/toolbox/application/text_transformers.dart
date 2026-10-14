@@ -1,6 +1,9 @@
 import 'package:flutter/widgets.dart' show StringCharacters;
 
 import 'emoji_width.dart';
+import 'fancy_styles.dart';
+
+export 'fancy_styles.dart' show FancyStyle, fancyCategories;
 
 const toolTextLimit = 10000;
 
@@ -234,64 +237,7 @@ String decodeMorse(String text) {
       .join('\n');
 }
 
-enum FancyStyle {
-  bold('粗体', 0x1d400, 0x1d41a, 0x1d7ce),
-  italic('斜体', 0x1d434, 0x1d44e),
-  script('花体', 0x1d49c, 0x1d4b6),
-  fraktur('哥特体', 0x1d504, 0x1d51e),
-  doubleLine('双线体', 0x1d538, 0x1d552, 0x1d7d8),
-  mono('等宽体', 0x1d670, 0x1d68a, 0x1d7f6),
-  full('全角', 0xff21, 0xff41, 0xff10);
-
-  const FancyStyle(this.label, this.upper, this.lower, [this.digit]);
-  final String label;
-  final int upper;
-  final int lower;
-  final int? digit;
-}
-
-const _fancyExceptions = <FancyStyle, Map<String, String>>{
-  FancyStyle.italic: {'h': 'ℎ'},
-  FancyStyle.script: {
-    'B': 'ℬ',
-    'E': 'ℰ',
-    'F': 'ℱ',
-    'H': 'ℋ',
-    'I': 'ℐ',
-    'L': 'ℒ',
-    'M': 'ℳ',
-    'R': 'ℛ',
-    'e': 'ℯ',
-    'g': 'ℊ',
-    'o': 'ℴ',
-  },
-  FancyStyle.fraktur: {'C': 'ℭ', 'H': 'ℌ', 'I': 'ℑ', 'R': 'ℜ', 'Z': 'ℨ'},
-  FancyStyle.doubleLine: {
-    'C': 'ℂ',
-    'H': 'ℍ',
-    'N': 'ℕ',
-    'P': 'ℙ',
-    'Q': 'ℚ',
-    'R': 'ℝ',
-    'Z': 'ℤ',
-  },
-};
-
 String fancyText(String text, FancyStyle style) {
   assertToolTextLimit(text);
-  return text.runes.map((code) {
-    final char = String.fromCharCode(code);
-    final exception = _fancyExceptions[style]?[char];
-    if (exception != null) return exception;
-    if (code >= 65 && code <= 90) {
-      return String.fromCharCode(style.upper + code - 65);
-    }
-    if (code >= 97 && code <= 122) {
-      return String.fromCharCode(style.lower + code - 97);
-    }
-    if (code >= 48 && code <= 57 && style.digit != null) {
-      return String.fromCharCode(style.digit! + code - 48);
-    }
-    return char;
-  }).join();
+  return style.convert(text);
 }
