@@ -1,5 +1,7 @@
 import 'package:flutter/widgets.dart' show StringCharacters;
 
+import 'emoji_width.dart';
+
 const toolTextLimit = 10000;
 
 void assertToolTextLimit(String text) {
@@ -26,15 +28,11 @@ class VerticalOptions {
   final String? separator;
 }
 
-final _doubleCellEmoji = RegExp(
-  r'[\p{Extended_Pictographic}\p{Regional_Indicator}\u{20E3}]',
-  unicode: true,
-);
 final _controlSeparator = RegExp(r'[\x00-\x1f\x7f-\x9f\u2028\u2029]');
 
 /// 与 Web 固定页格规则一致；先按完整 grapheme 分段，再计算中英文补位。
 int verticalCellWidth(String grapheme) {
-  if (_doubleCellEmoji.hasMatch(grapheme)) return 2;
+  if (containsDoubleCellEmoji(grapheme)) return 2;
   final code = grapheme.runes.firstOrNull ?? 0;
   return code >= 0x1100 &&
           (code <= 0x115f ||
@@ -52,6 +50,7 @@ int verticalCellWidth(String grapheme) {
 }
 
 String verticalText(String text, VerticalOptions options) {
+  registerEmojiWidthLicense();
   assertToolTextLimit(text);
   final VerticalOptions(:width, :height, :gap, :direction) = options;
   if (width < 1 || width > 100) {

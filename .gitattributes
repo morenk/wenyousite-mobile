@@ -4,6 +4,8 @@
 *.json text eol=lf
 # 词库许可证参与已提交源摘要，检出时必须保留原始 LF。
 contracts/toolbox/*.txt text eol=lf
+# 官方原文含行尾空格，保留 SHA-256 锁定的原始字节。
+contracts/toolbox/unicode-16.0-emoji-data.txt whitespace=-blank-at-eol
 *.yaml text eol=lf
 *.yml text eol=lf
 *.md text eol=lf

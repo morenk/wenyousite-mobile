@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
-import 'package:webview_flutter/webview_flutter.dart';
 import 'package:wenyousite_mobile/app/app_route_access.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/app/routes/account_routes.dart';
@@ -79,7 +78,9 @@ void main() {
       await tester.tap(find.byKey(ValueKey('toolbox-${tool.id}')));
       await tester.pumpAndSettle();
       expect(find.widgetWithText(AppBar, tool.title), findsOneWidget);
-      expect(find.byType(WebViewWidget), findsNothing);
+      expect(find.byType(AndroidView), findsNothing);
+      expect(find.byType(UiKitView), findsNothing);
+      expect(find.byType(PlatformViewLink), findsNothing);
       expect(find.byType(CircularProgressIndicator), findsNothing);
       expect(find.byKey(const Key('tool-generate')), findsOneWidget);
       await tester.tap(find.byTooltip('返回工具箱'));

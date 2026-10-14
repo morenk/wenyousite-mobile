@@ -64,10 +64,16 @@ void main() {
       '💫',
       '🇨🇳',
       '1️⃣',
+      '#\u20e3',
+      '👍🏽',
+      '👩‍👩‍👧‍👦',
+      '©',
+      '©︎',
+      '™',
     ]) {
       expect(verticalCellWidth(char), 2);
     }
-    for (final char in ['', 'a', 'ｦ']) {
+    for (final char in ['', 'a', 'ｦ', '1', '#', '*', '§', '¶']) {
       expect(verticalCellWidth(char), 1);
     }
   });
