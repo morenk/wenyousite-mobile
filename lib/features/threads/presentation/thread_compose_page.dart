@@ -9,6 +9,7 @@ import 'package:wenyousite_mobile/app/app_capabilities.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/application/editor_toolbar_preference.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_anchored_popover.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
@@ -348,6 +349,7 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
               ),
               WenyouComposerDock(
                 key: const Key('compose-toolbar'),
+                layout: ref.watch(editorToolbarLayoutProvider),
                 controller: _editorSession.controller,
                 capabilities: WenyouEditorCapabilities.forAlignment(
                   ref.watch(

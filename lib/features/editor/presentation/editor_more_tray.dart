@@ -1,117 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
-import 'package:wenyousite_mobile/core/markdown/markdown_alignment.dart';
-import 'package:wenyousite_mobile/core/markdown/markdown_delta_alignment.dart';
-import 'package:wenyousite_mobile/features/editor/presentation/editor_toolbar_buttons.dart';
 
 class WenyouEditorMoreTray extends StatelessWidget {
-  const WenyouEditorMoreTray({
-    required this.enabled,
-    required this.showLink,
-    required this.showInlineStyles,
-    required this.showBlockStyles,
-    required this.showQuote,
-    required this.showAlignment,
-    required this.showDice,
-    required this.showSticker,
-    required this.inlineCodeSelected,
-    required this.quoteSelected,
-    required this.strikethroughSelected,
-    required this.alignmentSelection,
-    required this.onLink,
-    required this.onInlineCode,
-    required this.onQuote,
-    required this.onAlignmentChanged,
-    required this.onHorizontalRule,
-    required this.onDice,
-    required this.onSticker,
-    required this.onStrikethrough,
-    super.key,
-  });
-
-  final bool enabled;
-  final bool showLink;
-  final bool showInlineStyles;
-  final bool showBlockStyles;
-  final bool showQuote;
-  final bool showAlignment;
-  final bool showDice;
-  final bool showSticker;
-  final bool inlineCodeSelected;
-  final bool quoteSelected;
-  final bool strikethroughSelected;
-  final MarkdownAlignmentSelectionState alignmentSelection;
-  final VoidCallback onLink;
-  final VoidCallback onInlineCode;
-  final VoidCallback onQuote;
-  final ValueChanged<WenyouTextAlignment> onAlignmentChanged;
-  final VoidCallback onHorizontalRule;
-  final VoidCallback onDice;
-  final VoidCallback onSticker;
-  final VoidCallback onStrikethrough;
+  const WenyouEditorMoreTray({required this.entries, super.key});
+  final List<Widget> entries;
 
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
-    final entries = <Widget>[
-      if (showAlignment)
-        _button(
-          key: const Key('editor-align-center'),
-          icon: WenyouIconIds.editorAlignCenter,
-          label: '居中',
-          selected: alignmentSelection.alignment == WenyouTextAlignment.center,
-          buttonEnabled: alignmentSelection.canApply,
-          onPressed: () => _toggleAlignment(WenyouTextAlignment.center),
-        ),
-      if (showAlignment)
-        _button(
-          key: const Key('editor-align-right'),
-          icon: WenyouIconIds.editorAlignRight,
-          label: '右对齐',
-          selected: alignmentSelection.alignment == WenyouTextAlignment.right,
-          buttonEnabled: alignmentSelection.canApply,
-          onPressed: () => _toggleAlignment(WenyouTextAlignment.right),
-        ),
-      if (showLink)
-        _button(icon: WenyouIconIds.editorLink, label: '链接', onPressed: onLink),
-      if (showInlineStyles)
-        _button(
-          icon: WenyouIconIds.editorInlineCode,
-          label: '行内代码',
-          selected: inlineCodeSelected,
-          onPressed: onInlineCode,
-        ),
-      if (showQuote)
-        _button(
-          icon: WenyouIconIds.editorQuote,
-          label: '引用',
-          selected: quoteSelected,
-          onPressed: onQuote,
-        ),
-      if (showBlockStyles)
-        _button(
-          key: const Key('editor-horizontal-rule'),
-          icon: WenyouIconIds.editorHorizontalRule,
-          label: '分隔线',
-          onPressed: onHorizontalRule,
-        ),
-      if (showDice)
-        _button(icon: WenyouIconIds.editorDice, label: '骰子', onPressed: onDice),
-      if (showSticker)
-        _button(
-          icon: WenyouIconIds.editorSticker,
-          label: '表情包',
-          onPressed: onSticker,
-        ),
-      if (showInlineStyles)
-        _button(
-          icon: WenyouIconIds.editorStrikethrough,
-          label: '删除线',
-          selected: strikethroughSelected,
-          onPressed: onStrikethrough,
-        ),
-    ];
     return Container(
       key: const Key('editor-more-tray'),
       constraints: const BoxConstraints(maxHeight: 152),
@@ -127,6 +24,7 @@ class WenyouEditorMoreTray extends StatelessWidget {
         ),
         child: LayoutBuilder(
           builder: (context, constraints) {
+            if (entries.isEmpty) return const SizedBox.shrink();
             final maximumColumns =
                 (constraints.maxWidth /
                         WenyouEditorContract.minimumActionExtent)
@@ -166,32 +64,6 @@ class WenyouEditorMoreTray extends StatelessWidget {
           },
         ),
       ),
-    );
-  }
-
-  void _toggleAlignment(WenyouTextAlignment alignment) {
-    onAlignmentChanged(
-      alignmentSelection.alignment == alignment
-          ? WenyouTextAlignment.left
-          : alignment,
-    );
-  }
-
-  Widget _button({
-    Key? key,
-    required String icon,
-    required String label,
-    required VoidCallback onPressed,
-    bool selected = false,
-    bool buttonEnabled = true,
-  }) {
-    return WenyouEditorTrayButton(
-      key: key,
-      icon: icon,
-      label: label,
-      selected: selected,
-      enabled: enabled && buttonEnabled,
-      onPressed: onPressed,
     );
   }
 }
