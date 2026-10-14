@@ -7,6 +7,23 @@ import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_format_policy.dart';
 
 void main() {
+  test('隐藏入口后仍保留列表格式创建、切换和取消能力', () {
+    final controller = _selectedController();
+    addTearDown(controller.dispose);
+
+    WenyouEditorFormatPolicy.toggle(controller, Attribute.ul);
+    expect(controller.getSelectionStyle().attributes['list']?.value, 'bullet');
+    expect(MarkdownDeltaCodec.encode(controller.document.toDelta()), '- 正文');
+
+    WenyouEditorFormatPolicy.toggle(controller, Attribute.ol);
+    expect(controller.getSelectionStyle().attributes['list']?.value, 'ordered');
+    expect(MarkdownDeltaCodec.encode(controller.document.toDelta()), '1. 正文');
+
+    WenyouEditorFormatPolicy.toggle(controller, Attribute.ol);
+    expect(controller.getSelectionStyle().attributes, isNot(contains('list')));
+    expect(MarkdownDeltaCodec.encode(controller.document.toDelta()), '正文');
+  });
+
   test('十五种兼容行内组合都能安全往返', () {
     const inlineAttributes = <Attribute>[
       Attribute.bold,

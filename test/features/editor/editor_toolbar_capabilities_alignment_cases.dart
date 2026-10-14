@@ -268,6 +268,8 @@ void registerEditorToolbarCapabilitiesAlignmentCases() {
       final secondRow = find.byKey(const Key('editor-more-row-1'));
       expect(firstRow, findsOneWidget);
       expect(secondRow, findsOneWidget);
+      expect(find.byTooltip('无序列表'), findsNothing);
+      expect(find.byTooltip('有序列表'), findsNothing);
       for (final key in const [
         Key('editor-align-center'),
         Key('editor-align-right'),
@@ -279,11 +281,11 @@ void registerEditorToolbarCapabilitiesAlignmentCases() {
       }
       expect(
         find.descendant(of: firstRow, matching: find.byType(IconButton)),
-        findsNWidgets(5),
+        findsNWidgets(4),
       );
       expect(
         find.descendant(of: secondRow, matching: find.byType(IconButton)),
-        findsNWidgets(scenario.width < 360 ? 5 : 4),
+        findsNWidgets(scenario.width < 360 ? 4 : 3),
       );
 
       await expectLater(

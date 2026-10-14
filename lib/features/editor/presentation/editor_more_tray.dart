@@ -17,15 +17,11 @@ class WenyouEditorMoreTray extends StatelessWidget {
     required this.showSticker,
     required this.inlineCodeSelected,
     required this.quoteSelected,
-    required this.bulletListSelected,
-    required this.orderedListSelected,
     required this.strikethroughSelected,
     required this.alignmentSelection,
     required this.onLink,
     required this.onInlineCode,
     required this.onQuote,
-    required this.onBulletList,
-    required this.onOrderedList,
     required this.onAlignmentChanged,
     required this.onHorizontalRule,
     required this.onDice,
@@ -44,15 +40,11 @@ class WenyouEditorMoreTray extends StatelessWidget {
   final bool showSticker;
   final bool inlineCodeSelected;
   final bool quoteSelected;
-  final bool bulletListSelected;
-  final bool orderedListSelected;
   final bool strikethroughSelected;
   final MarkdownAlignmentSelectionState alignmentSelection;
   final VoidCallback onLink;
   final VoidCallback onInlineCode;
   final VoidCallback onQuote;
-  final VoidCallback onBulletList;
-  final VoidCallback onOrderedList;
   final ValueChanged<WenyouTextAlignment> onAlignmentChanged;
   final VoidCallback onHorizontalRule;
   final VoidCallback onDice;
@@ -96,20 +88,6 @@ class WenyouEditorMoreTray extends StatelessWidget {
           label: '引用',
           selected: quoteSelected,
           onPressed: onQuote,
-        ),
-      if (showBlockStyles)
-        _button(
-          icon: WenyouIconIds.editorBulletList,
-          label: '无序列表',
-          selected: bulletListSelected,
-          onPressed: onBulletList,
-        ),
-      if (showBlockStyles)
-        _button(
-          icon: WenyouIconIds.editorOrderedList,
-          label: '有序列表',
-          selected: orderedListSelected,
-          onPressed: onOrderedList,
         ),
       if (showBlockStyles)
         _button(
