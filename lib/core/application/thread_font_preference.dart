@@ -3,27 +3,37 @@ import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 
 /// 设备阅读偏好只覆盖主题帖正文，不改变全局文字角色或系统缩放。
 enum ThreadFontPreference {
-  small('小', -1),
-  standard('标准', 0),
-  large('大', 1),
-  extraLarge('特大', 2),
-  largest('超大', 3);
+  size13(-3),
+  size14(-2),
+  size15(-1),
+  standard(0),
+  size17(1),
+  size18(2),
+  size19(3);
 
-  const ThreadFontPreference(this.label, this.step);
+  const ThreadFontPreference(this.step);
 
-  final String label;
   final int step;
 
   // 默认沿用 Foundation body（16sp），比原 reading（17sp）小一号。
-  double get fontSize =>
-      WenyouFoundationTypography.mobileSizes['body']! + step * 2;
+  double get fontSize => WenyouFoundationTypography.mobileSizes['body']! + step;
 
-  String get displayLabel => this == standard ? '标准（默认）' : label;
+  String get label => fontSize.toStringAsFixed(0);
 
-  static ThreadFontPreference fromStorage(Object? value) => values.firstWhere(
-    (preference) => preference.name == value,
-    orElse: () => standard,
-  );
+  String get semanticLabel => this == standard ? '$label，默认字号' : label;
+
+  static ThreadFontPreference fromStorage(Object? value) {
+    // 旧档位保留实际字号，已移除的 20／22 收敛到新的上限。
+    return switch (value) {
+      'small' => size14,
+      'large' => size18,
+      'extraLarge' || 'largest' => size19,
+      _ => values.firstWhere(
+        (preference) => preference.name == value,
+        orElse: () => standard,
+      ),
+    };
+  }
 }
 
 abstract interface class ThreadFontPreferenceStore {

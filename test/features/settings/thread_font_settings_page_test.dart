@@ -18,6 +18,38 @@ import '../../support/thread_font_store.dart';
 void main() {
   setUpAll(loadDeterministicTestFonts);
 
+  testWidgets('默认居中，七个数字左右等距且点击对应刻度选择准确字号', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(320, 800);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    final store = TestThreadFontStore();
+    await tester.pumpWidget(_app(store));
+    final slider = find.byKey(const Key('thread-font-slider'));
+    final widget = tester.widget<Slider>(slider);
+    expect(widget.min, 0);
+    expect(widget.max, 6);
+    expect(widget.divisions, 6);
+    expect(widget.value, 3);
+    final bounds = tester.getRect(slider);
+    final centers = [
+      for (var size = 13; size <= 19; size++)
+        tester.getCenter(find.byKey(ValueKey('thread-font-tick-$size'))).dx,
+    ];
+    expect(centers[3], closeTo(bounds.center.dx, 0.01));
+    final interval = centers[1] - centers[0];
+    for (var index = 0; index < centers.length; index++) {
+      expect(centers[index], closeTo(centers[0] + interval * index, 0.01));
+      await tester.tapAt(Offset(centers[index], bounds.center.dy));
+      await tester.pumpAndSettle();
+      expect(_preview(tester), 13 + index);
+      expect(store.saved.fontSize, 13 + index);
+    }
+    expect(find.text('超大'), findsNothing);
+    expect(find.text('标准'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('拖动实时预览、松手保存，返回再进恢复选择并可恢复默认', (tester) async {
     final store = TestThreadFontStore();
     final router = GoRouter(
@@ -49,19 +81,19 @@ void main() {
     final gesture = await tester.startGesture(bounds.center);
     await gesture.moveTo(Offset(bounds.right - 25, bounds.center.dy));
     await tester.pump();
-    expect(_preview(tester), 22);
+    expect(_preview(tester), 19);
     expect(tester.getRect(slider), bounds);
     expect(store.writes, isEmpty);
     await gesture.up();
     await tester.pumpAndSettle();
-    expect(store.writes, [ThreadFontPreference.largest]);
+    expect(store.writes, [ThreadFontPreference.size19]);
     await tester.pageBack();
     await tester.pumpAndSettle();
-    expect(find.text('超大'), findsOneWidget);
+    expect(find.text('19'), findsOneWidget);
     await tester.ensureVisible(entry);
     await tester.tap(entry);
     await tester.pumpAndSettle();
-    expect(_preview(tester), 22);
+    expect(_preview(tester), 19);
     await tester.ensureVisible(find.byKey(const Key('thread-font-reset')));
     await tester.tap(find.byKey(const Key('thread-font-reset')));
     await tester.pumpAndSettle();
@@ -88,7 +120,7 @@ void main() {
     await tester.ensureVisible(find.byKey(const Key('thread-font-retry')));
     await tester.tap(find.byKey(const Key('thread-font-retry')));
     await tester.pumpAndSettle();
-    expect(_preview(tester), 22);
+    expect(_preview(tester), 19);
   });
 
   testWidgets('读屏可按档调整且读出当前选择', (tester) async {
@@ -96,12 +128,12 @@ void main() {
     final store = TestThreadFontStore();
     await tester.pumpWidget(_app(store));
     await tester.pumpAndSettle();
-    final node = tester.getSemantics(find.bySemanticsLabel('标准（默认）'));
-    expect(node.getSemanticsData().value, '标准（默认）');
+    final node = tester.getSemantics(find.bySemanticsLabel('16'));
+    expect(node.getSemanticsData().value, '16，默认字号');
     node.owner!.performAction(node.id, SemanticsAction.increase);
     await tester.pumpAndSettle();
-    expect(_preview(tester), 18);
-    expect(store.saved, ThreadFontPreference.large);
+    expect(_preview(tester), 17);
+    expect(store.saved, ThreadFontPreference.size17);
     handle.dispose();
   });
 
@@ -135,7 +167,7 @@ void main() {
           TestThreadFontStore(),
           dark: dark,
           scale: 2,
-          preference: ThreadFontPreference.largest,
+          preference: ThreadFontPreference.size19,
         ),
       );
       await tester.pumpAndSettle();
