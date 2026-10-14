@@ -14,6 +14,7 @@ import 'package:wenyousite_mobile/features/settings/presentation/change_email_pa
 import 'package:wenyousite_mobile/features/settings/presentation/change_password_page.dart';
 import 'package:wenyousite_mobile/features/settings/presentation/delete_account_page.dart';
 import 'package:wenyousite_mobile/features/settings/presentation/diagnostic_settings_page.dart';
+import 'package:wenyousite_mobile/features/settings/presentation/editor_toolbar_settings_page.dart';
 import 'package:wenyousite_mobile/features/settings/presentation/login_sessions_page.dart';
 import 'package:wenyousite_mobile/features/settings/presentation/thread_font_settings_page.dart';
 import 'package:wenyousite_mobile/features/social/domain/user_relation_list_models.dart';
@@ -65,6 +66,11 @@ List<RouteBase> buildAccountRoutes(Ref ref) => [
     path: AppRouteLocations.threadFont,
     name: AppRouteNames.threadFont,
     builder: (context, state) => const ThreadFontSettingsPage(),
+  ),
+  GoRoute(
+    path: AppRouteLocations.editorToolbar,
+    name: AppRouteNames.editorToolbar,
+    builder: (context, state) => const EditorToolbarSettingsPage(),
   ),
   GoRoute(
     path: AppRouteLocations.appearance,

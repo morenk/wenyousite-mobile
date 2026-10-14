@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_capabilities.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/application/editor_toolbar_preference.dart';
 import 'package:wenyousite_mobile/core/application/visibility_cache_invalidation.dart';
 import 'package:wenyousite_mobile/core/diagnostics/diagnostic_widgets.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
@@ -401,6 +402,7 @@ class PostComposerSheetState extends ConsumerState<PostComposerSheet>
             toolbarMeasureKey: _toolbarMeasureKey,
             toolbar: WenyouComposerDock(
               key: const Key('post-composer-toolbar'),
+              layout: ref.watch(editorToolbarLayoutProvider),
               controller: _editorSession.controller,
               capabilities: WenyouEditorCapabilities.forAlignment(
                 ref.watch(
