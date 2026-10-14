@@ -25,7 +25,7 @@ test('只接受精确身份和整数确认revision，不回显远程内容', () 
     !error.message.includes('private-remote-output'));
 });
 
-function fixture({ mode = '', first = result, second = result, sshFailure = false, promoteFailure = false, legacyServer = false, upload = artifact, stubBuild = true, skipChecks = true } = {}) {
+function fixture({ mode = '', first = result, second = result, sshFailure = false, promoteFailure = false, unavailableServer = false, upload = artifact, stubBuild = true, skipChecks = true } = {}) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'wenyou-release-notes-'));
   const tool = path.join(root, 'tool');
   const bin = path.join(root, 'bin');
@@ -62,8 +62,8 @@ function fixture({ mode = '', first = result, second = result, sshFailure = fals
       echo credential-leak >> "$FIXTURE_LOG"; exit 71;
     fi
     echo "ssh $*" >> "$FIXTURE_LOG"
-    if [[ "$*" != *'--gateway '* ]]; then echo missing-gateway >> "$FIXTURE_LOG"; exit 72; fi
-    ${legacyServer ? 'exit 2' : ''}
+    if [[ "$*" == *'--gateway '* ]]; then echo unexpected-gateway >> "$FIXTURE_LOG"; exit 72; fi
+    ${unavailableServer ? 'exit 2' : ''}
     if [[ "$*" == *--preflight* ]]; then
       ${sshFailure ? 'exit 37' : ''}
       if [ -f "$FIXTURE_ROOT/called" ]; then cat "$FIXTURE_ROOT/second.json"; else
@@ -123,10 +123,10 @@ test('晋级前复核revision，变化停止，成功携带同一revision', { sk
   assert.ok(success.calls.indexOf('--preflight') < success.calls.indexOf('build\n'));
   assert.equal((success.calls.match(/--preflight/g) ?? []).length, 2);
   assert.match(success.calls, /--notes-revision 3/);
-  assert.equal((success.calls.match(/--gateway/g) ?? []).length, 3);
-  assert.match(success.calls, /--gateway --version 0\.9\.0 --build 100 --url https:\/\/wenyou-apk\.cn-nb1\.rains3\.com\/mobile\/android\/wenyou-0\.9\.0-100\.apk --size 12 --sha256 a{64} --notes-revision 3/);
+  assert.doesNotMatch(success.calls, /--gateway/);
+  assert.match(success.calls, /--version 0\.9\.0 --build 100 --url https:\/\/wenyou-apk\.cn-nb1\.rains3\.com\/mobile\/android\/wenyou-0\.9\.0-100\.apk --size 12 --sha256 a{64} --notes-revision 3/);
   assert.doesNotMatch(success.calls, /--url https:\/\/wenyou\.site/);
-  assert.match(success.stdout, /网关晋级成功: https:\/\/wenyou\.site\/api\/v1\/app-downloads\/android\/100\/file/);
+  assert.match(success.stdout, /存储桶直连晋级成功: https:\/\/wenyou-apk\.cn-nb1\.rains3\.com\/mobile\/android\/wenyou-0\.9\.0-100\.apk/);
 });
 
 test('晋级失败保留非零结果且不自动执行恢复', { skip: process.platform !== 'win32' }, () => {
@@ -134,19 +134,19 @@ test('晋级失败保留非零结果且不自动执行恢复', { skip: process.p
   assert.notEqual(failed.status, 0);
   assert.match(failed.calls, /--notes-revision 3/);
   assert.doesNotMatch(failed.calls, /--recover/);
-  assert.doesNotMatch(failed.stdout, /网关晋级成功/);
+  assert.doesNotMatch(failed.stdout, /晋级成功/);
   assert.equal((failed.calls.match(/--notes-revision/g) ?? []).length, 1);
 });
 
-test('旧远程入口不支持 gateway 时在构建前停止且不回退旧晋级', { skip: process.platform !== 'win32' }, () => {
-  const run = fixture({ legacyServer: true });
+test('远程直连发布入口不可用时在构建前停止且不回退网关', { skip: process.platform !== 'win32' }, () => {
+  const run = fixture({ unavailableServer: true });
   assert.notEqual(run.status, 0);
-  assert.match(run.calls, /--gateway --preflight/);
-  assert.doesNotMatch(run.calls, /build\n|upload|npm|--notes-revision|--recover/);
+  assert.match(run.calls, /--preflight/);
+  assert.doesNotMatch(run.calls, /--gateway|build\n|upload|npm|--notes-revision|--recover/);
 });
 
 test('上传输出源身份或公开地址不符时停止，不联系晋级', { skip: process.platform !== 'win32' }, () => {
-  for (const upload of [{ ...artifact, bucket: 'images' }, { ...artifact, publicUrl: artifact.legacyUpdateUrl },
+  for (const upload of [{ ...artifact, bucket: 'images' }, { ...artifact, publicUrl: 'https://wenyou.site/api/v1/app-downloads/android/100/file' },
     { url: artifact.legacyUpdateUrl, size: 12, sha256: artifact.sha256 }]) {
     const run = fixture({ upload });
     assert.notEqual(run.status, 0);

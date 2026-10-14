@@ -2,7 +2,7 @@ import { pathToFileURL } from 'node:url';
 
 export const LEGACY_APK_ORIGIN = 'https://wenyou-apk.cn-nb1.rains3.com';
 
-// 与 Backend manifest v1 同名字段；publicUrl 独立于不可改写的源对象/历史身份。
+// 保留 Backend manifest v1 字段；新发布直接使用不可改写的 RainS3 对象地址。
 export function createReleaseArtifact({ versionName, buildNumber, sizeBytes, sha256 }) {
   if (typeof versionName !== 'string' || !/^[0-9A-Za-z][0-9A-Za-z._-]{0,63}$/.test(versionName) ||
       !Number.isSafeInteger(buildNumber) || buildNumber < 1 || buildNumber > 2100000000 ||
@@ -17,7 +17,7 @@ export function createReleaseArtifact({ versionName, buildNumber, sizeBytes, sha
     versionName, buildNumber, sizeBytes, sha256,
     bucket: 'wenyou-apk', key,
     legacyUpdateUrl: `${LEGACY_APK_ORIGIN}/${key}`,
-    publicUrl: `https://wenyou.site/api/v1/app-downloads/android/${buildNumber}/file`,
+    publicUrl: `${LEGACY_APK_ORIGIN}/${key}`,
   };
 }
 

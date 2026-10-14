@@ -44,8 +44,8 @@ Android 可选环境变量：
   WENYOU_RELEASE_S3_REGION            默认 auto
   WENYOU_RELEASE_S3_BUCKET            默认 wenyou-apk
   WENYOU_RELEASE_S3_PREFIX            默认 mobile/android
-  WENYOU_RELEASE_LEGACY_BASE_URL      历史制品身份，固定 https://wenyou-apk.cn-nb1.rains3.com
-  WENYOU_RELEASE_PUBLIC_BASE_URL      上述历史地址的旧兼容别名，不控制本站下载地址
+  WENYOU_RELEASE_LEGACY_BASE_URL      制品及下载地址，固定 https://wenyou-apk.cn-nb1.rains3.com
+  WENYOU_RELEASE_PUBLIC_BASE_URL      上述存储桶地址的旧兼容别名
   WENYOU_RELEASE_S3_ACCESS_KEY_ID     发布上传 AccessKey，可复用既有凭据
   WENYOU_RELEASE_S3_SECRET_ACCESS_KEY 发布上传 SecretKey
   WENYOU_RELEASE_SSH_TARGET           默认 wenyou-release@wenyou.site
@@ -146,10 +146,10 @@ release_ssh() {
 
 preflight_android_notes() {
   local remote_command response
-  printf -v remote_command 'sudo -n %q --gateway --preflight --version %q --build %q' \
+  printf -v remote_command 'sudo -n %q --preflight --version %q --build %q' \
     "$REMOTE_PROMOTE_COMMAND" "$VERSION_NAME" "$BUILD_NUMBER"
   if ! response=$(release_ssh "$remote_command"); then
-    echo "网关发布入口或更新说明预检失败；请确认已部署对应入口及后台文案。若上次发布中断，请由负责人执行受限 --recover 后重试。" >&2
+    echo "存储桶直连发布入口或更新说明预检失败；请确认已部署对应入口及后台文案。若上次发布中断，请由负责人执行受限 --recover 后重试。" >&2
     return 1
   fi
   printf '%s' "$response" | node "$SCRIPT_DIR/release_notes_preflight.mjs" "$VERSION_NAME" "$BUILD_NUMBER"
@@ -412,7 +412,7 @@ publish_android() {
   IFS=$'\t' read -r legacy_update_url public_url apk_size apk_sha256 <<< "$validated_artifact"
 
   if [ "$UPLOAD_ONLY" = true ]; then
-    echo "--upload-only 已启用，源对象已上传，尚未预热或向用户推荐: $legacy_update_url"
+    echo "--upload-only 已启用，源对象已上传，尚未晋级或向用户推荐: $legacy_update_url"
     return 0
   fi
 
@@ -422,8 +422,8 @@ publish_android() {
     return 1
   fi
 
-  # --url 保存源对象原始身份；网关地址由已提交的受限入口在预热成功后启用。
-  printf -v remote_command 'sudo -n %q --gateway --version %q --build %q --url %q --size %q --sha256 %q --notes-revision %q' \
+  # --url 同时作为源对象身份与下载地址；受限入口复核公开制品后再更新策略。
+  printf -v remote_command 'sudo -n %q --version %q --build %q --url %q --size %q --sha256 %q --notes-revision %q' \
     "$REMOTE_PROMOTE_COMMAND" \
     "$VERSION_NAME" \
     "$BUILD_NUMBER" \
@@ -432,7 +432,7 @@ publish_android() {
     "$apk_sha256" \
     "$ANDROID_NOTES_REVISION"
   release_ssh "$remote_command"
-  echo "Android 网关晋级成功: $public_url"
+  echo "Android 存储桶直连晋级成功: $public_url"
 }
 
 publish_ios() {

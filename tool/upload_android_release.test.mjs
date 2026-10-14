@@ -15,7 +15,7 @@ import {
 
 const digest = 'a'.repeat(64);
 
-test('RainS3 源对象地址与本站固定下载地址分开', () => {
+test('RainS3 源对象身份与公开下载地址一致', () => {
   const config = releaseConfig({
     WENYOU_RELEASE_S3_ACCESS_KEY_ID: 'test-access-key',
     WENYOU_RELEASE_S3_SECRET_ACCESS_KEY: 'test-secret-key',
@@ -27,7 +27,7 @@ test('RainS3 源对象地址与本站固定下载地址分开', () => {
   const artifact = createReleaseArtifact({ versionName: '1.0.0', buildNumber: 42, sizeBytes: 123, sha256: digest });
   assert.equal(artifact.key, 'mobile/android/wenyou-1.0.0-42.apk');
   assert.equal(artifact.legacyUpdateUrl, 'https://wenyou-apk.cn-nb1.rains3.com/mobile/android/wenyou-1.0.0-42.apk');
-  assert.equal(artifact.publicUrl, 'https://wenyou.site/api/v1/app-downloads/android/42/file');
+  assert.equal(artifact.publicUrl, artifact.legacyUpdateUrl);
   assert.deepEqual(parseReleaseArtifact(JSON.stringify(artifact), '1.0.0', 42), artifact);
 });
 
@@ -36,7 +36,10 @@ test('晋级输入要求源身份与两个地址精确匹配，不接受旧 uplo
   for (const value of [null, [], {}, { url: artifact.legacyUpdateUrl, size: 123, sha256: digest },
     ...Object.entries({ schemaVersion: 2, applicationId: 'site.wenyou.app.debug', versionName: '1.0.1',
       buildNumber: 43, sizeBytes: 0, sha256: 'bad', bucket: 'images', key: '../images/a.apk',
-      legacyUpdateUrl: artifact.publicUrl, publicUrl: artifact.legacyUpdateUrl }).map(([key, value]) => ({ ...artifact, [key]: value })),
+      legacyUpdateUrl: 'https://wenyou-apk.cn-nb1.rains3.com/mobile/android/wenyou-1.0.0-43.apk',
+      publicUrl: 'https://wenyou.site/api/v1/app-downloads/android/42/file' }).map(([key, value]) => ({ ...artifact, [key]: value })),
+    ...['https://example.invalid/app.apk', `${artifact.legacyUpdateUrl}?token=fixture`,
+      `${artifact.legacyUpdateUrl}#download`].map(publicUrl => ({ ...artifact, publicUrl })),
   ]) assert.throws(() => parseReleaseArtifact(JSON.stringify(value), '1.0.0', 42));
   assert.throws(() => parseReleaseArtifact('fixture-secret', '1.0.0', 42),
     error => !error.message.includes('fixture-secret'));
