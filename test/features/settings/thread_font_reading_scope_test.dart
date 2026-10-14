@@ -30,9 +30,9 @@ void main() {
     _expectSizes(tester, 16);
     await container
         .read(threadFontPreferenceControllerProvider.notifier)
-        .select(ThreadFontPreference.largest);
+        .select(ThreadFontPreference.size19);
     await tester.pumpAndSettle();
-    _expectSizes(tester, 22);
+    _expectSizes(tester, 19);
     expect(Theme.of(context).textTheme.wenyouPageTitle, title);
     expect(tester.takeException(), isNull);
   });
@@ -48,7 +48,7 @@ void main() {
     _expectSizes(tester, 16);
     await container
         .read(threadFontPreferenceControllerProvider.notifier)
-        .select(ThreadFontPreference.small);
+        .select(ThreadFontPreference.size14);
     await tester.pumpAndSettle();
     _expectSizes(tester, 14);
   });
@@ -58,7 +58,7 @@ void main() {
     addTearDown(container.dispose);
     await container
         .read(threadFontPreferenceControllerProvider.notifier)
-        .select(ThreadFontPreference.largest);
+        .select(ThreadFontPreference.size19);
     await tester.pumpWidget(
       UncontrolledProviderScope(
         container: container,
@@ -95,10 +95,10 @@ void main() {
       17,
     );
     final context = tester.element(find.byKey(const Key('reading-content')));
-    expect(MediaQuery.textScalerOf(context).scale(22), 44);
-    final spec = WenyouRichTextStyleSpec.resolve(context, bodyFontSize: 22);
-    expect(spec.body.fontSize, 22);
-    expect(spec.quote.fontSize, 22);
+    expect(MediaQuery.textScalerOf(context).scale(19), 38);
+    final spec = WenyouRichTextStyleSpec.resolve(context, bodyFontSize: 19);
+    expect(spec.body.fontSize, 19);
+    expect(spec.quote.fontSize, 19);
     expect(spec.h1.fontSize, greaterThan(spec.body.fontSize!));
     expect(WenyouRichTextStyleSpec.resolve(context).body.fontSize, 17);
   });

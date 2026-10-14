@@ -67,52 +67,71 @@ class _ThreadFontSettingsPageState
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       Text(
-                        preference.displayLabel,
+                        preference.label,
                         key: const Key('thread-font-current'),
                         textAlign: TextAlign.center,
                         style: Theme.of(context).textTheme.wenyouRowTitle,
                       ),
                       SizedBox(height: tokens.space8),
-                      Semantics(
-                        label: '主题帖字号',
-                        child: Slider(
-                          key: const Key('thread-font-slider'),
-                          value: preference.index.toDouble(),
-                          max: (ThreadFontPreference.values.length - 1)
-                              .toDouble(),
-                          divisions: ThreadFontPreference.values.length - 1,
-                          label: preference.displayLabel,
-                          semanticFormatterCallback: (value) =>
-                              ThreadFontPreference
-                                  .values[value.round()]
-                                  .displayLabel,
-                          onChanged: state.isSaving
-                              ? null
-                              : (value) => setState(() {
-                                  _preview = ThreadFontPreference
-                                      .values[value.round()];
-                                }),
-                          onChangeEnd: (value) {
-                            setState(() => _preview = null);
-                            unawaited(
-                              controller.select(
-                                ThreadFontPreference.values[value.round()],
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                      ExcludeSemantics(
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      SliderTheme(
+                        data: SliderTheme.of(
+                          context,
+                        ).copyWith(trackShape: const _ThreadFontTrackShape()),
+                        child: Column(
                           children: [
-                            Text(
-                              '小',
-                              style: Theme.of(context).textTheme.wenyouCaption,
+                            Semantics(
+                              label: '主题帖字号',
+                              child: SizedBox(
+                                height: tokens.minimumTouchTarget,
+                                child: Slider(
+                                  key: const Key('thread-font-slider'),
+                                  value: preference.index.toDouble(),
+                                  max: (ThreadFontPreference.values.length - 1)
+                                      .toDouble(),
+                                  divisions:
+                                      ThreadFontPreference.values.length - 1,
+                                  label: preference.label,
+                                  semanticFormatterCallback: (value) =>
+                                      ThreadFontPreference
+                                          .values[value.round()]
+                                          .semanticLabel,
+                                  onChanged: state.isSaving
+                                      ? null
+                                      : (value) => setState(() {
+                                          _preview = ThreadFontPreference
+                                              .values[value.round()];
+                                        }),
+                                  onChangeEnd: (value) {
+                                    setState(() => _preview = null);
+                                    unawaited(
+                                      controller.select(
+                                        ThreadFontPreference.values[value
+                                            .round()],
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
                             ),
-                            Text(
-                              '超大',
-                              style: Theme.of(context).textTheme.wenyouCaption,
+                            ExcludeSemantics(
+                              child: Row(
+                                children: [
+                                  for (final tick
+                                      in ThreadFontPreference.values)
+                                    Expanded(
+                                      child: Text(
+                                        tick.label,
+                                        key: ValueKey(
+                                          'thread-font-tick-${tick.label}',
+                                        ),
+                                        textAlign: TextAlign.center,
+                                        style: Theme.of(
+                                          context,
+                                        ).textTheme.wenyouCaption,
+                                      ),
+                                    ),
+                                ],
+                              ),
                             ),
                           ],
                         ),
@@ -159,6 +178,36 @@ class _ThreadFontSettingsPageState
           ],
         ),
       ),
+    );
+  }
+}
+
+class _ThreadFontTrackShape extends RoundedRectSliderTrackShape {
+  const _ThreadFontTrackShape();
+
+  @override
+  Rect getPreferredRect({
+    required RenderBox parentBox,
+    Offset offset = Offset.zero,
+    required SliderThemeData sliderTheme,
+    bool isEnabled = false,
+    bool isDiscrete = false,
+  }) {
+    final track = super.getPreferredRect(
+      parentBox: parentBox,
+      offset: offset,
+      sliderTheme: sliderTheme,
+      isEnabled: isEnabled,
+      isDiscrete: isDiscrete,
+    );
+    // 刻度对齐数字单元格中心，命中区域仍覆盖两端滑块周围。
+    final inset =
+        parentBox.size.width / (ThreadFontPreference.values.length * 2);
+    return Rect.fromLTRB(
+      offset.dx + inset,
+      track.top,
+      offset.dx + parentBox.size.width - inset,
+      track.bottom,
     );
   }
 }

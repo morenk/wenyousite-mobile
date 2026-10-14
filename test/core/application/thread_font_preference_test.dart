@@ -7,20 +7,32 @@ import 'package:wenyousite_mobile/core/application/thread_font_preference.dart';
 import '../../support/thread_font_store.dart';
 
 void main() {
-  test('默认比原 17sp 小一号，五档连续递增', () {
+  test('七档按 1sp 等距递增，默认 16 位于中央且只用数字标记', () {
     expect(ThreadFontPreference.standard.fontSize, 16);
     expect(ThreadFontPreference.values.map((value) => value.fontSize), [
+      13,
       14,
+      15,
       16,
+      17,
       18,
-      20,
-      22,
+      19,
+    ]);
+    expect(ThreadFontPreference.standard.index, 3);
+    expect(ThreadFontPreference.values.map((value) => value.label), [
+      '13',
+      '14',
+      '15',
+      '16',
+      '17',
+      '18',
+      '19',
     ]);
   });
 
   test('冷启动恢复保存字号，读取失败采用默认并可重读且不写入', () async {
     final store = TestThreadFontStore()
-      ..saved = ThreadFontPreference.largest
+      ..saved = ThreadFontPreference.size19
       ..failRead = true;
     final initial = await loadInitialThreadFontPreference(store);
     final container = _container(store, initial);
@@ -31,11 +43,11 @@ void main() {
     expect(initial.readFailed, isTrue);
     store.failRead = false;
     await controller.retry();
-    expect(container.read(threadBodyFontSizeProvider), 22);
+    expect(container.read(threadBodyFontSizeProvider), 19);
     expect(store.writes, isEmpty);
     expect(
       (await loadInitialThreadFontPreference(store)).preference,
-      ThreadFontPreference.largest,
+      ThreadFontPreference.size19,
     );
   });
 
@@ -45,13 +57,13 @@ void main() {
     final controller = container.read(
       threadFontPreferenceControllerProvider.notifier,
     );
-    final save = controller.select(ThreadFontPreference.large);
+    final save = controller.select(ThreadFontPreference.size18);
     expect(container.read(threadBodyFontSizeProvider), 18);
     await save;
     expect(container.read(threadBodyFontSizeProvider), 16);
     expect(
       container.read(threadFontPreferenceControllerProvider).failedPreference,
-      ThreadFontPreference.large,
+      ThreadFontPreference.size18,
     );
     store.failWrite = false;
     await controller.retry();
@@ -70,16 +82,16 @@ void main() {
     );
     await controller.select(ThreadFontPreference.standard);
     expect(store.writes, isEmpty);
-    final save = controller.select(ThreadFontPreference.large);
-    await controller.select(ThreadFontPreference.small);
-    expect(store.writes, [ThreadFontPreference.large]);
+    final save = controller.select(ThreadFontPreference.size18);
+    await controller.select(ThreadFontPreference.size14);
+    expect(store.writes, [ThreadFontPreference.size18]);
     container.dispose();
     store.pending!.complete();
     await expectLater(save, completes);
   });
 
   test('读失败后主动恢复默认允许覆盖未知的旧值', () async {
-    final store = TestThreadFontStore()..saved = ThreadFontPreference.largest;
+    final store = TestThreadFontStore()..saved = ThreadFontPreference.size19;
     final container = _container(
       store,
       const ThreadFontPreferenceState(readFailed: true),

@@ -7,6 +7,21 @@ void main() {
   const store = SharedPreferencesThreadFontStore();
   const key = SharedPreferencesThreadFontStore.storageKey;
 
+  test('旧五档保留可用字号，超出上限的 20 和 22 回到 19，读取不改写', () async {
+    for (final entry in {
+      'small': 14,
+      'standard': 16,
+      'large': 18,
+      'extraLarge': 19,
+      'largest': 19,
+    }.entries) {
+      SharedPreferences.setMockInitialValues({key: entry.key});
+      expect((await store.read()).fontSize, entry.value);
+      final preferences = await SharedPreferences.getInstance();
+      expect(preferences.getString(key), entry.key);
+    }
+  });
+
   test('缺省、未知档位和错误类型均安全使用默认字号', () async {
     for (final value in [null, 'future-size', 999, true]) {
       SharedPreferences.setMockInitialValues({key: ?value});
