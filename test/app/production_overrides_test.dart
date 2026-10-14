@@ -5,6 +5,7 @@ import 'package:wenyousite_mobile/app/production_overrides.dart';
 import 'package:wenyousite_mobile/core/application/profile_cache_invalidation.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/network/session_controller.dart';
+import 'package:wenyousite_mobile/features/app_shell/application/mobile_update_controller.dart';
 import 'package:wenyousite_mobile/features/app_shell/application/startup_controller.dart';
 import 'package:wenyousite_mobile/features/app_shell/domain/contract_info.dart';
 import 'package:wenyousite_mobile/features/auth/application/auth_ports.dart';
@@ -24,6 +25,38 @@ import 'package:wenyousite_mobile/features/users/application/user_repository_por
 import 'package:wenyousite_mobile/features/wallet/application/wallet_repository_ports.dart';
 
 void main() {
+  test('资料绑定只按服务能力开启，缺失保持旧表单', () {
+    expect(
+      appCapabilitiesForContract(null).rpIdentityProfileSupported,
+      isFalse,
+    );
+    expect(
+      appCapabilitiesForContract(
+        const ContractInfo(
+          contractVersion: '5.36.0-dev.20261005.1',
+          markdownContractVersion: 5,
+          rpIdentityProfileSupported: true,
+        ),
+      ).rpIdentityProfileSupported,
+      isTrue,
+    );
+  });
+  test('角色提及的支持与新写开关分开，旧meta保持关闭', () {
+    expect(appCapabilitiesForContract(null).roleMentionsSupported, isFalse);
+    for (final enabled in [false, true]) {
+      final capabilities = appCapabilitiesForContract(
+        ContractInfo(
+          contractVersion: '5.35.0-dev.20261005.1',
+          markdownContractVersion: 5,
+          roleMentionsSupported: true,
+          roleMentionsWriteEnabled: enabled,
+        ),
+      );
+      expect(capabilities.roleMentionsSupported, isTrue);
+      expect(capabilities.roleMentionsWriteEnabled, enabled);
+    }
+  });
+
   test('关系变更同时失效我的计数、本人公开资料和对方公开资料', () {
     final container = ProviderContainer(
       overrides: [
@@ -85,7 +118,20 @@ void main() {
   });
   test('生产组合根绑定启动、公开浏览、创作与消息必需端口', () {
     final container = ProviderContainer(
-      overrides: productionProviderOverrides(),
+      overrides: [
+        ...productionProviderOverrides(),
+        // 本用例验证端口绑定，不启动网络检查，避免销毁后的异步回调。
+        startupControllerProvider.overrideWith(
+          (ref) => StartupController(
+            ref.watch(metaRepositoryProvider),
+            ref.watch(appEnvironmentProvider),
+            ref.read(sessionControllerProvider.notifier),
+            mobileUpdateService: ref.watch(mobileUpdateServiceProvider),
+            dismissStore: ref.watch(recommendedUpdateDismissStoreProvider),
+            autoStart: false,
+          ),
+        ),
+      ],
     );
     addTearDown(container.dispose);
     final mandatoryPorts = <ProviderListenable<Object?>>[

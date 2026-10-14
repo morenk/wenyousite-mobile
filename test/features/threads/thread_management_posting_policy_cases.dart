@@ -32,7 +32,7 @@ void registerThreadManagementPostingPolicyCases() {
     );
     await tester.tap(find.byKey(rowKey));
     await tester.pumpAndSettle();
-    expect(find.text('仅影响主贴下的发言，子贴权限单独设置。'), findsOneWidget);
+    expect(find.text('仅影响主贴下的发言，子贴权限单独设置。'), findsNothing);
     expect(find.text('玩家、楼主和协作者可以发言'), findsOneWidget);
     expect(
       tester

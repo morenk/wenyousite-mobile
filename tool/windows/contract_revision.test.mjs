@@ -21,7 +21,12 @@ test('固定部署祖先导出同一 SHA，拒绝远端 dev 以外提交且不�
     fs.writeFileSync(changelog, '# API 合同变更\n\n## 编辑器测试语料更新\n\n' + fs.readFileSync(changelog, 'utf8'));
     fs.copyFileSync(path.join(repository, 'contracts/mobile-client-guide.md'), path.join(backend, 'docs/mobile-client-guide.md'));
     fs.copyFileSync(path.join(repository, 'contracts/mobile-release-operations.md'), path.join(backend, 'docs/mobile-release-operations.md'));
+    fs.copyFileSync(path.join(repository, 'contracts/app-download-gateway.md'), path.join(backend, 'docs/app-download-gateway.md'));
+    fs.copyFileSync(path.join(repository, 'contracts/discussion-navigation.md'), path.join(backend, 'docs/discussion-navigation.md'));
     fs.copyFileSync(path.join(repository, 'contracts/media-display.md'), path.join(backend, 'docs/media-display.md'));
+    fs.copyFileSync(path.join(repository, 'contracts/thread-identity.md'), path.join(backend, 'docs/thread-identity.md'));
+    fs.copyFileSync(path.join(repository, 'contracts/markdown-v6-role-mentions.md'), path.join(backend, 'docs/markdown-v6-role-mentions.md'));
+    fs.copyFileSync(path.join(repository, 'contracts/rp-identity-profile-post.md'), path.join(backend, 'docs/rp-identity-profile-post.md'));
     git('init', '-b', 'dev');
     git('config', 'user.name', 'Contract fixture');
     git('config', 'user.email', 'fixture@example.invalid');
@@ -62,7 +67,16 @@ test('固定部署祖先导出同一 SHA，拒绝远端 dev 以外提交且不�
       'rich-text-behavior-v1.schema.json',
       'rich-text-behavior-results-v1.schema.json',
       'media-display-v1-fixtures.json',
+      'discussion-navigation.v1.json',
+      'discussion-navigation.md',
       'mobile-release-operations.md',
+      'app-download-gateway.md',
+      'thread-identity.md',
+      'thread-identity.v1.fixtures.json',
+      'markdown-v6-role-mentions.md',
+      'markdown-v6-role-mentions-fixtures.json',
+      'rp-identity-profile-post.md',
+      'rp-identity-profile-post.v1.fixtures.json',
       'fixtures/media-display/duplicate-frames.gif',
       'fixtures/media-display/duplicate-frames.webp',
       'fixtures/media-display/manifest.json',

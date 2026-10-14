@@ -6,7 +6,152 @@ part of 'create_post_dto.dart';
 // BuiltValueGenerator
 // **************************************************************************
 
+const CreatePostDtoMarkdownContractVersionEnum
+_$createPostDtoMarkdownContractVersionEnum_number6 =
+    const CreatePostDtoMarkdownContractVersionEnum._('number6');
+const CreatePostDtoMarkdownContractVersionEnum
+_$createPostDtoMarkdownContractVersionEnum_unknownDefaultOpenApi =
+    const CreatePostDtoMarkdownContractVersionEnum._('unknownDefaultOpenApi');
+
+CreatePostDtoMarkdownContractVersionEnum
+_$createPostDtoMarkdownContractVersionEnumValueOf(String name) {
+  switch (name) {
+    case 'number6':
+      return _$createPostDtoMarkdownContractVersionEnum_number6;
+    case 'unknownDefaultOpenApi':
+      return _$createPostDtoMarkdownContractVersionEnum_unknownDefaultOpenApi;
+    default:
+      return _$createPostDtoMarkdownContractVersionEnum_unknownDefaultOpenApi;
+  }
+}
+
+final BuiltSet<CreatePostDtoMarkdownContractVersionEnum>
+_$createPostDtoMarkdownContractVersionEnumValues =
+    BuiltSet<CreatePostDtoMarkdownContractVersionEnum>(
+      const <CreatePostDtoMarkdownContractVersionEnum>[
+        _$createPostDtoMarkdownContractVersionEnum_number6,
+        _$createPostDtoMarkdownContractVersionEnum_unknownDefaultOpenApi,
+      ],
+    );
+
+const CreatePostDtoIdentityModeEnum _$createPostDtoIdentityModeEnum_ACCOUNT =
+    const CreatePostDtoIdentityModeEnum._('ACCOUNT');
+const CreatePostDtoIdentityModeEnum _$createPostDtoIdentityModeEnum_RP =
+    const CreatePostDtoIdentityModeEnum._('RP');
+const CreatePostDtoIdentityModeEnum
+_$createPostDtoIdentityModeEnum_unknownDefaultOpenApi =
+    const CreatePostDtoIdentityModeEnum._('unknownDefaultOpenApi');
+
+CreatePostDtoIdentityModeEnum _$createPostDtoIdentityModeEnumValueOf(
+  String name,
+) {
+  switch (name) {
+    case 'ACCOUNT':
+      return _$createPostDtoIdentityModeEnum_ACCOUNT;
+    case 'RP':
+      return _$createPostDtoIdentityModeEnum_RP;
+    case 'unknownDefaultOpenApi':
+      return _$createPostDtoIdentityModeEnum_unknownDefaultOpenApi;
+    default:
+      return _$createPostDtoIdentityModeEnum_unknownDefaultOpenApi;
+  }
+}
+
+final BuiltSet<CreatePostDtoIdentityModeEnum>
+_$createPostDtoIdentityModeEnumValues = BuiltSet<CreatePostDtoIdentityModeEnum>(
+  const <CreatePostDtoIdentityModeEnum>[
+    _$createPostDtoIdentityModeEnum_ACCOUNT,
+    _$createPostDtoIdentityModeEnum_RP,
+    _$createPostDtoIdentityModeEnum_unknownDefaultOpenApi,
+  ],
+);
+
+Serializer<CreatePostDtoMarkdownContractVersionEnum>
+_$createPostDtoMarkdownContractVersionEnumSerializer =
+    _$CreatePostDtoMarkdownContractVersionEnumSerializer();
+Serializer<CreatePostDtoIdentityModeEnum>
+_$createPostDtoIdentityModeEnumSerializer =
+    _$CreatePostDtoIdentityModeEnumSerializer();
+
+class _$CreatePostDtoMarkdownContractVersionEnumSerializer
+    implements PrimitiveSerializer<CreatePostDtoMarkdownContractVersionEnum> {
+  static const Map<String, Object> _toWire = const <String, Object>{
+    'number6': 6,
+    'unknownDefaultOpenApi': 11184809,
+  };
+  static const Map<Object, String> _fromWire = const <Object, String>{
+    6: 'number6',
+    11184809: 'unknownDefaultOpenApi',
+  };
+
+  @override
+  final Iterable<Type> types = const <Type>[
+    CreatePostDtoMarkdownContractVersionEnum,
+  ];
+  @override
+  final String wireName = 'CreatePostDtoMarkdownContractVersionEnum';
+
+  @override
+  Object serialize(
+    Serializers serializers,
+    CreatePostDtoMarkdownContractVersionEnum object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => _toWire[object.name] ?? object.name;
+
+  @override
+  CreatePostDtoMarkdownContractVersionEnum deserialize(
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => CreatePostDtoMarkdownContractVersionEnum.valueOf(
+    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
+  );
+}
+
+class _$CreatePostDtoIdentityModeEnumSerializer
+    implements PrimitiveSerializer<CreatePostDtoIdentityModeEnum> {
+  static const Map<String, Object> _toWire = const <String, Object>{
+    'ACCOUNT': 'ACCOUNT',
+    'RP': 'RP',
+    'unknownDefaultOpenApi': 'unknown_default_open_api',
+  };
+  static const Map<Object, String> _fromWire = const <Object, String>{
+    'ACCOUNT': 'ACCOUNT',
+    'RP': 'RP',
+    'unknown_default_open_api': 'unknownDefaultOpenApi',
+  };
+
+  @override
+  final Iterable<Type> types = const <Type>[CreatePostDtoIdentityModeEnum];
+  @override
+  final String wireName = 'CreatePostDtoIdentityModeEnum';
+
+  @override
+  Object serialize(
+    Serializers serializers,
+    CreatePostDtoIdentityModeEnum object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => _toWire[object.name] ?? object.name;
+
+  @override
+  CreatePostDtoIdentityModeEnum deserialize(
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => CreatePostDtoIdentityModeEnum.valueOf(
+    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
+  );
+}
+
 class _$CreatePostDto extends CreatePostDto {
+  @override
+  final CreatePostDtoMarkdownContractVersionEnum? markdownContractVersion;
+  @override
+  final String? identityId;
+  @override
+  final String? identityToken;
+  @override
+  final CreatePostDtoIdentityModeEnum? identityMode;
   @override
   final String content;
   @override
@@ -20,6 +165,10 @@ class _$CreatePostDto extends CreatePostDto {
       (CreatePostDtoBuilder()..update(updates))._build();
 
   _$CreatePostDto._({
+    this.markdownContractVersion,
+    this.identityId,
+    this.identityToken,
+    this.identityMode,
     required this.content,
     this.parentPostId,
     this.replyToPostId,
@@ -36,6 +185,10 @@ class _$CreatePostDto extends CreatePostDto {
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
     return other is CreatePostDto &&
+        markdownContractVersion == other.markdownContractVersion &&
+        identityId == other.identityId &&
+        identityToken == other.identityToken &&
+        identityMode == other.identityMode &&
         content == other.content &&
         parentPostId == other.parentPostId &&
         replyToPostId == other.replyToPostId &&
@@ -45,6 +198,10 @@ class _$CreatePostDto extends CreatePostDto {
   @override
   int get hashCode {
     var _$hash = 0;
+    _$hash = $jc(_$hash, markdownContractVersion.hashCode);
+    _$hash = $jc(_$hash, identityId.hashCode);
+    _$hash = $jc(_$hash, identityToken.hashCode);
+    _$hash = $jc(_$hash, identityMode.hashCode);
     _$hash = $jc(_$hash, content.hashCode);
     _$hash = $jc(_$hash, parentPostId.hashCode);
     _$hash = $jc(_$hash, replyToPostId.hashCode);
@@ -56,6 +213,10 @@ class _$CreatePostDto extends CreatePostDto {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'CreatePostDto')
+          ..add('markdownContractVersion', markdownContractVersion)
+          ..add('identityId', identityId)
+          ..add('identityToken', identityToken)
+          ..add('identityMode', identityMode)
           ..add('content', content)
           ..add('parentPostId', parentPostId)
           ..add('replyToPostId', replyToPostId)
@@ -67,6 +228,27 @@ class _$CreatePostDto extends CreatePostDto {
 class CreatePostDtoBuilder
     implements Builder<CreatePostDto, CreatePostDtoBuilder> {
   _$CreatePostDto? _$v;
+
+  CreatePostDtoMarkdownContractVersionEnum? _markdownContractVersion;
+  CreatePostDtoMarkdownContractVersionEnum? get markdownContractVersion =>
+      _$this._markdownContractVersion;
+  set markdownContractVersion(
+    CreatePostDtoMarkdownContractVersionEnum? markdownContractVersion,
+  ) => _$this._markdownContractVersion = markdownContractVersion;
+
+  String? _identityId;
+  String? get identityId => _$this._identityId;
+  set identityId(String? identityId) => _$this._identityId = identityId;
+
+  String? _identityToken;
+  String? get identityToken => _$this._identityToken;
+  set identityToken(String? identityToken) =>
+      _$this._identityToken = identityToken;
+
+  CreatePostDtoIdentityModeEnum? _identityMode;
+  CreatePostDtoIdentityModeEnum? get identityMode => _$this._identityMode;
+  set identityMode(CreatePostDtoIdentityModeEnum? identityMode) =>
+      _$this._identityMode = identityMode;
 
   String? _content;
   String? get content => _$this._content;
@@ -93,6 +275,10 @@ class CreatePostDtoBuilder
   CreatePostDtoBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
+      _markdownContractVersion = $v.markdownContractVersion;
+      _identityId = $v.identityId;
+      _identityToken = $v.identityToken;
+      _identityMode = $v.identityMode;
       _content = $v.content;
       _parentPostId = $v.parentPostId;
       _replyToPostId = $v.replyToPostId;
@@ -119,6 +305,10 @@ class CreatePostDtoBuilder
     final _$result =
         _$v ??
         _$CreatePostDto._(
+          markdownContractVersion: markdownContractVersion,
+          identityId: identityId,
+          identityToken: identityToken,
+          identityMode: identityMode,
           content: BuiltValueNullFieldError.checkNotNull(
             content,
             r'CreatePostDto',

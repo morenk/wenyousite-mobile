@@ -10,6 +10,116 @@ import '../../support/deterministic_test_fonts.dart';
 void main() {
   setUpAll(loadDeterministicTestFonts);
 
+  for (final dark in [false, true]) {
+    testWidgets('顶部页签跟随页面，资料区域可保留内容表面 dark=$dark', (tester) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(320, 180);
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: dark ? AppTheme.dark : AppTheme.light,
+          home: Builder(
+            builder: (context) => Scaffold(
+              backgroundColor: wenyouBrowsePageBackground(context),
+              body: RepaintBoundary(
+                key: const Key('soft-content-tabs-visual'),
+                child: Column(
+                  children: [
+                    WenyouContentTabs<int>(
+                      key: const Key('browse-tabs'),
+                      semanticsLabel: '动态内容',
+                      placement: WenyouTabPlacement.page,
+                      options: const [
+                        WenyouFilterOption(value: 0, label: '发现'),
+                        WenyouFilterOption(value: 1, label: '关注'),
+                      ],
+                      selected: 0,
+                      onSelected: (_) {},
+                    ),
+                    const SizedBox(height: 16),
+                    WenyouContentTabs<int>(
+                      key: const Key('profile-tabs'),
+                      semanticsLabel: '个人内容',
+                      placement: WenyouTabPlacement.page,
+                      backgroundColor: context.wenyouTokens.panel,
+                      options: const [
+                        WenyouFilterOption(value: 0, label: '主题'),
+                        WenyouFilterOption(value: 1, label: '动态'),
+                        WenyouFilterOption(value: 2, label: '参与'),
+                        WenyouFilterOption(value: 3, label: '回复'),
+                      ],
+                      selected: 1,
+                      onSelected: (_) {},
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      final context = tester.element(find.byKey(const Key('browse-tabs')));
+      for (final entry in {
+        'browse-tabs': wenyouBrowsePageBackground(context),
+        'profile-tabs': context.wenyouTokens.panel,
+      }.entries) {
+        final tabs = find.byKey(Key(entry.key));
+        final surface = tester.widget<ColoredBox>(
+          find.descendant(of: tabs, matching: find.byType(ColoredBox)).first,
+        );
+        expect(surface.color, entry.value);
+        expect(tester.getSize(tabs).height, greaterThanOrEqualTo(48));
+      }
+      expect(tester.takeException(), isNull);
+      await expectLater(
+        find.byKey(const Key('soft-content-tabs-visual')),
+        matchesGoldenFile(
+          'goldens/soft_content_tabs_320_${dark ? 'dark' : 'light'}.png',
+        ),
+      );
+    });
+  }
+
+  testWidgets('滑动内容跟随所属页面底色，未指定的阅读页保留主题底色', (tester) async {
+    for (final dark in [false, true]) {
+      final theme = dark ? AppTheme.dark : AppTheme.light;
+      for (final browse in [false, true]) {
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: theme,
+            home: Builder(
+              builder: (context) => Scaffold(
+                backgroundColor: browse
+                    ? wenyouBrowsePageBackground(context)
+                    : null,
+                body: WenyouSwipeTabRegion<int>(
+                  key: const Key('page-background-swipe'),
+                  values: const [0, 1],
+                  selected: 0,
+                  onSelected: (_) {},
+                  child: const SizedBox.expand(),
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        final surface = tester.widget<ColoredBox>(
+          find.descendant(
+            of: find.byKey(const Key('page-background-swipe')),
+            matching: find.byType(ColoredBox),
+          ),
+        );
+        expect(
+          surface.color,
+          browse && !dark
+              ? WenyouThemeTokens.light.softPanel
+              : theme.scaffoldBackgroundColor,
+        );
+      }
+    }
+  });
+
   testWidgets('内容页签保留 48dp 命中区并由点击切换', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(360, 200);
@@ -206,24 +316,21 @@ void main() {
       ),
     );
 
-    final popup = tester.widget<PopupMenuButton<int>>(
+    final trigger = tester.widget<InkWell>(
       find.descendant(
         of: find.byKey(const Key('test-dropdown-filter')),
-        matching: find.byType(PopupMenuButton<int>),
+        matching: find.byType(InkWell),
       ),
     );
     final expectedRadius = BorderRadius.circular(
       WenyouThemeTokens.light.radiusPanel,
     );
-    expect(popup.borderRadius, expectedRadius);
+    expect(trigger.borderRadius, expectedRadius);
     expect(
       (AppTheme.light.popupMenuTheme.shape! as RoundedRectangleBorder)
           .borderRadius,
       expectedRadius,
     );
-    expect(popup.clipBehavior, Clip.antiAlias);
-    expect(popup.constraints?.minWidth, 224);
-    expect(popup.constraints?.maxWidth, 224);
     expect(
       tester.getSize(find.byKey(const Key('test-dropdown-filter'))).height,
       WenyouThemeTokens.light.minimumTouchTarget,
@@ -235,6 +342,13 @@ void main() {
       (widget) => widget is PopupMenuItem<int>,
     );
     expect(menuItems, findsNWidgets(2));
+    final menuSurface = tester
+        .widgetList<Material>(
+          find.ancestor(of: menuItems.first, matching: find.byType(Material)),
+        )
+        .first;
+    expect(menuSurface.clipBehavior, Clip.antiAlias);
+    expect(tester.getSize(find.byWidget(menuSurface)).width, 224);
     for (final element in menuItems.evaluate()) {
       expect(
         tester.getSize(find.byWidget(element.widget)).height,

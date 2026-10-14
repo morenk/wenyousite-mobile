@@ -41,6 +41,7 @@ class DirectMessagesApi {
   /// Parameters:
   /// * [id]
   /// * [setDirectConversationArchiveDto]
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -53,6 +54,7 @@ class DirectMessagesApi {
   Future<Response<DirectConversationsArchive200Response>> directConversationsArchive({
     required String id,
     required SetDirectConversationArchiveDto setDirectConversationArchiveDto,
+    int? xMarkdownContractVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -64,6 +66,7 @@ class DirectMessagesApi {
     final _options = Options(
       method: r'PATCH',
       headers: <String, dynamic>{
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -143,6 +146,7 @@ class DirectMessagesApi {
   ///
   /// Parameters:
   /// * [createDirectConversationDto]
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -154,6 +158,7 @@ class DirectMessagesApi {
   /// Throws [DioException] if API call or serialization fails
   Future<Response<DirectConversationsCreate201Response>> directConversationsCreate({
     required CreateDirectConversationDto createDirectConversationDto,
+    int? xMarkdownContractVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -165,6 +170,7 @@ class DirectMessagesApi {
     final _options = Options(
       method: r'POST',
       headers: <String, dynamic>{
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -246,6 +252,7 @@ class DirectMessagesApi {
   /// * [view]
   /// * [cursor] - 上一页最后一条会话 ID
   /// * [limit]
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -259,6 +266,7 @@ class DirectMessagesApi {
     String? view = 'INBOX',
     String? cursor,
     num? limit = 20,
+    int? xMarkdownContractVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -270,6 +278,7 @@ class DirectMessagesApi {
     final _options = Options(
       method: r'GET',
       headers: <String, dynamic>{
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -336,6 +345,7 @@ class DirectMessagesApi {
   ///
   /// Parameters:
   /// * [id]
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -347,6 +357,7 @@ class DirectMessagesApi {
   /// Throws [DioException] if API call or serialization fails
   Future<Response<DirectConversationsFindById200Response>> directConversationsFindById({
     required String id,
+    int? xMarkdownContractVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -358,6 +369,7 @@ class DirectMessagesApi {
     final _options = Options(
       method: r'GET',
       headers: <String, dynamic>{
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -417,6 +429,7 @@ class DirectMessagesApi {
   ///
   /// Parameters:
   /// * [userId]
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -428,6 +441,7 @@ class DirectMessagesApi {
   /// Throws [DioException] if API call or serialization fails
   Future<Response<DirectConversationsFindByUser200Response>> directConversationsFindByUser({
     required String userId,
+    int? xMarkdownContractVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -439,6 +453,7 @@ class DirectMessagesApi {
     final _options = Options(
       method: r'GET',
       headers: <String, dynamic>{
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -499,6 +514,7 @@ class DirectMessagesApi {
   /// Parameters:
   /// * [id]
   /// * [handleDirectRequestDto]
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -511,6 +527,7 @@ class DirectMessagesApi {
   Future<Response<DirectConversationsHandleRequest200Response>> directConversationsHandleRequest({
     required String id,
     required HandleDirectRequestDto handleDirectRequestDto,
+    int? xMarkdownContractVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -522,6 +539,7 @@ class DirectMessagesApi {
     final _options = Options(
       method: r'PATCH',
       headers: <String, dynamic>{
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -602,6 +620,7 @@ class DirectMessagesApi {
   /// Parameters:
   /// * [id]
   /// * [markDirectConversationReadDto]
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -614,6 +633,7 @@ class DirectMessagesApi {
   Future<Response<DirectConversationsMarkRead200Response>> directConversationsMarkRead({
     required String id,
     required MarkDirectConversationReadDto markDirectConversationReadDto,
+    int? xMarkdownContractVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -625,6 +645,7 @@ class DirectMessagesApi {
     final _options = Options(
       method: r'POST',
       headers: <String, dynamic>{
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -707,6 +728,7 @@ class DirectMessagesApi {
   /// * [cursor] - 加载此消息之前的历史消息；不能与 after 同时使用
   /// * [after] - 增量加载此消息之后的新消息；不能与 cursor 同时使用
   /// * [limit]
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -721,6 +743,7 @@ class DirectMessagesApi {
     String? cursor,
     String? after,
     num? limit = 30,
+    int? xMarkdownContractVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -732,6 +755,7 @@ class DirectMessagesApi {
     final _options = Options(
       method: r'GET',
       headers: <String, dynamic>{
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -799,6 +823,7 @@ class DirectMessagesApi {
   /// Parameters:
   /// * [id]
   /// * [createDirectMessageDto]
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -811,6 +836,7 @@ class DirectMessagesApi {
   Future<Response<DirectConversationsSend201Response>> directConversationsSend({
     required String id,
     required CreateDirectMessageDto createDirectMessageDto,
+    int? xMarkdownContractVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -822,6 +848,7 @@ class DirectMessagesApi {
     final _options = Options(
       method: r'POST',
       headers: <String, dynamic>{
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -900,6 +927,7 @@ class DirectMessagesApi {
   ///
   ///
   /// Parameters:
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -910,6 +938,7 @@ class DirectMessagesApi {
   /// Returns a [Future] containing a [Response] with a [DirectConversationsUnread200Response] as data
   /// Throws [DioException] if API call or serialization fails
   Future<Response<DirectConversationsUnread200Response>> directConversationsUnread({
+    int? xMarkdownContractVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -921,6 +950,7 @@ class DirectMessagesApi {
     final _options = Options(
       method: r'GET',
       headers: <String, dynamic>{
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -980,6 +1010,7 @@ class DirectMessagesApi {
   ///
   /// Parameters:
   /// * [id]
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -991,6 +1022,7 @@ class DirectMessagesApi {
   /// Throws [DioException] if API call or serialization fails
   Future<Response<DirectMessagesRecall200Response>> directMessagesRecall({
     required String id,
+    int? xMarkdownContractVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -1002,6 +1034,7 @@ class DirectMessagesApi {
     final _options = Options(
       method: r'DELETE',
       headers: <String, dynamic>{
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         ...?headers,
       },
       extra: <String, dynamic>{

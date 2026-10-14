@@ -36,6 +36,8 @@ class EditorPendingImages extends ChangeNotifier {
     required this.target,
     this.baseline,
     this.confirmRestore,
+    this.captureMetadata,
+    this.restoreMetadata,
   }) : scope = ref.read(sessionScopeProvider),
        accountId = ref.read(sessionScopeProvider).accountId {
     editor.addListener(_documentChanged);
@@ -48,6 +50,8 @@ class EditorPendingImages extends ChangeNotifier {
   final String? accountId;
   final String? baseline;
   final Future<bool?> Function()? confirmRestore;
+  final Map<String, Object?> Function()? captureMetadata;
+  final void Function(Object?)? restoreMetadata;
   final Map<String, EditorPendingImage> images = {};
   final Map<String, GlobalKey> _imageAnchors = {};
   GlobalKey anchorFor(String id) =>
@@ -133,6 +137,7 @@ class EditorPendingImages extends ChangeNotifier {
       }
       final markdown = payload['markdown'];
       if (markdown is! String) return;
+      restoreMetadata?.call(payload['metadata']);
       for (final entry in payload['images'] as List? ?? const []) {
         if (entry is! Map || entry['id'] is! String) continue;
         final input = entry['input'] is Map
@@ -382,6 +387,7 @@ class EditorPendingImages extends ChangeNotifier {
       if (baseline != null) 'baseline': baseline,
       'markdown': editor.localMarkdown,
       'mediaDisplays': mediaDisplaysToJson(editor.mediaDisplays),
+      if (captureMetadata != null) 'metadata': captureMetadata!(),
       'images': [
         for (final item in images.values)
           if (ids.contains(item.id))

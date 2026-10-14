@@ -10,9 +10,14 @@ WenyouLevelTier? wenyouLevelTier(BuildContext context, int level) {
 }
 
 class WenyouLevelBadge extends StatelessWidget {
-  const WenyouLevelBadge({required this.level, super.key});
+  const WenyouLevelBadge({
+    required this.level,
+    this.compact = false,
+    super.key,
+  });
 
   final int level;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -21,8 +26,8 @@ class WenyouLevelBadge extends StatelessWidget {
     return Semantics(
       label: '用户等级 $level',
       child: Container(
-        constraints: const BoxConstraints(minHeight: 20),
-        padding: const EdgeInsets.symmetric(horizontal: 6),
+        constraints: BoxConstraints(minHeight: compact ? 18 : 20),
+        padding: EdgeInsets.symmetric(horizontal: compact ? 4 : 6),
         decoration: BoxDecoration(
           color: tier.surface,
           border: Border.all(color: tier.border),
@@ -37,7 +42,7 @@ class WenyouLevelBadge extends StatelessWidget {
             'Lv.$level',
             style: Theme.of(context).textTheme.wenyouUtilityCaption.copyWith(
               color: tier.foreground,
-              fontSize: WenyouElementContract.levelFontSize,
+              fontSize: WenyouElementContract.levelFontSize - (compact ? 1 : 0),
               height: 1,
               fontWeight: FontWeight.w700,
               fontFeatures: const [FontFeature.tabularFigures()],

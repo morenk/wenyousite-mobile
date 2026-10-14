@@ -323,6 +323,7 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
                           customLeadingBlockBuilder:
                               wenyouEditorLeadingBlockBuilder(context),
                           embedBuilders: wenyouEditorEmbedBuilders(
+                            mentionLabels: _editorSession.mentionLabels,
                             mediaDisplays: _editorSession.mediaDisplays,
                             pendingImages: _pendingImages,
                           ),
@@ -450,7 +451,8 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
           textInputAction: TextInputAction.done,
           decoration: const InputDecoration(
             labelText: '标签（可选）',
-            hintText: '用空格或逗号分隔，最多 5 个',
+            hintText: '标签由空格或回车分隔',
+            hintMaxLines: 3,
           ),
           onSubmitted: (_) {
             setState(() => _metadataPanel = null);
@@ -491,6 +493,7 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
       _tagsController.text = state.tags.join(' ');
       _editorSession.applyExternalMarkdown(
         state.body,
+        mentionLabels: state.remoteDraft?.mentionLabels ?? const {},
         mediaDisplays: state.mediaDisplays,
       );
       ref

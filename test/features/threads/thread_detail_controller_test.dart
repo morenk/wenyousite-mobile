@@ -1,11 +1,11 @@
 import 'dart:async';
-
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_detail_controller.dart';
 import 'package:wenyousite_mobile/features/threads/data/thread_detail_repository.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.dart';
+import '../../support/discussion_window_fixture.dart';
 
 void main() {
   for (final metadataFails in [false, true]) {
@@ -77,7 +77,7 @@ void main() {
     expect(repository.floorRequests, ['subthread-2:null']);
   });
 
-  test('首屏完成后串行预取剩余全部楼层并逐页合并', () async {
+  test('首屏完成后每次邻近预取只追加一页', () async {
     var activeRequests = 0;
     var maximumActiveRequests = 0;
     final repository = _FakeThreadDetailRepository(
@@ -120,15 +120,13 @@ void main() {
     expect(controller.state.floors.map((item) => item.id), [
       'floor-1',
       'floor-2',
-      'floor-3',
     ]);
-    expect(controller.state.hasMore, isFalse);
+    expect(controller.state.hasMore, isTrue);
     expect(controller.state.isPrefetchingFloors, isFalse);
     expect(maximumActiveRequests, 1);
     expect(repository.floorRequests, [
       'subthread-2:null',
       'subthread-2:page-2',
-      'subthread-2:page-3',
     ]);
   });
 
@@ -214,8 +212,8 @@ void main() {
     final repository = _FakeThreadDetailRepository(
       onFloors: (subthreadId, cursor) async => CursorPage(
         items: cursor == null
-            ? [_floor('floor-1', number: 1), _floor('floor-3', number: 3)]
-            : [_floor('floor-2', number: 2)],
+            ? [_floor('floor-2', number: 2), _floor('floor-3', number: 3)]
+            : [_floor('floor-1', number: 1)],
         cursor: cursor == null ? 'cursor-1' : null,
         hasMore: cursor == null,
       ),
@@ -228,11 +226,11 @@ void main() {
     addTearDown(controller.dispose);
 
     await controller.loadInitial();
-    expect(controller.state.floors.map((item) => item.floorNumber), [1, 3]);
+    expect(controller.state.floors.map((item) => item.floorNumber), [2, 3]);
 
     await controller.setFloorOrder(ThreadFloorOrder.newest);
     expect(controller.state.floorOrder, ThreadFloorOrder.newest);
-    expect(controller.state.floors.map((item) => item.floorNumber), [3, 1]);
+    expect(controller.state.floors.map((item) => item.floorNumber), [3, 2]);
     expect(repository.floorRequests, ['subthread-2:null', 'subthread-2:null']);
     expect(repository.floorOrders, [
       ThreadFloorOrder.oldest,
@@ -345,7 +343,7 @@ void main() {
     expect(repository.floorAuthors, [null, 'user-owner', 'user-player']);
   });
 
-  test('分页 cursor 连续失效时只重载一次首页并提供重试', () async {
+  test('分页 cursor 失效只重取当前位置窗口一次', () async {
     var firstPageCalls = 0;
     final repository = _FakeThreadDetailRepository(
       onFloors: (subthreadId, cursor) async {
@@ -384,10 +382,8 @@ void main() {
       'user-owner',
       'user-owner',
       'user-owner',
-      'user-owner',
     ]);
-    expect(controller.state.transientFailure?.isInvalidCursor, isTrue);
-    expect(controller.state.retryAction, ThreadDetailRetryAction.loadMore);
+    expect(controller.state.transientFailure, isNull);
     expect(controller.state.isPrefetchingFloors, isFalse);
   });
 
@@ -691,7 +687,9 @@ void _expectRestrictedTerminal(ThreadDetailState state, int status) {
   expect(state.transientFailure, isNull);
 }
 
-class _FakeThreadDetailRepository implements ThreadDetailRepository {
+class _FakeThreadDetailRepository
+    with FloorWindowFixture
+    implements ThreadDetailRepository {
   _FakeThreadDetailRepository({this.onThread, this.onFloors});
 
   final Future<ThreadDetailModel> Function(String threadId)? onThread;

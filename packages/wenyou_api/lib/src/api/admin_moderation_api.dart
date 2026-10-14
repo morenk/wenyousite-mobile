@@ -46,6 +46,7 @@ class AdminModerationApi {
   /// * [actorId]
   /// * [createdAfter]
   /// * [createdBefore]
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -65,6 +66,7 @@ class AdminModerationApi {
     String? actorId,
     DateTime? createdAfter,
     DateTime? createdBefore,
+    int? xMarkdownContractVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -78,6 +80,7 @@ class AdminModerationApi {
       responseType: ResponseType.bytes,
       headers: <String, dynamic>{
         if (xCSRFToken != null) r'X-CSRF-Token': xCSRFToken,
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -153,6 +156,7 @@ class AdminModerationApi {
   /// Parameters:
   /// * [id]
   /// * [xCSRFToken] - 管理后台写操作必填
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -165,6 +169,7 @@ class AdminModerationApi {
   Future<Response<AdminModerationGetUser200Response>> adminModerationGetUser({
     required String id,
     String? xCSRFToken,
+    int? xMarkdownContractVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -177,6 +182,7 @@ class AdminModerationApi {
       method: r'GET',
       headers: <String, dynamic>{
         if (xCSRFToken != null) r'X-CSRF-Token': xCSRFToken,
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -245,6 +251,7 @@ class AdminModerationApi {
   /// * [id]
   /// * [moderateContentDto]
   /// * [xCSRFToken] - 管理后台写操作必填
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -259,6 +266,7 @@ class AdminModerationApi {
     required String id,
     required ModerateContentDto moderateContentDto,
     String? xCSRFToken,
+    int? xMarkdownContractVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -271,6 +279,7 @@ class AdminModerationApi {
       method: r'POST',
       headers: <String, dynamic>{
         if (xCSRFToken != null) r'X-CSRF-Token': xCSRFToken,
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -364,6 +373,7 @@ class AdminModerationApi {
   /// * [actorId]
   /// * [createdAfter]
   /// * [createdBefore]
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -383,6 +393,7 @@ class AdminModerationApi {
     String? actorId,
     DateTime? createdAfter,
     DateTime? createdBefore,
+    int? xMarkdownContractVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -395,6 +406,7 @@ class AdminModerationApi {
       method: r'GET',
       headers: <String, dynamic>{
         if (xCSRFToken != null) r'X-CSRF-Token': xCSRFToken,
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -475,6 +487,7 @@ class AdminModerationApi {
   /// * [cursor] - 服务端返回的不透明分页游标；首次请求不传，后续必须原样回传
   /// * [limit] - 每页条数（默认 20，最大 50）
   /// * [targetType]
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -489,6 +502,7 @@ class AdminModerationApi {
     String? cursor,
     num? limit = 20,
     String? targetType,
+    int? xMarkdownContractVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -501,6 +515,7 @@ class AdminModerationApi {
       method: r'GET',
       headers: <String, dynamic>{
         if (xCSRFToken != null) r'X-CSRF-Token': xCSRFToken,
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -579,6 +594,7 @@ class AdminModerationApi {
   /// * [q] - 用户名或邮箱关键词
   /// * [role]
   /// * [status]
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -596,6 +612,7 @@ class AdminModerationApi {
     String? q,
     String? role,
     String? status,
+    int? xMarkdownContractVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -608,6 +625,7 @@ class AdminModerationApi {
       method: r'GET',
       headers: <String, dynamic>{
         if (xCSRFToken != null) r'X-CSRF-Token': xCSRFToken,
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -686,6 +704,7 @@ class AdminModerationApi {
   /// * [id]
   /// * [moderateContentDto]
   /// * [xCSRFToken] - 管理后台写操作必填
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -700,6 +719,7 @@ class AdminModerationApi {
     required String id,
     required ModerateContentDto moderateContentDto,
     String? xCSRFToken,
+    int? xMarkdownContractVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -712,6 +732,7 @@ class AdminModerationApi {
       method: r'POST',
       headers: <String, dynamic>{
         if (xCSRFToken != null) r'X-CSRF-Token': xCSRFToken,
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -799,6 +820,7 @@ class AdminModerationApi {
   /// * [id]
   /// * [revokeSanctionDto]
   /// * [xCSRFToken] - 管理后台写操作必填
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -812,6 +834,7 @@ class AdminModerationApi {
     required String id,
     required RevokeSanctionDto revokeSanctionDto,
     String? xCSRFToken,
+    int? xMarkdownContractVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -824,6 +847,7 @@ class AdminModerationApi {
       method: r'POST',
       headers: <String, dynamic>{
         if (xCSRFToken != null) r'X-CSRF-Token': xCSRFToken,
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -911,6 +935,7 @@ class AdminModerationApi {
   /// * [id]
   /// * [sanctionUserDto]
   /// * [xCSRFToken] - 管理后台写操作必填
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -924,6 +949,7 @@ class AdminModerationApi {
     required String id,
     required SanctionUserDto sanctionUserDto,
     String? xCSRFToken,
+    int? xMarkdownContractVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -936,6 +962,7 @@ class AdminModerationApi {
       method: r'POST',
       headers: <String, dynamic>{
         if (xCSRFToken != null) r'X-CSRF-Token': xCSRFToken,
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -1023,6 +1050,7 @@ class AdminModerationApi {
   /// * [id]
   /// * [updateAdminRoleDto]
   /// * [xCSRFToken] - 管理后台写操作必填
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -1036,6 +1064,7 @@ class AdminModerationApi {
     required String id,
     required UpdateAdminRoleDto updateAdminRoleDto,
     String? xCSRFToken,
+    int? xMarkdownContractVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -1048,6 +1077,7 @@ class AdminModerationApi {
       method: r'PATCH',
       headers: <String, dynamic>{
         if (xCSRFToken != null) r'X-CSRF-Token': xCSRFToken,
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         ...?headers,
       },
       extra: <String, dynamic>{

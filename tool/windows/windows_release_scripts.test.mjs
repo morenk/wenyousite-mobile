@@ -150,6 +150,8 @@ test('发布包装器仅在进程环境解密凭据并始终清理', async () =>
   assert.match(source, /finally \{/);
   assert.match(source, /SetEnvironmentVariable\(\$secretVariable, \$previousSecret/);
   assert.doesNotMatch(source, /Write-(?:Host|Output).*(?:accessKeyPlaintext|secretKeyPlaintext)/i);
+  const common = await read('WenyouRelease.Common.ps1');
+  assert.ok(common.includes("-o 'SendEnv=-*'"));
 });
 
 test('运维文档覆盖安装、一键发布、密钥轮换和撤回', async () => {
@@ -162,4 +164,26 @@ test('运维文档覆盖安装、一键发布、密钥轮换和撤回', async ()
   assert.match(operations, /DPAPI 密文/);
   assert.match(operations, /RainS3 密钥轮换顺序/);
   assert.match(operations, /wenyousite-promote-android --withdraw/);
+});
+
+test('桌面 SSH 预检不继承上传凭据，失败后仍恢复调用方环境', () => {
+  const common = path.join(directory, 'WenyouRelease.Common.ps1').replaceAll("'", "''");
+  execFileSync('pwsh', ['-NoProfile', '-Command', `
+    $ErrorActionPreference = 'Stop'
+    . '${common}'
+    $env:WENYOU_RELEASE_S3_ACCESS_KEY_ID = 'fixture-key'
+    $env:WENYOU_RELEASE_S3_SECRET_ACCESS_KEY = 'fixture-secret'
+    function Test-FixtureSsh {
+      if ($env:WENYOU_RELEASE_S3_ACCESS_KEY_ID -or $env:WENYOU_RELEASE_S3_SECRET_ACCESS_KEY) {
+        $global:LASTEXITCODE = 71; return
+      }
+      if ($args -notcontains 'SendEnv=-*') { $global:LASTEXITCODE = 72; return }
+      $global:LASTEXITCODE = 37
+    }
+    $result = Invoke-WenyouSshPreflight -SshPath Test-FixtureSsh -SshAlias fixture.invalid
+    if ($result.ExitCode -ne 37) { throw 'SSH credential isolation failed' }
+    if ($env:WENYOU_RELEASE_S3_ACCESS_KEY_ID -ne 'fixture-key' -or
+        $env:WENYOU_RELEASE_S3_SECRET_ACCESS_KEY -ne 'fixture-secret' -or
+        $ErrorActionPreference -ne 'Stop') { throw 'Caller environment was not restored' }
+  `]);
 });

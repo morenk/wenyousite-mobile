@@ -298,6 +298,7 @@ class StickerPostMarkdown extends ConsumerWidget {
     this.postVersion = 1,
     this.galleryTarget,
     this.mediaDisplays = const {},
+    this.mentionLabels = const {},
     this.diceLabels = const {},
     this.diceSemantics = const {},
     this.diceDetails = const {},
@@ -316,6 +317,7 @@ class StickerPostMarkdown extends ConsumerWidget {
   final ReadingGalleryTarget? galleryTarget;
   final String data;
   final Map<String, MediaDisplay> mediaDisplays;
+  final Map<String, String> mentionLabels;
   final Map<String, String> diceLabels;
   final Map<String, String> diceSemantics;
   final Map<String, WenyouDiceRollDetail> diceDetails;
@@ -357,6 +359,7 @@ class StickerPostMarkdown extends ConsumerWidget {
                         ),
             ),
       mediaDisplays: mediaDisplays,
+      mentionLabels: mentionLabels,
       diceLabels: diceLabels,
       diceSemantics: diceSemantics,
       diceDetails: diceDetails,

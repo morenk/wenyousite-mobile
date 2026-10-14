@@ -31,6 +31,7 @@ class NotificationsApi {
   /// Parameters:
   /// * [cursor] - 分页游标（上一页最后一条通知 ID）
   /// * [type] - 按类型过滤，逗号分隔，如 type=mention,reply
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -43,6 +44,7 @@ class NotificationsApi {
   Future<Response<NotificationsFindAll200Response>> notificationsFindAll({
     String? cursor,
     String? type,
+    int? xMarkdownContractVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -54,6 +56,7 @@ class NotificationsApi {
     final _options = Options(
       method: r'GET',
       headers: <String, dynamic>{
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -118,6 +121,7 @@ class NotificationsApi {
   ///
   ///
   /// Parameters:
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -128,6 +132,7 @@ class NotificationsApi {
   /// Returns a [Future] containing a [Response] with a [NotificationsMarkAllAsRead200Response] as data
   /// Throws [DioException] if API call or serialization fails
   Future<Response<NotificationsMarkAllAsRead200Response>> notificationsMarkAllAsRead({
+    int? xMarkdownContractVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -139,6 +144,7 @@ class NotificationsApi {
     final _options = Options(
       method: r'POST',
       headers: <String, dynamic>{
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -198,6 +204,7 @@ class NotificationsApi {
   ///
   /// Parameters:
   /// * [id]
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -209,6 +216,7 @@ class NotificationsApi {
   /// Throws [DioException] if API call or serialization fails
   Future<Response<NotificationsRemove200Response>> notificationsRemove({
     required String id,
+    int? xMarkdownContractVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -220,6 +228,7 @@ class NotificationsApi {
     final _options = Options(
       method: r'DELETE',
       headers: <String, dynamic>{
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -280,6 +289,7 @@ class NotificationsApi {
   /// Parameters:
   /// * [id]
   /// * [setReadStatusDto]
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -292,6 +302,7 @@ class NotificationsApi {
   Future<Response<NotificationsSetReadStatus200Response>> notificationsSetReadStatus({
     required String id,
     required SetReadStatusDto setReadStatusDto,
+    int? xMarkdownContractVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -303,6 +314,7 @@ class NotificationsApi {
     final _options = Options(
       method: r'PATCH',
       headers: <String, dynamic>{
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -381,6 +393,7 @@ class NotificationsApi {
   ///
   ///
   /// Parameters:
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -391,6 +404,7 @@ class NotificationsApi {
   /// Returns a [Future] containing a [Response] with a [NotificationsUnreadCount200Response] as data
   /// Throws [DioException] if API call or serialization fails
   Future<Response<NotificationsUnreadCount200Response>> notificationsUnreadCount({
+    int? xMarkdownContractVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -402,6 +416,7 @@ class NotificationsApi {
     final _options = Options(
       method: r'GET',
       headers: <String, dynamic>{
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         ...?headers,
       },
       extra: <String, dynamic>{

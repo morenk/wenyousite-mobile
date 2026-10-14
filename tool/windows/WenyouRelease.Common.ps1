@@ -64,10 +64,22 @@ function Invoke-WenyouSshPreflight {
   )
 
   $previousErrorAction = $ErrorActionPreference
-  $ErrorActionPreference = 'Continue'
-  $output = @(& $SshPath -o BatchMode=yes -o ConnectTimeout=10 $SshAlias 'sudo -n /usr/local/sbin/wenyousite-promote-android --help' 2>&1)
-  $exitCode = $LASTEXITCODE
-  $ErrorActionPreference = $previousErrorAction
+  $accessVariable = 'WENYOU_RELEASE_S3_ACCESS_KEY_ID'
+  $secretVariable = 'WENYOU_RELEASE_S3_SECRET_ACCESS_KEY'
+  $previousAccess = [Environment]::GetEnvironmentVariable($accessVariable, 'Process')
+  $previousSecret = [Environment]::GetEnvironmentVariable($secretVariable, 'Process')
+  try {
+    # 即使调用方预先设置了发布凭据，SSH 也不继承；退出后恢复调用方环境。
+    [Environment]::SetEnvironmentVariable($accessVariable, $null, 'Process')
+    [Environment]::SetEnvironmentVariable($secretVariable, $null, 'Process')
+    $ErrorActionPreference = 'Continue'
+    $output = @(& $SshPath -o 'SendEnv=-*' -o BatchMode=yes -o ConnectTimeout=10 $SshAlias 'sudo -n /usr/local/sbin/wenyousite-promote-android --help' 2>&1)
+    $exitCode = $LASTEXITCODE
+  } finally {
+    [Environment]::SetEnvironmentVariable($accessVariable, $previousAccess, 'Process')
+    [Environment]::SetEnvironmentVariable($secretVariable, $previousSecret, 'Process')
+    $ErrorActionPreference = $previousErrorAction
+  }
   return [pscustomobject]@{
     ExitCode = $exitCode
     Output = $output

@@ -1,12 +1,11 @@
 import 'dart:async';
-import 'dart:convert';
 
-import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/app/app_router.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_reference.dart';
 import 'package:wenyousite_mobile/core/navigation/wenyou_feedback_visibility.dart';
+import 'package:wenyousite_mobile/features/app_shell/application/clipboard_navigation_coordinator.dart';
 import 'package:wenyousite_mobile/features/app_shell/application/clipboard_navigation_ports.dart';
 
 class ClipboardNavigationPrompt extends ConsumerStatefulWidget {
@@ -25,11 +24,8 @@ class _ClipboardNavigationPromptState
   int _readEpoch = 0;
   bool _promptOpen = false;
   AppLifecycleState? _lifecycleState;
-  String? _activeEntryToken;
   String? _lastObservedToken;
   String? _lastObservedFingerprint;
-  HandledClipboardNavigation? _handled;
-  Future<HandledClipboardNavigation?>? _handledLoad;
   late final WenyouFeedbackVisibility _visibility;
   bool _waitingForVisibility = false;
 
@@ -52,13 +48,11 @@ class _ClipboardNavigationPromptState
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    final previous = _lifecycleState;
     _lifecycleState = state;
-    if (state == AppLifecycleState.inactive &&
-        previous == AppLifecycleState.resumed) {
-      unawaited(_captureActiveClipboardChange());
-    } else if (state == AppLifecycleState.resumed) {
+    if (state == AppLifecycleState.resumed) {
       _readClipboardAfterFrame();
+    } else {
+      _readEpoch += 1;
     }
   }
 
@@ -82,14 +76,23 @@ class _ClipboardNavigationPromptState
   Widget build(BuildContext context) => widget.child;
 
   Future<void> _scanClipboard() async {
-    if (!mounted || _promptOpen) return;
+    if (!mounted ||
+        _promptOpen ||
+        (_lifecycleState != null &&
+            _lifecycleState != AppLifecycleState.resumed)) {
+      return;
+    }
     final epoch = ++_readEpoch;
+    final coordinator = ref.read(clipboardNavigationCoordinatorProvider);
+    await coordinator.ready();
+    if (!mounted || epoch != _readEpoch) return;
+    final revision = coordinator.revision;
     final gateway = ref.read(clipboardNavigationGatewayProvider);
     final changeToken = await gateway.readChangeToken();
-    final handled = await _readHandled();
-    if (!mounted || epoch != _readEpoch) return;
-
-    _activeEntryToken = changeToken;
+    if (!mounted || epoch != _readEpoch || revision != coordinator.revision) {
+      return;
+    }
+    final handled = coordinator.handled;
     if (changeToken != null &&
         (changeToken == handled?.changeToken ||
             changeToken == _lastObservedToken)) {
@@ -98,14 +101,31 @@ class _ClipboardNavigationPromptState
     }
 
     final snapshot = await gateway.readSnapshot();
-    if (!mounted || epoch != _readEpoch || snapshot == null) return;
+    if (!mounted ||
+        epoch != _readEpoch ||
+        revision != coordinator.revision ||
+        snapshot == null) {
+      return;
+    }
     final normalizedText = snapshot.text.trim();
     if (normalizedText.isEmpty) return;
     final effectiveSnapshot = ClipboardNavigationSnapshot(
       text: normalizedText,
       changeToken: snapshot.changeToken ?? changeToken,
     );
-    final fingerprint = _fingerprint(normalizedText);
+    final fingerprint = ClipboardNavigationCoordinator.fingerprint(
+      normalizedText,
+    );
+    if (await coordinator.resolveOwnReceipt(
+      effectiveSnapshot,
+      expectedRevision: revision,
+    )) {
+      _rememberObserved(effectiveSnapshot, fingerprint);
+      return;
+    }
+    if (!mounted || epoch != _readEpoch || revision != coordinator.revision) {
+      return;
+    }
     if ((effectiveSnapshot.changeToken != null &&
             (effectiveSnapshot.changeToken == handled?.changeToken ||
                 effectiveSnapshot.changeToken == _lastObservedToken)) ||
@@ -117,14 +137,16 @@ class _ClipboardNavigationPromptState
     }
     final reference = parseInternalReference(normalizedText);
     if (reference == null) {
-      _activeEntryToken = effectiveSnapshot.changeToken;
       _rememberObserved(effectiveSnapshot, fingerprint);
       return;
     }
 
     final router = ref.read(appRouterProvider);
     if (router.routerDelegate.currentConfiguration.uri == reference.location) {
-      await _rememberHandled(effectiveSnapshot, fingerprint);
+      await coordinator.rememberIfCurrent(
+        effectiveSnapshot,
+        expectedRevision: revision,
+      );
       return;
     }
     final navigatorContext = router.routerDelegate.navigatorKey.currentContext;
@@ -135,7 +157,6 @@ class _ClipboardNavigationPromptState
       return;
     }
 
-    _activeEntryToken = effectiveSnapshot.changeToken;
     _rememberObserved(effectiveSnapshot, fingerprint);
     _promptOpen = true;
     final isInvite = reference.kind == InternalReferenceKind.invite;
@@ -158,7 +179,10 @@ class _ClipboardNavigationPromptState
             ? '剪贴板中有一个主题链接，是否前往查看？'
             : '剪贴板中有一个楼层链接，是否前往查看？',
         onDecision: (decision) async {
-          await _rememberHandled(effectiveSnapshot, fingerprint);
+          await coordinator.rememberIfCurrent(
+            effectiveSnapshot,
+            expectedRevision: revision,
+          );
           if (dialogContext.mounted) {
             Navigator.pop(dialogContext, decision);
           }
@@ -173,73 +197,12 @@ class _ClipboardNavigationPromptState
     _readClipboardAfterFrame();
   }
 
-  Future<void> _captureActiveClipboardChange() async {
-    if (_promptOpen || _activeEntryToken == null) return;
-    final epoch = ++_readEpoch;
-    final gateway = ref.read(clipboardNavigationGatewayProvider);
-    final changeToken = await gateway.readChangeToken();
-    if (!mounted ||
-        epoch != _readEpoch ||
-        changeToken == null ||
-        changeToken == _activeEntryToken) {
-      return;
-    }
-    final snapshot = await gateway.readSnapshot();
-    if (!mounted || epoch != _readEpoch || snapshot == null) return;
-    final normalizedText = snapshot.text.trim();
-    if (normalizedText.isEmpty ||
-        parseInternalReference(normalizedText) == null) {
-      return;
-    }
-    final effectiveSnapshot = ClipboardNavigationSnapshot(
-      text: normalizedText,
-      changeToken: snapshot.changeToken ?? changeToken,
-    );
-    await _rememberHandled(effectiveSnapshot, _fingerprint(normalizedText));
-  }
-
-  Future<HandledClipboardNavigation?> _readHandled() {
-    return _handledLoad ??= _loadHandled();
-  }
-
-  Future<HandledClipboardNavigation?> _loadHandled() async {
-    try {
-      _handled = await ref.read(handledClipboardNavigationStoreProvider).read();
-    } on Object {
-      _handled = null;
-    }
-    return _handled;
-  }
-
-  Future<void> _rememberHandled(
-    ClipboardNavigationSnapshot snapshot,
-    String fingerprint,
-  ) async {
-    final value = HandledClipboardNavigation(
-      changeToken: snapshot.changeToken,
-      fingerprint: fingerprint,
-    );
-    _handled = value;
-    _handledLoad = Future.value(value);
-    _rememberObserved(snapshot, fingerprint);
-    try {
-      await ref.read(handledClipboardNavigationStoreProvider).write(value);
-    } on Object {
-      // Keep the choice for this process when preference storage is unavailable.
-      // A storage failure must not trap the user in the navigation dialog.
-    }
-  }
-
   void _rememberObserved(
     ClipboardNavigationSnapshot snapshot,
     String fingerprint,
   ) {
     _lastObservedToken = snapshot.changeToken;
     _lastObservedFingerprint = fingerprint;
-  }
-
-  String _fingerprint(String value) {
-    return sha256.convert(utf8.encode(value)).toString();
   }
 }
 

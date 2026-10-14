@@ -13,6 +13,7 @@ import 'package:wenyousite_mobile/features/search/application/search_repository_
 import 'package:wenyousite_mobile/features/search/domain/search_models.dart';
 import 'package:wenyousite_mobile/features/thread_feed/thread_feed_mapping.dart';
 import 'package:wenyousite_mobile/features/thread_feed/thread_feed_models.dart';
+import 'package:wenyousite_mobile/features/thread_identity/identity_mapping.dart';
 
 export 'package:wenyousite_mobile/features/search/application/search_repository_ports.dart'
     show SearchRepository, searchRepositoryProvider;
@@ -238,9 +239,13 @@ class ApiSearchRepository implements SearchRepository {
       parentPostId: dto.parentPostId,
       content: dto.content,
       mediaDisplays: mapMarkdownMediaDisplays(dto.mediaDisplays),
-      preview: MarkdownContent.toPlainTextPreview(dto.content),
+      preview: MarkdownContent.toPlainTextPreview(
+        dto.content,
+        mentionLabels: mapMentionIdentityLabels(dto.mentionIdentities),
+      ),
       authorId: dto.author.id,
       authorName: dto.author.username,
+      rpIdentity: mapRpIdentity(dto.author.rpIdentity),
       threadId: dto.thread.id,
       threadTitle: dto.thread.title,
       subthreadId: dto.subthread.id,

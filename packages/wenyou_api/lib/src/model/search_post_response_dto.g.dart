@@ -79,6 +79,8 @@ class _$SearchPostResponseDtoKindEnumSerializer
 
 class _$SearchPostResponseDto extends SearchPostResponseDto {
   @override
+  final BuiltList<MentionIdentityDisplayDto>? mentionIdentities;
+  @override
   final BuiltList<MarkdownMediaDisplayResponseDto>? mediaDisplays;
   @override
   final SearchPostResponseDtoKindEnum kind;
@@ -104,6 +106,7 @@ class _$SearchPostResponseDto extends SearchPostResponseDto {
   ]) => (SearchPostResponseDtoBuilder()..update(updates))._build();
 
   _$SearchPostResponseDto._({
+    this.mentionIdentities,
     this.mediaDisplays,
     required this.kind,
     required this.id,
@@ -128,6 +131,7 @@ class _$SearchPostResponseDto extends SearchPostResponseDto {
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
     return other is SearchPostResponseDto &&
+        mentionIdentities == other.mentionIdentities &&
         mediaDisplays == other.mediaDisplays &&
         kind == other.kind &&
         id == other.id &&
@@ -143,6 +147,7 @@ class _$SearchPostResponseDto extends SearchPostResponseDto {
   @override
   int get hashCode {
     var _$hash = 0;
+    _$hash = $jc(_$hash, mentionIdentities.hashCode);
     _$hash = $jc(_$hash, mediaDisplays.hashCode);
     _$hash = $jc(_$hash, kind.hashCode);
     _$hash = $jc(_$hash, id.hashCode);
@@ -160,6 +165,7 @@ class _$SearchPostResponseDto extends SearchPostResponseDto {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'SearchPostResponseDto')
+          ..add('mentionIdentities', mentionIdentities)
           ..add('mediaDisplays', mediaDisplays)
           ..add('kind', kind)
           ..add('id', id)
@@ -177,6 +183,13 @@ class _$SearchPostResponseDto extends SearchPostResponseDto {
 class SearchPostResponseDtoBuilder
     implements Builder<SearchPostResponseDto, SearchPostResponseDtoBuilder> {
   _$SearchPostResponseDto? _$v;
+
+  ListBuilder<MentionIdentityDisplayDto>? _mentionIdentities;
+  ListBuilder<MentionIdentityDisplayDto> get mentionIdentities =>
+      _$this._mentionIdentities ??= ListBuilder<MentionIdentityDisplayDto>();
+  set mentionIdentities(
+    ListBuilder<MentionIdentityDisplayDto>? mentionIdentities,
+  ) => _$this._mentionIdentities = mentionIdentities;
 
   ListBuilder<MarkdownMediaDisplayResponseDto>? _mediaDisplays;
   ListBuilder<MarkdownMediaDisplayResponseDto> get mediaDisplays =>
@@ -233,6 +246,7 @@ class SearchPostResponseDtoBuilder
   SearchPostResponseDtoBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
+      _mentionIdentities = $v.mentionIdentities?.toBuilder();
       _mediaDisplays = $v.mediaDisplays?.toBuilder();
       _kind = $v.kind;
       _id = $v.id;
@@ -267,6 +281,7 @@ class SearchPostResponseDtoBuilder
       _$result =
           _$v ??
           _$SearchPostResponseDto._(
+            mentionIdentities: _mentionIdentities?.build(),
             mediaDisplays: _mediaDisplays?.build(),
             kind: BuiltValueNullFieldError.checkNotNull(
               kind,
@@ -297,6 +312,8 @@ class SearchPostResponseDtoBuilder
     } catch (_) {
       late String _$failedField;
       try {
+        _$failedField = 'mentionIdentities';
+        _mentionIdentities?.build();
         _$failedField = 'mediaDisplays';
         _mediaDisplays?.build();
 

@@ -1,13 +1,16 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyou_api/wenyou_api.dart';
+import 'package:wenyousite_mobile/app/app_capabilities.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_write_guard.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
 import 'package:wenyousite_mobile/core/network/media_display_mapper.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/thread_feed/thread_feed_catalog_ports.dart';
 import 'package:wenyousite_mobile/features/thread_feed/thread_feed_models.dart';
+import 'package:wenyousite_mobile/features/thread_identity/identity_mapping.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_compose_repository_ports.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_compose_models.dart';
 
@@ -18,8 +21,11 @@ class ApiThreadComposeRepository implements ThreadComposeRepository {
   ApiThreadComposeRepository(
     this._threadsApi,
     this._categories,
-    this._usersApi,
-  );
+    this._usersApi, {
+    this.roleMentionsSupported = false,
+  });
+
+  final bool roleMentionsSupported;
 
   final ThreadsApi _threadsApi;
   final ThreadCategoryCatalogRepository _categories;
@@ -154,6 +160,10 @@ class ApiThreadComposeRepository implements ThreadComposeRepository {
   @override
   Future<ThreadRemoteDraft> createDraft(ThreadCreatePayload payload) async {
     try {
+      requireMentionWriteSupport(
+        payload.body,
+        supported: roleMentionsSupported,
+      );
       final title = payload.title.trim();
       final category = payload.categorySlug?.trim();
       final body = MarkdownContent.normalize(payload.body);
@@ -161,6 +171,9 @@ class ApiThreadComposeRepository implements ThreadComposeRepository {
         extra: ApiRequestPolicy.idempotentCreate.extra,
         createThreadDto: CreateThreadDto((builder) {
           builder
+            ..markdownContractVersion = roleMentionsSupported
+                ? CreateThreadDtoMarkdownContractVersionEnum.number6
+                : null
             ..clientRequestId = payload.clientRequestId
             ..visibility = payload.visibility == ThreadComposeVisibility.private
                 ? CreateThreadDtoVisibilityEnum.PRIVATE
@@ -194,12 +207,16 @@ class ApiThreadComposeRepository implements ThreadComposeRepository {
     required bool publish,
   }) async {
     try {
+      requireMentionWriteSupport(body, supported: roleMentionsSupported);
       final normalizedTitle = title.trim();
       final normalizedCategory = categorySlug?.trim();
       final response = await _threadsApi.threadsSaveAggregate(
         id: remoteDraft.id,
         saveThreadAggregateDto: SaveThreadAggregateDto((builder) {
           builder
+            ..markdownContractVersion = roleMentionsSupported
+                ? SaveThreadAggregateDtoMarkdownContractVersionEnum.number6
+                : null
             ..version = remoteDraft.version
             ..defaultSubthreadVersion = remoteDraft.defaultSubthreadVersion
             ..bodyVersion = remoteDraft.bodyVersion
@@ -263,6 +280,7 @@ class ApiThreadComposeRepository implements ThreadComposeRepository {
           .map((relation) => relation.tag.name)
           .toList(growable: false),
       body: bodyPost?.content ?? '',
+      mentionLabels: mapMentionIdentityLabels(bodyPost?.mentionIdentities),
       mediaDisplays: mapMarkdownMediaDisplays(bodyPost?.mediaDisplays),
     );
   }
@@ -293,5 +311,8 @@ final apiThreadComposeRepositoryProvider = Provider<ThreadComposeRepository>((
     api.getThreadsApi(),
     ref.watch(threadCategoryCatalogRepositoryProvider),
     api.getUsersApi(),
+    roleMentionsSupported: ref
+        .watch(appCapabilitiesProvider)
+        .roleMentionsSupported,
   );
 });

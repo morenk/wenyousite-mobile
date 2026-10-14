@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_alignment.dart';
@@ -88,7 +87,7 @@ void registerEditorToolbarCapabilitiesAlignmentCases() {
     expect(find.byKey(const Key('editor-submit')), findsOneWidget);
   });
 
-  testWidgets('更多面板使用中性表面并直接设置左、居中和右对齐', (tester) async {
+  testWidgets('更多面板仅保留居中和右对齐，再次点击已选按钮恢复默认', (tester) async {
     final controller = QuillController(
       document: Document()..insert(0, '正文'),
       selection: const TextSelection.collapsed(offset: 1),
@@ -123,7 +122,7 @@ void registerEditorToolbarCapabilitiesAlignmentCases() {
     await tester.tap(find.byKey(const Key('editor-more')));
     await tester.pumpAndSettle();
     expect(find.byType(SegmentedButton<WenyouTextAlignment>), findsNothing);
-    expect(find.byKey(const Key('editor-align-left')), findsOneWidget);
+    expect(find.byKey(const Key('editor-align-left')), findsNothing);
     expect(find.byKey(const Key('editor-align-center')), findsOneWidget);
     expect(find.byKey(const Key('editor-align-right')), findsOneWidget);
     final tray = tester.widget<Container>(
@@ -148,9 +147,12 @@ void registerEditorToolbarCapabilitiesAlignmentCases() {
     expect(alignment.isSelected, isTrue);
     expect(
       alignment.style!.backgroundColor!.resolve({WidgetState.selected}),
-      Colors.transparent,
+      tokens.accentedBackground,
     );
-    expect((alignment.selectedIcon! as WenyouIcon).color, tokens.like);
+    expect(
+      alignment.style!.foregroundColor!.resolve({WidgetState.selected}),
+      tokens.onAccentedBackground,
+    );
 
     await tester.tap(find.byTooltip('右对齐'));
     await tester.pumpAndSettle();
@@ -158,16 +160,16 @@ void registerEditorToolbarCapabilitiesAlignmentCases() {
       MarkdownDeltaCodec.encode(controller.document.toDelta()),
       '[wenyousite-align-v1-right]: #\n正文',
     );
-    await tester.tap(find.byTooltip('左对齐'));
+    await tester.tap(find.byTooltip('右对齐'));
     await tester.pumpAndSettle();
     expect(MarkdownDeltaCodec.encode(controller.document.toDelta()), '正文');
     alignment = tester.widget<IconButton>(
       find.descendant(
-        of: find.byKey(const Key('editor-align-left')),
+        of: find.byKey(const Key('editor-align-right')),
         matching: find.byType(IconButton),
       ),
     );
-    expect(alignment.isSelected, isTrue);
+    expect(alignment.isSelected, isFalse);
   });
 
   testWidgets('Markdown v5 独立图片可从更多面板设置对齐', (tester) async {
@@ -214,12 +216,14 @@ void registerEditorToolbarCapabilitiesAlignmentCases() {
   });
 
   for (final scenario in [
-    (name: 'light', theme: AppTheme.light),
-    (name: 'dark', theme: AppTheme.dark),
+    (name: '360_light', theme: AppTheme.light, width: 360.0, scale: 1.0),
+    (name: '360_dark', theme: AppTheme.dark, width: 360.0, scale: 1.0),
+    (name: '320_light_2x', theme: AppTheme.light, width: 320.0, scale: 2.0),
+    (name: '320_dark_2x', theme: AppTheme.dark, width: 320.0, scale: 2.0),
   ]) {
-    testWidgets('360dp ${scenario.name} 更多纯图标托盘保持视觉基线', (tester) async {
+    testWidgets('${scenario.name} 更多纯图标托盘保持视觉基线', (tester) async {
       tester.view.devicePixelRatio = 1;
-      tester.view.physicalSize = const Size(360, 320);
+      tester.view.physicalSize = Size(scenario.width, 320);
       addTearDown(tester.view.resetDevicePixelRatio);
       addTearDown(tester.view.resetPhysicalSize);
       final controller = QuillController(
@@ -230,6 +234,12 @@ void registerEditorToolbarCapabilitiesAlignmentCases() {
       await tester.pumpWidget(
         MaterialApp(
           theme: scenario.theme,
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(
+              context,
+            ).copyWith(textScaler: TextScaler.linear(scenario.scale)),
+            child: child!,
+          ),
           home: Scaffold(
             body: Align(
               alignment: Alignment.bottomCenter,
@@ -245,15 +255,20 @@ void registerEditorToolbarCapabilitiesAlignmentCases() {
           ),
         ),
       );
+      await tester.tap(find.byKey(const Key('editor-bold')));
+      await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('editor-more')));
       await tester.pumpAndSettle();
+      if (scenario.scale > 1) {
+        await tester.tap(find.byKey(const Key('editor-align-center')));
+        await tester.pumpAndSettle();
+      }
 
       final firstRow = find.byKey(const Key('editor-more-row-0'));
       final secondRow = find.byKey(const Key('editor-more-row-1'));
       expect(firstRow, findsOneWidget);
       expect(secondRow, findsOneWidget);
       for (final key in const [
-        Key('editor-align-left'),
         Key('editor-align-center'),
         Key('editor-align-right'),
       ]) {
@@ -268,12 +283,12 @@ void registerEditorToolbarCapabilitiesAlignmentCases() {
       );
       expect(
         find.descendant(of: secondRow, matching: find.byType(IconButton)),
-        findsNWidgets(5),
+        findsNWidgets(scenario.width < 360 ? 5 : 4),
       );
 
       await expectLater(
         find.byKey(const Key('editor-more-tray')),
-        matchesGoldenFile('goldens/editor_more_tray_360_${scenario.name}.png'),
+        matchesGoldenFile('goldens/editor_more_tray_${scenario.name}.png'),
       );
     });
   }

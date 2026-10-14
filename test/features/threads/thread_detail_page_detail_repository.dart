@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
+import 'package:wenyousite_mobile/core/navigation/navigation_link_writer.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/editor/editor.dart';
@@ -16,6 +17,7 @@ import 'package:wenyousite_mobile/features/threads/data/thread_detail_repository
 import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_page.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_target_utils.dart';
+import '../../support/discussion_window_fixture.dart';
 import 'thread_detail_page_collaboration_repositories.dart';
 import 'thread_detail_page_content_fixtures.dart';
 
@@ -280,6 +282,7 @@ Widget threadDetailPageTestDetailApp(
   double? textScale,
   bool enableRenderDiagnostics = false,
   ReaderMarkdownClipboardWriter? clipboardWriter,
+  NavigationLinkWriter? linkWriter,
 }) {
   final page = ThreadDetailPage(
     threadId: 'thread-1',
@@ -297,6 +300,8 @@ Widget threadDetailPageTestDetailApp(
         authorDirectory ??
             ThreadDetailPageTestFakePostDiscussionAuthorDirectory(),
       ),
+      if (linkWriter != null)
+        navigationLinkWriterProvider.overrideWithValue(linkWriter),
       if (clipboardWriter != null)
         readerMarkdownClipboardWriterProvider.overrideWithValue(
           clipboardWriter,
@@ -468,6 +473,7 @@ Future<void> threadDetailPageTestDismissPostComposerFromOutside(
 }
 
 class ThreadDetailPageTestFakeThreadDetailRepository
+    with FloorWindowFixture
     implements ThreadDetailRepository {
   ThreadDetailPageTestFakeThreadDetailRepository({
     this.threadFailure,

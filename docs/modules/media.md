@@ -18,6 +18,8 @@
 
 ## 4. 用户操作流程
 
+帖内身份头像复用本模块的选图、裁剪和媒体上传，仅把 mediaId 交给主题身份设置端点，不更新站内头像。历史头像引用与治理移除由后端管理；阅读获得明确 RP 投影但头像为空时保留空头像，不擅自换成用户今天的站内头像。候选与人工验收见[身份候选验收](../architecture/rp-identity-acceptance.md)。
+
 2026-09-26 图片首帧定位修复（负责人验收通过）：图集异步补齐及前插分页时，按当前图片身份同步实际画面位置，保留缩放状态；点击靠后的图片不再需要第二次点按来对齐画面。修正与原场景见[图片首帧定位验收](../architecture/image-viewer-anchor-acceptance.md)。
 
 2026-09-21 能力一致性候选／待负责人验收：本模块输入边界、附件生命周期或权限入口与固定后端契约对齐；已证实偏差、逐入口证据、回归及未验证边界见[能力一致性盘查](../architecture/capability-consistency-audit.md)。长度按后端 Unicode 码点计算，编辑光标仍使用原有 UTF16 偏移；密码保持原始内容，用户名与标签白名单不扩展。
@@ -68,7 +70,7 @@ galleryList：读取 GalleryList200Response / GalleryPageDto / GalleryImageDto�
 
 ## 8. 本地存储、缓存及失效规则
 
-开发预览按 Backend runId 隔离 Token、偏好、Drift 草稿／待确认操作、图片草稿和缓存；同名批次 reset 后使用新命名空间。原线上路径与数据保留，不向预览迁移身份或待提交操作。网络与上传先验证当前批次实际资源身份；预览仅 Debug 启用。详见 [持续 Debug](../live-debug.md)。
+普通 Debug 使用原有 Token、偏好、Drift 草稿／待确认操作、图片草稿和缓存路径。专用隔离开发预览已退役；旧批次数据保留在原键／文件，不自动读取、导入或删除。详情见 [Debug 开发](../live-debug.md)。
 
 选图恢复属于可选启动步骤。恢复上下文读取、系统选择读取或上下文清理失败时返回安全重选提示，不阻止应用启动，不自动上传。
 
@@ -132,7 +134,36 @@ galleryList：读取 GalleryList200Response / GalleryPageDto / GalleryImageDto�
 
 ## 13. 最近审查的契约版本和后端提交
 
-2026-09-29 编辑时间兼容契约同步：Backend `dc62a36dcf016f58fadcf53672215bb5fa66e618`，契约 `5.28.0-dev.20260929.1`；帖子响应兼容新增可选、可空 `editedAt`，生成类型更新，现有流程与验收状态保持。楼层呈现由 threads/posts 接入；同步范围见[编辑时间契约](../architecture/post-edited-time-contract-sync.md)。
+2026-10-10 合并来源复核：通过官方同步入口固定到实际部署 Backend `b5f0e3bb0b99a3f9763b31e3080cb4d4f2e64045`，OpenAPI 仍为 `5.36.0-dev.20261005.1`。相对退役实施提交，机器契约、共享语料、生成客户端及本模块行为不变；仅来源登记更新，详见[退役验收记录](../architecture/retire-development-preview-acceptance.md)。
+
+本轮共享契约复核：OpenAPI `5.36.0-dev.20261005.1`，Backend `a624bed0eb2b118701bd593fbce2aabf3dea7321`。新增帖内多角色集合及可选发表 identityId，Markdown 5 与本模块既有消费保持；实际部署与设备验收另行登记，相关行为见[帖内身份](thread-identity.md)。
+
+
+2026-10-05 逐条身份补充契约：固定 Backend `ff1a84178b37fabd7f8fd77e53989b4842b4d42f`／`5.33.0-dev.20261005.1`。四个新发言／首次正文写入增加可选 `identityMode: ACCOUNT|RP`；ACCOUNT 明确沿用站内资料，RP 需本人确认，旧正文编辑保留原身份。此 chore 只同步固定契约和生成 SDK，产品接入与验收另行记录。
+
+2026-10-05 帖内身份契约同步：Backend `473738d25405828932f2e307f38ff82bbf50c2a4`／`5.33.0-dev.20261004.1`，新增五个可选身份操作及历史显示投影。本 chore 仅同步固定来源和生成 SDK，原模块行为及验收边界保持；后续业务接入另行记录，见[契约同步](../architecture/rp-identity-contract-sync.md)。
+
+2026-10-04 部署来源审查：Backend `3748cc8c85a73f400fa4e237a8d7dd6eecd1853e` 已合并并部署，契约仍为 `5.32.0-dev.20261003.1`；33 个导出文件及受限发布 CLI 与原候选一致，仅 revision 更新。Mobile 公网来源与主题列表兼容门禁通过，本模块实现与原有验收边界不变，见[同步记录](../architecture/private-apk-contract-sync.md)。
+
+2026-10-03 每日下载次数契约同步：Backend `10b7819ad4a15777490dad5ab9abb7ae961422fc`／`5.32.0-dev.20261003.1`，238 个操作；仅下载 429 原因头、可选 Cookie 与计次说明兼容扩展，原生无 Cookie HEAD/GET 继续保留。本模块其他行为及原验收边界不变，见[契约同步](../architecture/private-apk-contract-sync.md)。
+
+2026-10-03 下载最终来源整合：Backend `1857d60fe3af309149eb5c1846be221d3a45fb86`／`5.31.0-dev.20261003.1`；相对 `27dc3ff7` 只修正隔离预览响应头，机器契约与受限发布入口逐字不变。已合入 Mobile `dev` 的讨论定位切片 `4a52274c`，保留其实现和验收边界，移除两项窗口接口的临时排除，API 范围为 164 项。
+
+2026-10-03 下载运行时契约同步：Backend `27dc3ff7eeb51334ff024feb8494e78eb7ae7fc8`／`5.31.0-dev.20261003.1`，完整保留下载接口与已合入的讨论窗口、可选 replyNumber。受限发布新增前置 `--gateway`；讨论定位能力留给独立切片，既有列表保持兼容，本模块其他行为与验收不因来源同步改变。见[同步记录](../architecture/private-apk-contract-sync.md)。
+
+2026-10-03 下载契约同步：Backend `c7060867fc938e002a14bff596886aea83279b1c`／`5.30.0-dev.20261002.2` 仅新增匿名下载信息与固定文件接口，本模块接口、状态及验收结论不变。SDK 和来源记录见[契约同步](../architecture/private-apk-contract-sync.md)；候选来源不代表已部署。
+
+2026-10-03 已部署讨论窗口来源：Backend `2b803a8e4bc73bc01bd046142e6f9005f92aa411`／`5.30.0-dev.20261001.1`。经正式同步入口仅更新来源 SHA，OpenAPI、固定语料、生成 SDK 与应用代码不变；保留现有行为及未覆盖的真机验收边界。
+
+2026-10-02 讨论窗口契约同步：Backend `62083784e27f697af3799e392011bf8f6dd825d2`／`5.30.0-dev.20261001.1`，兼容新增固定回复编号及双向窗口；本次 chore 仅同步契约和生成客户端，posts / threads 后续接线，其余模块行为与验收结论不变。
+
+2026-10-02 已部署来源登记：Backend `edd0b23d870d533df5f4ac787eb22df9a822981f`，API `5.29.0-dev.20261001.1`。官方同步入口仅更新来源SHA；OpenAPI、固定语料、消费者指南和生成客户端内容不变，本模块行为不变。
+
+2026-10-01 邀请交互文档同步：Backend `4db0cdf2c079fc8b66545c67849053cd74945f8a`／`5.29.0-dev.20261001.1`，仅更新邀请只复制的消费者说明；OpenAPI、DTO 与生成客户端不变。threads 界面由同任务后续候选更新，其余模块行为不变。
+
+2026-10-01 私密邀请契约同步：Backend `cfe9621c39f9d9c8c7f764bf45293be43bab1af7`／`5.29.0-dev.20261001.1`，新增幂等取得当前邀请链接的 PUT。本次生成同步也携带此前兼容新增的可选 `PostBaseResponseDto.editedAt`；除后续 threads 独立消费外，不改变本模块行为或验收结论。
+
+2026-09-28 固定关系计数候选来源：Backend `e807a3aa0cb15a626e5601eedc93f23c72d2e6c4`／`5.27.1-dev.20260928.1`。OpenAPI 仅补充已注销账号与查看者可见性的计数说明并递增 PATCH，无字段、类型或接口变化；本模块运行时代码与既有验收状态保持。候选来源不代表已部署，详见[关系数量排查](../architecture/profile-follow-counts-investigation.md)。
 
 2026-09-27 更新说明已部署契约复核：Backend `1d43b85f7aa8cd1ab03f6ab34f1851462e1a0021`、契约 `5.27.0-dev.20260927.1`。新增公开说明与管理类型，既有接口和 `/meta` 保持兼容；新能力由 app-shell 独立接入，不代表本模块其他行为或负责人验收变化。详见[契约同步](../architecture/mobile-release-contract-sync.md)。
 

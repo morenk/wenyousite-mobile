@@ -1,8 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
+import 'package:wenyousite_mobile/core/application/visibility_cache_invalidation.dart';
 import 'package:wenyousite_mobile/core/application/write_reconciler.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
-import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/social/application/social_states.dart';
 import 'package:wenyousite_mobile/features/social/application/thread_subscription_repository_ports.dart';
 import 'package:wenyousite_mobile/features/social/domain/thread_subscription_models.dart';
@@ -344,15 +344,12 @@ Future<({T? value, Object? error})> _capture<T>(Future<T> future) async {
 final threadSubscriptionControllerProvider = StateNotifierProvider.autoDispose
     .family<ThreadSubscriptionController, ThreadSubscriptionState, String>(
       (ref, threadId) {
-        final sessionScope = ref.watch(sessionScopeProvider);
+        final viewerScope = ref.watch(viewerScopeProvider);
         return ThreadSubscriptionController(
           ref.watch(threadSubscriptionRepositoryProvider),
           threadId,
-          viewerUserId: sessionScope.accountId,
+          viewerUserId: viewerScope.session.accountId,
         );
       },
-      dependencies: [
-        threadSubscriptionRepositoryProvider,
-        sessionScopeProvider,
-      ],
+      dependencies: [threadSubscriptionRepositoryProvider, viewerScopeProvider],
     );

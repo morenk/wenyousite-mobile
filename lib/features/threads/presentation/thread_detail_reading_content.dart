@@ -4,15 +4,16 @@ import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/widgets/discussion_sliver_list.dart';
 import 'package:wenyousite_mobile/core/widgets/reading_quick_scroll.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_content_item_divider.dart';
-import 'package:wenyousite_mobile/core/widgets/wenyou_discussion_scroll_policy.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/media/reading_gallery.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_controllers.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_discussion_author_directory_ports.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_discussion_author.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
+import 'package:wenyousite_mobile/features/thread_identity/identity_widgets.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_detail_controller.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_overview.dart';
@@ -34,6 +35,9 @@ List<Widget> buildThreadDetailReadingSlivers(
   required ReadingQuickScrollController quickScroll,
   required GlobalKey targetKey,
   required GlobalKey itemListKey,
+  Key? countKey,
+  VoidCallback? onLocate,
+  VoidCallback? onFilterChanged,
   required Future<void> Function(String) onSelectSubthread,
   required ValueChanged<PostComposerTarget> onCompose,
   required ValueChanged<ThreadFloorModel> onDeleteFloor,
@@ -58,7 +62,7 @@ List<Widget> buildThreadDetailReadingSlivers(
       ? target
       : null;
   final displayedFloors = state.floors;
-  return [
+  final slivers = <Widget>[
     SliverToBoxAdapter(
       child: WenyouContentFrame(
         top: 8,
@@ -143,16 +147,20 @@ List<Widget> buildThreadDetailReadingSlivers(
         ),
       SliverToBoxAdapter(
         child: ThreadFloorFilters(
+          key: countKey,
+          onLocate: onLocate,
           state: state,
           floorCount: selected.postCount,
           authors: discussionAuthors,
           onRetryAuthors: () =>
               ref.invalidate(postFloorDiscussionAuthorsProvider(selected.id)),
           onOrderChanged: (order) {
+            onFilterChanged?.call();
             quickScroll.close();
             ref.read(provider.notifier).setFloorOrder(order);
           },
           onAuthorChanged: (author) {
+            onFilterChanged?.call();
             quickScroll.close();
             ref.read(provider.notifier).setFloorAuthor(author);
           },
@@ -202,15 +210,16 @@ List<Widget> buildThreadDetailReadingSlivers(
           ),
         )
       else
-        SliverList(
+        DiscussionSliverList(
           key: itemListKey,
+          scope: (selected.id, state.floorOrder, state.floorAuthorId),
           delegate: SliverChildBuilderDelegate(
             (context, index) {
               final floor = displayedFloors[index];
               final focused =
                   usableTarget?.focusedReplyId == null &&
                   usableTarget?.floor.id == floor.id;
-              return DiscussionKeepAlive(
+              return KeyedSubtree(
                 key: ValueKey('thread-floor-item-${floor.id}'),
                 child: WenyouContentFrame(
                   top: index == 0 ? 12 : 0,
@@ -223,6 +232,8 @@ List<Widget> buildThreadDetailReadingSlivers(
                         ),
                       ReadingPositionAnchor(
                         controller: quickScroll,
+                        postId: floor.id,
+                        number: floor.floorNumber,
                         label: '第 ${floor.floorNumber} 楼附近',
                         child: ThreadFloorCard(
                           key: ValueKey('thread-floor-${floor.id}'),
@@ -320,5 +331,14 @@ List<Widget> buildThreadDetailReadingSlivers(
         ),
       ),
     ],
+  ];
+  return [
+    for (final sliver in slivers)
+      ThreadIdentityReadingScope(
+        threadId: threadId,
+        available: detail.supportsRpIdentity,
+        ownerId: detail.owner.id,
+        child: sliver,
+      ),
   ];
 }

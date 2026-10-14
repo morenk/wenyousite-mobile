@@ -53,6 +53,14 @@ import UIKit
       switch call.method {
       case "getChangeToken":
         result("ios:\(pasteboard.changeCount)")
+      case "writeText":
+        guard let arguments = call.arguments as? [String: Any],
+              let text = arguments["text"] as? String else {
+          result(FlutterError(code: "invalid_text", message: "复制内容不可用。", details: nil))
+          return
+        }
+        pasteboard.string = text
+        result("ios:\(pasteboard.changeCount)")
       case "readSnapshot":
         guard let text = pasteboard.string else {
           result(nil)

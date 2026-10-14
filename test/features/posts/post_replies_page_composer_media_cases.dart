@@ -308,14 +308,20 @@ void registerPostRepliesPageComposerMediaCases() {
     expect(tester.takeException(), isNull);
     expect(tester.getTopLeft(find.byType(AppBar)).dy, 0);
     expect(tester.getTopLeft(find.text('远行主题')).dy, greaterThan(0));
+    final editor = tester.widget<QuillEditor>(
+      find.byKey(const Key('post-composer-body')),
+    );
+    expect(editor.focusNode.hasFocus, isTrue);
+    // Golden 固定无光标画面，焦点行为仍分别验证。
+    editor.focusNode.unfocus();
+    await tester.pumpAndSettle();
+    expect(editor.focusNode.hasFocus, isFalse);
     await expectLater(
       find.byKey(const Key('post-composer-sheet')),
       matchesGoldenFile('goldens/post_composer_text_first_360.png'),
     );
-
-    final editor = tester.widget<QuillEditor>(
-      find.byKey(const Key('post-composer-body')),
-    );
+    editor.focusNode.requestFocus();
+    await tester.pump();
     final dock = tester.widget<WenyouComposerDock>(
       find.byKey(const Key('post-composer-toolbar')),
     );
@@ -362,6 +368,9 @@ void registerPostRepliesPageComposerMediaCases() {
     expect(find.byKey(const Key('editor-submit')), findsNothing);
     expect(find.byKey(const Key('editor-dice-status')), findsOneWidget);
     expect(tester.takeException(), isNull);
+    editor.focusNode.unfocus();
+    // 记录托盘完成展开及输入焦点转移后的稳定画面。
+    await tester.pumpAndSettle();
     await expectLater(
       find.byKey(const Key('post-composer-sheet')),
       matchesGoldenFile('goldens/post_composer_dice_keyboard_360.png'),

@@ -8,6 +8,7 @@ import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_settings_body.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_member_management_controller.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_member_management_models.dart';
@@ -20,7 +21,11 @@ class ThreadMemberManagementPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
-      appBar: AppBar(title: const Text('成员管理')),
+      backgroundColor: wenyouPersonalPageBackground(context),
+      appBar: AppBar(
+        backgroundColor: wenyouPersonalPageBackground(context),
+        title: const Text('成员管理'),
+      ),
       body: ThreadMemberManagementContent(threadId: threadId),
     );
   }
@@ -113,14 +118,24 @@ class _MembersReadyState extends ConsumerWidget {
             )
           else
             for (var index = 0; index < bootstrap.members.length; index++) ...[
-              _MemberRow(
-                threadId: threadId,
-                member: bootstrap.members[index],
-                actorIsOwner: bootstrap.actorIsOwner,
-                state: state,
+              WenyouSettingsGroup(
+                children: [
+                  Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: tokens.space12,
+                      vertical: tokens.space4,
+                    ),
+                    child: _MemberRow(
+                      threadId: threadId,
+                      member: bootstrap.members[index],
+                      actorIsOwner: bootstrap.actorIsOwner,
+                      state: state,
+                    ),
+                  ),
+                ],
               ),
               if (index < bootstrap.members.length - 1)
-                Divider(height: 1, color: tokens.border),
+                SizedBox(height: tokens.space12),
             ],
         ],
       ),

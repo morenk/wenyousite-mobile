@@ -53,6 +53,7 @@ class MomentsApi {
   ///
   /// Parameters:
   /// * [id]
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [createMomentBookmarkDto]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
@@ -65,6 +66,7 @@ class MomentsApi {
   /// Throws [DioException] if API call or serialization fails
   Future<Response<MomentsBookmark201Response>> momentsBookmark({
     required String id,
+    int? xMarkdownContractVersion,
     CreateMomentBookmarkDto? createMomentBookmarkDto,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -77,6 +79,7 @@ class MomentsApi {
     final _options = Options(
       method: r'POST',
       headers: <String, dynamic>{
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -155,6 +158,7 @@ class MomentsApi {
   ///
   ///
   /// Parameters:
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -165,6 +169,7 @@ class MomentsApi {
   /// Returns a [Future] containing a [Response] with a [MomentsBookmarkFolders200Response] as data
   /// Throws [DioException] if API call or serialization fails
   Future<Response<MomentsBookmarkFolders200Response>> momentsBookmarkFolders({
+    int? xMarkdownContractVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -176,6 +181,7 @@ class MomentsApi {
     final _options = Options(
       method: r'GET',
       headers: <String, dynamic>{
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -237,6 +243,7 @@ class MomentsApi {
   /// * [cursor] - 服务端返回的不透明分页游标；首次请求不传，后续必须原样回传
   /// * [limit] - 每页条数（默认 20，最大 50）
   /// * [folderId] - 只返回指定收藏夹中的动态；不传时返回全部
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -250,6 +257,7 @@ class MomentsApi {
     String? cursor,
     num? limit = 20,
     String? folderId,
+    int? xMarkdownContractVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -261,6 +269,7 @@ class MomentsApi {
     final _options = Options(
       method: r'GET',
       headers: <String, dynamic>{
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -327,6 +336,7 @@ class MomentsApi {
   ///
   /// Parameters:
   /// * [id]
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -338,6 +348,7 @@ class MomentsApi {
   /// Throws [DioException] if API call or serialization fails
   Future<Response<MomentsCommentAuthors200Response>> momentsCommentAuthors({
     required String id,
+    int? xMarkdownContractVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -349,6 +360,7 @@ class MomentsApi {
     final _options = Options(
       method: r'GET',
       headers: <String, dynamic>{
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -409,6 +421,7 @@ class MomentsApi {
   /// Parameters:
   /// * [id]
   /// * [commentId]
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -421,6 +434,7 @@ class MomentsApi {
   Future<Response<MomentsCommentContext200Response>> momentsCommentContext({
     required String id,
     required String commentId,
+    int? xMarkdownContractVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -432,6 +446,7 @@ class MomentsApi {
     final _options = Options(
       method: r'GET',
       headers: <String, dynamic>{
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -495,6 +510,7 @@ class MomentsApi {
   /// * [limit] - 每页条数（默认 20，最大 50）
   /// * [order] - 列表顺序；帖子回复与动态独立楼中楼默认 OLDEST，动态主评论默认 NEWEST；动态主评论内嵌回复固定 OLDEST
   /// * [authorId] - 只返回指定作者的回复
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -510,6 +526,7 @@ class MomentsApi {
     num? limit = 20,
     String? order,
     String? authorId,
+    int? xMarkdownContractVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -521,6 +538,7 @@ class MomentsApi {
     final _options = Options(
       method: r'GET',
       headers: <String, dynamic>{
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -588,6 +606,7 @@ class MomentsApi {
   ///
   /// Parameters:
   /// * [createMomentDto]
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -599,6 +618,7 @@ class MomentsApi {
   /// Throws [DioException] if API call or serialization fails
   Future<Response<MomentsCreate201Response>> momentsCreate({
     required CreateMomentDto createMomentDto,
+    int? xMarkdownContractVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -610,6 +630,7 @@ class MomentsApi {
     final _options = Options(
       method: r'POST',
       headers: <String, dynamic>{
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -689,6 +710,7 @@ class MomentsApi {
   ///
   /// Parameters:
   /// * [createMomentBookmarkFolderDto]
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -700,6 +722,7 @@ class MomentsApi {
   /// Throws [DioException] if API call or serialization fails
   Future<Response<MomentsCreateBookmarkFolder201Response>> momentsCreateBookmarkFolder({
     required CreateMomentBookmarkFolderDto createMomentBookmarkFolderDto,
+    int? xMarkdownContractVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -711,6 +734,7 @@ class MomentsApi {
     final _options = Options(
       method: r'POST',
       headers: <String, dynamic>{
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -791,6 +815,7 @@ class MomentsApi {
   /// Parameters:
   /// * [id]
   /// * [createMomentCommentDto]
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -803,6 +828,7 @@ class MomentsApi {
   Future<Response<MomentsCreateComment201Response>> momentsCreateComment({
     required String id,
     required CreateMomentCommentDto createMomentCommentDto,
+    int? xMarkdownContractVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -814,6 +840,7 @@ class MomentsApi {
     final _options = Options(
       method: r'POST',
       headers: <String, dynamic>{
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -893,6 +920,7 @@ class MomentsApi {
   ///
   /// Parameters:
   /// * [id]
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -904,6 +932,7 @@ class MomentsApi {
   /// Throws [DioException] if API call or serialization fails
   Future<Response<MomentsDeleteBookmarkFolder200Response>> momentsDeleteBookmarkFolder({
     required String id,
+    int? xMarkdownContractVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -915,6 +944,7 @@ class MomentsApi {
     final _options = Options(
       method: r'DELETE',
       headers: <String, dynamic>{
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -974,6 +1004,7 @@ class MomentsApi {
   ///
   /// Parameters:
   /// * [id]
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -985,6 +1016,7 @@ class MomentsApi {
   /// Throws [DioException] if API call or serialization fails
   Future<Response<MomentsDetail200Response>> momentsDetail({
     required String id,
+    int? xMarkdownContractVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -996,6 +1028,7 @@ class MomentsApi {
     final _options = Options(
       method: r'GET',
       headers: <String, dynamic>{
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -1055,6 +1088,7 @@ class MomentsApi {
   ///
   /// Parameters:
   /// * [id]
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -1066,6 +1100,7 @@ class MomentsApi {
   /// Throws [DioException] if API call or serialization fails
   Future<Response<MomentsLike201Response>> momentsLike({
     required String id,
+    int? xMarkdownContractVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -1077,6 +1112,7 @@ class MomentsApi {
     final _options = Options(
       method: r'POST',
       headers: <String, dynamic>{
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -1138,6 +1174,7 @@ class MomentsApi {
   /// * [cursor] - 服务端返回的不透明分页游标；首次请求不传，后续必须原样回传
   /// * [limit] - 每页条数（默认 20，最大 50）
   /// * [feed]
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -1151,6 +1188,7 @@ class MomentsApi {
     String? cursor,
     num? limit = 20,
     String? feed = 'DISCOVER',
+    int? xMarkdownContractVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -1162,6 +1200,7 @@ class MomentsApi {
     final _options = Options(
       method: r'GET',
       headers: <String, dynamic>{
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -1229,6 +1268,7 @@ class MomentsApi {
   /// Parameters:
   /// * [id]
   /// * [moveMomentBookmarkDto]
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -1241,6 +1281,7 @@ class MomentsApi {
   Future<Response<MomentsMoveBookmark200Response>> momentsMoveBookmark({
     required String id,
     required MoveMomentBookmarkDto moveMomentBookmarkDto,
+    int? xMarkdownContractVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -1252,6 +1293,7 @@ class MomentsApi {
     final _options = Options(
       method: r'PATCH',
       headers: <String, dynamic>{
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -1331,6 +1373,7 @@ class MomentsApi {
   ///
   /// Parameters:
   /// * [id]
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -1342,6 +1385,7 @@ class MomentsApi {
   /// Throws [DioException] if API call or serialization fails
   Future<Response<MomentsRemove200Response>> momentsRemove({
     required String id,
+    int? xMarkdownContractVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -1353,6 +1397,7 @@ class MomentsApi {
     final _options = Options(
       method: r'DELETE',
       headers: <String, dynamic>{
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -1413,6 +1458,7 @@ class MomentsApi {
   /// Parameters:
   /// * [id]
   /// * [commentId]
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -1425,6 +1471,7 @@ class MomentsApi {
   Future<Response<MomentsRemoveComment200Response>> momentsRemoveComment({
     required String id,
     required String commentId,
+    int? xMarkdownContractVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -1436,6 +1483,7 @@ class MomentsApi {
     final _options = Options(
       method: r'DELETE',
       headers: <String, dynamic>{
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -1496,6 +1544,7 @@ class MomentsApi {
   /// Parameters:
   /// * [id]
   /// * [renameMomentBookmarkFolderDto]
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -1508,6 +1557,7 @@ class MomentsApi {
   Future<Response<MomentsRenameBookmarkFolder200Response>> momentsRenameBookmarkFolder({
     required String id,
     required RenameMomentBookmarkFolderDto renameMomentBookmarkFolderDto,
+    int? xMarkdownContractVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -1519,6 +1569,7 @@ class MomentsApi {
     final _options = Options(
       method: r'PATCH',
       headers: <String, dynamic>{
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -1603,6 +1654,7 @@ class MomentsApi {
   /// * [limit] - 每页条数（默认 20，最大 50）
   /// * [order] - 列表顺序；帖子回复与动态独立楼中楼默认 OLDEST，动态主评论默认 NEWEST；动态主评论内嵌回复固定 OLDEST
   /// * [authorId] - 只返回指定作者的回复
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -1619,6 +1671,7 @@ class MomentsApi {
     num? limit = 20,
     String? order,
     String? authorId,
+    int? xMarkdownContractVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -1630,6 +1683,7 @@ class MomentsApi {
     final _options = Options(
       method: r'GET',
       headers: <String, dynamic>{
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -1697,6 +1751,7 @@ class MomentsApi {
   ///
   /// Parameters:
   /// * [id]
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -1708,6 +1763,7 @@ class MomentsApi {
   /// Throws [DioException] if API call or serialization fails
   Future<Response<MomentsUnbookmark200Response>> momentsUnbookmark({
     required String id,
+    int? xMarkdownContractVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -1719,6 +1775,7 @@ class MomentsApi {
     final _options = Options(
       method: r'DELETE',
       headers: <String, dynamic>{
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -1778,6 +1835,7 @@ class MomentsApi {
   ///
   /// Parameters:
   /// * [id]
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -1789,6 +1847,7 @@ class MomentsApi {
   /// Throws [DioException] if API call or serialization fails
   Future<Response<MomentsUnlike200Response>> momentsUnlike({
     required String id,
+    int? xMarkdownContractVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -1800,6 +1859,7 @@ class MomentsApi {
     final _options = Options(
       method: r'DELETE',
       headers: <String, dynamic>{
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -1860,6 +1920,7 @@ class MomentsApi {
   /// Parameters:
   /// * [id]
   /// * [updateMomentDto]
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -1872,6 +1933,7 @@ class MomentsApi {
   Future<Response<MomentsUpdate200Response>> momentsUpdate({
     required String id,
     required UpdateMomentDto updateMomentDto,
+    int? xMarkdownContractVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -1883,6 +1945,7 @@ class MomentsApi {
     final _options = Options(
       method: r'PATCH',
       headers: <String, dynamic>{
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -1964,6 +2027,7 @@ class MomentsApi {
   /// * [id]
   /// * [cursor] - 服务端返回的不透明分页游标；首次请求不传，后续必须原样回传
   /// * [limit] - 每页条数（默认 20，最大 50）
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -1977,6 +2041,7 @@ class MomentsApi {
     required String id,
     String? cursor,
     num? limit = 20,
+    int? xMarkdownContractVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -1988,6 +2053,7 @@ class MomentsApi {
     final _options = Options(
       method: r'GET',
       headers: <String, dynamic>{
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         ...?headers,
       },
       extra: <String, dynamic>{

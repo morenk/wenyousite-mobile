@@ -1,7 +1,19 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wenyousite_mobile/core/models/discussion_window.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
+import 'package:wenyousite_mobile/features/thread_identity/identity_models.dart';
 
 abstract interface class PostRepository {
+  Future<DiscussionWindow<PostItem>> fetchReplyWindow({
+    required String rootPostId,
+    int? number,
+    String? postId,
+    String? cursor,
+    int limit = 20,
+    PostReplyOrder order = PostReplyOrder.oldest,
+    String? authorId,
+  });
+
   Future<PostItem> fetchPost(String postId);
 
   Future<PostReplyPage> fetchReplies({
@@ -24,6 +36,9 @@ abstract interface class PostRepository {
     required String subthreadId,
     required String content,
     int? version,
+    String? identityToken,
+    String? identityId,
+    PostIdentityMode? identityMode,
   });
 
   Future<void> remove(String postId);
@@ -37,6 +52,17 @@ final postRepositoryProvider = Provider<PostRepository>((ref) {
 
 class _UnboundPostRepository implements PostRepository {
   const _UnboundPostRepository();
+
+  @override
+  Future<DiscussionWindow<PostItem>> fetchReplyWindow({
+    required String rootPostId,
+    int? number,
+    String? postId,
+    String? cursor,
+    int limit = 20,
+    PostReplyOrder order = PostReplyOrder.oldest,
+    String? authorId,
+  }) => Future.error(_error());
 
   @override
   Future<PostItem> fetchPost(String postId) => Future.error(_error());
@@ -69,6 +95,9 @@ class _UnboundPostRepository implements PostRepository {
     required String subthreadId,
     required String content,
     int? version,
+    String? identityToken,
+    String? identityId,
+    PostIdentityMode? identityMode,
   }) {
     return Future.error(_error());
   }

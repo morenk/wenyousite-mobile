@@ -5,6 +5,23 @@ import 'package:wenyousite_mobile/core/widgets/reading_scroll_spec.dart';
 import 'package:wenyousite_mobile/core/widgets/reading_scroll_velocity_tracker.dart';
 import 'package:wenyousite_mobile/core/widgets/reading_scroll_visibility.dart';
 
+/// 只属于当前页面的阅读锚点；编号用于显示，ID 和条目内偏移用于恢复。
+class ReadingBookmark {
+  const ReadingBookmark({
+    required this.id,
+    required this.number,
+    required this.offset,
+    required this.scope,
+  });
+
+  final String id;
+  final int? number;
+  final double offset;
+  final Object? scope;
+}
+
+typedef _AnchorInfo = ({String label, String? id, int? number});
+
 /// 页面持有，滚动控制器的生命周期仍归页面；不保存跨页面阅读进度。
 class ReadingQuickScrollController extends ChangeNotifier {
   ReadingQuickScrollController({
@@ -19,7 +36,9 @@ class ReadingQuickScrollController extends ChangeNotifier {
   final ScrollController scrollController;
   final VoidCallback onUserNavigation;
   final GlobalKey? pinnedHeaderKey;
-  final _anchors = <RenderBox, String>{};
+  final _anchors = <RenderBox, _AnchorInfo>{};
+  ReadingBookmark? _pendingBookmark;
+  ReadingBookmark? _visibleBookmark;
   Object? _scope;
   Object? _contentRevision;
   double? _measuredMax;
@@ -73,6 +92,7 @@ class ReadingQuickScrollController extends ChangeNotifier {
   bool get isFollowingEnd => _dragging && _followingEnd;
   double get fraction => _fraction;
   String get location => _location;
+  ReadingBookmark? get visibleBookmark => _visibleBookmark;
   bool get edgeFailed => _failedEdge != null;
   bool get canScroll =>
       !_disposed &&
@@ -95,6 +115,8 @@ class ReadingQuickScrollController extends ChangeNotifier {
       _location = '阅读位置';
       _fraction = 0;
       _measuredMax = null;
+      _pendingBookmark = null;
+      _visibleBookmark = null;
     }
     if (_contentRevision != contentRevision) _measuredMax = null;
     _contentRevision = contentRevision;
@@ -377,12 +399,67 @@ class ReadingQuickScrollController extends ChangeNotifier {
     scheduleSnapshot();
   }
 
-  void registerAnchor(RenderBox box, String label) {
-    _anchors[box] = label;
+  void _registerAnchor(RenderBox box, _AnchorInfo info) {
+    _anchors[box] = info;
     scheduleSnapshot();
   }
 
   void unregisterAnchor(RenderBox box) => _anchors.remove(box);
+
+  ReadingBookmark? captureBookmark() {
+    if (!scrollController.hasClients) return null;
+    _visibleLocation();
+    return _visibleBookmark;
+  }
+
+  bool isEntryVisible(GlobalKey key) {
+    if (!scrollController.hasClients) return true;
+    final entry = key.currentContext?.findRenderObject();
+    final view = scrollController.position.context.notificationContext
+        ?.findRenderObject();
+    if (entry is! RenderBox ||
+        !entry.attached ||
+        !entry.hasSize ||
+        !hasLiveScrollGeometry(entry)) {
+      return false;
+    }
+    if (view is! RenderBox || !view.hasSize) return true;
+    final top = view.localToGlobal(Offset.zero).dy;
+    final y = entry.localToGlobal(Offset.zero).dy;
+    return y < top + view.size.height && y + entry.size.height > top;
+  }
+
+  /// 在窗口数据变化前调用；下一次布局中校正，不先绘制错误位置。
+  void preserveVisiblePosition() {
+    final bookmark = captureBookmark();
+    _pendingBookmark = bookmark;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (identical(_pendingBookmark, bookmark)) _pendingBookmark = null;
+    });
+  }
+
+  double? _adjustForBookmark(ScrollMetrics metrics) {
+    final bookmark = _pendingBookmark;
+    if (bookmark == null || bookmark.scope != _scope) return null;
+    for (final entry in _anchors.entries) {
+      if (entry.value.id != bookmark.id) continue;
+      final box = entry.key;
+      if (!box.attached || !box.hasSize || !hasLiveScrollGeometry(box)) {
+        continue;
+      }
+      final viewport = RenderAbstractViewport.maybeOf(box);
+      if (viewport == null) return null;
+      final delta =
+          box.localToGlobal(Offset.zero, ancestor: viewport).dy +
+          bookmark.offset;
+      if (delta.abs() <= .5) {
+        _pendingBookmark = null;
+        return null;
+      }
+      return metrics.pixels + delta;
+    }
+    return null;
+  }
 
   void scheduleSnapshot() {
     if (_disposed || _snapshotScheduled) return;
@@ -420,7 +497,8 @@ class ReadingQuickScrollController extends ChangeNotifier {
     final view = scrollController.position.context.notificationContext
         ?.findRenderObject();
     if (view is! RenderBox || !view.hasSize) return '阅读位置';
-    var top = view.localToGlobal(Offset.zero).dy;
+    final viewportTop = view.localToGlobal(Offset.zero).dy;
+    var top = viewportTop;
     final bottom = top + view.size.height;
     final header = pinnedHeaderKey?.currentContext?.findRenderObject();
     if (header is RenderBox && header.hasSize && header.attached) {
@@ -429,6 +507,7 @@ class ReadingQuickScrollController extends ChangeNotifier {
     }
     var nearest = double.infinity;
     var label = '阅读位置';
+    ReadingBookmark? bookmark;
     for (final entry in _anchors.entries) {
       final box = entry.key;
       if (!box.attached || !box.hasSize || !hasLiveScrollGeometry(box)) {
@@ -439,9 +518,18 @@ class ReadingQuickScrollController extends ChangeNotifier {
       final distance = y <= top ? 0.0 : y - top;
       if (distance < nearest) {
         nearest = distance;
-        label = entry.value;
+        label = entry.value.label;
+        bookmark = entry.value.id == null
+            ? null
+            : ReadingBookmark(
+                id: entry.value.id!,
+                number: entry.value.number,
+                offset: viewportTop - y,
+                scope: _scope,
+              );
       }
     }
+    _visibleBookmark = bookmark;
     return label;
   }
 
@@ -490,6 +578,7 @@ class ReadingQuickScrollPhysics extends ScrollPhysics {
     required bool isScrolling,
     required double velocity,
   }) =>
+      controller._adjustForBookmark(newPosition) ??
       controller._adjustForMeasuredRange(newPosition) ??
       super.adjustPositionForNewDimensions(
         oldPosition: oldPosition,
@@ -504,31 +593,39 @@ class ReadingPositionAnchor extends SingleChildRenderObjectWidget {
   const ReadingPositionAnchor({
     required this.controller,
     required this.label,
+    this.postId,
+    this.number,
     required super.child,
     super.key,
   });
 
   final ReadingQuickScrollController controller;
   final String label;
+  final String? postId;
+  final int? number;
 
   @override
   RenderObject createRenderObject(BuildContext context) =>
-      _ReadingAnchor(controller, label);
+      _ReadingAnchor(controller, (label: label, id: postId, number: number));
 
   @override
   void updateRenderObject(
     BuildContext context,
     covariant RenderProxyBox renderObject,
   ) {
-    (renderObject as _ReadingAnchor).update(controller, label);
+    (renderObject as _ReadingAnchor).update(controller, (
+      label: label,
+      id: postId,
+      number: number,
+    ));
   }
 }
 
 class _ReadingAnchor extends RenderProxyBox {
-  _ReadingAnchor(this.controller, this.label);
+  _ReadingAnchor(this.controller, this.info);
 
   ReadingQuickScrollController controller;
-  String label;
+  _AnchorInfo info;
   Size? _lastSize;
 
   @override
@@ -540,17 +637,17 @@ class _ReadingAnchor extends RenderProxyBox {
     _lastSize = size;
   }
 
-  void update(ReadingQuickScrollController next, String text) {
+  void update(ReadingQuickScrollController next, _AnchorInfo nextInfo) {
     controller.unregisterAnchor(this);
     controller = next;
-    label = text;
-    if (attached) controller.registerAnchor(this, label);
+    info = nextInfo;
+    if (attached) controller._registerAnchor(this, info);
   }
 
   @override
   void attach(PipelineOwner owner) {
     super.attach(owner);
-    controller.registerAnchor(this, label);
+    controller._registerAnchor(this, info);
   }
 
   @override

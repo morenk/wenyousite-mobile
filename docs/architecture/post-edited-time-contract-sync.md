@@ -1,5 +1,13 @@
 # 楼层编辑时间契约同步
 
+## 2026-10-15 当前候选
+
+本轮合入 Mobile `dev` 的 `d7168b61ea1b547e737585d2e9b250f1b3bd24e2` 后，采用其已同步的 Backend `b5f0e3bb0b99a3f9763b31e3080cb4d4f2e64045`／API `5.36.0-dev.20261005.1`，生成客户端已包含可选、可空 `editedAt`；不恢复九月的旧契约或覆盖清单。匿名只读 `/meta` 与当前固定来源一致，Markdown 运行时为 5。字段语义与展示范围保持下述约定，当前验证结果见[候选验收记录](post-edited-time-acceptance.md)。
+
+## 历史：2026-09-29 首次同步
+
+以下记录首次契约同步及当时的线上差异，不代表当前候选的固定来源或检查状态。
+
 本候选固定 Backend `dc62a36dcf016f58fadcf53672215bb5fa66e618`，分支 `codex/20260929-post-edited-time`，OpenAPI `5.28.0-dev.20260929.1`。同步脚本从 Windows 后端只读镜像 fetch 该分支，按完整 SHA 导出已提交契约；不代表后端已合并或部署。
 
 `PostResponseDto`、`FloorResponseDto`、`ReplyResponseDto`、`PostDetailResponseDto` 兼容新增可选、可空的 `editedAt`。该时间由后端在规范化正文实际改变且保存成功后更新；历史与未编辑内容为 null，客户端不得从 `updatedAt`、版本号或两个时间的差值推测。缺字段也按未编辑处理。既有创建、排序和版本语义不变。

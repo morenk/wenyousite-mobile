@@ -1,5 +1,6 @@
 import 'package:flutter_quill/quill_delta.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_codec_types.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_mention_target.dart';
 
 abstract final class MarkdownDeltaExtensionNodes {
   static List<Map<String, Object?>> extract(
@@ -22,10 +23,16 @@ abstract final class MarkdownDeltaExtensionNodes {
         if (kind == 'all_players') {
           nodes.add({'type': 'mention_all_players', 'label': allPlayersLabel});
         } else if (kind == 'user') {
+          final target = MarkdownMentionTarget.fromPayload(payload);
           nodes.add({
             'type': 'mention',
             'userId': payload['userId'],
             'label': payload['label'],
+            if (target != null && !target.isLegacy) ...{
+              'sourceHref': target.sourceHref,
+              'targetIdentityId': target.identityId,
+              'mode': target.isAccount ? 'ACCOUNT' : 'RP',
+            },
           });
         }
       } else if (type == diceEmbed) {

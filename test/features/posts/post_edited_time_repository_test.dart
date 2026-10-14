@@ -24,6 +24,24 @@ void main() {
         includeEditedAt: variant != 'missing',
       )..['replies'] = [reply];
       final api = _api((request) {
+        if (request.path.endsWith('/window')) {
+          final isReply = request.path.endsWith('/replies/window');
+          final item = isReply ? reply : floor;
+          final targeted =
+              request.queryParameters['number'] != null ||
+              request.queryParameters['postId'] != null;
+          return {
+            'items': [item],
+            'pinnedItems': [if (!isReply && !targeted) floor],
+            'total': 1,
+            'maxNumber': isReply ? 1 : 7,
+            'target': targeted
+                ? {'id': item['id'], 'number': isReply ? 1 : 7}
+                : null,
+            'hasBefore': false,
+            'hasAfter': false,
+          };
+        }
         if (request.path.endsWith('/subthreads/subthread/posts')) {
           return [floor];
         }
@@ -42,6 +60,32 @@ void main() {
       expect(main.replies.single.editedAt, expected);
       expect(main.version, 9);
       expect(main.createdAt, DateTime.utc(2024, 1, 1, 2));
+
+      final firstWindow = await threads.fetchFloorWindow(
+        subthreadId: 'subthread',
+      );
+      expect(firstWindow.items.single.editedAt, expected);
+      expect(firstWindow.pinnedItems.single.editedAt, expected);
+      for (final byNumber in [true, false]) {
+        final floorWindow = await threads.fetchFloorWindow(
+          subthreadId: 'subthread',
+          number: byNumber ? 7 : null,
+          postId: byNumber ? null : 'floor',
+        );
+        expect(floorWindow.items.single.editedAt, expected);
+        expect(floorWindow.items.single.replies.single.editedAt, expected);
+        expect(floorWindow.items.single.author.rpIdentity?.id, 'identity');
+        expect(floorWindow.targetId, 'floor');
+        final replyWindow = await posts.fetchReplyWindow(
+          rootPostId: 'floor',
+          number: byNumber ? 1 : null,
+          postId: byNumber ? null : 'reply',
+        );
+        expect(replyWindow.items.single.editedAt, expected);
+        expect(replyWindow.items.single.replyNumber, 1);
+        expect(replyWindow.items.single.author.rpIdentity?.id, 'identity');
+        expect(replyWindow.targetId, 'reply');
+      }
 
       final detail = await posts.fetchPost('floor');
       expect(detail.editedAt, expected);
@@ -69,6 +113,7 @@ void main() {
       );
       expect(converted.editedAt, expected);
       expect(converted.createdAt, main.createdAt);
+      expect(converted.author.rpIdentity?.id, 'identity');
     });
   }
 }

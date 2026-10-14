@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
-import 'package:wenyousite_mobile/core/navigation/internal_link.dart';
+import 'package:wenyousite_mobile/core/application/thread_font_preference.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_content_action_menu.dart';
@@ -21,6 +21,7 @@ import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
 import 'package:wenyousite_mobile/features/reports/domain/report_models.dart';
 import 'package:wenyousite_mobile/features/reports/presentation/report_widgets.dart';
 import 'package:wenyousite_mobile/features/stickers/presentation/sticker_widgets.dart';
+import 'package:wenyousite_mobile/features/thread_identity/identity_widgets.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_detail_controller.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_dice_presentation.dart';
@@ -139,6 +140,10 @@ class ThreadSubthreadBody extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          if (body?.author case final author?) ...[
+            ThreadPostAuthorLine(author: author, compact: true),
+            SizedBox(height: tokens.space8),
+          ],
           if (body == null || body.markdown.trim().isEmpty)
             Row(
               children: [
@@ -164,8 +169,10 @@ class ThreadSubthreadBody extends ConsumerWidget {
           else if (body.postId == null)
             WenyouMarkdown(
               key: Key('thread-body-${subthread.id}'),
+              bodyFontSize: ref.watch(threadBodyFontSizeProvider),
               data: body.markdown,
               mediaDisplays: body.mediaDisplays,
+              mentionLabels: body.mentionLabels,
               diceLabels: threadDiceLabels(body.diceRolls),
               diceSemantics: threadDiceSemantics(body.diceRolls),
               diceDetails: threadDiceDetails(body.diceRolls),
@@ -177,6 +184,7 @@ class ThreadSubthreadBody extends ConsumerWidget {
           else
             StickerPostMarkdown(
               key: Key('thread-body-${subthread.id}'),
+              bodyFontSize: ref.watch(threadBodyFontSizeProvider),
               postId: body.postId!,
               postVersion: body.version ?? 1,
               galleryTarget: ReadingGalleryTarget(
@@ -187,6 +195,7 @@ class ThreadSubthreadBody extends ConsumerWidget {
               ),
               data: body.markdown,
               mediaDisplays: body.mediaDisplays,
+              mentionLabels: body.mentionLabels,
               diceLabels: threadDiceLabels(body.diceRolls),
               diceSemantics: threadDiceSemantics(body.diceRolls),
               diceDetails: threadDiceDetails(body.diceRolls),
@@ -223,14 +232,13 @@ class ThreadSubthreadBody extends ConsumerWidget {
                 write: () => ref.read(readerMarkdownClipboardWriterProvider)(
                   markdown: body.markdown,
                   diceLabels: threadDiceLabels(body.diceRolls),
+                  mentionLabels: body.mentionLabels,
                   scope: ref.read(sessionScopeProvider),
                 ),
               ),
             );
           case PostCardAction.copyLink:
-            unawaited(
-              copyPostCardValue(context, _publicBodyLink(), '正文链接已复制。'),
-            );
+            unawaited(copyPostCardLink(context, _publicBodyLink(), '正文链接已复制。'));
           case PostCardAction.edit:
             onEdit(threadDetailBodyTarget(detail, subthread));
           case PostCardAction.togglePin ||
@@ -431,49 +439,36 @@ class ThreadFloorCard extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: ThreadPostAuthorLine(
-                          key: Key('thread-floor-author-${floor.id}'),
-                          author: floor.author,
-                          time: floor.createdAt,
-                          editedAt: floor.editedAt,
-                          compact: true,
-                          avatarKey: Key(
-                            'thread-floor-author-avatar-${floor.id}',
-                          ),
-                        ),
-                      ),
-                      SizedBox(width: tokens.space8),
-                      DefaultTextStyle.merge(
-                        style: Theme.of(context).textTheme.wenyouCaption
-                            .copyWith(color: tokens.mutedText),
-                        child: Row(
+                  ThreadPostAuthorLine(
+                    key: Key('thread-floor-author-${floor.id}'),
+                    author: floor.author,
+                    time: floor.createdAt,
+                    editedAt: floor.editedAt,
+                    compact: true,
+                    avatarKey: Key('thread-floor-author-avatar-${floor.id}'),
+                    metadata: [
+                      if (floor.isPinned)
+                        Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            if (floor.isPinned) ...[
-                              const WenyouIcon(
-                                WenyouIconIds.statusPinned,
-                                size: 14,
-                              ),
-                              SizedBox(width: tokens.space4),
-                              Text(
-                                '置顶',
-                                key: Key('thread-floor-pinned-${floor.id}'),
-                              ),
-                              SizedBox(width: tokens.space8),
-                            ],
+                            const WenyouIcon(
+                              WenyouIconIds.statusPinned,
+                              size: 14,
+                            ),
+                            SizedBox(width: tokens.space4),
                             Text(
-                              floor.floorNumber == null
-                                  ? '楼层'
-                                  : '#${floor.floorNumber}',
-                              key: Key('thread-floor-number-${floor.id}'),
+                              '置顶',
+                              key: Key('thread-floor-pinned-${floor.id}'),
                             ),
                           ],
                         ),
-                      ),
                     ],
+                    trailing: Text(
+                      floor.floorNumber == null
+                          ? '楼层'
+                          : '#${floor.floorNumber}',
+                      key: Key('thread-floor-number-${floor.id}'),
+                    ),
                   ),
                   SizedBox(height: tokens.space8),
                   if (floor.isDeleted)
@@ -485,10 +480,12 @@ class ThreadFloorCard extends ConsumerWidget {
                   else
                     StickerPostMarkdown(
                       postId: floor.id,
+                      bodyFontSize: ref.watch(threadBodyFontSizeProvider),
                       postVersion: floor.version,
                       galleryTarget: galleryTarget,
                       data: floor.body.markdown,
                       mediaDisplays: floor.body.mediaDisplays,
+                      mentionLabels: floor.body.mentionLabels,
                       diceLabels: threadDiceLabels(floor.body.diceRolls),
                       diceSemantics: threadDiceSemantics(floor.body.diceRolls),
                       diceDetails: threadDiceDetails(floor.body.diceRolls),
@@ -530,11 +527,12 @@ class ThreadFloorCard extends ConsumerWidget {
           write: () => ref.read(readerMarkdownClipboardWriterProvider)(
             markdown: floor.body.markdown,
             diceLabels: threadDiceLabels(floor.body.diceRolls),
+            mentionLabels: floor.body.mentionLabels,
             scope: ref.read(sessionScopeProvider),
           ),
         );
       case PostCardAction.copyLink:
-        await copyPostCardValue(context, _publicLink(), '楼层链接已复制');
+        await copyPostCardLink(context, _publicLink(), '楼层链接已复制');
       case PostCardAction.togglePin:
         onTogglePin();
       case PostCardAction.edit:
@@ -615,7 +613,7 @@ class _FloorInlineReplyPreview extends StatelessWidget {
   }
 }
 
-class _FloorInlineReplyCard extends StatelessWidget {
+class _FloorInlineReplyCard extends ConsumerWidget {
   const _FloorInlineReplyCard({
     required this.floorId,
     required this.reply,
@@ -629,11 +627,11 @@ class _FloorInlineReplyCard extends StatelessWidget {
   final VoidCallback onReply;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final tokens = context.wenyouTokens;
     return WenyouDiscussionReplyCard(
       key: Key('thread-floor-reply-$floorId-${reply.id}'),
-      semanticsLabel: '${reply.author.username} 的楼中楼回复',
+      semanticsLabel: '${reply.author.displayName} 的楼中楼回复',
       enabled: enabled,
       onTap: onReply,
       tapHint: '点击回复这条回复',
@@ -674,12 +672,13 @@ class _FloorInlineReplyCard extends StatelessWidget {
               ),
               data: reply.body.markdown,
               mediaDisplays: reply.body.mediaDisplays,
+              mentionLabels: reply.body.mentionLabels,
               diceLabels: threadDiceLabels(reply.body.diceRolls),
               diceSemantics: threadDiceSemantics(reply.body.diceRolls),
               diceDetails: threadDiceDetails(reply.body.diceRolls),
               onInternalLink: (uri) => _showInternalLinkNotice(context, uri),
               onTapText: enabled ? onReply : null,
-              bodyFontSize: 17,
+              bodyFontSize: ref.watch(threadBodyFontSizeProvider),
               bodyHeight: 1.8,
             ),
         ],
@@ -759,7 +758,7 @@ PostComposerTarget threadDetailReplyFloorTarget(
     replyToPostId: floor.id,
     version: null,
     initialContent: '',
-    label: '回复 @${floor.author.username}',
+    label: '回复 @${floor.author.displayName}',
   );
 }
 
@@ -778,7 +777,7 @@ PostComposerTarget threadDetailReplyInlineTarget(
     replyToPostId: reply.id,
     version: null,
     initialContent: '',
-    label: '回复 @${reply.author.username}',
+    label: '回复 @${reply.author.displayName}',
   );
 }
 
@@ -818,5 +817,5 @@ PostComposerTarget threadDetailEditFloorTarget(
 }
 
 void _showInternalLinkNotice(BuildContext context, Uri uri) {
-  openInternalWenyouLink(context, uri);
+  openThreadReadingLink(context, uri);
 }

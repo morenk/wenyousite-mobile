@@ -58,15 +58,18 @@ void main() {
       await postRepliesPageTestPumpUi(tester);
       await tester.pumpAndSettle();
 
-      expect(find.text('#7 · 编辑于2025-02-03'), findsOneWidget);
-      expect(find.text('回复 @楼主 · 编辑于2025-02-03'), findsOneWidget);
-      expect(find.text('回复 @楼主 · 2024-01-01'), findsOneWidget);
+      expect(find.text('编辑于2025-02-03'), findsNWidgets(2));
+      expect(find.text('2024-01-01'), findsOneWidget);
+      expect(find.text('#7'), findsOneWidget);
+      expect(find.text('#1'), findsOneWidget);
+      expect(find.text('#2'), findsOneWidget);
+      expect(find.text('回复 @楼主'), findsNWidgets(2));
       expect(
         find.bySemanticsLabel(RegExp('楼层 7，编辑时间：2025-02-03')),
         findsOneWidget,
       );
       expect(
-        find.bySemanticsLabel(RegExp('回复 楼主，编辑时间：2025-02-03')),
+        find.bySemanticsLabel(RegExp('回复编号 1，回复 楼主，编辑时间：2025-02-03')),
         findsOneWidget,
       );
       expect(tester.takeException(), isNull);
@@ -110,7 +113,8 @@ void main() {
       addTearDown(container.dispose);
       await tester.pumpWidget(_postApp(container, dark: false));
       await postRepliesPageTestPumpUi(tester);
-      expect(find.text('#7 · 编辑于${entry.value}'), findsOneWidget);
+      expect(find.text('编辑于${entry.value}'), findsOneWidget);
+      expect(find.text('#7'), findsOneWidget);
       expect(find.textContaining('2024-01-01'), findsNothing);
     });
   }
@@ -196,6 +200,11 @@ PostItem _post({String id = 'reply', bool root = false, DateTime? editedAt}) =>
       isBody: false,
       isDeleted: false,
       floorNumber: root ? 7 : null,
+      replyNumber: root
+          ? null
+          : id == 'old-reply'
+          ? 2
+          : 1,
       parentPostId: root ? null : 'root',
       replyToPostId: root ? null : 'root',
       replyToAuthor: root

@@ -30,6 +30,7 @@ class AdminContentApi {
   /// * [type]
   /// * [id]
   /// * [xCSRFToken] - 管理后台写操作必填
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -43,6 +44,7 @@ class AdminContentApi {
     required String type,
     required String id,
     String? xCSRFToken,
+    int? xMarkdownContractVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -55,6 +57,7 @@ class AdminContentApi {
       method: r'GET',
       headers: <String, dynamic>{
         if (xCSRFToken != null) r'X-CSRF-Token': xCSRFToken,
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -131,6 +134,7 @@ class AdminContentApi {
   /// * [createdBefore]
   /// * [category]
   /// * [tagId]
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -153,6 +157,7 @@ class AdminContentApi {
     DateTime? createdBefore,
     String? category,
     String? tagId,
+    int? xMarkdownContractVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -165,6 +170,7 @@ class AdminContentApi {
       method: r'GET',
       headers: <String, dynamic>{
         if (xCSRFToken != null) r'X-CSRF-Token': xCSRFToken,
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -247,6 +253,7 @@ class AdminContentApi {
   /// * [id]
   /// * [updateContentTaxonomyDto]
   /// * [xCSRFToken] - 管理后台写操作必填
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -260,6 +267,7 @@ class AdminContentApi {
     required String id,
     required UpdateContentTaxonomyDto updateContentTaxonomyDto,
     String? xCSRFToken,
+    int? xMarkdownContractVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -272,6 +280,7 @@ class AdminContentApi {
       method: r'PATCH',
       headers: <String, dynamic>{
         if (xCSRFToken != null) r'X-CSRF-Token': xCSRFToken,
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         ...?headers,
       },
       extra: <String, dynamic>{

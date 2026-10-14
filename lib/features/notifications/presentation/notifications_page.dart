@@ -171,7 +171,7 @@ class _ReadyNotificationList extends StatelessWidget {
           SliverPadding(
             padding: EdgeInsets.fromLTRB(
               horizontal,
-              tokens.space16,
+              tokens.space8,
               horizontal,
               tokens.space32,
             ),
@@ -207,13 +207,31 @@ class _ReadyNotificationList extends StatelessWidget {
                 else
                   SliverList.separated(
                     itemCount: state.items.length,
-                    separatorBuilder: (_, _) => const Divider(height: 1),
+                    separatorBuilder: (_, _) => WenyouConstrainedWidth(
+                      child: ColoredBox(
+                        color: tokens.panel,
+                        child: Divider(
+                          height: 1,
+                          color: tokens.border,
+                          indent: tokens.space12,
+                          endIndent: tokens.space12,
+                        ),
+                      ),
+                    ),
                     itemBuilder: (context, index) {
                       final item = state.items[index];
                       return WenyouConstrainedWidth(
                         key: ValueKey(item.id),
                         child: _NotificationCard(
                           item: item,
+                          borderRadius: BorderRadius.vertical(
+                            top: index == 0
+                                ? Radius.circular(tokens.radiusCard)
+                                : Radius.zero,
+                            bottom: index == state.items.length - 1
+                                ? Radius.circular(tokens.radiusCard)
+                                : Radius.zero,
+                          ),
                           isPending: state.pendingId == item.id,
                           actionsDisabled:
                               state.isMutating && state.pendingId != item.id,
@@ -252,6 +270,7 @@ class _ReadyNotificationList extends StatelessWidget {
 class _NotificationCard extends StatelessWidget {
   const _NotificationCard({
     required this.item,
+    required this.borderRadius,
     required this.isPending,
     required this.actionsDisabled,
     required this.onOpen,
@@ -259,6 +278,7 @@ class _NotificationCard extends StatelessWidget {
   });
 
   final NotificationListItem item;
+  final BorderRadius borderRadius;
   final bool isPending;
   final bool actionsDisabled;
   final VoidCallback onOpen;
@@ -276,14 +296,16 @@ class _NotificationCard extends StatelessWidget {
       ].join('，'),
       child: Material(
         key: ValueKey('notification-${item.id}'),
-        color: tokens.background,
+        color: tokens.panel,
+        borderRadius: borderRadius,
+        clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: actionsDisabled ? null : onOpen,
           child: Padding(
             padding: EdgeInsets.fromLTRB(
-              tokens.space4,
               tokens.space12,
-              0,
+              tokens.space12,
+              tokens.space4,
               tokens.space12,
             ),
             child: Row(
@@ -370,6 +392,17 @@ class _NotificationBody extends StatelessWidget {
               color: Theme.of(context).colorScheme.error,
               fontWeight: FontWeight.w600,
             ),
+          ),
+        ],
+        if (item.payload?.rpIdentity case final identity?) ...[
+          SizedBox(height: tokens.space4),
+          Text(
+            '帖内身份：${identity.nickname}',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(
+              context,
+            ).textTheme.wenyouCaption.copyWith(color: tokens.mutedText),
           ),
         ],
         SizedBox(height: tokens.space4),

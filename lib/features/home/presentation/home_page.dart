@@ -47,7 +47,9 @@ class _HomePageState extends ConsumerState<HomePage> {
   Widget build(BuildContext context) {
     final state = ref.watch(homeFeedControllerProvider);
     return Scaffold(
+      backgroundColor: wenyouBrowsePageBackground(context),
       appBar: AppBar(
+        backgroundColor: wenyouBrowsePageBackground(context),
         title: Row(
           mainAxisSize: MainAxisSize.min,
           children: [

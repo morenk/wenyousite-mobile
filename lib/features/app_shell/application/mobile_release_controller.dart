@@ -44,6 +44,8 @@ final availableMobileReleaseUpdateProvider =
         final availability = await (service as MobileUpdateAvailabilityChecker)
             .checkAvailability(update);
         if (!availability.isAvailable || availability.targetVersion == null) {
+          final message = availability.userMessage;
+          if (message != null) throw MobileUpdateException(message);
           return null;
         }
         return update.withTargetVersion(availability.targetVersion);

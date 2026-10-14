@@ -1,5 +1,9 @@
 # Flutter / 原生移动端接入
 
+Android `/meta.updateUrl` 将兼容迁移到本站固定构建 APK 路由，保留旧 APP HEAD 校验 metadata；不指向 HTML 下载页。Windows 迁移、发布 CLI 与灰度顺序见 [下载网关契约](app-download-gateway.md)，VPS 不代表移动端门禁已执行。
+
+下载次数兼容：默认同一有效浏览器标识每天 3 次、单 IP 总计每天 10 次，按北京时间重置并跨构建累计。现有 APP 无需增加 info 调用、Cookie 或改变文件 URL，可继续直接 HEAD/GET；没有有效 Cookie 时只能按 IP 总次数约束，不等于验证设备唯一。HEAD 可能提前返回 429，GET 仍会最终判定；按 `Retry-After` 等待，`X-Download-Limit-Reason` 可区分 `device_daily_limit`、`ip_daily_limit` 与既有预算/频率限制。获准后中断、Range 和主动重试都计尝试，不能自动无限重试。Windows Flutter 消费端需基于固定契约同步；此文档不代表已执行真机门禁。
+
 本文定义原生移动客户端需要遵循的 HTTP、安全、重试和推送生命周期。字段与端点以 [`contracts/openapi.json`](../contracts/openapi.json) 为机器事实源；移动端 V1 范围与黄金旅程分别以 [`mobile-v1-operation-coverage.json`](../contracts/mobile-v1-operation-coverage.json) 和 [`mobile-v1-golden-fixtures.json`](../contracts/mobile-v1-golden-fixtures.json) 为准；动态分类、Markdown、站内传送门与 FCM data 继续使用各自独立 fixtures/schema。
 
 界面、字体、文字缩放和页面状态由公开 `wenyousite-foundation` 维护；仓库边界与入口见 [`mobile-ui-contract.md`](./mobile-ui-contract.md)，实际版本以 Flutter 客户端的 `foundation.lock.json` 为准。
@@ -266,3 +270,17 @@ Flutter 代码、类型生成和设备回归仅在 Windows 执行；本后端 PR
 `GET /mobile-releases?platform=android` 的公开历史、倒序分页与不透明游标继续兼容，空列表仍返回空数组。App 历史入口移除不删除该接口、详情接口、后台管理能力或历史数据；HTTP/OpenAPI、数据库及契约版本 `5.27.0-dev.20260927.1` 均不变，不新增服务端已读状态。
 
 管理接口和精确长度、错误码见 [API 契约](api-contract.md#android-版本说明兼容增量)。发布工具的受限说明预检与确认 revision 绑定见 [发布运维](mobile-release-operations.md)，构建-only 不要求后台说明，真实晋级必须以最终受限通道契约校验。本次不新增 iOS 发布或 FCM 消息。
+
+## 私帖邀请链接重复分享
+
+契约 `5.29.0-dev.20261001.1` 新增无请求体的 `PUT /threads/{id}/invite-link`（`threadsEnsureInviteLink`），返回 200 与现有 `InviteLinkResponseDto`；认证与归属沿用敏感写操作，仅已发布私帖楼主可用。重复、并发及跨设备取得同一个当前 token；不存在时才原子创建，不修改成员。
+
+当前 Web / App 只保留点击即复制的“复制邀请链接”操作，每次向服务端调用 PUT 取得当前链接；不显示独立标题、常驻说明、重置按钮或重置确认，正常态和复制成功后不展示链接正文。接口失败仅提示获取失败，不调用 POST；剪贴板失败才就地展示本次已取得的链接供手动复制，区分接口错误与复制失败。
+
+请求期间禁止重复操作；开始新请求、关闭、切号、离开或失去分享资格时清理内存中的邀请凭据，不写日志或独立持久缓存。Web 与 Windows Mobile 按精确提交记录接入文档来源；HTTP/OpenAPI、DTO 和契约版本仍为 `5.29.0-dev.20261001.1`，本轮交互简化不要求新增机器契约或生成物。Foundation 只补充交互说明，不发布组件或 Token 版本。
+
+`POST` / `threadsCreateInviteLink` 继续兼容旧客户端主动重置，本轮不删除接口或改变其语义；当前消费端不提供该操作。旧客户端重置结果不明时不得自动重发 POST，可通过 PUT 取回当前链接。重置后旧链接预览、加入对所有人均失效；已有成员仍从帖子入口访问。
+
+## 大讨论串定位
+
+固定编号、有界双向窗口、置顶去重与筛选错误语义见 [讨论定位契约](discussion-navigation.md)。

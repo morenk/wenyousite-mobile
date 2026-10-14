@@ -19,5 +19,12 @@ void main() {
       'https://wenyou.site',
     );
     expect(container.read(dioProvider).options.baseUrl, 'https://wenyou.site');
+    expect(
+      container
+          .read(dioProvider)
+          .options
+          .headers['X-Markdown-Contract-Version'],
+      '6',
+    );
   });
 }

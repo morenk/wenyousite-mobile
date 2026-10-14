@@ -10,7 +10,9 @@ import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_dice_contract.dart';
+import 'package:wenyousite_mobile/core/navigation/internal_reference.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_capabilities.dart';
+import 'package:wenyousite_mobile/features/editor/presentation/editor_clipboard_paste.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_dice_input_tray.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_format_policy.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_more_tray.dart';
@@ -77,6 +79,7 @@ class WenyouEditorToolbar extends StatefulWidget {
     this.editorFocusNode,
     this.onInteractionChanged,
     this.onSubmit,
+    this.submitEnabled,
     this.isSubmitting = false,
     this.submitLabel = '发送',
     this.characterCount,
@@ -97,6 +100,9 @@ class WenyouEditorToolbar extends StatefulWidget {
   final FocusNode? editorFocusNode;
   final ValueChanged<bool>? onInteractionChanged;
   final FutureOr<void> Function()? onSubmit;
+
+  /// 冻结正文的重试场景仍可使用原发表按钮，格式操作继续禁用。
+  final bool? submitEnabled;
   final bool isSubmitting;
   final String submitLabel;
   final int? characterCount;
@@ -310,7 +316,7 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
                             ),
                           if (widget.onSubmit != null)
                             WenyouEditorSubmitButton(
-                              enabled: widget.enabled,
+                              enabled: widget.submitEnabled ?? widget.enabled,
                               loading: widget.isSubmitting,
                               label: widget.submitLabel,
                               onPressed: widget.onSubmit!,
@@ -701,6 +707,33 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
       return;
     }
     final selection = _preservedSelection ?? widget.controller.selection;
+    final selectedLabel = selection.isCollapsed
+        ? label
+        : widget.controller.document.getPlainText(
+            selection.start,
+            selection.end - selection.start,
+          );
+    if (parseInternalReference(url) != null &&
+        RegExp('[\n\r\uFFFC]').hasMatch(selectedLabel)) {
+      setState(() => _linkLabelError = '站内链接请选择同一行的普通文字');
+      return;
+    }
+    final portal = WenyouEditorClipboardPastePlanner.internalReferenceDelta(
+      url,
+      selectedLabel,
+    );
+    if (portal != null) {
+      // 站内链接与粘贴、重开共用原子节点，避免普通 link 属性在保存后
+      // 变成另一种编辑语义；一次替换同时保留周边正文及撤销选区。
+      widget.controller.replaceText(
+        selection.start,
+        selection.end - selection.start,
+        portal,
+        TextSelection.collapsed(offset: selection.start + 1),
+      );
+      _setTray(_EditorTray.none);
+      return;
+    }
     if (selection.isCollapsed) {
       widget.controller.replaceText(
         selection.start,

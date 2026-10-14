@@ -261,9 +261,9 @@ class _UpdateWaitingPage extends StatelessWidget {
     final tokens = context.wenyouTokens;
     return _MessagePage(
       icon: WenyouIconIds.actionUpdate,
-      title: '新版正在准备中',
-      message: '当前版本暂时无法继续使用。新版正在发布，请稍后再试。',
-      detail: '新版准备好后会自动出现更新入口。',
+      title: '暂时无法更新',
+      message: '当前版本需要更新才能继续使用，请稍后重试。',
+      detail: '恢复后会自动出现更新入口。',
       action: SizedBox(
         width: 280,
         child: Column(

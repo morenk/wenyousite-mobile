@@ -465,7 +465,12 @@ void registerThreadDetailPageManagementClipboardCases() {
       threadDetailPageTestDetailApp(
         ThreadDetailPageTestFakeThreadDetailRepository(),
         clipboardWriter:
-            ({required markdown, required diceLabels, required scope}) async {
+            ({
+              required markdown,
+              required diceLabels,
+              required mentionLabels,
+              required scope,
+            }) async {
               copiedMarkdown.add(markdown);
             },
       ),

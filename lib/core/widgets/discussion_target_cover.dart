@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
@@ -31,6 +30,7 @@ class DiscussionTargetCover extends StatefulWidget {
     required this.onRetry,
     required this.onBack,
     this.navigationRevision = 0,
+    this.targetOffset,
     this.issue,
     this.onRevealed,
     this.onCovered,
@@ -54,6 +54,7 @@ class DiscussionTargetCover extends StatefulWidget {
   final VoidCallback onRetry;
   final VoidCallback onBack;
   final int navigationRevision;
+  final double? targetOffset;
   final Widget? issue;
   final VoidCallback? onRevealed;
   final VoidCallback? onCovered;
@@ -106,7 +107,7 @@ class _DiscussionTargetCoverState extends State<DiscussionTargetCover>
         oldWidget.targetId != widget.targetId;
     if (changedTarget ||
         (oldWidget.canLocate && !widget.canLocate) ||
-        (oldWidget.targetIndex >= 0 && widget.targetIndex < 0) ||
+        (!_revealed && oldWidget.targetIndex >= 0 && widget.targetIndex < 0) ||
         (oldWidget.issue == null && widget.issue != null)) {
       _conceal(restartSlowTimer: changedTarget);
     }
@@ -183,10 +184,10 @@ class _DiscussionTargetCoverState extends State<DiscussionTargetCover>
         (previous.height - current.height).abs() > 1) {
       final targetContext = widget.targetKey.currentContext;
       if (targetContext != null) {
-        Scrollable.ensureVisible(
+        alignDiscussionTarget(
           targetContext,
-          duration: Duration.zero,
-          alignment: 0,
+          widget.scrollController,
+          offset: widget.targetOffset,
         );
       } else {
         _reveal.handleLayoutChange(
@@ -256,10 +257,12 @@ class _DiscussionTargetCoverState extends State<DiscussionTargetCover>
         isMounted: () => mounted,
         requestRebuild: () => setState(() {}),
         onAligned: _onAligned,
+        targetOffset: widget.targetOffset,
       );
     } else {
       _pageScheduler.schedule(
         shouldPrefetch:
+            !_revealed &&
             canSeek &&
             widget.targetIndex < 0 &&
             widget.hasMore &&

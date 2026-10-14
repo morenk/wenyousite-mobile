@@ -79,6 +79,8 @@ class _$PostDetailResponseDtoKindEnumSerializer
 
 class _$PostDetailResponseDto extends PostDetailResponseDto {
   @override
+  final BuiltList<MentionIdentityDisplayDto>? mentionIdentities;
+  @override
   final BuiltList<MarkdownMediaDisplayResponseDto>? mediaDisplays;
   @override
   final String id;
@@ -92,6 +94,8 @@ class _$PostDetailResponseDto extends PostDetailResponseDto {
   final PostDetailResponseDtoKindEnum kind;
   @override
   final num? floorNumber;
+  @override
+  final num? replyNumber;
   @override
   final String? parentPostId;
   @override
@@ -130,6 +134,7 @@ class _$PostDetailResponseDto extends PostDetailResponseDto {
   ]) => (PostDetailResponseDtoBuilder()..update(updates))._build();
 
   _$PostDetailResponseDto._({
+    this.mentionIdentities,
     this.mediaDisplays,
     required this.id,
     required this.threadId,
@@ -137,6 +142,7 @@ class _$PostDetailResponseDto extends PostDetailResponseDto {
     required this.authorId,
     required this.kind,
     this.floorNumber,
+    this.replyNumber,
     this.parentPostId,
     this.replyToPostId,
     this.clientRequestId,
@@ -167,6 +173,7 @@ class _$PostDetailResponseDto extends PostDetailResponseDto {
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
     return other is PostDetailResponseDto &&
+        mentionIdentities == other.mentionIdentities &&
         mediaDisplays == other.mediaDisplays &&
         id == other.id &&
         threadId == other.threadId &&
@@ -174,6 +181,7 @@ class _$PostDetailResponseDto extends PostDetailResponseDto {
         authorId == other.authorId &&
         kind == other.kind &&
         floorNumber == other.floorNumber &&
+        replyNumber == other.replyNumber &&
         parentPostId == other.parentPostId &&
         replyToPostId == other.replyToPostId &&
         clientRequestId == other.clientRequestId &&
@@ -195,6 +203,7 @@ class _$PostDetailResponseDto extends PostDetailResponseDto {
   @override
   int get hashCode {
     var _$hash = 0;
+    _$hash = $jc(_$hash, mentionIdentities.hashCode);
     _$hash = $jc(_$hash, mediaDisplays.hashCode);
     _$hash = $jc(_$hash, id.hashCode);
     _$hash = $jc(_$hash, threadId.hashCode);
@@ -202,6 +211,7 @@ class _$PostDetailResponseDto extends PostDetailResponseDto {
     _$hash = $jc(_$hash, authorId.hashCode);
     _$hash = $jc(_$hash, kind.hashCode);
     _$hash = $jc(_$hash, floorNumber.hashCode);
+    _$hash = $jc(_$hash, replyNumber.hashCode);
     _$hash = $jc(_$hash, parentPostId.hashCode);
     _$hash = $jc(_$hash, replyToPostId.hashCode);
     _$hash = $jc(_$hash, clientRequestId.hashCode);
@@ -225,6 +235,7 @@ class _$PostDetailResponseDto extends PostDetailResponseDto {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'PostDetailResponseDto')
+          ..add('mentionIdentities', mentionIdentities)
           ..add('mediaDisplays', mediaDisplays)
           ..add('id', id)
           ..add('threadId', threadId)
@@ -232,6 +243,7 @@ class _$PostDetailResponseDto extends PostDetailResponseDto {
           ..add('authorId', authorId)
           ..add('kind', kind)
           ..add('floorNumber', floorNumber)
+          ..add('replyNumber', replyNumber)
           ..add('parentPostId', parentPostId)
           ..add('replyToPostId', replyToPostId)
           ..add('clientRequestId', clientRequestId)
@@ -255,6 +267,13 @@ class _$PostDetailResponseDto extends PostDetailResponseDto {
 class PostDetailResponseDtoBuilder
     implements Builder<PostDetailResponseDto, PostDetailResponseDtoBuilder> {
   _$PostDetailResponseDto? _$v;
+
+  ListBuilder<MentionIdentityDisplayDto>? _mentionIdentities;
+  ListBuilder<MentionIdentityDisplayDto> get mentionIdentities =>
+      _$this._mentionIdentities ??= ListBuilder<MentionIdentityDisplayDto>();
+  set mentionIdentities(
+    ListBuilder<MentionIdentityDisplayDto>? mentionIdentities,
+  ) => _$this._mentionIdentities = mentionIdentities;
 
   ListBuilder<MarkdownMediaDisplayResponseDto>? _mediaDisplays;
   ListBuilder<MarkdownMediaDisplayResponseDto> get mediaDisplays =>
@@ -286,6 +305,10 @@ class PostDetailResponseDtoBuilder
   num? _floorNumber;
   num? get floorNumber => _$this._floorNumber;
   set floorNumber(num? floorNumber) => _$this._floorNumber = floorNumber;
+
+  num? _replyNumber;
+  num? get replyNumber => _$this._replyNumber;
+  set replyNumber(num? replyNumber) => _$this._replyNumber = replyNumber;
 
   String? _parentPostId;
   String? get parentPostId => _$this._parentPostId;
@@ -369,6 +392,7 @@ class PostDetailResponseDtoBuilder
   PostDetailResponseDtoBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
+      _mentionIdentities = $v.mentionIdentities?.toBuilder();
       _mediaDisplays = $v.mediaDisplays?.toBuilder();
       _id = $v.id;
       _threadId = $v.threadId;
@@ -376,6 +400,7 @@ class PostDetailResponseDtoBuilder
       _authorId = $v.authorId;
       _kind = $v.kind;
       _floorNumber = $v.floorNumber;
+      _replyNumber = $v.replyNumber;
       _parentPostId = $v.parentPostId;
       _replyToPostId = $v.replyToPostId;
       _clientRequestId = $v.clientRequestId;
@@ -416,6 +441,7 @@ class PostDetailResponseDtoBuilder
       _$result =
           _$v ??
           _$PostDetailResponseDto._(
+            mentionIdentities: _mentionIdentities?.build(),
             mediaDisplays: _mediaDisplays?.build(),
             id: BuiltValueNullFieldError.checkNotNull(
               id,
@@ -443,6 +469,7 @@ class PostDetailResponseDtoBuilder
               'kind',
             ),
             floorNumber: floorNumber,
+            replyNumber: replyNumber,
             parentPostId: parentPostId,
             replyToPostId: replyToPostId,
             clientRequestId: clientRequestId,
@@ -479,6 +506,8 @@ class PostDetailResponseDtoBuilder
     } catch (_) {
       late String _$failedField;
       try {
+        _$failedField = 'mentionIdentities';
+        _mentionIdentities?.build();
         _$failedField = 'mediaDisplays';
         _mediaDisplays?.build();
 

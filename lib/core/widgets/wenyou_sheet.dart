@@ -9,16 +9,22 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart'
 Future<T?> showWenyouSheet<T>({
   required BuildContext context,
   required WidgetBuilder builder,
+  bool dismissible = true,
 }) => showModalBottomSheet<T>(
   context: context,
   isScrollControlled: true,
   useSafeArea: true,
-  showDragHandle: true,
+  isDismissible: dismissible,
+  enableDrag: dismissible,
+  showDragHandle: dismissible,
   constraints: BoxConstraints(
     maxWidth: context.wenyouTokens.pageContentMaxWidth,
   ),
   builder: (context) => Padding(
-    padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+    padding: EdgeInsets.only(
+      top: dismissible ? 0 : context.wenyouTokens.space12,
+      bottom: MediaQuery.viewInsetsOf(context).bottom,
+    ),
     child: SafeArea(
       top: false,
       child: LayoutBuilder(
@@ -38,6 +44,9 @@ class WenyouSheetBody extends StatelessWidget {
     required this.slivers,
     this.actions = const [],
     this.scrollKey,
+    this.onClose,
+    this.closeEnabled = true,
+    this.showHeader = true,
     super.key,
   });
 
@@ -45,59 +54,79 @@ class WenyouSheetBody extends StatelessWidget {
   final List<Widget> slivers;
   final List<Widget> actions;
   final Key? scrollKey;
+  final VoidCallback? onClose;
+  final bool closeEnabled;
+  final bool showHeader;
 
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
     return LayoutBuilder(
-      builder: (context, constraints) => CustomScrollView(
-        key: scrollKey,
-        shrinkWrap: true,
-        slivers: [
-          SliverPadding(
-            padding: EdgeInsets.fromLTRB(
-              wenyouHorizontalPagePadding(
-                context,
-                availableWidth: constraints.maxWidth,
-              ),
-              0,
-              wenyouHorizontalPagePadding(
-                context,
-                availableWidth: constraints.maxWidth,
-              ),
-              tokens.space16,
-            ),
-            sliver: SliverMainAxisGroup(
-              slivers: [
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: EdgeInsets.only(bottom: tokens.space12),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            title,
-                            style: Theme.of(
-                              context,
-                            ).textTheme.wenyouOverlayTitle,
-                          ),
-                        ),
-                        ...actions,
-                        IconButton(
-                          tooltip: '关闭$title',
-                          onPressed: () => Navigator.of(context).pop(),
-                          icon: const WenyouIcon(WenyouIconIds.actionClose),
-                        ),
-                      ],
-                    ),
-                  ),
+      builder: (context, constraints) {
+        final body = CustomScrollView(
+          key: scrollKey,
+          shrinkWrap: true,
+          slivers: [
+            SliverPadding(
+              padding: EdgeInsets.fromLTRB(
+                wenyouHorizontalPagePadding(
+                  context,
+                  availableWidth: constraints.maxWidth,
                 ),
-                ...slivers,
-              ],
+                0,
+                wenyouHorizontalPagePadding(
+                  context,
+                  availableWidth: constraints.maxWidth,
+                ),
+                tokens.space16,
+              ),
+              sliver: SliverMainAxisGroup(
+                slivers: [
+                  if (showHeader)
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: EdgeInsets.only(bottom: tokens.space12),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                title,
+                                style: Theme.of(
+                                  context,
+                                ).textTheme.wenyouOverlayTitle,
+                              ),
+                            ),
+                            ...actions,
+                            IconButton(
+                              tooltip: '关闭$title',
+                              onPressed: closeEnabled
+                                  ? onClose ?? () => Navigator.of(context).pop()
+                                  : null,
+                              icon: const WenyouIcon(WenyouIconIds.actionClose),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ...slivers,
+                ],
+              ),
             ),
-          ),
-        ],
-      ),
+          ],
+        );
+        if (showHeader) return body;
+        return Semantics(
+          key: const Key('wenyou-sheet-dismiss'),
+          container: true,
+          explicitChildNodes: true,
+          namesRoute: true,
+          label: title,
+          onDismiss: closeEnabled
+              ? onClose ?? () => Navigator.of(context).pop()
+              : null,
+          child: body,
+        );
+      },
     );
   }
 }

@@ -9,327 +9,14 @@ import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_dice_contract.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/features/posts/application/post_discussion_controller.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_repository_ports.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_states.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
+import 'package:wenyousite_mobile/features/thread_identity/identity_models.dart';
 
+export 'package:wenyousite_mobile/features/posts/application/post_discussion_controller.dart';
 export 'package:wenyousite_mobile/features/posts/application/post_states.dart';
-
-typedef PostDiscussionTarget = ({String rootPostId, String? focusedReplyId});
-typedef PostDiscussionControllerProvider =
-    AutoDisposeStateNotifierProvider<
-      PostDiscussionController,
-      PostDiscussionState
-    >;
-
-class PostDiscussionController extends StateNotifier<PostDiscussionState> {
-  PostDiscussionController(
-    this._repository,
-    this.target, {
-    bool autoStart = true,
-  }) : super(const PostDiscussionState()) {
-    if (autoStart) unawaited(load());
-  }
-
-  final PostRepository _repository;
-  final PostDiscussionTarget target;
-  var _epoch = 0;
-
-  Future<void> load() async {
-    final epoch = ++_epoch;
-    state = PostDiscussionState(order: state.order, authorId: state.authorId);
-    try {
-      final root = await _repository.fetchPost(target.rootPostId);
-      _assertRoot(root);
-      final page = await _repository.fetchReplies(
-        rootPostId: target.rootPostId,
-        order: state.order,
-        authorId: state.authorId,
-      );
-      final replies = await _includeFocusedReply(root, page.items);
-      if (!_isCurrent(epoch)) return;
-      state = PostDiscussionState(
-        phase: PostDiscussionPhase.ready,
-        root: root,
-        replies: replies,
-        cursor: page.cursor,
-        hasMore: page.hasMore,
-        order: state.order,
-        authorId: state.authorId,
-      );
-    } on Object catch (error) {
-      if (!_isCurrent(epoch)) return;
-      final failure = _asFailure(error, '楼中楼讨论加载失败，请稍后重试。');
-      if (_isRestricted(failure)) {
-        _hideRestrictedContent(failure);
-      } else {
-        state = PostDiscussionState(
-          phase: PostDiscussionPhase.failed,
-          order: state.order,
-          authorId: state.authorId,
-          failure: failure,
-        );
-      }
-    }
-  }
-
-  Future<void> refresh() async {
-    if (state.phase != PostDiscussionPhase.ready || state.isRefreshing) return;
-    state = state.copyWith(
-      isRefreshing: true,
-      isLoadingMore: false,
-      isPrefetchingReplies: false,
-      transientFailure: null,
-      retryAction: null,
-    );
-    final epoch = ++_epoch;
-    try {
-      final root = await _repository.fetchPost(target.rootPostId);
-      _assertRoot(root);
-      final page = await _repository.fetchReplies(
-        rootPostId: target.rootPostId,
-        order: state.order,
-        authorId: state.authorId,
-      );
-      final replies = await _includeFocusedReply(root, page.items);
-      if (!_isCurrent(epoch)) return;
-      state = state.copyWith(
-        root: root,
-        replies: replies,
-        cursor: page.cursor,
-        hasMore: page.hasMore,
-        isRefreshing: false,
-        isLoadingMore: false,
-        isPrefetchingReplies: false,
-        failure: null,
-        transientFailure: null,
-        retryAction: null,
-      );
-    } on Object catch (error) {
-      if (!_isCurrent(epoch)) return;
-      final failure = _asFailure(error, '楼中楼讨论刷新失败，请稍后重试。');
-      if (_isRestricted(failure)) {
-        _hideRestrictedContent(failure);
-        return;
-      }
-      state = state.copyWith(
-        isRefreshing: false,
-        transientFailure: failure,
-        retryAction: PostDiscussionRetryAction.refresh,
-      );
-    }
-  }
-
-  Future<void> setOrder(PostReplyOrder order) async {
-    await applyFilters(order: order, authorId: state.authorId);
-  }
-
-  Future<void> setAuthor(String? authorId) async {
-    await applyFilters(order: state.order, authorId: authorId);
-  }
-
-  Future<void> applyFilters({
-    required PostReplyOrder order,
-    required String? authorId,
-  }) async {
-    final normalized = authorId?.trim();
-    final next = normalized == null || normalized.isEmpty ? null : normalized;
-    if ((order == state.order && next == state.authorId) ||
-        state.phase != PostDiscussionPhase.ready) {
-      return;
-    }
-    state = state.copyWith(order: order, authorId: next);
-    await load();
-  }
-
-  Future<void> loadMore() => prefetchRemainingReplies();
-
-  Future<void> locateReply(String replyId) =>
-      prefetchRemainingReplies(untilReplyId: replyId);
-
-  /// Fetches all remaining reply text sequentially after the first frame. The
-  /// sliver still creates image widgets lazily inside its viewport cache.
-  Future<void> prefetchRemainingReplies({String? untilReplyId}) async {
-    if (state.phase != PostDiscussionPhase.ready ||
-        state.isPrefetchingReplies ||
-        !state.hasMore) {
-      return;
-    }
-    final epoch = _epoch;
-    final order = state.order;
-    final authorId = state.authorId;
-    final seenCursors = <String>{};
-    var didRestartInvalidCursor = false;
-    state = state.copyWith(
-      isLoadingMore: true,
-      isPrefetchingReplies: true,
-      transientFailure: null,
-      retryAction: null,
-    );
-
-    while (_matchesReplyRequest(epoch, order, authorId) &&
-        state.hasMore &&
-        (untilReplyId == null ||
-            !state.replies.any((reply) => reply.id == untilReplyId))) {
-      final cursor = state.cursor;
-      if (cursor == null || !seenCursors.add(cursor)) {
-        _finishReplyPrefetchFailure(
-          const ApiFailure(userMessage: '回复位置异常，请重试。'),
-        );
-        return;
-      }
-      try {
-        final page = await _repository.fetchReplies(
-          rootPostId: target.rootPostId,
-          cursor: cursor,
-          order: order,
-          authorId: authorId,
-        );
-        if (!_matchesReplyRequest(epoch, order, authorId)) return;
-        state = state.copyWith(
-          replies: _mergeReplies(state.replies, page.items, order),
-          cursor: page.cursor,
-          hasMore: page.hasMore,
-          transientFailure: null,
-          retryAction: null,
-        );
-      } on Object catch (error) {
-        if (!_matchesReplyRequest(epoch, order, authorId)) return;
-        final failure = _asFailure(error, '更多回复加载失败，请稍后重试。');
-        if (_isRestricted(failure)) {
-          _hideRestrictedContent(failure);
-          return;
-        }
-        if (failure.isInvalidCursor && !didRestartInvalidCursor) {
-          didRestartInvalidCursor = true;
-          seenCursors.clear();
-          try {
-            final firstPage = await _repository.fetchReplies(
-              rootPostId: target.rootPostId,
-              order: order,
-              authorId: authorId,
-            );
-            if (!_matchesReplyRequest(epoch, order, authorId)) return;
-            final root = state.root!;
-            final replies = await _includeFocusedReply(root, firstPage.items);
-            if (!_matchesReplyRequest(epoch, order, authorId)) return;
-            state = state.copyWith(
-              replies: replies,
-              cursor: firstPage.cursor,
-              hasMore: firstPage.hasMore,
-              transientFailure: null,
-              retryAction: null,
-            );
-            continue;
-          } on Object catch (restartError) {
-            if (!_matchesReplyRequest(epoch, order, authorId)) return;
-            final restartFailure = _asFailure(restartError, '回复重新加载失败，请稍后重试。');
-            if (_isRestricted(restartFailure)) {
-              _hideRestrictedContent(restartFailure);
-              return;
-            }
-            _finishReplyPrefetchFailure(restartFailure);
-            return;
-          }
-        }
-        _finishReplyPrefetchFailure(failure);
-        return;
-      }
-    }
-
-    if (_matchesReplyRequest(epoch, order, authorId)) {
-      state = state.copyWith(isLoadingMore: false, isPrefetchingReplies: false);
-    }
-  }
-
-  Future<void> retryTransientFailure() {
-    return switch (state.retryAction) {
-      PostDiscussionRetryAction.refresh => refresh(),
-      PostDiscussionRetryAction.loadMore => loadMore(),
-      null => Future<void>.value(),
-    };
-  }
-
-  void _assertRoot(PostItem root) {
-    if (root.isBody || root.parentPostId != null) {
-      throw const ApiFailure(userMessage: '只有主楼层可以打开楼中楼讨论。');
-    }
-  }
-
-  Future<List<PostItem>> _includeFocusedReply(
-    PostItem root,
-    List<PostItem> replies,
-  ) async {
-    final focusedId = target.focusedReplyId;
-    if (focusedId == null) return replies;
-    final firstPageIndex = replies.indexWhere((reply) => reply.id == focusedId);
-    final focused = firstPageIndex >= 0
-        ? replies[firstPageIndex]
-        : await _repository.fetchPost(focusedId);
-    if (focused.parentPostId != root.id ||
-        focused.threadId != root.threadId ||
-        focused.subthreadId != root.subthreadId) {
-      throw const ApiFailure(userMessage: '目标回复不属于当前楼中楼讨论。');
-    }
-    if (focused.isDeleted) {
-      throw const ApiFailure(userMessage: '目标内容已不可见', httpStatus: 404);
-    }
-    if (state.authorId != null && focused.author.id != state.authorId) {
-      return replies;
-    }
-    return replies;
-  }
-
-  bool _isCurrent(int epoch) => mounted && epoch == _epoch;
-
-  bool _matchesReplyRequest(
-    int epoch,
-    PostReplyOrder order,
-    String? authorId,
-  ) => _isCurrent(epoch) && state.order == order && state.authorId == authorId;
-
-  void _finishReplyPrefetchFailure(ApiFailure failure) {
-    state = state.copyWith(
-      isLoadingMore: false,
-      isPrefetchingReplies: false,
-      transientFailure: failure,
-      retryAction: PostDiscussionRetryAction.loadMore,
-    );
-  }
-
-  bool _isRestricted(ApiFailure failure) =>
-      failure.httpStatus == 403 || failure.httpStatus == 404;
-
-  void _hideRestrictedContent(ApiFailure failure) {
-    state = PostDiscussionState(
-      phase: PostDiscussionPhase.restricted,
-      order: state.order,
-      authorId: state.authorId,
-      failure: failure,
-    );
-  }
-
-  static List<PostItem> _mergeReplies(
-    Iterable<PostItem> current,
-    Iterable<PostItem> incoming,
-    PostReplyOrder order,
-  ) {
-    final byId = <String, PostItem>{
-      for (final reply in current) reply.id: reply,
-      for (final reply in incoming) reply.id: reply,
-    };
-    final result = byId.values.toList(growable: false)
-      ..sort((left, right) {
-        final compared = left.createdAt.compareTo(right.createdAt);
-        return order == PostReplyOrder.oldest ? compared : -compared;
-      });
-    return List.unmodifiable(result);
-  }
-
-  ApiFailure _asFailure(Object error, String fallback) {
-    return mapApplicationFailure(error, fallback);
-  }
-}
 
 class PostComposerController extends StateNotifier<PostComposerState> {
   PostComposerController(
@@ -346,7 +33,7 @@ class PostComposerController extends StateNotifier<PostComposerState> {
   String _requestId;
 
   void updateContent(String content) {
-    if (state.isSubmitting) return;
+    if (state.isSubmitting || state.pendingCreate != null) return;
     state = state.copyWith(
       content: content,
       failure: null,
@@ -356,7 +43,7 @@ class PostComposerController extends StateNotifier<PostComposerState> {
   }
 
   void restoreContent(String content) {
-    if (state.isSubmitting) return;
+    if (state.isSubmitting || state.pendingCreate != null) return;
     state = state.copyWith(
       content: MarkdownContent.normalize(content),
       documentRevision: state.documentRevision + 1,
@@ -366,7 +53,13 @@ class PostComposerController extends StateNotifier<PostComposerState> {
     );
   }
 
-  Future<PostItem?> submit() async {
+  Future<PostItem?> submit({
+    String? identityToken,
+    String? identityId,
+    PostIdentityMode? identityMode,
+    Future<bool> Function()? persistCreateIntent,
+    bool legacySingleIdentity = false,
+  }) async {
     if (state.isSubmitting) return null;
     final validation = _validate(state.content);
     if (validation != null) {
@@ -381,12 +74,23 @@ class PostComposerController extends StateNotifier<PostComposerState> {
     }
     return switch (target.kind) {
       PostComposerKind.createFloor ||
-      PostComposerKind.createReply => _submitCreate(),
+      PostComposerKind.createReply => _submitCreate(
+        identityToken: identityToken,
+        identityId: legacySingleIdentity ? null : identityId,
+        identityMode: identityMode,
+        persistCreateIntent: persistCreateIntent,
+      ),
       PostComposerKind.editPost => _submitEdit(
         postId: target.postId!,
         version: target.version!,
       ),
-      PostComposerKind.upsertBody => _submitBody(version: target.version),
+      PostComposerKind.upsertBody => _submitBody(
+        version: target.version,
+        identityToken: identityToken,
+        identityId: legacySingleIdentity ? null : identityId,
+        identityMode: identityMode,
+        persistCreateIntent: persistCreateIntent,
+      ),
     };
   }
 
@@ -402,7 +106,12 @@ class PostComposerController extends StateNotifier<PostComposerState> {
     );
   }
 
-  Future<PostItem?> _submitCreate() async {
+  Future<PostItem?> _submitCreate({
+    String? identityToken,
+    String? identityId,
+    PostIdentityMode? identityMode,
+    Future<bool> Function()? persistCreateIntent,
+  }) async {
     final pending = state.pendingCreate;
     final input =
         pending?.input ??
@@ -412,19 +121,30 @@ class PostComposerController extends StateNotifier<PostComposerState> {
           clientRequestId: _requestId,
           parentPostId: target.parentPostId,
           replyToPostId: target.replyToPostId,
+          identityToken: identityToken,
+          identityId: identityId,
+          identityMode: identityMode,
         );
-    state = state.copyWith(isSubmitting: true, failure: null, conflict: null);
-    PostItem? created;
+    // 请求发出前保存相同正文、身份和幂等键，异常退出后仍确认同一次发表。
+    state = state.copyWith(
+      isSubmitting: true,
+      failure: null,
+      conflict: null,
+      pendingCreate: PendingPostCreate(input: input),
+    );
     try {
-      created = await _repository.create(input);
-      var result = created;
-      if (state.content != input.content) {
-        result = await _repository.update(
-          postId: created.id,
-          content: state.content,
-          version: created.version,
+      if (persistCreateIntent != null && !await persistCreateIntent()) {
+        if (!mounted) return null;
+        state = state.copyWith(
+          isSubmitting: false,
+          failure: const ApiFailure.localWrite(
+            diagnosticCode: 'post_draft_save_failed',
+          ),
         );
+        return null;
       }
+      if (!mounted) return null;
+      final result = await _repository.create(input);
       if (!mounted) return null;
       state = state.copyWith(
         isSubmitting: false,
@@ -435,9 +155,6 @@ class PostComposerController extends StateNotifier<PostComposerState> {
     } on Object catch (error) {
       if (!mounted) return null;
       final failure = _asFailure(error, '内容没有发布成功，请稍后重试。');
-      if (created != null && _isConflict(failure)) {
-        return _resolveConflict(created.id, state.content, failure);
-      }
       final ambiguous = _isAmbiguous(failure);
       if (failure.businessCode == 40912) {
         _requestId = _createRequestId();
@@ -481,16 +198,65 @@ class PostComposerController extends StateNotifier<PostComposerState> {
     }
   }
 
-  Future<PostItem?> _submitBody({required int? version}) async {
-    state = state.copyWith(isSubmitting: true, failure: null, conflict: null);
+  Future<PostItem?> _submitBody({
+    required int? version,
+    String? identityToken,
+    String? identityId,
+    PostIdentityMode? identityMode,
+    Future<bool> Function()? persistCreateIntent,
+  }) async {
+    final creating = target.postId == null && version == null;
+    final pending = creating
+        ? state.pendingCreate ??
+              PendingPostCreate(
+                input: PostCreateInput(
+                  subthreadId: target.subthreadId,
+                  content: state.content,
+                  clientRequestId: _requestId,
+                  identityToken: identityToken,
+                  identityId: identityId,
+                  identityMode: identityMode,
+                ),
+              )
+        : null;
+    state = state.copyWith(
+      isSubmitting: true,
+      failure: null,
+      conflict: null,
+      pendingCreate: pending,
+    );
     try {
+      if (creating &&
+          persistCreateIntent != null &&
+          !await persistCreateIntent()) {
+        if (!mounted) return null;
+        state = state.copyWith(
+          isSubmitting: false,
+          failure: const ApiFailure.localWrite(
+            diagnosticCode: 'post_draft_save_failed',
+          ),
+        );
+        return null;
+      }
+      if (!mounted) return null;
       final result = await _repository.upsertBody(
         subthreadId: target.subthreadId,
-        content: state.content,
+        content: pending?.input.content ?? state.content,
         version: version,
+        identityId: pending != null ? pending.input.identityId : identityId,
+        identityToken: pending != null
+            ? pending.input.identityToken
+            : identityToken,
+        identityMode: pending != null
+            ? pending.input.identityMode
+            : identityMode,
       );
       if (!mounted) return null;
-      state = state.copyWith(isSubmitting: false, result: result);
+      state = state.copyWith(
+        isSubmitting: false,
+        result: result,
+        pendingCreate: null,
+      );
       return result;
     } on Object catch (error) {
       if (!mounted) return null;
@@ -498,7 +264,11 @@ class PostComposerController extends StateNotifier<PostComposerState> {
       if (_isConflict(failure) && target.postId != null) {
         return _resolveConflict(target.postId!, state.content, failure);
       } else {
-        state = state.copyWith(isSubmitting: false, failure: failure);
+        state = state.copyWith(
+          isSubmitting: false,
+          failure: failure,
+          pendingCreate: creating && _isAmbiguous(failure) ? pending : null,
+        );
       }
       return null;
     }
@@ -558,6 +328,34 @@ class PostComposerController extends StateNotifier<PostComposerState> {
     }
     if (content.runes.length > 10000) return '正文超过 10000 字符，请精简后重试。';
     return null;
+  }
+
+  /// 明确的身份冲突不曾写入；下一次点击发表使用更新后的身份。
+  void prepareIdentityRetry() {
+    if (state.isSubmitting || state.pendingCreate != null) return;
+    _requestId = _createRequestId();
+  }
+
+  void restorePendingCreate(PendingPostCreate pending) {
+    if (target.kind != PostComposerKind.createFloor &&
+        target.kind != PostComposerKind.createReply &&
+        !(target.kind == PostComposerKind.upsertBody &&
+            target.postId == null)) {
+      return;
+    }
+    final input = pending.input;
+    if (state.isSubmitting ||
+        input.subthreadId != target.subthreadId ||
+        input.parentPostId != target.parentPostId ||
+        input.replyToPostId != target.replyToPostId) {
+      return;
+    }
+    _requestId = input.clientRequestId;
+    state = state.copyWith(
+      content: input.content,
+      documentRevision: state.documentRevision + 1,
+      pendingCreate: pending,
+    );
   }
 
   bool _isAmbiguous(ApiFailure failure) {

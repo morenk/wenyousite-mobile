@@ -615,6 +615,7 @@ class ThreadComposeController extends StateNotifier<ThreadComposeState> {
               defaultSubthreadId: remote.defaultSubthreadId,
               defaultSubthreadVersion: remote.defaultSubthreadVersion,
               bodyVersion: remote.bodyVersion,
+              mentionLabels: remote.mentionLabels,
               title: metadata.title,
               categorySlug: metadata.categorySlug,
               visibility: metadata.visibility,

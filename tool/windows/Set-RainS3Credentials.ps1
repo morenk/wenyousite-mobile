@@ -42,8 +42,8 @@ function Protect-PrivateFile {
   [IO.File]::SetAccessControl($Path, $acl)
 }
 
-$accessKey = Read-RequiredSecret 'RainS3 new Access Key (hidden input)'
-$secretKey = Read-RequiredSecret 'RainS3 new Secret Key (hidden input)'
+$accessKey = Read-RequiredSecret 'RainS3 Access Key (hidden input)'
+$secretKey = Read-RequiredSecret 'RainS3 Secret Key (hidden input)'
 $credentialDirectory = Split-Path -Parent $CredentialStore
 [void](New-Item -ItemType Directory -Path $credentialDirectory -Force)
 

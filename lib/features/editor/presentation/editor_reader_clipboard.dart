@@ -12,17 +12,23 @@ typedef ReaderMarkdownClipboardWriter =
     Future<void> Function({
       required String markdown,
       required Map<String, String> diceLabels,
+      required Map<String, String> mentionLabels,
       required SessionScope scope,
     });
 
 final readerMarkdownClipboardWriterProvider =
     Provider<ReaderMarkdownClipboardWriter>((ref) {
-      return ({required markdown, required diceLabels, required scope}) =>
-          copyReaderMarkdownToClipboard(
-            markdown: markdown,
-            diceLabels: diceLabels,
-            scope: scope,
-          );
+      return ({
+        required markdown,
+        required diceLabels,
+        required mentionLabels,
+        required scope,
+      }) => copyReaderMarkdownToClipboard(
+        markdown: markdown,
+        diceLabels: diceLabels,
+        mentionLabels: mentionLabels,
+        scope: scope,
+      );
     });
 
 /// Captures a complete mobile reader item for a later editor paste.
@@ -34,6 +40,7 @@ Future<void> copyReaderMarkdownToClipboard({
   required String markdown,
   required SessionScope scope,
   Map<String, String> diceLabels = const {},
+  Map<String, String> mentionLabels = const {},
   EditorClipboardGateway? clipboardGateway,
   WenyouEditorClipboardStore? clipboardStore,
 }) async {
@@ -53,6 +60,7 @@ Future<void> copyReaderMarkdownToClipboard({
       plainTextFallback: MarkdownClipboardText.projectDelta(
         delta,
         diceLabels: diceLabels,
+        mentionLabels: mentionLabels,
       ),
       operation: WenyouEditorClipboardOperation.copy,
       marker: marker,

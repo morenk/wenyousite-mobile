@@ -1,6 +1,30 @@
 # 楼层编辑时间候选验收
 
-状态：候选／待负责人验收。Backend 契约固定 `dc62a36dcf016f58fadcf53672215bb5fa66e618`、API `5.28.0-dev.20260929.1`；契约同步提交 `09a24f35`。Foundation 保持正式 `v7.2.1`，呈现补充说明为 `28808c7fa1f7b81f57f5022fa5ce64fcfcf8e931`（PR #26）。
+状态：候选／待负责人验收。本轮解决原 PR #77 与最新 `dev` 的冲突并重新验证；不包含合并 `dev`、发布或安装。
+
+## 2026-10-15 冲突处理与重新验证
+
+- 合入基线 `d7168b61ea1b547e737585d2e9b250f1b3bd24e2`，保留原任务分支与已推送历史；33 处文本冲突已解决。契约、生成客户端、API 覆盖及通用模块说明采用新版基线，不将旧 5.28 内容覆盖回去。
+- 当前固定 Backend `b5f0e3bb0b99a3f9763b31e3080cb4d4f2e64045`／API `5.36.0-dev.20261005.1`；本轮匿名只读 `/meta` 核验一致，线上 Markdown 为 5。Foundation 已 fetch 远端 tags，最新正式版本仍为 `v7.2.1`，依赖保持不变。
+- 展示在现有 `WenyouAuthorHeader` 中使用编辑时间，保留 RP 头像、角色、回复编号和当前阅读字号，不再使用九月候选单独引入的旧作者行布局。主题信息、BODY 和最新发言摘要不扩展范围。
+- 回归补充 `fetchFloorWindow` 的首屏置顶与编号／ID 定位、`fetchReplyWindow` 的编号／ID 定位，以及 RP 身份和回复编号透传；原缺字段／null／有值、保存失败及相对时间断言继续保留。
+- 首轮定向测试已通过 7 项契约／仓储用例，首个界面测试启动时 Dart VM 报 `Out of memory`，记录保留于 `D:\codex-worktrees\mobile-edited-time\revalidate-20261015-targeted.log`。该失败不能记为通过；后续使用单并发顺序执行，不停止用户进程或修改系统设置。
+- 单并发重新运行界面用例未再出现 OOM；四项 Golden 比较因新版 `dev` 的共用作者布局和字体基线变化失败，其余断言通过。逐张检查实际明暗／320dp 画面后，仅更新本功能四张 Golden，未放宽文案、语义或溢出断言。旧差异记录保留于 `revalidate-20261015-widget-serial.log`。
+- 更新基准后，`flutter test --no-pub --concurrency=1` 定向执行 `test/core/network/post_edited_time_contract_test.dart`、`test/features/posts/post_edited_time_repository_test.dart`、`test/features/posts/post_edited_time_widget_test.dart`、`test/features/posts/post_replies_page_test.dart`、`test/features/threads/thread_identity_author_navigation_test.dart`：**64 项全部通过，退出码 0**，日志为 `revalidate-20261015-targeted-final.log`。
+- 最终 `npm run check:apk -- -TestConcurrency 1` **完整通过，退出码 0**：OpenAPI、固定来源、再生成一致性、线上只读兼容性、格式、应用／SDK 静态分析、架构、23 个模块文档、API 覆盖 174/174 全部通过；Flutter **6602 项通过、1 项原有显式 Sentry 收据验收跳过**；Windows 工具 **49 项通过**；ARM64 Debug APK 构建通过。完成时间为 2026-10-15 05:41（Asia/Shanghai），日志及退出码为 `D:\codex-worktrees\mobile-edited-time\revalidate-20261015-check-apk-retry.log` 和同名 `-status.json`；不覆盖九月或本轮失败证据。
+- 第一次完整门禁的生成器停在首个 API 输入，日志与 CPU 使用持续无进展；核对进程命令行和父进程后，仅终止本任务生成子进程，门禁退出码为 1（生成步骤 -1）。证据保留于 `revalidate-20261015-check-apk.log` 与 `revalidate-20261015-generator-stall.json`；执行生成器官方 `dart run build_runner clean` 成功后从统一入口完整重跑，不跳过步骤。
+- 实际设备与负责人真机验收尚未覆盖；不启动可能恢复登录或自动签到的线上调试会话，不以 Golden 或旧 APK 代替真机验收。日常调试遵循当前普通 Debug 规则，不再将已退役的专用预览批次作为本轮前置条件。
+
+### 本轮安装包与待验收项
+
+- APK：`D:\codex-worktrees\mobile-edited-time\wenyousite-mobile\build\app\outputs\flutter-apk\app-debug.apk`，110327842 字节；包名 `site.wenyou.app.debug`，版本名 `0.9.0-debug`，构建号 99。未安装、上传或发布。
+- SHA-256：`27d42ff09da534d9eb631b4843cd053172cb52074f8d8b53d1aa493329887f9d`。
+- 构建提示 `flutter_image_compress_common` 的 KGP 迁移及 Android SDK XML 工具版本警告，未导致失败；本轮不改变依赖或 SDK。
+- 负责人待复验：未编辑／历史楼层仍显示发布时间；首次及连续成功编辑只显示最新“编辑于…”；取消、无改动或失败保存不产生新时间；主楼层、楼中楼预览、独立回复页和编号／ID 定位后保持一致；重新进入页面、明暗主题、窄屏及读屏无回归。自动化写入验收仍只允许独立隔离环境。
+
+## 历史：2026-09-29 候选记录
+
+以下仅记录九月候选及当时的失败原因，不代表本轮验证状态。历史 Backend 契约为 `dc62a36dcf016f58fadcf53672215bb5fa66e618`／API `5.28.0-dev.20260929.1`，同步提交 `09a24f35`；Foundation 补充说明为 `28808c7fa1f7b81f57f5022fa5ce64fcfcf8e931`（PR #26）。
 
 ## 已实现行为
 

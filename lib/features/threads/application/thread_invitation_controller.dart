@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_invitation_repository_ports.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_invitation_models.dart';
 
@@ -13,23 +15,22 @@ class ThreadInviteLinkController extends StateNotifier<ThreadInviteLinkState> {
   final String _threadId;
   final ThreadInvitationRepository _repository;
 
-  Future<ThreadInvitationLink?> generate() async {
-    if (state.isGenerating) return null;
-    state = state.copyWith(isGenerating: true, failure: null);
+  Future<ThreadInvitationLink?> ensure() async {
+    if (!mounted || state.isLoading) return null;
+    // 每次分享重新核对，失败时不保留可能过期的凭据。
+    state = const ThreadInviteLinkState(isLoading: true);
     try {
-      final link = await _repository.generateLink(_threadId);
+      final link = await _repository.ensureLink(_threadId);
       if (!mounted) return null;
       state = ThreadInviteLinkState(link: link);
       return link;
-    } on ApiFailure catch (failure) {
+    } catch (error) {
       if (!mounted) return null;
-      state = state.copyWith(isGenerating: false, failure: failure);
+      state = ThreadInviteLinkState(
+        failure: mapApplicationFailure(error, '邀请链接获取失败，请重试。'),
+      );
       return null;
     }
-  }
-
-  void clearFailure() {
-    if (!state.isGenerating) state = state.copyWith(failure: null);
   }
 }
 
@@ -96,15 +97,16 @@ class ThreadInvitationAccessController
 }
 
 final threadInviteLinkControllerProvider = StateNotifierProvider.autoDispose
-    .family<ThreadInviteLinkController, ThreadInviteLinkState, String>((
-      ref,
-      threadId,
-    ) {
-      return ThreadInviteLinkController(
-        threadId,
-        ref.watch(threadInvitationRepositoryProvider),
-      );
-    }, dependencies: [threadInvitationRepositoryProvider]);
+    .family<ThreadInviteLinkController, ThreadInviteLinkState, String>(
+      (ref, threadId) {
+        ref.watch(sessionScopeProvider);
+        return ThreadInviteLinkController(
+          threadId,
+          ref.watch(threadInvitationRepositoryProvider),
+        );
+      },
+      dependencies: [threadInvitationRepositoryProvider, sessionScopeProvider],
+    );
 
 final threadInvitationAccessControllerProvider = StateNotifierProvider
     .autoDispose

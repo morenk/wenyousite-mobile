@@ -6,6 +6,70 @@ part of 'save_thread_aggregate_dto.dart';
 // BuiltValueGenerator
 // **************************************************************************
 
+const SaveThreadAggregateDtoMarkdownContractVersionEnum
+_$saveThreadAggregateDtoMarkdownContractVersionEnum_number6 =
+    const SaveThreadAggregateDtoMarkdownContractVersionEnum._('number6');
+const SaveThreadAggregateDtoMarkdownContractVersionEnum
+_$saveThreadAggregateDtoMarkdownContractVersionEnum_unknownDefaultOpenApi =
+    const SaveThreadAggregateDtoMarkdownContractVersionEnum._(
+      'unknownDefaultOpenApi',
+    );
+
+SaveThreadAggregateDtoMarkdownContractVersionEnum
+_$saveThreadAggregateDtoMarkdownContractVersionEnumValueOf(String name) {
+  switch (name) {
+    case 'number6':
+      return _$saveThreadAggregateDtoMarkdownContractVersionEnum_number6;
+    case 'unknownDefaultOpenApi':
+      return _$saveThreadAggregateDtoMarkdownContractVersionEnum_unknownDefaultOpenApi;
+    default:
+      return _$saveThreadAggregateDtoMarkdownContractVersionEnum_unknownDefaultOpenApi;
+  }
+}
+
+final BuiltSet<SaveThreadAggregateDtoMarkdownContractVersionEnum>
+_$saveThreadAggregateDtoMarkdownContractVersionEnumValues =
+    BuiltSet<SaveThreadAggregateDtoMarkdownContractVersionEnum>(const <
+      SaveThreadAggregateDtoMarkdownContractVersionEnum
+    >[
+      _$saveThreadAggregateDtoMarkdownContractVersionEnum_number6,
+      _$saveThreadAggregateDtoMarkdownContractVersionEnum_unknownDefaultOpenApi,
+    ]);
+
+const SaveThreadAggregateDtoIdentityModeEnum
+_$saveThreadAggregateDtoIdentityModeEnum_ACCOUNT =
+    const SaveThreadAggregateDtoIdentityModeEnum._('ACCOUNT');
+const SaveThreadAggregateDtoIdentityModeEnum
+_$saveThreadAggregateDtoIdentityModeEnum_RP =
+    const SaveThreadAggregateDtoIdentityModeEnum._('RP');
+const SaveThreadAggregateDtoIdentityModeEnum
+_$saveThreadAggregateDtoIdentityModeEnum_unknownDefaultOpenApi =
+    const SaveThreadAggregateDtoIdentityModeEnum._('unknownDefaultOpenApi');
+
+SaveThreadAggregateDtoIdentityModeEnum
+_$saveThreadAggregateDtoIdentityModeEnumValueOf(String name) {
+  switch (name) {
+    case 'ACCOUNT':
+      return _$saveThreadAggregateDtoIdentityModeEnum_ACCOUNT;
+    case 'RP':
+      return _$saveThreadAggregateDtoIdentityModeEnum_RP;
+    case 'unknownDefaultOpenApi':
+      return _$saveThreadAggregateDtoIdentityModeEnum_unknownDefaultOpenApi;
+    default:
+      return _$saveThreadAggregateDtoIdentityModeEnum_unknownDefaultOpenApi;
+  }
+}
+
+final BuiltSet<SaveThreadAggregateDtoIdentityModeEnum>
+_$saveThreadAggregateDtoIdentityModeEnumValues =
+    BuiltSet<SaveThreadAggregateDtoIdentityModeEnum>(
+      const <SaveThreadAggregateDtoIdentityModeEnum>[
+        _$saveThreadAggregateDtoIdentityModeEnum_ACCOUNT,
+        _$saveThreadAggregateDtoIdentityModeEnum_RP,
+        _$saveThreadAggregateDtoIdentityModeEnum_unknownDefaultOpenApi,
+      ],
+    );
+
 const SaveThreadAggregateDtoStatusEnum
 _$saveThreadAggregateDtoStatusEnum_RECRUITING =
     const SaveThreadAggregateDtoStatusEnum._('RECRUITING');
@@ -127,6 +191,12 @@ _$saveThreadAggregateDtoDefaultSubthreadPostingPolicyEnumValues =
       _$saveThreadAggregateDtoDefaultSubthreadPostingPolicyEnum_unknownDefaultOpenApi,
     ]);
 
+Serializer<SaveThreadAggregateDtoMarkdownContractVersionEnum>
+_$saveThreadAggregateDtoMarkdownContractVersionEnumSerializer =
+    _$SaveThreadAggregateDtoMarkdownContractVersionEnumSerializer();
+Serializer<SaveThreadAggregateDtoIdentityModeEnum>
+_$saveThreadAggregateDtoIdentityModeEnumSerializer =
+    _$SaveThreadAggregateDtoIdentityModeEnumSerializer();
 Serializer<SaveThreadAggregateDtoStatusEnum>
 _$saveThreadAggregateDtoStatusEnumSerializer =
     _$SaveThreadAggregateDtoStatusEnumSerializer();
@@ -136,6 +206,79 @@ _$saveThreadAggregateDtoVisibilityEnumSerializer =
 Serializer<SaveThreadAggregateDtoDefaultSubthreadPostingPolicyEnum>
 _$saveThreadAggregateDtoDefaultSubthreadPostingPolicyEnumSerializer =
     _$SaveThreadAggregateDtoDefaultSubthreadPostingPolicyEnumSerializer();
+
+class _$SaveThreadAggregateDtoMarkdownContractVersionEnumSerializer
+    implements
+        PrimitiveSerializer<SaveThreadAggregateDtoMarkdownContractVersionEnum> {
+  static const Map<String, Object> _toWire = const <String, Object>{
+    'number6': 6,
+    'unknownDefaultOpenApi': 11184809,
+  };
+  static const Map<Object, String> _fromWire = const <Object, String>{
+    6: 'number6',
+    11184809: 'unknownDefaultOpenApi',
+  };
+
+  @override
+  final Iterable<Type> types = const <Type>[
+    SaveThreadAggregateDtoMarkdownContractVersionEnum,
+  ];
+  @override
+  final String wireName = 'SaveThreadAggregateDtoMarkdownContractVersionEnum';
+
+  @override
+  Object serialize(
+    Serializers serializers,
+    SaveThreadAggregateDtoMarkdownContractVersionEnum object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => _toWire[object.name] ?? object.name;
+
+  @override
+  SaveThreadAggregateDtoMarkdownContractVersionEnum deserialize(
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => SaveThreadAggregateDtoMarkdownContractVersionEnum.valueOf(
+    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
+  );
+}
+
+class _$SaveThreadAggregateDtoIdentityModeEnumSerializer
+    implements PrimitiveSerializer<SaveThreadAggregateDtoIdentityModeEnum> {
+  static const Map<String, Object> _toWire = const <String, Object>{
+    'ACCOUNT': 'ACCOUNT',
+    'RP': 'RP',
+    'unknownDefaultOpenApi': 'unknown_default_open_api',
+  };
+  static const Map<Object, String> _fromWire = const <Object, String>{
+    'ACCOUNT': 'ACCOUNT',
+    'RP': 'RP',
+    'unknown_default_open_api': 'unknownDefaultOpenApi',
+  };
+
+  @override
+  final Iterable<Type> types = const <Type>[
+    SaveThreadAggregateDtoIdentityModeEnum,
+  ];
+  @override
+  final String wireName = 'SaveThreadAggregateDtoIdentityModeEnum';
+
+  @override
+  Object serialize(
+    Serializers serializers,
+    SaveThreadAggregateDtoIdentityModeEnum object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => _toWire[object.name] ?? object.name;
+
+  @override
+  SaveThreadAggregateDtoIdentityModeEnum deserialize(
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => SaveThreadAggregateDtoIdentityModeEnum.valueOf(
+    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
+  );
+}
 
 class _$SaveThreadAggregateDtoStatusEnumSerializer
     implements PrimitiveSerializer<SaveThreadAggregateDtoStatusEnum> {
@@ -256,6 +399,15 @@ class _$SaveThreadAggregateDtoDefaultSubthreadPostingPolicyEnumSerializer
 
 class _$SaveThreadAggregateDto extends SaveThreadAggregateDto {
   @override
+  final SaveThreadAggregateDtoMarkdownContractVersionEnum?
+  markdownContractVersion;
+  @override
+  final String? identityId;
+  @override
+  final String? identityToken;
+  @override
+  final SaveThreadAggregateDtoIdentityModeEnum? identityMode;
+  @override
   final String? title;
   @override
   final String? category;
@@ -284,6 +436,10 @@ class _$SaveThreadAggregateDto extends SaveThreadAggregateDto {
   ]) => (SaveThreadAggregateDtoBuilder()..update(updates))._build();
 
   _$SaveThreadAggregateDto._({
+    this.markdownContractVersion,
+    this.identityId,
+    this.identityToken,
+    this.identityMode,
     this.title,
     this.category,
     this.status,
@@ -309,6 +465,10 @@ class _$SaveThreadAggregateDto extends SaveThreadAggregateDto {
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
     return other is SaveThreadAggregateDto &&
+        markdownContractVersion == other.markdownContractVersion &&
+        identityId == other.identityId &&
+        identityToken == other.identityToken &&
+        identityMode == other.identityMode &&
         title == other.title &&
         category == other.category &&
         status == other.status &&
@@ -325,6 +485,10 @@ class _$SaveThreadAggregateDto extends SaveThreadAggregateDto {
   @override
   int get hashCode {
     var _$hash = 0;
+    _$hash = $jc(_$hash, markdownContractVersion.hashCode);
+    _$hash = $jc(_$hash, identityId.hashCode);
+    _$hash = $jc(_$hash, identityToken.hashCode);
+    _$hash = $jc(_$hash, identityMode.hashCode);
     _$hash = $jc(_$hash, title.hashCode);
     _$hash = $jc(_$hash, category.hashCode);
     _$hash = $jc(_$hash, status.hashCode);
@@ -343,6 +507,10 @@ class _$SaveThreadAggregateDto extends SaveThreadAggregateDto {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'SaveThreadAggregateDto')
+          ..add('markdownContractVersion', markdownContractVersion)
+          ..add('identityId', identityId)
+          ..add('identityToken', identityToken)
+          ..add('identityMode', identityMode)
           ..add('title', title)
           ..add('category', category)
           ..add('status', status)
@@ -361,6 +529,28 @@ class _$SaveThreadAggregateDto extends SaveThreadAggregateDto {
 class SaveThreadAggregateDtoBuilder
     implements Builder<SaveThreadAggregateDto, SaveThreadAggregateDtoBuilder> {
   _$SaveThreadAggregateDto? _$v;
+
+  SaveThreadAggregateDtoMarkdownContractVersionEnum? _markdownContractVersion;
+  SaveThreadAggregateDtoMarkdownContractVersionEnum?
+  get markdownContractVersion => _$this._markdownContractVersion;
+  set markdownContractVersion(
+    SaveThreadAggregateDtoMarkdownContractVersionEnum? markdownContractVersion,
+  ) => _$this._markdownContractVersion = markdownContractVersion;
+
+  String? _identityId;
+  String? get identityId => _$this._identityId;
+  set identityId(String? identityId) => _$this._identityId = identityId;
+
+  String? _identityToken;
+  String? get identityToken => _$this._identityToken;
+  set identityToken(String? identityToken) =>
+      _$this._identityToken = identityToken;
+
+  SaveThreadAggregateDtoIdentityModeEnum? _identityMode;
+  SaveThreadAggregateDtoIdentityModeEnum? get identityMode =>
+      _$this._identityMode;
+  set identityMode(SaveThreadAggregateDtoIdentityModeEnum? identityMode) =>
+      _$this._identityMode = identityMode;
 
   String? _title;
   String? get title => _$this._title;
@@ -422,6 +612,10 @@ class SaveThreadAggregateDtoBuilder
   SaveThreadAggregateDtoBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
+      _markdownContractVersion = $v.markdownContractVersion;
+      _identityId = $v.identityId;
+      _identityToken = $v.identityToken;
+      _identityMode = $v.identityMode;
       _title = $v.title;
       _category = $v.category;
       _status = $v.status;
@@ -457,6 +651,10 @@ class SaveThreadAggregateDtoBuilder
       _$result =
           _$v ??
           _$SaveThreadAggregateDto._(
+            markdownContractVersion: markdownContractVersion,
+            identityId: identityId,
+            identityToken: identityToken,
+            identityMode: identityMode,
             title: title,
             category: category,
             status: status,

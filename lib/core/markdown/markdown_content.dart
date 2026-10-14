@@ -2,6 +2,8 @@ import 'package:wenyousite_mobile/core/markdown/markdown_alignment.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_dice_contract.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_editable_block_syntax.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_list_structure.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_mention_target.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_source_protection.dart';
 
 class MarkdownContent {
   MarkdownContent._();
@@ -9,7 +11,7 @@ class MarkdownContent {
   static final _emptyImage = RegExp(r'!\[[^\]]*\]\(\s*\)');
   static final _emptyLink = RegExp(r'\[[^\]]*\]\(\s*\)');
   static final _image = RegExp(r'!\[[^\]]*\]\(\s*[^)\s]+[^)]*\)');
-  static final _link = RegExp(r'\[([^\]]+)\]\(\s*[^)\s]+[^)]*\)');
+  static final _link = RegExp(r'\[([^\]]+)\]\(\s*([^)\s]+)[^)]*\)');
   static final _httpAutolink = RegExp(
     r'<https?://[^\s<>]+>',
     caseSensitive: false,
@@ -596,23 +598,67 @@ class MarkdownContent {
   static bool isSafeImage(Uri uri) =>
       uri.scheme == 'https' || uri.scheme == 'http';
 
-  static String toPlainTextPreview(String markdown, {int maxLength = 180}) {
+  static String toPlainTextPreview(
+    String markdown, {
+    int maxLength = 180,
+    Map<String, String> mentionLabels = const {},
+  }) {
     if (maxLength <= 0) return '';
-    final visible =
-        MarkdownAlignmentContract.removeMarkerLines(normalize(markdown))
-            .replaceAllMapped(
-              _previewDice,
-              (match) => '[${match.group(1)!.trim()}]',
-            )
-            .replaceAll(_previewImage, '[图片]')
-            .replaceAllMapped(_link, (match) => match.group(1) ?? '[链接]')
-            .replaceAll(_httpAutolink, '[链接]')
-            .replaceAll(_previewUrl, '[链接]')
-            .replaceAll(_html, ' ')
-            .replaceAll(RegExp(r'(^|\n)\s{0,3}(?:[#>+\-]|\d+[.)])\s*'), ' ')
-            .replaceAll(RegExp(r'[`*_~|]'), '')
-            .replaceAll(RegExp(r'\s+', unicode: true), ' ')
-            .trim();
+    final source = MarkdownAlignmentContract.removeMarkerLines(
+      normalize(markdown),
+    );
+    final mask = source.contains('/users/')
+        ? MarkdownSourceProtection.analyze(
+            source.split('\n'),
+          ).maskedLines.join('\n')
+        : source;
+    var markerPrefix = '\uE000';
+    while (source.contains(markerPrefix)) {
+      markerPrefix += '\uE000';
+    }
+    final mentionText = <String, String>{};
+    final protected = source.replaceAllMapped(
+      RegExp(MarkdownMentionTarget.nodePattern),
+      (match) {
+        final label = match[1]!;
+        final target = MarkdownMentionTarget.parse(match[2]!);
+        var slashes = 0;
+        for (var i = match.start - 1; i >= 0 && source[i] == r'\'; i--) {
+          slashes++;
+        }
+        if (target == null ||
+            !target.acceptsLabel(label) ||
+            slashes.isOdd ||
+            (match.start > 0 && source[match.start - 1] == '!') ||
+            mask[match.start] != '[') {
+          return match[0]!;
+        }
+        final marker = '$markerPrefix${mentionText.length}\uE001';
+        mentionText[marker] =
+            '@${mentionLabels[target.projectionKey(label.substring(1))] ?? label.substring(1)}';
+        return marker;
+      },
+    );
+    var visible = protected
+        .replaceAllMapped(
+          _previewDice,
+          (match) => '[${match.group(1)!.trim()}]',
+        )
+        .replaceAll(_previewImage, '[图片]')
+        .replaceAllMapped(_link, (match) {
+          final label = match.group(1)!;
+          return label;
+        })
+        .replaceAll(_httpAutolink, '[链接]')
+        .replaceAll(_previewUrl, '[链接]')
+        .replaceAll(_html, ' ')
+        .replaceAll(RegExp(r'(^|\n)\s{0,3}(?:[#>+\-]|\d+[.)])\s*'), ' ')
+        .replaceAll(RegExp(r'[`*_~|]'), '')
+        .replaceAll(RegExp(r'\s+', unicode: true), ' ')
+        .trim();
+    for (final entry in mentionText.entries) {
+      visible = visible.replaceAll(entry.key, entry.value);
+    }
     final runes = visible.runes.toList(growable: false);
     if (runes.length <= maxLength) return visible;
     return '${String.fromCharCodes(runes.take(maxLength - 1))}…';

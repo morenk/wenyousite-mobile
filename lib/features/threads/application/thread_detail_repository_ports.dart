@@ -1,8 +1,19 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
+import 'package:wenyousite_mobile/core/models/discussion_window.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.dart';
 
 abstract interface class ThreadDetailRepository {
+  Future<DiscussionWindow<ThreadFloorModel>> fetchFloorWindow({
+    required String subthreadId,
+    int? number,
+    String? postId,
+    String? cursor,
+    int limit = 20,
+    ThreadFloorOrder order = ThreadFloorOrder.oldest,
+    String? authorId,
+  });
+
   Future<ThreadDetailModel> fetchThread(String threadId);
 
   Future<ThreadPostTargetModel> fetchPostTarget(String postId);
@@ -24,6 +35,17 @@ final threadDetailRepositoryProvider = Provider<ThreadDetailRepository>((ref) {
 
 class _UnboundThreadDetailRepository implements ThreadDetailRepository {
   const _UnboundThreadDetailRepository();
+
+  @override
+  Future<DiscussionWindow<ThreadFloorModel>> fetchFloorWindow({
+    required String subthreadId,
+    int? number,
+    String? postId,
+    String? cursor,
+    int limit = 20,
+    ThreadFloorOrder order = ThreadFloorOrder.oldest,
+    String? authorId,
+  }) => Future.error(_error());
 
   @override
   Future<ThreadDetailModel> fetchThread(String threadId) {

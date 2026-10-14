@@ -21,6 +21,8 @@ class HandledClipboardNavigation {
 }
 
 abstract interface class ClipboardNavigationGateway {
+  Future<String?> writeText(String text);
+
   Future<String?> readChangeToken();
 
   Future<ClipboardNavigationSnapshot?> readSnapshot();
@@ -44,6 +46,9 @@ final handledClipboardNavigationStoreProvider =
 class _UnavailableClipboardNavigationGateway
     implements ClipboardNavigationGateway {
   const _UnavailableClipboardNavigationGateway();
+
+  @override
+  Future<String?> writeText(String text) => Future.error(StateError('剪贴板暂不可用'));
 
   @override
   Future<String?> readChangeToken() async => null;

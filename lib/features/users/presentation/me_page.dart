@@ -9,6 +9,7 @@ import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/application/appearance_preference.dart';
 import 'package:wenyousite_mobile/core/application/background_execution.dart';
 import 'package:wenyousite_mobile/core/application/session_logout_controller.dart';
+import 'package:wenyousite_mobile/core/application/thread_font_preference.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
@@ -91,9 +92,14 @@ class _GuestMePage extends StatelessWidget {
               ),
             ),
             SizedBox(height: context.wenyouTokens.space12),
+            const _ToolboxEntry(),
+            SizedBox(height: context.wenyouTokens.space12),
             const WenyouSettingsGroup(
               title: '偏好',
-              children: [_AppearanceSettingsPanel()],
+              children: [
+                _AppearanceSettingsPanel(),
+                _ThreadFontSettingsPanel(),
+              ],
             ),
             WenyouSettingsGroup(
               title: '帮助',
@@ -144,11 +150,15 @@ class _AuthenticatedMePage extends ConsumerWidget {
         ],
       ),
       body: switch (state.phase) {
-        MeProfilePhase.loading => const WenyouPageBody(
-          child: WenyouDetailSkeleton(label: '正在加载个人资料'),
+        MeProfilePhase.loading => const _MePageList(
+          children: [
+            _ToolboxEntry(),
+            WenyouDetailSkeleton(label: '正在加载个人资料'),
+          ],
         ),
         MeProfilePhase.failed => _MePageList(
           children: [
+            const _ToolboxEntry(),
             WenyouPanel(
               child: WenyouEmptyState(
                 icon: WenyouIconIds.statusOffline,
@@ -382,6 +392,7 @@ class MeSettingsPage extends ConsumerWidget {
             title: '偏好与提醒',
             children: [
               const _AppearanceSettingsPanel(),
+              const _ThreadFontSettingsPanel(),
               if (backgroundReminderSupported)
                 const BackgroundReminderSettingsPanel(embedded: true),
             ],
@@ -411,6 +422,22 @@ class MeSettingsPage extends ConsumerWidget {
   }
 }
 
+class _ToolboxEntry extends StatelessWidget {
+  const _ToolboxEntry();
+
+  @override
+  Widget build(BuildContext context) => WenyouSettingsGroup(
+    children: [
+      WenyouSettingsLink(
+        key: const Key('me-open-toolbox'),
+        icon: WenyouIconIds.contentCategory,
+        title: '工具箱',
+        onTap: () => context.pushNamed(AppRouteNames.toolbox),
+      ),
+    ],
+  );
+}
+
 class _AppearanceSettingsPanel extends ConsumerWidget {
   const _AppearanceSettingsPanel();
 
@@ -427,6 +454,26 @@ class _AppearanceSettingsPanel extends ConsumerWidget {
       title: '外观',
       value: preference.label,
       onTap: () => context.pushNamed(AppRouteNames.appearance),
+    );
+  }
+}
+
+class _ThreadFontSettingsPanel extends ConsumerWidget {
+  const _ThreadFontSettingsPanel();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final preference = ref.watch(
+      threadFontPreferenceControllerProvider.select(
+        (state) => state.preference,
+      ),
+    );
+    return WenyouSettingsLink(
+      key: const Key('open-thread-font-settings'),
+      icon: WenyouIconIds.contentTopic,
+      title: '主题帖字号',
+      value: preference.label,
+      onTap: () => context.pushNamed(AppRouteNames.threadFont),
     );
   }
 }
@@ -543,6 +590,7 @@ class _MeDashboardState extends ConsumerState<_MeDashboard> {
                 keyPrefix: 'me-content',
                 semanticsLabel: '我的主页内容',
                 placement: WenyouTabPlacement.page,
+                backgroundColor: context.wenyouTokens.panel,
                 options: [
                   for (final tab in MeContentTab.values)
                     WenyouFilterOption(value: tab, label: tab.label),

@@ -6,6 +6,9 @@ import 'package:wenyousite_mobile/features/posts/application/post_composer_draft
 import 'package:wenyousite_mobile/features/posts/application/post_repository_ports.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
 import 'package:wenyousite_mobile/features/posts/presentation/post_composer_opening.dart';
+import 'package:wenyousite_mobile/features/thread_identity/identity_models.dart';
+
+import '../../support/discussion_window_fixture.dart';
 
 void main() {
   test('同一基线版本的本机草稿可安全恢复，正文分叉才要求选择', () {
@@ -214,7 +217,7 @@ PostItem _post({required String content, required int version}) => PostItem(
   isDeleted: false,
 );
 
-class _FakePostRepository implements PostRepository {
+class _FakePostRepository with PostWindowFixture implements PostRepository {
   _FakePostRepository({required this.latest, this.failures = 0});
 
   final PostItem latest;
@@ -261,5 +264,8 @@ class _FakePostRepository implements PostRepository {
     required String subthreadId,
     required String content,
     int? version,
+    String? identityToken,
+    String? identityId,
+    PostIdentityMode? identityMode,
   }) => throw UnimplementedError();
 }

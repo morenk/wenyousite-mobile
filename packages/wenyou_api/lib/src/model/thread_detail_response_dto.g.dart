@@ -164,6 +164,8 @@ class _$ThreadDetailResponseDtoVisibilityEnumSerializer
 
 class _$ThreadDetailResponseDto extends ThreadDetailResponseDto {
   @override
+  final bool? rpIdentityEnabled;
+  @override
   final String id;
   @override
   final String? title;
@@ -227,6 +229,7 @@ class _$ThreadDetailResponseDto extends ThreadDetailResponseDto {
   ]) => (ThreadDetailResponseDtoBuilder()..update(updates))._build();
 
   _$ThreadDetailResponseDto._({
+    this.rpIdentityEnabled,
     required this.id,
     this.title,
     required this.ownerId,
@@ -270,6 +273,7 @@ class _$ThreadDetailResponseDto extends ThreadDetailResponseDto {
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
     return other is ThreadDetailResponseDto &&
+        rpIdentityEnabled == other.rpIdentityEnabled &&
         id == other.id &&
         title == other.title &&
         ownerId == other.ownerId &&
@@ -304,6 +308,7 @@ class _$ThreadDetailResponseDto extends ThreadDetailResponseDto {
   @override
   int get hashCode {
     var _$hash = 0;
+    _$hash = $jc(_$hash, rpIdentityEnabled.hashCode);
     _$hash = $jc(_$hash, id.hashCode);
     _$hash = $jc(_$hash, title.hashCode);
     _$hash = $jc(_$hash, ownerId.hashCode);
@@ -340,6 +345,7 @@ class _$ThreadDetailResponseDto extends ThreadDetailResponseDto {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'ThreadDetailResponseDto')
+          ..add('rpIdentityEnabled', rpIdentityEnabled)
           ..add('id', id)
           ..add('title', title)
           ..add('ownerId', ownerId)
@@ -377,6 +383,11 @@ class ThreadDetailResponseDtoBuilder
     implements
         Builder<ThreadDetailResponseDto, ThreadDetailResponseDtoBuilder> {
   _$ThreadDetailResponseDto? _$v;
+
+  bool? _rpIdentityEnabled;
+  bool? get rpIdentityEnabled => _$this._rpIdentityEnabled;
+  set rpIdentityEnabled(bool? rpIdentityEnabled) =>
+      _$this._rpIdentityEnabled = rpIdentityEnabled;
 
   String? _id;
   String? get id => _$this._id;
@@ -518,6 +529,7 @@ class ThreadDetailResponseDtoBuilder
   ThreadDetailResponseDtoBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
+      _rpIdentityEnabled = $v.rpIdentityEnabled;
       _id = $v.id;
       _title = $v.title;
       _ownerId = $v.ownerId;
@@ -571,6 +583,7 @@ class ThreadDetailResponseDtoBuilder
       _$result =
           _$v ??
           _$ThreadDetailResponseDto._(
+            rpIdentityEnabled: rpIdentityEnabled,
             id: BuiltValueNullFieldError.checkNotNull(
               id,
               r'ThreadDetailResponseDto',

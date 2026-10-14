@@ -26,6 +26,7 @@ class MobileDevicesApi {
   ///
   /// Parameters:
   /// * [registerMobileDeviceDto]
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -37,6 +38,7 @@ class MobileDevicesApi {
   /// Throws [DioException] if API call or serialization fails
   Future<Response<MobileDeviceRegister200Response>> mobileDeviceRegister({
     required RegisterMobileDeviceDto registerMobileDeviceDto,
+    int? xMarkdownContractVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -48,6 +50,7 @@ class MobileDevicesApi {
     final _options = Options(
       method: r'PUT',
       headers: <String, dynamic>{
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -126,6 +129,7 @@ class MobileDevicesApi {
   ///
   ///
   /// Parameters:
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -136,6 +140,7 @@ class MobileDevicesApi {
   /// Returns a [Future] containing a [Response] with a [MobileDeviceUnregister200Response] as data
   /// Throws [DioException] if API call or serialization fails
   Future<Response<MobileDeviceUnregister200Response>> mobileDeviceUnregister({
+    int? xMarkdownContractVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -147,6 +152,7 @@ class MobileDevicesApi {
     final _options = Options(
       method: r'DELETE',
       headers: <String, dynamic>{
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         ...?headers,
       },
       extra: <String, dynamic>{

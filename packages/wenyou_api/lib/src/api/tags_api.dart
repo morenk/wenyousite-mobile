@@ -28,6 +28,7 @@ class TagsApi {
   ///
   /// Parameters:
   /// * [createTagDto]
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -39,6 +40,7 @@ class TagsApi {
   /// Throws [DioException] if API call or serialization fails
   Future<Response<TagsCreate200Response>> tagsCreate({
     required CreateTagDto createTagDto,
+    int? xMarkdownContractVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -50,6 +52,7 @@ class TagsApi {
     final _options = Options(
       method: r'POST',
       headers: <String, dynamic>{
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -129,6 +132,7 @@ class TagsApi {
   ///
   /// Parameters:
   /// * [id]
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -140,6 +144,7 @@ class TagsApi {
   /// Throws [DioException] if API call or serialization fails
   Future<Response<TagsGetById200Response>> tagsGetById({
     required String id,
+    int? xMarkdownContractVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -151,6 +156,7 @@ class TagsApi {
     final _options = Options(
       method: r'GET',
       headers: <String, dynamic>{
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -204,6 +210,7 @@ class TagsApi {
   ///
   /// Parameters:
   /// * [q] - 标签名称模糊搜索关键词
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -215,6 +222,7 @@ class TagsApi {
   /// Throws [DioException] if API call or serialization fails
   Future<Response<TagsSearch200Response>> tagsSearch({
     String? q,
+    int? xMarkdownContractVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -226,6 +234,7 @@ class TagsApi {
     final _options = Options(
       method: r'GET',
       headers: <String, dynamic>{
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         ...?headers,
       },
       extra: <String, dynamic>{

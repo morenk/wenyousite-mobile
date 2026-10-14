@@ -6,6 +6,7 @@ import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_line_metadata.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_dice_contract.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_mention_target.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_paragraph_boundaries.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_reference.dart';
 
@@ -380,7 +381,6 @@ class _ClipboardInlineBuilder {
     r'[a-zA-Z0-9_\u4e00-\u9fff]',
     unicode: true,
   );
-  static final _mentionId = RegExp(r'^[a-zA-Z0-9_-]{1,128}$');
   static final _stickerAssetId = RegExp(r'^c[a-z0-9]{20,}$');
   static final _unsafeControl = RegExp(
     '[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F]',
@@ -456,6 +456,24 @@ class _ClipboardInlineBuilder {
   void _appendAnchor(dom.Element element, Map<String, dynamic> attributes) {
     final href = element.attributes['href'] ?? '';
     final label = _visibleText(element);
+    final sourceHref = element.attributes['data-wenyou-mention-source-href'];
+    final sourceLabel = element.attributes['data-wenyou-mention-source-label'];
+    if (sourceHref != null || sourceLabel != null) {
+      final target = sourceHref == null
+          ? null
+          : MarkdownMentionTarget.parse(sourceHref);
+      if (target != null &&
+          sourceLabel != null &&
+          target.acceptsLabel(sourceLabel) &&
+          _isSafeAtomicLabel(sourceLabel)) {
+        _current.insert({
+          MarkdownDeltaCodec.mentionEmbed: target.toPayload(sourceLabel),
+        });
+      } else {
+        _appendText(label, attributes);
+      }
+      return;
+    }
     final reference = parseInternalReference(href);
     if (reference != null && _isSafeAtomicLabel(label)) {
       _current.insert({
@@ -471,20 +489,16 @@ class _ClipboardInlineBuilder {
       return;
     }
 
-    final user = RegExp(r'^/users/([^/]+)$').firstMatch(href);
+    final user = MarkdownMentionTarget.parse(href);
     if (user != null &&
-        _mentionId.hasMatch(user.group(1)!) &&
-        label.startsWith('@') &&
-        label.length <= 32 &&
+        user.isLegacy &&
+        user.acceptsLabel(label) &&
         _isSafeAtomicLabel(label)) {
-      _current.insert({
-        MarkdownDeltaCodec.mentionEmbed: {
-          'version': 1,
-          'kind': 'user',
-          'userId': user.group(1)!,
-          'label': label,
-        },
-      });
+      _current.insert({MarkdownDeltaCodec.mentionEmbed: user.toPayload(label)});
+      return;
+    }
+    if (user != null && !user.isLegacy) {
+      _appendText(label, attributes);
       return;
     }
 
