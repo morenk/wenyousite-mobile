@@ -14,6 +14,7 @@ void main() {
     (width: 360.0, scale: 1.0, dark: false, name: '360_light'),
     (width: 360.0, scale: 1.0, dark: true, name: '360_dark'),
     (width: 320.0, scale: 2.0, dark: false, name: '320_2x'),
+    (width: 320.0, scale: 2.0, dark: true, name: '320_2x_dark'),
   ]) {
     testWidgets('个人中心资料、工具和内容分层 ${visual.name}', (tester) async {
       tester.view.devicePixelRatio = 1;
@@ -70,6 +71,18 @@ void main() {
       final tools = find.byKey(const Key('me-personal-tools'));
       final header = tester.getRect(find.byKey(const Key('me-profile-header')));
       final toolsRect = tester.getRect(tools);
+      final toolbox = find.byKey(const Key('me-open-toolbox'));
+      expect(find.descendant(of: tools, matching: toolbox), findsOneWidget);
+      expect(tester.getSize(toolbox).height, greaterThanOrEqualTo(48));
+      expect(tester.getSize(toolbox).width, greaterThanOrEqualTo(48));
+      final firstTool = tester.getRect(
+        find.byKey(const Key('me-open-bookmarks')),
+      );
+      if (visual.scale == 1) {
+        expect(tester.getRect(toolbox).top, closeTo(firstTool.top, 1));
+      } else {
+        expect(tester.getRect(toolbox).top, greaterThan(firstTool.bottom - 1));
+      }
       expect(toolsRect.left, closeTo(header.left, 1));
       expect(toolsRect.right, closeTo(header.right, 1));
       expect(toolsRect.top, closeTo(header.bottom, 1));

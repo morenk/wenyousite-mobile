@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "repository": "https://github.com/morenk/wenyousite-frontend",
+  "revision": "0d82873888f551c688df4f4d1a92c5e284d35b32",
+  "files": {
+    "bilingual-name-data.json": {
+      "path": "src/lib/tools/bilingual-name-data.json",
+      "sha256": "abc1ddbb38dd435763592b15f10c764f4343e1a7e78fff98c27a1b48674c01be"
+    },
+    "name-inspiration.json": {
+      "path": "src/lib/tools/name-inspiration.json",
+      "sha256": "01fc3f364cece517135c08c7dc5c49b855911a8bd0f893b158b461a9592b742d"
+    },
+    "cn.json": {
+      "path": "src/lib/tools/name-data/cn.json",
+      "sha256": "7f0d6d19c3128de1c67e8c9c77420024a967f1e74a447da330c6ebbdae4a2d16"
+    },
+    "LICENSE.faker.txt": {
+      "path": "src/lib/tools/name-data/LICENSE.faker.txt",
+      "sha256": "8c0814c525426e67c04ca562f28364be477003697903d257160c081d14b271bf"
+    },
+    "name-fixtures.json": {
+      "path": "src/lib/tools/name-fixtures.json",
+      "sha256": "bbbb8fc9f35837bd6b4e1698eedd2cf5f3bd6bac07852723d8450e70fd94ff82"
+    },
+    "name-data-manifest.json": {
+      "path": "src/lib/tools/name-data-manifest.json",
+      "sha256": "a917e17e8e2d4f5aed69d83f46b27e94111ced9f891f63c7d2d8fa2722e475fc"
+    },
+    "LICENSE.wenyou.txt": {
+      "path": "src/lib/tools/name-data/LICENSE.wenyou.txt",
+      "sha256": "96c99f399007acf0f25ce53dec1862f5c192713c2c5e56a4f5c522a52f9525d8"
+    }
+  }
+}

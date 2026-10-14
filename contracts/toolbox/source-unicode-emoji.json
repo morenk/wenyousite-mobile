@@ -1,0 +1,15 @@
+{
+  "unicodeVersion": "16.0.0",
+  "property": "Extended_Pictographic",
+  "codePointCount": 3537,
+  "files": {
+    "unicode-16.0-emoji-data.txt": {
+      "url": "https://www.unicode.org/Public/16.0.0/ucd/emoji/emoji-data.txt",
+      "sha256": "f1365a5173eee18e1f98b240cdc492e84a25f1ce7e0c9d1094eb29c41a22696a"
+    },
+    "LICENSE.unicode.txt": {
+      "url": "https://www.unicode.org/license.txt",
+      "sha256": "e7a93b009565cfce55919a381437ac4db883e9da2126fa28b91d12732bc53d96"
+    }
+  }
+}
