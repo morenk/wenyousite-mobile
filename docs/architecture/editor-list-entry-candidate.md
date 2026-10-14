@@ -41,6 +41,8 @@ flutter test --no-pub --concurrency=2 `
 
 以下实际 Widget Golden 已逐张查看：列表图标移除、其余图标均分、无空占位，明暗主题及 2× 字号未见溢出。图片包含共享格式工具栏和展开的“更多”托盘。
 
+截图补正：初版 `7a429804` 的 Golden fixture 未传 `onInsertSticker`，画面没有展示实际编辑器已启用的表情包入口。应用功能未被删除。本轮补齐回调，四种视口均断言表情包按钮存在且可命中、两种列表按钮不存在，并检查布局无异常；以下图片更新为表情包启用状态。应用源码未变化，兼容回归结果继续有效。补图后工具栏 25 项测试通过，四张 Golden 非更新对比 4 项通过，改动测试文件格式检查通过；未重复无关检查或执行全量门禁。日志为 `.buildlog/hide-list-entries-sticker-goldens.log` 与 `.buildlog/hide-list-entries-sticker-compare.log`。
+
 | 视口与字号 | 画面 |
 | --- | --- |
 | 360×320dp，亮色，1× | [查看](../../test/features/editor/goldens/editor_more_tray_360_light.png) |
