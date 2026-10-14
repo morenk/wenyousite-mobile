@@ -5,9 +5,11 @@ import 'package:wenyousite_mobile/features/toolbox/domain/text_tool.dart';
 import 'package:wenyousite_mobile/features/toolbox/presentation/text_tool_page.dart';
 
 import '../../support/deterministic_test_fonts.dart';
+import '../../support/toolbox_test_fonts.dart';
 
 void main() {
   setUpAll(loadDeterministicTestFonts);
+  setUpAll(loadToolboxTestFonts);
   for (final tool in TextTool.values) {
     for (final dark in [false, true]) {
       for (final narrow in [false, true]) {
@@ -23,7 +25,9 @@ void main() {
           addTearDown(tester.view.resetPhysicalSize);
           await tester.pumpWidget(
             MaterialApp(
-              theme: dark ? AppTheme.dark : AppTheme.light,
+              theme: tool == TextTool.fancy
+                  ? toolboxGoldenTheme(dark ? AppTheme.dark : AppTheme.light)
+                  : (dark ? AppTheme.dark : AppTheme.light),
               builder: (context, child) => MediaQuery(
                 data: MediaQuery.of(
                   context,

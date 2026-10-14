@@ -52,21 +52,38 @@ class _TransformToolPanelState extends State<TransformToolPanel> {
     children: [
       WenyouSettingsGroup(
         children: [
-          if (widget.tool == TextTool.fancy)
+          if (widget.tool == TextTool.fancy) ...[
             ToolSelect(
+              key: const Key('fancy-category'),
+              label: '分类',
+              value: _style.category,
+              options: fancyCategories,
+              onChanged: (value) => setState(() {
+                _style = FancyStyle.values.firstWhere(
+                  (style) => style.category == value,
+                );
+                _result = null;
+                _error = null;
+              }),
+            ),
+            ToolSelect(
+              key: const Key('fancy-style'),
               label: '样式',
+              stacked: true,
+              spaciousText: true,
               value: _style,
               options: {
                 for (final style in FancyStyle.values)
-                  style: '${style.label}  ${fancyText('Abc', style)}',
+                  if (style.category == _style.category)
+                    style: '${style.label}\n${style.preview}',
               },
               onChanged: (value) => setState(() {
                 _style = value;
                 _result = null;
                 _error = null;
               }),
-            )
-          else
+            ),
+          ] else
             ToolSelect(
               label: '转换方式',
               value: _decode,
@@ -96,7 +113,11 @@ class _TransformToolPanelState extends State<TransformToolPanel> {
       ),
       if (_result != null && _result!.isNotEmpty) ...[
         SizedBox(height: context.wenyouTokens.space12),
-        ToolResult(text: _result!, revision: _resultRevision),
+        ToolResult(
+          text: _result!,
+          revision: _resultRevision,
+          protectCombiningMarks: widget.tool == TextTool.fancy,
+        ),
       ],
     ],
   );

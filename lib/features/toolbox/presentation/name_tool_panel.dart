@@ -226,7 +226,7 @@ class _NameToolPanelState extends State<NameToolPanel> {
           styles: !_advancedExpanded
               ? const {}
               : {
-                  for (final style in _advanced.catalog.forCountry(
+                  for (final style in _advanced.catalog.chronologicalOptions(
                     _country,
                     _advancedMode,
                   ))
