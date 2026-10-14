@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_settings_body.dart';
-import 'package:wenyousite_mobile/features/toolbox/application/historical_name_catalog.dart';
-import 'package:wenyousite_mobile/features/toolbox/application/historical_name_data.g.dart'
-    show historicalNameCountries;
-import 'package:wenyousite_mobile/features/toolbox/application/historical_name_generator.dart';
+import 'package:wenyousite_mobile/features/toolbox/application/advanced_name_catalog.dart';
+import 'package:wenyousite_mobile/features/toolbox/application/advanced_name_data.g.dart'
+    show advancedNameCountries;
+import 'package:wenyousite_mobile/features/toolbox/application/advanced_name_generator.dart';
 import 'package:wenyousite_mobile/features/toolbox/application/name_generator.dart';
-import 'package:wenyousite_mobile/features/toolbox/presentation/historical_name_controls.dart';
+import 'package:wenyousite_mobile/features/toolbox/presentation/advanced_name_controls.dart';
 import 'package:wenyousite_mobile/features/toolbox/presentation/name_tool_results.dart';
 import 'package:wenyousite_mobile/features/toolbox/presentation/tool_controls.dart';
 
@@ -18,9 +18,9 @@ class NameToolPanel extends StatefulWidget {
 
 class _NameToolPanelState extends State<NameToolPanel> {
   final _generator = LocalNameGenerator();
-  HistoricalNameGenerator? _historicalGenerator;
-  HistoricalNameGenerator get _historical =>
-      _historicalGenerator ??= HistoricalNameGenerator();
+  AdvancedNameGenerator? _advancedGenerator;
+  AdvancedNameGenerator get _advanced =>
+      _advancedGenerator ??= AdvancedNameGenerator();
   final _surname = TextEditingController();
   final _surnameZh = TextEditingController();
   final _count = TextEditingController(text: '10');
@@ -28,31 +28,64 @@ class _NameToolPanelState extends State<NameToolPanel> {
   var _sex = NameSex.any;
   var _style = NameStyle.common;
   var _advancedExpanded = false;
-  String? _profileId;
-  var _historicalRole = 'period';
-  var _familyId = '';
-  var _includePatronymic = false;
+  var _advancedMode = 'historical';
+  String? _advancedStyleId;
+  String? _structureId;
   List<GeneratedName> _results = [];
+  var _requestedCount = 0;
   String? _error;
 
-  HistoricalProfile? get _profile =>
-      _profileId == null ? null : _historical.catalog.profile(_profileId!);
+  AdvancedNameStyle? get _advancedStyle => _advancedStyleId == null
+      ? null
+      : _advanced.catalog.style(_advancedStyleId!);
 
-  void _resetHistorical() {
-    _profileId = null;
-    _historicalRole = 'period';
-    _familyId = '';
-    _includePatronymic = false;
+  void _resetAdvanced() {
+    _advancedMode = 'historical';
+    _advancedStyleId = null;
+    _structureId = null;
   }
 
-  void _changeHistorical(bool enabled) {
-    _resetHistorical();
-    _style = NameStyle.common;
-    _surname.clear();
-    _surnameZh.clear();
-    if (enabled) {
-      _profileId = _historical.catalog.forCountry(_country).first.id;
+  void _toggleAdvanced(bool enabled) {
+    _resetAdvanced();
+    _advancedExpanded = enabled;
+    if (enabled) _setAdvancedMode('historical');
+    _resetResults();
+  }
+
+  void _setAdvancedMode(String mode) {
+    if (!_advancedExpanded ||
+        !const ['historical', 'literary'].contains(mode)) {
+      return;
     }
+    final styles = _advanced.catalog.forCountry(_country, mode);
+    if (styles.isEmpty) return;
+    _advancedMode = mode;
+    _advancedStyleId = styles.first.id;
+    _structureId = styles.first.defaultStructureId;
+    _resetResults();
+  }
+
+  void _setAdvancedStyle(String id) {
+    if (!_advancedExpanded) return;
+    final style = _advanced.catalog.style(id);
+    if (style == null ||
+        style.country != _country ||
+        style.mode != _advancedMode) {
+      return;
+    }
+    _advancedStyleId = style.id;
+    _structureId = style.defaultStructureId;
+    _resetResults();
+  }
+
+  @override
+  void reassemble() {
+    super.reassemble();
+    // 调试中更新词库或由旧历史页切入时，只丢弃进阶临时状态。
+    // 普通姓名参数保持，旧选择浮层回调也不能恢复已收起的条件。
+    _advancedGenerator = null;
+    _advancedExpanded = false;
+    _resetAdvanced();
     _resetResults();
   }
 
@@ -66,16 +99,16 @@ class _NameToolPanelState extends State<NameToolPanel> {
 
   void _generate() {
     try {
-      final results = _profileId != null
-          ? _historical.generate(
-              HistoricalNameOptions(
+      final count = int.tryParse(_count.text) ?? 0;
+      final results = _advancedExpanded
+          ? _advanced.generate(
+              AdvancedNameOptions(
                 country: _country,
-                profileId: _profileId!,
-                role: _historicalRole,
-                familyId: _familyId,
+                mode: _advancedMode,
+                styleId: _advancedStyleId ?? '',
+                structureId: _structureId ?? '',
                 sex: _sex.name,
-                count: int.tryParse(_count.text) ?? 0,
-                includePatronymic: _includePatronymic,
+                count: count,
               ),
             )
           : _generator.generate(
@@ -85,11 +118,12 @@ class _NameToolPanelState extends State<NameToolPanel> {
                 style: _style,
                 surname: _surname.text,
                 surnameZh: _surnameZh.text,
-                count: int.tryParse(_count.text) ?? 0,
+                count: count,
               ),
             );
       setState(() {
         _results = results;
+        _requestedCount = count;
         _error = null;
       });
       FocusManager.instance.primaryFocus?.unfocus();
@@ -97,12 +131,14 @@ class _NameToolPanelState extends State<NameToolPanel> {
       setState(() {
         _error = error.message;
         _results = [];
+        _requestedCount = 0;
       });
     }
   }
 
   void _resetResults() {
     _results = [];
+    _requestedCount = 0;
     _error = null;
   }
 
@@ -121,7 +157,7 @@ class _NameToolPanelState extends State<NameToolPanel> {
               _style = NameStyle.common;
               _surname.clear();
               _surnameZh.clear();
-              _resetHistorical();
+              _resetAdvanced();
               _advancedExpanded = false;
               _resetResults();
             }),
@@ -139,7 +175,7 @@ class _NameToolPanelState extends State<NameToolPanel> {
               _resetResults();
             }),
           ),
-          if (_country == 'cn' && _profileId == null)
+          if (_country == 'cn' && !_advancedExpanded)
             ToolSelect(
               label: '风格',
               value: _style,
@@ -153,7 +189,7 @@ class _NameToolPanelState extends State<NameToolPanel> {
                 _resetResults();
               }),
             ),
-          if (_profileId == null)
+          if (!_advancedExpanded)
             ToolInlineInput(
               fieldKey: const Key('name-surname'),
               controller: _surname,
@@ -164,7 +200,7 @@ class _NameToolPanelState extends State<NameToolPanel> {
                 _resetResults();
               }),
             ),
-          if (_profileId == null &&
+          if (!_advancedExpanded &&
               _generator.needsSurnameZh(_country, _surname.text))
             ToolInlineInput(
               fieldKey: const Key('name-surname-zh'),
@@ -180,45 +216,42 @@ class _NameToolPanelState extends State<NameToolPanel> {
         ],
       ),
       SizedBox(height: context.wenyouTokens.space12),
-      if (historicalNameCountries.contains(_country)) ...[
-        HistoricalNameControls(
+      if (advancedNameCountries.contains(_country)) ...[
+        AdvancedNameControls(
           expanded: _advancedExpanded,
           onToggleExpanded: () =>
-              setState(() => _advancedExpanded = !_advancedExpanded),
-          profiles: _profileId == null
-              ? const []
-              : _historical.catalog.forCountry(_country),
-          profile: _profile,
-          role: _profile?.role(_historicalRole),
-          familyId: _familyId,
-          sex: _sex,
-          includePatronymic: _includePatronymic,
-          onEnabledChanged: (value) => setState(() => _changeHistorical(value)),
-          onProfileChanged: (value) => setState(() {
-            _profileId = value;
-            _historicalRole = 'period';
-            _familyId = '';
-            _includePatronymic = false;
-            _resetResults();
-          }),
-          onRoleChanged: (value) => setState(() {
-            _historicalRole = value;
-            _familyId = '';
-            _includePatronymic = false;
-            _resetResults();
-          }),
-          onFamilyChanged: (value) => setState(() {
-            _familyId = value;
-            _resetResults();
-          }),
-          onPatronymicChanged: (value) => setState(() {
-            _includePatronymic = value;
+              setState(() => _toggleAdvanced(!_advancedExpanded)),
+          mode: _advancedMode,
+          styleId: _advancedStyleId,
+          styles: !_advancedExpanded
+              ? const {}
+              : {
+                  for (final style in _advanced.catalog.forCountry(
+                    _country,
+                    _advancedMode,
+                  ))
+                    style.id: style.label,
+                },
+          structureId: _structureId,
+          structures: {
+            for (final structure
+                in _advancedStyle?.structures ?? <AdvancedNameStructure>[])
+              structure.id: structure.label,
+          },
+          onModeChanged: (value) => setState(() => _setAdvancedMode(value)),
+          onStyleChanged: (value) => setState(() => _setAdvancedStyle(value)),
+          onStructureChanged: (value) => setState(() {
+            if (!_advancedExpanded ||
+                _advancedStyle?.structure(value) == null) {
+              return;
+            }
+            _structureId = value;
             _resetResults();
           }),
         ),
         SizedBox(height: context.wenyouTokens.space12),
       ],
-      if (_profileId == null &&
+      if (!_advancedExpanded &&
           _country == 'ru' &&
           _surname.text.trim().isNotEmpty)
         const Text('固定姓氏按输入保留，不随性别变形'),
@@ -226,9 +259,10 @@ class _NameToolPanelState extends State<NameToolPanel> {
       ToolActions(
         onGenerate: _generate,
         onClear: () => setState(() {
-          _surname.clear();
-          _surnameZh.clear();
-          _familyId = '';
+          if (!_advancedExpanded) {
+            _surname.clear();
+            _surnameZh.clear();
+          }
           _resetResults();
         }),
       ),
@@ -236,7 +270,7 @@ class _NameToolPanelState extends State<NameToolPanel> {
         SizedBox(height: context.wenyouTokens.space12),
         NameToolResults(
           names: _results,
-          requestedCount: int.tryParse(_count.text) ?? 0,
+          requestedCount: _requestedCount,
           foreign: _country != 'cn',
         ),
       ],

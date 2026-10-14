@@ -41,7 +41,7 @@ class NameToolResults extends StatelessWidget {
           ),
         ],
       ),
-      if (names.length < requestedCount) Text('已生成 ${names.length} 个不同姓名'),
+      if (names.length < requestedCount) Text('已生成 ${names.length} 个不重复姓名'),
       ToolResultViewport(
         resetToken: names,
         child: Column(

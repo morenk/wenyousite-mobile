@@ -4,19 +4,17 @@ import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_settings_body.dart';
 
-/// 收起只隐藏控件，生效中的条件始终保留在入口上。
+/// 展开使用进阶条件，收起回到普通起名。
 class ToolAdvancedOptions extends StatelessWidget {
   const ToolAdvancedOptions({
     required this.expanded,
     required this.onToggle,
     required this.children,
-    this.summary,
     super.key,
   });
 
   final bool expanded;
   final VoidCallback onToggle;
-  final String? summary;
   final List<Widget> children;
 
   @override
@@ -30,21 +28,7 @@ class ToolAdvancedOptions extends StatelessWidget {
           child: ListTile(
             key: const Key('name-advanced-disclosure'),
             minTileHeight: tokens.minimumTouchTarget + tokens.space8,
-            title: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text('进阶选项', style: text.wenyouRowTitle),
-                if (summary != null) ...[
-                  SizedBox(height: tokens.space4),
-                  Text(
-                    summary!,
-                    style: text.wenyouCompactBody.copyWith(
-                      color: tokens.mutedText,
-                    ),
-                  ),
-                ],
-              ],
-            ),
+            title: Text('进阶选项', style: text.wenyouRowTitle),
             trailing: WenyouIcon(
               expanded
                   ? WenyouIconIds.navigationCollapse

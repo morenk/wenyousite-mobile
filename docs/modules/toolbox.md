@@ -89,3 +89,4 @@ Backend 基线 `5.36.0-dev.20261005.1`／`b5f0e3bb0b99a3f9763b31e3080cb4d4f2e640
 - [日常调试边界](../live-debug.md)
 - [原生工具候选检查与未通过门禁](../architecture/native-toolbox-candidate.md)
 - [可选历史起名候选](../architecture/historical-names-candidate.md)
+- [进阶起名 v2 反馈候选](../architecture/advanced-names-candidate.md)
