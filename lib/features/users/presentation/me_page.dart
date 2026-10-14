@@ -9,6 +9,7 @@ import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/application/appearance_preference.dart';
 import 'package:wenyousite_mobile/core/application/background_execution.dart';
 import 'package:wenyousite_mobile/core/application/session_logout_controller.dart';
+import 'package:wenyousite_mobile/core/application/thread_font_preference.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
@@ -95,7 +96,10 @@ class _GuestMePage extends StatelessWidget {
             SizedBox(height: context.wenyouTokens.space12),
             const WenyouSettingsGroup(
               title: '偏好',
-              children: [_AppearanceSettingsPanel()],
+              children: [
+                _AppearanceSettingsPanel(),
+                _ThreadFontSettingsPanel(),
+              ],
             ),
             WenyouSettingsGroup(
               title: '帮助',
@@ -388,6 +392,7 @@ class MeSettingsPage extends ConsumerWidget {
             title: '偏好与提醒',
             children: [
               const _AppearanceSettingsPanel(),
+              const _ThreadFontSettingsPanel(),
               if (backgroundReminderSupported)
                 const BackgroundReminderSettingsPanel(embedded: true),
             ],
@@ -449,6 +454,26 @@ class _AppearanceSettingsPanel extends ConsumerWidget {
       title: '外观',
       value: preference.label,
       onTap: () => context.pushNamed(AppRouteNames.appearance),
+    );
+  }
+}
+
+class _ThreadFontSettingsPanel extends ConsumerWidget {
+  const _ThreadFontSettingsPanel();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final preference = ref.watch(
+      threadFontPreferenceControllerProvider.select(
+        (state) => state.preference,
+      ),
+    );
+    return WenyouSettingsLink(
+      key: const Key('open-thread-font-settings'),
+      icon: WenyouIconIds.contentTopic,
+      title: '主题帖字号',
+      value: preference.label,
+      onTap: () => context.pushNamed(AppRouteNames.threadFont),
     );
   }
 }
