@@ -6,6 +6,48 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 
 void main() {
+  for (final status in ['available', 'no_release', 'unavailable']) {
+    test('存储桶信息契约 $status 保留匿名请求和推荐制品身份', () async {
+      const url =
+          'https://wenyou-apk.cn-nb1.rains3.com/mobile/android/wenyou-1.0.0-100.apk';
+      final adapter = _ContractAdapter({
+        'status': status,
+        'release': status == 'available'
+            ? {
+                'platform': 'android',
+                'applicationId': 'site.wenyou.app',
+                'versionName': '1.0.0',
+                'buildNumber': 100,
+                'sizeBytes': 4096,
+                'sha256': 'a' * 64,
+                'fileName': 'wenyou-1.0.0-100.apk',
+                'publishedAt': '2026-10-15T00:00:00.000Z',
+                'downloadUrl': url,
+                'releaseNotesUrl':
+                    'https://wenyou.site/api/v1/mobile-releases/android/100',
+              }
+            : null,
+        'retryAfterSeconds': null,
+      });
+      final dio = Dio()..httpClientAdapter = adapter;
+      addTearDown(() => dio.close(force: true));
+      final response = await WenyouApi(
+        dio: dio,
+      ).getMobileReleasesApi().mobileReleasesAndroidDownload();
+      final info = response.data!.data;
+      expect(info.status.name, status == 'no_release' ? 'noRelease' : status);
+      expect(info.retryAfterSeconds, isNull);
+      expect(info.release?.downloadUrl, status == 'available' ? url : isNull);
+      expect(info.release?.buildNumber, status == 'available' ? 100 : isNull);
+      expect(
+        adapter.requests.single.uri.path,
+        '/api/v1/mobile-releases/android/download',
+      );
+      expect(adapter.requests.single.method, 'GET');
+      expect(adapter.requests.single.extra['secure'], isEmpty);
+    });
+  }
+
   for (final status in ['no_release', 'withdrawn', 'paused', 'unavailable']) {
     test('下载契约 $status 的空制品与建议等待可解码', () async {
       final adapter = _ContractAdapter({

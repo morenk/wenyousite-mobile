@@ -10,6 +10,7 @@ import 'package:dio/dio.dart';
 
 import 'package:wenyou_api/src/api_util.dart';
 import 'package:wenyou_api/src/model/api_error_envelope.dart';
+import 'package:wenyou_api/src/model/mobile_releases_android_download200_response.dart';
 import 'package:wenyou_api/src/model/mobile_releases_detail200_response.dart';
 import 'package:wenyou_api/src/model/mobile_releases_list200_response.dart';
 
@@ -20,6 +21,82 @@ class MobileReleasesApi {
   final Serializers _serializers;
 
   const MobileReleasesApi(this._dio, this._serializers);
+
+  /// 读取 Android 推荐版本及存储桶直连地址
+  /// 仅返回受限发布完成的当前推荐制品。无推荐为 no_release；策略尚未切回存储桶、记录缺失或身份不匹配为 unavailable。该入口不访问对象存储、不代理 APK、不签发网关 Cookie。客户端显式点击后直连桶校验 HEAD，再原生 GET；限额及缓存遵循存储桶响应。
+  ///
+  /// Parameters:
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
+  /// * [headers] - Can be used to add additional headers to the request
+  /// * [extras] - Can be used to add flags to the request
+  /// * [validateStatus] - A [ValidateStatus] callback that can be used to determine request success based on the HTTP status of the response
+  /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
+  /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
+  ///
+  /// Returns a [Future] containing a [Response] with a [MobileReleasesAndroidDownload200Response] as data
+  /// Throws [DioException] if API call or serialization fails
+  Future<Response<MobileReleasesAndroidDownload200Response>> mobileReleasesAndroidDownload({
+    int? xMarkdownContractVersion,
+    CancelToken? cancelToken,
+    Map<String, dynamic>? headers,
+    Map<String, dynamic>? extra,
+    ValidateStatus? validateStatus,
+    ProgressCallback? onSendProgress,
+    ProgressCallback? onReceiveProgress,
+  }) async {
+    final _path = r'/api/v1/mobile-releases/android/download';
+    final _options = Options(
+      method: r'GET',
+      headers: <String, dynamic>{
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        ...?headers,
+      },
+      extra: <String, dynamic>{
+        'secure': <Map<String, String>>[],
+        ...?extra,
+      },
+      validateStatus: validateStatus,
+    );
+
+    final _response = await _dio.request<Object>(
+      _path,
+      options: _options,
+      cancelToken: cancelToken,
+      onSendProgress: onSendProgress,
+      onReceiveProgress: onReceiveProgress,
+    );
+
+    MobileReleasesAndroidDownload200Response? _responseData;
+
+    try {
+      final rawResponse = _response.data;
+      _responseData = rawResponse == null ? null : _serializers.deserialize(
+        rawResponse,
+        specifiedType: const FullType(MobileReleasesAndroidDownload200Response),
+      ) as MobileReleasesAndroidDownload200Response;
+
+    } catch (error, stackTrace) {
+      throw DioException(
+        requestOptions: _response.requestOptions,
+        response: _response,
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    return Response<MobileReleasesAndroidDownload200Response>(
+      data: _responseData,
+      headers: _response.headers,
+      isRedirect: _response.isRedirect,
+      requestOptions: _response.requestOptions,
+      redirects: _response.redirects,
+      statusCode: _response.statusCode,
+      statusMessage: _response.statusMessage,
+      extra: _response.extra,
+    );
+  }
 
   /// 读取已发布版本说明；不存在或未发布均为 404
   ///

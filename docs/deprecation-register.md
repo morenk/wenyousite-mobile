@@ -1,5 +1,12 @@
 # 兼容与弃用登记
 
+## Android 恢复存储桶直连（候选／待负责人验收）
+
+- 固定 Backend `882889c5d8dc4a47893cb4fe913a0f68e536ce2f`／`5.37.0-dev.20261015.1`。新发布工具默认不带 `--gateway`，`publicUrl` 与原 RainS3 地址相同，说明确认和制品身份校验保持。
+- App 继续消费 `/meta.updateUrl`，保留桶与历史网关地址、无 Cookie HEAD／流式 GET、完整 SHA-256 和原生包身份校验。Web 专用 `mobileReleasesAndroidDownload` 已生成但不作为 App 更新前置请求。
+- 未删除旧网关端点、生成 SDK、429 兼容提示、`--gateway` 后端入口、账本或历史审计。先部署兼容 Backend，再由授权管理入口切换策略；不在本任务自动晋级、修改桶权限或清理协议。回滚仍使用原受限流程，不能改写历史对象或重置账本。
+- 定向验证和真实环境未覆盖项见[直连候选记录](architecture/android-direct-download-acceptance.md)。
+
 ## 帖内 RP 身份一期（候选／待验收）
 
 - 逐条模式增量：`identityMode: ACCOUNT|RP` 为可选字段，省略保持旧兼容；ACCOUNT 明确使用账号，RP 要求有效显示和本人 token。编辑旧正文忽略新模式，成功幂等重放仍返回原帖。本轮不删除缺省协议。

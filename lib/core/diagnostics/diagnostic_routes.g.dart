@@ -39,6 +39,8 @@ const diagnosticApiRoutes = <String, String>{
   'GET /api/v1/image-gallery': 'galleryList',
   'GET /api/v1/meta': 'metaGetMeta',
   'GET /api/v1/mobile-releases': 'mobileReleasesList',
+  'GET /api/v1/mobile-releases/android/download':
+      'mobileReleasesAndroidDownload',
   'GET /api/v1/moderation/decisions/mine': 'userModerationAppealsMine',
   'GET /api/v1/moments': 'momentsList',
   'GET /api/v1/moments/bookmark-folders': 'momentsBookmarkFolders',

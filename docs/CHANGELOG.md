@@ -1,5 +1,16 @@
 # 移动端变更记录
 
+## 2026-10-15 — Android 存储桶直连发布候选／待负责人验收
+
+- Windows 发布工具恢复原 RainS3 下载地址，移除预检和晋级的 `--gateway`，保留两次说明 revision 核验、最终 `--notes-revision` 和不可改写的制品身份校验。
+- 固定同步 Backend `882889c5d8dc4a47893cb4fe913a0f68e536ce2f`／`5.37.0-dev.20261015.1`，生成 Web 专用下载信息方法并说明 Mobile 排除原因；App 仍使用 `/meta`、HEAD、流式 GET 和 SHA-256 校验，旧网关兼容保留。
+- 本轮只做发布工具 mock、契约解码和更新器定向验证；全量测试和门禁留到负责人明确授权的合并阶段。未构建、签包、上传、晋级或部署，详见[候选记录](architecture/android-direct-download-acceptance.md)。
+
+## 2026-10-15 — Android 存储桶直连契约同步候选
+
+- 固定 Backend `882889c5d8dc4a47893cb4fe913a0f68e536ce2f`／`5.37.0-dev.20261015.1`，同步 Web 专用下载信息接口与生成 SDK；Mobile 继续使用 `/meta` 更新器，保留历史网关兼容。
+- 来源 fixture 与下载相关 58 项离线测试通过，未运行全量测试、门禁或构建；来源尚未上线，发布工具改造在后续提交，见[契约同步记录](architecture/android-direct-download-contract-sync.md)。
+
 ## 2026-10-15 — 花体字与进阶年代排序验收通过
 
 - 负责人确认已安装的花体字与年代排序候选可用，并授权合并 PR #96；对应应用源码 `466277914096014b797a2db7f8496516dc066fb4`，设备 Debug 99 的 APK 摘要与本地一致，详见[验收记录](architecture/toolbox-fancy-expansion-candidate.md)。
