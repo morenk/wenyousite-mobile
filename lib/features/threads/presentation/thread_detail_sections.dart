@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/application/thread_font_preference.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_content_action_menu.dart';
@@ -168,6 +169,7 @@ class ThreadSubthreadBody extends ConsumerWidget {
           else if (body.postId == null)
             WenyouMarkdown(
               key: Key('thread-body-${subthread.id}'),
+              bodyFontSize: ref.watch(threadBodyFontSizeProvider),
               data: body.markdown,
               mediaDisplays: body.mediaDisplays,
               mentionLabels: body.mentionLabels,
@@ -182,6 +184,7 @@ class ThreadSubthreadBody extends ConsumerWidget {
           else
             StickerPostMarkdown(
               key: Key('thread-body-${subthread.id}'),
+              bodyFontSize: ref.watch(threadBodyFontSizeProvider),
               postId: body.postId!,
               postVersion: body.version ?? 1,
               galleryTarget: ReadingGalleryTarget(
@@ -476,6 +479,7 @@ class ThreadFloorCard extends ConsumerWidget {
                   else
                     StickerPostMarkdown(
                       postId: floor.id,
+                      bodyFontSize: ref.watch(threadBodyFontSizeProvider),
                       postVersion: floor.version,
                       galleryTarget: galleryTarget,
                       data: floor.body.markdown,
@@ -608,7 +612,7 @@ class _FloorInlineReplyPreview extends StatelessWidget {
   }
 }
 
-class _FloorInlineReplyCard extends StatelessWidget {
+class _FloorInlineReplyCard extends ConsumerWidget {
   const _FloorInlineReplyCard({
     required this.floorId,
     required this.reply,
@@ -622,7 +626,7 @@ class _FloorInlineReplyCard extends StatelessWidget {
   final VoidCallback onReply;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final tokens = context.wenyouTokens;
     return WenyouDiscussionReplyCard(
       key: Key('thread-floor-reply-$floorId-${reply.id}'),
@@ -672,7 +676,7 @@ class _FloorInlineReplyCard extends StatelessWidget {
               diceDetails: threadDiceDetails(reply.body.diceRolls),
               onInternalLink: (uri) => _showInternalLinkNotice(context, uri),
               onTapText: enabled ? onReply : null,
-              bodyFontSize: 17,
+              bodyFontSize: ref.watch(threadBodyFontSizeProvider),
               bodyHeight: 1.8,
             ),
         ],
