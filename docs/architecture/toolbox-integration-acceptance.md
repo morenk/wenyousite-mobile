@@ -24,7 +24,7 @@
 - 全量 Flutter 测试为 5942 通过、1 项预期跳过、2 项失败。跳过项是未启用 `WENYOU_VALIDATE_SENTRY` 的诊断收据验证；两项失败均为结果滚动 Golden 中“詹姆”由缺字方框恢复正常字形，布局、操作和滚动条未变。此前测试字体补字时遗漏这两张基准，本批独立复现后仅同步 `native_names_scroll_400_dark.png`、`native_names_scroll_320_2x_light.png`；原失败图与摘要保留。
 - `tool_result_scroll_test.dart` 与 `name_results_visual_test.dart` 补验 7 项通过，覆盖正常字形、限高常显滚动条、完整复制、重新生成复位及键盘高度。应用源码与已完成全量门禁和 APK 构建一致，仅修正测试基准及补充文档，不机械重跑全量应用测试。
 - 随后完整 `test/features/toolbox` 502 项全部通过，包含普通、历史、进阶、文字算法、Unicode 逐码点与工具 Widget／Golden 回归；没有跳过或额外失败。
-- 必需的公网只读契约校验仍失败：`HandshakeException: Connection terminated during handshake`。独立复核也失败，未修改 TLS、代理、网络配置或校验脚本绕过；保留 Draft PR，等待连接恢复后补验原入口，当前不可合并。
+- 首轮公网只读契约校验及独立复核均因 `HandshakeException: Connection terminated during handshake` 失败；未修改 TLS、代理、网络配置或校验脚本绕过。负责人通知连接恢复后，重新执行原入口 `npm run api:verify:production`，退出 0：API 与 bundle 均为 `5.36.0-dev.20261005.1`，服务端构建 `b5f0e3bb0b99a3f9763b31e3080cb4d4f2e64045`，Markdown 4 → 5 兼容，`GET /threads` Schema 兼容。原完整门禁的失败日志继续保留，两项失败均已分别补验通过，合并阻塞解除。
 
 详细日志保存在治理工作区 `.artifacts/toolbox-merge-20261014`：`mobile-check-apk.log` 保留完整失败退出；`scroll-golden-reproduction.log`、`scroll-golden-font-diff/manifest.json` 保留复现与差异；`scroll-name-results-recheck.log`、`toolbox-final-recheck.log` 记录修正后的定向复验。未操作真机、安装 APK、重启应用、访问业务写入接口、合并或发布。npm 工具链安装提示既有锁文件 10 项审计告警，未执行无关升级；不将其隐藏为已修复。
 
@@ -39,7 +39,7 @@
 - SHA-256：`3e15981d34004abe7402bc2c22c9169938667ebb60cb0dbce9e72bd46b513296`
 - 包信息与摘要：同目录 `apk-badging.txt`、`apk-evidence.json`；最终提交摘要另由外置交付记录绑定。
 
-构建成功不覆盖公网校验失败，也不代表已安装、重新进行真机验收或发布。构建输出仍提示既有 Kotlin 插件迁移和 Android SDK XML 工具版本差异，不在本批顺带升级。
+构建成功不代表已安装、重新进行真机验收或发布；公网校验恢复结果单独记录，不改写此前失败记录。构建输出仍提示既有 Kotlin 插件迁移和 Android SDK XML 工具版本差异，不在本批顺带升级。
 
 ## 历史证据
 
