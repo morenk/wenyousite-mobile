@@ -427,14 +427,6 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
             Attribute.inlineCode.key,
           ),
           quoteSelected: style.attributes.containsKey(Attribute.blockQuote.key),
-          bulletListSelected: WenyouEditorFormatPolicy.isActive(
-            style,
-            Attribute.ul,
-          ),
-          orderedListSelected: WenyouEditorFormatPolicy.isActive(
-            style,
-            Attribute.ol,
-          ),
           strikethroughSelected: style.attributes.containsKey(
             Attribute.strikeThrough.key,
           ),
@@ -447,9 +439,6 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
               _runFormattingAction(() => _toggle(Attribute.inlineCode)),
           onQuote: () =>
               _runFormattingAction(() => _toggle(Attribute.blockQuote)),
-          onBulletList: () => _runFormattingAction(() => _toggle(Attribute.ul)),
-          onOrderedList: () =>
-              _runFormattingAction(() => _toggle(Attribute.ol)),
           onAlignmentChanged: (alignment) => _runFormattingAction(
             () => WenyouEditorFormatPolicy.applyAlignment(
               widget.controller,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:wenyousite_mobile/features/editor/presentation/editor_format_policy.dart';
 
 import '../../support/deterministic_test_fonts.dart';
 import 'post_replies_page_test_support.dart';
@@ -14,7 +15,7 @@ void main() {
     (label: '无序列表', key: 'list', value: 'bullet', prefix: '-'),
     (label: '有序列表', key: 'list', value: 'ordered', prefix: '1.'),
   ]) {
-    testWidgets('回复空正文选 ${format.label} 后可恢复草稿、输入、发布及重新编辑', (tester) async {
+    testWidgets('回复 ${format.label} 空块可恢复草稿、输入、发布及重新编辑', (tester) async {
       final repository = PostRepliesPageTestFakePostRepository();
       final container = await postRepliesPageTestPostContainer(
         repository,
@@ -32,7 +33,13 @@ void main() {
       } else {
         await tester.tap(find.byKey(const Key('editor-more')));
         await tester.pumpAndSettle();
-        await tester.tap(find.byTooltip(format.label));
+        expect(find.byTooltip('无序列表'), findsNothing);
+        expect(find.byTooltip('有序列表'), findsNothing);
+        // 列表入口已隐藏，历史空列表仍保留原格式能力和页面保存链路。
+        WenyouEditorFormatPolicy.toggle(
+          _controller(tester),
+          format.value == 'bullet' ? Attribute.ul : Attribute.ol,
+        );
       }
       await tester.pumpAndSettle();
       expect(find.textContaining('不能安全保存'), findsNothing);
