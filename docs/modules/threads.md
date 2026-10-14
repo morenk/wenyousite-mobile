@@ -297,6 +297,8 @@ GIF 上传插入修复（2026-09-13，负责人验收通过）：新主题正文
 
 ## 13. 最近审查的契约版本和后端提交
 
+2026-10-15 Android 直连契约同步：固定 Backend `882889c5d8dc4a47893cb4fe913a0f68e536ce2f`／`5.37.0-dev.20261015.1`，新增 Web 下载信息接口；本模块既有行为保持，Mobile 继续由 `/meta` 下载策略驱动更新。来源尚未合并部署，见[直连契约同步](../architecture/android-direct-download-contract-sync.md)。
+
 2026-10-10 合并来源复核：通过官方同步入口固定到实际部署 Backend `b5f0e3bb0b99a3f9763b31e3080cb4d4f2e64045`，OpenAPI 仍为 `5.36.0-dev.20261005.1`。相对退役实施提交，机器契约、共享语料、生成客户端及本模块行为不变；仅来源登记更新，详见[退役验收记录](../architecture/retire-development-preview-acceptance.md)。
 
 2026-10-05 逐条身份补充契约：固定 Backend `a624bed0eb2b118701bd593fbce2aabf3dea7321`／`5.36.0-dev.20261005.1`。四个新发言／首次正文写入增加可选 `identityMode: ACCOUNT|RP`；ACCOUNT 明确沿用站内资料，RP 需本人确认，旧正文编辑保留原身份。此 chore 只同步固定契约和生成 SDK，产品接入与验收另行记录。

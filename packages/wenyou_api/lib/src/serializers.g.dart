@@ -317,6 +317,7 @@ Serializers _$serializers =
           ..add(MobilePlatformCompatibilityDto.serializer)
           ..add(MobileReleaseRevisionDto.serializer)
           ..add(MobileReleaseSnapshotDto.serializer)
+          ..add(MobileReleasesAndroidDownload200Response.serializer)
           ..add(MobileReleasesDetail200Response.serializer)
           ..add(MobileReleasesList200Response.serializer)
           ..add(ModerateContentDto.serializer)

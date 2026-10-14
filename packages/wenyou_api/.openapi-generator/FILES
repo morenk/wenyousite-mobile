@@ -299,6 +299,7 @@ lib/src/model/mobile_device_unregister200_response.dart
 lib/src/model/mobile_platform_compatibility_dto.dart
 lib/src/model/mobile_release_revision_dto.dart
 lib/src/model/mobile_release_snapshot_dto.dart
+lib/src/model/mobile_releases_android_download200_response.dart
 lib/src/model/mobile_releases_detail200_response.dart
 lib/src/model/mobile_releases_list200_response.dart
 lib/src/model/moderate_content_dto.dart

@@ -264,6 +264,7 @@ import 'package:wenyou_api/src/model/mobile_device_unregister200_response.dart';
 import 'package:wenyou_api/src/model/mobile_platform_compatibility_dto.dart';
 import 'package:wenyou_api/src/model/mobile_release_revision_dto.dart';
 import 'package:wenyou_api/src/model/mobile_release_snapshot_dto.dart';
+import 'package:wenyou_api/src/model/mobile_releases_android_download200_response.dart';
 import 'package:wenyou_api/src/model/mobile_releases_detail200_response.dart';
 import 'package:wenyou_api/src/model/mobile_releases_list200_response.dart';
 import 'package:wenyou_api/src/model/moderate_content_dto.dart';
@@ -813,6 +814,7 @@ part 'serializers.g.dart';
   MobilePlatformCompatibilityDto,
   MobileReleaseRevisionDto,
   MobileReleaseSnapshotDto,
+  MobileReleasesAndroidDownload200Response,
   MobileReleasesDetail200Response,
   MobileReleasesList200Response,
   ModerateContentDto,

@@ -20,7 +20,7 @@ part 'android_download_release_dto.g.dart';
 /// * [sha256]
 /// * [fileName]
 /// * [publishedAt]
-/// * [downloadUrl]
+/// * [downloadUrl] - 新入口返回固定 HTTPS 存储桶地址；历史 app-downloads 入口仍返回本站兼容地址
 /// * [releaseNotesUrl]
 @BuiltValue()
 abstract class AndroidDownloadReleaseDto implements Built<AndroidDownloadReleaseDto, AndroidDownloadReleaseDtoBuilder> {
@@ -49,6 +49,7 @@ abstract class AndroidDownloadReleaseDto implements Built<AndroidDownloadRelease
   @BuiltValueField(wireName: r'publishedAt')
   DateTime get publishedAt;
 
+  /// 新入口返回固定 HTTPS 存储桶地址；历史 app-downloads 入口仍返回本站兼容地址
   @BuiltValueField(wireName: r'downloadUrl')
   String get downloadUrl;
 
