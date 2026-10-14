@@ -1,6 +1,6 @@
-# 主题帖字号七档细化候选
+# 主题帖字号七档细化验收记录
 
-状态：候选／待负责人验收。此前五档实现已通过验收并合并 PR #95，本记录仅覆盖后续七档调整。
+状态：2026-10-15 负责人验收通过，已授权合并与清理任务分支、临时工作树。此前五档实现已通过验收并合并 PR #95，本记录仅覆盖后续七档调整。
 
 ## 需求与行为
 
@@ -24,7 +24,7 @@
 - 明暗 320dp／600dp 字号页 Golden 与个人设置入口数字值基准已更新；已查看窄屏明暗及 600dp 浅色画面，数字与刻度对齐，默认居中，无溢出。
 - 修改的 Dart 文件格式检查、`git diff --check` 和 `dart run tool/check_docs.dart` 通过。
 
-日志保留于当前工作树 `build/thread-font-ticks-tests.log`、`build/thread-font-ticks-ui.log`、`build/thread-font-ticks-analyze.log` 和 `build/thread-font-ticks-apk.log`。
+日志原位于工作树 `build/thread-font-ticks-tests.log`、`build/thread-font-ticks-ui.log`、`build/thread-font-ticks-analyze.log` 和 `build/thread-font-ticks-apk.log`。合并清理前，四份日志及候选 APK 已归档到 `D:\code\wenyousite\recovery\thread-font-ticks-20261015-1b300347`，逐文件 SHA-256 与原件一致；`manifest.json` 记录原路径、归档路径、大小及摘要。
 
 ## Debug 安装
 
@@ -35,7 +35,7 @@
 - 设备最初未连接，负责人随后连接 `4b9c39b5`（2509FPN0BC，ARM64）。安装前前台包为 `site.wenyou.app.debug`，核对与候选一致；没有活动 Flutter run 会话。
 - `adb -s 4b9c39b5 install -r`：`Success`，未卸载、未清数据。安装后 `lastUpdateTime=2026-10-15 01:30:48`，设备 `base.apk` SHA-256 与候选完整一致。
 - 无本任务可复用的 Flutter 会话，采用独立 APK 覆盖；未由代理启动应用、恢复登录或触发线上业务。API 仍为默认 `https://wenyou.site/api/v1`，由负责人手动打开“温油站 Debug”验收。
-- 本记录所在功能提交包含上述 APK 的全部应用源码；构建后仅补齐文档，没有修改应用源码。
+- 功能提交 `1b300347cf48c234c6c7b94bf1a2be7eec4908eb` 包含上述 APK 的全部应用源码；构建后仅补齐文档，没有修改应用源码。
 
 ## 真机验收步骤
 
@@ -44,4 +44,8 @@
 3. 逐格滑动并返回主题，确认每次字号变化 1sp，预览、正文、楼层和回复一致，返回设置保留选择。
 4. 检查原来选择 14／16／18 的用户保持字号，原 20／22 进入后为 19；恢复默认、重开应用和读屏增减正常。
 
-本轮负责人验收结果：尚未提供。
+## 负责人验收结果
+
+2026-10-15，负责人在上述候选安装后回复“可以合并清理分支了”，确认本轮验收通过并授权合并、清理分支与临时工作树。此结果对应功能提交 `1b300347cf48c234c6c7b94bf1a2be7eec4908eb` 及上述 APK；负责人未另行提供逐项手测结果。
+
+验收后仅更新文档，应用源码未变；沿用本轮不运行完整门禁的明确要求，不将此前未执行的完整门禁记为通过。
