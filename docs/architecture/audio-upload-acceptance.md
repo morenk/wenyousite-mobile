@@ -58,9 +58,21 @@ test/core/application/editor_toolbar_layout_test.dart
 
 ## 原生构建与待验收
 
+### 后续播放器交互批次
+
+本批只修改播放器组件与测试，未改变 API、存储、Markdown、插件或 Foundation 版本。固定渐变、180ms 背景／边界、120ms 图标与内部 96% 按压、4→6dp 实心进度圆点均沿用既有主题；48dp 命中保持。拖动期间和本轮 seek 确认前锁定本地目标，连续 seek 串行、三秒兜底释放，取消／失败／失焦／切换目标清理；等宽时间预留固定宽度。减少动态关闭缩放、过渡及 Slider ticker，离屏仅停视觉而不停止音乐。
+
+- `test/core/widgets/audio_player_interaction_test.dart` 与 `test/core/widgets/wenyou_audio_player_test.dart` 共 21 项通过；`.buildlog/audio-interaction-final-update.log` 和 `audio-interaction-final-compare.log` 分别记录 Golden 更新与最终比较。覆盖真实按压完成值 0.96、48dp 命中、实际键盘／读屏 adjust、媒体事件／旧 seek 完成、取消／失败／超时／切换、暂停／结束、减少动态、离屏／后台与加载状态。
+- 三个改动 Dart 文件定向分析：`.buildlog/audio-interaction-analyze-clean.log` 为 No issues found；前次 `audio-interaction-final-analyze.log` 的两条测试 API 弃用 info 已改用 `TickerMode.valuesOf(...).enabled` 消除。不运行全量测试、全量分析或门禁。
+- 早期两项测试失败分别为取到多个 ScaleTransition、取到 Slider 外层语义容器；限定内部动画与实际可调语义节点后补验。读屏 Slider 回调未为测试额外扩张；语义句柄清理亦已修正。最初使用管道正则参数的 Windows Flutter 命令未执行测试，改为单项名称后继续。原日志保留，不把失败命令记为通过。
+- `test/core/widgets/goldens/audio_states_{320|360}_{light|dark}.png` 为同段正文 idle／playing／dragging 三状态对照，另有 `_200.png` 四张长标题二倍字号图。拖动在首帧后等待 180ms 再截取，实测半径 6 与正常 4；移除默认 thumb 阴影，保留品牌实心圆点。画面经交叉审阅，仍为离线候选，未获得负责人真机交互验收。
+- 本批设备无在线连接，未启动、安装或热重载，也未重建 APK。下面 b9e857e9 的 APK 只包含此前静态样式，**不含本批播放器交互**，不能用该产物冒充最终源码。
+
+### 此前集中原生构建
+
 插件／原生变更已集中生成一次 ARM64 Debug APK，命令 `flutter build apk --debug --target-platform android-arm64 --dart-define=API_BASE_URL=https://wenyou.site/api/v1`，exit 0，454.8 秒；没有调用包含全量检查的候选脚本。日志 `.buildlog/audio-debug-build.log`，构建时源码干净。
 
-- 应用源码 `b9e857e94676b68c1cbef628d28adbf0b6af63c0`，Git tree `e3222baafdcf920301237f4b6a65605744613742`；后续记录提交不改变应用源码。
+- 应用源码 `b9e857e94676b68c1cbef628d28adbf0b6af63c0`，Git tree `e3222baafdcf920301237f4b6a65605744613742`；该产物早于上述交互批次。
 - APK：`build/app/outputs/flutter-apk/app-debug.apk`，112,652,030 字节；SHA-256 `f173861b8dd0f88bd2588523b7fe3d308568763403824a2959a2af5c8e0a2818`。
 - aapt 核验 `site.wenyou.app.debug`／温油站 Debug／0.9.0-debug (99)，仅 arm64-v8a，minSdk 26／targetSdk 36。无 RECORD_AUDIO；原有非音频前台服务权限保留，本轮没有新增音频后台播放服务。构建含已有图片插件 KGP 与 SDK XML 兼容提示，不影响本次成功。
 - API 明确为 `https://wenyou.site/api/v1`，按公网数据保护。构建前及结束时 `adb devices -l` 均无在线设备，因此未安装、未启动、未热重载、未修改设备数据，也未停止或接管旧工具栏会话；不以旧 APK 或旧画面冒充本次音频候选。
