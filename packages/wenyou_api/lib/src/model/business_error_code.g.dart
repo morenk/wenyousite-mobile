@@ -52,6 +52,14 @@ const BusinessErrorCode _$MARKDOWN_CAPABILITY_REQUIRED =
 const BusinessErrorCode _$ROLE_MENTIONS_DISABLED = const BusinessErrorCode._(
   'ROLE_MENTIONS_DISABLED',
 );
+const BusinessErrorCode _$TEXT_COLOR_CAPABILITY_REQUIRED =
+    const BusinessErrorCode._('TEXT_COLOR_CAPABILITY_REQUIRED');
+const BusinessErrorCode _$TEXT_COLOR_DISABLED = const BusinessErrorCode._(
+  'TEXT_COLOR_DISABLED',
+);
+const BusinessErrorCode _$INVALID_TEXT_COLOR = const BusinessErrorCode._(
+  'INVALID_TEXT_COLOR',
+);
 const BusinessErrorCode _$UNAUTHORIZED = const BusinessErrorCode._(
   'UNAUTHORIZED',
 );
@@ -313,6 +321,12 @@ BusinessErrorCode _$valueOf(String name) {
       return _$MARKDOWN_CAPABILITY_REQUIRED;
     case 'ROLE_MENTIONS_DISABLED':
       return _$ROLE_MENTIONS_DISABLED;
+    case 'TEXT_COLOR_CAPABILITY_REQUIRED':
+      return _$TEXT_COLOR_CAPABILITY_REQUIRED;
+    case 'TEXT_COLOR_DISABLED':
+      return _$TEXT_COLOR_DISABLED;
+    case 'INVALID_TEXT_COLOR':
+      return _$INVALID_TEXT_COLOR;
     case 'UNAUTHORIZED':
       return _$UNAUTHORIZED;
     case 'TOKEN_EXPIRED':
@@ -499,6 +513,9 @@ final BuiltSet<BusinessErrorCode> _$values =
       _$RP_IDENTITY_LIMIT,
       _$MARKDOWN_CAPABILITY_REQUIRED,
       _$ROLE_MENTIONS_DISABLED,
+      _$TEXT_COLOR_CAPABILITY_REQUIRED,
+      _$TEXT_COLOR_DISABLED,
+      _$INVALID_TEXT_COLOR,
       _$UNAUTHORIZED,
       _$TOKEN_EXPIRED,
       _$TOKEN_INVALID,
@@ -604,6 +621,10 @@ class _$BusinessErrorCodeMeta {
   BusinessErrorCode get MARKDOWN_CAPABILITY_REQUIRED =>
       _$MARKDOWN_CAPABILITY_REQUIRED;
   BusinessErrorCode get ROLE_MENTIONS_DISABLED => _$ROLE_MENTIONS_DISABLED;
+  BusinessErrorCode get TEXT_COLOR_CAPABILITY_REQUIRED =>
+      _$TEXT_COLOR_CAPABILITY_REQUIRED;
+  BusinessErrorCode get TEXT_COLOR_DISABLED => _$TEXT_COLOR_DISABLED;
+  BusinessErrorCode get INVALID_TEXT_COLOR => _$INVALID_TEXT_COLOR;
   BusinessErrorCode get UNAUTHORIZED => _$UNAUTHORIZED;
   BusinessErrorCode get TOKEN_EXPIRED => _$TOKEN_EXPIRED;
   BusinessErrorCode get TOKEN_INVALID => _$TOKEN_INVALID;
@@ -731,6 +752,9 @@ class _$BusinessErrorCodeSerializer
     'RP_IDENTITY_LIMIT': 40013,
     'MARKDOWN_CAPABILITY_REQUIRED': 40014,
     'ROLE_MENTIONS_DISABLED': 40015,
+    'TEXT_COLOR_CAPABILITY_REQUIRED': 40016,
+    'TEXT_COLOR_DISABLED': 40017,
+    'INVALID_TEXT_COLOR': 40018,
     'UNAUTHORIZED': 40100,
     'TOKEN_EXPIRED': 40101,
     'TOKEN_INVALID': 40102,
@@ -831,6 +855,9 @@ class _$BusinessErrorCodeSerializer
     40013: 'RP_IDENTITY_LIMIT',
     40014: 'MARKDOWN_CAPABILITY_REQUIRED',
     40015: 'ROLE_MENTIONS_DISABLED',
+    40016: 'TEXT_COLOR_CAPABILITY_REQUIRED',
+    40017: 'TEXT_COLOR_DISABLED',
+    40018: 'INVALID_TEXT_COLOR',
     40100: 'UNAUTHORIZED',
     40101: 'TOKEN_EXPIRED',
     40102: 'TOKEN_INVALID',

@@ -83,6 +83,8 @@ class _$PostDetailResponseDto extends PostDetailResponseDto {
   @override
   final BuiltList<MarkdownMediaDisplayResponseDto>? mediaDisplays;
   @override
+  final BuiltList<AudioMediaDto>? mediaAudios;
+  @override
   final String id;
   @override
   final String threadId;
@@ -136,6 +138,7 @@ class _$PostDetailResponseDto extends PostDetailResponseDto {
   _$PostDetailResponseDto._({
     this.mentionIdentities,
     this.mediaDisplays,
+    this.mediaAudios,
     required this.id,
     required this.threadId,
     required this.subthreadId,
@@ -175,6 +178,7 @@ class _$PostDetailResponseDto extends PostDetailResponseDto {
     return other is PostDetailResponseDto &&
         mentionIdentities == other.mentionIdentities &&
         mediaDisplays == other.mediaDisplays &&
+        mediaAudios == other.mediaAudios &&
         id == other.id &&
         threadId == other.threadId &&
         subthreadId == other.subthreadId &&
@@ -205,6 +209,7 @@ class _$PostDetailResponseDto extends PostDetailResponseDto {
     var _$hash = 0;
     _$hash = $jc(_$hash, mentionIdentities.hashCode);
     _$hash = $jc(_$hash, mediaDisplays.hashCode);
+    _$hash = $jc(_$hash, mediaAudios.hashCode);
     _$hash = $jc(_$hash, id.hashCode);
     _$hash = $jc(_$hash, threadId.hashCode);
     _$hash = $jc(_$hash, subthreadId.hashCode);
@@ -237,6 +242,7 @@ class _$PostDetailResponseDto extends PostDetailResponseDto {
     return (newBuiltValueToStringHelper(r'PostDetailResponseDto')
           ..add('mentionIdentities', mentionIdentities)
           ..add('mediaDisplays', mediaDisplays)
+          ..add('mediaAudios', mediaAudios)
           ..add('id', id)
           ..add('threadId', threadId)
           ..add('subthreadId', subthreadId)
@@ -281,6 +287,12 @@ class PostDetailResponseDtoBuilder
   set mediaDisplays(
     ListBuilder<MarkdownMediaDisplayResponseDto>? mediaDisplays,
   ) => _$this._mediaDisplays = mediaDisplays;
+
+  ListBuilder<AudioMediaDto>? _mediaAudios;
+  ListBuilder<AudioMediaDto> get mediaAudios =>
+      _$this._mediaAudios ??= ListBuilder<AudioMediaDto>();
+  set mediaAudios(ListBuilder<AudioMediaDto>? mediaAudios) =>
+      _$this._mediaAudios = mediaAudios;
 
   String? _id;
   String? get id => _$this._id;
@@ -394,6 +406,7 @@ class PostDetailResponseDtoBuilder
     if ($v != null) {
       _mentionIdentities = $v.mentionIdentities?.toBuilder();
       _mediaDisplays = $v.mediaDisplays?.toBuilder();
+      _mediaAudios = $v.mediaAudios?.toBuilder();
       _id = $v.id;
       _threadId = $v.threadId;
       _subthreadId = $v.subthreadId;
@@ -443,6 +456,7 @@ class PostDetailResponseDtoBuilder
           _$PostDetailResponseDto._(
             mentionIdentities: _mentionIdentities?.build(),
             mediaDisplays: _mediaDisplays?.build(),
+            mediaAudios: _mediaAudios?.build(),
             id: BuiltValueNullFieldError.checkNotNull(
               id,
               r'PostDetailResponseDto',
@@ -510,6 +524,8 @@ class PostDetailResponseDtoBuilder
         _mentionIdentities?.build();
         _$failedField = 'mediaDisplays';
         _mediaDisplays?.build();
+        _$failedField = 'mediaAudios';
+        _mediaAudios?.build();
 
         _$failedField = 'diceRolls';
         diceRolls.build();
