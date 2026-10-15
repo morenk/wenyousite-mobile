@@ -7,6 +7,7 @@ import 'package:wenyousite_mobile/core/application/visibility_cache_invalidation
 import 'package:wenyousite_mobile/core/models/paging.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/core/network/network_recovery.dart';
 import 'package:wenyousite_mobile/features/notifications/application/notification_repository_ports.dart';
 import 'package:wenyousite_mobile/features/notifications/application/notification_states.dart';
 
@@ -16,7 +17,7 @@ class NotificationUnreadController
     extends StateNotifier<NotificationUnreadState> {
   NotificationUnreadController(this._repository, {bool autoStart = true})
     : super(const NotificationUnreadState()) {
-    if (autoStart) unawaited(refresh());
+    if (autoStart) unawaited(runAutomaticNetworkRequests(refresh));
   }
 
   final NotificationRepository _repository;
@@ -24,20 +25,25 @@ class NotificationUnreadController
   var _pendingRemovals = 0;
   var _clearRevision = 0;
 
-  Future<void> refresh({bool force = false}) async {
-    if (!mounted || _pendingRemovals > 0 || (state.isLoading && !force)) return;
+  /// 仅实际完成且仍属当前批次的读取返回 true，跳过不能作为恢复证据。
+  Future<bool> refresh({bool force = false}) async {
+    if (!mounted || _pendingRemovals > 0 || (state.isLoading && !force)) {
+      return false;
+    }
     final epoch = _requestEpoch.begin();
     state = NotificationUnreadState(count: state.count, isLoading: true);
     try {
       final count = await _repository.fetchUnreadCount();
-      if (!mounted || !_requestEpoch.isCurrent(epoch)) return;
+      if (!mounted || !_requestEpoch.isCurrent(epoch)) return false;
       state = NotificationUnreadState(count: count < 0 ? 0 : count);
+      return true;
     } on Object catch (error) {
-      if (!mounted || !_requestEpoch.isCurrent(epoch)) return;
+      if (!mounted || !_requestEpoch.isCurrent(epoch)) return false;
       state = NotificationUnreadState(
         count: state.count,
         failure: mapApplicationFailure(error, '未读通知数同步失败。'),
       );
+      return false;
     }
   }
 

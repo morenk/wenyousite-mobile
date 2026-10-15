@@ -38,4 +38,6 @@ abstract final class ApiRequestExtraKeys {
   static const explicitCredentials = 'explicitCredentials';
   static const idempotentCreate = 'idempotentCreate';
   static const noAutomaticReplay = 'noAutomaticReplay';
+  static const automaticRecovery = 'wenyou.recovery.automatic';
+  static const recoveryTicket = 'wenyou.recovery.ticket';
 }

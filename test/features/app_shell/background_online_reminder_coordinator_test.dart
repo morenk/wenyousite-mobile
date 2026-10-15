@@ -3,10 +3,130 @@ import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/core/application/background_execution.dart';
 import 'package:wenyousite_mobile/core/application/background_online_reminders.dart';
+import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/network/network_recovery.dart';
 import 'package:wenyousite_mobile/features/app_shell/application/background_online_poller.dart';
 import 'package:wenyousite_mobile/features/app_shell/application/background_online_reminder_coordinator.dart';
 
 void main() {
+  test('网络冷却仍核验通知权限并立即停用无权限的后台任务', () async {
+    final recovery = NetworkRecovery();
+    recovery.failed(
+      recovery.ticket,
+      const ApiFailure(reason: FailureReason.offline),
+    );
+    final polling = _FakePollingSession();
+    final timers = _FakeTimerFactory();
+    var denied = 0;
+    final coordinator = BackgroundOnlineReminderCoordinator(
+      recovery: recovery,
+      pollingSession: polling,
+      notificationGateway: _FakeGateway(canNotifyValue: false),
+      onPermissionDenied: () async => denied++,
+      executionGateway: _RunningExecution(),
+      onExecutionUnavailable: (_) async {},
+      timerFactory: timers.create,
+    );
+    addTearDown(coordinator.dispose);
+    coordinator.start(includeDirectMessages: false);
+    await _settle();
+    expect(denied, 1);
+    expect(timers.activeTimer, isNull);
+    expect(polling.ensureCalls, 0);
+  });
+
+  test('失败基线和轮询共用冷却，成功后恢复每节拍读取', () async {
+    var elapsed = Duration.zero;
+    final recovery = NetworkRecovery(elapsed: () => elapsed);
+    var failBaseline = true;
+    final polling = _FakePollingSession();
+    polling.ensureHandler = () async {
+      if (failBaseline) throw const ApiFailure(httpStatus: 502);
+      return true;
+    };
+    final timers = _FakeTimerFactory();
+    final coordinator = _coordinator(
+      polling,
+      _FakeGateway(),
+      timers,
+      recovery: recovery,
+    );
+    addTearDown(coordinator.dispose);
+    coordinator.start(includeDirectMessages: false);
+    await _settle();
+    expect(polling.ensureCalls, 1);
+    timers.tick();
+    await _settle();
+    expect(polling.ensureCalls, 1);
+    elapsed += recovery.remaining;
+    timers.tick();
+    await _settle();
+    expect(polling.ensureCalls, 2);
+    expect(recovery.remaining.inSeconds, inInclusiveRange(60, 66));
+    failBaseline = false;
+    elapsed += recovery.remaining;
+    timers.tick();
+    await _settle();
+    expect(recovery.isCoolingDown, isFalse);
+    for (var i = 0; i < 3; i++) {
+      timers.tick();
+      await _settle();
+    }
+    expect(polling.pollCalls, 3);
+    polling.pollHandler = () async =>
+        throw const ApiFailure(reason: FailureReason.timeout);
+    timers.tick();
+    await _settle();
+    expect(recovery.remaining.inSeconds, inInclusiveRange(30, 33));
+  });
+
+  test('旧周期迟到失败不增加新周期冷却', () async {
+    final recovery = NetworkRecovery();
+    final pending = Completer<BackgroundOnlinePollBatch?>();
+    final polling = _FakePollingSession()..pollHandler = () => pending.future;
+    final timers = _FakeTimerFactory();
+    final coordinator = _coordinator(
+      polling,
+      _FakeGateway(),
+      timers,
+      recovery: recovery,
+    );
+    addTearDown(coordinator.dispose);
+    coordinator.start(includeDirectMessages: false);
+    await _settle();
+    timers.tick();
+    await _settle();
+    coordinator.stop();
+    recovery.resetSession();
+    coordinator.start(includeDirectMessages: false);
+    await _settle();
+    pending.completeError(const ApiFailure(reason: FailureReason.offline));
+    await _settle();
+    expect(recovery.isCoolingDown, isFalse);
+  });
+
+  test('后台读取失败后跳过冷却期间节拍且前后台切换不解除冷却', () async {
+    final polling = _FakePollingSession();
+    polling.pollHandler = () async => throw const ApiFailure(
+      source: FailureSource.network,
+      reason: FailureReason.offline,
+    );
+    final timers = _FakeTimerFactory();
+    final coordinator = _coordinator(polling, _FakeGateway(), timers);
+    addTearDown(coordinator.dispose);
+    coordinator.start(includeDirectMessages: false);
+    await _settle();
+    timers.tick();
+    await _settle();
+    timers.tick();
+    await _settle();
+    expect(polling.pollCalls, 1);
+    coordinator.stop();
+    coordinator.start(includeDirectMessages: false);
+    await _settle();
+    expect(polling.ensureCalls, 2);
+  });
+
   test('通知展示的迟到成功不能写入新后台周期的去重记录', () async {
     final polling = _FakePollingSession();
     polling.pollHandler = () async => polling.alertBatch();
@@ -281,9 +401,11 @@ void main() {
 BackgroundOnlineReminderCoordinator _coordinator(
   _FakePollingSession polling,
   _FakeGateway gateway,
-  _FakeTimerFactory timers,
-) {
+  _FakeTimerFactory timers, {
+  NetworkRecovery? recovery,
+}) {
   return BackgroundOnlineReminderCoordinator(
+    recovery: recovery,
     pollingSession: polling,
     notificationGateway: gateway,
     onPermissionDenied: () async {},
@@ -305,6 +427,7 @@ class _FakePollingSession implements BackgroundOnlinePollingSession {
   int pollCalls = 0;
   int commitCalls = 0;
   Future<BackgroundOnlinePollBatch?> Function()? pollHandler;
+  Future<bool> Function()? ensureHandler;
 
   @override
   bool get hasBaseline => baseline;
@@ -312,8 +435,8 @@ class _FakePollingSession implements BackgroundOnlinePollingSession {
   @override
   Future<bool> ensureBaseline({required bool includeDirectMessages}) async {
     ensureCalls++;
-    baseline = true;
-    return true;
+    baseline = await (ensureHandler?.call() ?? Future.value(true));
+    return baseline;
   }
 
   @override

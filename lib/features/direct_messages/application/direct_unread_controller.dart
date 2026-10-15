@@ -5,6 +5,7 @@ import 'package:wenyousite_mobile/app/app_capabilities.dart';
 import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
 import 'package:wenyousite_mobile/core/application/visibility_cache_invalidation.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/core/network/network_recovery.dart';
 import 'package:wenyousite_mobile/features/direct_messages/application/direct_message_repository_ports.dart';
 import 'package:wenyousite_mobile/features/direct_messages/application/direct_message_states.dart';
 import 'package:wenyousite_mobile/features/direct_messages/domain/direct_message_models.dart';
@@ -46,7 +47,7 @@ final directUnreadControllerProvider =
 class DirectUnreadController extends StateNotifier<DirectUnreadState> {
   DirectUnreadController(this._repository, {bool autoStart = true})
     : super(const DirectUnreadState()) {
-    if (autoStart) unawaited(refresh());
+    if (autoStart) unawaited(runAutomaticNetworkRequests(refresh));
   }
 
   final DirectMessageRepository _repository;
@@ -84,20 +85,23 @@ class DirectUnreadController extends StateNotifier<DirectUnreadState> {
     };
   }
 
-  Future<void> refresh() async {
-    if (!mounted || state.isLoading || _reading.isNotEmpty) return;
+  /// 跳过、过期或失败的读取不能解除整组自动未读查询的失败预算。
+  Future<bool> refresh() async {
+    if (!mounted || state.isLoading || _reading.isNotEmpty) return false;
     final epoch = ++_epoch;
     state = DirectUnreadState(counts: state.counts, isLoading: true);
     try {
       final counts = await _repository.fetchUnreadCounts();
-      if (!mounted || epoch != _epoch) return;
+      if (!mounted || epoch != _epoch) return false;
       state = DirectUnreadState(counts: counts);
+      return true;
     } on Object catch (error) {
-      if (!mounted || epoch != _epoch) return;
+      if (!mounted || epoch != _epoch) return false;
       state = DirectUnreadState(
         counts: state.counts,
         failure: mapApplicationFailure(error, '私聊未读数同步失败。'),
       );
+      return false;
     }
   }
 }
