@@ -69,6 +69,14 @@ test/core/application/editor_toolbar_layout_test.dart
 - 最终图片 `test/features/editor/goldens/audio_editor_{320|360}_{light|dark}{_200}.png`、`audio_editor_selected_360_light.png`；阅读／三状态在 `test/core/widgets/goldens/audio_body_*`、`audio_states_*`。全部含右侧保存图标，明暗窄屏、200% 与选中边框经交叉查看，仍为候选。
 - 当前没有可控热重载会话；旧 exec32990 已 Lost connection。未安装、未启动、未重启用户手机。WYSIWYG 本身为 Dart 代码，重进编辑目标会初始化控制器；此次新增原生保存需要新 APK，不能用旧包热重载冒充原生保存可用。
 
+本批源码冻结后单次执行 `flutter build apk --debug --target-platform android-arm64 --dart-define=API_BASE_URL=https://wenyou.site/api/v1`，exit 0，Gradle assembleDebug 420.1 秒。日志 `.buildlog/audio-wysiwyg-save-debug-build.log`；没有调用全量门禁或额外重复构建。新增 Android 保存通道已通过本次原生编译，既有图片插件 KGP 与 SDK XML 警告保留，不误记为新功能失败。
+
+- APK 对应源码 `4008ddbb9297ba0c1ba927d0abd82011877bd4a3`，Git tree `96ef8e133d679efc20acd9a868d1cb8bc1c6a35e`。后续仅补本文档，不能把文档提交当作重新构建的源码版本。
+- 产物 `D:\codex-worktrees\mobile-audio-upload\wenyousite-mobile\build\app\outputs\flutter-apk\app-debug.apk`，154,807,167 字节；SHA-256 `643e213d386b95ed63ffb136c8b4ce49a3244eda337bd2718f6b090480ea8423`。本路径覆盖此前旧 APK，下文旧摘要仅作历史记录。
+- aapt 和 APK 条目共同核验仅 `arm64-v8a`；包名 `site.wenyou.app.debug`，温油站 Debug，`0.9.0-debug (99)`，minSdk 26／targetSdk 36。无麦克风权限；原有权限未因音频保存扩张。新包体积增大不代表多 ABI，旧包已覆盖，未对旧包逐项体积归因。
+- API 为 `https://wenyou.site/api/v1`，属于真实公网数据。仅构建和只读产物检查，按本轮要求没有安装、启动、热重启、热重载或操作设备；真实保存与本次编辑交互仍待负责人验收。
+- 机器可读摘要 `.buildlog/audio-wysiwyg-save-artifact.json`，包元数据 `.buildlog/audio-wysiwyg-save-badging.log`。PR #102 保持 Draft；源码提交含 `[skip ci]`，推送后的 Actions run 列表为空。
+
 ### 后续播放器交互批次
 
 本批只修改播放器组件与测试，未改变 API、存储、Markdown、插件或 Foundation 版本。固定渐变、180ms 背景／边界、120ms 图标与内部 96% 按压、4→6dp 实心进度圆点均沿用既有主题；48dp 命中保持。拖动期间和本轮 seek 确认前锁定本地目标，连续 seek 串行、三秒兜底释放，取消／失败／失焦／切换目标清理；等宽时间预留固定宽度。减少动态关闭缩放、过渡及 Slider ticker，离屏仅停视觉而不停止音乐。
