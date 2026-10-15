@@ -20,6 +20,8 @@ Map<String, Object?> diagnosticErrorDetails(Object error, ApiFailure? failure) {
     _ => null,
   };
   return {
+    if (cause is MarkdownCodecException && cause.structure != null)
+      ...cause.structure!.diagnosticFields,
     'diagnosticCode': cause is MarkdownCodecException
         ? markdownDiagnosticCode(cause.message)
         : failure?.diagnosticCode,

@@ -93,6 +93,16 @@ SentryEvent diagnosticSentryEvent(DiagnosticRecord record) {
     (frame) => frame.file.startsWith('package:wenyousite_mobile/'),
   );
   final location = appFrames.firstOrNull ?? coordinates.firstOrNull;
+  final stableCodecCode =
+      fields['errorType'] == 'MarkdownCodecException' &&
+      const {
+        'markdown.document_roundtrip',
+        'markdown.block_roundtrip',
+        'markdown.divider_line',
+        'markdown.divider_attributes',
+        'markdown.divider_terminator',
+        'markdown.paragraph_alignment_conflict',
+      }.contains(fields['diagnosticCode']);
   final context = Contexts();
   context['diagnostic'] = record.toJson();
   return SentryEvent(
@@ -118,7 +128,8 @@ SentryEvent diagnosticSentryEvent(DiagnosticRecord record) {
       if (fields['diagnosticCode'] case final String code) code,
       if (fields['apiOperation'] case final String api) api,
       if (fields['dioType'] case final String type) type,
-      if (location != null) '${location.file}:${location.line}',
+      if (location != null && !stableCodecCode)
+        '${location.file}:${location.line}',
     ],
     tags: {
       'diagnostic_id': record.id,
