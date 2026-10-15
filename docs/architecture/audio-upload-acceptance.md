@@ -58,7 +58,15 @@ test/core/application/editor_toolbar_layout_test.dart
 
 ## 原生构建与待验收
 
-插件／原生变更集中生成一次 ARM64 Debug APK，结果与设备交接另补。不能把旧工具栏包的热重载当音频原生验证；不自动启动或热重启登录应用，避免自动签到。iOS 原生编译、真实文件提供者／音频焦点／Range 播放未在 Windows 验证。
+插件／原生变更已集中生成一次 ARM64 Debug APK，命令 `flutter build apk --debug --target-platform android-arm64 --dart-define=API_BASE_URL=https://wenyou.site/api/v1`，exit 0，454.8 秒；没有调用包含全量检查的候选脚本。日志 `.buildlog/audio-debug-build.log`，构建时源码干净。
+
+- 应用源码 `b9e857e94676b68c1cbef628d28adbf0b6af63c0`，Git tree `e3222baafdcf920301237f4b6a65605744613742`；后续记录提交不改变应用源码。
+- APK：`build/app/outputs/flutter-apk/app-debug.apk`，112,652,030 字节；SHA-256 `f173861b8dd0f88bd2588523b7fe3d308568763403824a2959a2af5c8e0a2818`。
+- aapt 核验 `site.wenyou.app.debug`／温油站 Debug／0.9.0-debug (99)，仅 arm64-v8a，minSdk 26／targetSdk 36。无 RECORD_AUDIO；原有非音频前台服务权限保留，本轮没有新增音频后台播放服务。构建含已有图片插件 KGP 与 SDK XML 兼容提示，不影响本次成功。
+- API 明确为 `https://wenyou.site/api/v1`，按公网数据保护。构建前及结束时 `adb devices -l` 均无在线设备，因此未安装、未启动、未热重载、未修改设备数据，也未停止或接管旧工具栏会话；不以旧 APK 或旧画面冒充本次音频候选。
+- 产物明细 `.buildlog/audio-debug-artifact.json`；[Draft PR #102](https://github.com/morenk/wenyousite-mobile/pull/102) 依赖 #98。未触发 GitHub 自动 run。
+
+不能把旧工具栏包的热重载当音频原生验证；不自动启动或热重启登录应用，避免自动签到。iOS 原生编译、真实文件提供者／音频焦点／Range 播放未在 Windows 验证。
 
 后端兼容发布后由负责人手动验证五种文件、超限／取消、草稿重开显式继续、失败重新选择、链接编辑发表、点击播放／拖进度、后台／离页／耳机中断、双播放器互斥与旧链接兼容。线上自动化只读；写入 E2E 另用已核验隔离环境。
 
