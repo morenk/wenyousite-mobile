@@ -5,6 +5,7 @@
 ## 范围与证据
 
 - 基线：`origin/dev` 的 `d7168b61ea1b547e737585d2e9b250f1b3bd24e2`，任务分支 `codex/20261015-sentry-editor-save`。
+- 已验证的应用源码提交为 `965d09f2e92484b78f0f31360e9354e88996831d`；后续仅调整 CHANGELOG 插入位置及验收记录，未合入新 `dev` 的应用源码。完整门禁与下述 APK 继续绑定此源码，文档 HEAD 另见 PR #100。
 - 关联 `WENYOUSITE-MOBILE-2J/1T`（`markdown.document_roundtrip`）、`1G/2A`（`markdown.divider_line`）与 `21`（`markdown.paragraph_alignment_conflict`）。这些事件没有原始正文、Delta 或完整操作序列，不能证明其精确触发条件。本候选不关闭它们。
 - 已证实的本机操作：打开 `前文\n\n---\n\n后文`，在分隔线节点后输入文字、删去线前两次换行或线后两次换行，旧代码均产生 `divider_line`；全选跨线并应用 H2 则产生 `divider_attributes`。原有严格保存门禁正确阻断写入。
 - 不吸收独立 PR #76 的尖括号／打开保护改动，也不调整 HTTP、Markdown 契约、数据库、依赖或线上数据。
