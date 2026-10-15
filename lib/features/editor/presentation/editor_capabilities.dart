@@ -1,4 +1,6 @@
 import 'package:flutter/foundation.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/core/application/editor_toolbar_layout.dart';
 
 @immutable
 class WenyouEditorCapabilities {
@@ -46,4 +48,34 @@ class WenyouEditorCapabilities {
 
   bool get hasMoreActions =>
       inlineStyles || links || blockStyles || alignment || dice || stickers;
+
+  Set<EditorTool> availableTools({required bool stickerCallback}) => {
+    if (headings) EditorTool.heading,
+    if (inlineStyles) ...[
+      EditorTool.bold,
+      EditorTool.italic,
+      EditorTool.inlineCode,
+      EditorTool.strike,
+    ],
+    if (images) EditorTool.image,
+    if (blockStyles) ...[EditorTool.quote, EditorTool.horizontalRule],
+    if (alignment) ...[EditorTool.alignCenter, EditorTool.alignRight],
+    if (links) EditorTool.link,
+    if (dice) EditorTool.dice,
+    if (drafts) EditorTool.drafts,
+    if (stickers && stickerCallback) EditorTool.sticker,
+  };
+
+  /// 编辑器与摆放预览共用扣除内边距后的实际宽度和能力规则。
+  ResolvedEditorToolbarLayout resolveToolbar(
+    EditorToolbarLayout layout, {
+    required double width,
+    required bool showSubmit,
+    required bool stickerCallback,
+  }) => layout.resolve(
+    slots: (width / WenyouEditorContract.minimumActionExtent).floor(),
+    showMore: hasMoreActions || !layout.isDefault,
+    showSubmit: showSubmit,
+    available: availableTools(stickerCallback: stickerCallback),
+  );
 }

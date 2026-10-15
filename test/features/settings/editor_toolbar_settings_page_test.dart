@@ -3,14 +3,18 @@ import 'dart:async';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/app_capabilities.dart';
 import 'package:wenyousite_mobile/app/app_route_access.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/application/editor_toolbar_layout.dart';
 import 'package:wenyousite_mobile/core/application/editor_toolbar_preference.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_reorder_feedback.dart';
 import 'package:wenyousite_mobile/features/settings/presentation/editor_toolbar_settings_page.dart';
 import 'package:wenyousite_mobile/features/users/presentation/me_page.dart';
 
@@ -36,6 +40,9 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          appCapabilitiesProvider.overrideWithValue(
+            const AppCapabilities(stickers: true, markdownAlignment: true),
+          ),
           editorToolbarPreferenceStoreProvider.overrideWithValue(store),
         ],
         child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
@@ -132,14 +139,16 @@ void main() {
     await tester.pumpAndSettle();
     expect(store.saved.expanded.first, EditorTool.heading);
     final writes = store.writes;
-    final scroll = tester
-        .widget<SingleChildScrollView>(
-          find.byKey(const Key('toolbar-layout-primary')),
-        )
-        .controller!;
     await tester.drag(_dragTool(EditorTool.italic), const Offset(-100, 0));
     await tester.pumpAndSettle();
-    expect(scroll.offset, greaterThan(0));
+    expect(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is SingleChildScrollView &&
+            widget.scrollDirection == Axis.horizontal,
+      ),
+      findsNothing,
+    );
     expect(store.writes, writes);
     expect(find.byKey(const Key('toolbar-drop-indicator')), findsNothing);
   });
@@ -159,8 +168,8 @@ void main() {
     await tester.pumpAndSettle();
     expect(store.saved.primary.take(3), [
       EditorTool.bold,
-      EditorTool.heading,
       EditorTool.italic,
+      EditorTool.heading,
     ]);
     final writes = store.writes;
     final cancel = await _startDrag(tester, EditorTool.bold);
@@ -172,7 +181,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('空展开栏可接收拖放，主栏横滑及边缘拖动不改写保存归属', (tester) async {
+  testWidgets('窄屏溢出及宽度变化只改变预览，空展开栏可拖入', (tester) async {
     _viewport(tester, const Size(320, 640));
     final saved = EditorToolbarLayout.custom(
       primary: EditorTool.values,
@@ -180,31 +189,20 @@ void main() {
     );
     final store = TestEditorToolbarStore()..saved = saved;
     await tester.pumpWidget(_app(store));
-    await tester.drag(
-      find.byKey(const Key('toolbar-layout-primary')),
-      const Offset(-180, 0),
-    );
-    await tester.pumpAndSettle();
+    Finder group(String name) => find.byKey(Key('toolbar-layout-$name'));
+    Finder within(String name, EditorTool tool) =>
+        find.descendant(of: group(name), matching: _dragTool(tool));
+    expect(within('primary', EditorTool.image), findsOneWidget);
+    expect(within('expanded', EditorTool.quote), findsOneWidget);
     expect(store.writes, 0);
     expect(store.saved, saved);
+    tester.view.physicalSize = const Size(1200, 640);
+    await tester.pumpAndSettle();
     expect(
       find.byKey(const ValueKey('toolbar-empty-expanded')),
       findsOneWidget,
     );
-
     final drag = await _startDrag(tester, EditorTool.heading);
-    final viewport = tester.getRect(
-      find.byKey(const Key('toolbar-layout-primary')),
-    );
-    final scroll = tester
-        .widget<SingleChildScrollView>(
-          find.byKey(const Key('toolbar-layout-primary')),
-        )
-        .controller!;
-    await drag.moveTo(Offset(viewport.right - 4, viewport.center.dy));
-    await tester.pump(const Duration(milliseconds: 240));
-    expect(scroll.offset, greaterThan(0));
-    expect(store.writes, 0);
     await drag.moveTo(
       tester.getCenter(find.byKey(const ValueKey('toolbar-empty-expanded'))),
     );
@@ -212,10 +210,7 @@ void main() {
     await drag.up();
     await tester.pumpAndSettle();
     expect(store.saved.expanded, [EditorTool.heading]);
-    expect(
-      store.saved.primary,
-      EditorTool.values.where((tool) => tool != EditorTool.heading),
-    );
+    expect(store.writes, 1);
     expect(tester.takeException(), isNull);
   });
 
@@ -270,7 +265,288 @@ void main() {
     expect(store.saved.primary.first, EditorTool.bold);
   });
 
+  testWidgets('满主栏末端插入实时让位，保存后不再隐藏重排', (tester) async {
+    _viewport(tester, const Size(320, 640));
+    final store = TestEditorToolbarStore()
+      ..saved = EditorToolbarLayout.custom(
+        primary: EditorTool.values,
+        expanded: [],
+      );
+    await tester.pumpWidget(_app(store));
+    final before = tester.getRect(
+      find.byKey(const ValueKey('toolbar-drop-primary-3')),
+    );
+    final source = tester.state(_dragTool(EditorTool.sticker));
+    final drag = await _startDrag(tester, EditorTool.sticker);
+    await drag.moveTo(Offset(before.right + 1, before.center.dy));
+    await tester.pumpAndSettle();
+    expect(tester.state(_dragTool(EditorTool.sticker)), same(source));
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('toolbar-layout-expanded')),
+        matching: _dragTool(EditorTool.image),
+      ),
+      findsOneWidget,
+    );
+    expect(store.writes, 0);
+    await drag.up();
+    await tester.pumpAndSettle();
+    expect(store.saved.primary, [
+      EditorTool.heading,
+      EditorTool.bold,
+      EditorTool.italic,
+      EditorTool.sticker,
+    ]);
+    expect(store.saved.expanded.first, EditorTool.image);
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('toolbar-layout-primary')),
+        matching: _dragTool(EditorTool.sticker),
+      ),
+      findsOneWidget,
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('默认独立草稿可拖动，落回后空行消失且未显示能力顺序保留', (tester) async {
+    _viewport(tester, const Size(320, 640));
+    final store = TestEditorToolbarStore();
+    await tester.pumpWidget(_app(store));
+    expect(
+      find.byKey(const Key('toolbar-preview-dedicated-draft')),
+      findsOneWidget,
+    );
+    final source = tester.state(_dragTool(EditorTool.drafts));
+    final draftCenter = tester.getCenter(_dragTool(EditorTool.drafts));
+    final drag = await _startDrag(tester, EditorTool.drafts);
+    expect(
+      tester.getCenter(find.byKey(const Key('toolbar-feedback-position'))),
+      draftCenter,
+    );
+    await drag.moveTo(
+      tester.getCenter(find.byKey(const ValueKey('toolbar-drop-primary-0'))),
+    );
+    await tester.pump();
+    expect(tester.state(_dragTool(EditorTool.drafts)), same(source));
+    await drag.up();
+    await tester.pumpAndSettle();
+    expect(store.saved.primary.first, EditorTool.drafts);
+    expect(
+      find.byKey(const Key('toolbar-preview-dedicated-draft')),
+      findsNothing,
+    );
+    expect(find.byKey(const Key('toolbar-drag-feedback')), findsNothing);
+    await tester.pumpWidget(const SizedBox.shrink());
+    store.saved = EditorToolbarLayout.custom(
+      primary: [
+        EditorTool.alignRight,
+        EditorTool.heading,
+        EditorTool.sticker,
+        EditorTool.alignCenter,
+        EditorTool.bold,
+        EditorTool.image,
+      ],
+      expanded: [],
+    );
+    await tester.pumpWidget(_app(store, capabilities: false));
+    expect(_dragTool(EditorTool.sticker), findsNothing);
+    expect(_dragTool(EditorTool.alignRight), findsNothing);
+    await _drop(tester, EditorTool.heading, EditorToolbarGroup.expanded, 0);
+    expect(
+      store.saved.primary.where(
+        (tool) => [
+          EditorTool.alignRight,
+          EditorTool.sticker,
+          EditorTool.alignCenter,
+        ].contains(tool),
+      ),
+      [EditorTool.alignRight, EditorTool.sticker, EditorTool.alignCenter],
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  for (final reduced in [false, true]) {
+    testWidgets('快速松手落入最终槽位、触感及取消（减弱动画$reduced）', (tester) async {
+      _viewport(tester, const Size(360, 640));
+      var haptics = 0;
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        (call) async {
+          if (call.method == 'HapticFeedback.vibrate') haptics++;
+          return null;
+        },
+      );
+      addTearDown(
+        () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          SystemChannels.platform,
+          null,
+        ),
+      );
+      final store = TestEditorToolbarStore();
+      await tester.pumpWidget(_app(store, reducedMotion: reduced));
+      final tray = tester.getRect(
+        find.byKey(const Key('toolbar-layout-expanded')),
+      );
+      final boldBefore = tester.getTopLeft(_dragTool(EditorTool.bold));
+      final destination = tester.getRect(
+        find.byKey(const ValueKey('toolbar-drop-primary-2')),
+      );
+      final drag = await _startDrag(tester, EditorTool.heading);
+      expect(haptics, 1);
+      expect(
+        tester.getRect(find.byKey(const Key('toolbar-layout-expanded'))),
+        tray,
+      );
+      await drag.moveTo(destination.center + const Offset(8, 0));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 16));
+      expect(
+        tester.getTopLeft(_dragTool(EditorTool.bold)).dx,
+        lessThan(boldBefore.dx),
+      );
+      expect(store.writes, 0);
+      final liftBeforeRelease = tester
+          .widget<WenyouReorderFeedback>(
+            find.byKey(const Key('toolbar-drag-feedback')),
+          )
+          .animation!
+          .value;
+      if (!reduced) expect(liftBeforeRelease, lessThan(1));
+      await drag.up();
+      await tester.pump();
+      expect(store.writes, 1);
+      expect(store.saved.primary[2], EditorTool.heading);
+      if (!reduced) {
+        expect(
+          tester
+              .widget<WenyouReorderFeedback>(
+                find.byKey(const Key('toolbar-drag-feedback')),
+              )
+              .animation!
+              .value,
+          lessThanOrEqualTo(liftBeforeRelease),
+        );
+        await tester.pump(); // 松手后的下一帧启动回落时钟。
+        await tester.pump(
+          WenyouFoundationMotion.standard - const Duration(milliseconds: 1),
+        );
+        expect(
+          tester
+              .getTopLeft(find.byKey(const Key('toolbar-feedback-position')))
+              .dx,
+          closeTo(destination.left, 1),
+        );
+      }
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('toolbar-drag-feedback')), findsNothing);
+      expect(
+        tester.getTopLeft(_dragTool(EditorTool.heading)).dx,
+        destination.left,
+      );
+      final cancelled = await _startDrag(tester, EditorTool.bold);
+      await cancelled.moveTo(
+        tester.getCenter(find.byKey(const ValueKey('toolbar-drop-expanded-0'))),
+      );
+      await tester.pump();
+      await cancelled.cancel();
+      await tester.pumpAndSettle();
+      expect(store.writes, 1);
+      expect(find.byKey(const Key('toolbar-drag-feedback')), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  testWidgets('收起后起拖自动展开，跨栏不重挂载手势且托盘不跳高', (tester) async {
+    _viewport(tester, const Size(360, 640));
+    final store = TestEditorToolbarStore()
+      ..saved = EditorToolbarLayout.custom(
+        primary: EditorTool.values.skip(6).toList(),
+        expanded: EditorTool.values.take(6).toList(),
+      );
+    await tester.pumpWidget(_app(store));
+    await tester.tap(find.byKey(const Key('toolbar-layout-fixed-more')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('toolbar-layout-expanded')), findsNothing);
+    final tool = store.saved.primary.first;
+    final sourceState = tester.state(_dragTool(tool));
+    final drag = await _startDrag(tester, tool);
+    await tester.pumpAndSettle();
+    final height = tester
+        .getSize(find.byKey(const Key('toolbar-layout-expanded')))
+        .height;
+    await drag.moveTo(
+      tester.getCenter(find.byKey(const ValueKey('toolbar-drop-expanded-0'))),
+    );
+    await tester.pump();
+    expect(tester.state(_dragTool(tool)), same(sourceState));
+    expect(
+      tester.getSize(find.byKey(const Key('toolbar-layout-expanded'))).height,
+      height,
+    );
+    await drag.up();
+    await tester.pump();
+    expect(store.writes, 1);
+    expect(
+      tester.getSize(find.byKey(const Key('toolbar-layout-expanded'))).height,
+      height,
+    );
+    await tester.pumpAndSettle();
+    expect(store.saved.expanded.first, tool);
+    expect(find.byKey(const Key('toolbar-drag-feedback')), findsNothing);
+    expect(
+      tester.getSize(find.byKey(const Key('toolbar-layout-expanded'))).height,
+      lessThanOrEqualTo(height),
+    );
+  });
+
   for (final dark in [false, true]) {
+    testWidgets('默认共用预览${dark ? 'dark' : 'light'}实际画面', (tester) async {
+      _viewport(tester, Size(dark ? 360 : 320, 640));
+      final store = TestEditorToolbarStore();
+      await tester.pumpWidget(_app(store, dark: dark));
+      await tester.pumpAndSettle();
+      expect(store.writes, 0);
+      await expectLater(
+        find.byType(Scaffold),
+        matchesGoldenFile(
+          'goldens/editor_toolbar_default_${dark ? '360_dark' : '320_light'}.png',
+        ),
+      );
+    });
+  }
+
+  for (final dark in [false, true]) {
+    testWidgets('320dp ${dark ? 'dark' : 'light'} 拖起和腾位画面', (tester) async {
+      final previousShadows = debugDisableShadows;
+      debugDisableShadows = false;
+      try {
+        _viewport(tester, const Size(320, 640));
+        final store = TestEditorToolbarStore()
+          ..saved = customEditorToolbarTestLayout();
+        await tester.pumpWidget(_app(store, dark: dark));
+        final drag = await _startDrag(tester, EditorTool.sticker);
+        await drag.moveTo(
+          tester.getCenter(
+                find.byKey(const ValueKey('toolbar-drop-expanded-0')),
+              ) +
+              const Offset(6, 8),
+        );
+        await tester.pump();
+        await tester.pump(WenyouFoundationMotion.standard);
+        expect(store.writes, 0);
+        await expectLater(
+          find.byType(MaterialApp),
+          matchesGoldenFile(
+            'goldens/editor_toolbar_drag_320_${dark ? 'dark' : 'light'}.png',
+          ),
+        );
+        await drag.cancel();
+        await tester.pumpAndSettle();
+        expect(store.writes, 0);
+      } finally {
+        debugDisableShadows = previousShadows;
+      }
+    });
     for (final width in [320, 360]) {
       testWidgets('${width}dp ${dark ? 'dark' : 'light'} 图标摆放实际画面', (
         tester,
@@ -316,7 +592,18 @@ Finder _dragTool(EditorTool tool) =>
 
 void _expectNoAdjustmentControls() {
   expect(find.byKey(const Key('toolbar-layout-actions')), findsNothing);
-  for (final label in ['前移', '后移', '移到主栏', '移到展开栏', '点按调整']) {
+  for (final label in [
+    '前移',
+    '后移',
+    '移到主栏',
+    '移到展开栏',
+    '点按调整',
+    '主栏',
+    '展开栏',
+    '拖动调整',
+    '回复',
+    '主题',
+  ]) {
     expect(find.text(label), findsNothing);
     expect(find.byTooltip(label), findsNothing);
   }
@@ -366,19 +653,26 @@ Widget _app(
   TestEditorToolbarStore store, {
   bool dark = false,
   double scale = 1,
+  bool reducedMotion = false,
+  bool capabilities = true,
 }) => ProviderScope(
   overrides: [
+    appCapabilitiesProvider.overrideWithValue(
+      AppCapabilities(stickers: capabilities, markdownAlignment: capabilities),
+    ),
     editorToolbarPreferenceStoreProvider.overrideWithValue(store),
     initialEditorToolbarPreferenceProvider.overrideWithValue(
       EditorToolbarPreferenceState(layout: store.saved),
     ),
   ],
   child: MaterialApp(
+    debugShowCheckedModeBanner: false,
     theme: dark ? AppTheme.dark : AppTheme.light,
     builder: (context, child) => MediaQuery(
-      data: MediaQuery.of(
-        context,
-      ).copyWith(textScaler: TextScaler.linear(scale)),
+      data: MediaQuery.of(context).copyWith(
+        textScaler: TextScaler.linear(scale),
+        disableAnimations: reducedMotion,
+      ),
       child: child!,
     ),
     home: const EditorToolbarSettingsPage(),

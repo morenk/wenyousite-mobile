@@ -239,37 +239,13 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
   bool get _showMore =>
       widget.capabilities.hasMoreActions || !widget.layout.isDefault;
 
-  ResolvedEditorToolbarLayout _resolveLayout(double width) {
-    final capabilities = widget.capabilities;
-    return widget.layout.resolve(
-      slots: (width / WenyouEditorContract.minimumActionExtent).floor(),
-      showMore: _showMore,
-      showSubmit: widget.onSubmit != null,
-      available: {
-        if (capabilities.headings) EditorTool.heading,
-        if (capabilities.inlineStyles) ...[
-          EditorTool.bold,
-          EditorTool.italic,
-          EditorTool.inlineCode,
-          EditorTool.strike,
-        ],
-        if (capabilities.images) EditorTool.image,
-        if (capabilities.blockStyles) ...[
-          EditorTool.quote,
-          EditorTool.horizontalRule,
-        ],
-        if (capabilities.alignment) ...[
-          EditorTool.alignCenter,
-          EditorTool.alignRight,
-        ],
-        if (capabilities.links) EditorTool.link,
-        if (capabilities.dice) EditorTool.dice,
-        if (capabilities.drafts) EditorTool.drafts,
-        if (capabilities.stickers && widget.onInsertSticker != null)
-          EditorTool.sticker,
-      },
-    );
-  }
+  ResolvedEditorToolbarLayout _resolveLayout(double width) =>
+      widget.capabilities.resolveToolbar(
+        widget.layout,
+        width: width,
+        showSubmit: widget.onSubmit != null,
+        stickerCallback: widget.onInsertSticker != null,
+      );
 
   Widget _buildToolbarRow(BuildContext context, Style style, double width) {
     final resolved = _resolveLayout(width);
