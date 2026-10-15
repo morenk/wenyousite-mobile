@@ -6,6 +6,7 @@ import 'package:wenyousite_mobile/core/markdown/markdown_editable_block_syntax.d
 import 'package:wenyousite_mobile/core/markdown/markdown_inline_boundary.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_inline_code_source.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_inline_compatibility_syntax.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_link_identity.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_reference.dart';
 
 class MarkdownRichLine {
@@ -35,7 +36,18 @@ class MarkdownRichLine {
 
   static List<MarkdownRichSpan> _mergedSpans(List<MarkdownRichSpan> spans) {
     final result = <MarkdownRichSpan>[];
-    for (final span in spans) {
+    final identities = <Object, int>{};
+    for (final original in spans) {
+      final identity = original.attributes?[markdownLinkIdentityKey];
+      final span = identity == null
+          ? original
+          : MarkdownRichSpan(original.text, {
+              ...?original.attributes,
+              markdownLinkIdentityKey: identities.putIfAbsent(
+                identity,
+                () => identities.length,
+              ),
+            });
       if (span.internalReference == null &&
           result.isNotEmpty &&
           result.last.internalReference == null &&
@@ -262,6 +274,7 @@ class MarkdownRichLineDecoder {
           return false;
         }
         attributes['link'] = href;
+        attributes[markdownLinkIdentityKey] = newMarkdownLinkIdentity();
       } else {
         return false;
       }

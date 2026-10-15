@@ -1,7 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wenyousite_mobile/features/media/domain/audio_upload_policy.dart';
 
 class AppCapabilities {
   const AppCapabilities({
+    this.audioUpload,
     this.stickers = false,
     this.directMessages = false,
     this.pushNotifications = false,
@@ -14,6 +16,7 @@ class AppCapabilities {
   });
 
   final bool stickers;
+  final AudioUploadPolicy? audioUpload;
   final bool directMessages;
   final bool pushNotifications;
   final bool markdownAlignment;

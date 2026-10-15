@@ -4,6 +4,7 @@ import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/network/media_audio_mapper.dart';
 import 'package:wenyousite_mobile/core/network/media_display_mapper.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/thread_feed/thread_feed_mapping.dart';
@@ -250,6 +251,7 @@ class ApiPublicUserRepository implements PublicUserRepository {
     final source = dto.preview.trim().isEmpty ? dto.content : dto.preview;
     return PublicUserReplyModel(
       mediaDisplays: mapMarkdownMediaDisplays(dto.mediaDisplays),
+      mediaAudios: mapMediaAudios(dto.mediaAudios),
       id: dto.id,
       threadId: dto.threadId,
       threadTitle: dto.thread.title,

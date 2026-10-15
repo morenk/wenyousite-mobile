@@ -1,10 +1,12 @@
 import 'package:wenyousite_mobile/features/app_shell/domain/mobile_update.dart';
+import 'package:wenyousite_mobile/features/media/domain/audio_upload_policy.dart';
 
 class ContractInfo {
   const ContractInfo({
     required this.contractVersion,
     required this.markdownContractVersion,
     this.buildSha,
+    this.audioUpload,
     this.android = const MobilePlatformPolicy(),
     this.ios = const MobilePlatformPolicy(),
     this.stickersEnabled = false,
@@ -18,6 +20,7 @@ class ContractInfo {
   final String contractVersion;
   final int markdownContractVersion;
   final String? buildSha;
+  final AudioUploadPolicy? audioUpload;
   final MobilePlatformPolicy android;
   final MobilePlatformPolicy ios;
   final bool stickersEnabled;

@@ -6,6 +6,7 @@ String editorToolIconId(EditorTool tool) => switch (tool) {
   EditorTool.bold => WenyouIconIds.editorBold,
   EditorTool.italic => WenyouIconIds.editorItalic,
   EditorTool.image => WenyouIconIds.editorImage,
+  EditorTool.audio => WenyouIconIds.editorAudio,
   EditorTool.quote => WenyouIconIds.editorQuote,
   EditorTool.sticker => WenyouIconIds.editorSticker,
   EditorTool.drafts => WenyouIconIds.editorContentDrafts,

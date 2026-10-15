@@ -134,7 +134,7 @@ void main() {
       ],
       'expanded': ['sticker', 'link', 'link'],
     });
-    expect(layout.primary, [EditorTool.sticker]);
+    expect(layout.primary, [EditorTool.sticker, EditorTool.audio]);
     expect(layout.expanded.first, EditorTool.link);
     expect({...layout.primary, ...layout.expanded}, all);
     for (final data in [
@@ -152,7 +152,7 @@ void main() {
       ),
       EditorToolbarGroup.expanded,
     );
-    expect(EditorTool.fromId('audio'), isNull);
+    expect(EditorTool.fromId('audio'), EditorTool.audio);
     expect(EditorTool.values.any((tool) => tool.id.contains('list')), isFalse);
   });
 }

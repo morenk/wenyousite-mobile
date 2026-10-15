@@ -12,6 +12,7 @@ import 'package:wenyousite_mobile/core/application/editor_toolbar_layout.dart';
 import 'package:wenyousite_mobile/core/widgets/editor_tool_icon.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_reorder_feedback.dart';
 import 'package:wenyousite_mobile/features/editor/editor.dart';
+
 import 'toolbar_arrangement_draggable.dart';
 
 /// 与表情排序相同：逻辑槽位命中、临时腾位，松手才保存一次。
@@ -22,12 +23,14 @@ class EditorToolbarArrangement extends StatefulWidget {
     required this.onChanged,
     required this.capabilities,
     required this.stickersEnabled,
+    this.audioEnabled = false,
     super.key,
   });
 
   final EditorToolbarLayout layout;
   final WenyouEditorCapabilities capabilities;
   final bool stickersEnabled;
+  final bool audioEnabled;
   final bool enabled;
   final ValueChanged<EditorToolbarLayout> onChanged;
 
@@ -72,6 +75,7 @@ class _EditorToolbarArrangementState extends State<EditorToolbarArrangement>
       widget.capabilities.hasMoreActions || !_preview.isDefault;
   Set<EditorTool> get _available => widget.capabilities.availableTools(
     stickerCallback: widget.stickersEnabled,
+    audioCallback: widget.audioEnabled,
   );
   ResolvedEditorToolbarLayout get _resolved =>
       widget.capabilities.resolveToolbar(
@@ -79,6 +83,7 @@ class _EditorToolbarArrangementState extends State<EditorToolbarArrangement>
         width: _width,
         showSubmit: true,
         stickerCallback: widget.stickersEnabled,
+        audioCallback: widget.audioEnabled,
       );
   List<EditorTool> _items(EditorToolbarGroup group) =>
       group == EditorToolbarGroup.primary

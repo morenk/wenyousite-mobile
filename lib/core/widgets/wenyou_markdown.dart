@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -15,6 +16,7 @@ import 'package:wenyousite_mobile/core/markdown/markdown_mention_target.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_quote_line_syntax.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_reader_paragraph_syntax.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_source_protection.dart';
+import 'package:wenyousite_mobile/core/media/media_audio.dart';
 import 'package:wenyousite_mobile/core/media/media_display.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_link.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_reference.dart';
@@ -43,6 +45,7 @@ class WenyouMarkdown extends StatefulWidget {
     required this.data,
     this.diceLabels = const {},
     this.mediaDisplays = const {},
+    this.mediaAudios = const {},
     this.mentionLabels = const {},
     this.diceSemantics = const {},
     this.diceDetails = const {},
@@ -60,6 +63,7 @@ class WenyouMarkdown extends StatefulWidget {
 
   final String data;
   final Map<String, MediaDisplay> mediaDisplays;
+  final Map<String, MediaAudio> mediaAudios;
   final Map<String, String> mentionLabels;
   final Map<String, String> diceLabels;
   final Map<String, String> diceSemantics;
@@ -127,7 +131,8 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
     if (!mapEquals(oldWidget.diceDetails, widget.diceDetails)) {
       _diceDetails.value = Map.unmodifiable(widget.diceDetails);
     }
-    if (!mapEquals(oldWidget.mediaDisplays, widget.mediaDisplays)) {
+    if (!mapEquals(oldWidget.mediaDisplays, widget.mediaDisplays) ||
+        !mapEquals(oldWidget.mediaAudios, widget.mediaAudios)) {
       _renderedBody = null;
     }
     if (!mapEquals(oldWidget.mentionLabels, widget.mentionLabels)) {
@@ -315,6 +320,7 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
     int imageStartIndex = 0,
   }) => WenyouMarkdownBody(
     data: data,
+    mediaAudios: widget.mediaAudios,
     selectable: false,
     // MarkdownBody defaults to fitContent=true, which shrink-wraps its inner
     // paragraph Wrap. A centered/right-aligned TextAlign then has no spare

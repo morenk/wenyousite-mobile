@@ -355,6 +355,7 @@ List<Override> productionProviderOverrides() => [
 
 AppCapabilities appCapabilitiesForContract(ContractInfo? contract) {
   return AppCapabilities(
+    audioUpload: contract?.audioUpload,
     stickers: contract?.stickersEnabled ?? false,
     directMessages: contract?.directMessagesEnabled ?? false,
     pushNotifications: contract?.pushNotificationsEnabled ?? false,

@@ -65,7 +65,11 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
       onMarkdownChanged: (markdown) {
         ref
             .read(threadComposeControllerProvider.notifier)
-            .updateBody(markdown, mediaDisplays: _editorSession.mediaDisplays);
+            .updateBody(
+              markdown,
+              mediaDisplays: _editorSession.mediaDisplays,
+              mediaAudios: _editorSession.mediaAudios,
+            );
         ref
             .read(
               contentDraftsControllerProvider(_contentDraftSessionKey).notifier,
@@ -87,7 +91,9 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
     if (state == AppLifecycleState.inactive ||
         state == AppLifecycleState.paused ||
         state == AppLifecycleState.detached) {
-      _pendingImages.pause();
+      _pendingImages.pause(
+        preserveAudioSelection: state != AppLifecycleState.detached,
+      );
       unawaited(_flushSnapshot());
     } else if (state == AppLifecycleState.resumed) {
       _pendingImages.resume();
@@ -363,6 +369,10 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
                 enabled: enabled,
                 editorFocusNode: _editorSession.focusNode,
                 onInsertImage: _insertImage,
+                onInsertAudio:
+                    ref.watch(appCapabilitiesProvider).audioUpload != null
+                    ? _pendingImages.audios.pick
+                    : null,
                 onInsertHorizontalRule: _editorSession.insertHorizontalRule,
                 onInsertSticker: ref.watch(stickersEnabledProvider)
                     ? _insertSticker
@@ -497,6 +507,7 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
         state.body,
         mentionLabels: state.remoteDraft?.mentionLabels ?? const {},
         mediaDisplays: state.mediaDisplays,
+        mediaAudios: state.mediaAudios,
       );
       ref
           .read(
@@ -615,19 +626,23 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
     final currentBody = ref.read(threadComposeControllerProvider).body;
     final scope = ref.read(sessionScopeProvider);
     var restoredDisplays = _editorSession.mediaDisplays;
+    var restoredAudios = _editorSession.mediaAudios;
     await showContentDraftsSheet(
       context: context,
       draftSessionKey: _contentDraftSessionKey,
       currentContent: currentBody,
       onRestoreDisplays: (values) => restoredDisplays = values,
+      onRestoreAudios: (values) => restoredAudios = values,
       onRestore: (content) {
         if (!mounted || ref.read(sessionScopeProvider) != scope) return;
         _editorSession.replaceMediaDisplays(restoredDisplays);
+        _editorSession.replaceMediaAudios(restoredAudios);
         ref
             .read(threadComposeControllerProvider.notifier)
             .restoreContentDraft(
               content,
               mediaDisplays: _editorSession.mediaDisplays,
+              mediaAudios: _editorSession.mediaAudios,
             );
         ref
             .read(

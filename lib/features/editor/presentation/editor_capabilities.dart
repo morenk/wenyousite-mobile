@@ -49,7 +49,10 @@ class WenyouEditorCapabilities {
   bool get hasMoreActions =>
       inlineStyles || links || blockStyles || alignment || dice || stickers;
 
-  Set<EditorTool> availableTools({required bool stickerCallback}) => {
+  Set<EditorTool> availableTools({
+    required bool stickerCallback,
+    bool audioCallback = false,
+  }) => {
     if (headings) EditorTool.heading,
     if (inlineStyles) ...[
       EditorTool.bold,
@@ -58,6 +61,7 @@ class WenyouEditorCapabilities {
       EditorTool.strike,
     ],
     if (images) EditorTool.image,
+    if (links && audioCallback) EditorTool.audio,
     if (blockStyles) ...[EditorTool.quote, EditorTool.horizontalRule],
     if (alignment) ...[EditorTool.alignCenter, EditorTool.alignRight],
     if (links) EditorTool.link,
@@ -72,10 +76,14 @@ class WenyouEditorCapabilities {
     required double width,
     required bool showSubmit,
     required bool stickerCallback,
+    bool audioCallback = false,
   }) => layout.resolve(
     slots: (width / WenyouEditorContract.minimumActionExtent).floor(),
     showMore: hasMoreActions || !layout.isDefault,
     showSubmit: showSubmit,
-    available: availableTools(stickerCallback: stickerCallback),
+    available: availableTools(
+      stickerCallback: stickerCallback,
+      audioCallback: audioCallback,
+    ),
   );
 }

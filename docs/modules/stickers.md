@@ -62,6 +62,8 @@
 
 ## 10. 跨模块约束
 
+共享 StickerPostMarkdown 正文门面透传可信 mediaAudios 给普通 Markdown 播放器；收藏、插入、拖动和表情权限本身不变。
+
 本模块页面排版统一遵循[移动端视觉基线](../architecture/visual-baseline.md)中的 Foundation v6.9.0 语义文字角色，不自定义字号或直接依赖 Material 字体槽位。
 
 media application 负责相册选择、格式校验、`STICKER_SOURCE` 用途和安全上传，stickers presentation 只消费完成的 `mediaId`，不导入 media data 或 Dio；direct_messages 负责 `stickerAssetId` 独占载荷和消息展示；editor 只插入 Codec 已支持的 sticker embed；posts/threads 传入真实 postId 与 Markdown 图片 URL；moments 分别传入动态/评论 ID 与图片 mediaId。视觉只使用 Foundation v6.9.0 Token、语义图标、面板、状态和最小触控目标，不维护平行审美规范。
@@ -88,6 +90,8 @@ media application 负责相册选择、格式校验、`STICKER_SOURCE` 用途和
 移动端相册入口当前一次选择一张，未实现 Web 的最多十张并发批量导入；动画只在发送或正文实际图片 URL 中播放，收藏网格使用缩略图。处理任务依靠前台轮询，不做后台通知；进程终止后重新进入即从服务端 pending 列表恢复观察。
 
 ## 13. 最近审查的契约版本和后端提交
+
+本轮音频候选固定 Backend `cb44acaeb7fbc735fb569276aef00435bf24efe5`／API `5.37.0-dev.20261016.1`、独立 audio v1；Foundation 正式 `v7.3.0`（`a582d6ec498e26f30739d8bf6995f9613e26eb4d`）。未部署 Backend 不开放新上传，旧普通链接继续可读。见[音频候选记录](../architecture/audio-upload-acceptance.md)。
 
 2026-10-10 合并来源复核：通过官方同步入口固定到实际部署 Backend `b5f0e3bb0b99a3f9763b31e3080cb4d4f2e64045`，OpenAPI 仍为 `5.36.0-dev.20261005.1`。相对退役实施提交，机器契约、共享语料、生成客户端及本模块行为不变；仅来源登记更新，详见[退役验收记录](../architecture/retire-development-preview-acceptance.md)。
 

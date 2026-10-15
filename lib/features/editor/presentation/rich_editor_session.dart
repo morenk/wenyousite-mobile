@@ -1,5 +1,4 @@
 // ignore_for_file: experimental_member_use
-
 import 'dart:async';
 import 'dart:convert';
 
@@ -9,11 +8,13 @@ import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_quill/quill_delta.dart';
 import 'package:uuid/uuid.dart';
 import 'package:wenyousite_mobile/core/diagnostics/failure_diagnostics.dart';
+import 'package:wenyousite_mobile/core/markdown/local_audio_marker.dart';
 import 'package:wenyousite_mobile/core/markdown/local_image_marker.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_line_metadata.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_editing_compatibility.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_submission_guard.dart';
+import 'package:wenyousite_mobile/core/media/media_audio.dart';
 import 'package:wenyousite_mobile/core/media/media_display.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_clipboard.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_clipboard_gateway.dart';
@@ -49,6 +50,7 @@ class RichEditorSession extends ChangeNotifier {
   RichEditorSession({
     required String initialMarkdown,
     Map<String, MediaDisplay> initialMediaDisplays = const {},
+    Map<String, MediaAudio> initialMediaAudios = const {},
     this.mentionLabels = const {},
     required this.onMarkdownChanged,
     this.codecDebounce = const Duration(milliseconds: 120),
@@ -68,6 +70,7 @@ class RichEditorSession extends ChangeNotifier {
            _legacyClipboardGateway(readClipboardText, writeClipboardText),
        _clipboardStore = clipboardStore ?? wenyouEditorClipboardStore {
     _mediaDisplays = Map.unmodifiable(initialMediaDisplays);
+    _mediaAudios = Map.unmodifiable(initialMediaAudios);
     _siteClipboardParser =
         siteClipboardParser ??
         WenyouSiteClipboardParser(imageAlignment: imageAlignment);
@@ -95,6 +98,13 @@ class RichEditorSession extends ChangeNotifier {
 
   late Map<String, MediaDisplay> _mediaDisplays;
   Map<String, MediaDisplay> get mediaDisplays => _mediaDisplays;
+  late Map<String, MediaAudio> _mediaAudios;
+  Map<String, MediaAudio> get mediaAudios => _mediaAudios;
+
+  void replaceMediaAudios(Map<String, MediaAudio> values) {
+    _mediaAudios = Map.unmodifiable(values);
+    notifyListeners();
+  }
 
   void replaceMediaDisplays(Map<String, MediaDisplay> values) {
     _mediaDisplays = Map.unmodifiable(values);
@@ -330,6 +340,7 @@ class RichEditorSession extends ChangeNotifier {
     required String markdown,
     required int revision,
     Map<String, MediaDisplay>? mediaDisplays,
+    Map<String, MediaAudio>? mediaAudios,
     RichEditorSelectionPlacement selection =
         RichEditorSelectionPlacement.preserve,
   }) {
@@ -342,6 +353,7 @@ class RichEditorSession extends ChangeNotifier {
         markdown,
         selection: selection,
         mediaDisplays: mediaDisplays,
+        mediaAudios: mediaAudios,
       );
     });
     binding.ensureVisualUpdate();
@@ -351,6 +363,7 @@ class RichEditorSession extends ChangeNotifier {
     String markdown, {
     Map<String, String>? mentionLabels,
     Map<String, MediaDisplay>? mediaDisplays,
+    Map<String, MediaAudio>? mediaAudios,
     RichEditorSelectionPlacement selection =
         RichEditorSelectionPlacement.preserve,
   }) {
@@ -359,6 +372,7 @@ class RichEditorSession extends ChangeNotifier {
       this.mentionLabels = Map.unmodifiable(mentionLabels);
     }
     if (mediaDisplays != null) _mediaDisplays = Map.unmodifiable(mediaDisplays);
+    if (mediaAudios != null) _mediaAudios = Map.unmodifiable(mediaAudios);
     _applyingDocument = true;
     _documentGeneration += 1;
     try {
@@ -413,7 +427,9 @@ class RichEditorSession extends ChangeNotifier {
         imageAlignment: imageAlignment,
       );
       // 本机占位只在编辑会话和本机草稿中流转，永不通知业务发布控制器。
-      final hasLocalImages = containsLocalImageMarker(markdown);
+      final hasLocalImages =
+          containsLocalImageMarker(markdown) ||
+          containsLocalAudioMarker(markdown);
       if (!hasLocalImages) MarkdownSubmissionGuard.validate(markdown);
       _serializedLength = markdown.length;
       if (_serializedLength > maximumSerializedLength) {

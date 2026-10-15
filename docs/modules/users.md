@@ -65,6 +65,8 @@ Android 账号设置新增“后台消息提醒”设备开关，默认开启；
 
 ## 6. 状态模型和数据流
 
+公开用户相关帖子投影透传可选 mediaAudios，经统一安全校验后交给正文消费；用户页摘要不主动请求音频。
+
 完整展示（负责人已验收）：头像 avatarDisplay 和主页背景 display 在仓储映射为展示 URL，修改仍提交媒体 ID；不扩展动画头像上传策略。个人最近回复保留授权 mediaDisplays 供正文消费，列表文本摘要策略不变；个人主页主题封面复用共享完整／小预览选择。见[全场景验收记录](../architecture/animation-webp-all-surfaces.md)。
 
 公开页和“我的”内容区共享 `PublicUserContentSectionSliver`，主题与回复按视口惰性构建。资料、标签、分页与错误区独立组织，使用 `WenyouPinnedHeader` 和 `WenyouNestedScrollInset` 协调吸顶标签与内层列表遮挡，不使用固定字号高度。本人各分区保留已有分页、缓存和 PageStorage。
@@ -160,6 +162,8 @@ Android 账号设置新增“后台消息提醒”设备开关，默认开启；
 不做资料离线缓存、复杂勋章系统或后台用户管理。头像和主页背景只提供当前选图会话内的手动取景，不持久化原图或未确认的取景状态。密码、邮箱、终端与注销已交由 settings/auth 的独立页面管理。“我的”本次不展示本地或云端草稿；契约 5.9 已提供本人协作主题分页，但移动端尚未建立列表入口与任免后的失效链路。契约 5.25 已提供本人关注/粉丝列表的双向关系投影与移除粉丝端点，当前移动端列表仍保持只读，管理按钮、冲突恢复和跨页面缓存失效另行接入。勋章和跨页面关系同步后续接入，公开路由不会绕过关闭的隐私字段。
 
 ## 13. 最近审查的契约版本和后端提交
+
+本轮音频候选固定 Backend `cb44acaeb7fbc735fb569276aef00435bf24efe5`／API `5.37.0-dev.20261016.1`、独立 audio v1；Foundation 正式 `v7.3.0`（`a582d6ec498e26f30739d8bf6995f9613e26eb4d`）。未部署 Backend 不开放新上传，旧普通链接继续可读。见[音频候选记录](../architecture/audio-upload-acceptance.md)。
 
 2026-10-10 合并来源复核：通过官方同步入口固定到实际部署 Backend `b5f0e3bb0b99a3f9763b31e3080cb4d4f2e64045`，OpenAPI 仍为 `5.36.0-dev.20261005.1`。相对退役实施提交，机器契约、共享语料、生成客户端及本模块行为不变；仅来源登记更新，详见[退役验收记录](../architecture/retire-development-preview-acceptance.md)。
 

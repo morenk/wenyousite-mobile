@@ -34,6 +34,8 @@
 
 ## 6. 状态模型和数据流
 
+帖子结果的可选 mediaAudios 经过统一校验随领域正文传递，不根据扩展名猜测音频；摘要行为不变，不在结果列表自动加载音频。
+
 完整展示（负责人已验收）：搜索用户头像优先 avatarDisplay；SearchPost 授权 mediaDisplays 映射保留在展示模型，既有文本摘要不新增加载图片。主题封面复用共享 display／preview 选择。见[全场景验收记录](../architecture/animation-webp-all-surfaces.md)。
 
 四个用户可见 Tab 独立保存 idle/loading/ready/failed 状态；动态和楼层内容额外保存不透明 cursor、hasMore、加载更多和局部错误。搜索仓储接口位于 `search/application`，`main.dart` 组合根绑定 API data 适配器，两个搜索控制器不直接导入 data。主题结果直接映射为 thread_feed 的共享主题卡模型，只消费 `coverImages` 的唯一安全 HTTP(S) 首图，并保留搜索端点自己的相关度排序。控制器共享 query 与请求代次，只有最新代次可写回状态。`ThreadPostSearchController(threadId)` 隔离每个主题的关键词、分页和请求代次；所有列表按稳定 ID 去重。后端综合搜索读模型继续保留兼容映射，但移动端不把它暴露为结果类型或入口。
@@ -93,6 +95,8 @@
 不做语音搜索、云历史、结果离线缓存和全文高亮编辑。楼层内容结果通过目标楼层强调，不渲染后端 HTML 高亮片段；综合端点仅作为后端兼容读模型保留，移动端页面不请求或展示综合 Tab。主题帖搜索尚未接入 cursor 分页，当前省略参数的兼容调用最多返回 50 条。
 
 ## 13. 最近审查的契约版本和后端提交
+
+本轮音频候选固定 Backend `cb44acaeb7fbc735fb569276aef00435bf24efe5`／API `5.37.0-dev.20261016.1`、独立 audio v1；Foundation 正式 `v7.3.0`（`a582d6ec498e26f30739d8bf6995f9613e26eb4d`）。未部署 Backend 不开放新上传，旧普通链接继续可读。见[音频候选记录](../architecture/audio-upload-acceptance.md)。
 
 2026-10-10 合并来源复核：通过官方同步入口固定到实际部署 Backend `b5f0e3bb0b99a3f9763b31e3080cb4d4f2e64045`，OpenAPI 仍为 `5.36.0-dev.20261005.1`。相对退役实施提交，机器契约、共享语料、生成客户端及本模块行为不变；仅来源登记更新，详见[退役验收记录](../architecture/retire-development-preview-acceptance.md)。
 

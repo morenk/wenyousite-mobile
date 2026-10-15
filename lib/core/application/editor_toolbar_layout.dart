@@ -5,6 +5,7 @@ enum EditorTool {
   bold('bold', '粗体'),
   italic('italic', '斜体'),
   image('image', '图片'),
+  audio('audio', '音频'),
   quote('quote', '引用'),
   sticker('sticker', '表情包'),
   drafts('drafts', '正文草稿'),
@@ -59,6 +60,7 @@ class EditorToolbarLayout {
     EditorTool.drafts,
   ];
   static const defaultExpanded = [
+    EditorTool.audio,
     EditorTool.alignCenter,
     EditorTool.alignRight,
     EditorTool.link,
@@ -68,7 +70,7 @@ class EditorToolbarLayout {
     EditorTool.strike,
   ];
 
-  // 音频尚未实现；预留稳定 ID，新能力接入时默认进入展开栏，不显示占位按钮。
+  // 保留早期预留 ID，旧布局新增音频时归入展开栏。
   static const reservedAudioId = 'audio';
   static EditorToolbarGroup defaultGroupForId(String id) =>
       defaultPrimary.any((tool) => tool.id == id)
@@ -163,6 +165,7 @@ class EditorToolbarLayout {
       expanded: [
         ...core.skip(displayedCore.length),
         ...[
+          EditorTool.audio,
           EditorTool.alignCenter,
           EditorTool.alignRight,
           EditorTool.link,

@@ -1,0 +1,56 @@
+import 'package:markdown/markdown.dart' as md;
+import 'package:wenyousite_mobile/core/media/media_audio.dart';
+
+class MarkdownAudioLabelRun {
+  const MarkdownAudioLabelRun(this.text, this.marks);
+  final String text;
+  final Set<String> marks;
+}
+
+class MarkdownAudioProjection {
+  const MarkdownAudioProjection(this.audio, this.label, this.labelRuns);
+  final MediaAudio audio;
+  final String label;
+  final List<MarkdownAudioLabelRun> labelRuns;
+
+  /// 仅调用于顶层块，列表/引用内部不递归升级。
+  static MarkdownAudioProjection? fromBlock(
+    md.Node block,
+    Map<String, MediaAudio> audios,
+  ) {
+    if (block is! md.Element || block.tag != 'p') return null;
+    final children = block.children;
+    if (children == null || children.length != 1) return null;
+    final link = children.single;
+    if (link is! md.Element ||
+        link.tag != 'a' ||
+        link.attributes.containsKey('title')) {
+      return null;
+    }
+    final audio = audios[link.attributes['href']];
+    if (audio == null || !_textLabel(link)) return null;
+    final runs = <MarkdownAudioLabelRun>[];
+    void visit(md.Node node, Set<String> marks) {
+      if (node is md.Text) {
+        runs.add(MarkdownAudioLabelRun(node.text, Set.unmodifiable(marks)));
+      } else if (node is md.Element) {
+        for (final child in node.children ?? const <md.Node>[]) {
+          visit(child, {...marks, if (node.tag != 'a') node.tag});
+        }
+      }
+    }
+
+    visit(link, const {});
+    return MarkdownAudioProjection(
+      audio,
+      link.textContent,
+      List.unmodifiable(runs),
+    );
+  }
+
+  static bool _textLabel(md.Node node) =>
+      node is md.Text ||
+      (node is md.Element &&
+          const {'a', 'strong', 'em', 'del', 's', 'code'}.contains(node.tag) &&
+          (node.children?.every(_textLabel) ?? false));
+}

@@ -43,12 +43,16 @@ galleryList：读取 GalleryList200Response / GalleryPageDto / GalleryImageDto�
 
 跨模块入口使用 `reading_gallery.dart` 公开门面；收藏动作由来源模块注入并接收当前 `ReadingGalleryImage`，媒体模块不依赖表情收藏内部状态。
 
-- 媒体管线：`mediaGetUploadUrl`、`mediaConfirmUpload`、`mediaGetMedia`；契约已提供 `mediaReissueUploadUrl`，当前等待同一媒体重签与重传切片接入。
+- 媒体管线：`mediaGetUploadUrl`、`mediaConfirmUpload`、`mediaGetMedia`；契约已提供 `mediaReissueUploadUrl`，图片当前等待同一媒体重签与重传切片接入；音频候选已经按原 mediaId 接入重签。
 - 头像：`usersSetAvatar`、`usersRemoveAvatar`。
 - 主页背景：`usersSetProfileCover`、`usersRemoveProfileCover`。
 - 主要生成类型：`CreateUploadUrlDto`（含 purpose）、`ConfirmUploadDto`、`MediaResponseDto`（含 purpose/animated 与派生 URL）、`SetAvatarDto`、`SetProfileCoverDto`、`PrivateUserResponseDto`。
 
 ## 6. 状态模型和数据流
+
+正文音频使用独立流式上传管线：Android SAF 在后台以 64 KiB 缓冲复制到本任务缓存，按声明大小及实际读取的 30 MiB 预算早停，取消关闭流并删除自有临时文件；其他平台使用 file_selector。选择结果有显式释放租约，24 小时前的自有 UUID 缓存可回收，不删除来源文件。私有草稿文件按账号和编辑目标保存。上传复用预签名 PUT、确认、同 mediaId 续查／重签；最多十分钟，输入 MP3/M4A/WAV/OGG/FLAC，由 Backend 验证并生成唯一 MP3 播放副本。
+
+播放器仅在点击后创建 just_audio 并请求 sourceUrl，不预取正文音频；全局只保留一个活动播放目标。离页、进入后台、音频中断或耳机断开调用 stop 终止加载／缓冲，不自动恢复。暂停／继续保留进度，完成后重播从零开始。有效历史 mediaAudios 的播放不受 audioUpload 能力开关影响。
 
 全屏图集候选：正文按子贴（正文与主楼层）或某楼层回复讨论分组，动态按正文、一级评论、某评论回复分组；不跨层级。点击立即使用已加载原图，独立 `ReadingGalleryController` 后台取得锚点及双向游标，跟随打开时的排序与作者筛选。正文 AST 普通图片序号保留重复 URL，排除贴纸、代码与未发布路径；共享 occurrences fixtures 验证后端一致性。图片的稳定展示键使用来源、版本和出现位置，前插页不改变当前图片，活动触摸期间集合前插取消本次导航意图。
 
@@ -133,6 +137,8 @@ galleryList：读取 GalleryList200Response / GalleryPageDto / GalleryImageDto�
 服务端用户 DTO 未提供头像或主页背景的 thumbnail/medium 字段，因此资料页只使用明确原地址。原图、预览、取景框与失败上传输入只在当前页面/autoDispose 生命周期内短暂保留，也不提供后台队列；页面释放、主动取消后需重新选择，进程在 Android 系统选图期间被终止时仅保底恢复富正文、动态/评论和私聊的待选文件，头像与主页背景仍需重新选择。`flutter_image_compress` 没有取消在途 native 编码的接口：用户取消后不会开始对象存储上传且迟到结果会被丢弃，但已经进入平台编码的任务仍可能运行到返回；当前以全局单路准备、像素上限和 Debug 分阶段计时控制与观测风险，是否进一步降低像素阈值需以 Profile/Release 大图数据决定。当前 `flutter_image_compress_common` 仍由插件应用 Kotlin Gradle Plugin，Flutter 已提示未来需迁移到 Built-in Kotlin；现有可解析版本尚未提供该迁移，后续按上游兼容版本单独处理。契约 5.4 的 `mediaReissueUploadUrl` 尚未接入；同一 `mediaId` 的对象缺失恢复、重签地址、重传、再次确认和取消边界作为独立高风险上传切片实现。契约 5.26 新增内容图片图集查询，但当前查看器仍只浏览调用页面已经加载的图片；跨页双向游标、锚点失效与索引未就绪恢复需在独立媒体切片接入。相册文件访问由 `image_picker` 与 Android 系统 Photo Picker 管理。
 
 ## 13. 最近审查的契约版本和后端提交
+
+本轮音频候选固定 Backend `cb44acaeb7fbc735fb569276aef00435bf24efe5`／API `5.37.0-dev.20261016.1`、独立 audio v1；Foundation 正式 `v7.3.0`（`a582d6ec498e26f30739d8bf6995f9613e26eb4d`）。未部署 Backend 不开放新上传，旧普通链接继续可读。见[音频候选记录](../architecture/audio-upload-acceptance.md)。
 
 2026-10-10 合并来源复核：通过官方同步入口固定到实际部署 Backend `b5f0e3bb0b99a3f9763b31e3080cb4d4f2e64045`，OpenAPI 仍为 `5.36.0-dev.20261005.1`。相对退役实施提交，机器契约、共享语料、生成客户端及本模块行为不变；仅来源登记更新，详见[退役验收记录](../architecture/retire-development-preview-acceptance.md)。
 
