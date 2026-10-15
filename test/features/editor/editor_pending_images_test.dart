@@ -13,8 +13,9 @@ import 'package:wenyousite_mobile/features/editor/presentation/editor_pending_im
 import 'package:wenyousite_mobile/features/editor/presentation/rich_editor_session.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_ports.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
-import 'package:wenyousite_mobile/features/media/application/pending_media_file_store_ports.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
+
+import '../../support/memory_pending_media_file_store.dart';
 
 const _pending = PendingMediaUpload(
   mediaId: 'known-id',
@@ -26,6 +27,48 @@ const _ready = UploadedEditorImage(
 );
 
 void main() {
+  testWidgets('未取得媒体身份的附件重开不自动申请，明确重试保留正文', (tester) async {
+    final store = MemoryPendingMediaFileStore();
+    addTearDown(store.dispose);
+    final first = _Gateway();
+    var state = await _mount(tester, store, first);
+    state.images.add(_input());
+    await tester.pump();
+    expect(first.uploads, hasLength(1));
+    state.images.pause();
+    expect(await state.images.save(), isTrue);
+    final savedMarkdown = store.drafts.values.single['markdown'];
+    await tester.pumpWidget(const SizedBox());
+
+    final second = _Gateway(autoComplete: true);
+    state = await _mount(tester, store, second);
+    await tester.pump();
+    expect(second.uploads, isEmpty);
+    expect(second.resumes, isEmpty);
+    expect(state.images.hasPending, isTrue);
+    expect(state.editor.localMarkdown, savedMarkdown);
+    final id = state.images.images.keys.single;
+    expect(state.images.images[id]!.state.failure?.canRetry, isTrue);
+    var retryComplete = false;
+    final retry = state.images
+        .retry(id)
+        .whenComplete(() => retryComplete = true);
+    // 页面 Future 留在 widget zone；单独给真实临时文件 IO 执行机会。
+    for (var i = 0; i < 100 && !retryComplete; i++) {
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 10)),
+      );
+      await tester.pump();
+    }
+    expect(retryComplete, isTrue);
+    await retry;
+    expect(second.uploads, hasLength(1));
+    await tester.pump();
+    expect(state.images.hasPending, isFalse);
+    expect(state.emitted.last, contains(_ready.url));
+    await tester.pumpWidget(const SizedBox());
+  });
+
   testWidgets('取消发布后离开重进仅续查原图片，不恢复发布意图', (tester) async {
     final store = _MemoryStore();
     final firstGateway = _Gateway();
@@ -77,7 +120,10 @@ void main() {
       ),
     );
     gateway.uploads.single.fail(
-      const ApiFailure(userMessage: '图片处理失败，请重新选择后上传。'),
+      const ApiFailure(
+        userMessage: '图片处理失败，请重新选择后上传。',
+        diagnosticCode: 'media_processing_failed',
+      ),
     );
     await tester.pump();
     expect(state.images.images[id]!.state.failure, isNotNull);
@@ -203,7 +249,7 @@ MediaUploadInput _input() => MediaUploadInput(
 
 Future<_HarnessState> _mount(
   WidgetTester tester,
-  _MemoryStore store,
+  PendingMediaFileStore store,
   _Gateway gateway, {
   bool restore = true,
   String? baseline,
@@ -341,6 +387,8 @@ class _PersistedInput implements MediaUploadInput {
 }
 
 class _Gateway implements MediaUploadGateway, ResumableMediaUploadGateway {
+  _Gateway({this.autoComplete = false});
+  final bool autoComplete;
   final uploads = <_Operation>[];
   final resumes = <_Operation>[];
   final resumedIds = <String>[];
@@ -351,6 +399,7 @@ class _Gateway implements MediaUploadGateway, ResumableMediaUploadGateway {
   }) {
     final operation = _Operation(onProgress);
     uploads.add(operation);
+    if (autoComplete) operation.complete(_ready);
     return operation;
   }
 

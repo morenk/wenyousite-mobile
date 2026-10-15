@@ -155,7 +155,7 @@ class MediaUploadTaskController
     }
     final input = _retryInput;
     if (input == null) return Future<UploadedEditorImage?>.value();
-    return _start(input: input, pending: _pendingUpload);
+    return _start(input: input, pending: _pendingUpload, allowTransfer: true);
   }
 
   @override
@@ -170,12 +170,31 @@ class MediaUploadTaskController
   /// 页面重开只恢复图片任务；发布意图由页面单独管理，不能随草稿恢复。
   Future<UploadedEditorImage?> resumeUpload(
     MediaUploadInput input,
-    PendingMediaUpload pending,
-  ) {
+    PendingMediaUpload? pending, {
+    bool allowTransfer = false,
+  }) {
     if (_activeFuture != null) return _activeFuture!;
     _retryInput = input;
     _pendingUpload = pending;
-    return _start(input: input, pending: pending);
+    if (pending == null && !allowTransfer) {
+      state = const MediaUploadTaskState(
+        phase: MediaUploadTaskPhase.failed,
+        failure: MediaUploadFailure(
+          failure: ApiFailure(source: FailureSource.expected),
+          presentation: UserFacingFailure(
+            title: '图片上传未完成',
+            message: '图片已保留，请重试。',
+            recoveryAction: FailureRecoveryAction.retry,
+            placement: FailurePresentationPlacement.inline,
+            retainContent: true,
+            actionLabel: '重试',
+          ),
+          canRetry: true,
+        ),
+      );
+      return Future.value();
+    }
+    return _start(input: input, pending: pending, allowTransfer: allowTransfer);
   }
 
   /// 离开页面保留已知媒体身份，使本机草稿可以续查而不重复直传。
@@ -196,7 +215,12 @@ class MediaUploadTaskController
 
   @override
   void cancel() {
-    if (!state.isBusy && _operation == null && _pendingUpload == null) return;
+    if (!state.isBusy &&
+        _operation == null &&
+        _pendingUpload == null &&
+        _retryInput == null) {
+      return;
+    }
     _runId += 1;
     _activeFuture = null;
     _retryInput = null;
@@ -226,13 +250,15 @@ class MediaUploadTaskController
   Future<UploadedEditorImage?> _start({
     MediaUploadInput? input,
     PendingMediaUpload? pending,
+    bool allowTransfer = false,
   }) {
     final active = _activeFuture;
     if (active != null) return active;
     late final Future<UploadedEditorImage?> future;
-    future = _run(input: input, pending: pending).whenComplete(() {
-      if (identical(_activeFuture, future)) _activeFuture = null;
-    });
+    future = _run(input: input, pending: pending, allowTransfer: allowTransfer)
+        .whenComplete(() {
+          if (identical(_activeFuture, future)) _activeFuture = null;
+        });
     _activeFuture = future;
     return future;
   }
@@ -240,6 +266,7 @@ class MediaUploadTaskController
   Future<UploadedEditorImage?> _run({
     MediaUploadInput? input,
     PendingMediaUpload? pending,
+    bool allowTransfer = false,
   }) async {
     final runId = ++_runId;
     final cancelSignal = Completer<void>();
@@ -271,7 +298,8 @@ class MediaUploadTaskController
         progress: preparing,
         pendingUpload: pending,
       );
-      if (pending == null && !selected.isMaterialized) {
+      if ((pending == null || (pending.needsTransfer && allowTransfer)) &&
+          !selected.isMaterialized) {
         final materialized = await _untilCancelled(
           selected.materialize(),
           cancelSignal,
@@ -299,6 +327,14 @@ class MediaUploadTaskController
       final gateway = ref.read(mediaUploadGatewayPortProvider);
       final operation = pending == null
           ? gateway.startImageUpload(selected, onProgress: onProgress)
+          : pending.needsTransfer &&
+                allowTransfer &&
+                gateway is RetryableMediaUploadGateway
+          ? (gateway as RetryableMediaUploadGateway).retryImageUpload(
+              selected,
+              pending,
+              onProgress: onProgress,
+            )
           : gateway is ResumableMediaUploadGateway
           ? (gateway as ResumableMediaUploadGateway).resumeImageProcessing(
               pending,
@@ -328,25 +364,42 @@ class MediaUploadTaskController
       acceptProgress = false;
       if (!_isCurrent(runId)) return null;
       _operation = null;
-      _pendingUpload = lookup.upload;
       final cause = mapApplicationFailure(lookup.cause, '图片查询失败，请稍后继续查询。');
+      final terminal = cause.diagnosticCode == 'media_processing_failed';
+      _pendingUpload = terminal ? null : lookup.upload;
+      final objectMissing =
+          lookup.upload.needsTransfer && cause.businessCode == 40419;
+      final transferPending =
+          objectMissing || cause.diagnosticCode == 'media_transfer_pending';
       final canRetry =
-          !{
-            FailureReason.unauthenticated,
-            FailureReason.sessionInvalid,
-            FailureReason.permissionDenied,
-            FailureReason.notFound,
-          }.contains(cause.reason) &&
-          !{401, 403, 404}.contains(cause.httpStatus);
+          terminal ||
+          objectMissing ||
+          lookup.transferFailed ||
+          (!{
+                FailureReason.unauthenticated,
+                FailureReason.sessionInvalid,
+                FailureReason.permissionDenied,
+                FailureReason.notFound,
+              }.contains(cause.reason) &&
+              !{401, 403, 404}.contains(cause.httpStatus));
       state = MediaUploadTaskState(
         phase: MediaUploadTaskPhase.failed,
-        pendingUpload: lookup.upload,
+        pendingUpload: _pendingUpload,
         failure: MediaUploadFailure(
           failure: cause,
           canRetry: canRetry,
+          diagnosticId: FailureDiagnostics.instance.idFor(lookup.cause),
           presentation: UserFacingFailure.fromApi(
             cause,
-            title: '图片查询失败',
+            title: lookup.upload.needsTransfer ? '图片上传失败' : '图片查询失败',
+            message: transferPending
+                ? '图片尚未上传完成，请重试。'
+                : lookup.transferFailed
+                ? '图片没有上传成功，请重试。'
+                : null,
+            recoveryAction: transferPending || lookup.transferFailed
+                ? FailureRecoveryAction.retry
+                : null,
             retainContent: true,
           ),
         ),
@@ -380,10 +433,17 @@ class MediaUploadTaskController
     } on Object catch (error, stack) {
       acceptProgress = false;
       if (!_isCurrent(runId)) return null;
-      _pendingUpload = null;
+      // 只有服务端明确 FAILED 才可放弃旧身份；未知结果仍必须复用。
+      if (error is ApiFailure &&
+          error.diagnosticCode == 'media_processing_failed') {
+        _pendingUpload = null;
+      } else {
+        _pendingUpload ??= pending;
+      }
       _operation = null;
       state = MediaUploadTaskState(
         phase: MediaUploadTaskPhase.failed,
+        pendingUpload: _pendingUpload,
         failure: _failureFor(error, stack, canRetry: _retryInput != null),
       );
       return null;
