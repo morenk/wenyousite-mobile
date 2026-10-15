@@ -20,7 +20,7 @@ import '../../support/editor_toolbar_store.dart';
 void main() {
   setUpAll(loadDeterministicTestFonts);
 
-  testWidgets('偏好入口可打开，连续调整跨页面保留并可恢复默认', (tester) async {
+  testWidgets('偏好入口可打开，拖放跨页面保留并可恢复默认', (tester) async {
     final store = TestEditorToolbarStore();
     final router = GoRouter(
       routes: [
@@ -49,22 +49,8 @@ void main() {
       AppRouteAccessPolicy.forLocation(AppRouteLocations.editorToolbar),
       AppRouteAccess.public,
     );
-    await _select(tester, EditorTool.heading);
-    expect(store.writes, 0);
-    await tester.tap(find.byTooltip('后移'));
-    await tester.pumpAndSettle();
-    expect(store.saved.primary.take(2), [EditorTool.bold, EditorTool.heading]);
-    await tester.tap(find.byTooltip('后移'));
-    await tester.pumpAndSettle();
-    expect(store.saved.primary[2], EditorTool.heading);
-    await tester.tap(find.byTooltip('前移'));
-    await tester.pumpAndSettle();
-    expect(store.saved.primary[1], EditorTool.heading);
-    await _select(tester, EditorTool.image);
-    await tester.tap(find.byTooltip('移到展开栏'));
-    await tester.pumpAndSettle();
-    expect(store.saved.expanded.last, EditorTool.image);
-    expect(find.byTooltip('移到主栏'), findsOneWidget);
+    await _drop(tester, EditorTool.image, EditorToolbarGroup.expanded, 0);
+    expect(store.saved.expanded.first, EditorTool.image);
     router.pop();
     await tester.pumpAndSettle();
     await tester.ensureVisible(entry);
@@ -86,32 +72,36 @@ void main() {
     expect(find.text('音频'), findsNothing);
   });
 
-  testWidgets('图标点选和操作条支持真实读屏tap，固定控件不可拖动', (tester) async {
+  testWidgets('不显示点击调整控件，隐式读屏操作可重排和换栏，固定控件不可拖动', (tester) async {
     final semantics = tester.ensureSemantics();
     try {
       final store = TestEditorToolbarStore();
       await tester.pumpWidget(_app(store));
-      final icon = tester.getSemantics(_iconButton(EditorTool.heading));
-      expect(icon.getSemanticsData().hasAction(SemanticsAction.tap), isTrue);
-      icon.owner!.performAction(icon.id, SemanticsAction.tap);
+      await tester.tap(_dragTool(EditorTool.heading));
       await tester.pumpAndSettle();
       expect(store.writes, 0);
-      final next = tester.getSemantics(find.byTooltip('后移'));
-      expect(next.getSemanticsData().hasAction(SemanticsAction.tap), isTrue);
-      next.owner!.performAction(next.id, SemanticsAction.tap);
-      await tester.pumpAndSettle();
+      _expectNoAdjustmentControls();
+      final icon = tester.getSemantics(
+        find.byKey(const ValueKey('toolbar-semantics-heading')),
+      );
+      expect(icon.getSemanticsData().hasAction(SemanticsAction.tap), isFalse);
+      await _semanticAction(tester, EditorTool.heading, '后移');
       expect(store.saved.primary[1], EditorTool.heading);
-      expect(find.byTooltip('前移'), findsOneWidget);
-      expect(find.byType(LongPressDraggable<EditorTool>), findsNWidgets(14));
+      await _semanticAction(tester, EditorTool.heading, '前移');
+      expect(store.saved.primary.first, EditorTool.heading);
+      await _semanticAction(tester, EditorTool.heading, '移到展开栏');
+      expect(store.saved.expanded.last, EditorTool.heading);
+      _expectNoAdjustmentControls();
+      final draggable = find.byWidgetPredicate(
+        (widget) => widget is Draggable<EditorTool>,
+      );
+      expect(draggable, findsNWidgets(14));
       for (final key in [
         'toolbar-layout-fixed-more',
         'toolbar-layout-fixed-submit',
       ]) {
         expect(
-          find.ancestor(
-            of: find.byKey(Key(key)),
-            matching: find.byType(LongPressDraggable<EditorTool>),
-          ),
+          find.ancestor(of: find.byKey(Key(key)), matching: draggable),
           findsNothing,
         );
       }
@@ -120,6 +110,38 @@ void main() {
     } finally {
       semantics.dispose();
     }
+  });
+
+  testWidgets('鼠标无需长按即开始拖放，触屏横滑不误拖', (tester) async {
+    _viewport(tester, const Size(320, 640));
+    final store = TestEditorToolbarStore();
+    await tester.pumpWidget(_app(store));
+    final mouse = await tester.startGesture(
+      tester.getCenter(_dragTool(EditorTool.heading)),
+      kind: PointerDeviceKind.mouse,
+    );
+    final target = tester.getCenter(
+      find.byKey(const ValueKey('toolbar-drop-expanded-0')),
+    );
+    await mouse.moveTo(target);
+    await tester.pump(const Duration(milliseconds: 16));
+    await mouse.moveBy(const Offset(1, 0));
+    await tester.pump(const Duration(milliseconds: 16));
+    expect(find.byKey(const Key('toolbar-drop-indicator')), findsOneWidget);
+    await mouse.up();
+    await tester.pumpAndSettle();
+    expect(store.saved.expanded.first, EditorTool.heading);
+    final writes = store.writes;
+    final scroll = tester
+        .widget<SingleChildScrollView>(
+          find.byKey(const Key('toolbar-layout-primary')),
+        )
+        .controller!;
+    await tester.drag(_dragTool(EditorTool.italic), const Offset(-100, 0));
+    await tester.pumpAndSettle();
+    expect(scroll.offset, greaterThan(0));
+    expect(store.writes, writes);
+    expect(find.byKey(const Key('toolbar-drop-indicator')), findsNothing);
   });
 
   testWidgets('长按拖放提供插入反馈并保存准确顺序，取消不写入', (tester) async {
@@ -170,7 +192,6 @@ void main() {
       findsOneWidget,
     );
 
-    await _select(tester, EditorTool.heading);
     final drag = await _startDrag(tester, EditorTool.heading);
     final viewport = tester.getRect(
       find.byKey(const Key('toolbar-layout-primary')),
@@ -195,7 +216,6 @@ void main() {
       store.saved.primary,
       EditorTool.values.where((tool) => tool != EditorTool.heading),
     );
-    expect(find.byTooltip('移到主栏'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -227,19 +247,18 @@ void main() {
       ..failWrite = true
       ..pendingWrite = Completer<void>();
     await tester.pumpWidget(_app(store));
-    await _select(tester, EditorTool.heading);
-    await tester.tap(find.byTooltip('后移'));
+    final drag = await _startDrag(tester, EditorTool.heading);
+    await drag.moveTo(
+      tester.getCenter(find.byKey(const ValueKey('toolbar-drop-primary-2'))),
+    );
+    await tester.pump();
+    await drag.up();
     await tester.pump();
     expect(
       tester
-          .widget<IconButton>(
-            find.descendant(
-              of: find.byKey(const Key('toolbar-layout-next')),
-              matching: find.byType(IconButton),
-            ),
-          )
-          .onPressed,
-      isNull,
+          .widget<Draggable<EditorTool>>(_dragTool(EditorTool.heading))
+          .maxSimultaneousDrags,
+      0,
     );
     store.pendingWrite!.complete();
     await tester.pumpAndSettle();
@@ -260,8 +279,10 @@ void main() {
         final store = TestEditorToolbarStore()
           ..saved = customEditorToolbarTestLayout();
         await tester.pumpWidget(_app(store, dark: dark));
-        await _select(tester, EditorTool.sticker);
+        await tester.tap(_dragTool(EditorTool.sticker));
+        await tester.pumpAndSettle();
         expect(store.writes, 0);
+        _expectNoAdjustmentControls();
         expect(tester.takeException(), isNull);
         await expectLater(
           find.byType(Scaffold),
@@ -271,15 +292,13 @@ void main() {
         );
       });
     }
-    testWidgets('320dp ${dark ? 'dark' : 'light'} 两倍字号操作条可换栏', (tester) async {
+    testWidgets('320dp ${dark ? 'dark' : 'light'} 两倍字号可拖放换栏', (tester) async {
       _viewport(tester, const Size(320, 640));
       final store = TestEditorToolbarStore();
       await tester.pumpWidget(_app(store, dark: dark, scale: 2));
-      await _select(tester, EditorTool.dice);
-      await tester.tap(find.byTooltip('移到主栏'));
-      await tester.pumpAndSettle();
-      expect(store.saved.primary.last, EditorTool.dice);
-      expect(_iconButton(EditorTool.dice).hitTestable(), findsOneWidget);
+      await _drop(tester, EditorTool.dice, EditorToolbarGroup.primary, 0);
+      expect(store.saved.primary.first, EditorTool.dice);
+      expect(_dragTool(EditorTool.dice).hitTestable(), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
   }
@@ -292,22 +311,53 @@ void _viewport(WidgetTester tester, Size size) {
   addTearDown(tester.view.resetPhysicalSize);
 }
 
-Finder _iconButton(EditorTool tool) => find.descendant(
-  of: find.byKey(ValueKey('toolbar-layout-${tool.id}')),
-  matching: find.byType(IconButton),
-);
+Finder _dragTool(EditorTool tool) =>
+    find.byKey(ValueKey('toolbar-drag-${tool.id}'));
 
-Future<void> _select(WidgetTester tester, EditorTool tool) async {
-  await tester.ensureVisible(_iconButton(tool));
-  await tester.tap(_iconButton(tool));
+void _expectNoAdjustmentControls() {
+  expect(find.byKey(const Key('toolbar-layout-actions')), findsNothing);
+  for (final label in ['前移', '后移', '移到主栏', '移到展开栏', '点按调整']) {
+    expect(find.text(label), findsNothing);
+    expect(find.byTooltip(label), findsNothing);
+  }
+  expect(find.byKey(const Key('toolbar-layout-previous')), findsNothing);
+  expect(find.byKey(const Key('toolbar-layout-next')), findsNothing);
+  expect(find.byKey(const Key('toolbar-layout-change-group')), findsNothing);
+}
+
+Future<void> _semanticAction(
+  WidgetTester tester,
+  EditorTool tool,
+  String label,
+) async {
+  final node = tester.getSemantics(
+    find.byKey(ValueKey('toolbar-semantics-${tool.id}')),
+  );
+  final id = node.getSemanticsData().customSemanticsActionIds!.singleWhere(
+    (id) => CustomSemanticsAction.getAction(id)!.label == label,
+  );
+  node.owner!.performAction(node.id, SemanticsAction.customAction, id);
+  await tester.pumpAndSettle();
+}
+
+Future<void> _drop(
+  WidgetTester tester,
+  EditorTool tool,
+  EditorToolbarGroup group,
+  int index,
+) async {
+  final drag = await _startDrag(tester, tool);
+  await drag.moveTo(
+    tester.getCenter(find.byKey(ValueKey('toolbar-drop-${group.name}-$index'))),
+  );
+  await tester.pump();
+  await drag.up();
   await tester.pumpAndSettle();
 }
 
 Future<TestGesture> _startDrag(WidgetTester tester, EditorTool tool) async {
-  await tester.ensureVisible(_iconButton(tool));
-  final gesture = await tester.startGesture(
-    tester.getCenter(_iconButton(tool)),
-  );
+  await tester.ensureVisible(_dragTool(tool));
+  final gesture = await tester.startGesture(tester.getCenter(_dragTool(tool)));
   await tester.pump(kLongPressTimeout + const Duration(milliseconds: 50));
   return gesture;
 }

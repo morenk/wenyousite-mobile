@@ -1,6 +1,8 @@
 import 'dart:async';
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
@@ -83,15 +85,8 @@ class _ToolbarArrangementState extends State<_ToolbarArrangement> {
   final _toolKeys = {for (final tool in EditorTool.values) tool: GlobalKey()};
   Timer? _edgeScrollTimer;
   double _edgeScrollDirection = 0;
-  EditorTool? _selected;
   EditorTool? _dragging;
   bool _expanded = true;
-
-  @override
-  void didUpdateWidget(covariant _ToolbarArrangement oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.layout != widget.layout) _revealSelection();
-  }
 
   @override
   void dispose() {
@@ -128,10 +123,10 @@ class _ToolbarArrangementState extends State<_ToolbarArrangement> {
     });
   }
 
-  void _revealSelection() {
+  void _revealTool(EditorTool tool) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      final context = _toolKeys[_selected]?.currentContext;
+      final context = _toolKeys[tool]?.currentContext;
       if (context != null) {
         unawaited(Scrollable.ensureVisible(context, alignment: 0.5));
       }
@@ -149,10 +144,10 @@ class _ToolbarArrangementState extends State<_ToolbarArrangement> {
     final oldIndex = widget.layout.toolsIn(oldGroup).indexOf(tool);
     if (oldGroup == group && oldIndex == index) return;
     setState(() {
-      _selected = tool;
       if (group == EditorToolbarGroup.expanded) _expanded = true;
     });
     widget.onChanged(widget.layout.move(tool, group, index));
+    _revealTool(tool);
   }
 
   // 拖放目标表示插入到该项之前；同组删除源项后，后续目标索引减一。
@@ -174,7 +169,7 @@ class _ToolbarArrangementState extends State<_ToolbarArrangement> {
             tokens.space16,
             tokens.space12,
           ),
-          child: const Text('长按拖动，点按调整'),
+          child: const Text('拖动调整'),
         ),
         WenyouPanel(
           padding: EdgeInsets.zero,
@@ -188,10 +183,6 @@ class _ToolbarArrangementState extends State<_ToolbarArrangement> {
             ],
           ),
         ),
-        if (_selected case final tool?) ...[
-          SizedBox(height: tokens.space12),
-          _selectionActions(tool),
-        ],
       ],
     );
   }
@@ -354,17 +345,47 @@ class _ToolbarArrangementState extends State<_ToolbarArrangement> {
   }
 
   Widget _draggableTool(EditorTool tool, EditorToolbarGroup group) {
+    final items = widget.layout.toolsIn(group);
+    final index = items.indexOf(tool);
+    final other = group == EditorToolbarGroup.primary
+        ? EditorToolbarGroup.expanded
+        : EditorToolbarGroup.primary;
     final child = SizedBox(
       key: _toolKeys[tool],
-      // 长按由拖动接管；图标的 Tooltip 仍提供读屏名称与鼠标悬停提示。
-      child: TooltipTheme(
-        data: TooltipTheme.of(
-          context,
-        ).copyWith(triggerMode: TooltipTriggerMode.manual),
-        child: _toolButton(tool, group),
+      child: Semantics(
+        key: ValueKey('toolbar-semantics-${tool.id}'),
+        container: true,
+        label:
+            '${tool.label}，${group == EditorToolbarGroup.primary ? '主栏' : '展开栏'}，第${index + 1}项',
+        enabled: widget.enabled,
+        customSemanticsActions: widget.enabled
+            ? {
+                if (index > 0)
+                  const CustomSemanticsAction(label: '前移'): () =>
+                      _move(tool, group, index - 1),
+                if (index < items.length - 1)
+                  const CustomSemanticsAction(label: '后移'): () =>
+                      _move(tool, group, index + 1),
+                CustomSemanticsAction(
+                  label: other == EditorToolbarGroup.primary ? '移到主栏' : '移到展开栏',
+                ): () =>
+                    _move(tool, other, widget.layout.toolsIn(other).length),
+              }
+            : null,
+        child: ExcludeSemantics(
+          child: MouseRegion(
+            cursor: widget.enabled
+                ? SystemMouseCursors.grab
+                : SystemMouseCursors.basic,
+            // 图标只作为拖放对象；阻止点击涟漪、按钮焦点与内层长按提示。
+            child: AbsorbPointer(
+              child: ExcludeFocus(child: _toolButton(tool, group)),
+            ),
+          ),
+        ),
       ),
     );
-    return LongPressDraggable<EditorTool>(
+    return _ToolbarDraggable(
       key: ValueKey('toolbar-drag-${tool.id}'),
       data: tool,
       maxSimultaneousDrags: widget.enabled ? 1 : 0,
@@ -396,64 +417,70 @@ class _ToolbarArrangementState extends State<_ToolbarArrangement> {
   }) {
     final label =
         '${tool.label}，${group == EditorToolbarGroup.primary ? '主栏' : '展开栏'}';
-    void select() => setState(() => _selected = tool);
     return group == EditorToolbarGroup.primary
         ? WenyouEditorToolbarButton(
             key: feedback ? null : ValueKey('toolbar-layout-${tool.id}'),
             icon: editorToolIconId(tool),
             label: label,
             enabled: widget.enabled,
-            selected: feedback || _selected == tool,
-            onPressed: select,
+            selected: feedback,
+            onPressed: _doNothing,
           )
         : WenyouEditorTrayButton(
             key: feedback ? null : ValueKey('toolbar-layout-${tool.id}'),
             icon: editorToolIconId(tool),
             label: label,
             enabled: widget.enabled,
-            selected: feedback || _selected == tool,
-            onPressed: select,
+            selected: feedback,
+            onPressed: _doNothing,
           );
   }
+}
 
-  Widget _selectionActions(EditorTool tool) {
-    final group = _groupOf(tool);
-    final items = widget.layout.toolsIn(group);
-    final index = items.indexOf(tool);
-    final other = group == EditorToolbarGroup.primary
-        ? EditorToolbarGroup.expanded
-        : EditorToolbarGroup.primary;
-    final tokens = context.wenyouTokens;
-    return WenyouPanel(
-      key: const Key('toolbar-layout-actions'),
-      padding: EdgeInsets.only(left: tokens.space16, right: tokens.space4),
-      child: Row(
-        children: [
-          Expanded(child: Semantics(liveRegion: true, child: Text(tool.label))),
-          WenyouEditorToolbarButton(
-            key: const Key('toolbar-layout-previous'),
-            icon: WenyouIconIds.navigationPrevious,
-            label: '前移',
-            enabled: widget.enabled && index > 0,
-            onPressed: () => _move(tool, group, index - 1),
-          ),
-          WenyouEditorToolbarButton(
-            key: const Key('toolbar-layout-next'),
-            icon: WenyouIconIds.navigationNext,
-            label: '后移',
-            enabled: widget.enabled && index < items.length - 1,
-            onPressed: () => _move(tool, group, index + 1),
-          ),
-          WenyouEditorToolbarButton(
-            key: const Key('toolbar-layout-change-group'),
-            icon: WenyouIconIds.actionMove,
-            label: other == EditorToolbarGroup.primary ? '移到主栏' : '移到展开栏',
-            enabled: widget.enabled,
-            onPressed: () =>
-                _move(tool, other, widget.layout.toolsIn(other).length),
-          ),
-        ],
-      ),
-    );
+class _ToolbarDraggable extends Draggable<EditorTool> {
+  const _ToolbarDraggable({
+    required super.data,
+    required super.feedback,
+    required super.child,
+    required super.childWhenDragging,
+    required super.maxSimultaneousDrags,
+    required super.onDragStarted,
+    required super.onDragUpdate,
+    required super.onDragEnd,
+    super.key,
+  });
+
+  @override
+  MultiDragGestureRecognizer createRecognizer(
+    GestureMultiDragStartCallback onStart,
+  ) => _ToolbarDragRecognizer(debugOwner: this)..onStart = onStart;
+}
+
+class _ToolbarDragRecognizer extends DelayedMultiDragGestureRecognizer {
+  _ToolbarDragRecognizer({required super.debugOwner});
+
+  @override
+  MultiDragPointerState createNewPointerState(PointerDownEvent event) =>
+      event.kind == PointerDeviceKind.mouse
+      ? _MouseDragPointerState(event.position, event.kind, gestureSettings)
+      : super.createNewPointerState(event);
+}
+
+class _MouseDragPointerState extends MultiDragPointerState {
+  _MouseDragPointerState(
+    super.initialPosition,
+    super.kind,
+    super.gestureSettings,
+  );
+
+  @override
+  void checkForResolutionAfterMove() {
+    if (pendingDelta!.distance > computeHitSlop(kind, gestureSettings)) {
+      resolve(GestureDisposition.accepted);
+    }
   }
+
+  @override
+  void accepted(GestureMultiDragStartCallback starter) =>
+      starter(initialPosition);
 }

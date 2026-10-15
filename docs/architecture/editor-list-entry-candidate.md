@@ -6,7 +6,7 @@
 
 - 从已更新的 `origin/dev` `d7168b61ea1b547e737585d2e9b250f1b3bd24e2` 创建 `codex/20261015-hide-list-entries`。
 - Worktree：`D:\codex-worktrees\mobile-hide-list-entries\wenyousite-mobile`；只修改 Windows Mobile。
-- “偏好 → 编辑器工具栏”直接模拟真实工具栏，分别配置主栏、展开栏顺序；支持长按拖放、点选操作条连续前移／后移／换栏和恢复默认。游客与登录用户均可设置。
+- “偏好 → 编辑器工具栏”直接模拟真实工具栏，分别配置主栏、展开栏顺序；鼠标直接拖动、触屏长按拖动完成排序／换栏，保留恢复默认。游客与登录用户均可设置。
 - 共享工具栏隐藏无序／有序列表入口，列表不进入可选项。表情包保留，主题创作、帖子、回复和子贴共用布局；受限能力及缺少表情回调的动作继续隐藏。
 - 保留格式策略、Markdown ↔ Delta 编解码、历史列表编辑与阅读、站内结构化粘贴，以及既有不支持结构的源码保护；不迁移或清理历史内容。
 - Foundation 固定正式版 `v7.2.1`，复用 48dp 命中区、设置组件、主题和语义图标，不增加依赖。
@@ -22,7 +22,7 @@ SharedPreferences `editor.toolbar.layout.v1` 只保存版本和两组稳定 ID�
 
 音频仅为后续实现预留稳定 ID `audio`，默认归展开栏。本候选没有音频占位按钮，不实现上传、录音、播放器或音频契约。
 
-设置画布通过 editor 公共入口复用真实按钮、图标及展开托盘，展开栏在上、主栏在下。主栏横滑展示保存的完整归属，避免把实际编辑器窄屏临时溢出混作用户分组；长按拖到边缘自动滚动。拖入图标前显示插入线，末尾及空栏显示可放入区域；取消拖动、仅点选图标和横滑均不保存。点选操作条保留选中图标，可连续调整并通过读屏操作；更多可收起／展开，发送禁用，两者固定不可拖动。局部 Tooltip 改为手动触发以避免抢占长按拖动，读屏名称与鼠标提示保留。
+设置画布通过 editor 公共入口复用真实按钮、图标及展开托盘，展开栏在上、主栏在下。主栏横滑展示保存的完整归属，避免把实际编辑器窄屏临时溢出混作用户分组；拖到边缘自动滚动。拖入图标前显示插入线，末尾及空栏显示可放入区域；取消拖动、点击图标和横滑均不保存。选中态与整条可见调整操作区已移除，读屏通过非视觉自定义语义操作排序／换栏；更多可收起／展开，发送禁用，两者固定不可拖动。鼠标按住移动即开始拖动，触屏继续使用 Flutter 长按识别，横滑不误触拖放；仅保留“拖动调整”提示。设置图标不弹悬停提示，保留读屏名称，避免提示浮层在换栏时重挂载。
 
 ## 开发验证边界
 
@@ -32,7 +32,11 @@ SharedPreferences `editor.toolbar.layout.v1` 只保存版本和两组稳定 ID�
 
 ## 定向检查
 
-本次图标摆放反馈从 `707a40e3b7d92ba4837b13c108b0885006a17e7b` 继续，只修改设置交互、editor 公共组件导出和该设置页测试。设置页 12 项通过，包含四张 320／360dp 明暗 Golden 非更新对比、2× 字号、连续操作、读屏真实 tap、拖放落点、空主栏／展开栏、边缘滚动、取消不写入及失败重试。三个改动 Dart 文件分析 No issues found，格式零变化、差异检查通过。日志：`.buildlog/editor-toolbar-visual-layout-second.log`、`.buildlog/editor-toolbar-visual-layout-analyze.log`。首轮 8 过 4 失败：发现 Tooltip 长按抢占拖动和测试错误读取 RawTooltip 为 IconButton；均已修正，首轮日志保留。此次只更新四张设置页图，账号页和运行时工具栏 Golden 不变。
+本轮简化反馈从 `038ae0e6faf2815bc75c609b9009c00489ad3bf4` 继续，仅改设置页交互及其测试。最终 `flutter test --no-pub test/features/settings/editor_toolbar_settings_page_test.dart` 13 项通过，包含鼠标无需长按即可拖放、触屏横滑不误拖、取消与点击不写入、非视觉读屏排序／换栏、空栏、落点、边缘滚动、失败重试、2× 字号及四张明暗窄屏 Golden 非更新比较。两个改动 Dart 文件分析 No issues found，格式零变化，`git diff --check` 通过。日志：`.buildlog/editor-toolbar-drag-only-final.log`、`.buildlog/editor-toolbar-drag-only-final-analyze.log`。
+
+本轮失败与补验如实保留：首轮遗漏 `CustomSemanticsAction` import，测试编译与分析失败；补齐后更新图片运行 11 过 2 失败，发现鼠标悬停提示浮层随图标换栏重挂载触发 Flutter 布局断言，下一测试受其遗留异常影响。移除额外提示层后，上述 13 项及分析全部通过；失败日志为 `.buildlog/editor-toolbar-drag-only-first.log`、`.buildlog/editor-toolbar-drag-only-analyze.log`、`.buildlog/editor-toolbar-drag-only-update.log`。本轮仅更新四张设置页 Golden，账号页与实际编辑器工具栏 Golden 未改。
+
+前次图标摆放反馈从 `707a40e3b7d92ba4837b13c108b0885006a17e7b` 继续，只修改设置交互、editor 公共组件导出和该设置页测试。设置页 12 项通过，包含四张 320／360dp 明暗 Golden 非更新对比、2× 字号、连续操作、读屏真实 tap、拖放落点、空主栏／展开栏、边缘滚动、取消不写入及失败重试。三个改动 Dart 文件分析 No issues found，格式零变化、差异检查通过。日志：`.buildlog/editor-toolbar-visual-layout-second.log`、`.buildlog/editor-toolbar-visual-layout-analyze.log`。首轮 8 过 4 失败：发现 Tooltip 长按抢占拖动和测试错误读取 RawTooltip 为 IconButton；均已修正，首轮日志保留。此次只更新四张设置页图，账号页和运行时工具栏 Golden 不变。
 
 以下是前一布局功能阶段的检查记录，未因本次设置页反馈重复执行无变化的检查：
 
@@ -51,7 +55,7 @@ SharedPreferences `editor.toolbar.layout.v1` 只保存版本和两组稳定 ID�
 
 ## 离线画面
 
-以下实际 Widget Golden 已逐张查看，未见裁切或溢出。自定义设置与工具栏使用同一配置，表情回调已启用；列表及未实现音频无入口。新设置图显示选中表情包后的操作条；这些局部候选不是真机截图。治理任务已交叉审阅代码及画面，不代替负责人视觉验收。
+以下实际 Widget Golden 已逐张查看，未见裁切或溢出。自定义设置与工具栏使用同一配置，表情回调已启用；列表及未实现音频无入口。新设置图只展示工具栏拖放区域，没有选中态或可见调整操作条；这些局部候选不是真机截图。治理任务已交叉审阅代码及画面，不代替负责人视觉验收。
 
 | 视口与字号 | 自定义工具栏及展开栏 | 同一配置的偏好页 |
 | --- | --- | --- |
@@ -60,7 +64,7 @@ SharedPreferences `editor.toolbar.layout.v1` 只保存版本和两组稳定 ID�
 | 360dp，亮色，1× | [工具栏](../../test/features/editor/goldens/editor_custom_toolbar_360_light.png) | [偏好](../../test/features/settings/goldens/editor_toolbar_settings_360_light.png) |
 | 360dp，暗色，1× | [工具栏](../../test/features/editor/goldens/editor_custom_toolbar_360_dark.png) | [偏好](../../test/features/settings/goldens/editor_toolbar_settings_360_dark.png) |
 
-工具栏截图 360dp 高，新偏好图 640dp 高。设置页另有 320dp、640dp 高、2× 字号明暗操作条换栏与目标自动可见测试。
+工具栏截图 360dp 高，新偏好图 640dp 高。设置页另有 320dp、640dp 高、2× 字号明暗拖放换栏与目标自动可见测试。
 
 原默认对照保持：[360 亮](../../test/features/editor/goldens/editor_more_tray_360_light.png)、[360 暗](../../test/features/editor/goldens/editor_more_tray_360_dark.png)、[320 亮 2×](../../test/features/editor/goldens/editor_more_tray_320_light_2x.png)、[320 暗 2×](../../test/features/editor/goldens/editor_more_tray_320_dark_2x.png)。账号设置因增加“编辑器工具栏”一行，更新其 8 张明暗／宽度基线，原资料编辑页 Golden 字节不变；代表画面为[360 亮](../../test/features/users/goldens/account_settings_light_360.png)和[320 暗 2×](../../test/features/users/goldens/account_settings_320_2x_dark.png)。
 
@@ -70,13 +74,13 @@ SharedPreferences `editor.toolbar.layout.v1` 只保存版本和两组稳定 ID�
 - `editor_toolbar_preference.dart`：`c8fe907d6f5cd4e1288e2795194b25e6b1050501517f0fc9d06bce3027d4e422`。
 - `editor_toolbar.dart`：`361a451b52b5cbd394e22cdff476ff4e1f6064be551ce0697a5ecf8c9fd54f9b`。
 - `editor_more_tray.dart`：`0ef6a1ef3c27b81763c74447fc59647097f44a9bcd266331084ef385336daf2d`。
-- `editor_toolbar_settings_page.dart`：`d892622d104c539b11d910c1dff764e52fda7fe18d81ebba73b8fac3bcee8d4e`。
+- `editor_toolbar_settings_page.dart`：`db2ca33fdf41e81abd1377debe82bc47f2500d745e618944b72aa312e7948b91`。
 - `editor.dart` 公共组件导出：`0369b0db11684b63f7107f86da570e28faba7b885e6514e525901e32fb08e326`。
 
 ## 待负责人验收
 
 1. 从偏好进入工具栏设置，跨组移动、重排，打开编辑器并展开工具栏；返回页面和重启 App 后确认顺序保留，恢复默认后重启仍为默认。
-2. 明暗主题、窄屏及大字号下检查主栏、展开栏、拖动落点与点选操作条；确认表情包可用，设置主栏可横滑且不改变保存归属，固定控件不能拖动。
+2. 明暗主题、窄屏及大字号下检查主栏、展开栏、拖动落点、鼠标直接拖动与触屏长按；确认表情包可用，设置主栏可横滑且不改变保存归属，固定控件不能拖动。
 3. 打开已有列表正文并编辑、保存、重开，确认原列表语义保留。真实业务写入由负责人手动执行，自动化仅用离线 Fake Repository。
 
 未覆盖真机软键盘、系统读屏及负责人实际历史帖子；离线 Golden 和语义断言不能代替人工验收。本候选不声称已验收或可合并，未合并、部署、安装或接管手机。
