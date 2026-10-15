@@ -1,13 +1,129 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
+import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/network/network_recovery.dart';
 import 'package:wenyousite_mobile/core/network/session_controller.dart';
 import 'package:wenyousite_mobile/core/network/session_remote.dart';
 import 'package:wenyousite_mobile/core/storage/token_store.dart';
 
 void main() {
+  for (final failure in [
+    ApiFailure.fromDio(
+      DioException(
+        requestOptions: RequestOptions(path: '/auth/refresh'),
+        error: const SocketException('DNS test failure'),
+      ),
+    ),
+    const ApiFailure(
+      source: FailureSource.network,
+      reason: FailureReason.timeout,
+    ),
+    const ApiFailure(httpStatus: 502),
+  ]) {
+    test(
+      '续期 ${failure.effectiveSource}/${failure.reason} 冷却到期恢复，手动尝试保持合并和令牌',
+      () async {
+        var elapsed = Duration.zero;
+        var shouldFail = true;
+        final pending = Completer<SessionTokens>();
+        final remote = _FakeSessionRemote(
+          onRefresh: (_) async {
+            if (shouldFail) throw failure;
+            return pending.future;
+          },
+        );
+        final recovery = NetworkRecovery(elapsed: () => elapsed);
+        final store = _MemoryTokenStore();
+        final controller = SessionController(store, remote, recovery: recovery);
+        addTearDown(controller.dispose);
+        await controller.authenticate(_oldTokens);
+        await expectLater(controller.refresh(), throwsA(isA<ApiFailure>()));
+        await expectLater(controller.refresh(), throwsA(isA<ApiFailure>()));
+        expect(remote.refreshCalls, 1);
+        elapsed += recovery.remaining;
+        await expectLater(controller.refresh(), throwsA(isA<ApiFailure>()));
+        expect(remote.refreshCalls, 2);
+        expect(recovery.remaining.inSeconds, inInclusiveRange(60, 66));
+        shouldFail = false;
+        final manual = controller.refresh(automatic: false);
+        final joined = controller.refresh();
+        expect(identical(manual, joined), isTrue);
+        expect(recovery.isCoolingDown, isTrue);
+        pending.complete(_tokensFor('user-one', '2'));
+        final tokens = await manual;
+        await joined;
+        expect(remote.refreshCalls, 3);
+        expect(recovery.isCoolingDown, isFalse);
+        expect(controller.tokens, same(tokens));
+        expect(store.value, same(tokens));
+      },
+    );
+  }
+
+  test('手动尝试失败不会解除自动冷却', () async {
+    final remote = _FakeSessionRemote(
+      onRefresh: (_) async =>
+          throw const ApiFailure(reason: FailureReason.offline),
+    );
+    final controller = SessionController(_MemoryTokenStore(), remote);
+    addTearDown(controller.dispose);
+    await controller.authenticate(_oldTokens);
+    await expectLater(controller.refresh(), throwsA(isA<ApiFailure>()));
+    await expectLater(
+      controller.refresh(automatic: false),
+      throwsA(isA<ApiFailure>()),
+    );
+    await expectLater(controller.refresh(), throwsA(isA<ApiFailure>()));
+    expect(remote.refreshCalls, 2);
+    expect(controller.recovery.isCoolingDown, isTrue);
+    expect(controller.tokens, same(_oldTokens));
+  });
+
+  test('旧账号瞬时失败不能给新账号添加冷却，重新登录清除旧冷却', () async {
+    final pending = Completer<SessionTokens>();
+    final remote = _FakeSessionRemote(
+      onRefresh: (token) => token == _oldTokens.refreshToken
+          ? pending.future
+          : Future.value(_tokensFor('new', '2')),
+    );
+    final controller = SessionController(_MemoryTokenStore(), remote);
+    addTearDown(controller.dispose);
+    await controller.authenticate(_oldTokens);
+    final result = expectLater(
+      controller.refresh(),
+      throwsA(isA<ApiFailure>()),
+    );
+    await controller.authenticate(_tokensFor('new', '1'));
+    pending.completeError(const ApiFailure(reason: FailureReason.offline));
+    await result;
+    expect(controller.recovery.isCoolingDown, isFalse);
+    await controller.refresh();
+    expect(remote.refreshCalls, 2);
+  });
+
+  test('瞬时刷新失败后连续自动请求不会再次调用刷新接口', () async {
+    final remote = _FakeSessionRemote(
+      onRefresh: (_) async => throw const ApiFailure(
+        source: FailureSource.network,
+        reason: FailureReason.offline,
+      ),
+    );
+    final store = _MemoryTokenStore();
+    final controller = SessionController(store, remote);
+    addTearDown(controller.dispose);
+    await controller.authenticate(_oldTokens);
+    for (var attempt = 0; attempt < 5; attempt++) {
+      await expectLater(controller.refresh(), throwsA(isA<ApiFailure>()));
+    }
+    expect(remote.refreshCalls, 1);
+    expect(controller.tokens, same(_oldTokens));
+    expect(store.value, same(_oldTokens));
+  });
+
   test('仅从结构完整的 JWT 提取本地数据隔离用户 ID', () async {
     final controller = SessionController(
       _MemoryTokenStore(),

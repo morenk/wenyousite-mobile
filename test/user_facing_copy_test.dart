@@ -2,6 +2,8 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
+import 'support/legacy_failure_copy_audit.dart';
+
 void main() {
   test('用户可见文案不回退到开发者视角', () {
     const forbiddenPhrases = [
@@ -57,9 +59,7 @@ void main() {
     for (final entity in Directory('lib').listSync(recursive: true)) {
       if (entity is! File || !entity.path.endsWith('.dart')) continue;
       final source = entity.readAsStringSync();
-      legacyApiFailureConstructors += RegExp(
-        r'ApiFailure\s*\(',
-      ).allMatches(source).length;
+      legacyApiFailureConstructors += countLegacyApiFailureCopy(source);
       final isPresentation = entity.path.contains(
         '${Platform.pathSeparator}presentation${Platform.pathSeparator}',
       );
@@ -81,8 +81,54 @@ void main() {
     );
     expect(
       legacyApiFailureConstructors,
+      // d7168b61 的实际 userMessage 调用基线，包含命名工厂，禁止增长。
       lessThanOrEqualTo(418),
       reason: '不得新增带展示文案的网络失败；请改用 FailureReason 与展示映射。',
+    );
+  });
+
+  test('旧失败文案审计识别普通、const、命名工厂与前缀调用', () {
+    const calls = [
+      "ApiFailure(userMessage: '失败')",
+      "const ApiFailure(userMessage: '失败')",
+      "new ApiFailure(userMessage: '失败')",
+      'ApiFailure.contractViolation(userMessage: message)',
+      'api.ApiFailure(userMessage: message)',
+      'api.ApiFailure.contractViolation(userMessage: message)',
+      "const api.ApiFailure(userMessage: '失败')",
+      "const api.ApiFailure.legacy(userMessage: '失败')",
+    ];
+    for (final call in calls) {
+      expect(countLegacyApiFailureCopy('final failure = $call;'), 1);
+    }
+    expect(
+      countLegacyApiFailureCopy('''
+class ApiFailure {
+  const ApiFailure({String? userMessage});
+  const ApiFailure.legacy() : this(userMessage: '失败');
+}
+'''),
+      1,
+    );
+  });
+
+  test('旧失败文案审计排除类型化错误、声明、模式、注释和字符串', () {
+    expect(
+      countLegacyApiFailureCopy('''
+class ApiFailure {
+  const ApiFailure({String? userMessage});
+  const ApiFailure.typed() : this();
+}
+// ApiFailure(userMessage: '注释');
+final text = "ApiFailure(userMessage: '字符串')";
+final typed = ApiFailure(reason: FailureReason.cancelled);
+final named = ApiFailure.invalidResponse(diagnosticCode: 'test');
+String? read(Object failure) => switch (failure) {
+  ApiFailure(userMessage: final message) => message,
+  _ => null,
+};
+'''),
+      0,
     );
   });
 
