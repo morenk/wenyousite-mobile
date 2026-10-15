@@ -54,6 +54,8 @@ test/core/application/editor_toolbar_layout_test.dart
 - `test/core/widgets/goldens/audio_body_320_light.png`、`audio_body_320_dark.png`、`audio_body_360_light.png`、`audio_body_360_dark.png`
 - `test/features/settings/goldens/editor_audio_320_light.png`、`editor_audio_320_dark.png`、`editor_audio_360_light.png`、`editor_audio_360_dark.png`
 
+新增正文样式反馈已收敛为淡边界、圆形 accent 播放按钮和对齐的细轨道／等宽时长；直接 Widget 6 项复验含轨道上下 20dp 的真实点击及拖动 seek，四张正文 Golden 更新，二倍字号不溢出。`.buildlog/audio-refined-ui-final.log`、`audio-refined-ui-analyze-fixed.log` 记录补验（首次一条 import 排序 info 已修正）；未改播放逻辑。
+
 ## 原生构建与待验收
 
 插件／原生变更集中生成一次 ARM64 Debug APK，结果与设备交接另补。不能把旧工具栏包的热重载当音频原生验证；不自动启动或热重启登录应用，避免自动签到。iOS 原生编译、真实文件提供者／音频焦点／Range 播放未在 Windows 验证。

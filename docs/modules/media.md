@@ -52,6 +52,8 @@ galleryList：读取 GalleryList200Response / GalleryPageDto / GalleryImageDto�
 
 正文音频使用独立流式上传管线：Android SAF 在后台以 64 KiB 缓冲复制到本任务缓存，按声明大小及实际读取的 30 MiB 预算早停，取消关闭流并删除自有临时文件；其他平台使用 file_selector。选择结果有显式释放租约，24 小时前的自有 UUID 缓存可回收，不删除来源文件。私有草稿文件按账号和编辑目标保存。上传复用预签名 PUT、确认、同 mediaId 续查／重签；最多十分钟，输入 MP3/M4A/WAV/OGG/FLAC，由 Backend 验证并生成唯一 MP3 播放副本。
 
+播放器使用 Foundation surface／compact／body／utility 角色，极淡边界与弱 accent 圆形播放底；标题、细轨道及等宽时长对齐，播放与进度命中均为 48dp，标签 marks 保留。
+
 播放器仅在点击后创建 just_audio 并请求 sourceUrl，不预取正文音频；全局只保留一个活动播放目标。离页、进入后台、音频中断或耳机断开调用 stop 终止加载／缓冲，不自动恢复。暂停／继续保留进度，完成后重播从零开始。有效历史 mediaAudios 的播放不受 audioUpload 能力开关影响。
 
 全屏图集候选：正文按子贴（正文与主楼层）或某楼层回复讨论分组，动态按正文、一级评论、某评论回复分组；不跨层级。点击立即使用已加载原图，独立 `ReadingGalleryController` 后台取得锚点及双向游标，跟随打开时的排序与作者筛选。正文 AST 普通图片序号保留重复 URL，排除贴纸、代码与未发布路径；共享 occurrences fixtures 验证后端一致性。图片的稳定展示键使用来源、版本和出现位置，前插页不改变当前图片，活动触摸期间集合前插取消本次导航意图。

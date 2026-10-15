@@ -43,6 +43,14 @@ void main() {
         await tester.pumpAndSettle();
         expect(find.byType(WenyouAudioPlayer), findsNWidgets(2));
         expect(creations, 0);
+        final player = find.byType(WenyouAudioPlayer).first;
+        for (final type in [IconButton, Slider]) {
+          final control = find.descendant(
+            of: player,
+            matching: find.byType(type),
+          );
+          expect(tester.getSize(control).height, greaterThanOrEqualTo(48));
+        }
         expect(tester.takeException(), isNull);
         await expectLater(
           find.byType(Scaffold),
@@ -68,6 +76,21 @@ void main() {
     await tester.tap(buttons.first);
     await tester.pump();
     expect(driver.plays, 1);
+    final track = tester.getRect(find.byType(Slider).first);
+    for (final dy in [-20.0, 20.0]) {
+      final before = driver.seeks;
+      final point = Offset(
+        track.left + track.width * 0.4,
+        track.center.dy + dy,
+      );
+      await tester.tapAt(point);
+      await tester.pump();
+      expect(driver.seeks, greaterThan(before));
+      final afterTap = driver.seeks;
+      await tester.dragFrom(point, const Offset(30, 0));
+      await tester.pump();
+      expect(driver.seeks, greaterThan(afterTap));
+    }
     await tester.tap(buttons.last);
     await tester.pump();
     expect(driver.plays, 2);

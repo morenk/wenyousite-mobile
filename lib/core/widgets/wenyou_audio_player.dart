@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_audio_projection.dart';
 import 'package:wenyousite_mobile/core/media/media_audio.dart';
@@ -83,11 +84,13 @@ class _WenyouAudioPlayerState extends ConsumerState<WenyouAudioPlayer>
           .clamp(0.0, total)
           .toDouble();
       final label = widget.label.trim().isEmpty ? '音频' : widget.label;
+      final tokens = context.wenyouTokens;
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 6),
         child: DecoratedBox(
           decoration: BoxDecoration(
-            color: context.wenyouTokens.panel,
+            color: tokens.panel,
+            border: Border.all(color: tokens.border.withValues(alpha: 0.5)),
             borderRadius: BorderRadius.circular(
               context.wenyouTokens.radiusCompact,
             ),
@@ -95,128 +98,161 @@ class _WenyouAudioPlayerState extends ConsumerState<WenyouAudioPlayer>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Row(
-                children: [
-                  Semantics(
-                    label: '$label，${state.playing ? '暂停' : '播放'}',
-                    button: true,
-                    child: ExcludeSemantics(
-                      child: IconButton(
-                        constraints: const BoxConstraints(
-                          minWidth: 48,
-                          minHeight: 48,
-                        ),
-                        onPressed: _activeRoute
-                            ? () => unawaited(
-                                _playback.toggle(_owner, widget.audio),
-                              )
-                            : null,
-                        icon: state.loading
-                            ? const SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : WenyouIcon(
-                                state.playing
-                                    ? WenyouIconIds.mediaPause
-                                    : WenyouIconIds.mediaPlay,
-                                size: 20,
-                              ),
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.only(top: 8, right: 12),
-                          child: Text.rich(
-                            TextSpan(
-                              children: widget.labelRuns.isEmpty
-                                  ? [TextSpan(text: label)]
-                                  : [
-                                      for (final run in widget.labelRuns)
-                                        TextSpan(
-                                          text: run.text,
-                                          style: TextStyle(
-                                            fontWeight:
-                                                run.marks.contains('strong')
-                                                ? FontWeight.bold
-                                                : null,
-                                            fontStyle: run.marks.contains('em')
-                                                ? FontStyle.italic
-                                                : null,
-                                            decoration:
-                                                run.marks.contains('del') ||
-                                                    run.marks.contains('s')
-                                                ? TextDecoration.lineThrough
-                                                : null,
-                                            fontFamily:
-                                                run.marks.contains('code')
-                                                ? 'monospace'
-                                                : null,
-                                          ),
-                                        ),
-                                    ],
+              Padding(
+                padding: const EdgeInsets.fromLTRB(4, 4, 12, 4),
+                child: Row(
+                  children: [
+                    Semantics(
+                      label: '$label，${state.playing ? '暂停' : '播放'}',
+                      button: true,
+                      child: ExcludeSemantics(
+                        child: IconButton(
+                          padding: const EdgeInsets.all(6),
+                          style: IconButton.styleFrom(
+                            foregroundColor: tokens.onAccentedBackground,
+                          ),
+                          constraints: const BoxConstraints(
+                            minWidth: 48,
+                            minHeight: 48,
+                          ),
+                          onPressed: _activeRoute
+                              ? () => unawaited(
+                                  _playback.toggle(_owner, widget.audio),
+                                )
+                              : null,
+                          icon: Container(
+                            width: 36,
+                            height: 36,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: tokens.accentedBackground,
+                              shape: BoxShape.circle,
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.bodyMedium,
+                            child: state.loading
+                                ? const SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : WenyouIcon(
+                                    state.playing
+                                        ? WenyouIconIds.mediaPause
+                                        : WenyouIconIds.mediaPlay,
+                                    size: 20,
+                                  ),
                           ),
                         ),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: SliderTheme(
-                                data: SliderTheme.of(context).copyWith(
-                                  activeTrackColor:
-                                      context.wenyouTokens.brandForeground,
-                                  thumbColor:
-                                      context.wenyouTokens.brandForeground,
-                                  trackHeight: 2,
-                                  thumbShape: const RoundSliderThumbShape(
-                                    enabledThumbRadius: 5,
-                                  ),
-                                  overlayShape: const RoundSliderOverlayShape(
-                                    overlayRadius: 12,
-                                  ),
-                                ),
-                                child: Slider(
-                                  label: '播放进度',
-                                  value: position,
-                                  max: total,
-                                  semanticFormatterCallback: (value) =>
-                                      '播放进度，${_time(value.round())}',
-                                  onChanged: current && !state.loading
-                                      ? (value) => unawaited(
-                                          _playback.seek(
-                                            _owner,
-                                            Duration(
-                                              milliseconds: value.round(),
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.only(top: 4),
+                            child: Text.rich(
+                              TextSpan(
+                                children: widget.labelRuns.isEmpty
+                                    ? [TextSpan(text: label)]
+                                    : [
+                                        for (final run in widget.labelRuns)
+                                          TextSpan(
+                                            text: run.text,
+                                            style: TextStyle(
+                                              fontWeight:
+                                                  run.marks.contains('strong')
+                                                  ? FontWeight.bold
+                                                  : null,
+                                              fontStyle:
+                                                  run.marks.contains('em')
+                                                  ? FontStyle.italic
+                                                  : null,
+                                              decoration:
+                                                  run.marks.contains('del') ||
+                                                      run.marks.contains('s')
+                                                  ? TextDecoration.lineThrough
+                                                  : null,
+                                              fontFamily:
+                                                  run.marks.contains('code')
+                                                  ? 'monospace'
+                                                  : null,
                                             ),
                                           ),
-                                        )
-                                      : null,
+                                      ],
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(
+                                context,
+                              ).textTheme.wenyouCompactBody,
+                            ),
+                          ),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: SliderTheme(
+                                  data: SliderTheme.of(context).copyWith(
+                                    activeTrackColor:
+                                        context.wenyouTokens.brandForeground,
+                                    thumbColor:
+                                        context.wenyouTokens.brandForeground,
+                                    inactiveTrackColor: tokens.border,
+                                    disabledInactiveTrackColor: tokens.border,
+                                    disabledActiveTrackColor:
+                                        tokens.brandForeground,
+                                    disabledThumbColor: tokens.brandForeground,
+                                    trackHeight: 2,
+                                    thumbShape: const RoundSliderThumbShape(
+                                      enabledThumbRadius: 4,
+                                      disabledThumbRadius: 4,
+                                    ),
+                                    overlayShape: const RoundSliderOverlayShape(
+                                      overlayRadius: 24,
+                                    ),
+                                  ),
+                                  child: SizedBox(
+                                    height: 48,
+                                    child: Slider(
+                                      padding: EdgeInsets.zero,
+                                      label: '播放进度',
+                                      value: position,
+                                      max: total,
+                                      semanticFormatterCallback: (value) =>
+                                          '播放进度，${_time(value.round())}',
+                                      onChanged: current && !state.loading
+                                          ? (value) => unawaited(
+                                              _playback.seek(
+                                                _owner,
+                                                Duration(
+                                                  milliseconds: value.round(),
+                                                ),
+                                              ),
+                                            )
+                                          : null,
+                                    ),
+                                  ),
                                 ),
                               ),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.only(right: 12),
-                              child: Text(
-                                '${_time(position.round())} / ${_time(total.round())}',
-                                style: Theme.of(context).textTheme.labelSmall,
+                              Padding(
+                                padding: const EdgeInsets.only(left: 12),
+                                child: Text(
+                                  '${_time(position.round())} / ${_time(total.round())}',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .wenyouUtilityCaption
+                                      .copyWith(color: tokens.mutedText),
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
-                      ],
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
               if (current && _playback.error != null)
                 Padding(
