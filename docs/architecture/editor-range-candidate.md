@@ -47,7 +47,9 @@
 
 网络候选协作任务完成只读审查，未发现阻断：核对了 UTF-16 坐标、Embed 单 U+FFFC、失效范围不 clamp、公开 `replaceText` 事务前校验，以及链接托盘完整 Delta 签名校验。该审查没有运行合并后的候选，不能替代组合回归。
 
-与分隔线候选合并时，公开替换入口顺序必须为：范围校验 → 失效立即返回 → 同一 `history.record` 内执行 `_replaceLiteralText(selectedText: ...)` → `preserveEditorDividerBlocks`。同时保留分隔线候选在 `formatText`／`compose` 中的保护。应用源码、测试与 Manifest 在最终验证期间保持冻结；仅验收记录等文档更新不改变 APK 对应源码。
+本候选 #103 与保存／分隔线候选 #100 没有硬依赖，各自在原始基线上独立验证。建议遵循本轮优先级，先合并 #103，再集成 #100；该顺序不代替负责人验收与明确的合并授权。
+
+集成 #100 时，公开替换入口顺序必须为：范围校验 → 失效立即返回 → 同一 `history.record` 内执行 `_replaceLiteralText(selectedText: ...)` → `preserveEditorDividerBlocks`。范围校验始终位于历史事务和分隔线修复之前，同时保留 #100 在 `formatText`／`compose` 中的保护。应用源码、测试与 Manifest 在最终验证期间保持冻结；仅验收记录等文档更新不改变 APK 对应源码。
 
 ## 负责人复验
 
