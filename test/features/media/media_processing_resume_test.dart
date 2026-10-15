@@ -1,20 +1,68 @@
 import 'dart:async';
-import 'dart:io';
 
-import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/application/user_facing_failure.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/direct_messages/application/direct_message_pending_media.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
-import 'package:wenyousite_mobile/features/media/data/media_upload_repository.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
 
+import 'media_processing_resume_fixtures.dart';
+
 void main() {
+  test('对象存储403可手动重签，不能误判为业务媒体访问被禁止', () async {
+    final fixture = MediaRecoveryApiFixture()
+      ..putStatus = 403
+      ..status = 'UPLOADING';
+    addTearDown(fixture.close);
+    final task = MediaRecoveryTaskHarness(fixture);
+    await task.controller.uploadInput(fixture.input);
+    expect(task.state.failure?.canRetry, isTrue);
+    expect(task.state.failure?.failure.httpStatus, 403);
+    expect(
+      task.state.failure?.presentation.recoveryAction,
+      FailureRecoveryAction.retry,
+    );
+    fixture.putStatus = 200;
+    fixture.completeAfterPut = true;
+    expect((await task.controller.retryUpload())?.mediaId, 'media-one');
+    expect(fixture.allocateCount, 1);
+    expect(fixture.reissueCount, 1);
+    expect(fixture.putCount, 2);
+  });
+
+  test('PUT 超时保留同一媒体身份，手动重试不再次创建媒体', () async {
+    final fixture = MediaRecoveryApiFixture()
+      ..putFails = true
+      ..status = 'UPLOADING';
+    addTearDown(fixture.close);
+    final container = ProviderContainer(
+      overrides: [
+        mediaUploadGatewayPortProvider.overrideWithValue(fixture.gateway),
+      ],
+    );
+    addTearDown(container.dispose);
+    final provider = mediaUploadTaskControllerProvider(Object());
+    final subscription = container.listen(provider, (_, _) {});
+    addTearDown(subscription.close);
+    final controller = container.read(provider.notifier);
+    expect(await controller.uploadInput(fixture.input), isNull);
+    expect(container.read(provider).pendingUpload?.mediaId, 'media-one');
+    expect(container.read(provider).failure?.diagnosticId, isNotNull);
+    expect(fixture.allocateCount, 1);
+    expect(fixture.confirmCount, 0);
+    fixture.putFails = false;
+    fixture.completeAfterPut = true;
+    expect((await controller.retryUpload())?.mediaId, 'media-one');
+    expect(fixture.allocateCount, 1);
+    expect(fixture.reissueCount, 1);
+    expect(fixture.putCount, 2);
+    expect(fixture.confirmCount, 1);
+  });
+
   test('确认未成功时只对同一媒体重试确认，不重复直传', () async {
-    final fixture = _ApiFixture()
+    final fixture = MediaRecoveryApiFixture()
       ..confirmStatus = 503
       ..status = 'UPLOADING';
     addTearDown(fixture.close);
@@ -40,8 +88,249 @@ void main() {
     expect(fixture.putCount, 1);
   });
 
+  test('PUT 失败的草稿恢复只查询，用户重试才重新直传', () async {
+    final fixture = MediaRecoveryApiFixture()
+      ..putFails = true
+      ..status = 'UPLOADING';
+    addTearDown(fixture.close);
+    final task = MediaRecoveryTaskHarness(fixture);
+    await task.controller.uploadInput(fixture.input);
+    final saved = PendingMediaUpload.fromJson(
+      task.state.pendingUpload!.toJson(),
+    )!;
+    expect(saved.needsTransfer, isTrue);
+    expect(saved.contentSha256, hasLength(64));
+    task.controller.reset();
+    fixture.putFails = false;
+    await task.controller.resumeUpload(fixture.input, saved);
+    expect(task.state.failure?.canRetry, isTrue);
+    expect(task.state.failure?.failure.legacyUserMessage, isNull);
+    expect(task.state.failure?.presentation.message, '图片尚未上传完成，请重试。');
+    expect(task.state.pendingUpload?.mediaId, 'media-one');
+    expect(fixture.putCount, 1);
+    expect(fixture.reissueCount, 0);
+    fixture.completeAfterPut = true;
+    expect((await task.controller.retryUpload())?.mediaId, 'media-one');
+    expect(fixture.allocateCount, 1);
+    expect(fixture.putCount, 2);
+  });
+
+  test('申请上传地址 500 不自动重放，输入保留供明确重试', () async {
+    final fixture = MediaRecoveryApiFixture()..allocateStatus = 500;
+    addTearDown(fixture.close);
+    final task = MediaRecoveryTaskHarness(fixture);
+    expect(await task.controller.uploadInput(fixture.input), isNull);
+    await Future<void>.delayed(Duration.zero);
+    expect(fixture.allocateCount, 1);
+    expect(fixture.putCount, 0);
+    expect(task.state.pendingUpload, isNull);
+    expect(task.state.failure?.canRetry, isTrue);
+    // 模拟页面重开：没有响应中的媒体身份也不能自动申请另一个媒体。
+    task.controller.reset();
+    await task.controller.resumeUpload(fixture.input, null);
+    expect(fixture.allocateCount, 1);
+    expect(task.state.failure?.canRetry, isTrue);
+    fixture.allocateStatus = 200;
+    fixture.completeAfterPut = true;
+    expect((await task.controller.retryUpload())?.mediaId, 'media-one');
+    expect(fixture.allocateCount, 2);
+    expect(fixture.putCount, 1);
+  });
+
+  test('重签失败不丢失媒体，下一次重试仍复用同一身份', () async {
+    final fixture = MediaRecoveryApiFixture()
+      ..putFails = true
+      ..status = 'UPLOADING';
+    addTearDown(fixture.close);
+    final task = MediaRecoveryTaskHarness(fixture);
+    await task.controller.uploadInput(fixture.input);
+    fixture.putFails = false;
+    fixture.reissueStatus = 503;
+    expect(await task.controller.retryUpload(), isNull);
+    expect(task.state.pendingUpload?.mediaId, 'media-one');
+    expect(fixture.putCount, 1);
+    fixture.reissueStatus = 200;
+    fixture.completeAfterPut = true;
+    expect((await task.controller.retryUpload())?.mediaId, 'media-one');
+    expect(fixture.allocateCount, 1);
+    expect(fixture.reissueCount, 2);
+  });
+
+  test('取消未取得媒体身份的恢复附件后，旧重试不能再上传', () async {
+    final fixture = MediaRecoveryApiFixture();
+    addTearDown(fixture.close);
+    final task = MediaRecoveryTaskHarness(fixture);
+    await task.controller.resumeUpload(fixture.input, null);
+    task.controller.cancel();
+    expect(task.state.phase, MediaUploadTaskPhase.idle);
+    expect(await task.controller.retryUpload(), isNull);
+    expect(fixture.allocateCount, 0);
+  });
+
+  test('服务端明确处理失败才释放旧身份，重开不自动重新申请', () async {
+    final fixture = MediaRecoveryApiFixture()
+      ..putFails = true
+      ..status = 'UPLOADING';
+    addTearDown(fixture.close);
+    final task = MediaRecoveryTaskHarness(fixture);
+    await task.controller.uploadInput(fixture.input);
+    fixture.status = 'FAILED';
+    await task.controller.retryUpload();
+    expect(task.state.pendingUpload, isNull);
+    expect(task.state.failure?.canRetry, isTrue);
+    expect(fixture.allocateCount, 1);
+    await task.controller.resumeUpload(fixture.input, null);
+    expect(fixture.allocateCount, 1);
+    fixture.putFails = false;
+    fixture.completeAfterPut = true;
+    await task.controller.retryUpload();
+    expect(fixture.allocateCount, 2);
+    expect(fixture.reissueCount, 0);
+  });
+
+  test('取消等待中的恢复查询，不重签、不直传且丢弃迟到结果', () async {
+    final fixture = MediaRecoveryApiFixture()
+      ..putFails = true
+      ..status = 'UPLOADING';
+    addTearDown(fixture.close);
+    final task = MediaRecoveryTaskHarness(fixture);
+    await task.controller.uploadInput(fixture.input);
+    final wait = Completer<void>();
+    fixture.getPause = wait;
+    final result = task.controller.retryUpload();
+    await fixture.firstQuery.future;
+    task.controller.cancel();
+    expect(await result, isNull);
+    wait.complete();
+    await Future<void>.delayed(Duration.zero);
+    expect(task.state.phase, MediaUploadTaskPhase.idle);
+    expect(task.state.pendingUpload, isNull);
+    expect(fixture.reissueCount, 0);
+    expect(fixture.putCount, 1);
+  });
+
+  test('PUT 响应丢失后若已完成则只复用结果，不重传', () async {
+    final fixture = MediaRecoveryApiFixture()
+      ..putFails = true
+      ..status = 'UPLOADING';
+    addTearDown(fixture.close);
+    final task = MediaRecoveryTaskHarness(fixture);
+    await task.controller.uploadInput(fixture.input);
+    fixture.status = 'COMPLETED';
+    expect((await task.controller.retryUpload())?.mediaId, 'media-one');
+    expect(fixture.allocateCount, 1);
+    expect(fixture.reissueCount, 0);
+    expect(fixture.putCount, 1);
+  });
+
+  test('确认对象缺失 40419 可明确重传，不按普通404失效处理', () async {
+    final fixture = MediaRecoveryApiFixture()
+      ..status = 'UPLOADING'
+      ..confirmStatus = 404
+      ..confirmCode = 40419;
+    addTearDown(fixture.close);
+    final task = MediaRecoveryTaskHarness(fixture);
+    await task.controller.uploadInput(fixture.input);
+    expect(task.state.pendingUpload?.needsTransfer, isTrue);
+    expect(task.state.failure?.canRetry, isTrue);
+    expect(task.state.failure?.presentation.actionLabel, '重试');
+    fixture.confirmStatus = 200;
+    fixture.completeAfterPut = true;
+    expect((await task.controller.retryUpload())?.mediaId, 'media-one');
+    expect(fixture.allocateCount, 1);
+    expect(fixture.reissueCount, 1);
+    expect(fixture.putCount, 2);
+  });
+
+  test('恢复查询403保留身份但禁止反复重试，不另建媒体', () async {
+    final fixture = MediaRecoveryApiFixture()
+      ..putFails = true
+      ..status = 'UPLOADING';
+    addTearDown(fixture.close);
+    final task = MediaRecoveryTaskHarness(fixture);
+    await task.controller.uploadInput(fixture.input);
+    fixture.getStatus = 403;
+    await task.controller.retryUpload();
+    expect(task.state.failure?.canRetry, isFalse);
+    fixture.getStatus = 200;
+    expect(await task.controller.retryUpload(), isNull);
+    expect(fixture.getCount, 1);
+    expect(fixture.allocateCount, 1);
+    expect(fixture.reissueCount, 0);
+  });
+
+  test('同大小同类型的不同字节不能写入旧媒体身份', () async {
+    final fixture = MediaRecoveryApiFixture()
+      ..putFails = true
+      ..status = 'UPLOADING';
+    addTearDown(fixture.close);
+    final task = MediaRecoveryTaskHarness(fixture);
+    await task.controller.uploadInput(fixture.input);
+    final pending = task.state.pendingUpload!;
+    final input = fixture.input;
+    input.bytes[input.bytes.length - 1] ^= 1;
+    expect(
+      await task.controller.resumeUpload(input, pending, allowTransfer: true),
+      isNull,
+    );
+    expect(
+      task.state.failure?.failure.diagnosticCode,
+      'media_retry_input_mismatch',
+    );
+    expect(task.state.pendingUpload?.mediaId, 'media-one');
+    expect(fixture.reissueCount, 0);
+    expect(fixture.putCount, 1);
+  });
+
+  test('私聊明确重试PUT失败只恢复原媒体，不另申请记录', () async {
+    final fixture = MediaRecoveryApiFixture()
+      ..putFails = true
+      ..status = 'UPLOADING';
+    addTearDown(fixture.close);
+    final jobs = DirectMessagePendingMediaJobs(fixture.gateway);
+    addTearDown(jobs.dispose);
+    jobs.register('message-one', fixture.input);
+    await expectLater(
+      jobs.resolveMediaId('message-one', onProgress: (_) {}),
+      throwsA(isA<MediaProcessingLookupFailure>()),
+    );
+    fixture.putFails = false;
+    fixture.completeAfterPut = true;
+    expect(
+      await jobs.resolveMediaId('message-one', onProgress: (_) {}),
+      'media-one',
+    );
+    expect(fixture.allocateCount, 1);
+    expect(fixture.reissueCount, 1);
+    expect(fixture.putCount, 2);
+  });
+
+  test('私聊已分配身份后的普通异常仍保留原媒体', () async {
+    final fixture = MediaRecoveryApiFixture()
+      ..uploadUrl = 'file:///unsafe'
+      ..status = 'UPLOADING';
+    addTearDown(fixture.close);
+    final jobs = DirectMessagePendingMediaJobs(fixture.gateway);
+    addTearDown(jobs.dispose);
+    jobs.register('message-one', fixture.input);
+    await expectLater(
+      jobs.resolveMediaId('message-one', onProgress: (_) {}),
+      throwsA(isA<ApiFailure>()),
+    );
+    expect(fixture.putCount, 0);
+    fixture.uploadUrl = 'https://s3.example/reissued';
+    fixture.completeAfterPut = true;
+    expect(
+      await jobs.resolveMediaId('message-one', onProgress: (_) {}),
+      'media-one',
+    );
+    expect(fixture.allocateCount, 1);
+    expect(fixture.reissueCount, 1);
+    expect(fixture.putCount, 1);
+  });
+
   test('初次确认的媒体身份错配不会进入处理查询', () async {
-    final fixture = _ApiFixture()..confirmId = 'different-media';
+    final fixture = MediaRecoveryApiFixture()..confirmId = 'different-media';
     addTearDown(fixture.close);
     await expectLater(
       fixture.gateway.startImageUpload(fixture.input).result,
@@ -52,7 +341,7 @@ void main() {
 
   test('轮询退避不占查询名额，第三张可查询', () async {
     final delays = <Completer<void>>[];
-    final fixture = _ApiFixture(
+    final fixture = MediaRecoveryApiFixture(
       delay: (duration) async {
         if (duration == const Duration(seconds: 1)) {
           final wait = Completer<void>();
@@ -80,7 +369,7 @@ void main() {
 
   test('取消排队中的第三张后不请求上传地址或执行 PUT', () async {
     final wait = Completer<void>();
-    final fixture = _ApiFixture()..confirmPause = wait;
+    final fixture = MediaRecoveryApiFixture()..confirmPause = wait;
     addTearDown(fixture.close);
     final first = fixture.gateway.startImageUpload(fixture.input);
     final second = fixture.gateway.startImageUpload(fixture.input);
@@ -101,7 +390,7 @@ void main() {
 
   test('前两张处理查询未返回时第三张仍完成传输，查询最多两路', () async {
     final wait = Completer<void>();
-    final fixture = _ApiFixture()..getPause = wait;
+    final fixture = MediaRecoveryApiFixture()..getPause = wait;
     addTearDown(fixture.close);
     final operations = List.generate(
       3,
@@ -121,7 +410,7 @@ void main() {
   });
 
   test('确认响应丢失后用已知身份恢复，文件丢失也不重传', () async {
-    final fixture = _ApiFixture()..confirmStatus = 503;
+    final fixture = MediaRecoveryApiFixture()..confirmStatus = 503;
     addTearDown(fixture.close);
     final container = ProviderContainer(
       overrides: [
@@ -155,7 +444,7 @@ void main() {
 
   test('离页暂停保留处理中身份，迟到结果不能恢复旧操作', () async {
     final wait = Completer<void>();
-    final fixture = _ApiFixture()..getPause = wait;
+    final fixture = MediaRecoveryApiFixture()..getPause = wait;
     addTearDown(fixture.close);
     final container = ProviderContainer(
       overrides: [
@@ -195,7 +484,7 @@ void main() {
     'http://10.0.2.2/full.webp',
   ]) {
     test('完整展示上传结果沿用安全 URL 规则：$url', () async {
-      final fixture = _ApiFixture()
+      final fixture = MediaRecoveryApiFixture()
         ..status = 'COMPLETED'
         ..displayUrl = url;
       addTearDown(fixture.close);
@@ -212,7 +501,7 @@ void main() {
   }
   for (final missing in [true, false]) {
     test('查询响应${missing ? '缺少媒体' : '身份不匹配'}使用内容失败展示映射', () async {
-      final fixture = _ApiFixture()
+      final fixture = MediaRecoveryApiFixture()
         ..missingQueryData = missing
         ..queryId = 'another-media';
       addTearDown(fixture.close);
@@ -238,7 +527,7 @@ void main() {
   }
   test('账号切换取消处理中查询，迟到响应不能恢复旧任务', () async {
     final wait = Completer<void>();
-    final fixture = _ApiFixture()..getPause = wait;
+    final fixture = MediaRecoveryApiFixture()..getPause = wait;
     addTearDown(fixture.close);
     final account = StateProvider<int>((ref) => 0);
     final container = ProviderContainer(
@@ -267,7 +556,7 @@ void main() {
     expect(fixture.putCount, 1);
   });
   test('账号代次切换清理旧待查询身份，不把旧媒体续查带给新账号', () async {
-    final fixture = _ApiFixture();
+    final fixture = MediaRecoveryApiFixture();
     addTearDown(fixture.close);
     final account = StateProvider<int>((ref) => 0);
     final container = ProviderContainer(
@@ -294,7 +583,7 @@ void main() {
     expect(fixture.putCount, 1);
   });
   test('长处理保留媒体身份，继续查询只增加 GET 不再 POST/PUT', () async {
-    final fixture = _ApiFixture();
+    final fixture = MediaRecoveryApiFixture();
     addTearDown(fixture.close);
     final container = ProviderContainer(
       overrides: [
@@ -323,7 +612,7 @@ void main() {
   });
   for (final status in [401, 403, 404, 503]) {
     test('查询 $status 不伪装处理中且不重复上传', () async {
-      final fixture = _ApiFixture()..getStatus = status;
+      final fixture = MediaRecoveryApiFixture()..getStatus = status;
       addTearDown(fixture.close);
       final container = ProviderContainer(
         overrides: [
@@ -352,7 +641,7 @@ void main() {
     });
   }
   test('私聊独立队列保留 PROCESSING 和查询失败身份，完成后才可发送', () async {
-    final fixture = _ApiFixture();
+    final fixture = MediaRecoveryApiFixture();
     addTearDown(fixture.close);
     final jobs = DirectMessagePendingMediaJobs(fixture.gateway);
     addTearDown(jobs.dispose);
@@ -398,142 +687,3 @@ Matcher _invalidResponse(String code) => isA<ApiFailure>()
       'presentation',
       '当前内容暂时无法显示，请重新加载。',
     );
-
-class _ApiFixture {
-  _ApiFixture({MediaUploadDelay? delay}) {
-    apiDio.interceptors.add(
-      InterceptorsWrapper(
-        onRequest: (request, handler) async {
-          Object? data;
-          if (request.method == 'POST') {
-            postCount++;
-            if (!request.path.endsWith('/upload-url')) {
-              await confirmPause?.future;
-            }
-            if (!request.path.endsWith('/upload-url') && confirmStatus != 200) {
-              handler.reject(
-                DioException(
-                  requestOptions: request,
-                  type: DioExceptionType.badResponse,
-                  response: Response<Object>(
-                    requestOptions: request,
-                    statusCode: confirmStatus,
-                    data: {'code': confirmStatus * 100, 'message': 'failure'},
-                  ),
-                ),
-              );
-              return;
-            }
-            data = request.path.endsWith('/upload-url')
-                ? {
-                    'uploadUrl': 'https://s3.example/upload',
-                    'mediaId': 'media-one',
-                    'objectKey': 'original.gif',
-                    'publicUrl': 'https://cdn.example/original.gif',
-                  }
-                : {
-                    'processing': status != 'COMPLETED',
-                    'media': {...media, 'id': confirmId},
-                  };
-          } else {
-            getCount++;
-            if (!firstQuery.isCompleted) firstQuery.complete();
-            await getPause?.future;
-            if (getStatus != 200) {
-              handler.reject(
-                DioException(
-                  requestOptions: request,
-                  type: DioExceptionType.badResponse,
-                  response: Response<Object>(
-                    requestOptions: request,
-                    statusCode: getStatus,
-                    data: {'code': getStatus * 100, 'message': 'failure'},
-                  ),
-                ),
-              );
-              return;
-            }
-            data = missingQueryData ? null : {...media, 'id': queryId};
-          }
-          handler.resolve(
-            Response<Object>(
-              requestOptions: request,
-              statusCode: 200,
-              data: request.method == 'GET' && missingQueryData
-                  ? null
-                  : {'code': 0, 'message': 'ok', 'data': data},
-            ),
-          );
-        },
-      ),
-    );
-    putDio.interceptors.add(
-      InterceptorsWrapper(
-        onRequest: (request, handler) {
-          putCount++;
-          handler.resolve(
-            Response<Object>(requestOptions: request, statusCode: 200),
-          );
-        },
-      ),
-    );
-    gateway = RepositoryMediaUploadGateway(
-      ApiMediaUploadRepository(
-        WenyouApi(dio: apiDio).getMediaApi(),
-        putDio,
-        maxPollAttempts: 2,
-        delay: delay ?? (_) async {},
-      ),
-    );
-  }
-  final apiDio = Dio();
-  final firstQuery = Completer<void>();
-  Completer<void>? getPause;
-  Completer<void>? confirmPause;
-  final putDio = Dio();
-  late final RepositoryMediaUploadGateway gateway;
-  var postCount = 0, putCount = 0, getCount = 0, getStatus = 200;
-  var confirmStatus = 200;
-  var confirmId = 'media-one';
-  var status = 'PROCESSING';
-  var displayUrl = 'https://cdn.example/full.webp';
-  var queryId = 'media-one';
-  var missingQueryData = false;
-  MediaUploadInput get input => MediaUploadInput(
-    filename: 'original.gif',
-    declaredContentType: 'image/gif',
-    bytes: File(
-      'test/fixtures/animation-webp-all-surfaces/original.gif',
-    ).readAsBytesSync(),
-  );
-  Map<String, Object?> get media => {
-    'id': 'media-one',
-    'userId': 'user-one',
-    'url': 'https://cdn.example/original.gif',
-    'key': 'original.gif',
-    'contentType': 'image/gif',
-    'size': 1383,
-    'width': 320,
-    'height': 180,
-    'purpose': 'RICH_CONTENT',
-    'animated': true,
-    'status': status,
-    'createdAt': '2026-09-12T00:00:00Z',
-    if (status == 'COMPLETED')
-      'display': {
-        'url': displayUrl,
-        'contentType': 'image/webp',
-        'width': 320,
-        'height': 180,
-        'bytes': 180,
-        'animated': true,
-        'frameCount': 2,
-        'durationMs': 360,
-        'loopCount': 2,
-      },
-  };
-  void close() {
-    apiDio.close();
-    putDio.close();
-  }
-}

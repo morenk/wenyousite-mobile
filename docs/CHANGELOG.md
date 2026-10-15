@@ -30,6 +30,12 @@
 - 数字与滑杆刻度对齐，保留固定高度预览、松手保存、恢复默认与读屏增减。旧 14／16／18 选择保留，原 20／22 收敛至 19；读取时不改写旧存储。
 - 直接相关检查与 Debug 交付见[七档候选记录](architecture/thread-font-ticks-acceptance.md)，本轮尚待负责人验收；此前五档版本的验收及合并记录保持。
 
+## 2026-10-15 — Sentry 上传恢复候选／待负责人验收
+
+- PUT 前保留已分配媒体与输入摘要，明确重试复用原 ID 重签、直传和确认；恢复草稿不自动申请、重签或 PUT，已有确认/处理阶段沿用同 ID 恢复，取消及切号仍丢弃迟到结果。
+- 对象缺失 `40419` 支持同 ID 手动重传；初次申请地址响应未知时只保留输入，不自动重放。HTTP API、Markdown 与数据库不变。
+- 关联 27/2P 的证据、旧实现失败、验证结果及未覆盖边界见[候选记录](architecture/sentry-upload-recovery-candidate.md)。
+
 ## 2026-10-15 — 主题帖字号偏好验收通过
 
 - 负责人确认已安装的主题帖字号 Debug 候选可用，授权合并 PR #95 并清理任务分支；对应功能源码 `10fe127cdbb4a03c23fee83d41921013ff4aefdd`、versionCode `99`，完整 APK 摘要与安装证据见[字号验收记录](architecture/thread-font-size-acceptance.md)。

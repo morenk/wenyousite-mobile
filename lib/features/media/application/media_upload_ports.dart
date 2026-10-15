@@ -41,3 +41,12 @@ abstract interface class ResumableMediaUploadGateway {
     void Function(MediaUploadProgress progress)? onProgress,
   });
 }
+
+/// 用户明确重试对象直传；草稿自动恢复不调用该重传能力。
+abstract interface class RetryableMediaUploadGateway {
+  MediaUploadOperation<UploadedEditorImage> retryImageUpload(
+    MediaUploadInput input,
+    PendingMediaUpload upload, {
+    void Function(MediaUploadProgress progress)? onProgress,
+  });
+}

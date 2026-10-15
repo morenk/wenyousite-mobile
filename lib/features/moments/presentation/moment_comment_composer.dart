@@ -443,10 +443,10 @@ class _MomentCommentComposerState extends ConsumerState<MomentCommentComposer>
       _failed = false;
     });
     _notifyDraftChanged();
-    await _runImageUpload();
+    await _runImageUpload(allowTransfer: true);
   }
 
-  Future<void> _retryImage() => _runImageUpload();
+  Future<void> _retryImage() => _runImageUpload(allowTransfer: true);
 
   void _removePending() {
     _hideImageLimitHint();
@@ -479,7 +479,7 @@ class _MomentCommentComposerState extends ConsumerState<MomentCommentComposer>
         });
   }
 
-  Future<void> _runImageUpload() async {
+  Future<void> _runImageUpload({bool allowTransfer = false}) async {
     final input = _pendingInput;
     if (input == null) return;
     final generation = ++_generation;
@@ -503,9 +503,11 @@ class _MomentCommentComposerState extends ConsumerState<MomentCommentComposer>
       return;
     }
     if (!mounted || generation != _generation || _closing) return;
-    final image = _pendingUpload == null
-        ? await controller.uploadInput(_pendingInput!)
-        : await controller.resumeUpload(_pendingInput!, _pendingUpload!);
+    final image = await controller.resumeUpload(
+      _pendingInput!,
+      _pendingUpload,
+      allowTransfer: allowTransfer,
+    );
     if (!mounted || generation != _generation || _closing) return;
     if (image == null) {
       _pendingUpload = ref

@@ -41,7 +41,12 @@ class MediaUploadStatusBanner extends StatelessWidget {
               TextButton(
                 key: retryKey,
                 onPressed: onRetry,
-                child: Text(state.pendingUpload == null ? retryLabel : '继续查询'),
+                child: Text(
+                  state.pendingUpload == null ||
+                          state.pendingUpload!.needsTransfer
+                      ? retryLabel
+                      : '继续查询',
+                ),
               ),
           ],
         ),
