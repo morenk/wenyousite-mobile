@@ -75,3 +75,11 @@
 - 省略资料字段保持绑定，生成器省略 null，因此解除引用使用 `clearProfilePost=true`。旧 single clear 保持只清旧头像昵称，不隐式清除资料。
 - 资料正文由现有授权详情接口实时读取，角色／原帖不可读不显示缓存正文；本人原绑定与访客过滤后 null 分开，不以不可见推断解绑。归档不增加访问权限，不改变历史头像昵称。
 - 消费者可回滚而保留新字段；后端 author_version 迁移有独立旧写兼容边界，详见同步的资料引用契约。发布仍按兼容后端→消费端，合并、部署另行决定。本轮不启用角色提及新写。
+
+
+## 正文音频 v1（候选／待验收）
+
+- 固定 Backend `cb44acaeb7fbc735fb569276aef00435bf24efe5`／API `5.37.0-dev.20261016.1`，新增可选 audioUpload、mediaAudios、RICH_CONTENT_AUDIO、durationMs/failureCode。正文仍是无 title 普通链接，不新增强制 Markdown 语法；旧端可编辑往返并降级为链接。
+- 缺少上传能力不开放新上传；合法历史投影仍能播放，错误投影安全降级。后端精确 URL 与 purpose 识别引用，新端不猜扩展名、外链或行内链接。
+- 发布顺序为兼容 Backend → 消费端；本轮无协议删除。回滚 App 恢复普通链接阅读，不删除存储资产。沿用图片公开资产语义，已知对象 URL 不因帖子权限改变被撤销，不宣称私有流式鉴权。
+- Foundation 已正式发布 v7.3.0，消费锁定该 Tag。检查与已知限制见[候选记录](architecture/audio-upload-acceptance.md)。

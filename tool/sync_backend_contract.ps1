@@ -209,6 +209,9 @@ $contractFiles = @(
   @{ Source = 'docs/mobile-release-operations.md'; Destination = 'mobile-release-operations.md' },
   @{ Source = 'docs/app-download-gateway.md'; Destination = 'app-download-gateway.md' },
   @{ Source = 'docs/media-display.md'; Destination = 'media-display.md' }
+  @{ Source = 'contracts/markdown-audio-v1-fixtures.json'; Destination = 'markdown-audio-v1-fixtures.json' },
+  @{ Source = 'contracts/markdown-audio-v1.schema.json'; Destination = 'markdown-audio-v1.schema.json' },
+  @{ Source = 'docs/audio-upload.md'; Destination = 'audio-upload.md' }
 )
 
 New-Item -ItemType Directory -Force -Path $contractDirectory | Out-Null

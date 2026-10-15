@@ -83,6 +83,8 @@ class _$SearchPostResponseDto extends SearchPostResponseDto {
   @override
   final BuiltList<MarkdownMediaDisplayResponseDto>? mediaDisplays;
   @override
+  final BuiltList<AudioMediaDto>? mediaAudios;
+  @override
   final SearchPostResponseDtoKindEnum kind;
   @override
   final String id;
@@ -108,6 +110,7 @@ class _$SearchPostResponseDto extends SearchPostResponseDto {
   _$SearchPostResponseDto._({
     this.mentionIdentities,
     this.mediaDisplays,
+    this.mediaAudios,
     required this.kind,
     required this.id,
     this.floorNumber,
@@ -133,6 +136,7 @@ class _$SearchPostResponseDto extends SearchPostResponseDto {
     return other is SearchPostResponseDto &&
         mentionIdentities == other.mentionIdentities &&
         mediaDisplays == other.mediaDisplays &&
+        mediaAudios == other.mediaAudios &&
         kind == other.kind &&
         id == other.id &&
         floorNumber == other.floorNumber &&
@@ -149,6 +153,7 @@ class _$SearchPostResponseDto extends SearchPostResponseDto {
     var _$hash = 0;
     _$hash = $jc(_$hash, mentionIdentities.hashCode);
     _$hash = $jc(_$hash, mediaDisplays.hashCode);
+    _$hash = $jc(_$hash, mediaAudios.hashCode);
     _$hash = $jc(_$hash, kind.hashCode);
     _$hash = $jc(_$hash, id.hashCode);
     _$hash = $jc(_$hash, floorNumber.hashCode);
@@ -167,6 +172,7 @@ class _$SearchPostResponseDto extends SearchPostResponseDto {
     return (newBuiltValueToStringHelper(r'SearchPostResponseDto')
           ..add('mentionIdentities', mentionIdentities)
           ..add('mediaDisplays', mediaDisplays)
+          ..add('mediaAudios', mediaAudios)
           ..add('kind', kind)
           ..add('id', id)
           ..add('floorNumber', floorNumber)
@@ -197,6 +203,12 @@ class SearchPostResponseDtoBuilder
   set mediaDisplays(
     ListBuilder<MarkdownMediaDisplayResponseDto>? mediaDisplays,
   ) => _$this._mediaDisplays = mediaDisplays;
+
+  ListBuilder<AudioMediaDto>? _mediaAudios;
+  ListBuilder<AudioMediaDto> get mediaAudios =>
+      _$this._mediaAudios ??= ListBuilder<AudioMediaDto>();
+  set mediaAudios(ListBuilder<AudioMediaDto>? mediaAudios) =>
+      _$this._mediaAudios = mediaAudios;
 
   SearchPostResponseDtoKindEnum? _kind;
   SearchPostResponseDtoKindEnum? get kind => _$this._kind;
@@ -248,6 +260,7 @@ class SearchPostResponseDtoBuilder
     if ($v != null) {
       _mentionIdentities = $v.mentionIdentities?.toBuilder();
       _mediaDisplays = $v.mediaDisplays?.toBuilder();
+      _mediaAudios = $v.mediaAudios?.toBuilder();
       _kind = $v.kind;
       _id = $v.id;
       _floorNumber = $v.floorNumber;
@@ -283,6 +296,7 @@ class SearchPostResponseDtoBuilder
           _$SearchPostResponseDto._(
             mentionIdentities: _mentionIdentities?.build(),
             mediaDisplays: _mediaDisplays?.build(),
+            mediaAudios: _mediaAudios?.build(),
             kind: BuiltValueNullFieldError.checkNotNull(
               kind,
               r'SearchPostResponseDto',
@@ -316,6 +330,8 @@ class SearchPostResponseDtoBuilder
         _mentionIdentities?.build();
         _$failedField = 'mediaDisplays';
         _mediaDisplays?.build();
+        _$failedField = 'mediaAudios';
+        _mediaAudios?.build();
 
         _$failedField = 'author';
         author.build();

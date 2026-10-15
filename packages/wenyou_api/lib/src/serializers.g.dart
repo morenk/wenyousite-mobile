@@ -131,6 +131,12 @@ Serializers _$serializers =
           ..add(ApiSuccessEnvelopeCodeEnum.serializer)
           ..add(AppDownloadsInfo200Response.serializer)
           ..add(AppealAccessTokenResponseDto.serializer)
+          ..add(AudioMediaDto.serializer)
+          ..add(AudioMediaDtoContentTypeEnum.serializer)
+          ..add(AudioUploadCapabilityDto.serializer)
+          ..add(AudioUploadCapabilityDtoContentTypesEnum.serializer)
+          ..add(AudioUploadCapabilityDtoOutputContentTypeEnum.serializer)
+          ..add(AudioUploadCapabilityDtoVersionEnum.serializer)
           ..add(AuthChangePassword200Response.serializer)
           ..add(AuthForgotPassword200Response.serializer)
           ..add(AuthListSessions200Response.serializer)
@@ -301,6 +307,7 @@ Serializers _$serializers =
           ..add(MediaGetUploadUrl201Response.serializer)
           ..add(MediaReissueUploadUrl200Response.serializer)
           ..add(MediaResponseDto.serializer)
+          ..add(MediaResponseDtoFailureCodeEnum.serializer)
           ..add(MediaResponseDtoPurposeEnum.serializer)
           ..add(MediaResponseDtoStatusEnum.serializer)
           ..add(MentionCandidateDto.serializer)
@@ -812,6 +819,12 @@ Serializers _$serializers =
           )
           ..addBuilderFactory(
             const FullType(BuiltList, const [
+              const FullType(AudioUploadCapabilityDtoContentTypesEnum),
+            ]),
+            () => ListBuilder<AudioUploadCapabilityDtoContentTypesEnum>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [
               const FullType(BlockedUserRecordResponseDto),
             ]),
             () => ListBuilder<BlockedUserRecordResponseDto>(),
@@ -927,10 +940,18 @@ Serializers _$serializers =
             () => ListBuilder<MarkdownMediaDisplayResponseDto>(),
           )
           ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(AudioMediaDto)]),
+            () => ListBuilder<AudioMediaDto>(),
+          )
+          ..addBuilderFactory(
             const FullType(BuiltList, const [
               const FullType(MarkdownMediaDisplayResponseDto),
             ]),
             () => ListBuilder<MarkdownMediaDisplayResponseDto>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(AudioMediaDto)]),
+            () => ListBuilder<AudioMediaDto>(),
           )
           ..addBuilderFactory(
             const FullType(BuiltList, const [
@@ -957,6 +978,10 @@ Serializers _$serializers =
             () => ListBuilder<MarkdownMediaDisplayResponseDto>(),
           )
           ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(AudioMediaDto)]),
+            () => ListBuilder<AudioMediaDto>(),
+          )
+          ..addBuilderFactory(
             const FullType(BuiltList, const [
               const FullType(MentionIdentityDisplayDto),
             ]),
@@ -967,6 +992,10 @@ Serializers _$serializers =
               const FullType(MarkdownMediaDisplayResponseDto),
             ]),
             () => ListBuilder<MarkdownMediaDisplayResponseDto>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(AudioMediaDto)]),
+            () => ListBuilder<AudioMediaDto>(),
           )
           ..addBuilderFactory(
             const FullType(BuiltList, const [
@@ -987,22 +1016,8 @@ Serializers _$serializers =
             () => ListBuilder<MarkdownMediaDisplayResponseDto>(),
           )
           ..addBuilderFactory(
-            const FullType(BuiltList, const [
-              const FullType(DiceRollResponseDto),
-            ]),
-            () => ListBuilder<DiceRollResponseDto>(),
-          )
-          ..addBuilderFactory(
-            const FullType(BuiltList, const [
-              const FullType(MentionIdentityDisplayDto),
-            ]),
-            () => ListBuilder<MentionIdentityDisplayDto>(),
-          )
-          ..addBuilderFactory(
-            const FullType(BuiltList, const [
-              const FullType(MarkdownMediaDisplayResponseDto),
-            ]),
-            () => ListBuilder<MarkdownMediaDisplayResponseDto>(),
+            const FullType(BuiltList, const [const FullType(AudioMediaDto)]),
+            () => ListBuilder<AudioMediaDto>(),
           )
           ..addBuilderFactory(
             const FullType(BuiltList, const [
@@ -1023,6 +1038,10 @@ Serializers _$serializers =
             () => ListBuilder<MarkdownMediaDisplayResponseDto>(),
           )
           ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(AudioMediaDto)]),
+            () => ListBuilder<AudioMediaDto>(),
+          )
+          ..addBuilderFactory(
             const FullType(BuiltList, const [
               const FullType(DiceRollResponseDto),
             ]),
@@ -1039,6 +1058,32 @@ Serializers _$serializers =
               const FullType(MarkdownMediaDisplayResponseDto),
             ]),
             () => ListBuilder<MarkdownMediaDisplayResponseDto>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(AudioMediaDto)]),
+            () => ListBuilder<AudioMediaDto>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [
+              const FullType(DiceRollResponseDto),
+            ]),
+            () => ListBuilder<DiceRollResponseDto>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [
+              const FullType(MentionIdentityDisplayDto),
+            ]),
+            () => ListBuilder<MentionIdentityDisplayDto>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [
+              const FullType(MarkdownMediaDisplayResponseDto),
+            ]),
+            () => ListBuilder<MarkdownMediaDisplayResponseDto>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(AudioMediaDto)]),
+            () => ListBuilder<AudioMediaDto>(),
           )
           ..addBuilderFactory(
             const FullType(BuiltList, const [

@@ -22,6 +22,21 @@ const CreateUploadUrlDtoContentTypeEnum
 _$createUploadUrlDtoContentTypeEnum_imageSlashAvif =
     const CreateUploadUrlDtoContentTypeEnum._('imageSlashAvif');
 const CreateUploadUrlDtoContentTypeEnum
+_$createUploadUrlDtoContentTypeEnum_audioSlashMpeg =
+    const CreateUploadUrlDtoContentTypeEnum._('audioSlashMpeg');
+const CreateUploadUrlDtoContentTypeEnum
+_$createUploadUrlDtoContentTypeEnum_audioSlashMp4 =
+    const CreateUploadUrlDtoContentTypeEnum._('audioSlashMp4');
+const CreateUploadUrlDtoContentTypeEnum
+_$createUploadUrlDtoContentTypeEnum_audioSlashWav =
+    const CreateUploadUrlDtoContentTypeEnum._('audioSlashWav');
+const CreateUploadUrlDtoContentTypeEnum
+_$createUploadUrlDtoContentTypeEnum_audioSlashOgg =
+    const CreateUploadUrlDtoContentTypeEnum._('audioSlashOgg');
+const CreateUploadUrlDtoContentTypeEnum
+_$createUploadUrlDtoContentTypeEnum_audioSlashFlac =
+    const CreateUploadUrlDtoContentTypeEnum._('audioSlashFlac');
+const CreateUploadUrlDtoContentTypeEnum
 _$createUploadUrlDtoContentTypeEnum_unknownDefaultOpenApi =
     const CreateUploadUrlDtoContentTypeEnum._('unknownDefaultOpenApi');
 
@@ -39,6 +54,16 @@ CreateUploadUrlDtoContentTypeEnum _$createUploadUrlDtoContentTypeEnumValueOf(
       return _$createUploadUrlDtoContentTypeEnum_imageSlashWebp;
     case 'imageSlashAvif':
       return _$createUploadUrlDtoContentTypeEnum_imageSlashAvif;
+    case 'audioSlashMpeg':
+      return _$createUploadUrlDtoContentTypeEnum_audioSlashMpeg;
+    case 'audioSlashMp4':
+      return _$createUploadUrlDtoContentTypeEnum_audioSlashMp4;
+    case 'audioSlashWav':
+      return _$createUploadUrlDtoContentTypeEnum_audioSlashWav;
+    case 'audioSlashOgg':
+      return _$createUploadUrlDtoContentTypeEnum_audioSlashOgg;
+    case 'audioSlashFlac':
+      return _$createUploadUrlDtoContentTypeEnum_audioSlashFlac;
     case 'unknownDefaultOpenApi':
       return _$createUploadUrlDtoContentTypeEnum_unknownDefaultOpenApi;
     default:
@@ -55,6 +80,11 @@ _$createUploadUrlDtoContentTypeEnumValues =
         _$createUploadUrlDtoContentTypeEnum_imageSlashGif,
         _$createUploadUrlDtoContentTypeEnum_imageSlashWebp,
         _$createUploadUrlDtoContentTypeEnum_imageSlashAvif,
+        _$createUploadUrlDtoContentTypeEnum_audioSlashMpeg,
+        _$createUploadUrlDtoContentTypeEnum_audioSlashMp4,
+        _$createUploadUrlDtoContentTypeEnum_audioSlashWav,
+        _$createUploadUrlDtoContentTypeEnum_audioSlashOgg,
+        _$createUploadUrlDtoContentTypeEnum_audioSlashFlac,
         _$createUploadUrlDtoContentTypeEnum_unknownDefaultOpenApi,
       ],
     );
@@ -75,6 +105,9 @@ _$createUploadUrlDtoPurposeEnum_MOMENT_COMMENT =
 const CreateUploadUrlDtoPurposeEnum
 _$createUploadUrlDtoPurposeEnum_RICH_CONTENT =
     const CreateUploadUrlDtoPurposeEnum._('RICH_CONTENT');
+const CreateUploadUrlDtoPurposeEnum
+_$createUploadUrlDtoPurposeEnum_RICH_CONTENT_AUDIO =
+    const CreateUploadUrlDtoPurposeEnum._('RICH_CONTENT_AUDIO');
 const CreateUploadUrlDtoPurposeEnum
 _$createUploadUrlDtoPurposeEnum_STICKER_SOURCE =
     const CreateUploadUrlDtoPurposeEnum._('STICKER_SOURCE');
@@ -100,6 +133,8 @@ CreateUploadUrlDtoPurposeEnum _$createUploadUrlDtoPurposeEnumValueOf(
       return _$createUploadUrlDtoPurposeEnum_MOMENT_COMMENT;
     case 'RICH_CONTENT':
       return _$createUploadUrlDtoPurposeEnum_RICH_CONTENT;
+    case 'RICH_CONTENT_AUDIO':
+      return _$createUploadUrlDtoPurposeEnum_RICH_CONTENT_AUDIO;
     case 'STICKER_SOURCE':
       return _$createUploadUrlDtoPurposeEnum_STICKER_SOURCE;
     case 'LEGACY':
@@ -120,6 +155,7 @@ _$createUploadUrlDtoPurposeEnumValues = BuiltSet<CreateUploadUrlDtoPurposeEnum>(
     _$createUploadUrlDtoPurposeEnum_MOMENT,
     _$createUploadUrlDtoPurposeEnum_MOMENT_COMMENT,
     _$createUploadUrlDtoPurposeEnum_RICH_CONTENT,
+    _$createUploadUrlDtoPurposeEnum_RICH_CONTENT_AUDIO,
     _$createUploadUrlDtoPurposeEnum_STICKER_SOURCE,
     _$createUploadUrlDtoPurposeEnum_LEGACY,
     _$createUploadUrlDtoPurposeEnum_unknownDefaultOpenApi,
@@ -141,6 +177,11 @@ class _$CreateUploadUrlDtoContentTypeEnumSerializer
     'imageSlashGif': 'image/gif',
     'imageSlashWebp': 'image/webp',
     'imageSlashAvif': 'image/avif',
+    'audioSlashMpeg': 'audio/mpeg',
+    'audioSlashMp4': 'audio/mp4',
+    'audioSlashWav': 'audio/wav',
+    'audioSlashOgg': 'audio/ogg',
+    'audioSlashFlac': 'audio/flac',
     'unknownDefaultOpenApi': 'unknown_default_open_api',
   };
   static const Map<Object, String> _fromWire = const <Object, String>{
@@ -149,6 +190,11 @@ class _$CreateUploadUrlDtoContentTypeEnumSerializer
     'image/gif': 'imageSlashGif',
     'image/webp': 'imageSlashWebp',
     'image/avif': 'imageSlashAvif',
+    'audio/mpeg': 'audioSlashMpeg',
+    'audio/mp4': 'audioSlashMp4',
+    'audio/wav': 'audioSlashWav',
+    'audio/ogg': 'audioSlashOgg',
+    'audio/flac': 'audioSlashFlac',
     'unknown_default_open_api': 'unknownDefaultOpenApi',
   };
 
@@ -183,6 +229,7 @@ class _$CreateUploadUrlDtoPurposeEnumSerializer
     'MOMENT': 'MOMENT',
     'MOMENT_COMMENT': 'MOMENT_COMMENT',
     'RICH_CONTENT': 'RICH_CONTENT',
+    'RICH_CONTENT_AUDIO': 'RICH_CONTENT_AUDIO',
     'STICKER_SOURCE': 'STICKER_SOURCE',
     'LEGACY': 'LEGACY',
     'unknownDefaultOpenApi': 'unknown_default_open_api',
@@ -194,6 +241,7 @@ class _$CreateUploadUrlDtoPurposeEnumSerializer
     'MOMENT': 'MOMENT',
     'MOMENT_COMMENT': 'MOMENT_COMMENT',
     'RICH_CONTENT': 'RICH_CONTENT',
+    'RICH_CONTENT_AUDIO': 'RICH_CONTENT_AUDIO',
     'STICKER_SOURCE': 'STICKER_SOURCE',
     'LEGACY': 'LEGACY',
     'unknown_default_open_api': 'unknownDefaultOpenApi',
