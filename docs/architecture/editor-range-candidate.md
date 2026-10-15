@@ -2,6 +2,8 @@
 
 状态：候选／待负责人验收。关联 Sentry `WENYOUSITE-MOBILE-2W`，历史 `M/1Q` 仅作为相近调用路径参考；不关闭或合并 Sentry issue。
 
+官方完整门禁：**待通过**。按 `AGENTS.md` 第 8 节，高风险候选必须在同一次官方完整门禁成功后构建 APK。以下 OOM 失败与分步补检结果分别保留，分步通过不替代 `npm run check:apk -- -TestConcurrency 1` 一次退出 0；等待独占构建资源后重跑官方入口，应用源码继续冻结。
+
 ## 问题证据与边界
 
 - Sentry 调用链为 IME → `LiteralTextQuillController.replaceText` → 提及监听 → `Document.getPlainText` → `Line._getNodeText.substring`。
@@ -24,9 +26,9 @@
 - `npm run check:apk -- -TestConcurrency 1` 的契约校验／来源／再生成一致性、公网只读兼容核验、1301 文件格式、应用和生成客户端分析、架构、23 个模块文档及 174/174 API 覆盖均通过；全量 Flutter 在 2343 项通过、1 项既有跳过后遇到宿主 Dart VM `allocation.cc:30 Out of memory`，加载 `startup_brand_test.dart` 时编译器退出。已核验并停止本任务挂起 runner，门禁最终退出 1（`range-check-apk.log`），不记为通过。
 - 释放空闲构建资源后，单独执行 `flutter test --no-pub -j 1 --reporter expanded`：6607 项通过、1 项既有 Sentry 显式在线验收跳过、0 失败，退出 0，耗时 41 分 22 秒（`range-flutter-after-oom.log`）。该次覆盖最终前置校验、文末边界、异常分隔线、完整编辑器目录、真实编辑页关闭／返回及阅读生命周期。
 - `npm run test:release-tool`：49 项通过、0 跳过、0 失败，退出 0（`range-windows-tools.log`）。
-- `flutter build apk --debug --target-platform android-arm64`：退出 0，`assembleDebug` 耗时 209 秒（`range-apk.log`）。补检期间没有修改应用源码、测试或 Manifest；不重复已通过的静态步骤，也不把原完整门禁的退出 1 改写为退出 0。
+- `flutter build apk --debug --target-platform android-arm64`：退出 0，`assembleDebug` 耗时 209 秒（`range-apk.log`）。补检期间没有修改应用源码、测试或 Manifest；当时未重复已通过的静态步骤，原完整门禁仍为退出 1。后续须独占重跑官方入口取得一次退出 0。
 
-候选 APK 位于 `D:\codex-worktrees\mobile-sentry-range\wenyousite-mobile\build\app\outputs\flutter-apk\app-debug.apk`，大小 110344514 字节；`aapt dump badging` 核验包名 `site.wenyou.app.debug`、版本 `0.9.0-debug`、构建号 `99`、ABI `arm64-v8a`。SHA-256 为 `DDB38636E2AAE62C4B411EF74B5A70F0BAC54C1FB86B68AAF3FD3AD8EB74B985`。构建完成于 2026-10-16 03:10（北京时间）；没有安装或启动该包。
+分步构建 APK 位于 `D:\codex-worktrees\mobile-sentry-range\wenyousite-mobile\build\app\outputs\flutter-apk\app-debug.apk`，大小 110344514 字节；`aapt dump badging` 核验包名 `site.wenyou.app.debug`、版本 `0.9.0-debug`、构建号 `99`、ABI `arm64-v8a`。SHA-256 为 `DDB38636E2AAE62C4B411EF74B5A70F0BAC54C1FB86B68AAF3FD3AD8EB74B985`。构建完成于 2026-10-16 03:10（北京时间）；没有安装或启动该包，不据此宣称官方门禁已通过。
 
 直接回归文件：
 
