@@ -9,6 +9,7 @@ import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_quill/quill_delta.dart';
 import 'package:uuid/uuid.dart';
 import 'package:wenyousite_mobile/core/diagnostics/failure_diagnostics.dart';
+import 'package:wenyousite_mobile/core/editor/quill_document_range.dart';
 import 'package:wenyousite_mobile/core/markdown/local_image_marker.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_line_metadata.dart';
@@ -583,13 +584,21 @@ class RichEditorSession extends ChangeNotifier {
     final generation = _documentGeneration;
     final documentSignature = _documentSignature();
     final selection = controller.selection;
-    final documentEnd = controller.document.length - 1;
-    final start = selection.start.clamp(0, documentEnd).toInt();
-    final end = selection.end.clamp(start, documentEnd).toInt();
+    final start = selection.start;
+    final end = selection.end;
+    final selectedText = readQuillDocumentRange(
+      controller.document,
+      start,
+      end - start,
+    );
+    if (selectedText == null) {
+      _setOperationFailure(
+        RichEditorOperationFailureKind.documentChanged,
+        '正文已发生变化，请重新粘贴。',
+      );
+      return false;
+    }
     final plainText = controller.document.toPlainText();
-    final selectedText = end == start
-        ? ''
-        : controller.document.getPlainText(start, end - start);
 
     EditorClipboardSnapshot snapshot;
     try {
