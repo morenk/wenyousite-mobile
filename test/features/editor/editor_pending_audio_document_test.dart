@@ -17,6 +17,68 @@ final _audio = MediaAudio.parse({
 })!;
 
 void main() {
+  testWidgets('原文件名安全往返，旧占位恢复补名，用户自定义label与marks保留', (tester) async {
+    for (final name in ['雨夜 [原声] (现场).wav', 'a_*`<>.flac']) {
+      final session = RichEditorSession(
+        initialMarkdown: '',
+        onMarkdownChanged: (_) {},
+      );
+      session.insertLocalAudio('new', filename: name);
+      session.resolveLocalAudio('new', _audio, filename: name);
+      expect(
+        await session.flush(),
+        isTrue,
+        reason: '$name: ${session.codecFailure}',
+      );
+      final block = md.Document(
+        encodeHtml: false,
+      ).parse(session.localMarkdown).single;
+      expect((block as md.Element).textContent, name);
+      session.applyExternalMarkdown(session.localMarkdown);
+      expect(await session.flush(), isTrue);
+      expect(
+        md.Document(
+          encodeHtml: false,
+        ).parse(session.localMarkdown).single.textContent,
+        name,
+      );
+      session.dispose();
+    }
+    final old = RichEditorSession(
+      initialMarkdown: '',
+      onMarkdownChanged: (_) {},
+    );
+    addTearDown(old.dispose);
+    old.insertLocalAudio('old');
+    old.resolveLocalAudio('old', _audio, filename: '现场.wav');
+    await old.flush();
+    expect(
+      md.Document(
+        encodeHtml: false,
+      ).parse(old.localMarkdown).single.textContent,
+      '现场.wav',
+    );
+    old.applyExternalMarkdown(
+      '[**自定义**](https://local.invalid/wenyou-pending-audio/custom)',
+    );
+    old.resolveLocalAudio('custom', _audio, filename: '不应覆盖.wav');
+    await old.flush();
+    final projection = MarkdownAudioProjection.fromBlock(
+      md.Document(encodeHtml: false).parse(old.localMarkdown).single,
+      old.mediaAudios,
+    );
+    expect(projection!.label, '自定义');
+    expect(
+      projection.labelRuns,
+      everyElement(
+        isA<MarkdownAudioLabelRun>().having(
+          (run) => run.marks,
+          'marks',
+          contains('strong'),
+        ),
+      ),
+    );
+  });
   for (final placement in [0, 2, 4]) {
     testWidgets('插入与完成音频保留独立段落/选区 $placement', (tester) async {
       final emitted = <String>[];
@@ -43,7 +105,9 @@ void main() {
       expect(session.controller.selection, selection);
       expect(session.localAudioIds, isEmpty);
       expect(session.codecFailure, isNull);
-      final blocks = md.Document().parse(session.localMarkdown);
+      final blocks = md.Document(
+        encodeHtml: false,
+      ).parse(session.localMarkdown);
       expect(
         blocks
             .map(
@@ -63,7 +127,9 @@ void main() {
     );
     addTearDown(session.dispose);
     expect(await session.flush(), isTrue);
-    final block = md.Document().parse(session.localMarkdown).single;
+    final block = md.Document(
+      encodeHtml: false,
+    ).parse(session.localMarkdown).single;
     expect(
       MarkdownAudioProjection.fromBlock(block, {_audio.sourceUrl: _audio}),
       isNull,

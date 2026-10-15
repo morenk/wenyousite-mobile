@@ -11,6 +11,7 @@ final class MarkdownDeltaInlineEncoder {
   MarkdownDeltaInlineEncoder(this.output);
 
   static const literalTextKey = 'wenyou_literal_text';
+  static const keepLinkShapeKey = 'wenyou_audio_link_shape';
   static const markKeys = {'bold', 'italic', 'strike', 'code', 'link'};
 
   final StringBuffer output;
@@ -18,6 +19,7 @@ final class MarkdownDeltaInlineEncoder {
   final _runs = <MarkdownInlineRun>[];
   final _legacy = StringBuffer();
   bool _hasLiteralInput = false;
+  bool _keepLinkShape = false;
   Map<String, dynamic> _marks = const {};
   String? _codeSource;
   Object? _linkIdentity;
@@ -39,6 +41,7 @@ final class MarkdownDeltaInlineEncoder {
     }
     _linkIdentity = identity;
     _hasLiteralInput |= attributes?[literalTextKey] == true;
+    _keepLinkShape |= attributes?[keepLinkShapeKey] == true;
     final marks = visibleMarks(attributes);
     final source = attributes?[MarkdownInlineCodeSource.key] as String?;
     if (!mapEquals(marks, _marks)) _finishRun();
@@ -64,10 +67,11 @@ final class MarkdownDeltaInlineEncoder {
       _legacy.clear();
       _runs.clear();
       _hasLiteralInput = false;
+      _keepLinkShape = false;
       _linkIdentity = null;
       return;
     }
-    final singleLink = _singleLink(normalized);
+    final singleLink = _singleLink(normalized, includeSingle: _keepLinkShape);
     var encoded =
         singleLink != null && MarkdownInlineRuns.matches(singleLink, normalized)
         ? singleLink
@@ -92,13 +96,19 @@ final class MarkdownDeltaInlineEncoder {
     _legacy.clear();
     _runs.clear();
     _hasLiteralInput = false;
+    _keepLinkShape = false;
     _linkIdentity = null;
   }
 
   /// 一个链接的标签包含不同 marks 时保持一个外层链接，避免把音频独立
   /// 段落拆成相邻链接；所有候选仍必须通过原有 Delta 语义校验。
-  static String? _singleLink(List<MarkdownInlineRun> runs) {
-    if (runs.length < 2) return null;
+  static String? _singleLink(
+    List<MarkdownInlineRun> runs, {
+    required bool includeSingle,
+  }) {
+    if (runs.length < 2 && (!includeSingle || runs.first.marks.length < 2)) {
+      return null;
+    }
     final link = runs.first.marks['link'];
     if (link is! String || runs.any((run) => run.marks['link'] != link)) {
       return null;

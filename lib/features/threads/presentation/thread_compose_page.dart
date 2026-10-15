@@ -17,6 +17,7 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/drafts/application/content_drafts_controller.dart';
 import 'package:wenyousite_mobile/features/drafts/presentation/content_drafts_sheet.dart';
 import 'package:wenyousite_mobile/features/editor/editor.dart';
+import 'package:wenyousite_mobile/features/editor/presentation/editor_audio_embed_builder.dart';
 import 'package:wenyousite_mobile/features/media/presentation/editor_image_crop_dialog.dart';
 import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
 import 'package:wenyousite_mobile/features/stickers/presentation/sticker_widgets.dart';
@@ -314,6 +315,20 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
                         focusNode: _editorSession.focusNode,
                         scrollController: _editorSession.scrollController,
                         config: QuillEditorConfig(
+                          onTapUp: (details, _) => editorAudioOwnsPointer(
+                            context,
+                            details.globalPosition,
+                          ),
+                          onSingleLongTapStart: (details, _) =>
+                              editorAudioOwnsPointer(
+                                context,
+                                details.globalPosition,
+                              ),
+                          onSingleLongTapEnd: (details, _) =>
+                              editorAudioOwnsPointer(
+                                context,
+                                details.globalPosition,
+                              ),
                           scrollable: true,
                           expands: true,
                           paintCursorAboveText: true,
@@ -332,6 +347,8 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
                           embedBuilders: wenyouEditorEmbedBuilders(
                             mentionLabels: _editorSession.mentionLabels,
                             mediaDisplays: _editorSession.mediaDisplays,
+                            mediaAudios: _editorSession.mediaAudios,
+                            editorFocusNode: _editorSession.focusNode,
                             pendingImages: _pendingImages,
                           ),
                           customShortcuts: _editorSession.clipboardShortcuts,

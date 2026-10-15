@@ -6,6 +6,7 @@ import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/markdown/local_image_marker.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_mention_target.dart';
+import 'package:wenyousite_mobile/core/media/media_audio.dart';
 import 'package:wenyousite_mobile/core/media/media_display.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_reference.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_body_divider.dart';
@@ -13,11 +14,14 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_dice_node.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_inline_text_elements.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_internal_reference_text.dart';
+import 'package:wenyousite_mobile/features/editor/presentation/editor_audio_embed_builder.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_pending_image_widget.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_pending_images.dart';
 
 List<EmbedBuilder> wenyouEditorEmbedBuilders({
   Map<String, MediaDisplay> mediaDisplays = const {},
+  Map<String, MediaAudio> mediaAudios = const {},
+  FocusNode? editorFocusNode,
   EditorPendingImages? pendingImages,
   Map<String, String> mentionLabels = const {},
 }) => [
@@ -26,6 +30,7 @@ List<EmbedBuilder> wenyouEditorEmbedBuilders({
   _DiceEmbedBuilder(),
   _StickerEmbedBuilder(mediaDisplays),
   _ImageEmbedBuilder(mediaDisplays, pendingImages),
+  EditorAudioEmbedBuilder(mediaAudios, editorFocusNode),
   _CompatibilityEmbedBuilder(),
   _HorizontalRuleEmbedBuilder(),
 ];

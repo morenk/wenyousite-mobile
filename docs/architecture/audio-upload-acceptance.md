@@ -1,6 +1,6 @@
 # 正文音频候选验收
 
-状态：离线功能与视觉候选，待负责人真机及跨端验收。未合并、未部署；后端未开放 audioUpload 时新上传入口隐藏属于预期，不能据安装成功认定完整链路可用。
+状态：Mobile 离线功能与视觉候选，待负责人真机及跨端验收，未合并。治理已确认兼容 Backend PR51 部署至 1aa8655f；Mobile 不以安装成功认定完整链路验收通过。以下构建与检查按批次保留，不混用旧 APK 和新源码。
 
 ## 来源与范围
 
@@ -12,7 +12,7 @@ Windows Worktree：`D:\codex-worktrees\mobile-audio-upload\wenyousite-mobile`，
 
 - 仅文件上传。Android SAF 后台 64 KiB 缓冲复制、30 MiB 实际预算、异步取消并清自有缓存；兼容端 file_selector。选择器接受同格式 MIME alias，最终仍限制 MP3/M4A/WAV/OGG/FLAC、最多十分钟；内容验证与唯一 MP3 副本由后端负责。
 - 私有草稿保存文件、阶段和 mediaId，显式继续才续传；系统选择期间后台切换保留选择，离开编辑目标／账号取消。处理终态失败提供重新选择，已完成结果可在新上传关闭时恢复。未完成本机标记禁止发表／云草稿写入。
-- 编辑态是普通可编辑链接，阅读态才是播放器，不新增正文预览入口。顶层独占无 title 链接命中可信 mediaAudios 才升级；外链、行内、列表／引用、代码、同 URL 两个独立链接保持普通语义。标签 marks 保留，内部 link identity 不写入 Markdown。
+- 新上传以原文件名为标签；编辑态与阅读态共享播放器，不新增正文预览入口。顶层独占无 title 链接命中可信 mediaAudios 才升级；外链、行内、列表／引用、代码、同 URL 两个独立链接保持普通语义。标签 marks 保留，内部 link identity、音频视图及编码来源不写入 Markdown。
 - 点击才请求，全局单活动；暂停／恢复进度，离页／后台／音频中断 stop 终止加载缓冲。不预加载、自动恢复、录音或后台播放。有效历史投影播放独立于上传开关。
 - 音频默认展开，有能力可拖入常用栏；主题／回复一套 App 本机偏好，网页单独设置。关闭能力隐藏但保留排序。
 - 沿用图片公开 URL 资产语义，已知 URL 不随帖子权限撤销，不宣称私有流式鉴权。
@@ -57,6 +57,17 @@ test/core/application/editor_toolbar_layout_test.dart
 新增正文样式反馈已收敛为淡边界、圆形 accent 播放按钮和对齐的细轨道／等宽时长；直接 Widget 6 项复验含轨道上下 20dp 的真实点击及拖动 seek，四张正文 Golden 更新，二倍字号不溢出。`.buildlog/audio-refined-ui-final.log`、`audio-refined-ui-analyze-fixed.log` 记录补验（首次一条 import 排序 info 已修正）；未改播放逻辑。
 
 ## 原生构建与待验收
+
+### 编辑态／保存／原名／拖动批次（当前候选）
+
+- `test/features/editor/editor_audio_projection_test.dart`、`editor_audio_widget_test.dart`、`editor_pending_audio_document_test.dart`、`editor_pending_audios_test.dart`，`test/core/widgets/audio_save_button_test.dart`、`audio_player_interaction_test.dart`、`wenyou_audio_player_test.dart`，`test/features/media/audio_download_test.dart` 共 **82 项通过**；最终比较日志 `.buildlog/audio-wysiwyg-save-final.log`。包含真实 Quill 选块删除／撤销重做、前后输入、剪切移动、跨会话失信降级、上传删除／撤销后不复活、滚动后的命中、滑块拖出边界及保存按钮不改选区、不提前请求媒体。
+- 新文件名含方括号、括号、星号、反引号与尖括号，按 literal 来源安全往返；旧默认占位可从本机附件补名，自定义名称与 marks 保留。全粗标签仅在可信音频视图的编码路径保持外层 link；普通链接的既有规范断言不放宽。早期测试使用默认 encodeHtml 导致标签比较成实体、单一 marks 被分成多个 Text 节点的断言均已按真实语义修正。
+- 真正的密集 pointer move 在 buffering 更新后仍可拖动，Slider.value 每次随手指变化，静态标题／播放按钮 Widget 实例不变，移动期间 seek 为零、松手一次提交。两倍字体轨道不足时将时间移下，标题整体仍可见，播放／保存／轨道 48dp 命中保持。
+- `test/features/posts/post_audio_submission_test.dart` 用实际 PostComposerSheet、隔离内存仓储与 mock 音频完成结果覆盖空正文完成立即发送、音频加文字、恢复文档与空／未完成拒绝。用例通过恢复待处理媒体身份后显式 retry 走 `_run`，代码核对新选文件也走同一完成回调；这不是系统选择器或真实上传链路。与 `test/core/markdown/markdown_delta_semantic_safety_test.dart`、`test/features/editor/editor_inline_combination_cross_test.dart` 的最终独立组 **21 项全过**，日志 `.buildlog/audio-submit-codec-final.log`。临时只移除最终同步行的对照 `.buildlog/audio-post-without-sync.log` 为 **3 过 1 失败**：恢复场景没有请求；同步后通过。正常单音频在对照仍通过，不能据此唯一解释负责人原 postCreate／encode／validation 报错，原场景继续待真机复验。没有线上写入测试。
+- 改动 Dart 30 文件分析先修正所有 info；`.buildlog/audio-wysiwyg-save-analyze-final.log` 仅余三个测试文件导入顺序，最终 `.buildlog/audio-wysiwyg-save-analyze-imports.log` 对该三文件 **No issues found**。其余 27 文件无问题；格式仅覆盖改动文件。没有全量测试、全量分析或门禁。
+- Android 保存复用 `BoundedAudioCopy`；`.buildlog/audio-save-copy-check.log` 为 JVM 6 项通过（成功、预算、空、取消、提供者异常），原生通道编译由冻结源码后的一次 Debug 构建验证。iOS UIDocumentPicker 仅静态审查，Windows 无 Xcode 编译；没有新增插件或权限。系统提供者不支持删除时尝试截断并记录安全诊断，真实系统保存／取消待负责人手测。
+- 最终图片 `test/features/editor/goldens/audio_editor_{320|360}_{light|dark}{_200}.png`、`audio_editor_selected_360_light.png`；阅读／三状态在 `test/core/widgets/goldens/audio_body_*`、`audio_states_*`。全部含右侧保存图标，明暗窄屏、200% 与选中边框经交叉查看，仍为候选。
+- 当前没有可控热重载会话；旧 exec32990 已 Lost connection。未安装、未启动、未重启用户手机。WYSIWYG 本身为 Dart 代码，重进编辑目标会初始化控制器；此次新增原生保存需要新 APK，不能用旧包热重载冒充原生保存可用。
 
 ### 后续播放器交互批次
 

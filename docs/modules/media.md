@@ -54,6 +54,10 @@ galleryList：读取 GalleryList200Response / GalleryPageDto / GalleryImageDto�
 
 播放器使用 Foundation surface／compact／body／utility 角色，极淡边界与弱 accent 圆形播放底；标题、细轨道及等宽时长对齐，播放与进度命中均为 48dp，标签 marks 保留。
 
+编辑与阅读共用播放器，标题显示正文持久化的原文件名标签。右侧 48dp 图标按需“保存到本地”，只有点击才进行无认证、无 Cookie 的 HTTP 流下载；校验 MIME、投影大小及 30 MiB 预算，连接／接收超时 15／30 秒，下载总时限两分钟。文件先写自有 UUID 私有目录，完成后才交系统保存器，取消与失败清理临时源。Android 独立 ACTION_CREATE_DOCUMENT 通道后台复用 BoundedAudioCopy，不改变 ZIP 保存；取消／引擎销毁与完成竞态只回调一次，删除部分目标失败时尝试截断并记录不含 URI 的诊断。iOS 13 使用 UIDocumentPicker 导出私有文件，无新增插件或权限；Windows 未做 Xcode 编译。桌面沿 file_selector 选择目标并流式写暂存，确认替换前保留旧文件。导出名保留原主体，清理目录字符、方向控制、Windows 保留名与末尾点空格，扩展统一真实 MP3，不把转码副本伪装为 WAV／FLAC。取消不提示失败，失败可显式重试。
+
+进度拖动目标使用局部 ValueNotifier，仅重绘进度与时间；已就绪后的 buffering 不禁用 Slider，移动时不发原生 seek，松手提交最终目标。标题视觉下移 2dp；窄屏／两倍字体下轨道不足 80dp 时将时间移到下方，保留标题和进度命中。真机卡顿与保存仍待负责人复验。
+
 播放时固定浅品牌渐变从按钮向卡片中部消失，暂停淡出；背景／边界 180ms easeOut，按钮内部按压为 96%、图标 120ms 交叉淡入淡出，不改变命中范围。进度圆点在拖动／键盘聚焦时从 4dp 半径变为 6dp，无阴影或循环呼吸。时间使用 tabular figures 并预留总时长宽度，拖动目标原位显示；拖动中和当前 seek 确认前不被旧位置事件覆盖，连续 seek 串行，失败／取消／失焦／切换目标清理交互，未收到位置回报最多等待三秒。键盘与读屏可调整真实进度。
 
 减少动态时关闭缩放、过渡和 Slider 视觉 ticker，圆点保持正常半径、焦点仍有边界提示；加载保持按钮内静态指示。滚出视口仅停视觉 ticker，不增加滚动停播行为；后台、离页的既有停止播放规则不变。
@@ -144,7 +148,7 @@ galleryList：读取 GalleryList200Response / GalleryPageDto / GalleryImageDto�
 
 ## 13. 最近审查的契约版本和后端提交
 
-本轮音频候选固定 Backend `cb44acaeb7fbc735fb569276aef00435bf24efe5`／API `5.37.0-dev.20261016.1`、独立 audio v1；Foundation 正式 `v7.3.0`（`a582d6ec498e26f30739d8bf6995f9613e26eb4d`）。未部署 Backend 不开放新上传，旧普通链接继续可读。见[音频候选记录](../architecture/audio-upload-acceptance.md)。
+本轮音频候选固定 Backend `cb44acaeb7fbc735fb569276aef00435bf24efe5`／API `5.37.0-dev.20261016.1`、独立 audio v1；Foundation 正式 `v7.3.0`（`a582d6ec498e26f30739d8bf6995f9613e26eb4d`）。治理已确认兼容 Backend PR51 部署至 1aa8655f；缺失 audioUpload 能力时隐藏新上传入口，旧普通链接继续可读。见[音频候选记录](../architecture/audio-upload-acceptance.md)。
 
 2026-10-10 合并来源复核：通过官方同步入口固定到实际部署 Backend `b5f0e3bb0b99a3f9763b31e3080cb4d4f2e64045`，OpenAPI 仍为 `5.36.0-dev.20261005.1`。相对退役实施提交，机器契约、共享语料、生成客户端及本模块行为不变；仅来源登记更新，详见[退役验收记录](../architecture/retire-development-preview-acceptance.md)。
 

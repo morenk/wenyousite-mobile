@@ -10,18 +10,19 @@ import 'package:uuid/uuid.dart';
 import 'package:wenyousite_mobile/core/diagnostics/failure_diagnostics.dart';
 import 'package:wenyousite_mobile/core/markdown/local_audio_marker.dart';
 import 'package:wenyousite_mobile/core/markdown/local_image_marker.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_audio_embed.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_line_metadata.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_editing_compatibility.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_submission_guard.dart';
 import 'package:wenyousite_mobile/core/media/media_audio.dart';
 import 'package:wenyousite_mobile/core/media/media_display.dart';
+import 'package:wenyousite_mobile/features/editor/presentation/audio_projected_quill_controller.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_clipboard.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_clipboard_gateway.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_clipboard_paste.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_document_alignment.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_site_clipboard.dart';
-import 'package:wenyousite_mobile/features/editor/presentation/literal_text_quill_controller.dart';
 
 enum RichEditorSelectionPlacement { preserve, start, end }
 
@@ -81,8 +82,11 @@ class RichEditorSession extends ChangeNotifier {
     _issues = decoded.issues;
     _lastMarkdown = initialMarkdown;
     _serializedLength = initialMarkdown.length;
-    final document = Document.fromDelta(decoded.delta);
-    controller = LiteralTextQuillController(
+    final document = Document.fromDelta(
+      MarkdownAudioEmbed.project(decoded.delta, _mediaAudios),
+    );
+    controller = AudioProjectedQuillController(
+      audios: () => _mediaAudios,
       document: document,
       selection: _selectionFor(document, initialSelection, null),
       config: QuillControllerConfig(
@@ -103,6 +107,7 @@ class RichEditorSession extends ChangeNotifier {
 
   void replaceMediaAudios(Map<String, MediaAudio> values) {
     _mediaAudios = Map.unmodifiable(values);
+    controller.projectAudio();
     notifyListeners();
   }
 
@@ -122,7 +127,7 @@ class RichEditorSession extends ChangeNotifier {
   final WenyouEditorClipboardStore _clipboardStore;
   late final WenyouSiteClipboardParser _siteClipboardParser;
 
-  late final LiteralTextQuillController controller;
+  late final AudioProjectedQuillController controller;
   final FocusNode focusNode = FocusNode();
   final ScrollController scrollController = ScrollController();
   Timer? _codecTimer;
@@ -381,7 +386,9 @@ class RichEditorSession extends ChangeNotifier {
         imageAlignment: imageAlignment,
       );
       final previousSelection = controller.selection;
-      final document = Document.fromDelta(decoded.delta);
+      final document = Document.fromDelta(
+        MarkdownAudioEmbed.project(decoded.delta, _mediaAudios),
+      );
       unawaited(_documentChanges?.cancel());
       controller.document = document;
       _listenToDocument(document);

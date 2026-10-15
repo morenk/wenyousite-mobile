@@ -8,6 +8,7 @@ import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_audio_projection.dart';
 import 'package:wenyousite_mobile/core/media/media_audio.dart';
 import 'package:wenyousite_mobile/core/widgets/audio_playback_button.dart';
+import 'package:wenyousite_mobile/core/widgets/audio_save_button.dart';
 import 'package:wenyousite_mobile/features/media/application/audio_playback.dart';
 import 'package:wenyousite_mobile/features/media/data/just_audio_playback_driver.dart';
 
@@ -35,7 +36,10 @@ class _WenyouAudioPlayerState extends ConsumerState<WenyouAudioPlayer>
   bool _visible = true;
   bool _dragging = false;
   bool _seekCompleted = false;
-  double? _targetPosition;
+  bool _readyForSeek = false;
+  final _seekPosition = ValueNotifier<double?>(null);
+  double? get _targetPosition => _seekPosition.value;
+  set _targetPosition(double? value) => _seekPosition.value = value;
   int _interaction = 0;
   Future<void> _seekQueue = Future<void>.value();
   Timer? _seekDeadline;
@@ -95,6 +99,7 @@ class _WenyouAudioPlayerState extends ConsumerState<WenyouAudioPlayer>
     _playback.removeListener(_playbackChanged);
     _clearInteraction();
     _playback.release(_owner);
+    _seekPosition.dispose();
     super.dispose();
   }
 
@@ -116,8 +121,12 @@ class _WenyouAudioPlayerState extends ConsumerState<WenyouAudioPlayer>
 
   void _playbackChanged() {
     if (!_playback.owns(_owner) || _playback.error != null) {
+      _readyForSeek = false;
       _clearInteraction();
-    } else if (!_dragging &&
+      return;
+    }
+    if (!_playback.status.loading) _readyForSeek = true;
+    if (!_dragging &&
         _seekCompleted &&
         _targetPosition != null &&
         (_playback.status.position.inMilliseconds - _targetPosition!).abs() <
@@ -188,10 +197,6 @@ class _WenyouAudioPlayerState extends ConsumerState<WenyouAudioPlayer>
       final current = _playback.owns(_owner);
       final state = current ? _playback.status : const AudioPlaybackStatus();
       final total = widget.audio.durationMs.toDouble();
-      final position =
-          (_targetPosition ?? state.position.inMilliseconds.toDouble())
-              .clamp(0.0, total)
-              .toDouble();
       final label = widget.label.trim().isEmpty ? '音频' : widget.label;
       final tokens = context.wenyouTokens;
       final reduceMotion =
@@ -199,7 +204,8 @@ class _WenyouAudioPlayerState extends ConsumerState<WenyouAudioPlayer>
           MediaQuery.accessibleNavigationOf(context);
       final animate = _foreground && _activeRoute && _visible && !reduceMotion;
       final playing = state.playing && !state.completed && _foreground;
-      final canSeek = current && !state.loading && _activeRoute && _foreground;
+      // 已就绪后的暂时缓冲不能撤销手指正在进行的拖动。
+      final canSeek = current && _readyForSeek && _activeRoute && _foreground;
       return TickerMode(
         enabled: animate,
         child: Padding(
@@ -246,7 +252,7 @@ class _WenyouAudioPlayerState extends ConsumerState<WenyouAudioPlayer>
               mainAxisSize: MainAxisSize.min,
               children: [
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(4, 4, 12, 4),
+                  padding: const EdgeInsets.all(4),
                   child: Row(
                     children: [
                       AudioPlaybackButton(
@@ -270,148 +276,204 @@ class _WenyouAudioPlayerState extends ConsumerState<WenyouAudioPlayer>
                           children: [
                             Padding(
                               padding: const EdgeInsets.only(top: 4),
-                              child: Text.rich(
-                                TextSpan(
-                                  children: widget.labelRuns.isEmpty
-                                      ? [TextSpan(text: label)]
-                                      : [
-                                          for (final run in widget.labelRuns)
-                                            TextSpan(
-                                              text: run.text,
-                                              style: TextStyle(
-                                                fontWeight:
-                                                    run.marks.contains('strong')
-                                                    ? FontWeight.bold
-                                                    : null,
-                                                fontStyle:
-                                                    run.marks.contains('em')
-                                                    ? FontStyle.italic
-                                                    : null,
-                                                decoration:
-                                                    run.marks.contains('del') ||
-                                                        run.marks.contains('s')
-                                                    ? TextDecoration.lineThrough
-                                                    : null,
-                                                fontFamily:
-                                                    run.marks.contains('code')
-                                                    ? 'monospace'
-                                                    : null,
+                              child: Transform.translate(
+                                offset: const Offset(0, 2),
+                                child: Text.rich(
+                                  TextSpan(
+                                    children: widget.labelRuns.isEmpty
+                                        ? [TextSpan(text: label)]
+                                        : [
+                                            for (final run in widget.labelRuns)
+                                              TextSpan(
+                                                text: run.text,
+                                                style: TextStyle(
+                                                  fontWeight:
+                                                      run.marks.contains(
+                                                        'strong',
+                                                      )
+                                                      ? FontWeight.bold
+                                                      : null,
+                                                  fontStyle:
+                                                      run.marks.contains('em')
+                                                      ? FontStyle.italic
+                                                      : null,
+                                                  decoration:
+                                                      run.marks.contains(
+                                                            'del',
+                                                          ) ||
+                                                          run.marks.contains(
+                                                            's',
+                                                          )
+                                                      ? TextDecoration
+                                                            .lineThrough
+                                                      : null,
+                                                  fontFamily:
+                                                      run.marks.contains('code')
+                                                      ? 'monospace'
+                                                      : null,
+                                                ),
                                               ),
-                                            ),
-                                        ],
+                                          ],
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: Theme.of(
+                                    context,
+                                  ).textTheme.wenyouCompactBody,
                                 ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: Theme.of(
-                                  context,
-                                ).textTheme.wenyouCompactBody,
                               ),
                             ),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: TweenAnimationBuilder<double>(
-                                    tween: Tween(
-                                      end:
-                                          !reduceMotion &&
-                                              (_dragging ||
-                                                  _sliderFocus.hasFocus)
-                                          ? 6
-                                          : 4,
-                                    ),
-                                    duration: animate
-                                        ? const Duration(milliseconds: 120)
-                                        : Duration.zero,
-                                    curve: Curves.easeOut,
-                                    builder: (context, radius, _) => SliderTheme(
-                                      data: SliderTheme.of(context).copyWith(
-                                        activeTrackColor: context
-                                            .wenyouTokens
-                                            .brandForeground,
-                                        thumbColor: context
-                                            .wenyouTokens
-                                            .brandForeground,
-                                        inactiveTrackColor: tokens.border,
-                                        disabledInactiveTrackColor:
-                                            tokens.border,
-                                        disabledActiveTrackColor:
-                                            tokens.brandForeground,
-                                        disabledThumbColor:
-                                            tokens.brandForeground,
-                                        trackHeight: 2,
-                                        thumbShape: RoundSliderThumbShape(
-                                          enabledThumbRadius: radius,
-                                          disabledThumbRadius: 4,
-                                          elevation: 0,
-                                          pressedElevation: 0,
-                                        ),
-                                        overlayShape:
-                                            SliderComponentShape.noOverlay,
-                                        showValueIndicator:
-                                            ShowValueIndicator.never,
-                                      ),
-                                      child: SizedBox(
-                                        height: 48,
-                                        child: Listener(
-                                          onPointerCancel: (_) =>
-                                              setState(_clearInteraction),
-                                          child: Slider(
-                                            focusNode: _sliderFocus,
-                                            padding: EdgeInsets.zero,
-                                            label: '播放进度',
-                                            value: position,
-                                            max: total,
-                                            semanticFormatterCallback: (value) =>
-                                                '播放进度，${_time(value.round())}',
-                                            onChangeStart: canSeek
-                                                ? _beginSeek
-                                                : null,
-                                            onChanged: canSeek
-                                                ? (value) => setState(
-                                                    () =>
-                                                        _targetPosition = value,
-                                                  )
-                                                : null,
-                                            onChangeEnd: canSeek
-                                                ? _endSeek
-                                                : null,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.only(left: 12),
-                                  child: Stack(
-                                    alignment: Alignment.centerRight,
-                                    children: [
-                                      ExcludeSemantics(
-                                        child: Opacity(
-                                          opacity: 0,
-                                          child: Text(
+                            ValueListenableBuilder<double?>(
+                              valueListenable: _seekPosition,
+                              builder: (context, target, _) {
+                                final position =
+                                    (target ??
+                                            state.position.inMilliseconds
+                                                .toDouble())
+                                        .clamp(0.0, total)
+                                        .toDouble();
+                                return LayoutBuilder(
+                                  builder: (context, constraints) {
+                                    final captionStyle = Theme.of(
+                                      context,
+                                    ).textTheme.wenyouUtilityCaption;
+                                    final metrics = TextPainter(
+                                      text: TextSpan(
+                                        text:
                                             '${_time(total.round())} / ${_time(total.round())}',
-                                            style: Theme.of(
-                                              context,
-                                            ).textTheme.wenyouUtilityCaption,
+                                        style: captionStyle,
+                                      ),
+                                      textDirection: TextDirection.ltr,
+                                      textScaler: MediaQuery.textScalerOf(
+                                        context,
+                                      ),
+                                    )..layout();
+                                    final stacked =
+                                        constraints.maxWidth -
+                                            metrics.width -
+                                            12 <
+                                        80;
+                                    metrics.dispose();
+                                    final slider = TweenAnimationBuilder<double>(
+                                      tween: Tween(
+                                        end:
+                                            !reduceMotion &&
+                                                (_dragging ||
+                                                    _sliderFocus.hasFocus)
+                                            ? 6
+                                            : 4,
+                                      ),
+                                      duration: animate
+                                          ? const Duration(milliseconds: 120)
+                                          : Duration.zero,
+                                      curve: Curves.easeOut,
+                                      builder: (context, radius, _) => SliderTheme(
+                                        data: SliderTheme.of(context).copyWith(
+                                          activeTrackColor: context
+                                              .wenyouTokens
+                                              .brandForeground,
+                                          thumbColor: context
+                                              .wenyouTokens
+                                              .brandForeground,
+                                          inactiveTrackColor: tokens.border,
+                                          disabledInactiveTrackColor:
+                                              tokens.border,
+                                          disabledActiveTrackColor:
+                                              tokens.brandForeground,
+                                          disabledThumbColor:
+                                              tokens.brandForeground,
+                                          trackHeight: 2,
+                                          thumbShape: RoundSliderThumbShape(
+                                            enabledThumbRadius: radius,
+                                            disabledThumbRadius: 4,
+                                            elevation: 0,
+                                            pressedElevation: 0,
+                                          ),
+                                          overlayShape:
+                                              SliderComponentShape.noOverlay,
+                                          showValueIndicator:
+                                              ShowValueIndicator.never,
+                                        ),
+                                        child: SizedBox(
+                                          height: 48,
+                                          child: Listener(
+                                            onPointerCancel: (_) =>
+                                                setState(_clearInteraction),
+                                            child: Slider(
+                                              focusNode: _sliderFocus,
+                                              padding: EdgeInsets.zero,
+                                              label: '播放进度',
+                                              value: position,
+                                              max: total,
+                                              semanticFormatterCallback: (value) =>
+                                                  '播放进度，${_time(value.round())}',
+                                              onChangeStart: canSeek
+                                                  ? _beginSeek
+                                                  : null,
+                                              onChanged: canSeek
+                                                  ? (value) =>
+                                                        _targetPosition = value
+                                                  : null,
+                                              onChangeEnd: canSeek
+                                                  ? _endSeek
+                                                  : null,
+                                            ),
                                           ),
                                         ),
                                       ),
-                                      Text(
-                                        '${_time(position.round())} / ${_time(total.round())}',
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .wenyouUtilityCaption
-                                            .copyWith(color: tokens.mutedText),
+                                    );
+                                    final time = Padding(
+                                      padding: EdgeInsets.only(
+                                        left: stacked ? 0 : 12,
+                                        bottom: stacked ? 4 : 0,
                                       ),
-                                    ],
-                                  ),
-                                ),
-                              ],
+                                      child: Stack(
+                                        alignment: Alignment.centerRight,
+                                        children: [
+                                          ExcludeSemantics(
+                                            child: Opacity(
+                                              opacity: 0,
+                                              child: Text(
+                                                '${_time(total.round())} / ${_time(total.round())}',
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .wenyouUtilityCaption,
+                                              ),
+                                            ),
+                                          ),
+                                          Text(
+                                            '${_time(position.round())} / ${_time(total.round())}',
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .wenyouUtilityCaption
+                                                .copyWith(
+                                                  color: tokens.mutedText,
+                                                ),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                    return stacked
+                                        ? Column(
+                                            mainAxisSize: MainAxisSize.min,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.end,
+                                            children: [slider, time],
+                                          )
+                                        : Row(
+                                            children: [
+                                              Expanded(child: slider),
+                                              time,
+                                            ],
+                                          );
+                                  },
+                                );
+                              },
                             ),
                           ],
                         ),
                       ),
+                      AudioSaveButton(audio: widget.audio, label: label),
                     ],
                   ),
                 ),

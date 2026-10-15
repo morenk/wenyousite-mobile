@@ -577,6 +577,8 @@ class PostComposerSheetState extends ConsumerState<PostComposerSheet>
     final controller = ref.read(
       postComposerControllerProvider(widget.target).notifier,
     );
+    // 发布以刚完成编码的文档为准；草稿恢复/附件完成不能依赖先前通知时机。
+    controller.updateContent(_editorSession.localMarkdown);
     final pending = ref
         .read(postComposerControllerProvider(widget.target))
         .pendingCreate;

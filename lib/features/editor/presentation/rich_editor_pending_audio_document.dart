@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_quill/quill_delta.dart';
 import 'package:wenyousite_mobile/core/markdown/local_audio_marker.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_paragraph_boundaries.dart';
 import 'package:wenyousite_mobile/core/media/media_audio.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/rich_editor_session.dart';
@@ -16,7 +17,7 @@ extension RichEditorPendingAudioDocument on RichEditorSession {
           url.substring(localAudioMarkerPrefix.length),
   };
 
-  void insertLocalAudio(String id) {
+  void insertLocalAudio(String id, {String filename = '音频'}) {
     if (controller.readOnly) return;
     final document = controller.document;
     final text = document.toPlainText();
@@ -28,7 +29,11 @@ extension RichEditorPendingAudioDocument on RichEditorSession {
     if (start > 0 && text[start - 1] != '\n') {
       change.insert('\n', {MarkdownParagraphBoundaries.key: 1});
     }
-    change.insert('音频', {'link': '$localAudioMarkerPrefix$id'});
+    final label = filename.replaceAll(RegExp(r'[\r\n]'), ' ');
+    change.insert(label.trim().isEmpty ? '音频' : label, {
+      'link': '$localAudioMarkerPrefix$id',
+      MarkdownDeltaCodec.literalTextAttribute: true,
+    });
     if (text[end] != '\n') {
       change.insert('\n', {MarkdownParagraphBoundaries.key: 1});
     } else {
@@ -57,26 +62,49 @@ extension RichEditorPendingAudioDocument on RichEditorSession {
     unawaited(flush());
   }
 
-  void resolveLocalAudio(String id, MediaAudio audio) {
+  void resolveLocalAudio(String id, MediaAudio audio, {String? filename}) {
     replaceMediaAudios({...mediaAudios, audio.sourceUrl: audio});
-    _replaceAudioLink(id, audio.sourceUrl, ChangeSource.remote);
+    _replaceAudioLink(
+      id,
+      audio.sourceUrl,
+      ChangeSource.remote,
+      filename: filename,
+    );
   }
 
   void removeLocalAudio(String id) => controller.runEditCommand(
     () => _replaceAudioLink(id, null, ChangeSource.local),
   );
 
-  void _replaceAudioLink(String id, String? url, ChangeSource source) {
+  void _replaceAudioLink(
+    String id,
+    String? url,
+    ChangeSource source, {
+    String? filename,
+  }) {
     final change = Delta();
     var changed = false;
     var offset = 0;
     var selection = controller.selection;
+    var renamed = false;
     for (final operation in controller.document.toDelta().toList()) {
       final length = operation.length ?? 0;
       if (operation.attributes?['link'] == '$localAudioMarkerPrefix$id') {
         changed = true;
         if (url != null) {
-          change.retain(length, {'link': url});
+          if (operation.data == '音频' &&
+              filename != null &&
+              filename.trim().isNotEmpty) {
+            change.insert(filename.replaceAll(RegExp(r'[\r\n]'), ' '), {
+              ...?operation.attributes,
+              'link': url,
+              MarkdownDeltaCodec.literalTextAttribute: true,
+            });
+            change.delete(length);
+            renamed = true;
+          } else {
+            change.retain(length, {'link': url});
+          }
         } else {
           change.delete(length);
           int adjusted(int value) => value <= offset
@@ -91,6 +119,12 @@ extension RichEditorPendingAudioDocument on RichEditorSession {
         change.retain(length);
       }
       offset += length;
+    }
+    if (renamed) {
+      selection = selection.copyWith(
+        baseOffset: change.transformPosition(selection.baseOffset),
+        extentOffset: change.transformPosition(selection.extentOffset),
+      );
     }
     if (changed) controller.compose(change, selection, source);
   }

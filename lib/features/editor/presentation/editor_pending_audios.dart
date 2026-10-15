@@ -124,7 +124,7 @@ class EditorPendingAudios extends ChangeNotifier {
       final item = EditorPendingAudio(id, input)..persisted = true;
       items[id] = item;
       adopted = true;
-      editor.insertLocalAudio(id);
+      editor.insertLocalAudio(id, filename: input.filename);
       await editor.flush();
       _selection = null;
       if (await save() && current()) {
@@ -205,7 +205,11 @@ class EditorPendingAudios extends ChangeNotifier {
         continue;
       }
       if (item.result != null) {
-        editor.resolveLocalAudio(item.id, item.result!);
+        editor.resolveLocalAudio(
+          item.id,
+          item.result!,
+          filename: item.input?.filename,
+        );
         unawaited(editor.flush());
       } else if (!item.active &&
           !item.awaitingContinue &&
@@ -292,7 +296,7 @@ class EditorPendingAudios extends ChangeNotifier {
           );
       if (!current()) return;
       item.result = result;
-      editor.resolveLocalAudio(item.id, result);
+      editor.resolveLocalAudio(item.id, result, filename: item.input?.filename);
       await editor.flush();
       await save();
     } on AudioProcessingFailed catch (error) {

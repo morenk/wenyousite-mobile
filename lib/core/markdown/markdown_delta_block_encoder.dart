@@ -1,5 +1,6 @@
 import 'package:wenyousite_mobile/core/markdown/markdown_codec_types.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_delta_inline_encoder.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_line_metadata.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_editable_block_syntax.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_inline_boundary.dart';
@@ -22,6 +23,7 @@ abstract final class MarkdownDeltaBlockEncoder {
       'code',
       'link',
       markdownLinkIdentityKey,
+      MarkdownDeltaInlineEncoder.keepLinkShapeKey,
       emptyParagraphAttribute,
       sourceBreakAttribute,
       literalLineAttribute,

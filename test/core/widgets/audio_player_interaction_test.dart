@@ -29,6 +29,63 @@ final _body =
 
 void main() {
   setUpAll(loadAudioTestFonts);
+  testWidgets('密集拖动仅更新进度且缓冲不打断，松手一次提交最终目标', (tester) async {
+    final driver = _SeekDriver();
+    final controller = AudioPlaybackController(() => driver);
+    addTearDown(controller.dispose);
+    await tester.pumpWidget(_app(controller));
+    await tester.tap(
+      find.descendant(
+        of: find.byType(AudioPlaybackButton),
+        matching: find.descendant(
+          of: find.byType(AudioPlaybackButton),
+          matching: find.byType(IconButton),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final rect = tester.getRect(find.byType(Slider));
+    final gesture = await tester.startGesture(
+      Offset(rect.left + rect.width * .2, rect.center.dy),
+    );
+    await gesture.moveBy(const Offset(12, 0));
+    await tester.pump();
+    driver.state.add(
+      const AudioPlaybackStatus(
+        playing: true,
+        loading: true,
+        position: Duration(seconds: 1),
+      ),
+    );
+    await tester.pump();
+    final button = tester.widget<AudioPlaybackButton>(
+      find.byType(AudioPlaybackButton),
+    );
+    final title = tester.widget<Text>(find.text('雨夜与片段'));
+    for (var i = 3; i <= 8; i++) {
+      await gesture.moveTo(
+        Offset(rect.left + rect.width * i / 10, rect.center.dy),
+      );
+      await tester.pump(const Duration(milliseconds: 16));
+      final slider = tester.widget<Slider>(find.byType(Slider));
+      expect(slider.onChanged, isNotNull);
+      expect(slider.value, closeTo(_audio.durationMs * i / 10, 2));
+      expect(
+        tester.widget<AudioPlaybackButton>(find.byType(AudioPlaybackButton)),
+        same(button),
+      );
+      expect(tester.widget<Text>(find.text('雨夜与片段')), same(title));
+      expect(driver.targets, isEmpty);
+    }
+    await gesture.up();
+    await tester.pump();
+    expect(driver.targets, hasLength(1));
+    expect(
+      driver.targets.single.inMilliseconds,
+      closeTo(_audio.durationMs * .8, 2),
+    );
+    await tester.pumpWidget(const SizedBox());
+  });
   for (final scale in [1.0, 2.0]) {
     for (final dark in [false, true]) {
       for (final width in [320, 360]) {
@@ -95,7 +152,14 @@ void main() {
           );
           await tester.pumpAndSettle();
           for (final i in [1, 2]) {
-            await tester.tap(find.byType(IconButton).at(i));
+            await tester.tap(
+              find
+                  .descendant(
+                    of: find.byType(AudioPlaybackButton),
+                    matching: find.byType(IconButton),
+                  )
+                  .at(i),
+            );
             await tester.pump();
             drivers[i].emit(42000);
           }
@@ -154,7 +218,12 @@ void main() {
     final controller = AudioPlaybackController(() => driver);
     addTearDown(controller.dispose);
     await tester.pumpWidget(_app(controller));
-    await tester.tap(find.byType(IconButton));
+    await tester.tap(
+      find.descendant(
+        of: find.byType(AudioPlaybackButton),
+        matching: find.byType(IconButton),
+      ),
+    );
     await tester.pumpAndSettle();
     driver.emit(10000);
     await tester.pump();
@@ -212,7 +281,12 @@ void main() {
     final controller = AudioPlaybackController(() => driver);
     addTearDown(controller.dispose);
     await tester.pumpWidget(_app(controller));
-    await tester.tap(find.byType(IconButton));
+    await tester.tap(
+      find.descendant(
+        of: find.byType(AudioPlaybackButton),
+        matching: find.byType(IconButton),
+      ),
+    );
     await tester.pumpAndSettle();
     final slider = tester.widget<Slider>(find.byType(Slider));
     slider.focusNode!.requestFocus();
@@ -236,7 +310,12 @@ void main() {
     driver.state.addError(StateError('unavailable'));
     await tester.pumpAndSettle();
     expect(find.text('音频播放失败，点击重试。'), findsOneWidget);
-    await tester.tap(find.byType(IconButton));
+    await tester.tap(
+      find.descendant(
+        of: find.byType(AudioPlaybackButton),
+        matching: find.byType(IconButton),
+      ),
+    );
     await tester.pumpAndSettle();
     expect(driver.loads, hasLength(2));
   });
@@ -246,7 +325,12 @@ void main() {
     final controller = AudioPlaybackController(() => driver);
     addTearDown(controller.dispose);
     await tester.pumpWidget(_app(controller));
-    final rect = tester.getRect(find.byType(IconButton));
+    final rect = tester.getRect(
+      find.descendant(
+        of: find.byType(AudioPlaybackButton),
+        matching: find.byType(IconButton),
+      ),
+    );
     final gesture = await tester.startGesture(rect.center);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 120));
@@ -263,7 +347,15 @@ void main() {
       .96,
     );
     expect(tester.widget<AnimatedScale>(find.byType(AnimatedScale)).scale, .96);
-    expect(tester.getRect(find.byType(IconButton)), rect);
+    expect(
+      tester.getRect(
+        find.descendant(
+          of: find.byType(AudioPlaybackButton),
+          matching: find.byType(IconButton),
+        ),
+      ),
+      rect,
+    );
     expect(rect.height, greaterThanOrEqualTo(48));
     await gesture.up();
     await tester.pump();
@@ -277,7 +369,12 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(tester.binding.hasScheduledFrame, isFalse);
-    await tester.tap(find.byType(IconButton));
+    await tester.tap(
+      find.descendant(
+        of: find.byType(AudioPlaybackButton),
+        matching: find.byType(IconButton),
+      ),
+    );
     await tester.pumpAndSettle();
     final box =
         tester
@@ -296,7 +393,12 @@ void main() {
     addTearDown(controller.dispose);
     await tester.pumpWidget(_app(controller, reduce: true, scroll: true));
     final gesture = await tester.startGesture(
-      tester.getCenter(find.byType(IconButton)),
+      tester.getCenter(
+        find.descendant(
+          of: find.byType(AudioPlaybackButton),
+          matching: find.byType(IconButton),
+        ),
+      ),
     );
     await tester.pump();
     expect(tester.widget<AnimatedScale>(find.byType(AnimatedScale)).scale, 1);
@@ -402,7 +504,14 @@ void main() {
     final controller = AudioPlaybackController(() => driver);
     addTearDown(controller.dispose);
     await tester.pumpWidget(_app(controller, second: true));
-    await tester.tap(find.byType(IconButton).first);
+    await tester.tap(
+      find
+          .descendant(
+            of: find.byType(AudioPlaybackButton),
+            matching: find.byType(IconButton),
+          )
+          .first,
+    );
     await tester.pumpAndSettle();
     driver.emit(12000);
     await tester.pump();
@@ -421,7 +530,14 @@ void main() {
     final drag = await tester.startGesture(rect.center);
     await drag.moveBy(const Offset(20, 0));
     await tester.pump();
-    await tester.tap(find.byType(IconButton).last);
+    await tester.tap(
+      find
+          .descendant(
+            of: find.byType(AudioPlaybackButton),
+            matching: find.byType(IconButton),
+          )
+          .last,
+    );
     await tester.pump();
     await drag.up();
     await tester.pumpAndSettle();
@@ -435,7 +551,12 @@ void main() {
     final controller = AudioPlaybackController(() => driver);
     addTearDown(controller.dispose);
     await tester.pumpWidget(_app(controller, reduce: true));
-    await tester.tap(find.byType(IconButton));
+    await tester.tap(
+      find.descendant(
+        of: find.byType(AudioPlaybackButton),
+        matching: find.byType(IconButton),
+      ),
+    );
     await tester.pumpAndSettle();
     expect(
       tester

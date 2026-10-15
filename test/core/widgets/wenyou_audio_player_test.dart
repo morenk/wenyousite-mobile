@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/media/media_audio.dart';
+import 'package:wenyousite_mobile/core/widgets/audio_playback_button.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_audio_player.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_markdown.dart';
 import 'package:wenyousite_mobile/features/media/application/audio_playback.dart';
@@ -49,7 +50,12 @@ void main() {
             of: player,
             matching: find.byType(type),
           );
-          expect(tester.getSize(control).height, greaterThanOrEqualTo(48));
+          for (final match in control.evaluate()) {
+            expect(
+              tester.getSize(find.byWidget(match.widget)).height,
+              greaterThanOrEqualTo(48),
+            );
+          }
         }
         expect(tester.takeException(), isNull);
         await expectLater(
@@ -71,7 +77,10 @@ void main() {
     expect(driver.loads, isEmpty);
     final buttons = find.descendant(
       of: find.byType(WenyouAudioPlayer),
-      matching: find.byType(IconButton),
+      matching: find.descendant(
+        of: find.byType(AudioPlaybackButton),
+        matching: find.byType(IconButton),
+      ),
     );
     await tester.tap(buttons.first);
     await tester.pump();
