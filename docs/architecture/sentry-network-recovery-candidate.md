@@ -1,6 +1,8 @@
 # Sentry 后台网络恢复候选
 
-状态：候选／待负责人验收。关联 WENYOUSITE-MOBILE-14、W、2H；不关闭 Sentry 问题、不合并或部署、不安装真机。
+状态：候选实现／官方完整门禁待通过／待负责人验收。关联 WENYOUSITE-MOBILE-14、W、2H；不关闭 Sentry 问题、不合并或部署、不安装真机。
+
+本候选尚未满足 `AGENTS.md` 第 8 节“高风险候选使用 `npm run check:apk`，在同一次完整门禁成功后构建 Debug APK”的要求。现有首次失败、分项补检和独立 APK 构建均保留为证据，不能拼接宣称官方完整门禁通过。应用源码保持 `765778e4fbf2eeb2a1745560773628282b1eb66f`；等待独占工具槽后重新执行官方 `check:apk`，以实际退出 0 及同次 APK 结果更新状态。
 
 ## 事实与范围
 
@@ -24,11 +26,11 @@
 - 新增注入覆盖 DNS/Socket、超时、502、失败递增/上限、成功重置、并行读取包装、手动提前尝试、singleflight、Token 保留、切号迟到结果、前后台切换、未知错误不归类、未发送拒绝无诊断、前台写入只发一次。
 - 定向命令 `flutter test -j 1 test/core/network test/features/app_shell/background_online_reminder_coordinator_test.dart test/features/app_shell/background_online_reminders_test.dart test/features/app_shell/background_reminder_lifecycle_test.dart test/features/app_shell/background_reminder_runtime_test.dart`：114 项通过，退出 0。日志 `build/network-targeted.log` 的 SHA-256 为 `a152b72f896874ce4c7f8c362c64f82231c7be2a1b024840cdee476f1ec83604`。
 - 完整入口 `npm run check:apk -- -TestConcurrency 1` 的首次运行退出 1：契约校验／再生成零差异、公网兼容性只读检查、全仓格式、应用与生成客户端分析、架构、模块文档和 API 覆盖均通过；全量 Flutter 为 6614 通过、1 项原有 Sentry 显式验收跳过、1 项文案静态检查失败。日志 `build/network-check-apk.log` 的 SHA-256 为 `7b544f777fda19553610024b9da84f89e2c68209a273e67e467d06c173b3aa8d`。
-- 唯一失败是旧文案检查用 `ApiFailure\s*\(` 把新的无文案冷却取消也算作文案，粗计数由 418 变为 419。检查改用现有 analyzer 的 AST，覆盖普通／const／命名工厂／前缀调用和重定向的 `userMessage` 实参，排除声明、模式、注释和无文案错误；基线与本候选的实际文案调用均为 418，阈值不放宽。检查修正仅改测试，应用源码与上述全量行为回归一致，不重复运行已通过的行为回归；按治理协调补检该静态检查与原入口未执行的 Windows 发布工具、APK，分别记录结果，不将首次入口退出 1 写成退出 0。
+- 唯一失败是旧文案检查用 `ApiFailure\s*\(` 把新的无文案冷却取消也算作文案，粗计数由 418 变为 419。检查改用现有 analyzer 的 AST，覆盖普通／const／命名工厂／前缀调用和重定向的 `userMessage` 实参，排除声明、模式、注释和无文案错误；基线与本候选的实际文案调用均为 418，阈值不放宽。检查修正仅改测试，应用源码与上述全量行为回归一致；随后完成该静态检查、原入口未执行的 Windows 发布工具和独立 APK 构建。以下补检均为分项结果，不能替代尚待成功的官方 `check:apk`，也不将首次入口退出 1 写成退出 0。
 - 检查修正独立提交 `2a5a9216348c80e9d3e41b3bf553da0f6d7fd786`。`flutter test --no-pub -j 1 test/user_facing_copy_test.dart`：6 项通过；两个变更测试文件的 `dart format --output=none --set-exit-if-changed` 与 `dart analyze --fatal-infos --fatal-warnings` 通过。最终定向日志 `build/network-copy-guard-final.log` 的 SHA-256 为 `b51b45b0ba85c7fc67fc2ce413d637b7e776139fa337ecae13413195e4e40907`。
 - 补检 `npm run test:release-tool`：49 项通过、退出 0，日志 `build/network-release-tool.log`；使用本地隔离夹具，不执行真实发布。
 - 补构建 `flutter build apk --debug --target-platform android-arm64`：退出 0，日志 `build/network-apk.log` 的 SHA-256 为 `58750f449653db020bab55ce4198648f9fc9c55a855baad10d9bfc846c1eebca`。产物 `build/app/outputs/flutter-apk/app-debug.apk` 为 110,352,442 字节，SHA-256 `c45262b748671ebaa626cb5673b782efdeace6696003486f4ac663f315331094`；`aapt dump badging` 核验包名 `site.wenyou.app.debug`、版本 `0.9.0-debug`／99、仅 `arm64-v8a`。构建使用默认 API `https://wenyou.site/api/v1`，该目标按线上保护；未安装、未启动应用，不能据本地构建声称数据隔离。
-- 验收记录补齐后的 `npm run docs:check` 通过 23 个模块；生成客户端与锁文件均无差异。最终仅追加本段 APK 摘要，不改变应用源码及模块行为。
+- 验收记录补齐后的 `npm run docs:check` 通过 23 个模块；生成客户端与锁文件均无差异。上述证据绑定应用源码 `765778e4fbf2eeb2a1745560773628282b1eb66f`，后续文档更正不改变应用源码及模块行为。
 - 独立代码复核检查会话代次／票据、失败去重、旧成功不能清除新失败、singleflight、SafeRetry／noAutomaticReplay 和后台权限，未发现确定阻断；代码复核不代替真机验收。
 - 所有故障注入使用内存 fake／Dio adapter，不连接线上、不写真实业务数据；没有运行写入 E2E，无新增隔离资源。
 
