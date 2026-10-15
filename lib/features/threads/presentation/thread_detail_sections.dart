@@ -443,6 +443,7 @@ class ThreadFloorCard extends ConsumerWidget {
                     key: Key('thread-floor-author-${floor.id}'),
                     author: floor.author,
                     time: floor.createdAt,
+                    editedAt: floor.editedAt,
                     compact: true,
                     avatarKey: Key('thread-floor-author-avatar-${floor.id}'),
                     metadata: [
@@ -640,6 +641,7 @@ class _FloorInlineReplyCard extends ConsumerWidget {
           ThreadPostAuthorLine(
             author: reply.author,
             time: reply.createdAt,
+            editedAt: reply.editedAt,
             compact: true,
             avatarKey: Key('thread-floor-reply-author-avatar-${reply.id}'),
           ),

@@ -42,6 +42,7 @@ void registerPostRepliesPageSessionEditingCases() {
           content,
           postRepliesPageTestAuthor,
           version: version + 1,
+          editedAt: DateTime(2025, 2, 3),
         );
       },
     );
@@ -77,6 +78,11 @@ void registerPostRepliesPageSessionEditingCases() {
       '自己的回复',
     );
     expect(
+      repository.replies.singleWhere((post) => post.id == 'reply-own').editedAt,
+      isNull,
+    );
+    expect(find.textContaining('编辑于'), findsNothing);
+    expect(
       MarkdownDeltaCodec.encode(
         tester
             .state<QuillEditorState>(
@@ -97,6 +103,7 @@ void registerPostRepliesPageSessionEditingCases() {
     expect(find.byKey(const Key('post-composer-sheet')), findsNothing);
     expect(find.text('编辑失败后保留的内容'), findsOneWidget);
     expect(find.text('自己的回复'), findsNothing);
+    expect(find.textContaining('编辑于2025-02-03'), findsOneWidget);
   });
 
   testWidgets('会话切换丢弃旧账号迟到首屏并立即加载新会话', (tester) async {

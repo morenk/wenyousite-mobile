@@ -26,6 +26,8 @@ void main() {
                 ownerId: 'account-1',
                 child: ThreadPostAuthorLine(
                   avatarKey: const Key('author-avatar'),
+                  time: DateTime(2024, 1, 1),
+                  editedAt: DateTime(2025, 2, 3),
                   author: ThreadAuthorModel(
                     id: 'account-1',
                     username: '站内用户',
@@ -81,6 +83,8 @@ void main() {
           ),
         ),
       );
+      expect(find.text('编辑于2025-02-03'), findsOneWidget);
+      expect(find.text('2024-01-01'), findsNothing);
       await tester.tap(find.byKey(const Key('author-avatar')));
       await tester.pumpAndSettle();
       if (hasRp) {
