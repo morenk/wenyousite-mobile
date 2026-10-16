@@ -42,4 +42,8 @@ feature 内保持 `presentation → application → domain`，data 在应用边�
 
 ## 图片上传协调依赖
 
+## 工具栏偏好依赖
+
+工具栏偏好设置通过 `editor.dart` 公共展示入口复用真实工具栏、托盘和能力解析，新增已审查的单向 `settings -> editor`；编辑器不依赖设置模块，布局和持久化端口仍属于 `core/application`。设置从共享 `appCapabilitiesProvider` 读取表情能力，不依赖表情收藏控制器。没有新增跨 feature 内部导入、循环或分层债务。
+
 本轮经依赖图审查新增单向 `editor -> media`：正文编辑会话消费媒体上传 application 端口、领域输入以及 `media_ui.dart` 导出的本机预览组件，媒体不反向依赖编辑器。私有文件适配器只依赖 `pending_media_file_store_ports.dart`，由应用组合根绑定。删除三个已消失的跨 feature 横幅内部导入债务；没有增加循环依赖、内部层导入债务或超限文件豁免。
