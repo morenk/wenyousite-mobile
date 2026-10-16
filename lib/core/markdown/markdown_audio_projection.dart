@@ -21,7 +21,16 @@ class MarkdownAudioProjection {
     if (block is! md.Element || block.tag != 'p') return null;
     final children = block.children;
     if (children == null || children.length != 1) return null;
-    final link = children.single;
+    var link = children.single;
+    final outerMarks = <String>{};
+    // 旧编辑器会把整段标签样式放到链接外；只展开单一文字样式链，
+    // 不把混排、多链接、代码或块容器猜成音频。
+    while (link is md.Element &&
+        const {'strong', 'em', 'del', 's'}.contains(link.tag) &&
+        link.children?.length == 1) {
+      outerMarks.add(link.tag);
+      link = link.children!.single;
+    }
     if (link is! md.Element ||
         link.tag != 'a' ||
         link.attributes.containsKey('title')) {
@@ -40,7 +49,7 @@ class MarkdownAudioProjection {
       }
     }
 
-    visit(link, const {});
+    visit(link, outerMarks);
     return MarkdownAudioProjection(
       audio,
       link.textContent,

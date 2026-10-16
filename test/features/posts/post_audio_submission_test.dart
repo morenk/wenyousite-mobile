@@ -5,6 +5,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/markdown/local_audio_marker.dart';
 import 'package:wenyousite_mobile/core/media/media_audio.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_audio_player.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_markdown.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/rich_editor_pending_audio_document.dart';
 import 'package:wenyousite_mobile/features/media/data/audio_upload_repository.dart';
 import 'package:wenyousite_mobile/features/media/domain/audio_upload_models.dart';
@@ -108,6 +110,22 @@ void main() {
         isNot(contains('wenyou_audio_view')),
       );
       expect(tester.takeException(), isNull);
+      final submitted = repository.createInputs.single.content;
+      await tester.pumpWidget(
+        ProviderScope(
+          child: MaterialApp(
+            theme: AppTheme.light,
+            home: Scaffold(
+              body: WenyouMarkdown(
+                data: submitted,
+                mediaAudios: {_audio.sourceUrl: _audio},
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(WenyouAudioPlayer), findsOneWidget, reason: submitted);
       await tester.pumpWidget(const SizedBox());
       await tester.pump();
     });

@@ -18,11 +18,13 @@ class WenyouAudioPlayer extends ConsumerStatefulWidget {
     required this.audio,
     required this.label,
     this.labelRuns = const [],
+    this.showSave = true,
     super.key,
   });
   final MediaAudio audio;
   final String label;
   final List<MarkdownAudioLabelRun> labelRuns;
+  final bool showSave;
   @override
   ConsumerState<WenyouAudioPlayer> createState() => _WenyouAudioPlayerState();
 }
@@ -217,26 +219,6 @@ class _WenyouAudioPlayerState extends ConsumerState<WenyouAudioPlayer>
             curve: Curves.easeOut,
             decoration: BoxDecoration(
               color: tokens.panel,
-              gradient: LinearGradient(
-                begin: Alignment.centerLeft,
-                end: Alignment.center,
-                colors: [
-                  Color.alphaBlend(
-                    tokens.brandForeground.withValues(
-                      alpha: playing ? 0.10 : 0,
-                    ),
-                    tokens.panel,
-                  ),
-                  Color.alphaBlend(
-                    tokens.brandForeground.withValues(
-                      alpha: playing ? 0.03 : 0,
-                    ),
-                    tokens.panel,
-                  ),
-                  tokens.panel,
-                ],
-                stops: const [0, 0.5, 1],
-              ),
               border: Border.all(
                 color: _sliderFocus.hasFocus
                     ? tokens.brandForeground.withValues(alpha: 0.6)
@@ -473,7 +455,8 @@ class _WenyouAudioPlayerState extends ConsumerState<WenyouAudioPlayer>
                           ],
                         ),
                       ),
-                      AudioSaveButton(audio: widget.audio, label: label),
+                      if (widget.showSave)
+                        AudioSaveButton(audio: widget.audio, label: label),
                     ],
                   ),
                 ),

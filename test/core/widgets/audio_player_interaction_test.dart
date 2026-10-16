@@ -320,7 +320,7 @@ void main() {
     expect(driver.loads, hasLength(2));
   });
 
-  testWidgets('按压缩放内部48dp、图标120ms、背景180ms且无循环', (tester) async {
+  testWidgets('按压缩放内部48dp、图标120ms、边框180ms且始终无渐变', (tester) async {
     final driver = _SeekDriver();
     final controller = AudioPlaybackController(() => driver);
     addTearDown(controller.dispose);
@@ -369,6 +369,14 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(tester.binding.hasScheduledFrame, isFalse);
+    expect(
+      (tester
+                  .widget<AnimatedContainer>(find.byType(AnimatedContainer))
+                  .decoration!
+              as BoxDecoration)
+          .gradient,
+      isNull,
+    );
     await tester.tap(
       find.descendant(
         of: find.byType(AudioPlaybackButton),
@@ -381,10 +389,7 @@ void main() {
                 .widget<AnimatedContainer>(find.byType(AnimatedContainer))
                 .decoration!
             as BoxDecoration;
-    expect(
-      box.gradient!.colors.every((color) => color == box.gradient!.colors.last),
-      isTrue,
-    );
+    expect(box.gradient, isNull);
   });
 
   testWidgets('减少动态无缩放过渡或Slider动画，后台停播，离屏仅停视觉', (tester) async {

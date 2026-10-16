@@ -8,6 +8,46 @@ import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/core/media/media_audio.dart';
 
 void main() {
+  final audio = MediaAudio.parse({
+    'sourceUrl': 'https://storage.example/song.mp3',
+    'mediaId': 'song',
+    'contentType': 'audio/mpeg',
+    'size': 16000,
+    'durationMs': 59000,
+  })!;
+  MarkdownAudioProjection? project(String source, {bool trusted = true}) =>
+      MarkdownAudioProjection.fromBlock(
+        md.Document(
+          extensionSet: md.ExtensionSet.gitHubFlavored,
+          encodeHtml: false,
+        ).parse(source).single,
+        trusted ? {audio.sourceUrl: audio} : {},
+      );
+  test('外层单一样式链接与内部marks一致，可信来源不变', () {
+    const label = '原文件名.mp3';
+    for (final style in ['**', '*', '~~', '***']) {
+      final source = '$style[$label](${audio.sourceUrl})$style';
+      final result = project(source)!;
+      expect(result.label, label);
+      expect(result.audio, same(audio));
+      expect(result.labelRuns.every((run) => run.marks.isNotEmpty), isTrue);
+      expect(project(source, trusted: false), isNull);
+    }
+    final nested = project('**[*原名*与`片段`](${audio.sourceUrl})**')!;
+    expect(nested.labelRuns.first.marks, containsAll(['strong', 'em']));
+    expect(nested.labelRuns.last.marks, containsAll(['strong', 'code']));
+    for (final source in [
+      '**前文[原名](${audio.sourceUrl})**',
+      '**[甲](${audio.sourceUrl})[乙](${audio.sourceUrl})**',
+      '`[原名](${audio.sourceUrl})`',
+      '- **[原名](${audio.sourceUrl})**',
+      '> **[原名](${audio.sourceUrl})**',
+      '**[原名](https://external.example/song.mp3)**',
+      '**[原名](${audio.sourceUrl} "title")**',
+    ]) {
+      expect(project(source), isNull, reason: source);
+    }
+  });
   final fixture =
       jsonDecode(
             File(

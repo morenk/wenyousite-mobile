@@ -58,6 +58,16 @@ test/core/application/editor_toolbar_layout_test.dart
 
 ## 原生构建与待验收
 
+### 样式兼容／阅读链接／移除渐变批次（最新候选）
+
+负责人再次反馈新发表音频只显示链接，原页面截图中新链接带整段粗体、旧音频仍显示播放器，因此本轮验收尚未通过。旧 `MarkdownAudioProjection.fromBlock` 只接受 `p → a`，真实 WenyouMarkdown 的 `**[文件名](可信 URL)**` 回归在旧实现失败：`.buildlog/audio-published-link-before.log`。此处兼容只展开单一 `strong/em/del/s` 链，继续要求独立段落、单一链接和可信 URL；不按文件名扩展猜测，不改 API、持久 Markdown 或上传协议。原正文／投影尚未取得时，不以该构造失败宣布原问题已唯一定位。
+
+- 读取、标签、编辑、播放器与真实发表页的最终比较 `.buildlog/audio-published-link-final.log` **61 项通过**。实际 PostComposerSheet mock 上传完成后发送的 canonical 正文也交给真实阅读器，单音频和音频加正文均保留播放器；不等同线上上传验证。
+- 追加外层／内层 plain、strong、em、del 的 16 组合，逐个编辑投影、复制粘贴、保存重开、阅读比对可见文字／URL／marks；`.buildlog/audio-published-style-matrix-final.log` 编辑相关 **30 项通过**。阅读控件样式隔离、前后文字／列表／引用／代码不升级的阅读组 **8 项通过**，见 `.buildlog/audio-published-style-matrix.log`；同条命令的编辑测试首次因测试缺 `foundation.dart` 导入编译失败，已补验，不能把该整条命令称通过。
+- `.buildlog/audio-published-link-analyze.log` 原 8 个变更 Dart 文件 **No issues found**；新增／更新的两测试文件 `.buildlog/audio-published-style-analyze.log` 同样通过。仅相关检查，无全量测试／分析／门禁。
+- 编辑态 `showSave=false`，阅读态保存继续按需请求。播放器所有状态均无渐变；标签 marks 只作用于文字，播放和下载控件不继承其字重／字体／图标主题。新 Golden 覆盖 320／360 明暗、200% 与 idle／playing／dragging，路径沿用 `audio_editor_*`、`audio_states_*`。
+- 本批只有 Dart 变化，没有重建 APK；下方 `4008ddbb` 产物不含本批修正。设备与热重载由治理任务持有，本实现任务未接管、安装、启动、重启或写业务数据。
+
 ### 编辑态／保存／原名／拖动批次（当前候选）
 
 - `test/features/editor/editor_audio_projection_test.dart`、`editor_audio_widget_test.dart`、`editor_pending_audio_document_test.dart`、`editor_pending_audios_test.dart`，`test/core/widgets/audio_save_button_test.dart`、`audio_player_interaction_test.dart`、`wenyou_audio_player_test.dart`，`test/features/media/audio_download_test.dart` 共 **82 项通过**；最终比较日志 `.buildlog/audio-wysiwyg-save-final.log`。包含真实 Quill 选块删除／撤销重做、前后输入、剪切移动、跨会话失信降级、上传删除／撤销后不复活、滚动后的命中、滑块拖出边界及保存按钮不改选区、不提前请求媒体。

@@ -32,7 +32,7 @@ final _body =
 
 void main() {
   setUpAll(loadAudioTestFonts);
-  testWidgets('编辑态保存按钮不改变选区、正文或触发播放', (tester) async {
+  testWidgets('编辑态不提供保存按钮，不改变选区、正文或触发播放', (tester) async {
     final editor = RichEditorSession(
       initialMarkdown: '[原文件名.wav](${_audio.sourceUrl})',
       initialMediaAudios: {_audio.sourceUrl: _audio},
@@ -47,13 +47,12 @@ void main() {
     await tester.pumpAndSettle();
     final before = editor.controller.selection;
     final delta = editor.controller.document.toDelta().toJson();
-    await tester.tap(find.byTooltip('保存到本地'));
+    expect(find.byTooltip('保存到本地'), findsNothing);
     await tester.pump();
-    expect(download.labels, ['原文件名.wav']);
+    expect(download.labels, isEmpty);
     expect(editor.controller.selection, before);
     expect(editor.controller.document.toDelta().toJson(), delta);
     expect(driver.loads, isEmpty);
-    download.operations.single.completion.complete(false);
     await tester.pumpWidget(const SizedBox());
   });
   for (final scale in [1.0, 2.0]) {

@@ -1,10 +1,13 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:markdown/markdown.dart' as md;
 import 'package:wenyousite_mobile/core/markdown/markdown_audio_embed.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_audio_projection.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/core/media/media_audio.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_clipboard.dart';
@@ -34,6 +37,77 @@ int _embeds(RichEditorSession session) => session.controller.document
     .length;
 
 void main() {
+  testWidgets('音频内外样式组合在编辑复制重开与阅读中保留', (tester) async {
+    const styles = {'': '', '**': 'strong', '*': 'em', '~~': 'del'};
+    for (final outer in styles.entries) {
+      for (final inner in styles.entries) {
+        final source =
+            '${outer.key}[${inner.key}原文件名${inner.key}]'
+            '(${_audio.sourceUrl})${outer.key}';
+        final marks = {
+          if (outer.value.isNotEmpty) outer.value,
+          if (inner.value.isNotEmpty) inner.value,
+        };
+        String? clipboard;
+        final gateway = CallbackEditorClipboardGateway(
+          readCallback: () async => clipboard,
+          writeCallback: (value) async {
+            clipboard = value;
+          },
+        );
+        final store = WenyouEditorClipboardStore();
+        final original = RichEditorSession(
+          initialMarkdown: source,
+          initialMediaAudios: {_audio.sourceUrl: _audio},
+          onMarkdownChanged: (_) {},
+          clipboardGateway: gateway,
+          clipboardStore: store,
+        );
+        final pasted = RichEditorSession(
+          initialMarkdown: '',
+          initialMediaAudios: {_audio.sourceUrl: _audio},
+          onMarkdownChanged: (_) {},
+          clipboardGateway: gateway,
+          clipboardStore: store,
+        );
+        try {
+          expect(_embeds(original), 1, reason: source);
+          original.controller.updateSelection(
+            const TextSelection(baseOffset: 0, extentOffset: 1),
+            ChangeSource.local,
+          );
+          expect(await original.copySelection(), isTrue);
+          expect(clipboard, '原文件名');
+          expect(await pasteEditorClipboard(pasted.controller), isTrue);
+          expect(_embeds(pasted), 1);
+          expect(await pasted.flush(), isTrue);
+          final saved = pasted.localMarkdown;
+          expect(saved, isNot(contains(MarkdownAudioEmbed.type)));
+          final reading = MarkdownAudioProjection.fromBlock(
+            md.Document(
+              extensionSet: md.ExtensionSet.gitHubFlavored,
+              encodeHtml: false,
+            ).parse(saved).single,
+            pasted.mediaAudios,
+          )!;
+          expect(reading.label, '原文件名');
+          expect(reading.audio.sourceUrl, _audio.sourceUrl);
+          expect(
+            reading.labelRuns.every((run) => setEquals(run.marks, marks)),
+            isTrue,
+            reason: source,
+          );
+          pasted.applyExternalMarkdown(saved, mediaAudios: pasted.mediaAudios);
+          expect(_embeds(pasted), 1);
+          expect(await pasted.flush(), isTrue);
+          expect(pasted.localMarkdown, saved);
+        } finally {
+          original.dispose();
+          pasted.dispose();
+        }
+      }
+    }
+  });
   final fixtures =
       jsonDecode(
             File(

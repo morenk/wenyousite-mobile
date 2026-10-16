@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/media/media_audio.dart';
 import 'package:wenyousite_mobile/core/widgets/audio_playback_button.dart';
+import 'package:wenyousite_mobile/core/widgets/audio_save_button.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_audio_player.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_markdown.dart';
 import 'package:wenyousite_mobile/features/media/application/audio_playback.dart';
@@ -25,6 +26,66 @@ String get _body =>
 
 void main() {
   setUpAll(loadAudioTestFonts);
+  testWidgets('标签样式不传给播放和保存控件，混排和无投影保持普通正文', (tester) async {
+    final controller = AudioPlaybackController(() => throw StateError('不得加载'));
+    addTearDown(controller.dispose);
+    await tester.pumpWidget(
+      _app(controller, body: '[原名](${_audio.sourceUrl})'),
+    );
+    await tester.pumpAndSettle();
+    final styles = {
+      for (final type in [AudioPlaybackButton, AudioSaveButton])
+        type: DefaultTextStyle.of(tester.element(find.byType(type))).style,
+    };
+    final icons = {
+      for (final type in [AudioPlaybackButton, AudioSaveButton])
+        type: IconTheme.of(tester.element(find.byType(type))),
+    };
+    for (final label in [
+      '**[原名](${_audio.sourceUrl})**',
+      '*[**原名**](${_audio.sourceUrl})*',
+      '~~[***原名***](${_audio.sourceUrl})~~',
+    ]) {
+      await tester.pumpWidget(_app(controller, body: label));
+      await tester.pumpAndSettle();
+      expect(find.byType(WenyouAudioPlayer), findsOneWidget);
+      expect(find.byTooltip('保存到本地'), findsOneWidget);
+      for (final type in [AudioPlaybackButton, AudioSaveButton]) {
+        final context = tester.element(find.byType(type));
+        expect(DefaultTextStyle.of(context).style, styles[type]);
+        expect(IconTheme.of(context), icons[type]);
+      }
+    }
+    for (final source in [
+      '前文 **[原名](${_audio.sourceUrl})**',
+      '**[原名](${_audio.sourceUrl})** 后文',
+      '- **[原名](${_audio.sourceUrl})**',
+      '> **[原名](${_audio.sourceUrl})**',
+      '`[原名](${_audio.sourceUrl})`',
+    ]) {
+      await tester.pumpWidget(_app(controller, body: source));
+      await tester.pumpAndSettle();
+      expect(find.byType(WenyouAudioPlayer), findsNothing, reason: source);
+    }
+  });
+  testWidgets('独立粗体文件名链接按可信投影显示播放器', (tester) async {
+    final controller = AudioPlaybackController(() => throw StateError('不得加载'));
+    addTearDown(controller.dispose);
+    const name = '莫问归期.辞九门回忆--+1晨#2F92SO.mp3';
+    await tester.pumpWidget(
+      _app(controller, body: '**[$name](${_audio.sourceUrl})**'),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byType(WenyouAudioPlayer), findsOneWidget);
+    final player = tester.widget<WenyouAudioPlayer>(
+      find.byType(WenyouAudioPlayer),
+    );
+    expect(player.label, name);
+    expect(
+      player.labelRuns.every((run) => run.marks.contains('strong')),
+      isTrue,
+    );
+  });
   for (final dark in [false, true]) {
     for (final width in [320, 360]) {
       testWidgets('$width ${dark ? 'dark' : 'light'} 正文播放器静态候选不加载音源', (

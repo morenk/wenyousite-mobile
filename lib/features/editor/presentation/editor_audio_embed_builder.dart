@@ -92,6 +92,7 @@ class EditorAudioEmbedBuilder extends EmbedBuilder {
               audio: projection.audio,
               label: projection.label,
               labelRuns: projection.labelRuns,
+              showSave: false,
             ),
           ),
         ),
