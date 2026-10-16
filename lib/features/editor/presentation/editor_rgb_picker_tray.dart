@@ -27,17 +27,36 @@ class EditorRgbPickerTray extends StatefulWidget {
 class _EditorRgbPickerTrayState extends State<EditorRgbPickerTray> {
   late HSVColor _hsv;
   late final List<TextEditingController> _channels;
+  late final List<FocusNode> _channelFocus;
 
   @override
   void initState() {
     super.initState();
     _hsv = HSVColor.fromColor(widget.initialColor.withValues(alpha: 1));
     _channels = List.generate(3, (_) => TextEditingController());
+    _channelFocus = List.generate(
+      3,
+      (index) => FocusNode()
+        ..addListener(() {
+          if (!_channelFocus[index].hasFocus) return;
+          // 移动端点按会在焦点变化后再定位光标，等该帧结束后选中数值。
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted || !_channelFocus[index].hasFocus) return;
+            _channels[index].selection = TextSelection(
+              baseOffset: 0,
+              extentOffset: _channels[index].text.length,
+            );
+          });
+        }),
+    );
     _syncChannels();
   }
 
   @override
   void dispose() {
+    for (final focus in _channelFocus) {
+      focus.dispose();
+    }
     for (final channel in _channels) {
       channel.dispose();
     }
@@ -111,9 +130,25 @@ class _EditorRgbPickerTrayState extends State<EditorRgbPickerTray> {
                   onPressed: widget.onCancel,
                   child: const Text(WenyouEditorTextColorContract.cancelLabel),
                 ),
-                const Expanded(child: Center(child: Text('自定义颜色'))),
+                Expanded(
+                  child: Center(
+                    child: Text(
+                      'Aa',
+                      key: const Key('editor-color-preview'),
+                      semanticsLabel: '文字颜色预览',
+                      style: Theme.of(
+                        context,
+                      ).textTheme.wenyouBody.copyWith(color: _color),
+                    ),
+                  ),
+                ),
                 TextButton(
                   key: const Key('editor-color-apply'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: tokens.onActionSurface,
+                    backgroundColor: _valid ? tokens.actionSurface : null,
+                    minimumSize: Size(64, tokens.minimumTouchTarget),
+                  ),
                   onPressed: _valid ? () => widget.onApply(_color) : null,
                   child: const Text(WenyouEditorTextColorContract.applyLabel),
                 ),
@@ -162,12 +197,17 @@ class _EditorRgbPickerTrayState extends State<EditorRgbPickerTray> {
                             child: TextField(
                               key: Key('editor-color-${['r', 'g', 'b'][i]}'),
                               controller: _channels[i],
+                              focusNode: _channelFocus[i],
                               keyboardType: TextInputType.number,
+                              textInputAction: i == 2
+                                  ? TextInputAction.done
+                                  : TextInputAction.next,
                               inputFormatters: [
                                 FilteringTextInputFormatter.digitsOnly,
                                 LengthLimitingTextInputFormatter(3),
                               ],
                               decoration: InputDecoration(
+                                isDense: true,
                                 labelText: ['R', 'G', 'B'][i],
                                 errorText: _channelValue(i) == null
                                     ? '0–255'
@@ -178,16 +218,6 @@ class _EditorRgbPickerTrayState extends State<EditorRgbPickerTray> {
                           ),
                         ),
                     ],
-                  ),
-                  Padding(
-                    padding: EdgeInsets.all(tokens.space8),
-                    child: Text(
-                      '文字预览 Aa',
-                      key: const Key('editor-color-preview'),
-                      style: Theme.of(
-                        context,
-                      ).textTheme.wenyouBody.copyWith(color: _color),
-                    ),
                   ),
                 ],
               ),

@@ -17,9 +17,9 @@
 
 ## 数据边界与未覆盖项
 
-本轮 UI 测试使用内存仓储与 mocked SharedPreferences，不访问真实业务写接口。`adb devices -l` 无已连接设备，未安装或启动 Debug，未接管音频等并行任务设备。当前没有真机画面；真机拖动取色、中文输入法、数字键盘切换、返回正文选区及半屏高度需要负责人验收。测试固定字体缺少部分 emoji，不代表平台字体实际效果。
+本轮 UI 测试使用内存仓储与 mocked SharedPreferences，不访问真实业务写接口。初次交付时 ADB 无设备；后续负责人连接 Xiaomi `4b9c39b5`，本任务独占该 Debug 包的安装／调试，未接管音频任务会话。旧版已由负责人手动启动；本次修复新包已完成完整门禁；安装前设备再次断开，待 USB 连接恢复后覆盖安装和原场景复验。组件 Golden 不替代真机画面；拖动取色、中文输入法、数字键盘切换、返回正文选区及半屏高度需要负责人验收。测试固定字体缺少部分 emoji，不代表平台字体实际效果。
 
-负责人真机清单（兼容后端另行批准生效后）：
+负责人真机清单（兼容后端已获批部署并开启新写）：
 
 1. 在主题、子帖、楼层和回复选中文字，打开 T；无选区时颜色禁用，混合颜色不预选。
 2. 拖动取色并输入 RGB 的 0、255、越界值，确认正文仅在应用时变化；取消后原选区和正文焦点恢复，应用后一次撤销／重做恢复完整颜色范围。
@@ -39,7 +39,40 @@
 
 Backend 对相同 21 条分别验证启用新写及关闭新写保源；18 条有色原文的旧端覆盖和全部去色覆盖均以 40016 拒绝，3 条无色正常。联验仅传递生成的 Markdown 测试数据，不传播未提交源码、不写真实业务环境。生成输入由文件 SHA-256 清单固定（全部应用源码、导出测试、依赖锁和颜色契约），提交后再次核验清单并在产物绑定正式任务提交。合入阅读空格修复后，reader／颜色／摘要与 Web 回程 107 项通过，额外同段空格实体与颜色组合及阅读 Golden 5 项通过；重新生成输入清单和 21 条保存产物。
 
+## 2026-10-17 交互精简反馈候选
+
+负责人反馈选中文字后颜色与自定义入口无反应。首次只读核验公网 `/meta`：Backend `d3577839dc537e21c546ee385a4c97091b58a8f7`／API `5.38.0-dev.20261016.1`，`textColorV1Supported=true`、`textColorV1WriteEnabled=false`。现有面板按该开关禁用所有操作，但色块仍饱和显示，且点按没有反馈；这是本次确认的原因，不能据此声称已复现选区丢失。当时未开启线上新写或部署消费者。
+
+候选将恢复默认改成带无障碍名称的无文字按钮，自定义固定在色块同行右侧，预设与最近色可横滑；点击区保持 48dp。取色盘顶部以 Aa 实色预览替代重复标题，移除底部预览行；RGB 数值首次聚焦后全选。无选区和新写关闭分别短暂提示原因，正常态不增加常驻说明。
+
+定向入口为 `editor_text_color_palette_test.dart`、`editor_text_color_flow_test.dart`、`editor_text_color_selection_test.dart`、`editor_rgb_picker_tray_test.dart`、`post_composer_text_color_test.dart`、`thread_compose_text_color_test.dart`。最终 34 项通过，日志 `.dart_tool/text-color-ux-focused-final.log`；覆盖真实长按选词 → T → 预设／自定义 → 应用／恢复默认／撤销重做、RGB 边界与首次聚焦全选、禁用原因、320/360dp 单行横滑及 1/1.5/2 倍字号、两类完整编辑器短屏键盘。首次运行 31 通过／1 失败，发现移动端点按光标定位覆盖 `selectAllOnFocus`；改为焦点帧结束后全选，再执行上述检查通过，原失败日志 `.dart_tool/text-color-ux-focused.log` 保留。
+
+14 张 Golden 更新为实际组件渲染，包含完整 T 面板、RGB 面板、明暗与短屏；不是系统键盘或真人交互实拍。当前属于原 PR #106 的连续反馈批次，保留本地现场，未因本次微调重建安装包或重复全量门禁，未宣称负责人已验收。
+
 ## 门禁与交付
+
+2026-10-17 负责人明确要求“我要直接真实测试”后，通过管理员入口仅启用当前已部署 Backend `d3577839` 的 `TEXT_COLOR_V1_ENABLED=true` 并重启该服务，公开与本机只读健康、能力及数据安全检查通过；Web 服务未部署。审计见治理仓库 `docs/verification/text-color-v1/write-enable-20261017.json`。App 由负责人返回前台刷新能力，不自动登录或写业务数据。
+
+随后负责人反馈 `MarkdownCodecException`／`markdown.document_roundtrip`，明确操作为“居中对齐、预设色、选中整段”；失败发生在本机编码，尚未发送请求。以“如何呢”、预设 `#D14343`、整段 `center` 和实际输入的 literal 属性构造回归，旧实现同样在 `markdown_delta_codec.dart:163` 拒绝（`.dart_tool/text-color-layout-old.log`），修正对齐解析后通过（`.dart_tool/text-color-layout-fixed.log`）。这份回归匹配已确认操作条件；最终仍须负责人在真机原正文复验。
+
+通过 `tool/sync_backend_contract.ps1 -Revision d3577839dc537e21c546ee385a4c97091b58a8f7` 从只读参考仓库同步实际部署提交；所有契约字节保持一致，仅 `backend-contract.properties` 的来源 SHA 更新。没有通过改写检查、跳过线上核验或同步尚未部署的后续契约绕过此前失败。
+
+本次新增兼容检查：
+
+- `test/core/markdown/markdown_text_color_combinations_test.dart`：7 组通过，覆盖 32 种粗／斜／删除线／代码／链接组合、4096 个相邻样式与同色／异色／默认色组合，以及部分范围、不同链接、转义符、中文、emoji、组合字符、空格、Tab、NBSP。分别核对独立阅读 AST、逐字样式和重开；日志 `.dart_tool/text-color-combinations.log`。
+- `test/core/markdown/markdown_text_color_layout_test.dart`、`test/features/editor/editor_text_color_compatibility_test.dart`：34 项通过，覆盖正文／H2／H3 的左中右对齐、引用及三级有序／无序列表与 32 种行内样式、软换行和空段边界、真实输入后以两种顺序应用居中和预设色、局部恢复默认、保存重开，以及图片、表情、骰子、用户／全体玩家提及和传送门原子保持身份且不着色。围栏代码和既有不支持硬换行保持源码保护；恶意属性、任意 HTML、损坏标记和掩码后字符索引均有断言。日志 `.dart_tool/text-color-layout-session-final.log`。
+- 首次布局／会话测试 23 通过、2 失败，原因是测试夹具遗漏已有空段分隔属性、全体玩家提及缺少合法词边界；修正夹具后重跑 34 项通过，保留 `.dart_tool/text-color-layout-session.log`，没有为通过测试放宽应用规则。
+- `test/core/widgets/wenyou_markdown_text_color_test.dart`：19 项通过，新增明暗 × 居中／右对齐 × 正文／H2／H3 的 12 项真实阅读组件验证，检查 `RenderParagraph` 实际字形位置与原始 RGB，不只依赖编解码互相验证。日志 `.dart_tool/text-color-reader-alignment.log`。
+
+同一修复另通过既有编解码相关 6 文件 384 项回归（`.dart_tool/text-color-codec-existing-regressions.log`），最终定向分析无问题。完整 `npm run check:apk -- -TestConcurrency 2` 首轮通过契约校验／生成、线上精确版本、格式、应用／SDK 分析和架构后，在文档门禁发现其余 22 个模块仍记录旧来源 SHA（`.dart_tool/text-color-ux-codec-check-apk.log`）。契约内容无变化，已同步模块审查来源，23 模块检查及 174/174 API 范围检查通过。第二轮 `.dart_tool/text-color-ux-codec-check-apk-final.log` 在分析阶段主动停止：发现精简面板的无障碍包装隐藏了子按钮点击动作，补 `Semantics.onTap` 后冻结源码重跑完整入口，日志 `.dart_tool/text-color-ux-codec-check-apk-verified.log`。不将尚未完成的检查记为通过。
+
+面板追加实际读屏语义回归：可用时调用颜色／默认色动作，禁用时没有写动作。旧候选可用状态断言失败（`.dart_tool/text-color-ux-semantics-old.log`；同轮还有测试 handle 清理问题），修正包装动作及测试后，整个面板 12 项通过（`.dart_tool/text-color-ux-semantics-final.log`）。此次无障碍修正不改变画面，保留既有 Golden。
+
+Web 本轮临时离线入口补齐生产使用的对齐 parser/schema，验证 78 个合法输入（精确复现、72 组合、3 排版和无空行相邻 center/right 2 例）及 1 个既有硬换行保源负例，79/79 通过；既有 Web 5 文件 248/248。Web `5231f0fd11f37624b16f96c078ce4f49dac79447` 输出 78 条的 SHA-256 为 `9803d936cad68838fceae298899ffc942ce9afb9fa2483f3e1165f70ac1b588e`，通过现有 `editor_text_color_roundtrip_test.dart` 的 `TEXT_COLOR_IMPORT` 入口在 App 实际会话复读：本轮 101 项全部通过（原有 23＋新增 78），日志 `.dart_tool/text-color-web-alignment-return.log`。旧 21 条入口未装载对齐插件，因此不能拿旧结果证明这部分覆盖；Web 永久回归补充另行提交。
+
+Web 永久回归已交付 [PR #73](https://github.com/morenk/wenyousite-frontend/pull/73)，提交 `48eb3e926b9a926152427849e7742ab03fa4aa43`，完整检查 396 文件／5274 测试及构建通过。最终产物 SHA-256 为 `cc184d7627232d8f75028f03cf82651ed0073f8db5ab86190e4515c6032fdecc`；本机独立核对 78 条有序 `id/source/saved` 与已复读输入完全一致，0 差异，按此绑定最终提交，不重复相同 App 检查。
+
+Backend 扩测另外发现旧端投影在无空行相邻对齐块中可能转义对齐标记；补修 [PR #54](https://github.com/morenk/wenyousite-backend/pull/54)／`1b437db739c4c4bf1ed126cb6389b33d38ffc7a8` 已通过完整检查：208 suites／2804 测试、26 E2E 套件、12 音频预算场景，以及 1541 离线组合。本轮 9 组隔离资源核验清理完成。新增 4 个 fixture 属于现有协议的回归，无 API 或 Schema 变化；Mobile 保持实际上线 `d3577839` 来源，不提前同步未部署提交，不需要 Foundation 发版。两份补充 PR 均未合并或部署，不能将兼容补修记为线上已生效。
 
 集成 `0b3bd047` 后的完整批次日志为 `.dart_tool/text-color-check-apk-integrated.log`：Flutter 6720 通过、1 跳过、2 失败，Windows 工具 48/49；继续执行已生成旧树诊断 APK。失败分别为旧行内原子组件断言未区分受控文字样式、旧失败文案构造存量门禁，以及契约导出临时后端缺颜色文档夹具。修复保留原子组件断言，并补同段折行几何和链接／代码基线；颜色能力拒绝改为明确的 `FailureReason.validation`／`keepDraft` 与展示层映射，验证无网络请求；脚本夹具包含颜色文档、Schema 与语料并核对同步字节。该轮失败不被后续补验覆盖，最终应用源码重新运行完整门禁，旧 APK 不交付。
 
@@ -52,3 +85,18 @@ Backend 对相同 21 条分别验证启用新写及关闭新写保源；18 条�
 只读生产核验实际为 API `5.37.0-dev.20261016.1`、Backend `1aa8655f7c8e25dcc8723d7793afb9cefc6d510d`、Markdown 5，与固定候选 `5.38.0-dev.20261016.1`／`2cdedbc` 不符。该失败不通过部署、跳过或改写版本绕过；即使构建产生 APK，也不能称为完整门禁合格候选。检查同时要求实际 build SHA 与同步来源完全相同；Backend 经批准合并部署后，需要按实际上线 SHA 重新同步／核验消费者契约并补验，合并 SHA 不一定等于当前候选 `2cdedbc`，不能仅凭部署宣称本次锁定自动通过。最终结果、PR 与提交记录在交付时追加，无自动合并、部署或正式发包。
 
 Auto-review 默认偏好已传递；当前协作工具没有审批配置入口，运行策略为 `never`，实际 Auto-review 尚未设置／核验，不能视为“帮我批准”已生效。
+
+## 2026-10-17 本机 SDK 恢复
+
+本轮完整门禁期间发现 `D:/sdk/android` 的平台、NDK、构建工具和许可目录为空，原 platform-tools 完整；手机经 USB 重新连接后 ADB 为 `device`。负责人明确批准重新安装所需官方 SDK 并接受对应许可。下载官方命令行工具 `commandlinetools-win-15859902_latest.zip`，SHA-256 与官网 `90ae805d20434428bffcb699c290860f19bb5f66a67e6b330067e3de801fb04a` 一致，通过 sdkmanager 恢复 NDK `28.2.13676358`、CMake `3.22.1`、Build-Tools `36.0.0`、Android 36 与 37.0；现有插件构建另补 Android 34／35。许可由官方工具在本轮授权后记录，没有手工写入接受哈希。
+
+恢复后 aapt、CMake、NDK clang 可运行，Gradle `help` 与 `:app:checkDebugAarMetadata` 返回 0。未改变应用的 Gradle、SDK 目标、依赖或源码，完整测试继续使用原冻结输入。另一个音频任务报告其旧 Worktree 清理可能沿 SDK junction 影响共享目标，事故原因与清理修复由该任务审计；本任务不删除任何 Worktree，也不将 SDK 缺失归因负责人操作。脱敏恢复记录另存治理交付目录 `docs/verification/text-color-v1/sdk-recovery-20261017.json`。
+## 本轮最终自动检查与候选 APK
+
+冻结源码完整运行 `npm run check:apk -- -TestConcurrency 2`，`.dart_tool/text-color-ux-codec-check-apk-verified.log` 返回 0：Flutter **6800 通过、1 项既有 Sentry 显式联网验收跳过、0 失败**；Windows 工具 **49/49**；OpenAPI、固定来源、生成一致性、实际上线精确 SHA、格式、应用／生成 SDK 分析、架构、23 模块文档与 174/174 API 覆盖均通过。Debug ARM64 APK 构建成功（56.1 秒）。3031 个应用、测试、原生、依赖和契约输入在门禁后逐项核对 SHA-256，0 变化；记录 `.dart_tool/text-color-ux-codec-frozen-inputs.json` 与 `text-color-ux-codec-source-verification.json`。后续仅补文档不重复整套应用检查。
+
+候选包名 `site.wenyou.app.debug`，显示名“温油站 Debug”，`0.9.0-debug`／99，`arm64-v8a`，minSdk 26／targetSdk 36，110484748 字节，SHA-256 `4167ee51f0b53c70464052b4359e4811f358a92e5847aa3955d2d3a8ef3f6050`。APK 内 Debug kernel 已核对包含新版单行面板／横滑标识及默认色无障碍文案，避免把旧包时间戳当作新代码证据。另存 `D:/codex-artifacts/text-color-v1/wenyou-text-color-0.9.0-debug-99-4167ee51.apk`，未发布到用户下载通道。
+
+安装前再次查询 `4b9c39b5` 返回 device not found，ADB 与 Windows 即插即用列表均无该设备，故此处不记为安装完成；已请求负责人重新连接，恢复后仅 `install -r`，不自动启动、卸载或清除数据。原场景与中文输入法、RGB 拖动、半屏高度仍待真机验收。
+
+同一门禁运行期间音频 PR #102 合入新的 `dev`。本次冻结候选用于原任务反馈，正式合并前须同步最新集成分支，保留音频／工具栏和链接来源身份继承修复，并按变化风险完成集成验证；不能用本次冻结树的检查结果覆盖之后的合并树。所有 PR 保持待负责人验收，无自动合并、发版或部署。

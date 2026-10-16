@@ -78,6 +78,33 @@ void main() {
     expect(applied, isFalse);
   });
 
+  testWidgets('预览与操作同行，RGB 聚焦全选且键盘可顺序跳转', (tester) async {
+    await pump(tester);
+    expect(find.text('自定义颜色'), findsNothing);
+    expect(find.text('文字预览 Aa'), findsNothing);
+    expect(
+      tester.getCenter(find.byKey(const Key('editor-color-preview'))).dy,
+      tester.getCenter(find.byKey(const Key('editor-color-apply'))).dy,
+    );
+    for (final channel in ['r', 'g', 'b']) {
+      final field = find.byKey(Key('editor-color-$channel'));
+      await tester.tap(field);
+      await tester.pump();
+      final widget = tester.widget<TextField>(field);
+      expect(
+        widget.controller!.selection,
+        TextSelection(
+          baseOffset: 0,
+          extentOffset: widget.controller!.text.length,
+        ),
+      );
+      expect(
+        widget.textInputAction,
+        channel == 'b' ? TextInputAction.done : TextInputAction.next,
+      );
+    }
+  });
+
   for (final width in [320, 360]) {
     for (final dark in [false, true]) {
       testWidgets('$width ${dark ? 'dark' : 'light'} 取色盘可滚动且明暗保持 RGB', (

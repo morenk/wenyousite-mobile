@@ -8,6 +8,72 @@ import '../../support/deterministic_test_fonts.dart';
 
 void main() {
   setUpAll(loadDeterministicTestFonts);
+  for (final dark in [false, true]) {
+    for (final alignment in ['center', 'right']) {
+      for (final prefix in ['', '## ', '### ']) {
+        testWidgets('整段颜色保留实际字形对齐 $dark/$alignment/$prefix', (tester) async {
+          await tester.pumpWidget(
+            MaterialApp(
+              theme: dark ? AppTheme.dark : AppTheme.light,
+              home: Scaffold(
+                body: SizedBox(
+                  width: 320,
+                  child: WenyouMarkdown(
+                    data:
+                        '[wenyousite-align-v1-$alignment]: #\n'
+                        '$prefix<span data-wenyou-color-v1="#D14343">如何呢</span>',
+                  ),
+                ),
+              ),
+            ),
+          );
+          await tester.pumpAndSettle();
+          final finder = find.byWidgetPredicate(
+            (widget) =>
+                widget is RichText && widget.text.toPlainText() == '如何呢',
+          );
+          expect(finder, findsOneWidget);
+          final paragraph = tester.renderObject<RenderParagraph>(finder);
+          expect(
+            paragraph.textAlign,
+            alignment == 'center' ? TextAlign.center : TextAlign.end,
+          );
+          final box = paragraph
+              .getBoxesForSelection(
+                const TextSelection(baseOffset: 0, extentOffset: 3),
+              )
+              .single;
+          final glyphs = box.toRect().shift(
+            paragraph.localToGlobal(Offset.zero),
+          );
+          final segment = tester.getRect(
+            find.byKey(ValueKey('wenyou-markdown-segment-0-$alignment')),
+          );
+          expect(
+            alignment == 'center' ? glyphs.center.dx : glyphs.right,
+            closeTo(
+              alignment == 'center' ? segment.center.dx : segment.right,
+              1,
+            ),
+          );
+          void expectColor(InlineSpan span, TextStyle? inherited) {
+            final style = inherited?.merge(span.style) ?? span.style;
+            if (span is TextSpan) {
+              if (span.text?.isNotEmpty ?? false) {
+                expect(style?.color, const Color(0xFFD14343));
+              }
+              for (final child in span.children ?? <InlineSpan>[]) {
+                expectColor(child, style);
+              }
+            }
+          }
+
+          expectColor(paragraph.text, null);
+          expect(tester.takeException(), isNull);
+        });
+      }
+    }
+  }
   for (final scale in [1.0, 2.0]) {
     testWidgets('颜色范围与前后文组成同一可跨行段落 scale=$scale', (tester) async {
       tester.view.devicePixelRatio = 1;

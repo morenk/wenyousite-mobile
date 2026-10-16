@@ -19,6 +19,110 @@ class _MemoryColors implements EditorTextColorPreferenceStore {
 }
 
 void main() {
+  for (final custom in [false, true]) {
+    testWidgets('真实长按选词后进入 T 应用${custom ? '自定义' : '预设'}，保留选区与粗体', (
+      tester,
+    ) async {
+      final session = RichEditorSession(
+        initialMarkdown: '**color** word',
+        onMarkdownChanged: (_) {},
+      );
+      addTearDown(session.dispose);
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.light,
+          home: Scaffold(
+            body: Column(
+              children: [
+                Expanded(
+                  child: QuillEditor.basic(
+                    controller: session.controller,
+                    focusNode: session.focusNode,
+                  ),
+                ),
+                WenyouEditorToolbar(
+                  controller: session.controller,
+                  onInsertImage: () async {},
+                  onSaveDraft: () async {},
+                  enabled: true,
+                  editorFocusNode: session.focusNode,
+                  textColor: EditorTextColorConfiguration(
+                    presets: const [(label: '测试色', rgb: '#123456')],
+                    maximumRecentColors: 4,
+                    accountId: 'account',
+                    store: _MemoryColors(),
+                    writeEnabled: true,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+      final raw = tester.state<QuillRawEditorState>(
+        find.byType(QuillRawEditor),
+      );
+      await tester.longPressAt(
+        raw.renderEditor.localToGlobal(
+          raw.renderEditor
+              .getLocalRectForCaret(const TextPosition(offset: 2))
+              .center,
+        ),
+      );
+      await tester.pumpAndSettle();
+      final selection = session.controller.selection;
+      expect(selection, const TextSelection(baseOffset: 0, extentOffset: 5));
+      final before = session.controller.document.toDelta();
+      session.controller.document.history.clear();
+      await tester.tap(find.byKey(const Key('editor-heading')));
+      await tester.pumpAndSettle();
+      if (custom) {
+        await tester.tap(find.byKey(const Key('editor-color-custom')));
+        await tester.pumpAndSettle();
+        for (final entry in {'r': '18', 'g': '52', 'b': '86'}.entries) {
+          await tester.enterText(
+            find.byKey(Key('editor-color-${entry.key}')),
+            entry.value,
+          );
+        }
+        expect(session.controller.document.toDelta(), before);
+        await tester.tap(find.byKey(const Key('editor-color-apply')));
+      } else {
+        await tester.tap(find.byKey(const Key('editor-text-color-#123456')));
+      }
+      await tester.pumpAndSettle();
+      expect(session.controller.selection, selection);
+      expect(session.focusNode.hasFocus, isTrue);
+      expect(
+        session.controller.document
+            .collectStyle(0, 5)
+            .attributes['color']
+            ?.value,
+        '#123456',
+      );
+      expect(
+        session.controller.document
+            .collectStyle(0, 5)
+            .attributes['bold']
+            ?.value,
+        true,
+      );
+      session.controller.undo();
+      expect(session.controller.document.toDelta(), before);
+      session.controller.redo();
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('editor-heading')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('editor-color-default')));
+      await tester.pumpAndSettle();
+      expect(session.controller.document.toDelta(), before);
+      expect(session.controller.selection, selection);
+      expect(await session.flush(), isTrue);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pumpAndSettle();
+    });
+  }
+
   testWidgets('T 内取色应用、选区、草稿重开、单步撤销及最近色', (tester) async {
     final session = RichEditorSession(
       initialMarkdown: '前面 **选中文字** 后面',

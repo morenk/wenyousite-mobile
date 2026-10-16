@@ -27,20 +27,39 @@ class EditorTextColorPalette extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
     final enabled = selection.enabled && writeEnabled;
-    Widget swatch(String rgb, String label) {
-      final selected = !selection.mixed && selection.color == rgb;
+    final unavailable = !writeEnabled
+        ? '文字颜色暂未开放'
+        : !selection.enabled
+        ? '先选中文字'
+        : null;
+    Widget choice(String? rgb, String label) {
+      final selected =
+          selection.enabled && !selection.mixed && selection.color == rgb;
       return Semantics(
         button: true,
+        enabled: enabled,
         selected: selected,
-        label: label,
+        label: unavailable == null ? label : '$label，$unavailable',
+        excludeSemantics: true,
+        onTap: enabled ? () => onSelect(rgb) : null,
         child: Tooltip(
-          message: label,
-          child: InkWell(
-            key: ValueKey('editor-text-color-$rgb'),
-            onTap: enabled ? () => onSelect(rgb) : null,
-            child: SizedBox(
-              width: tokens.minimumTouchTarget,
-              height: tokens.minimumTouchTarget,
+          message: unavailable ?? label,
+          triggerMode: enabled
+              ? TooltipTriggerMode.longPress
+              : TooltipTriggerMode.tap,
+          child: TextButton(
+            key: rgb == null
+                ? const Key('editor-color-default')
+                : ValueKey('editor-text-color-$rgb'),
+            onPressed: enabled ? () => onSelect(rgb) : null,
+            style: TextButton.styleFrom(
+              padding: EdgeInsets.zero,
+              minimumSize: Size.square(tokens.minimumTouchTarget),
+              maximumSize: Size.square(tokens.minimumTouchTarget),
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+            child: Opacity(
+              opacity: enabled ? 1 : .38,
               child: Center(
                 child: Container(
                   width: 28,
@@ -49,10 +68,19 @@ class EditorTextColorPalette extends StatelessWidget {
                     shape: BoxShape.circle,
                     border: Border.all(
                       color: selected ? tokens.text : tokens.border,
-                      width: selected ? 3 : 1,
+                      width: selected ? 2 : 1,
                     ),
-                    color: Color(int.parse('FF${rgb.substring(1)}', radix: 16)),
+                    color: rgb == null
+                        ? tokens.panel
+                        : Color(int.parse('FF${rgb.substring(1)}', radix: 16)),
                   ),
+                  child: rgb == null
+                      ? WenyouIcon(
+                          WenyouIconIds.editorTextColor,
+                          size: 18,
+                          color: tokens.text,
+                        )
+                      : null,
                 ),
               ),
             ),
@@ -61,30 +89,42 @@ class EditorTextColorPalette extends StatelessWidget {
       );
     }
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
+    return Row(
+      key: const Key('editor-color-row'),
       children: [
-        Wrap(
-          crossAxisAlignment: WrapCrossAlignment.center,
-          children: [
-            TextButton(
-              key: const Key('editor-color-default'),
-              onPressed: enabled ? () => onSelect(null) : null,
-              child: const Text(WenyouEditorTextColorContract.defaultLabel),
+        Expanded(
+          child: SingleChildScrollView(
+            key: const Key('editor-color-swatches'),
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                choice(null, '恢复默认色'),
+                for (final preset in presets) choice(preset.rgb, preset.label),
+                if (recent.isNotEmpty)
+                  SizedBox(
+                    width: tokens.space8,
+                    height: 20,
+                    child: VerticalDivider(width: 1, color: tokens.border),
+                  ),
+                for (final rgb in recent) choice(rgb, '最近使用 $rgb'),
+              ],
             ),
-            for (final preset in presets) swatch(preset.rgb, preset.label),
-          ],
+          ),
         ),
-        Wrap(
-          crossAxisAlignment: WrapCrossAlignment.center,
-          children: [
-            for (final rgb in recent) swatch(rgb, '最近使用 $rgb'),
-            TextButton(
-              key: const Key('editor-color-custom'),
-              onPressed: enabled ? onCustom : null,
-              child: const Text(WenyouEditorTextColorContract.customLabel),
+        Tooltip(
+          message: unavailable ?? WenyouEditorTextColorContract.customLabel,
+          triggerMode: enabled
+              ? TooltipTriggerMode.longPress
+              : TooltipTriggerMode.tap,
+          child: TextButton(
+            key: const Key('editor-color-custom'),
+            style: TextButton.styleFrom(
+              minimumSize: Size.square(tokens.minimumTouchTarget),
+              padding: EdgeInsets.symmetric(horizontal: tokens.space8),
             ),
-          ],
+            onPressed: enabled ? onCustom : null,
+            child: const Text(WenyouEditorTextColorContract.customLabel),
+          ),
         ),
       ],
     );
