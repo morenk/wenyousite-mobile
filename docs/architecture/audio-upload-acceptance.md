@@ -58,7 +58,22 @@ test/core/application/editor_toolbar_layout_test.dart
 
 ## 原生构建与待验收
 
-### 独占空段阅读修正与上传卡片（最新候选）
+### 真实页面解析缓存复核（2026-10-17 负责人验收通过）
+
+`9e2e73f7` 明确热重载 11／4764 个库后，原第 18 楼仍是链接，继续记为验收失败。治理只读取得当前 Widget 原正文，存放忽略目录私有证据；脱敏结构为带反斜杠标点转义的普通链接，紧邻第二行精确 `<br />`，两行均无前后空白，不将原 URL／文件名提交。新临时诊断确认原子识别已生效：parent=null、单行 eligible=true，最终新 blocks 为 `p[a:hit=true]` 与空段，eligible=[true,false]；但上游 children 仍只有旧 Column。原因是 flutter_markdown_plus 1.0.12 仅在 data／styleSheet 变化时重新解析，父组件清自身缓存未清上游 children。
+
+候选在有效音频来源集合变化时重建 Markdown 解析子树，同时覆盖正文不变时投影迟到或撤回；等价新 DTO 保持原播放器 State，避免不必要停播。Debug reassemble 亦刷新子树，所有临时诊断均删除。重挂期间旧播放器 dispose 的 release 延至下一微任务，仍以旧 owner 检查；不会在树锁定期间通知新订阅者，也不停止后来切换的新 owner。
+
+- 精确旧失败 `.buildlog/audio-cache-before.log`：相同正文从无投影更新为可信投影，仍找不到播放器；新最终 `.buildlog/audio-cache-final.log` **12 项全过**，仅 `wenyou_audio_player_test.dart`。覆盖转义文件名、投影迟到、空段保留、等价 DTO 继续播放、reassemble、撤回释放，以及原样式／窄屏 Golden／互斥与后台停止用例，不新增视觉样式。
+- reassemble 回归第一次直接 await 在测试假时钟等待帧，安全停止本任务测试；改用 Flutter 自身测试的 unawaited＋pump 方式后发现树锁通知问题，修补后最终全过。没有把中断或失败命令写成通过。
+- `.buildlog/audio-cache-analyze.log` 原两变更文件 **No issues found**；后补播放器生命周期文件 `audio-cache-lifecycle-analyze.log` 同样定向检查。格式与 diff 限定本批文件，无全量测试、全量分析、门禁或构建。
+- 原设备与连续 attach 仍由治理持有，本实现任务未接管／安装／启动。治理复用设备 `4b9c39b5`、PID `23852`，attach 会话 `28661`，最终 `r` 为 **Reloaded 4/4764 libraries，3437ms**。只读原页面截图确认第 18 楼已显示原名播放器、0:00／5:55 与右侧保存，第 17 楼旧音频仍正常；未点播放、上传或发表。原页只读显示核对通过，用户交互与负责人验收仍待。私有截图／原文仅在忽略目录，不提交。
+
+这次实际画面对应生产文件 SHA-256：`wenyou_markdown.dart` 为 `CC3A5A75E4E31009BA94F36B17D51F496B9B58A9CE4F8E0DB28009BC66FA2B9E`，`wenyou_audio_player.dart` 为 `E2BFEBFDC6D292F8A5414C1FF26E850BB69A437E15A5A67C2E0C50236CCBB2FE`；不用旧 APK 哈希冒充热重载画面。
+
+负责人随后明确回复“已经修复成功”，原发布后显示链接的问题验收通过。范围限定该原页面显示恢复，不据此声称 iOS 编译、所有上传／保存／播放交互或合并门禁完成。最终脱敏用例用合成文件名和 URL，`audio-cache-sanitized.log` 12 项全过；短暂的 Windows 批处理正则参数管道解析错误未运行测试，改回明确文件路径后完成，不冒称该失败命令通过。
+
+### 独占空段阅读修正与上传卡片（前一候选，原页面仍需缓存修正）
 
 上一批外层 marks 修正后，负责人原第 18 楼仍为链接，记录为“验收失败／继续排查”。治理在授权的当前 Debug 页面取得仅含计数／标签／布尔结构的运行诊断：`audios=1`、精确链接命中、`p[a,br]`、eligible=false；正文共两行，含字面 br，无双空格／反斜杠 hardbreak，末尾空白为零。确认不是 DTO 投影丢失，而是既有文字行布局将独占音频与相邻协议空段合并。脱敏两行 `[原文件名.mp3](可信URL)\n<br />` 在旧实现失败（`.buildlog/audio-literal-empty-before.log`），新实现播放器与 30.6dp 空段同时保留（`audio-literal-empty-after.log`）。
 

@@ -54,6 +54,8 @@ galleryList：读取 GalleryList200Response / GalleryPageDto / GalleryImageDto�
 
 有效文件选择完成即在编辑正文显示本机音频卡片，准备、上传、处理与失败状态来自原队列；私有保存完成前不上传。卡片沿用最终播放器的单行标题、纯色表面与进度位置，轨道为实际上传进度，处理中显示已上传完成，失败／暂停不归零。未完成卡片没有可用播放／seek／下载，不请求音源；取消、继续、重试／重新选择仍走原状态机，完成后原位变播放器。原发布链接故障的实际运行证据为可信投影命中但 AST 为 `p[a,br]`；阅读现将顶层独占音频与相邻协议空段分别渲染，空段高度保持，引用／列表内部不受影响。
 
+阅读解析缓存必须与可信音频集合一致：flutter_markdown_plus 只随 data／styleSheet 更新缓存 children，而 mediaAudios 也影响段落分块。因此有效来源集合变化时重建解析子树；等价 DTO 刷新不重挂、不打断播放，Debug reassemble 同步刷新。旧卡片 dispose 后以微任务按 owner 释放，避免树锁定期间同步通知刚挂的新组件；旧 owner 不停止新目标。
+
 播放器使用 Foundation surface／compact／body／utility 角色，极淡边界与弱 accent 圆形播放底；标题、细轨道及等宽时长对齐，播放与进度命中均为 48dp，标签 marks 保留。
 
 编辑与阅读共用播放器，标题显示正文持久化的原文件名标签；编辑态不显示保存入口，阅读态右侧 48dp 图标按需“保存到本地”，只有点击才进行无认证、无 Cookie 的 HTTP 流下载；校验 MIME、投影大小及 30 MiB 预算，连接／接收超时 15／30 秒，下载总时限两分钟。文件先写自有 UUID 私有目录，完成后才交系统保存器，取消与失败清理临时源。Android 独立 ACTION_CREATE_DOCUMENT 通道后台复用 BoundedAudioCopy，不改变 ZIP 保存；取消／引擎销毁与完成竞态只回调一次，删除部分目标失败时尝试截断并记录不含 URI 的诊断。iOS 13 使用 UIDocumentPicker 导出私有文件，无新增插件或权限；Windows 未做 Xcode 编译。桌面沿 file_selector 选择目标并流式写暂存，确认替换前保留旧文件。导出名保留原主体，清理目录字符、方向控制、Windows 保留名与末尾点空格，扩展统一真实 MP3，不把转码副本伪装为 WAV／FLAC。取消不提示失败，失败可显式重试。

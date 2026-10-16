@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -26,6 +28,52 @@ String get _body =>
 
 void main() {
   setUpAll(loadAudioTestFonts);
+  testWidgets('同正文音频投影迟到会重建解析缓存，等价投影不打断播放', (tester) async {
+    final driver = Driver();
+    final controller = AudioPlaybackController(() => driver);
+    addTearDown(controller.dispose);
+    final source =
+        r'[原声\.现场回忆\-\-\+1段\#ABC123\.mp3]'
+        '(${_audio.sourceUrl})\n<br />';
+    await tester.pumpWidget(_app(controller, body: source, audios: const {}));
+    await tester.pumpAndSettle();
+    expect(find.byType(WenyouAudioPlayer), findsNothing);
+    await tester.pumpWidget(_app(controller, body: source));
+    await tester.pumpAndSettle();
+    expect(find.byType(WenyouAudioPlayer), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('wenyou-markdown-empty-paragraph-0')),
+      findsOneWidget,
+    );
+    expect(driver.loads, isEmpty);
+    await tester.tap(
+      find.descendant(
+        of: find.byType(AudioPlaybackButton),
+        matching: find.byType(IconButton),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final playerState = tester.state(find.byType(WenyouAudioPlayer));
+    await tester.pumpWidget(
+      _app(
+        controller,
+        body: source,
+        audios: {_audio.sourceUrl: MediaAudio.parse(_audio.toJson())!},
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(tester.state(find.byType(WenyouAudioPlayer)), same(playerState));
+    expect(driver.loads, hasLength(1));
+    expect(driver.stops, 0);
+    unawaited(tester.binding.reassembleApplication());
+    await tester.pumpAndSettle();
+    expect(find.byType(WenyouAudioPlayer), findsOneWidget);
+    await tester.pumpWidget(_app(controller, body: source, audios: const {}));
+    await tester.pumpAndSettle();
+    expect(find.byType(WenyouAudioPlayer), findsNothing);
+    expect(driver.loads, hasLength(1));
+    expect(driver.stops, greaterThanOrEqualTo(1));
+  });
   testWidgets('独占音频后接协议空段保留播放器与空行高度', (tester) async {
     final controller = AudioPlaybackController(() => throw StateError('不得加载'));
     addTearDown(controller.dispose);
@@ -128,7 +176,7 @@ void main() {
   testWidgets('独立粗体文件名链接按可信投影显示播放器', (tester) async {
     final controller = AudioPlaybackController(() => throw StateError('不得加载'));
     addTearDown(controller.dispose);
-    const name = '原声.现场回忆--+1段#2F92SO.mp3';
+    const name = '原声.现场回忆--+1段#ABC123.mp3';
     await tester.pumpWidget(
       _app(controller, body: '**[$name](${_audio.sourceUrl})**'),
     );

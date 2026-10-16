@@ -99,6 +99,7 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
   Map<String, md.LinkReference> _imageReferences = const {};
   MarkdownStyleSheet? _styleSheet;
   Widget? _renderedBody;
+  Key? _markdownParseKey;
   var _usesPlainTextFastPath = false;
   var _hasSelection = false;
 
@@ -135,6 +136,14 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
     if (!mapEquals(oldWidget.mediaDisplays, widget.mediaDisplays) ||
         !mapEquals(oldWidget.mediaAudios, widget.mediaAudios)) {
       _renderedBody = null;
+    }
+    if (!setEquals(
+      _audioSources(oldWidget.mediaAudios),
+      _audioSources(widget.mediaAudios),
+    )) {
+      // 上游只在 data/styleSheet 改变时重建 children；可信音频集合
+      // 也会改变段落分块，必须让 AST 与 children 同步。等价 DTO 不重挂。
+      _markdownParseKey = UniqueKey();
     }
     if (!mapEquals(oldWidget.mentionLabels, widget.mentionLabels)) {
       _mentionLabels.value = Map.unmodifiable(widget.mentionLabels);
@@ -179,7 +188,13 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
     super.reassemble();
     // 阅读缓存包含解析器和 builder；Debug 热重载后重新应用渲染规则。
     _renderedBody = null;
+    _markdownParseKey = UniqueKey();
   }
+
+  static Set<String> _audioSources(Map<String, MediaAudio> audios) => {
+    for (final entry in audios.entries)
+      if (entry.key == entry.value.sourceUrl) entry.key,
+  };
 
   Widget _buildBody() {
     final Widget body;
@@ -202,7 +217,10 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
       body = GestureDetector(
         behavior: HitTestBehavior.translucent,
         onTap: widget.onTapText == null ? null : _handleTapText,
-        child: _buildMarkdownSegments(),
+        child: KeyedSubtree(
+          key: _markdownParseKey,
+          child: _buildMarkdownSegments(),
+        ),
       );
     }
     return KeyedSubtree(

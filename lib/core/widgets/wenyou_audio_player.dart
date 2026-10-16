@@ -100,7 +100,9 @@ class _WenyouAudioPlayerState extends ConsumerState<WenyouAudioPlayer>
     _sliderFocus.dispose();
     _playback.removeListener(_playbackChanged);
     _clearInteraction();
-    _playback.release(_owner);
+    // 解析子树重挂时新卡片可能已订阅同一控制器；树解锁后再通知，
+    // release 仍按旧 owner 校验，不会停止已切换的新播放目标。
+    scheduleMicrotask(() => _playback.release(_owner));
     _seekPosition.dispose();
     super.dispose();
   }
