@@ -170,6 +170,8 @@ Android 的 Debug、Profile 和 Release 均仅支持 `arm64-v8a`，使用 ARM64 
 
 ## 13. 最近审查的契约版本和后端提交
 
+2026-10-17 合并契约复核：固定 Backend `7f95563edd8f461ebb7a66d7b458ec0349e39297`／API `5.39.0-dev.20261017.1`。原 operationId 集合和成功字段保持兼容，音频新增预算错误；文本颜色为可选能力，本批不声明读取头、不开放颜色 UI，旧端读取由服务端去色并保护有色原文覆盖。此登记不代表预算后端已部署。
+
 合并候选已同步 Backend `78685f48f0eeabf358fb4a6f5a4b0bca6b068a12`／API `5.39.0-dev.20261017.1`。可选文本颜色能力仅进入生成类型，本批应用不声明颜色能力、不开放颜色编辑；正常读取采用服务端去色副本，原有音频能力逻辑不变。
 
 本轮音频候选固定 Backend `cb44acaeb7fbc735fb569276aef00435bf24efe5`／API `5.37.0-dev.20261016.1`、独立 audio v1；Foundation 正式 `v7.3.0`（`a582d6ec498e26f30739d8bf6995f9613e26eb4d`）。未部署 Backend 不开放新上传，旧普通链接继续可读。见[音频候选记录](../architecture/audio-upload-acceptance.md)。

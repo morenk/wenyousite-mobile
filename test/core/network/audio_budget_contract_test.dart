@@ -28,6 +28,6 @@ void main() {
     final manifest = File(
       'contracts/backend-contract.properties',
     ).readAsStringSync();
-    expect(manifest, contains('78685f48f0eeabf358fb4a6f5a4b0bca6b068a12'));
+    expect(manifest, contains('7f95563edd8f461ebb7a66d7b458ec0349e39297'));
   });
 }

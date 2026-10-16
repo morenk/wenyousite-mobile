@@ -4,6 +4,10 @@
 
 ## 来源与范围
 
+合并候选应用树为 `0c0723f27c2c7b44e26165492e137f3c8db3d814`，Foundation 正式 `v7.4.0`／`a03b5c24ea7dcdaa2ba07c962f58434bdb40965d`。5.39 契约先固定 `78685f48` 并生成客户端，Backend PR53 合并后正常同步来源到 `7f95563edd8f461ebb7a66d7b458ec0349e39297`；两提交契约字节一致，OpenAPI／生成客户端／应用 Dart 无差异。相对已部署 `d3577839`，新增仅音频预算错误／响应和版本元数据；颜色及音频正文语料相同。当前手机未同步本轮 Provider 装配和传输策略，不自动重启。
+
+最终 `check:apk -ContinueAfterFailure -TestConcurrency 2` 的应用／生成包全量分析、生成一致性和格式已通过。门禁中另外发现 README 两处旧依赖版本、API 排除清单滞后、验收文档中文占位 URL 三项问题；只修文档／登记后逐项复验，不修改检查器或运行中的应用源码。API operationId 从 5.36 到 5.39 均为 248 个、无增删，重新审查并移除音频已调用的 `mediaReissueUploadUrl` 排除后，覆盖为 175/175、73 项合法排除。文档 23 模块与架构复验通过，来源改为实际 merge SHA 的数字错误码测试另行 1 项通过；不把先前读取旧来源的测试计作该项证据。原命令的历史失败和最终完整测试／构建结果分别记录，不冒称整条命令全绿。
+
 合并阶段先正常整合工具栏 PR98 与最新 `dev`，保留上游摘要／段首空格修复。初次完整检查暴露架构边界失败，按 [依赖说明](dependencies.md#音频端口与展示边界) 收口，未扩展豁免。定向 112 项首轮为 104 通过、8 张 pending 旧图字距失败；恢复原 0.5 字距后，pending 10 项与生产装配 5 项补验全部通过，未更新 Golden。38 个改动／新增 Dart 文件分析及架构检查通过，最后字距与装配断言另作复验。旧门禁中断与失败日志保留；最终冻结源码后重新执行完整门禁，不把运行中结果计作最终树通过。
 
 负责人已明确“允许本批延期该项，其余门禁通过后合并”：仅生产精确版本匹配本批留待未来部署核验，检查命令的实际失败不改写为成功，不永久修改门禁，也不部署。其它门禁、源码与构建仍必须通过。
@@ -93,7 +97,7 @@ test/core/application/editor_toolbar_layout_test.dart
 
 ### 独占空段阅读修正与上传卡片（前一候选，原页面仍需缓存修正）
 
-上一批外层 marks 修正后，负责人原第 18 楼仍为链接，记录为“验收失败／继续排查”。治理在授权的当前 Debug 页面取得仅含计数／标签／布尔结构的运行诊断：`audios=1`、精确链接命中、`p[a,br]`、eligible=false；正文共两行，含字面 br，无双空格／反斜杠 hardbreak，末尾空白为零。确认不是 DTO 投影丢失，而是既有文字行布局将独占音频与相邻协议空段合并。脱敏两行 `[原文件名.mp3](可信URL)\n<br />` 在旧实现失败（`.buildlog/audio-literal-empty-before.log`），新实现播放器与 30.6dp 空段同时保留（`audio-literal-empty-after.log`）。
+上一批外层 marks 修正后，负责人原第 18 楼仍为链接，记录为“验收失败／继续排查”。治理在授权的当前 Debug 页面取得仅含计数／标签／布尔结构的运行诊断：`audios=1`、精确链接命中、`p[a,br]`、eligible=false；正文共两行，含字面 br，无双空格／反斜杠 hardbreak，末尾空白为零。确认不是 DTO 投影丢失，而是既有文字行布局将独占音频与相邻协议空段合并。脱敏两行 `[原文件名.mp3](https://media.example.invalid/audio.mp3)\n<br />` 在旧实现失败（`.buildlog/audio-literal-empty-before.log`），新实现播放器与 30.6dp 空段同时保留（`audio-literal-empty-after.log`）。
 
 修正仅让顶层可信独占音频在文字行合并前保留块身份，空段交给既有 builder；多个／前置／尾部空段、旧 br 写法和标签 marks 保留，inline hardbreak／前后混排不误升级。引用／列表递归解析不启用该分块；有无媒体投影的文字矩形与高度直接比较一致。阅读缓存的 Debug reassemble 重新应用解析器，无需热重启。临时诊断与原文件名筛选常量已删除；原手机页面尚须治理统一 reload 后复验，不能以离线回归代替负责人验收。
 
@@ -106,7 +110,7 @@ test/core/application/editor_toolbar_layout_test.dart
 
 ### 样式兼容／阅读链接／移除渐变批次（前一候选，原场景未通过）
 
-负责人再次反馈新发表音频只显示链接，原页面截图中新链接带整段粗体、旧音频仍显示播放器，因此本轮验收尚未通过。旧 `MarkdownAudioProjection.fromBlock` 只接受 `p → a`，真实 WenyouMarkdown 的 `**[文件名](可信 URL)**` 回归在旧实现失败：`.buildlog/audio-published-link-before.log`。此处兼容只展开单一 `strong/em/del/s` 链，继续要求独立段落、单一链接和可信 URL；不按文件名扩展猜测，不改 API、持久 Markdown 或上传协议。原正文／投影尚未取得时，不以该构造失败宣布原问题已唯一定位。
+负责人再次反馈新发表音频只显示链接，原页面截图中新链接带整段粗体、旧音频仍显示播放器，因此本轮验收尚未通过。旧 `MarkdownAudioProjection.fromBlock` 只接受 `p → a`，真实 WenyouMarkdown 的 `**[文件名](https://media.example.invalid/audio.mp3)**` 回归在旧实现失败：`.buildlog/audio-published-link-before.log`。此处兼容只展开单一 `strong/em/del/s` 链，继续要求独立段落、单一链接和可信 URL；不按文件名扩展猜测，不改 API、持久 Markdown 或上传协议。原正文／投影尚未取得时，不以该构造失败宣布原问题已唯一定位。
 
 - 读取、标签、编辑、播放器与真实发表页的最终比较 `.buildlog/audio-published-link-final.log` **61 项通过**。实际 PostComposerSheet mock 上传完成后发送的 canonical 正文也交给真实阅读器，单音频和音频加正文均保留播放器；不等同线上上传验证。
 - 追加外层／内层 plain、strong、em、del 的 16 组合，逐个编辑投影、复制粘贴、保存重开、阅读比对可见文字／URL／marks；`.buildlog/audio-published-style-matrix-final.log` 编辑相关 **30 项通过**。阅读控件样式隔离、前后文字／列表／引用／代码不升级的阅读组 **8 项通过**，见 `.buildlog/audio-published-style-matrix.log`；同条命令的编辑测试首次因测试缺 `foundation.dart` 导入编译失败，已补验，不能把该整条命令称通过。
