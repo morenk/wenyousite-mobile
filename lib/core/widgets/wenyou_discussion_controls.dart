@@ -103,7 +103,7 @@ class WenyouDiscussionListControls<T extends Object> extends StatelessWidget {
       overflow: TextOverflow.ellipsis,
       style: Theme.of(context).textTheme.wenyouCompactBody.copyWith(
         color: tokens.mutedText,
-        fontWeight: FontWeight.w600,
+        fontWeight: onCountPressed == null ? FontWeight.w600 : FontWeight.w500,
       ),
     );
     final count = onCountPressed == null
