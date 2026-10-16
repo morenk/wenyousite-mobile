@@ -50,6 +50,10 @@ galleryList：读取 GalleryList200Response / GalleryPageDto / GalleryImageDto�
 
 ## 6. 状态模型和数据流
 
+音频上传／保存下载统一为请求起点起 5 分钟总时限、30 秒无字节增长时限，独立连接时限 15 秒；仅真实字节增长刷新无进展计时，相同进度／空 chunk 不能续命。内部超时只取消本次传输，保留队列失败、文件和 mediaId；用户取消不显示失败。流读取静默时也会取消订阅，完成／失败／取消清理计时与监听。只调整音频客户端，不修改图片超时。
+
+确认后的处理查询按 1／2／4／8／10 秒递增并封顶，不并发、不因 60 次或 120 秒转为失败。前台活动会话继续查询；后台、离页、取消、换账号停止请求与等待。恢复页面不会自动 PUT／确认，沿已有显式继续入口恢复原 mediaId；真实网络失败可重试，服务端 FAILED 才进入重新选择终态。`42901` 活动名额不足、`42902` UTC 日准入额度不足均保留本机文件和身份，不能自动新建或重复上传。
+
 正文音频使用独立流式上传管线：Android SAF 在后台以 64 KiB 缓冲复制到本任务缓存，按声明大小及实际读取的 30 MiB 预算早停，取消关闭流并删除自有临时文件；其他平台使用 file_selector。选择结果有显式释放租约，24 小时前的自有 UUID 缓存可回收，不删除来源文件。私有草稿文件按账号和编辑目标保存。上传复用预签名 PUT、确认、同 mediaId 续查／重签；最多十分钟，输入 MP3/M4A/WAV/OGG/FLAC，由 Backend 验证并生成唯一 MP3 播放副本。
 
 有效文件选择完成即在编辑正文显示本机音频卡片，准备、上传、处理与失败状态来自原队列；私有保存完成前不上传。卡片沿用最终播放器的单行标题、纯色表面与进度位置，轨道为实际上传进度，处理中显示已上传完成，失败／暂停不归零。未完成卡片没有可用播放／seek／下载，不请求音源；取消、继续、重试／重新选择仍走原状态机，完成后原位变播放器。原发布链接故障的实际运行证据为可信投影命中但 AST 为 `p[a,br]`；阅读现将顶层独占音频与相邻协议空段分别渲染，空段高度保持，引用／列表内部不受影响。
@@ -58,7 +62,7 @@ galleryList：读取 GalleryList200Response / GalleryPageDto / GalleryImageDto�
 
 播放器使用 Foundation surface／compact／body／utility 角色，极淡边界与弱 accent 圆形播放底；标题、细轨道及等宽时长对齐，播放与进度命中均为 48dp，标签 marks 保留。
 
-编辑与阅读共用播放器，标题显示正文持久化的原文件名标签；编辑态不显示保存入口，阅读态右侧 48dp 图标按需“保存到本地”，只有点击才进行无认证、无 Cookie 的 HTTP 流下载；校验 MIME、投影大小及 30 MiB 预算，连接／接收超时 15／30 秒，下载总时限两分钟。文件先写自有 UUID 私有目录，完成后才交系统保存器，取消与失败清理临时源。Android 独立 ACTION_CREATE_DOCUMENT 通道后台复用 BoundedAudioCopy，不改变 ZIP 保存；取消／引擎销毁与完成竞态只回调一次，删除部分目标失败时尝试截断并记录不含 URI 的诊断。iOS 13 使用 UIDocumentPicker 导出私有文件，无新增插件或权限；Windows 未做 Xcode 编译。桌面沿 file_selector 选择目标并流式写暂存，确认替换前保留旧文件。导出名保留原主体，清理目录字符、方向控制、Windows 保留名与末尾点空格，扩展统一真实 MP3，不把转码副本伪装为 WAV／FLAC。取消不提示失败，失败可显式重试。
+编辑与阅读共用播放器，标题显示正文持久化的原文件名标签；编辑态不显示保存入口，阅读态右侧 48dp 图标按需“保存到本地”，只有点击才进行无认证、无 Cookie 的 HTTP 流下载；校验 MIME、投影大小及 30 MiB 预算，逐跳复核最多五次重定向，重定向不重置总期限。文件先写自有 UUID 私有目录，完成后才交系统保存器，取消与失败清理临时源。Android 独立 ACTION_CREATE_DOCUMENT 通道后台复用 BoundedAudioCopy，不改变 ZIP 保存；取消／引擎销毁与完成竞态只回调一次，删除部分目标失败时尝试截断并记录不含 URI 的诊断。iOS 13 使用 UIDocumentPicker 导出私有文件，无新增插件或权限；Windows 未做 Xcode 编译。桌面沿 file_selector 选择目标并流式写暂存，确认替换前保留旧文件。导出名保留原主体，清理目录字符、方向控制、Windows 保留名与末尾点空格，扩展统一真实 MP3，不把转码副本伪装为 WAV／FLAC。取消不提示失败，失败可显式重试。
 
 进度拖动目标使用局部 ValueNotifier，仅重绘进度与时间；已就绪后的 buffering 不禁用 Slider，移动时不发原生 seek，松手提交最终目标。标题视觉下移 2dp；窄屏／两倍字体下轨道不足 80dp 时将时间移到下方，保留标题和进度命中。真机卡顿与保存仍待负责人复验。
 
@@ -152,7 +156,7 @@ galleryList：读取 GalleryList200Response / GalleryPageDto / GalleryImageDto�
 
 ## 13. 最近审查的契约版本和后端提交
 
-本轮音频候选固定 Backend `cb44acaeb7fbc735fb569276aef00435bf24efe5`／API `5.37.0-dev.20261016.1`、独立 audio v1；Foundation 正式 `v7.3.0`（`a582d6ec498e26f30739d8bf6995f9613e26eb4d`）。治理已确认兼容 Backend PR51 部署至 1aa8655f；缺失 audioUpload 能力时隐藏新上传入口，旧普通链接继续可读。见[音频候选记录](../architecture/audio-upload-acceptance.md)。
+本轮音频候选固定 Backend `9159729106cefb883726121dc9f94c0b164678c1`／API `5.38.0-dev.20261017.1`、独立 audio v1；Foundation 正式 `v7.3.0`（`a582d6ec498e26f30739d8bf6995f9613e26eb4d`）。治理已确认兼容 Backend PR51 部署至 1aa8655f；缺失 audioUpload 能力时隐藏新上传入口，旧普通链接继续可读。见[音频候选记录](../architecture/audio-upload-acceptance.md)。
 
 2026-10-10 合并来源复核：通过官方同步入口固定到实际部署 Backend `b5f0e3bb0b99a3f9763b31e3080cb4d4f2e64045`，OpenAPI 仍为 `5.36.0-dev.20261005.1`。相对退役实施提交，机器契约、共享语料、生成客户端及本模块行为不变；仅来源登记更新，详见[退役验收记录](../architecture/retire-development-preview-acceptance.md)。
 

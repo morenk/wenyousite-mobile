@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/core/media/media_audio.dart';
 import 'package:wenyousite_mobile/features/media/application/audio_download.dart';
+import 'package:wenyousite_mobile/features/media/data/audio_transfer_timing.dart';
 import 'package:wenyousite_mobile/features/media/data/device_audio_download.dart';
 import 'package:wenyousite_mobile/features/media/domain/audio_download_filename.dart';
 
@@ -172,6 +173,93 @@ void main() {
     await entered.future;
     await operation.cancel();
     expect(await operation.result, isFalse);
+    await emptyCache();
+  });
+
+  for (final cancelByUser in [false, true]) {
+    test('流已返回但不再出字节：${cancelByUser ? '取消静默' : '超时失败可重试'}并清理', () async {
+      final opened = Completer<void>();
+      var streamCancelled = false;
+      final stream = StreamController<Uint8List>(
+        onCancel: () => streamCancelled = true,
+      );
+      service = DeviceAudioDownload(
+        dio: dio,
+        platform: TargetPlatform.android,
+        channel: channel,
+        temporaryDirectory: () async => directory,
+        timing: const AudioTransferTiming(idle: Duration(milliseconds: 80)),
+      );
+      dio.interceptors.add(
+        InterceptorsWrapper(
+          onRequest: (options, handler) {
+            handler.resolve(
+              Response<ResponseBody>(
+                requestOptions: options,
+                statusCode: 200,
+                data: ResponseBody(stream.stream, 200),
+              ),
+            );
+            opened.complete();
+          },
+        ),
+      );
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (_) async => fail('未完成不得保存'));
+      final operation = service.save(audio, 'a');
+      final checked = cancelByUser
+          ? expectLater(operation.result, completion(isFalse))
+          : expectLater(operation.result, throwsA(isA<AudioSaveException>()));
+      await opened.future;
+      stream.add(Uint8List.fromList([1]));
+      if (cancelByUser) await operation.cancel();
+      await checked;
+      expect(streamCancelled, isTrue);
+      await emptyCache();
+      await stream.close();
+    });
+  }
+
+  test('空chunk不续命；超时后显式重试可保存，旧临时目录已清除', () async {
+    service = DeviceAudioDownload(
+      dio: dio,
+      platform: TargetPlatform.android,
+      channel: channel,
+      temporaryDirectory: () async => directory,
+      timing: const AudioTransferTiming(idle: Duration(milliseconds: 80)),
+    );
+    final stream = StreamController<Uint8List>();
+    Timer? emptyChunks;
+    stream.onCancel = () => emptyChunks?.cancel();
+    dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) {
+          handler.resolve(
+            Response<ResponseBody>(
+              requestOptions: options,
+              statusCode: 200,
+              data: ResponseBody(stream.stream, 200),
+            ),
+          );
+          emptyChunks = Timer.periodic(
+            const Duration(milliseconds: 10),
+            (_) => stream.add(Uint8List(0)),
+          );
+        },
+      ),
+    );
+    await expectLater(
+      service.save(audio, 'a').result,
+      throwsA(isA<AudioSaveException>()),
+    );
+    expect(emptyChunks!.isActive, isFalse);
+    await emptyCache();
+    await stream.close();
+    dio.interceptors.clear();
+    response();
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, (_) async => true);
+    expect(await service.save(audio, 'a').result, isTrue);
     await emptyCache();
   });
 }

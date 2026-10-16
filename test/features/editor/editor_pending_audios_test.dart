@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/app/app_capabilities.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_audio_embed.dart';
 import 'package:wenyousite_mobile/core/media/media_audio.dart';
+import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_pending_audios.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/rich_editor_pending_audio_document.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/rich_editor_session.dart';
@@ -39,6 +40,81 @@ final _ready = MediaAudio.parse({
 })!;
 
 void main() {
+  testWidgets('活跃处理退后台即取消，回前台不续查，继续保留原身份', (tester) async {
+    final harness = await _mount(tester);
+    harness.repository.waiting = Completer<MediaAudio>();
+    harness.editor.insertLocalAudio('processing');
+    await harness.editor.flush();
+    harness.audios.restore([
+      {
+        'id': 'processing',
+        'input': _input.toJson(),
+        'pending': {'mediaId': 'server-id', 'stage': 'processing'},
+      },
+    ]);
+    final running = harness.audios.retry('processing');
+    await tester.pump();
+    expect(harness.repository.calls, 1);
+    final item = harness.audios.items['processing']!;
+    expect(item.active, isTrue);
+    harness.audios.pause();
+    await running;
+    expect(item.cancel!.isCancelled, isTrue);
+    expect(item.failure, isNull);
+    expect(item.active, isFalse);
+    expect(item.awaitingContinue, isTrue);
+    harness.audios.resume();
+    await tester.pump(const Duration(minutes: 3));
+    expect(harness.repository.calls, 1);
+    harness.repository.waiting!.complete(_ready);
+    harness.repository.waiting = null;
+    await harness.audios.retry('processing');
+    expect(harness.repository.lastPending!.mediaId, 'server-id');
+    expect(harness.editor.localAudioIds, isEmpty);
+    await harness.close(tester);
+  });
+
+  for (final code in [null, 42901, 42902]) {
+    testWidgets('${code ?? '超时'}保留文件和身份，显式重试前不重放', (tester) async {
+      final harness = await _mount(tester);
+      harness.repository.failure = ApiFailure(
+        userMessage: '音频操作失败，请稍后重试。',
+        reason: code == null
+            ? FailureReason.timeout
+            : FailureReason.rateLimited,
+        businessCode: code,
+      );
+      harness.editor.insertLocalAudio('waiting');
+      await harness.editor.flush();
+      harness.audios.restore([
+        {
+          'id': 'waiting',
+          'input': _input.toJson(),
+          'pending': {'mediaId': 'server-id', 'stage': 'processing'},
+        },
+      ]);
+      await harness.audios.retry('waiting');
+      final item = harness.audios.items['waiting']!;
+      expect(item.failure, isNotNull);
+      expect(item.terminalFailure, isFalse);
+      expect(item.input!.path, _input.path);
+      expect(item.pending!.mediaId, 'server-id');
+      expect(item.cancel!.isCancelled, isFalse);
+      harness.audios.documentChanged();
+      harness.audios.pause();
+      harness.audios.resume();
+      await tester.pump();
+      expect(harness.repository.calls, 1);
+      expect(harness.store.removed, isEmpty);
+      harness.repository.failure = null;
+      await harness.audios.retry('waiting');
+      expect(harness.repository.calls, 2);
+      expect(harness.repository.lastPending!.mediaId, 'server-id');
+      expect(harness.editor.localAudioIds, isEmpty);
+      await harness.close(tester);
+    });
+  }
+
   testWidgets('恢复与回前台不自动上传，用户继续后已完成音频不依赖新上传能力', (tester) async {
     final harness = await _mount(tester, capability: false);
     harness.editor.insertLocalAudio('restored');
@@ -206,6 +282,7 @@ class _Harness {
 class _Repository implements AudioUploadRepository {
   int calls = 0;
   Object? failure;
+  Completer<MediaAudio>? waiting;
   AudioUploadPolicy? lastPolicy;
   PendingAudioUpload? lastPending;
   @override
@@ -221,6 +298,12 @@ class _Repository implements AudioUploadRepository {
     lastPolicy = policy;
     lastPending = pending;
     if (failure != null) throw failure!;
+    if (waiting != null) {
+      return Future.any([
+        waiting!.future,
+        cancelToken.whenCancel.then<MediaAudio>((error) => throw error),
+      ]);
+    }
     return _ready;
   }
 }

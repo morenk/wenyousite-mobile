@@ -7,7 +7,7 @@ import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/media/media_audio.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
-import 'package:wenyousite_mobile/features/media/data/media_upload_repository.dart';
+import 'package:wenyousite_mobile/features/media/data/audio_transfer_timing.dart';
 import 'package:wenyousite_mobile/features/media/data/media_upload_work_coordinator.dart';
 import 'package:wenyousite_mobile/features/media/domain/audio_upload_models.dart';
 import 'package:wenyousite_mobile/features/media/domain/audio_upload_policy.dart';
@@ -28,17 +28,17 @@ class ApiAudioUploadRepository implements AudioUploadRepository {
     this.api,
     this.storage, {
     required this.coordinator,
-    this.pollAttempts = 60,
-    Future<void> Function(Duration)? delay,
-  }) : delay = delay ?? Future<void>.delayed;
+    this.timing = const AudioTransferTiming(),
+    this.delay = waitForAudioProcessing,
+  });
 
   final MediaApi api;
 
   /// 独立无账号鉴权的对象存储客户端。
   final Dio storage;
   final MediaUploadWorkCoordinator coordinator;
-  final int pollAttempts;
-  final Future<void> Function(Duration) delay;
+  final AudioTransferTiming timing;
+  final Future<void> Function(Duration, CancelToken) delay;
 
   @override
   Future<MediaAudio> upload(
@@ -112,24 +112,42 @@ class ApiAudioUploadRepository implements AudioUploadRepository {
           );
           await savePending(identity);
           _check(cancelToken);
-          await storage.putUri<void>(
-            Uri.parse(upload.uploadUrl),
-            data: input.openRead(),
-            options: Options(
-              contentType: input.contentType,
-              headers: {'Content-Length': input.size},
-              responseType: ResponseType.plain,
-              sendTimeout: const Duration(minutes: 5),
-            ),
-            cancelToken: cancelToken,
-            onSendProgress: (sent, _) => onProgress?.call(
-              AudioUploadProgress(
-                AudioUploadStage.uploading,
-                sent: sent,
-                total: input.size,
+          final transfer = AudioTransferGuard(cancelToken, timing);
+          try {
+            await transfer.wait(
+              storage.putUri<void>(
+                Uri.parse(upload.uploadUrl),
+                data: input.openRead(),
+                options: Options(
+                  contentType: input.contentType,
+                  headers: {'Content-Length': input.size},
+                  responseType: ResponseType.plain,
+                  sendTimeout: timing.total,
+                  receiveTimeout: timing.idle,
+                ),
+                cancelToken: transfer.token,
+                onSendProgress: (sent, _) {
+                  transfer.progress(sent);
+                  onProgress?.call(
+                    AudioUploadProgress(
+                      AudioUploadStage.uploading,
+                      sent: sent,
+                      total: input.size,
+                    ),
+                  );
+                },
               ),
-            ),
-          );
+            );
+          } on AudioTransferTimeout {
+            throw const ApiFailure(
+              userMessage: '音频上传超时，请重试。',
+              source: FailureSource.network,
+              reason: FailureReason.timeout,
+            );
+          } finally {
+            transfer.dispose();
+          }
+          _check(cancelToken);
           final uploaded = PendingAudioUpload(
             upload.mediaId,
             AudioUploadStage.confirming,
@@ -165,21 +183,26 @@ class ApiAudioUploadRepository implements AudioUploadRepository {
       );
       await savePending(current);
       onProgress?.call(const AudioUploadProgress(AudioUploadStage.processing));
-      for (var attempt = 0; attempt < pollAttempts; attempt++) {
-        await Future.any<void>([
-          delay(const Duration(seconds: 1)),
-          cancelToken.whenCancel.then<void>((error) => throw error),
-        ]);
+      var seconds = 1;
+      while (true) {
+        await delay(Duration(seconds: seconds), cancelToken);
+        _check(cancelToken);
         final completed = _finished(
           await _query(current.mediaId, cancelToken),
           current.mediaId,
         );
         if (completed != null) return completed;
+        seconds = (seconds * 2).clamp(1, 10);
       }
-      throw const AudioProcessingPending();
     } on DioException catch (error) {
       if (CancelToken.isCancel(error)) rethrow;
-      throw ApiFailure.fromDio(error);
+      throw ApiFailure.fromDio(
+        error,
+        featureMessages: const {
+          42901: '正在处理的音频较多，请稍后重试。',
+          42902: '今日音频上传额度已用完，请在 UTC 次日重试。',
+        },
+      );
     }
   }
 
@@ -242,10 +265,17 @@ class ApiAudioUploadRepository implements AudioUploadRepository {
   };
 }
 
+// 音频传输的时限独立于图片，不修改图片客户端的现有配置。
+final audioUploadDioProvider = Provider<Dio>((ref) {
+  final dio = Dio(BaseOptions(connectTimeout: AudioTransferTiming.connect));
+  ref.onDispose(() => dio.close(force: true));
+  return dio;
+});
+
 final audioUploadRepositoryProvider = Provider<AudioUploadRepository>(
   (ref) => ApiAudioUploadRepository(
     ref.watch(wenyouApiProvider).getMediaApi(),
-    ref.watch(mediaUploadDioProvider),
+    ref.watch(audioUploadDioProvider),
     coordinator: ref.watch(mediaUploadWorkCoordinatorProvider),
   ),
 );

@@ -11,13 +11,14 @@ import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
 import 'package:wenyousite_mobile/core/media/media_audio.dart';
 import 'package:wenyousite_mobile/features/media/application/audio_download.dart';
+import 'package:wenyousite_mobile/features/media/data/audio_transfer_timing.dart';
 import 'package:wenyousite_mobile/features/media/domain/audio_download_filename.dart';
 
 final audioDownloadProvider = Provider<AudioDownload>((ref) {
   // 公开媒体请求不携带业务客户端的身份、Cookie 或重试拦截器。
   final dio = Dio(
     BaseOptions(
-      connectTimeout: const Duration(seconds: 15),
+      connectTimeout: AudioTransferTiming.connect,
       receiveTimeout: const Duration(seconds: 30),
     ),
   );
@@ -29,11 +30,13 @@ class DeviceAudioDownload implements AudioDownload {
   DeviceAudioDownload({
     required this.dio,
     this.platform,
+    this.timing = const AudioTransferTiming(),
     this.channel = const MethodChannel('site.wenyou.app/document_saver'),
     Future<Directory> Function()? temporaryDirectory,
   }) : temporaryDirectory = temporaryDirectory ?? getTemporaryDirectory;
   final Dio dio;
   final TargetPlatform? platform;
+  final AudioTransferTiming timing;
   final MethodChannel channel;
   final Future<Directory> Function() temporaryDirectory;
   @override
@@ -72,25 +75,24 @@ class _Save implements AudioSaveOperation {
 
   Future<void> _run() async {
     Directory? directory;
-    Timer? timeout;
     var saved = false;
     var failed = false;
     try {
       if (!service.isSupported || audio.size > maximumBytes) {
         throw const AudioSaveException();
       }
-      timeout = Timer(
-        const Duration(minutes: 2),
-        () => token.cancel('audio_save_timeout'),
-      );
       final root = await service.temporaryDirectory();
       directory = await Directory(
         p.join(root.path, 'audio-downloads-v1', id),
       ).create(recursive: true);
       final fileName = audioDownloadFilename(label);
       final file = File(p.join(directory.path, fileName));
-      await _download(file);
-      timeout.cancel();
+      final transfer = AudioTransferGuard(token, service.timing);
+      try {
+        await _download(file, transfer);
+      } finally {
+        transfer.dispose();
+      }
       if (cancelled) return;
       final platform = service.platform ?? defaultTargetPlatform;
       if (platform == TargetPlatform.android ||
@@ -117,7 +119,6 @@ class _Save implements AudioSaveOperation {
     } on Object {
       failed = !cancelled;
     } finally {
-      timeout?.cancel();
       nativeSaving = false;
       try {
         if (directory != null && await directory.exists()) {
@@ -170,18 +171,20 @@ class _Save implements AudioSaveOperation {
     }
   }
 
-  Future<void> _download(File file) async {
+  Future<void> _download(File file, AudioTransferGuard transfer) async {
     var uri = Uri.parse(audio.sourceUrl);
     for (var redirects = 0; redirects <= 5; redirects++) {
       if (!isSafeAudioUrl(uri.toString())) throw const AudioSaveException();
-      final response = await service.dio.getUri<ResponseBody>(
-        uri,
-        cancelToken: token,
-        options: Options(
-          responseType: ResponseType.stream,
-          followRedirects: false,
-          validateStatus: (value) =>
-              value != null && value >= 200 && value < 400,
+      final response = await transfer.wait(
+        service.dio.getUri<ResponseBody>(
+          uri,
+          cancelToken: transfer.token,
+          options: Options(
+            responseType: ResponseType.stream,
+            followRedirects: false,
+            validateStatus: (value) =>
+                value != null && value >= 200 && value < 400,
+          ),
         ),
       );
       final body = response.data!;
@@ -210,11 +213,14 @@ class _Save implements AudioSaveOperation {
         throw const AudioSaveException();
       }
       final sink = file.openWrite();
+      final chunks = StreamIterator(body.stream);
       var size = 0;
       try {
-        await for (final chunk in body.stream) {
+        while (await transfer.wait(chunks.moveNext())) {
+          final chunk = chunks.current;
           if (token.isCancelled) throw const AudioSaveException();
           size += chunk.length;
+          transfer.progress(size);
           if (size > maximumBytes || size > audio.size) {
             throw const AudioSaveException();
           }
@@ -222,7 +228,11 @@ class _Save implements AudioSaveOperation {
           await sink.flush();
         }
       } finally {
-        await sink.close();
+        try {
+          await chunks.cancel();
+        } finally {
+          await sink.close();
+        }
       }
       if (size != audio.size || size == 0) throw const AudioSaveException();
       return;

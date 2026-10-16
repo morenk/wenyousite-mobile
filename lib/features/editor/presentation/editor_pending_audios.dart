@@ -337,8 +337,6 @@ class EditorPendingAudios extends ChangeNotifier {
         item.terminalFailure = true;
         item.failure = error.message;
       }
-    } on AudioProcessingPending {
-      if (current()) item.failure = '音频仍在处理中，点击重试查询。';
     } on Object catch (error) {
       if (current() && !cancel.isCancelled) {
         item.failure = error is ApiFailure ? error.userMessage : '音频上传失败，请重试。';

@@ -4,6 +4,8 @@
 
 ## 来源与范围
 
+2026-10-17 传输等待批次将契约升级至 Backend `9159729106cefb883726121dc9f94c0b164678c1`／API `5.38.0-dev.20261017.1`，独立同步提交 `999c86f8`；新增活动／日准入预算错误，成功 DTO、Markdown、大小、格式与码率不变。契约升级不表示预算后端已部署。以下更早来源／构建按原批次保留。
+
 Windows Worktree：`D:\codex-worktrees\mobile-audio-upload\wenyousite-mobile`，分支 `codex/20261016-audio-upload`。从更新后的 origin/dev `17631a2c` 创建，保留楼层编辑时间上游变更；依赖 [PR #98](https://github.com/morenk/wenyousite-mobile/pull/98)，其未合并前本 PR 不标可合并。按顺序 cherry-pick -x：7a429804→859df35b、2f2180af→f9b8bfd5、707a40e3→9124dc6b、038ae0e6→9eabe65d、7997bfba→4ce2e2b7、b2b8ce58→74bdc7d1。旧工具栏 Worktree 未混入音频源码。
 
 契约固定 Backend cb44acaeb7fbc735fb569276aef00435bf24efe5／API 5.37.0-dev.20261016.1，见[来源](audio-contract-source.md)。正式 Foundation v7.3.0 锁定 a582d6ec498e26f30739d8bf6995f9613e26eb4d，独立升级提交 a7b85f59。file_selector 1.1.0（BSD-3-Clause）、just_audio 0.10.6、audio_session 0.2.4（MIT）；Android minSdk 26／iOS 13 不抬升，没有麦克风／后台播放服务权限。
@@ -18,6 +20,18 @@ Windows Worktree：`D:\codex-worktrees\mobile-audio-upload\wenyousite-mobile`，
 - 沿用图片公开 URL 资产语义，已知 URL 不随帖子权限撤销，不宣称私有流式鉴权。
 
 ## 实际定向检查
+
+### 2026-10-17 统一传输与处理等待
+
+共同依据为治理 `21f0a939b3a9f5e41aa9816b44628fe0b3de59da` 的 `docs/audio-transfer-policy.md`。上传与保存下载采用音频独立的 5 分钟总时限／30 秒实际字节无增长／15 秒连接；重复字节和空 chunk 不续命，总期限不刷新。内部超时与用户取消分离，保留失败、文件和 mediaId；下载在流静默时也退出，取消订阅并清私有临时目录。处理查询 1／2／4／8／10 秒封顶，前台继续直到真实终态，后台／离页／取消／账号变化停止，恢复页面不自动重放。
+
+- `audio-budget-api-generate.log`：既有 SDK 生成入口成功；生成变更限版本及新增错误码。`audio-transfer-repository.log`：契约、上传和队列首轮 20 项通过，其中预算数字反序列化 1 项。签发／重签／确认的预算失败保留本机文件与身份，不自动创建或 PUT。
+- `audio-transfer-first.log`：下载 12 项已通过，但并行的 timing Widget 用例在测试收尾挂起，主动停止自有测试，整条命令不记成功。局部诊断确认超时和 dispose 已执行；纯 fake_async 初次 6 项失败指出结果仍等待本地订阅取消 Future。该订阅没有 IO 资源，改为同步解除监听且不阻塞结果返回；未移除计时器／取消断言。诊断 print 没有留在源码。
+- `audio-timing-final.log`：6 项全部通过，覆盖 30 秒无增长、相同／回退字节、持续增长仍达 5 分钟、成功／用户取消／已取消请求、处理等待取消；断言 pendingTimers 为空，dispose 后父取消不影响已结束 child。`fake_async 1.3.3` 仅将已有传递测试依赖声明为直接 dev 依赖，运行时依赖不变。
+- `audio-transfer-final.log`：受收尾调整影响的上传 11／下载 12／队列 9，共 32 项全部通过；含流静默退出／空 chunk／清临时目录／显式重试、75 轮处理中持续同身份、后台取消活跃处理后回前台不自重放。加上独立 timing 6 和契约 1，本批 39 项唯一用例有通过证据，不把重复执行累加。
+- `audio-transfer-analyze.log`：10 个变更 Dart 文件仅有两个测试 import 排序 info；修正后仅复核这两文件，`audio-transfer-analyze-final.log` 为 No issues found。`audio-transfer-format.log`：同 10 文件格式检查 0 变化；`git diff --check` 通过。
+
+本批不重跑全量测试／分析／门禁，不构建、安装或操作治理持有的 Debug 会话，也没有线上写入。新增 timing 构造参数与音频 Dio Provider 不能保证已存活对象仅经 r 就获得新策略；后续真机验证应在负责人安全手动重开后的新实例进行，不自动启动或热重启登录应用。旧 APK 与手机当前热重载不包含本批策略，不能以此前验收冒充本轮。
 
 按用户明确要求未执行全量测试、全量 analyze、npm check/check:apk/candidate:apk；未写公网数据，未执行 Mobile 写入 E2E。
 

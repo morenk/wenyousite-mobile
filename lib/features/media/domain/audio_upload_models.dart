@@ -76,11 +76,6 @@ class AudioUploadProgress {
       : null;
 }
 
-/// 保留同一媒体身份，重试只能查询/确认，不能重新创建对象。
-class AudioProcessingPending implements Exception {
-  const AudioProcessingPending();
-}
-
 /// 服务端媒体已终结，继续查询同一身份不能恢复。
 class AudioProcessingFailed implements Exception {
   const AudioProcessingFailed(this.message);
