@@ -73,7 +73,7 @@ users 只提供入口，app 组合路由；工具服务没有业务 API、上传
 
 ## 13. 最近审查的契约版本和后端提交
 
-文本颜色候选契约审查：Backend `2cdedbcdecee4991634cf4b256aa0f547b06d88c`，API `5.38.0-dev.20261016.1`；共享 Markdown 版本保持 v6，新增独立文本颜色 v1 与站内 clipboard v2 保色规则。契约同步不代表已部署；未涉及颜色的模块保持原行为。
+文本颜色契约审查：Backend `d3577839dc537e21c546ee385a4c97091b58a8f7`，API `5.38.0-dev.20261016.1`；新增独立文本颜色 v1 与站内 clipboard v2 保色规则，不提升全局 Markdown 版本或替代角色提及能力。此来源已通过实际部署 SHA 的只读核验；未涉及颜色的模块保持原行为。
 
 三工具算法与逐字样例基于 Web `2aa7a81ef8d89f86f9447b0fc08e8b115d05b8a2`。双语词库固定提交与每个源文件 SHA-256 记录在 [source.json](../../contracts/toolbox/source.json)，同步入口 `tool/sync_toolbox_data.ps1 -Revision <40位SHA>` 只读取 VPS Git 已提交对象；`dart run tool/generate_toolbox_data.dart --check` 核验源摘要和生成常量一致。Faker 中文词库和温油双语词库许可证保留源码并通过 LicenseRegistry 随 App 提供。
 
