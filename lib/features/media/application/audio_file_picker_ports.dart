@@ -1,19 +1,9 @@
 import 'dart:io';
 
-/// 限制由已协商的上传能力传入，选择器不自行猜测服务端预算。
-class AudioFileSelectionPolicy {
-  AudioFileSelectionPolicy({
-    required this.maximumBytes,
-    required List<String> contentTypes,
-  }) : contentTypes = List.unmodifiable(contentTypes) {
-    if (maximumBytes <= 0 || contentTypes.isEmpty) {
-      throw ArgumentError('音频选择需要明确大小和类型限制。');
-    }
-  }
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wenyousite_mobile/core/media/audio_file_selection_policy.dart';
 
-  final int maximumBytes;
-  final List<String> contentTypes;
-}
+export 'package:wenyousite_mobile/core/media/audio_file_selection_policy.dart';
 
 enum AudioFileSelectionFailure { unavailable, unreadable, empty, tooLarge }
 
@@ -48,3 +38,8 @@ abstract interface class AudioFilePickOperation {
 abstract interface class AudioFilePicker {
   AudioFilePickOperation pick(AudioFileSelectionPolicy policy);
 }
+
+final audioFilePickerProvider = Provider<AudioFilePicker>(
+  (ref) =>
+      throw StateError('AudioFilePicker must be bound by the composition root'),
+);

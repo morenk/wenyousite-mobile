@@ -4,7 +4,6 @@ import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/features/editor/editor.dart';
-import 'package:wenyousite_mobile/features/editor/presentation/editor_audio_embed_builder.dart';
 
 class PostComposerSheetHeader extends StatelessWidget {
   const PostComposerSheetHeader({

@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:wenyousite_mobile/features/media/application/audio_playback.dart';
+import 'package:wenyousite_mobile/core/application/audio_playback.dart';
 
 class Driver implements AudioPlaybackDriver {
   final state = StreamController<AudioPlaybackStatus>.broadcast(sync: true);

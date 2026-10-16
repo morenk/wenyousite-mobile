@@ -5,14 +5,15 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/application/audio_playback.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_audio_projection.dart';
 import 'package:wenyousite_mobile/core/media/media_audio.dart';
 import 'package:wenyousite_mobile/core/widgets/audio_playback_button.dart';
 import 'package:wenyousite_mobile/core/widgets/audio_save_button.dart';
-import 'package:wenyousite_mobile/features/media/application/audio_playback.dart';
-import 'package:wenyousite_mobile/features/media/data/just_audio_playback_driver.dart';
 
 /// 只展示已授权投影元数据；初始构建、滚入屏幕均不读取音频。
+const _audioCodeStyle = TextStyle(fontFamily: 'monospace');
+
 class WenyouAudioPlayer extends ConsumerStatefulWidget {
   const WenyouAudioPlayer({
     required this.audio,
@@ -270,32 +271,38 @@ class _WenyouAudioPlayerState extends ConsumerState<WenyouAudioPlayer>
                                             for (final run in widget.labelRuns)
                                               TextSpan(
                                                 text: run.text,
-                                                style: TextStyle(
-                                                  fontWeight:
-                                                      run.marks.contains(
-                                                        'strong',
-                                                      )
-                                                      ? FontWeight.bold
-                                                      : null,
-                                                  fontStyle:
-                                                      run.marks.contains('em')
-                                                      ? FontStyle.italic
-                                                      : null,
-                                                  decoration:
-                                                      run.marks.contains(
-                                                            'del',
-                                                          ) ||
-                                                          run.marks.contains(
-                                                            's',
-                                                          )
-                                                      ? TextDecoration
-                                                            .lineThrough
-                                                      : null,
-                                                  fontFamily:
-                                                      run.marks.contains('code')
-                                                      ? 'monospace'
-                                                      : null,
-                                                ),
+                                                style:
+                                                    (run.marks.contains('code')
+                                                            ? _audioCodeStyle
+                                                            : const TextStyle())
+                                                        .copyWith(
+                                                          fontWeight:
+                                                              run.marks
+                                                                  .contains(
+                                                                    'strong',
+                                                                  )
+                                                              ? FontWeight.bold
+                                                              : null,
+                                                          fontStyle:
+                                                              run.marks
+                                                                  .contains(
+                                                                    'em',
+                                                                  )
+                                                              ? FontStyle.italic
+                                                              : null,
+                                                          decoration:
+                                                              run.marks
+                                                                      .contains(
+                                                                        'del',
+                                                                      ) ||
+                                                                  run.marks
+                                                                      .contains(
+                                                                        's',
+                                                                      )
+                                                              ? TextDecoration
+                                                                    .lineThrough
+                                                              : null,
+                                                        ),
                                               ),
                                           ],
                                   ),

@@ -4,24 +4,16 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyou_api/wenyou_api.dart';
+import 'package:wenyousite_mobile/core/media/audio_upload_policy.dart';
 import 'package:wenyousite_mobile/core/media/media_audio.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/features/media/application/audio_upload_ports.dart';
 import 'package:wenyousite_mobile/features/media/data/audio_transfer_timing.dart';
 import 'package:wenyousite_mobile/features/media/data/media_upload_work_coordinator.dart';
 import 'package:wenyousite_mobile/features/media/domain/audio_upload_models.dart';
-import 'package:wenyousite_mobile/features/media/domain/audio_upload_policy.dart';
 
-abstract interface class AudioUploadRepository {
-  Future<MediaAudio> upload(
-    AudioUploadInput? input,
-    AudioUploadPolicy? policy, {
-    required CancelToken cancelToken,
-    required Future<void> Function(PendingAudioUpload pending) savePending,
-    PendingAudioUpload? pending,
-    void Function(AudioUploadProgress progress)? onProgress,
-  });
-}
+export 'package:wenyousite_mobile/features/media/application/audio_upload_ports.dart';
 
 class ApiAudioUploadRepository implements AudioUploadRepository {
   ApiAudioUploadRepository(
@@ -272,7 +264,7 @@ final audioUploadDioProvider = Provider<Dio>((ref) {
   return dio;
 });
 
-final audioUploadRepositoryProvider = Provider<AudioUploadRepository>(
+final apiAudioUploadRepositoryProvider = Provider<AudioUploadRepository>(
   (ref) => ApiAudioUploadRepository(
     ref.watch(wenyouApiProvider).getMediaApi(),
     ref.watch(audioUploadDioProvider),

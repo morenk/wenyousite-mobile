@@ -7,7 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
-import 'package:wenyousite_mobile/features/media/application/audio_file_picker.dart';
+import 'package:wenyousite_mobile/features/media/application/audio_file_picker_ports.dart';
 
 /// Android 的大文件准备由后台 SAF 端口处理；其他端沿用系统文件选择器。
 class SystemAudioFilePicker implements AudioFilePicker {

@@ -7,8 +7,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/app/app_capabilities.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
+import 'package:wenyousite_mobile/core/application/audio_playback.dart';
 import 'package:wenyousite_mobile/core/markdown/local_audio_marker.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_submission_guard.dart';
+import 'package:wenyousite_mobile/core/media/audio_upload_policy.dart';
 import 'package:wenyousite_mobile/core/media/media_audio.dart';
 import 'package:wenyousite_mobile/core/widgets/audio_playback_button.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_audio_player.dart';
@@ -18,11 +20,8 @@ import 'package:wenyousite_mobile/features/editor/presentation/editor_pending_au
 import 'package:wenyousite_mobile/features/editor/presentation/editor_text_styles.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/rich_editor_pending_audio_document.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/rich_editor_session.dart';
-import 'package:wenyousite_mobile/features/media/application/audio_playback.dart';
 import 'package:wenyousite_mobile/features/media/data/audio_upload_repository.dart';
-import 'package:wenyousite_mobile/features/media/data/just_audio_playback_driver.dart';
 import 'package:wenyousite_mobile/features/media/domain/audio_upload_models.dart';
-import 'package:wenyousite_mobile/features/media/domain/audio_upload_policy.dart';
 
 import '../../support/audio_test_fonts.dart';
 
@@ -50,7 +49,7 @@ String _pending(String id) =>
     '[雨夜与片段：远处的雨声与沿街的脚步.wav]($localAudioMarkerPrefix$id)';
 
 void main() {
-  setUpAll(loadAudioTestFonts);
+  setUpAll(loadDeterministicTestFonts);
   for (final width in [320, 360]) {
     for (final dark in [false, true]) {
       for (final scale in [1.0, 2.0]) {

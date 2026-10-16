@@ -1,4 +1,4 @@
-import 'package:wenyousite_mobile/features/media/application/audio_file_picker.dart';
+import 'package:wenyousite_mobile/core/media/audio_file_selection_policy.dart';
 
 /// 缺少可识别的服务端能力时不开放选择和上传。
 class AudioUploadPolicy {

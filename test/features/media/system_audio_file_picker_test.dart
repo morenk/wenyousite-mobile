@@ -2,9 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:wenyousite_mobile/features/media/application/audio_file_picker.dart';
+import 'package:wenyousite_mobile/core/media/audio_upload_policy.dart';
+import 'package:wenyousite_mobile/features/media/application/audio_file_picker_ports.dart';
 import 'package:wenyousite_mobile/features/media/data/system_audio_file_picker.dart';
-import 'package:wenyousite_mobile/features/media/domain/audio_upload_policy.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

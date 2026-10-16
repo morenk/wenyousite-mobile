@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:audio_session/audio_session.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart';
-import 'package:wenyousite_mobile/features/media/application/audio_playback.dart';
+import 'package:wenyousite_mobile/core/application/audio_playback.dart';
 
 class JustAudioPlaybackDriver implements AudioPlaybackDriver {
   JustAudioPlaybackDriver() {
@@ -91,7 +91,7 @@ class JustAudioPlaybackDriver implements AudioPlaybackDriver {
   }
 }
 
-final audioPlaybackProvider = Provider<AudioPlaybackController>((ref) {
+final deviceAudioPlaybackProvider = Provider<AudioPlaybackController>((ref) {
   final controller = AudioPlaybackController(JustAudioPlaybackDriver.new);
   ref.onDispose(controller.dispose);
   return controller;

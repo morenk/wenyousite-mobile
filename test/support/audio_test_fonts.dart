@@ -1,5 +1,5 @@
-import 'deterministic_test_fonts.dart';
+import 'deterministic_test_fonts.dart' as fonts;
 
-Future<void> loadAudioTestFonts() => loadDeterministicTestFonts(
+Future<void> loadDeterministicTestFonts() => fonts.loadDeterministicTestFonts(
   fontPath: 'test/support/fonts/WenyouGoldenAudioText.ttf',
 );

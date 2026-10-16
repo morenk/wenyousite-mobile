@@ -6,13 +6,14 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
+import 'package:wenyousite_mobile/core/application/audio_download.dart';
+import 'package:wenyousite_mobile/core/application/audio_playback.dart';
 import 'package:wenyousite_mobile/core/media/media_audio.dart';
 import 'package:wenyousite_mobile/core/widgets/audio_playback_button.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_audio_player.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_markdown.dart';
-import 'package:wenyousite_mobile/features/media/application/audio_playback.dart';
-import 'package:wenyousite_mobile/features/media/data/just_audio_playback_driver.dart';
 
+import '../../support/audio_download.dart';
 import '../../support/audio_driver.dart';
 import '../../support/audio_test_fonts.dart';
 
@@ -28,7 +29,7 @@ final _body =
     '[**雨夜**与*片段*：远处的雨声与沿街的脚步](${_audio.sourceUrl})\n\n故事还在继续。';
 
 void main() {
-  setUpAll(loadAudioTestFonts);
+  setUpAll(loadDeterministicTestFonts);
   testWidgets('密集拖动仅更新进度且缓冲不打断，松手一次提交最终目标', (tester) async {
     final driver = _SeekDriver();
     final controller = AudioPlaybackController(() => driver);
@@ -122,6 +123,9 @@ void main() {
                             for (var i = 0; i < 3; i++)
                               ProviderScope(
                                 overrides: [
+                                  audioDownloadProvider.overrideWithValue(
+                                    FakeAudioDownload(),
+                                  ),
                                   audioPlaybackProvider.overrideWithValue(
                                     controllers[i],
                                   ),
@@ -584,7 +588,10 @@ Widget _app(
   bool scroll = false,
   bool second = false,
 }) => ProviderScope(
-  overrides: [audioPlaybackProvider.overrideWithValue(controller)],
+  overrides: [
+    audioDownloadProvider.overrideWithValue(FakeAudioDownload()),
+    audioPlaybackProvider.overrideWithValue(controller),
+  ],
   child: MaterialApp(
     theme: AppTheme.light,
     home: Scaffold(

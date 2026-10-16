@@ -4,6 +4,8 @@ import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
+import 'package:wenyousite_mobile/core/application/audio_download.dart';
+import 'package:wenyousite_mobile/core/application/audio_playback.dart';
 import 'package:wenyousite_mobile/core/media/media_audio.dart';
 import 'package:wenyousite_mobile/core/widgets/audio_playback_button.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_audio_player.dart';
@@ -11,9 +13,6 @@ import 'package:wenyousite_mobile/features/editor/presentation/editor_audio_embe
 import 'package:wenyousite_mobile/features/editor/presentation/editor_embed_builders.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_text_styles.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/rich_editor_session.dart';
-import 'package:wenyousite_mobile/features/media/application/audio_playback.dart';
-import 'package:wenyousite_mobile/features/media/data/device_audio_download.dart';
-import 'package:wenyousite_mobile/features/media/data/just_audio_playback_driver.dart';
 
 import '../../support/audio_download.dart';
 import '../../support/audio_driver.dart';
@@ -31,7 +30,7 @@ final _body =
     '[**雨夜**与*片段*：远处的雨声与沿街的脚步](${_audio.sourceUrl})\n\n故事还在继续。';
 
 void main() {
-  setUpAll(loadAudioTestFonts);
+  setUpAll(loadDeterministicTestFonts);
   testWidgets('编辑态不提供保存按钮，不改变选区、正文或触发播放', (tester) async {
     final editor = RichEditorSession(
       initialMarkdown: '[原文件名.wav](${_audio.sourceUrl})',

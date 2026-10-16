@@ -9,15 +9,10 @@ import 'package:wenyousite_mobile/core/media/media_audio.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/rich_editor_pending_audio_document.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/rich_editor_session.dart';
-import 'package:wenyousite_mobile/features/media/application/audio_file_picker.dart';
+import 'package:wenyousite_mobile/features/media/application/audio_file_picker_ports.dart';
+import 'package:wenyousite_mobile/features/media/application/audio_upload_ports.dart';
 import 'package:wenyousite_mobile/features/media/application/pending_media_file_store_ports.dart';
-import 'package:wenyousite_mobile/features/media/data/audio_upload_repository.dart';
-import 'package:wenyousite_mobile/features/media/data/system_audio_file_picker.dart';
 import 'package:wenyousite_mobile/features/media/domain/audio_upload_models.dart';
-
-final audioFilePickerProvider = Provider<AudioFilePicker>(
-  (ref) => const SystemAudioFilePicker(),
-);
 
 class EditorPendingAudio {
   EditorPendingAudio(this.id, this.input);

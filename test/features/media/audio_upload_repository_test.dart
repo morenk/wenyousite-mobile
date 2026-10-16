@@ -4,12 +4,12 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyou_api/wenyou_api.dart';
+import 'package:wenyousite_mobile/core/media/audio_upload_policy.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/media/data/audio_transfer_timing.dart';
 import 'package:wenyousite_mobile/features/media/data/audio_upload_repository.dart';
 import 'package:wenyousite_mobile/features/media/data/media_upload_work_coordinator.dart';
 import 'package:wenyousite_mobile/features/media/domain/audio_upload_models.dart';
-import 'package:wenyousite_mobile/features/media/domain/audio_upload_policy.dart';
 
 final audioPolicy = AudioUploadPolicy.parse({
   'version': 1,

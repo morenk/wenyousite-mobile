@@ -211,8 +211,10 @@ class EditorPendingAudioCard extends StatelessWidget {
                         ? const SizedBox()
                         : Text(
                             failure == '音频上传失败，请重试。' ? '上传失败' : failure,
-                            style: Theme.of(context).textTheme.labelSmall
-                                ?.copyWith(
+                            style: Theme.of(context).textTheme.wenyouCaption
+                                .copyWith(
+                                  // 保留原紧凑标签的字距；其余字形属性沿用 caption。
+                                  letterSpacing: 0.5,
                                   color: Theme.of(context).colorScheme.error,
                                 ),
                           ),

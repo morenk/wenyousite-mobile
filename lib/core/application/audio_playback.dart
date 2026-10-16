@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/media/media_audio.dart';
 
 class AudioPlaybackStatus {
@@ -192,3 +193,13 @@ class AudioPlaybackController extends ChangeNotifier {
     super.dispose();
   }
 }
+
+final audioPlaybackProvider = Provider<AudioPlaybackController>((ref) {
+  final controller = AudioPlaybackController(
+    () => throw StateError(
+      'AudioPlaybackDriver must be bound by the composition root',
+    ),
+  );
+  ref.onDispose(controller.dispose);
+  return controller;
+});

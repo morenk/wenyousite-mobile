@@ -1,6 +1,7 @@
 import 'dart:async';
+
+import 'package:wenyousite_mobile/core/application/audio_download.dart';
 import 'package:wenyousite_mobile/core/media/media_audio.dart';
-import 'package:wenyousite_mobile/features/media/application/audio_download.dart';
 
 class FakeAudioDownload implements AudioDownload {
   final operations = <FakeAudioSave>[];

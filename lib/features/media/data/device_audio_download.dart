@@ -9,12 +9,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
+import 'package:wenyousite_mobile/core/application/audio_download.dart';
 import 'package:wenyousite_mobile/core/media/media_audio.dart';
-import 'package:wenyousite_mobile/features/media/application/audio_download.dart';
 import 'package:wenyousite_mobile/features/media/data/audio_transfer_timing.dart';
 import 'package:wenyousite_mobile/features/media/domain/audio_download_filename.dart';
 
-final audioDownloadProvider = Provider<AudioDownload>((ref) {
+final deviceAudioDownloadProvider = Provider<AudioDownload>((ref) {
   // 公开媒体请求不携带业务客户端的身份、Cookie 或重试拦截器。
   final dio = Dio(
     BaseOptions(

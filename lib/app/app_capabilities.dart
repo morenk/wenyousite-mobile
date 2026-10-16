@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:wenyousite_mobile/features/media/domain/audio_upload_policy.dart';
+import 'package:wenyousite_mobile/core/media/audio_upload_policy.dart';
 
 class AppCapabilities {
   const AppCapabilities({

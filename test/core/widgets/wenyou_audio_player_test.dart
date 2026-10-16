@@ -4,14 +4,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
+import 'package:wenyousite_mobile/core/application/audio_download.dart';
+import 'package:wenyousite_mobile/core/application/audio_playback.dart';
 import 'package:wenyousite_mobile/core/media/media_audio.dart';
 import 'package:wenyousite_mobile/core/widgets/audio_playback_button.dart';
 import 'package:wenyousite_mobile/core/widgets/audio_save_button.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_audio_player.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_markdown.dart';
-import 'package:wenyousite_mobile/features/media/application/audio_playback.dart';
-import 'package:wenyousite_mobile/features/media/data/just_audio_playback_driver.dart';
 
+import '../../support/audio_download.dart';
 import '../../support/audio_driver.dart';
 import '../../support/audio_test_fonts.dart';
 
@@ -27,7 +28,7 @@ String get _body =>
     '雨停之前，我们在屋檐下等了一会儿。\n\n[**雨夜**与*片段*](${_audio.sourceUrl})\n\n这是同行人留下的一小段声音。\n\n[$_label](${_audio.sourceUrl})\n\n故事还在继续。';
 
 void main() {
-  setUpAll(loadAudioTestFonts);
+  setUpAll(loadDeterministicTestFonts);
   testWidgets('同正文音频投影迟到会重建解析缓存，等价投影不打断播放', (tester) async {
     final driver = Driver();
     final controller = AudioPlaybackController(() => driver);
@@ -341,7 +342,10 @@ Widget _app(
   String? body,
   Map<String, MediaAudio>? audios,
 }) => ProviderScope(
-  overrides: [audioPlaybackProvider.overrideWithValue(controller)],
+  overrides: [
+    audioDownloadProvider.overrideWithValue(FakeAudioDownload()),
+    audioPlaybackProvider.overrideWithValue(controller),
+  ],
   child: MaterialApp(
     theme: dark ? AppTheme.dark : AppTheme.light,
     home: Scaffold(

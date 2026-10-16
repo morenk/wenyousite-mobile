@@ -3,9 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/core/application/audio_download.dart';
 import 'package:wenyousite_mobile/core/media/media_audio.dart';
-import 'package:wenyousite_mobile/features/media/application/audio_download.dart';
-import 'package:wenyousite_mobile/features/media/data/device_audio_download.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_snack_bar.dart';
 
 class AudioSaveButton extends ConsumerStatefulWidget {
   const AudioSaveButton({required this.audio, required this.label, super.key});
@@ -50,9 +50,7 @@ class _AudioSaveButtonState extends ConsumerState<AudioSaveButton> {
     if (!mounted || !identical(_operation, operation)) return;
     setState(() => _operation = null);
     if (message != null) {
-      ScaffoldMessenger.maybeOf(
-        context,
-      )?.showSnackBar(SnackBar(content: Text(message)));
+      showWenyouSnackBar(context, message);
     }
   }
 

@@ -7,8 +7,8 @@ import 'package:wenyousite_mobile/app/app_capabilities.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/application/editor_toolbar_layout.dart';
 import 'package:wenyousite_mobile/core/application/editor_toolbar_preference.dart';
+import 'package:wenyousite_mobile/core/media/audio_upload_policy.dart';
 import 'package:wenyousite_mobile/features/editor/editor.dart';
-import 'package:wenyousite_mobile/features/media/domain/audio_upload_policy.dart';
 import 'package:wenyousite_mobile/features/settings/presentation/editor_toolbar_settings_page.dart';
 
 import '../../support/deterministic_test_fonts.dart';

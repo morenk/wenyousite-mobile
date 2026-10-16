@@ -1,6 +1,6 @@
 import 'package:wenyou_api/wenyou_api.dart';
+import 'package:wenyousite_mobile/core/media/audio_upload_policy.dart';
 import 'package:wenyousite_mobile/core/media/media_audio.dart';
-import 'package:wenyousite_mobile/features/media/domain/audio_upload_policy.dart';
 
 Map<String, MediaAudio> mapMediaAudios(Iterable<AudioMediaDto>? values) =>
     mediaAudiosFromJson([

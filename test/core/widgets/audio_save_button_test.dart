@@ -2,12 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
+import 'package:wenyousite_mobile/core/application/audio_download.dart';
+import 'package:wenyousite_mobile/core/application/audio_playback.dart';
 import 'package:wenyousite_mobile/core/media/media_audio.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_audio_player.dart';
-import 'package:wenyousite_mobile/features/media/application/audio_download.dart';
-import 'package:wenyousite_mobile/features/media/application/audio_playback.dart';
-import 'package:wenyousite_mobile/features/media/data/device_audio_download.dart';
-import 'package:wenyousite_mobile/features/media/data/just_audio_playback_driver.dart';
+
 import '../../support/audio_download.dart';
 import '../../support/audio_driver.dart';
 
