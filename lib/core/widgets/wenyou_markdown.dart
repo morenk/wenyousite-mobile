@@ -15,6 +15,7 @@ import 'package:wenyousite_mobile/core/markdown/markdown_inline_boundary.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_inline_compatibility_syntax.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_mention_target.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_quote_line_syntax.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_reader_leading_space_syntax.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_reader_paragraph_syntax.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_source_protection.dart';
 import 'package:wenyousite_mobile/core/media/media_audio.dart';
@@ -365,6 +366,7 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
       const MarkdownReaderParagraphSyntax(),
     ],
     inlineSyntaxes: [
+      MarkdownReaderLeadingSpaceSyntax(),
       MarkdownImageOccurrenceSyntax(
         startIndex: imageStartIndex,
         references: _imageReferences,
