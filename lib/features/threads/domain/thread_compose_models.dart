@@ -109,6 +109,7 @@ class ThreadCreatePayload {
     required this.visibility,
     required this.tags,
     required this.body,
+    this.textColorSupported,
   });
 
   final String clientRequestId;
@@ -117,6 +118,9 @@ class ThreadCreatePayload {
   final ThreadComposeVisibility visibility;
   final List<String> tags;
   final String body;
+
+  /// null 兼容未记录能力的旧 pending；false 冻结原请求未声明的状态。
+  final bool? textColorSupported;
 
   String toNormalizedJson() {
     return jsonEncode({
@@ -127,6 +131,8 @@ class ThreadCreatePayload {
       'visibility': visibility.wireValue,
       'tags': normalizeTagNames(tags),
       'body': MarkdownContent.normalize(body),
+      if (textColorSupported != null)
+        'textColorVersion': textColorSupported! ? 1 : null,
     });
   }
 
@@ -157,6 +163,9 @@ class ThreadCreatePayload {
         visibility: ThreadComposeVisibility.fromWireValue(visibility),
         tags: List<String>.unmodifiable(tags.cast<String>()),
         body: body,
+        textColorSupported: data.containsKey('textColorVersion')
+            ? data['textColorVersion'] == 1
+            : null,
       );
     } on Object {
       return null;

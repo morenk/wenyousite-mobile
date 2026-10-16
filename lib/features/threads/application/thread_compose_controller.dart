@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
+import 'package:wenyousite_mobile/app/app_capabilities.dart';
 import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/media/media_display.dart';
@@ -150,11 +151,13 @@ class ThreadComposeController extends StateNotifier<ThreadComposeState> {
     this._repository,
     this._snapshotStore, {
     String? knownOwnerId,
+    bool Function()? textColorSupported,
     String Function()? createRequestId,
     DateTime Function()? clock,
     Duration snapshotDebounce = const Duration(milliseconds: 700),
     bool autoStart = true,
   }) : _knownOwnerId = knownOwnerId?.isEmpty == true ? null : knownOwnerId,
+       _textColorSupported = textColorSupported ?? (() => false),
        _createRequestId = createRequestId ?? const Uuid().v4,
        _clock = clock ?? DateTime.now,
        _snapshotDebounce = Duration(
@@ -167,6 +170,7 @@ class ThreadComposeController extends StateNotifier<ThreadComposeState> {
   final ThreadComposeRepository _repository;
   final EditorSnapshotStore _snapshotStore;
   final String? _knownOwnerId;
+  final bool Function() _textColorSupported;
   final String Function() _createRequestId;
   final DateTime Function() _clock;
   final Duration _snapshotDebounce;
@@ -571,6 +575,7 @@ class ThreadComposeController extends StateNotifier<ThreadComposeState> {
 
   ThreadCreatePayload _currentCreatePayload() {
     return ThreadCreatePayload(
+      textColorSupported: _textColorSupported(),
       clientRequestId: state.clientRequestId,
       title: state.title,
       categorySlug: state.categorySlug,
@@ -666,6 +671,12 @@ class ThreadComposeController extends StateNotifier<ThreadComposeState> {
   }
 
   bool _isAmbiguousCreateFailure(ApiFailure failure) {
+    // 明确的本地校验拒绝尚未产生远端写入，不冻结待确认创建请求。
+    if (failure.httpStatus == null &&
+        failure.reason == FailureReason.validation &&
+        failure.effectiveSource == FailureSource.expected) {
+      return false;
+    }
     final status = failure.httpStatus;
     return status == null || status >= 500;
   }
@@ -694,6 +705,8 @@ final threadComposeControllerProvider =
           ref.watch(threadComposeRepositoryProvider),
           ref.watch(editorSnapshotStoreProvider),
           knownOwnerId: sessionScope.accountId,
+          textColorSupported: () =>
+              ref.read(appCapabilitiesProvider).textColorSupported,
         );
       },
       dependencies: [

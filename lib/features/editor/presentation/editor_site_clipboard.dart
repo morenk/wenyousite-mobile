@@ -8,6 +8,7 @@ import 'package:wenyousite_mobile/core/markdown/markdown_delta_line_metadata.dar
 import 'package:wenyousite_mobile/core/markdown/markdown_dice_contract.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_mention_target.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_paragraph_boundaries.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_text_color.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_reference.dart';
 
 /// Reconstructs only the allow-listed rich fragment emitted by Wenyou Web.
@@ -442,6 +443,15 @@ class _ClipboardInlineBuilder {
     }
 
     final nested = switch (tag) {
+      'span'
+          when node.attributes.length == 1 &&
+              MarkdownTextColor.rgb.hasMatch(
+                node.attributes['data-wenyou-color-v1'] ?? '',
+              ) =>
+        {
+          ...attributes,
+          'color': node.attributes['data-wenyou-color-v1']!.toUpperCase(),
+        },
       'b' || 'strong' => {...attributes, 'bold': true},
       'i' || 'em' => {...attributes, 'italic': true},
       's' || 'strike' || 'del' => {...attributes, 'strike': true},

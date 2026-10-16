@@ -373,6 +373,7 @@ void main() {
       repository,
       _createFloorTarget,
       createRequestId: () => 'stable',
+      textColorSupported: () => true,
     );
     controller.updateContent('持久草稿');
     await controller.submit(
@@ -401,6 +402,7 @@ void main() {
     reopened.restorePendingCreate(PostPublishDraft.fromJson(saved)!.pending!);
     await reopened.submit(identityMode: PostIdentityMode.account);
     expect(retryRepository.createInputs.single.content, '持久草稿');
+    expect(retryRepository.createInputs.single.textColorSupported, isTrue);
     expect(retryRepository.createInputs.single.clientRequestId, 'stable');
     expect(retryRepository.createInputs.single.identityToken, 'token-old');
     expect(retryRepository.createInputs.single.identityId, 'restored-role');
@@ -416,6 +418,7 @@ void main() {
       repository,
       _createFloorTarget,
       createRequestId: () => 'stable',
+      textColorSupported: () => true,
     );
     addTearDown(controller.dispose);
     controller.updateContent('草稿');
@@ -849,6 +852,7 @@ class _FakePostRepository with PostWindowFixture implements PostRepository {
 
   @override
   Future<PostItem> upsertBody({
+    bool? textColorSupported,
     required String subthreadId,
     required String content,
     int? version,

@@ -11,8 +11,11 @@ export 'presentation/editor_reader_clipboard.dart'
         ReaderMarkdownClipboardWriter,
         copyReaderMarkdownToClipboard,
         readerMarkdownClipboardWriterProvider;
+export 'presentation/editor_text_color_configuration.dart'
+    show editorTextColorConfigurationProvider;
 export 'presentation/editor_text_styles.dart'
     show wenyouEditorLeadingBlockBuilder, wenyouEditorTextStyles;
+export 'presentation/editor_tool_area.dart' show EditorToolArea;
 export 'presentation/editor_toolbar.dart'
     show
         WenyouComposerDock,

@@ -1,11 +1,34 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:wenyousite_mobile/core/application/user_facing_failure.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/direct_messages/data/direct_message_failure_messages.dart';
 import 'package:wenyousite_mobile/features/moments/data/moment_failure_messages.dart';
 import 'package:wenyousite_mobile/features/wallet/data/wallet_failure_messages.dart';
 
 void main() {
+  test('颜色能力与损坏错误保留草稿并提供恢复动作', () {
+    for (final code in [40016, 40017, 40018]) {
+      final options = RequestOptions(path: '/api/v1/posts/p');
+      final failure = ApiFailure.fromDio(
+        DioException(
+          requestOptions: options,
+          response: Response<Object?>(
+            requestOptions: options,
+            statusCode: 409,
+            data: {'code': code, 'message': 'hidden backend details'},
+          ),
+        ),
+      );
+      final presentation = UserFacingFailure.fromApi(failure);
+      expect(failure.reason, FailureReason.validation);
+      expect(failure.recoveryAction, FailureRecoveryAction.keepDraft);
+      expect(presentation.retainContent, isTrue);
+      expect(presentation.message, contains('草稿已保留'));
+      expect(presentation.message, isNot(contains('hidden')));
+      expect(failure.invalidatesSession, isFalse);
+    }
+  });
   test('响应契约异常只向用户暴露安全结果文案', () {
     final failure = ApiFailure.contractViolation(
       userMessage: '私聊加载失败，请重新加载。',

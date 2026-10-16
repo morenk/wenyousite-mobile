@@ -14,9 +14,14 @@ export 'package:wenyousite_mobile/features/drafts/application/content_draft_repo
     show ContentDraftRepository, contentDraftRepositoryProvider;
 
 class ApiContentDraftRepository implements ContentDraftRepository {
-  ApiContentDraftRepository(this._api, {this.roleMentionsSupported = false});
+  ApiContentDraftRepository(
+    this._api, {
+    this.roleMentionsSupported = false,
+    this.textColorSupported = false,
+  });
 
   final bool roleMentionsSupported;
+  final bool textColorSupported;
 
   final DraftsApi _api;
 
@@ -64,10 +69,14 @@ class ApiContentDraftRepository implements ContentDraftRepository {
   }) async {
     try {
       requireMentionWriteSupport(content, supported: roleMentionsSupported);
+      requireTextColorWriteSupport(content, supported: textColorSupported);
       final payload = CreateDraftDto((builder) {
         builder
           ..markdownContractVersion = roleMentionsSupported
               ? CreateDraftDtoMarkdownContractVersionEnum.number6
+              : null
+          ..textColorVersion = textColorSupported
+              ? CreateDraftDtoTextColorVersionEnum.number1
               : null
           ..content = content
           ..clientRequestId = clientRequestId;
@@ -94,10 +103,14 @@ class ApiContentDraftRepository implements ContentDraftRepository {
   }) async {
     try {
       requireMentionWriteSupport(content, supported: roleMentionsSupported);
+      requireTextColorWriteSupport(content, supported: textColorSupported);
       final payload = UpdateDraftDto(
         (builder) => builder
           ..markdownContractVersion = roleMentionsSupported
               ? UpdateDraftDtoMarkdownContractVersionEnum.number6
+              : null
+          ..textColorVersion = textColorSupported
+              ? UpdateDraftDtoTextColorVersionEnum.number1
               : null
           ..content = content
           ..version = version,
@@ -149,6 +162,7 @@ final apiContentDraftRepositoryProvider = Provider<ContentDraftRepository>((
 ) {
   return ApiContentDraftRepository(
     ref.watch(wenyouApiProvider).getDraftsApi(),
+    textColorSupported: ref.watch(appCapabilitiesProvider).textColorSupported,
     roleMentionsSupported: ref
         .watch(appCapabilitiesProvider)
         .roleMentionsSupported,

@@ -20,6 +20,7 @@ abstract final class MarkdownDeltaBlockEncoder {
       'strike',
       'code',
       'link',
+      'color',
       emptyParagraphAttribute,
       sourceBreakAttribute,
       literalLineAttribute,

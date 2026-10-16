@@ -18,6 +18,13 @@ class LiteralTextQuillController extends QuillController {
   });
 
   final _selectionHistory = EditorSelectionHistory();
+  bool _defaultColorForTyping = false;
+
+  /// 选区改色不切换后续输入模式；后续手工输入恢复主题正文色。
+  void useDefaultColorForTyping() {
+    _defaultColorForTyping = true;
+    toggledStyle = toggledStyle.put(Attribute.clone(Attribute.color, null));
+  }
 
   /// 复合命令的正文变化与最终选区一起附着于同一原生历史条目。
   void runEditCommand(void Function() command) =>
@@ -109,6 +116,9 @@ class LiteralTextQuillController extends QuillController {
     required bool shouldNotifyListeners,
   }) {
     final before = document.toDelta();
+    if (_defaultColorForTyping && data is String) {
+      toggledStyle = toggledStyle.put(Attribute.clone(Attribute.color, null));
+    }
     final preservesLink =
         toggledStyle.attributes[Attribute.link.key]?.value != null ||
         document.collectStyle(index, 0).attributes[Attribute.link.key]?.value !=

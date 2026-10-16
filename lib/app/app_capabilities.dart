@@ -10,6 +10,8 @@ class AppCapabilities {
     this.legacySingleThreadIdentity = false,
     this.roleMentionsSupported = false,
     this.roleMentionsWriteEnabled = false,
+    this.textColorSupported = false,
+    this.textColorWriteEnabled = false,
     this.rpIdentityProfileSupported = false,
   });
 
@@ -21,6 +23,8 @@ class AppCapabilities {
   final bool legacySingleThreadIdentity;
   final bool roleMentionsSupported;
   final bool roleMentionsWriteEnabled;
+  final bool textColorSupported;
+  final bool textColorWriteEnabled;
   final bool rpIdentityProfileSupported;
 }
 

@@ -45,6 +45,7 @@ Future<ProviderContainer> postRepliesPageTestPostContainer(
   bool markdownAlignment = false,
   bool markdownImageAlignment = false,
   ThreadIdentityRepository? identityRepository,
+  List<Override> extraOverrides = const [],
 }) async {
   final container = ProviderContainer(
     overrides: [
@@ -87,6 +88,7 @@ Future<ProviderContainer> postRepliesPageTestPostContainer(
         readerMarkdownClipboardWriterProvider.overrideWithValue(
           clipboardWriter,
         ),
+      ...extraOverrides,
     ],
   );
   if (userId != null) {
@@ -317,6 +319,7 @@ class PostRepliesPageTestFakePostRepository
 
   @override
   Future<PostItem> upsertBody({
+    bool? textColorSupported,
     required String subthreadId,
     required String content,
     int? version,
