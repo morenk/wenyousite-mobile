@@ -36,4 +36,8 @@
 
 ## 保留边界
 
+`4ccc6c91` 的 `.buildlog/audio-final-port-gate.log` 已通过契约／生成／格式、应用与 SDK 分析、架构、文档及 API 覆盖；Flutter 执行到 4079 通过、1 跳过、24 失败时主动停止本任务门禁与测试进程，未执行该旧树 APK 构建。24 项为 v7 链接首／中／尾的普通输入：Quill 继承公开 link URL，却未继承内部来源，严格来源编码因此将续写拆开。修复限定在普通 String 输入的同一次 literal formatting，根据插入后的实际 URL 与插入前唯一来源匹配；不放宽编码器的 null／known 和不同原链接边界。原 v7 fixture 及期待未修改，完整该组 133 项复验通过。
+
+新增来源交互回归覆盖首／中／尾、跨 marks 选区替换、不同 URL、相邻同 URL 不同来源、跨两个来源的替换、结构化粘贴、null／known 外来 Delta 与一步撤销／重做。首轮新增测试有 3 个断言错误地限定 strong 必须在 link 内，独立 Markdown 语义允许外包，已改为直接读取 AST 的逐字 marks；原失败日志保留。`.buildlog/audio-editor-complete-regression.log` 完整执行 `test/core/markdown` 与 `test/features/editor` 两目录，2580 项全部通过（含上述 13 项、完整 v7、中央邻接矩阵及现有粘贴／音频交互），耗时 3 分 40 秒。`.buildlog/audio-link-continuation-analyze.log` 两个变更 Dart 文件 No issues found，`.buildlog/audio-link-continuation-architecture.log` 架构通过。下一轮完整门禁绑定此后冻结的源码。
+
 负责人已确认原帖音频显示修复成功；本批只读手机证据仍沿原记录，本轮不操作手机。新增传输 Provider／装配不能以旧实例热重载冒充已应用。iOS 保存入口未经过 Xcode 编译；用户“刚上传单音频发送失败”的旧诊断未能唯一复现，不把模拟完成页面回归称为真实线上上传验证。最终 APK 仅交付，不安装，不自动冷启动或热重启登录应用。

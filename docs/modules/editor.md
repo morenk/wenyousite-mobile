@@ -158,6 +158,8 @@ v5 独立图片保存时会与前后正文、协议空段及其他块保持 Mark
 
 普通链接的来源边界仅在内存 Delta／行内 run 中保存。相邻同 URL 的不同原链接不合并为音频；同一原链接的内部 marks 仍保持一个标签。链接来源切换只结束当前 run，不提前结束整段规范化，避免正文相邻 marks 在重开后改变 canonical 编码。独立阅读 AST 的链接数、逐字样式与中央组合矩阵共同验证，不能只用 Codec 往返自洽替代。
 
+普通文字在原链接首、中、尾续写，或完整位于同一原链接的选区替换时，按实际插入 URL 继承该来源，并与文字作为一步撤销／重做。相邻同 URL 但不同来源、null／已知来源交界、跨链接选区及显式切换 URL 都不能猜测合并；结构化粘贴保留载荷自己的来源，不经过续写继承。
+
 本模块页面排版统一遵循[移动端视觉基线](../architecture/visual-baseline.md)中的 Foundation v6.9.0 语义文字角色，不自定义字号或直接依赖 Material 字体槽位。
 
 Delta 仅存在页面内存，后端、服务端主题草稿和 Drift 都保存 Markdown v4。提及候选接口位于 users，但查询生命周期和插入行为由 editor 管理；帖子和主题页面只传真实 `threadId`。媒体上传任务生命周期属于 `media/application`；editor 页面不直接调用上传仓储或持有 Dio 取消令牌，只消费 `COMPLETED` 结果并插入正文。骰子结果只由服务端生成。五槽位正文草稿属于[草稿](drafts.md)模块，不等同于当前主题实体的未发布草稿。参见[Codec 架构](../architecture/editor-codec.md)和[持久化](../architecture/persistence.md)。
