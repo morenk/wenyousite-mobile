@@ -34,10 +34,25 @@
 
 `531775c4` 的下一轮完整门禁 `.buildlog/audio-final-frozen-gate.log` 通过契约／生成／格式、应用和 SDK 分析、文档与 API 覆盖，但架构发现 data 经 ports 转导出依赖非端口 application 文件。Flutter 刚开始时（477 通过、1 跳过）停止该轮，避免浪费旧树验证和构建。失败 enum／exception 属于上传端口协议，已直接收归 `audio_upload_ports.dart`，不修改 allowlist。`.buildlog/audio-failure-port-architecture.log` 通过，`.buildlog/audio-failure-port-final.log` 故障分类／仓储／队列 24 项通过；最终完整门禁重新绑定修正后的源码。
 
-## 保留边界
+## 链接续写回归
 
 `4ccc6c91` 的 `.buildlog/audio-final-port-gate.log` 已通过契约／生成／格式、应用与 SDK 分析、架构、文档及 API 覆盖；Flutter 执行到 4079 通过、1 跳过、24 失败时主动停止本任务门禁与测试进程，未执行该旧树 APK 构建。24 项为 v7 链接首／中／尾的普通输入：Quill 继承公开 link URL，却未继承内部来源，严格来源编码因此将续写拆开。修复限定在普通 String 输入的同一次 literal formatting，根据插入后的实际 URL 与插入前唯一来源匹配；不放宽编码器的 null／known 和不同原链接边界。原 v7 fixture 及期待未修改，完整该组 133 项复验通过。
 
 新增来源交互回归覆盖首／中／尾、跨 marks 选区替换、不同 URL、相邻同 URL 不同来源、跨两个来源的替换、结构化粘贴、null／known 外来 Delta 与一步撤销／重做。首轮新增测试有 3 个断言错误地限定 strong 必须在 link 内，独立 Markdown 语义允许外包，已改为直接读取 AST 的逐字 marks；原失败日志保留。`.buildlog/audio-editor-complete-regression.log` 完整执行 `test/core/markdown` 与 `test/features/editor` 两目录，2580 项全部通过（含上述 13 项、完整 v7、中央邻接矩阵及现有粘贴／音频交互），耗时 3 分 40 秒。`.buildlog/audio-link-continuation-analyze.log` 两个变更 Dart 文件 No issues found，`.buildlog/audio-link-continuation-architecture.log` 架构通过。下一轮完整门禁绑定此后冻结的源码。
+
+## 冻结源码完整结果与构建阻塞
+
+应用源码固定为 `26f3121b603a66292f788e8657bc233817ef4a74`，工作区无应用改动。`.buildlog/audio-final-continuation-gate.log` 的 `npm run check:apk -- -ContinueAfterFailure -TestConcurrency 4` 完整执行：
+
+- OpenAPI 校验、固定来源、再生成一致性、全仓格式、应用与生成 SDK 全量分析、架构、文档及 API 覆盖全部通过。
+- Flutter 全量 6864 项通过、1 项既有条件跳过、0 失败，27 分 55 秒；Windows 工具 49 项全部通过，131.7 秒。
+- 生产精确项仍观察到线上 `d3577839`／5.38，与固定 `7f95563e`／5.39 不等，保留已批准的延期失败。
+- Android ARM64 Debug 构建失败：共享 SDK 缺少 NDK `28.2.13676358` 及许可，在 Gradle 配置阶段报 `LicenceNotAcceptedException`。整条命令退出 1、共两项失败，不将其记为全绿，也没有生成新 APK。此环境失败不在生产版本例外内，修复并补验构建前不合并。
+
+只读审计确认 PR98 的本任务清理存在遗漏：2026-10-17 04:15:22 执行 `git worktree remove` 前只核验 Worktree 根路径，没有枚举 Debug guard 创建的 SDK junction；共享 SDK 的相关目录于 04:15:25–04:16:45 清空。`tool/debug/sdk-guard.mjs` 为除 platform-tools 外的 SDK 目录创建 junction，当前恰好只有 platform-tools 保持完整，证据高度指向递归删除跟随这些联接。未将原因归给其他任务。该清理前／后记录和自身命令审计保留在任务外证据目录。
+
+现 PR102 逐层、不跟随 reparse point 的只读审计枚举 5270 个本地目录，发现 11 个 junction，均在 `build/debug-sdk/sdk-98cd51d1173ea29d`，目标仅为共享 Android SDK；无其他外部 plugin 目标。证据为 `D:/codex-artifacts/mobile-merge-20261017/pr102/audio-cleanup-junction-audit.json`。已暂停所有 Worktree 清理，保留联接与现场；SDK 由协调后的单一任务恢复，我方不并行安装或接受许可。恢复后应用源码不变，只补 APK 构建阶段，不机械重跑已通过的完整应用测试。
+
+## 保留边界
 
 负责人已确认原帖音频显示修复成功；本批只读手机证据仍沿原记录，本轮不操作手机。新增传输 Provider／装配不能以旧实例热重载冒充已应用。iOS 保存入口未经过 Xcode 编译；用户“刚上传单音频发送失败”的旧诊断未能唯一复现，不把模拟完成页面回归称为真实线上上传验证。最终 APK 仅交付，不安装，不自动冷启动或热重启登录应用。
