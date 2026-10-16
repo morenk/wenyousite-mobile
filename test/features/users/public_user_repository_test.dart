@@ -131,6 +131,36 @@ void main() {
     expect(replies.single.parentPostId, 'floor-7');
     expect(replies.single.threadTitle, '星海旅团');
   });
+
+  test('最近回复优先解析完整正文，避免实体源码截断的摘要泄漏转义', () async {
+    final api = _MockUsersApi();
+    final content = '【构筑表】${'&#32;' * 40}\n────种族────\n**精灵**';
+    when(() => api.usersGetUserRecentReplies(id: 'user-1')).thenAnswer(
+      (_) async => _recentRepliesResponse(
+        content: content,
+        preview: content.substring(0, 180),
+      ),
+    );
+
+    final replies = await ApiPublicUserRepository(
+      api,
+    ).fetchRecentReplies('user-1');
+
+    expect(replies.single.preview, '【构筑表】 ────种族──── 精灵');
+  });
+
+  test('最近回复只有空白正文时仍解析备用摘要', () async {
+    final api = _MockUsersApi();
+    when(() => api.usersGetUserRecentReplies(id: 'user-1')).thenAnswer(
+      (_) async => _recentRepliesResponse(content: ' \n ', preview: '甲&#32;乙'),
+    );
+
+    final replies = await ApiPublicUserRepository(
+      api,
+    ).fetchRecentReplies('user-1');
+
+    expect(replies.single.preview, '甲 乙');
+  });
 }
 
 class _MockUsersApi extends Mock implements UsersApi {}
@@ -236,7 +266,10 @@ Response<UsersGetUserBookmarks200Response> _bookmarksResponse() {
   );
 }
 
-Response<UsersGetUserRecentReplies200Response> _recentRepliesResponse() {
+Response<UsersGetUserRecentReplies200Response> _recentRepliesResponse({
+  String content = '',
+  String preview = '**最近回复** ![航图](https://cdn.example.com/map.jpg)',
+}) {
   return Response(
     requestOptions: RequestOptions(path: '/api/v1/users/user-1/recent-replies'),
     data: UsersGetUserRecentReplies200Response(
@@ -249,8 +282,8 @@ Response<UsersGetUserRecentReplies200Response> _recentRepliesResponse() {
               ..id = 'reply-1'
               ..createdAt = DateTime.utc(2026, 8, 10, 8)
               ..parentPostId = 'floor-7'
-              ..content = '正文回退'
-              ..preview = '**最近回复** ![航图](https://cdn.example.com/map.jpg)'
+              ..content = content
+              ..preview = preview
               ..threadId = 'thread-created'
               ..thread.update((thread) => thread.title = '星海旅团')
               ..subthreadId = 'subthread-1'

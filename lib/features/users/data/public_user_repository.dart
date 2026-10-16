@@ -1,7 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyou_api/wenyou_api.dart';
-import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/media_display_mapper.dart';
@@ -10,6 +9,7 @@ import 'package:wenyousite_mobile/features/thread_feed/thread_feed_mapping.dart'
 import 'package:wenyousite_mobile/features/thread_feed/thread_feed_models.dart';
 import 'package:wenyousite_mobile/features/users/application/user_repository_ports.dart';
 import 'package:wenyousite_mobile/features/users/data/profile_cover_mapper.dart';
+import 'package:wenyousite_mobile/features/users/data/recent_reply_preview.dart';
 import 'package:wenyousite_mobile/features/users/domain/public_user_models.dart';
 
 export 'package:wenyousite_mobile/features/users/application/user_repository_ports.dart'
@@ -247,7 +247,7 @@ class ApiPublicUserRepository implements PublicUserRepository {
   }
 
   PublicUserReplyModel _mapReply(RecentReplyResponseDto dto) {
-    final source = dto.preview.trim().isEmpty ? dto.content : dto.preview;
+    final source = dto.content.trim().isEmpty ? dto.preview : dto.content;
     return PublicUserReplyModel(
       mediaDisplays: mapMarkdownMediaDisplays(dto.mediaDisplays),
       id: dto.id,
@@ -255,7 +255,14 @@ class ApiPublicUserRepository implements PublicUserRepository {
       threadTitle: dto.thread.title,
       subthreadId: dto.subthreadId,
       subthreadTitle: dto.subthread.title,
-      preview: MarkdownContent.toPlainTextPreview(source),
+      preview: recentReplyPreview(
+        source,
+        diceLabels: {
+          for (final roll in dto.diceRolls)
+            roll.nodeId.toLowerCase():
+                '${roll.notation} = ${roll.total.toInt()}',
+        },
+      ),
       createdAt: dto.createdAt,
       floorNumber: dto.floorNumber?.toInt(),
       parentPostId: dto.parentPostId,

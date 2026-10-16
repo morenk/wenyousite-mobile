@@ -13,6 +13,7 @@ import 'package:wenyousite_mobile/core/markdown/markdown_inline_boundary.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_inline_compatibility_syntax.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_mention_target.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_quote_line_syntax.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_reader_leading_space_syntax.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_reader_paragraph_syntax.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_source_protection.dart';
 import 'package:wenyousite_mobile/core/media/media_display.dart';
@@ -94,6 +95,7 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
   Map<String, md.LinkReference> _imageReferences = const {};
   MarkdownStyleSheet? _styleSheet;
   Widget? _renderedBody;
+  var _markdownReloadGeneration = 0;
   var _usesPlainTextFastPath = false;
   var _hasSelection = false;
 
@@ -153,6 +155,14 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
   }
 
   @override
+  void reassemble() {
+    super.reassemble();
+    // 上游会缓存解析结果；热重载后重建阅读子树，让新的语法立即生效。
+    _markdownReloadGeneration++;
+    _renderedBody = null;
+  }
+
+  @override
   void dispose() {
     _selectionScope?.update(this, false);
     _diceLabels.dispose();
@@ -189,7 +199,10 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
       body = GestureDetector(
         behavior: HitTestBehavior.translucent,
         onTap: widget.onTapText == null ? null : _handleTapText,
-        child: _buildMarkdownSegments(),
+        child: KeyedSubtree(
+          key: ValueKey(_markdownReloadGeneration),
+          child: _buildMarkdownSegments(),
+        ),
       );
     }
     return KeyedSubtree(
@@ -331,6 +344,7 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
       const MarkdownReaderParagraphSyntax(),
     ],
     inlineSyntaxes: [
+      MarkdownReaderLeadingSpaceSyntax(),
       MarkdownImageOccurrenceSyntax(
         startIndex: imageStartIndex,
         references: _imageReferences,
