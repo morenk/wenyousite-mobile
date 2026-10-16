@@ -57,6 +57,7 @@ class PostItem {
     required this.version,
     required this.createdAt,
     required this.updatedAt,
+    this.editedAt,
     required this.isBody,
     required this.isDeleted,
     this.floorNumber,
@@ -83,6 +84,7 @@ class PostItem {
   final int version;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final DateTime? editedAt;
   final bool isBody;
   final bool isDeleted;
   final int? floorNumber;

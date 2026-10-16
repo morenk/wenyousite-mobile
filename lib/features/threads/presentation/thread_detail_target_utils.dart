@@ -213,6 +213,7 @@ PostItem threadFloorAsPost(
     mediaDisplays: floor.body.mediaDisplays,
     version: floor.version,
     createdAt: floor.createdAt,
+    editedAt: floor.editedAt,
     updatedAt: floor.createdAt,
     isBody: false,
     isDeleted: floor.isDeleted,
