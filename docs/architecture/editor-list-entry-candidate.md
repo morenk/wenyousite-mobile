@@ -1,6 +1,6 @@
 # 编辑器工具栏布局候选
 
-状态：前次真机验收未通过，修正候选／待负责人复验。日期：2026-10-16。沿用 [PR #98](https://github.com/morenk/wenyousite-mobile/pull/98)。
+状态：用户已授权本批合并；检查及限定例外见文末。历史反馈记录保留，不将自动测试代替未覆盖的人工交互验收。沿用 [PR #98](https://github.com/morenk/wenyousite-mobile/pull/98)。
 
 ## 范围与来源
 
@@ -119,3 +119,5 @@ SharedPreferences `editor.toolbar.layout.v1` 只保存版本和两组稳定 ID�
 合并最新 `dev` 后，完整 Flutter 测试首轮为 6661 项通过、1 项跳过、4 项失败。四项均是工具箱入口测试截取整个游客“我的”页面时，遗漏本功能已增加的“编辑器工具栏”偏好行；已逐张核对 400dp 明暗及 320dp 双倍字号明暗的实际、原图和差异图，仅新增该行并使其后帮助区域顺延，未改字号、间距或容差。只更新这四张基线后，`test/features/toolbox/toolbox_entry_test.dart` 的 8 项非更新比较全部通过。应用源码未变；原失败记录保留，不能将原命令写成全绿。
 
 完整检查原日志为 `.buildlog/toolbar-final-merge-gate.log`；四图更新与非更新比较分别为 `.buildlog/toolbar-toolbox-golden-update.log`、`.buildlog/toolbar-toolbox-golden-compare.log`。线上精确 API 版本／构建 SHA 校验按用户“允许本批延期该项，其余门禁通过后合并”的限定授权，保留失败事实并待部署后核验；本批未修改或关闭该检查。
+
+其余完整阶段通过：OpenAPI 校验、固定来源、客户端再生成一致性、1318 文件格式检查、应用与生成客户端全量分析、架构、模块文档、API 范围覆盖，以及 Windows 发布工具 49 项。原完整命令仍退出 1（线上精确项及上述已补验的四张旧基线），不冒称整条命令全绿。验证应用树为 `74fe7e42`，后续仅四图和记录变化。最终线上只读观察已为 `d3577839`／API `5.38.0-dev.20261016.1`；本 PR 固定的 `b5f0e3bb`／5.36 历史契约与其不相等，后续 PR #102 按 5.39 固定来源完成最终消费端检查。本批不部署，也不永久豁免版本校验。
