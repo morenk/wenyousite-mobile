@@ -9,7 +9,6 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_settings_body.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/editor/editor.dart';
 import 'package:wenyousite_mobile/features/settings/presentation/editor_toolbar_arrangement.dart';
-import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
 
 class EditorToolbarSettingsPage extends ConsumerWidget {
   const EditorToolbarSettingsPage({super.key});
@@ -45,7 +44,7 @@ class EditorToolbarSettingsPage extends ConsumerWidget {
                   capabilities: WenyouEditorCapabilities.forAlignment(
                     ref.watch(appCapabilitiesProvider).markdownAlignment,
                   ),
-                  stickersEnabled: ref.watch(stickersEnabledProvider),
+                  stickersEnabled: ref.watch(appCapabilitiesProvider).stickers,
                   audioEnabled:
                       ref.watch(appCapabilitiesProvider).audioUpload != null,
                   layout: state.layout,
