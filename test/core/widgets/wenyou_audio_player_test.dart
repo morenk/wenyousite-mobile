@@ -26,6 +26,20 @@ String get _body =>
 
 void main() {
   setUpAll(loadAudioTestFonts);
+  testWidgets('独占音频后接协议空段保留播放器与空行高度', (tester) async {
+    final controller = AudioPlaybackController(() => throw StateError('不得加载'));
+    addTearDown(controller.dispose);
+    await tester.pumpWidget(
+      _app(controller, body: '[原文件名.mp3](${_audio.sourceUrl})\n<br />'),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byType(WenyouAudioPlayer), findsOneWidget);
+    final blank = find.byKey(
+      const ValueKey('wenyou-markdown-empty-paragraph-0'),
+    );
+    expect(blank, findsOneWidget);
+    expect(tester.getSize(blank).height, closeTo(30.6, .01));
+  });
   testWidgets('标签样式不传给播放和保存控件，混排和无投影保持普通正文', (tester) async {
     final controller = AudioPlaybackController(() => throw StateError('不得加载'));
     addTearDown(controller.dispose);
@@ -68,10 +82,53 @@ void main() {
       expect(find.byType(WenyouAudioPlayer), findsNothing, reason: source);
     }
   });
+  testWidgets('音频前后多个独占空段保留高度和marks，inline换行不拆混排', (tester) async {
+    final controller = AudioPlaybackController(() => throw StateError('不得加载'));
+    addTearDown(controller.dispose);
+    final link = '**[*原名*](${_audio.sourceUrl})**';
+    for (final body in [
+      '<br />\n$link\n<br />\n<br />',
+      '  <br> \n$link\n<br/>\n <br /> ',
+    ]) {
+      await tester.pumpWidget(_app(controller, body: body));
+      await tester.pumpAndSettle();
+      expect(find.byType(WenyouAudioPlayer), findsOneWidget);
+      final player = tester.widget<WenyouAudioPlayer>(
+        find.byType(WenyouAudioPlayer),
+      );
+      expect(player.labelRuns.single.marks, containsAll(['strong', 'em']));
+      for (var i = 0; i < 3; i++) {
+        final blank = find.byKey(
+          ValueKey('wenyou-markdown-empty-paragraph-$i'),
+        );
+        expect(tester.getSize(blank).height, closeTo(30.6, .01));
+      }
+    }
+    await tester.pumpWidget(
+      _app(controller, body: '前文\n<br />\n$link\n<br />\n后文'),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byType(WenyouAudioPlayer), findsOneWidget);
+    expect(find.textContaining('前文', findRichText: true), findsOneWidget);
+    expect(find.textContaining('后文', findRichText: true), findsOneWidget);
+    for (final body in [
+      '$link\n后文\n<br />',
+      '前文\n$link\n<br />',
+      '$link<br />',
+      '$link  \n后文',
+      '$link\\\n后文',
+      '- $link\n<br />',
+      '> $link\n> <br />',
+    ]) {
+      await tester.pumpWidget(_app(controller, body: body));
+      await tester.pumpAndSettle();
+      expect(find.byType(WenyouAudioPlayer), findsNothing, reason: body);
+    }
+  });
   testWidgets('独立粗体文件名链接按可信投影显示播放器', (tester) async {
     final controller = AudioPlaybackController(() => throw StateError('不得加载'));
     addTearDown(controller.dispose);
-    const name = '莫问归期.辞九门回忆--+1晨#2F92SO.mp3';
+    const name = '原声.现场回忆--+1段#2F92SO.mp3';
     await tester.pumpWidget(
       _app(controller, body: '**[$name](${_audio.sourceUrl})**'),
     );
@@ -85,6 +142,35 @@ void main() {
       player.labelRuns.every((run) => run.marks.contains('strong')),
       isTrue,
     );
+  });
+  testWidgets('音频投影不改变引用或列表内部空行与段落几何', (tester) async {
+    final controller = AudioPlaybackController(() => throw StateError('不得加载'));
+    addTearDown(controller.dispose);
+    final link = '[原名](${_audio.sourceUrl})';
+    for (final source in [
+      '> $link\n> <br />\n> <br />\n> 后文',
+      '- $link\n  <br />\n  <br />\n  后文',
+      '> <br />\n> $link\n> <br />',
+    ]) {
+      await tester.pumpWidget(_app(controller, body: source, audios: const {}));
+      await tester.pumpAndSettle();
+      final height = tester.getSize(find.byType(WenyouMarkdown)).height;
+      final textRects = tester
+          .widgetList<RichText>(find.byType(RichText))
+          .where((widget) => widget.text.toPlainText().contains('原名'))
+          .map((widget) => tester.getRect(find.byWidget(widget)))
+          .toList();
+      await tester.pumpWidget(_app(controller, body: source));
+      await tester.pumpAndSettle();
+      expect(find.byType(WenyouAudioPlayer), findsNothing);
+      expect(tester.getSize(find.byType(WenyouMarkdown)).height, height);
+      final withProjection = tester
+          .widgetList<RichText>(find.byType(RichText))
+          .where((widget) => widget.text.toPlainText().contains('原名'))
+          .map((widget) => tester.getRect(find.byWidget(widget)))
+          .toList();
+      expect(withProjection, textRects);
+    }
   });
   for (final dark in [false, true]) {
     for (final width in [320, 360]) {

@@ -30,7 +30,7 @@ List<EmbedBuilder> wenyouEditorEmbedBuilders({
   _DiceEmbedBuilder(),
   _StickerEmbedBuilder(mediaDisplays),
   _ImageEmbedBuilder(mediaDisplays, pendingImages),
-  EditorAudioEmbedBuilder(mediaAudios, editorFocusNode),
+  EditorAudioEmbedBuilder(mediaAudios, editorFocusNode, pendingImages?.audios),
   _CompatibilityEmbedBuilder(),
   _HorizontalRuleEmbedBuilder(),
 ];

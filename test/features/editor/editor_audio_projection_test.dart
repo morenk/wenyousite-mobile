@@ -357,4 +357,42 @@ void main() {
     expect(await session.flush(), isTrue);
     expect(session.localMarkdown, contains(_audio.sourceUrl));
   });
+  testWidgets('待上传卡片复制不会把本机身份或内部视图带到另一会话', (tester) async {
+    String? text;
+    final gateway = CallbackEditorClipboardGateway(
+      readCallback: () async => text,
+      writeCallback: (value) async {
+        text = value;
+      },
+    );
+    final store = WenyouEditorClipboardStore();
+    final session = RichEditorSession(
+      initialMarkdown: '',
+      onMarkdownChanged: (_) {},
+      clipboardGateway: gateway,
+      clipboardStore: store,
+    );
+    addTearDown(session.dispose);
+    session.insertLocalAudio('local-only', filename: '原名.wav');
+    expect(_embeds(session), 1);
+    session.controller.updateSelection(
+      const TextSelection(baseOffset: 0, extentOffset: 1),
+      ChangeSource.local,
+    );
+    expect(await session.copySelection(), isTrue);
+    expect(text, '[音频未就绪]');
+    final other = RichEditorSession(
+      initialMarkdown: '',
+      onMarkdownChanged: (_) {},
+      clipboardGateway: gateway,
+      clipboardStore: store,
+    );
+    addTearDown(other.dispose);
+    expect(await pasteEditorClipboard(other.controller), isTrue);
+    expect(other.localAudioIds, isEmpty);
+    expect(_embeds(other), 0);
+    expect(await other.flush(), isTrue);
+    expect(other.localMarkdown, isNot(contains('local.invalid')));
+    expect(other.localMarkdown, isNot(contains(MarkdownAudioEmbed.type)));
+  });
 }

@@ -62,6 +62,8 @@ class EditorPendingAudios extends ChangeNotifier {
   Completer<void>? _resumed;
   String? selectionFailure;
   bool get selecting => _selection != null;
+  bool get preparingSelection =>
+      items.values.any((item) => item.persisting != null);
   Set<String> get ids => editor.localAudioIds;
   bool get hasPending => ids.isNotEmpty || selecting;
   bool get hasFailure =>
@@ -89,6 +91,7 @@ class EditorPendingAudios extends ChangeNotifier {
     String? savedId;
     PendingAudioFileStore? savedStore;
     bool adopted = false;
+    EditorPendingAudio? selectedItem;
     try {
       file = await operation.result;
       if (_paused && current()) await _resumed?.future;
@@ -108,7 +111,12 @@ class EditorPendingAudios extends ChangeNotifier {
       final id = const Uuid().v4();
       savedId = id;
       savedStore = store as PendingAudioFileStore;
-      final input = await savedStore.persistAudio(
+      final item = EditorPendingAudio(id, null)..active = true;
+      selectedItem = item;
+      items[id] = item;
+      final itemGeneration = item.generation;
+      editor.insertLocalAudio(id, filename: file.filename);
+      final persistence = savedStore.persistAudio(
         AudioUploadInput(
           filename: file.filename,
           path: file.path,
@@ -119,16 +127,24 @@ class EditorPendingAudios extends ChangeNotifier {
         target: target,
         attachmentId: id,
       );
+      item.persisting = persistence.then<void>(
+        (_) {},
+        onError: (Object _, StackTrace _) {},
+      );
+      notifyListeners();
+      final input = await persistence;
+      item.persisting = null;
       if (_paused && current()) await _resumed?.future;
-      if (!current()) return;
-      final item = EditorPendingAudio(id, input)..persisted = true;
-      items[id] = item;
+      if (!current() || !ids.contains(id)) return;
+      item.input = input;
+      item.persisted = true;
+      item.active = false;
+      if (item.generation != itemGeneration) item.awaitingContinue = true;
       adopted = true;
-      editor.insertLocalAudio(id, filename: input.filename);
       await editor.flush();
       _selection = null;
       if (await save() && current()) {
-        unawaited(_run(item));
+        if (!item.awaitingContinue) unawaited(_run(item));
       } else {
         item.failure = '音频未能保存到本机，请重试或移除。';
       }
@@ -142,11 +158,24 @@ class EditorPendingAudios extends ChangeNotifier {
       }
     } on Object catch (error) {
       if (current()) {
-        selectionFailure = error is ApiFailure
-            ? error.userMessage
-            : '音频选择失败，请重试。';
+        final message = error is ApiFailure ? error.userMessage : '音频选择失败，请重试。';
+        if (selectedItem != null && ids.contains(selectedItem.id)) {
+          selectedItem.failure = message;
+          selectedItem.terminalFailure = true;
+        } else {
+          selectionFailure = message;
+        }
       }
     } finally {
+      if (selectedItem != null) {
+        selectedItem.persisting = null;
+        if (!adopted) {
+          selectedItem.active = false;
+          if (!_disposed && isCurrent() && !current()) {
+            editor.removeLocalAudio(selectedItem.id);
+          }
+        }
+      }
       if (!adopted && savedStore != null && savedId != null) {
         await savedStore.removeAudio(
           accountId: accountId!,
@@ -180,6 +209,9 @@ class EditorPendingAudios extends ChangeNotifier {
         ..persisted = input != null
         ..pending = PendingAudioUpload.parse(entry['pending'])
         ..awaitingContinue = true;
+      item.progress = AudioUploadProgress(
+        item.pending?.stage ?? AudioUploadStage.preparing,
+      );
       if (input == null && item.pending == null) {
         item.failure = '本机音频缺失，请移除后重新选择。';
       }
@@ -240,6 +272,7 @@ class EditorPendingAudios extends ChangeNotifier {
         !isCurrent() ||
         _paused ||
         item.active ||
+        item.persisting != null ||
         !ids.contains(item.id)) {
       return;
     }
@@ -330,6 +363,7 @@ class EditorPendingAudios extends ChangeNotifier {
     item.generation++;
     item.cancel?.cancel();
     item.active = false;
+    item.awaitingContinue = true;
   }
 
   void pause({bool cancelSelection = true}) {

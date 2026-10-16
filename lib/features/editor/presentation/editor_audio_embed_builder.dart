@@ -6,11 +6,18 @@ import 'package:wenyousite_mobile/core/markdown/markdown_audio_embed.dart';
 import 'package:wenyousite_mobile/core/media/media_audio.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_audio_player.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/audio_projected_quill_controller.dart';
+import 'package:wenyousite_mobile/features/editor/presentation/editor_pending_audio_widget.dart';
+import 'package:wenyousite_mobile/features/editor/presentation/editor_pending_audios.dart';
 
 class EditorAudioEmbedBuilder extends EmbedBuilder {
-  const EditorAudioEmbedBuilder(this.audios, this.editorFocusNode);
+  const EditorAudioEmbedBuilder(
+    this.audios,
+    this.editorFocusNode, [
+    this.pendingAudios,
+  ]);
   final Map<String, MediaAudio> audios;
   final FocusNode? editorFocusNode;
+  final EditorPendingAudios? pendingAudios;
   @override
   String get key => MarkdownAudioEmbed.type;
   @override
@@ -27,7 +34,12 @@ class EditorAudioEmbedBuilder extends EmbedBuilder {
       audios,
     );
     // 元数据只能来自当前编辑会话，剪贴板载荷本身没有播放权限。
-    if (projection == null) return Text(toPlainText(embedContext.node));
+    final pendingId = MarkdownAudioEmbed.pendingId(
+      embedContext.node.value.data,
+    );
+    if (projection == null && pendingId == null) {
+      return Text(toPlainText(embedContext.node));
+    }
     final controller = embedContext.controller;
     void select() {
       if (embedContext.readOnly) return;
@@ -87,13 +99,33 @@ class EditorAudioEmbedBuilder extends EmbedBuilder {
           child: GestureDetector(
             behavior: HitTestBehavior.opaque,
             onTap: select,
-            child: WenyouAudioPlayer(
-              key: ValueKey('editor-audio-${projection.audio.mediaId}'),
-              audio: projection.audio,
-              label: projection.label,
-              labelRuns: projection.labelRuns,
-              showSave: false,
-            ),
+            child: pendingId != null
+                ? EditorPendingAudioCard(
+                    id: pendingId,
+                    label: toPlainText(embedContext.node),
+                    audios: pendingAudios,
+                    locked: controller.readOnly,
+                    onRemove: () {
+                      if (pendingAudios != null) {
+                        pendingAudios!.remove(pendingId);
+                      } else {
+                        final offset = embedContext.node.documentOffset;
+                        controller.replaceText(
+                          offset,
+                          1,
+                          '',
+                          TextSelection.collapsed(offset: offset),
+                        );
+                      }
+                    },
+                  )
+                : WenyouAudioPlayer(
+                    key: ValueKey('editor-audio-${projection!.audio.mediaId}'),
+                    audio: projection.audio,
+                    label: projection.label,
+                    labelRuns: projection.labelRuns,
+                    showSave: false,
+                  ),
           ),
         ),
       ),

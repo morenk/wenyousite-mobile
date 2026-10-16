@@ -7,6 +7,7 @@ import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:markdown/markdown.dart' as md;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_alignment.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_audio_projection.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_empty_paragraphs.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_image_occurrence_syntax.dart';
@@ -173,6 +174,13 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
     return _renderedBody ??= _buildBody();
   }
 
+  @override
+  void reassemble() {
+    super.reassemble();
+    // 阅读缓存包含解析器和 builder；Debug 热重载后重新应用渲染规则。
+    _renderedBody = null;
+  }
+
   Widget _buildBody() {
     final Widget body;
     if (_usesPlainTextFastPath) {
@@ -332,7 +340,9 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
     blockSyntaxes: [
       const md.SetextHeaderSyntax(),
       const MarkdownQuoteLineSyntax(_emptyParagraphTag),
-      const MarkdownLiteralRowsSyntax(),
+      MarkdownLiteralRowsSyntax(
+        isAtomicLine: widget.mediaAudios.isEmpty ? null : _isAudioLine,
+      ),
       _EmptyParagraphBlockSyntax(),
       const MarkdownReaderParagraphSyntax(),
     ],
@@ -400,6 +410,18 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
     },
     onTapLink: (_, href, _) => _openLink(context, href),
   );
+
+  bool _isAudioLine(String line) {
+    if (!line.contains('[')) return false;
+    final blocks = md.Document(
+      extensionSet: md.ExtensionSet.gitHubFlavored,
+      inlineSyntaxes: MarkdownInlineCompatibilitySyntax.create(),
+      encodeHtml: false,
+    ).parse(line);
+    return blocks.length == 1 &&
+        MarkdownAudioProjection.fromBlock(blocks.single, widget.mediaAudios) !=
+            null;
+  }
 
   void _handleTapText() {
     if (_hasSelection) {

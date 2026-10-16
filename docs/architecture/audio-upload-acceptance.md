@@ -58,7 +58,20 @@ test/core/application/editor_toolbar_layout_test.dart
 
 ## 原生构建与待验收
 
-### 样式兼容／阅读链接／移除渐变批次（最新候选）
+### 独占空段阅读修正与上传卡片（最新候选）
+
+上一批外层 marks 修正后，负责人原第 18 楼仍为链接，记录为“验收失败／继续排查”。治理在授权的当前 Debug 页面取得仅含计数／标签／布尔结构的运行诊断：`audios=1`、精确链接命中、`p[a,br]`、eligible=false；正文共两行，含字面 br，无双空格／反斜杠 hardbreak，末尾空白为零。确认不是 DTO 投影丢失，而是既有文字行布局将独占音频与相邻协议空段合并。脱敏两行 `[原文件名.mp3](可信URL)\n<br />` 在旧实现失败（`.buildlog/audio-literal-empty-before.log`），新实现播放器与 30.6dp 空段同时保留（`audio-literal-empty-after.log`）。
+
+修正仅让顶层可信独占音频在文字行合并前保留块身份，空段交给既有 builder；多个／前置／尾部空段、旧 br 写法和标签 marks 保留，inline hardbreak／前后混排不误升级。引用／列表递归解析不启用该分块；有无媒体投影的文字矩形与高度直接比较一致。阅读缓存的 Debug reassemble 重新应用解析器，无需热重启。临时诊断与原文件名筛选常量已删除；原手机页面尚须治理统一 reload 后复验，不能以离线回归代替负责人验收。
+
+- 文件选择完成即显示本机音频卡片，包括私有文件准备阶段；上传／处理／失败与恢复状态来自原队列。真实上传进度不冒充播放进度，处理中满轨道，失败／暂停冻结；完成原位可播放。取消、删除撤销、迟到完成、草稿继续、未知本机标记可移除、未完成发表阻拦均保留。跨会话剪贴板仍以“音频未就绪”降级，内部 JSON 和本机 URL 不外泄。编辑始终无下载，阅读保留保存。
+- `.buildlog/audio-pending-final.log` 六个相关文件 **66 项全过**：`editor_pending_audio_widget_test.dart`、`editor_pending_audios_test.dart`、`editor_audio_projection_test.dart`、`editor_pending_audio_document_test.dart`、`post_audio_submission_test.dart`、`wenyou_audio_player_test.dart`。包含真实 Quill 卡片取消／undo／显式重试完成与选区，mock 实际发表页，原名／marks／复制／标准正文往返，原两行及空段组合、明暗窄屏／200% Golden 比较。
+- `.buildlog/audio-pending-breaks.log` 之前相关 **28 项通过**，包含现有 `wenyou_markdown_empty_paragraphs_test.dart`、`markdown_paragraph_spacing_test.dart`；与最终组有重叠，不累加成独立总数。新增引用／列表几何精确对照 `audio-quote-boundary.log` **1 项通过**，亦已纳入最终组。
+- 首次删除撤销用例未分开即时插入与删除的历史事务，先失败；清空已验证的初始建模历史、单独验证用户删除／撤销后通过，见 `audio-pending-lifecycle.log` 与最终日志。首轮定向分析 4 条 info 已修；`.buildlog/audio-pending-analyze-final.log` **13 个改动 Dart 文件 No issues found**。格式仅改动文件。
+- 新图 `test/features/editor/goldens/audio_pending_{320|360}_{light|dark}{_200}.png` 共八张，包含上传、处理、失败与完成卡片。真实主题背景、原名字形、细轨道、必要恢复操作无可见溢出；失败只保留一次消息。交叉审阅作为视觉候选，待负责人体验。
+- 本批纯 Dart，无新 API、插件、原生或 Foundation 版本；未构建、安装、启动、热重启或操作用户手机。旧 APK `4008ddbb` 不含本批；设备／热重载由治理任务持有，最终结果以其会话记录为准。无全量测试／分析／门禁及线上写入。
+
+### 样式兼容／阅读链接／移除渐变批次（前一候选，原场景未通过）
 
 负责人再次反馈新发表音频只显示链接，原页面截图中新链接带整段粗体、旧音频仍显示播放器，因此本轮验收尚未通过。旧 `MarkdownAudioProjection.fromBlock` 只接受 `p → a`，真实 WenyouMarkdown 的 `**[文件名](可信 URL)**` 回归在旧实现失败：`.buildlog/audio-published-link-before.log`。此处兼容只展开单一 `strong/em/del/s` 链，继续要求独立段落、单一链接和可信 URL；不按文件名扩展猜测，不改 API、持久 Markdown 或上传协议。原正文／投影尚未取得时，不以该构造失败宣布原问题已唯一定位。
 

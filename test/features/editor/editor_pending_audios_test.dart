@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/app/app_capabilities.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_audio_embed.dart';
 import 'package:wenyousite_mobile/core/media/media_audio.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_pending_audios.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/rich_editor_pending_audio_document.dart';
@@ -86,6 +87,16 @@ void main() {
     final pick = harness.audios.pick();
     harness.picker.complete();
     await tester.pump();
+    expect(harness.editor.localAudioIds, hasLength(1));
+    expect(
+      harness.editor.controller.document.toDelta().operations.first.data,
+      isA<Map>().having(
+        (value) => value.containsKey(MarkdownAudioEmbed.type),
+        '本机卡片',
+        isTrue,
+      ),
+    );
+    expect(harness.repository.calls, 0);
     harness.audios.pause();
     harness.store.copyGate!.complete();
     await pick;
@@ -93,6 +104,29 @@ void main() {
     expect(harness.repository.calls, 0);
     expect(harness.editor.localAudioIds, isEmpty);
     expect(harness.picker.released, isTrue);
+    await harness.close(tester);
+  });
+
+  testWidgets('准备卡片删除后复制迟到不上传，撤销不自动重试', (tester) async {
+    final harness = await _mount(tester);
+    harness.store.copyGate = Completer<void>();
+    final pick = harness.audios.pick();
+    harness.picker.complete();
+    await tester.pump();
+    final id = harness.editor.localAudioIds.single;
+    harness.editor.controller.document.history.clear();
+    harness.audios.remove(id);
+    harness.store.copyGate!.complete();
+    await pick;
+    expect(harness.repository.calls, 0);
+    expect(harness.editor.localAudioIds, isEmpty);
+    expect(harness.store.removed, [id]);
+    harness.editor.controller.undo();
+    expect(harness.editor.localAudioIds, {id});
+    harness.audios.documentChanged();
+    await tester.pump();
+    expect(harness.repository.calls, 0);
+    expect(harness.audios.items[id]!.awaitingContinue, isTrue);
     await harness.close(tester);
   });
 

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_quill/quill_delta.dart';
 import 'package:wenyousite_mobile/core/markdown/local_audio_marker.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_audio_embed.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_paragraph_boundaries.dart';
 import 'package:wenyousite_mobile/core/media/media_audio.dart';
@@ -11,7 +12,9 @@ import 'package:wenyousite_mobile/features/editor/presentation/rich_editor_sessi
 
 extension RichEditorPendingAudioDocument on RichEditorSession {
   Set<String> get localAudioIds => {
-    for (final operation in controller.document.toDelta().toList())
+    for (final operation in MarkdownAudioEmbed.expand(
+      controller.document.toDelta(),
+    ).toList())
       if (operation.attributes?['link'] case final String url)
         if (url.startsWith(localAudioMarkerPrefix))
           url.substring(localAudioMarkerPrefix.length),
@@ -89,6 +92,44 @@ extension RichEditorPendingAudioDocument on RichEditorSession {
     var renamed = false;
     for (final operation in controller.document.toDelta().toList()) {
       final length = operation.length ?? 0;
+      final data = operation.data;
+      if (data is Map &&
+          MarkdownAudioEmbed.pendingId(data[MarkdownAudioEmbed.type]) == id) {
+        changed = true;
+        if (url == null) {
+          change.delete(length);
+          int adjusted(int value) => value <= offset
+              ? value
+              : value - (value - offset).clamp(0, length);
+          selection = selection.copyWith(
+            baseOffset: adjusted(selection.baseOffset),
+            extentOffset: adjusted(selection.extentOffset),
+          );
+        } else {
+          final link = MarkdownAudioEmbed.content(
+            data[MarkdownAudioEmbed.type],
+          )!;
+          final replacement = Delta();
+          for (final item in link.operations) {
+            replacement.insert(
+              item.data == '音频' && filename?.trim().isNotEmpty == true
+                  ? filename!.replaceAll(RegExp(r'[\r\n]'), ' ')
+                  : item.data,
+              {
+                ...?item.attributes,
+                'link': url,
+                MarkdownDeltaCodec.literalTextAttribute: true,
+              },
+            );
+          }
+          change.insert({
+            MarkdownAudioEmbed.type: {'link': replacement.toJson()},
+          });
+          change.delete(length);
+        }
+        offset += length;
+        continue;
+      }
       if (operation.attributes?['link'] == '$localAudioMarkerPrefix$id') {
         changed = true;
         if (url != null) {

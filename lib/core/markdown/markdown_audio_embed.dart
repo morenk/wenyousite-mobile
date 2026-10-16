@@ -1,4 +1,5 @@
 import 'package:flutter_quill/quill_delta.dart';
+import 'package:wenyousite_mobile/core/markdown/local_audio_marker.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_audio_projection.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_codec_types.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_inline_encoder.dart';
@@ -29,6 +30,14 @@ abstract final class MarkdownAudioEmbed {
     } on Object {
       return null;
     }
+  }
+
+  static String? pendingId(Object? payload) {
+    final value = content(payload);
+    final url = value == null ? null : _linkUrl(value);
+    if (url == null || !url.startsWith(localAudioMarkerPrefix)) return null;
+    final id = url.substring(localAudioMarkerPrefix.length);
+    return id.isEmpty ? null : id;
   }
 
   static String? _linkUrl(Delta value) {
@@ -112,12 +121,16 @@ abstract final class MarkdownAudioEmbed {
   static Delta project(Delta source, Map<String, MediaAudio> audios) {
     if (audios.isEmpty &&
         !source.operations.any(
-          (op) => op.data is Map && (op.data as Map).containsKey(type),
+          (op) =>
+              (op.data is Map && (op.data as Map).containsKey(type)) ||
+              (op.attributes?['link'] is String &&
+                  (op.attributes!['link'] as String).startsWith(
+                    localAudioMarkerPrefix,
+                  )),
         )) {
       return source;
     }
     final expanded = expand(source);
-    if (audios.isEmpty) return expanded;
     final output = Delta();
     var offset = 0;
     var start = 0;
@@ -137,7 +150,8 @@ abstract final class MarkdownAudioEmbed {
         offset++;
         final payload = {'link': line.toJson()};
         // 普通正文不反复扫描整篇段落；只有可信的单链接行需要查边界。
-        final range = projection(payload, audios) == null
+        final range =
+            projection(payload, audios) == null && pendingId(payload) == null
             ? null
             : MarkdownParagraphBoundaries.range(expanded, start);
         if (range?.start == start && range?.end == offset) {
