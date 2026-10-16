@@ -78,6 +78,7 @@ class WenyouEditorToolbar extends StatefulWidget {
     required this.onSaveDraft,
     required this.enabled,
     this.onInsertSticker,
+    this.onInsertAudio,
     this.onInsertHorizontalRule,
     this.editorFocusNode,
     this.onInteractionChanged,
@@ -97,6 +98,7 @@ class WenyouEditorToolbar extends StatefulWidget {
 
   final QuillController controller;
   final Future<void> Function() onInsertImage;
+  final Future<void> Function()? onInsertAudio;
   final Future<void> Function(TextSelection selection)? onInsertSticker;
   final VoidCallback? onInsertHorizontalRule;
   final Future<void> Function() onSaveDraft;
@@ -245,6 +247,7 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
         width: width,
         showSubmit: widget.onSubmit != null,
         stickerCallback: widget.onInsertSticker != null,
+        audioCallback: widget.onInsertAudio != null,
       );
 
   Widget _buildToolbarRow(BuildContext context, Style style, double width) {
@@ -342,6 +345,7 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
         () => _toggle(Attribute.strikeThrough),
       ),
       EditorTool.image => () => _runExternal(widget.onInsertImage),
+      EditorTool.audio => () => _runExternal(widget.onInsertAudio!),
       EditorTool.sticker => () => _runSelectionExternal(
         widget.onInsertSticker!,
       ),

@@ -47,7 +47,10 @@ void main() {
         await tester.tap(find.byKey(const Key('editor-more')));
         await tester.pumpAndSettle();
         for (final tool in EditorTool.values) {
-          expect(find.byTooltip(tool.label), findsOneWidget);
+          expect(
+            find.byTooltip(tool.label),
+            tool == EditorTool.audio ? findsNothing : findsOneWidget,
+          );
         }
         expect(find.byTooltip('表情包').hitTestable(), findsOneWidget);
         expect(find.byTooltip('有序列表'), findsNothing);
@@ -62,6 +65,22 @@ void main() {
       });
     }
   }
+
+  testWidgets('音频回调可用时进入展开栏且点击只调用音频动作', (tester) async {
+    final controller = QuillController.basic();
+    addTearDown(controller.dispose);
+    var inserted = 0;
+    await tester.pumpWidget(
+      _app(controller, layout, onInsertAudio: () async => inserted++),
+    );
+    expect(find.byTooltip(EditorTool.audio.label), findsNothing);
+    await tester.tap(find.byKey(const Key('editor-more')));
+    await tester.pumpAndSettle();
+    expect(find.byTooltip(EditorTool.audio.label), findsOneWidget);
+    await tester.tap(find.byTooltip(EditorTool.audio.label));
+    expect(inserted, 1);
+    expect(controller.document.toPlainText(), '\n');
+  });
 
   testWidgets('无原更多能力仍可访问自定义展开栏，缺表情回调不显示按钮', (tester) async {
     final controller = QuillController.basic();
@@ -142,6 +161,7 @@ Widget _app(
   bool dark = false,
   double scale = 1,
   bool stickers = true,
+  Future<void> Function()? onInsertAudio,
   WenyouEditorCapabilities capabilities =
       WenyouEditorCapabilities.richMarkdownWithImageAlignment,
 }) => MaterialApp(
@@ -159,6 +179,7 @@ Widget _app(
         layout: layout,
         capabilities: capabilities,
         onInsertImage: () async {},
+        onInsertAudio: onInsertAudio,
         onSaveDraft: () async {},
         onInsertSticker: stickers ? (_) async {} : null,
         onSubmit: () {},

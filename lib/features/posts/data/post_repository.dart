@@ -7,6 +7,7 @@ import 'package:wenyousite_mobile/core/models/discussion_window.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
 import 'package:wenyousite_mobile/core/network/discussion_window_mapper.dart';
+import 'package:wenyousite_mobile/core/network/media_audio_mapper.dart';
 import 'package:wenyousite_mobile/core/network/media_display_mapper.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_repository_ports.dart';
@@ -428,6 +429,7 @@ class ApiPostRepository implements PostRepository {
   PostItem _mapPost(PostResponseDto dto) {
     return PostItem(
       mediaDisplays: mapMarkdownMediaDisplays(dto.mediaDisplays),
+      mediaAudios: mapMediaAudios(dto.mediaAudios),
       mentionLabels: mapMentionIdentityLabels(dto.mentionIdentities),
       id: dto.id,
       threadId: dto.threadId,
@@ -453,6 +455,7 @@ class ApiPostRepository implements PostRepository {
   PostItem _mapReply(ReplyResponseDto dto) {
     return PostItem(
       mediaDisplays: mapMarkdownMediaDisplays(dto.mediaDisplays),
+      mediaAudios: mapMediaAudios(dto.mediaAudios),
       mentionLabels: mapMentionIdentityLabels(dto.mentionIdentities),
       id: dto.id,
       threadId: dto.threadId,
@@ -481,6 +484,7 @@ class ApiPostRepository implements PostRepository {
   PostItem _mapDetail(PostDetailResponseDto dto) {
     return PostItem(
       mediaDisplays: mapMarkdownMediaDisplays(dto.mediaDisplays),
+      mediaAudios: mapMediaAudios(dto.mediaAudios),
       mentionLabels: mapMentionIdentityLabels(dto.mentionIdentities),
       id: dto.id,
       threadId: dto.threadId,

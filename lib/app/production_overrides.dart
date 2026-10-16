@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/app/app_capabilities.dart';
 import 'package:wenyousite_mobile/app/visibility_cache_invalidation.dart';
+import 'package:wenyousite_mobile/core/application/audio_download.dart';
+import 'package:wenyousite_mobile/core/application/audio_playback.dart';
 import 'package:wenyousite_mobile/core/application/background_execution.dart';
 import 'package:wenyousite_mobile/core/application/background_online_reminders.dart';
 import 'package:wenyousite_mobile/core/application/bookmark_folder_catalog.dart';
@@ -38,18 +40,25 @@ import 'package:wenyousite_mobile/features/drafts/data/content_draft_repository.
 import 'package:wenyousite_mobile/features/editor/data/editor_snapshot_store.dart';
 import 'package:wenyousite_mobile/features/editor/data/mention_candidate_repository.dart';
 import 'package:wenyousite_mobile/features/home/data/home_repository.dart';
+import 'package:wenyousite_mobile/features/media/application/audio_file_picker_ports.dart';
+import 'package:wenyousite_mobile/features/media/application/audio_upload_ports.dart';
 import 'package:wenyousite_mobile/features/media/application/avatar_image_ports.dart';
 import 'package:wenyousite_mobile/features/media/application/image_crop_ports.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
 import 'package:wenyousite_mobile/features/media/application/pending_media_file_store_ports.dart';
 import 'package:wenyousite_mobile/features/media/application/profile_cover_image_ports.dart';
 import 'package:wenyousite_mobile/features/media/application/reading_gallery_controller.dart';
+import 'package:wenyousite_mobile/features/media/data/audio_upload_repository.dart'
+    show apiAudioUploadRepositoryProvider;
+import 'package:wenyousite_mobile/features/media/data/device_audio_download.dart';
 import 'package:wenyousite_mobile/features/media/data/editor_image_picker.dart';
 import 'package:wenyousite_mobile/features/media/data/image_crop_processor.dart';
+import 'package:wenyousite_mobile/features/media/data/just_audio_playback_driver.dart';
 import 'package:wenyousite_mobile/features/media/data/media_upload_repository.dart';
 import 'package:wenyousite_mobile/features/media/data/private_pending_media_file_store.dart';
 import 'package:wenyousite_mobile/features/media/data/profile_cover_image_picker.dart';
 import 'package:wenyousite_mobile/features/media/data/reading_gallery_repository.dart';
+import 'package:wenyousite_mobile/features/media/data/system_audio_file_picker.dart';
 import 'package:wenyousite_mobile/features/moderation/data/moderation_appeal_repository.dart';
 import 'package:wenyousite_mobile/features/moments/application/moment_draft_store_ports.dart';
 import 'package:wenyousite_mobile/features/moments/data/moment_bookmark_repository.dart';
@@ -311,6 +320,16 @@ List<Override> productionProviderOverrides() => [
   walletRepositoryProvider.overrideWith(
     (ref) => ref.watch(apiWalletRepositoryProvider),
   ),
+  audioPlaybackProvider.overrideWith(
+    (ref) => ref.watch(deviceAudioPlaybackProvider),
+  ),
+  audioDownloadProvider.overrideWith(
+    (ref) => ref.watch(deviceAudioDownloadProvider),
+  ),
+  audioFilePickerProvider.overrideWith((ref) => const SystemAudioFilePicker()),
+  audioUploadRepositoryProvider.overrideWith(
+    (ref) => ref.watch(apiAudioUploadRepositoryProvider),
+  ),
   avatarImagePickerPortProvider.overrideWith(
     (ref) => ref.watch(avatarImagePickerProvider),
   ),
@@ -355,6 +374,7 @@ List<Override> productionProviderOverrides() => [
 
 AppCapabilities appCapabilitiesForContract(ContractInfo? contract) {
   return AppCapabilities(
+    audioUpload: contract?.audioUpload,
     stickers: contract?.stickersEnabled ?? false,
     directMessages: contract?.directMessagesEnabled ?? false,
     pushNotifications: contract?.pushNotificationsEnabled ?? false,

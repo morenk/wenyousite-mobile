@@ -28,6 +28,7 @@ class PostReadingBody extends ConsumerWidget {
     galleryTarget: galleryTarget,
     data: post.content,
     mediaDisplays: post.mediaDisplays,
+    mediaAudios: post.mediaAudios,
     mentionLabels: post.mentionLabels,
     onInternalLink: (uri) => openThreadReadingLink(context, uri),
     diceLabels: {

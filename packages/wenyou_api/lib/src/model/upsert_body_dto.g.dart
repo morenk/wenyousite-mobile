@@ -6,6 +6,35 @@ part of 'upsert_body_dto.dart';
 // BuiltValueGenerator
 // **************************************************************************
 
+const UpsertBodyDtoTextColorVersionEnum
+_$upsertBodyDtoTextColorVersionEnum_number1 =
+    const UpsertBodyDtoTextColorVersionEnum._('number1');
+const UpsertBodyDtoTextColorVersionEnum
+_$upsertBodyDtoTextColorVersionEnum_unknownDefaultOpenApi =
+    const UpsertBodyDtoTextColorVersionEnum._('unknownDefaultOpenApi');
+
+UpsertBodyDtoTextColorVersionEnum _$upsertBodyDtoTextColorVersionEnumValueOf(
+  String name,
+) {
+  switch (name) {
+    case 'number1':
+      return _$upsertBodyDtoTextColorVersionEnum_number1;
+    case 'unknownDefaultOpenApi':
+      return _$upsertBodyDtoTextColorVersionEnum_unknownDefaultOpenApi;
+    default:
+      return _$upsertBodyDtoTextColorVersionEnum_unknownDefaultOpenApi;
+  }
+}
+
+final BuiltSet<UpsertBodyDtoTextColorVersionEnum>
+_$upsertBodyDtoTextColorVersionEnumValues =
+    BuiltSet<UpsertBodyDtoTextColorVersionEnum>(
+      const <UpsertBodyDtoTextColorVersionEnum>[
+        _$upsertBodyDtoTextColorVersionEnum_number1,
+        _$upsertBodyDtoTextColorVersionEnum_unknownDefaultOpenApi,
+      ],
+    );
+
 const UpsertBodyDtoMarkdownContractVersionEnum
 _$upsertBodyDtoMarkdownContractVersionEnum_number6 =
     const UpsertBodyDtoMarkdownContractVersionEnum._('number6');
@@ -66,12 +95,48 @@ _$upsertBodyDtoIdentityModeEnumValues = BuiltSet<UpsertBodyDtoIdentityModeEnum>(
   ],
 );
 
+Serializer<UpsertBodyDtoTextColorVersionEnum>
+_$upsertBodyDtoTextColorVersionEnumSerializer =
+    _$UpsertBodyDtoTextColorVersionEnumSerializer();
 Serializer<UpsertBodyDtoMarkdownContractVersionEnum>
 _$upsertBodyDtoMarkdownContractVersionEnumSerializer =
     _$UpsertBodyDtoMarkdownContractVersionEnumSerializer();
 Serializer<UpsertBodyDtoIdentityModeEnum>
 _$upsertBodyDtoIdentityModeEnumSerializer =
     _$UpsertBodyDtoIdentityModeEnumSerializer();
+
+class _$UpsertBodyDtoTextColorVersionEnumSerializer
+    implements PrimitiveSerializer<UpsertBodyDtoTextColorVersionEnum> {
+  static const Map<String, Object> _toWire = const <String, Object>{
+    'number1': 1,
+    'unknownDefaultOpenApi': 11184809,
+  };
+  static const Map<Object, String> _fromWire = const <Object, String>{
+    1: 'number1',
+    11184809: 'unknownDefaultOpenApi',
+  };
+
+  @override
+  final Iterable<Type> types = const <Type>[UpsertBodyDtoTextColorVersionEnum];
+  @override
+  final String wireName = 'UpsertBodyDtoTextColorVersionEnum';
+
+  @override
+  Object serialize(
+    Serializers serializers,
+    UpsertBodyDtoTextColorVersionEnum object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => _toWire[object.name] ?? object.name;
+
+  @override
+  UpsertBodyDtoTextColorVersionEnum deserialize(
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => UpsertBodyDtoTextColorVersionEnum.valueOf(
+    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
+  );
+}
 
 class _$UpsertBodyDtoMarkdownContractVersionEnumSerializer
     implements PrimitiveSerializer<UpsertBodyDtoMarkdownContractVersionEnum> {
@@ -145,6 +210,8 @@ class _$UpsertBodyDtoIdentityModeEnumSerializer
 
 class _$UpsertBodyDto extends UpsertBodyDto {
   @override
+  final UpsertBodyDtoTextColorVersionEnum? textColorVersion;
+  @override
   final UpsertBodyDtoMarkdownContractVersionEnum? markdownContractVersion;
   @override
   final String? identityId;
@@ -161,6 +228,7 @@ class _$UpsertBodyDto extends UpsertBodyDto {
       (UpsertBodyDtoBuilder()..update(updates))._build();
 
   _$UpsertBodyDto._({
+    this.textColorVersion,
     this.markdownContractVersion,
     this.identityId,
     this.identityToken,
@@ -179,6 +247,7 @@ class _$UpsertBodyDto extends UpsertBodyDto {
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
     return other is UpsertBodyDto &&
+        textColorVersion == other.textColorVersion &&
         markdownContractVersion == other.markdownContractVersion &&
         identityId == other.identityId &&
         identityToken == other.identityToken &&
@@ -190,6 +259,7 @@ class _$UpsertBodyDto extends UpsertBodyDto {
   @override
   int get hashCode {
     var _$hash = 0;
+    _$hash = $jc(_$hash, textColorVersion.hashCode);
     _$hash = $jc(_$hash, markdownContractVersion.hashCode);
     _$hash = $jc(_$hash, identityId.hashCode);
     _$hash = $jc(_$hash, identityToken.hashCode);
@@ -203,6 +273,7 @@ class _$UpsertBodyDto extends UpsertBodyDto {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'UpsertBodyDto')
+          ..add('textColorVersion', textColorVersion)
           ..add('markdownContractVersion', markdownContractVersion)
           ..add('identityId', identityId)
           ..add('identityToken', identityToken)
@@ -216,6 +287,12 @@ class _$UpsertBodyDto extends UpsertBodyDto {
 class UpsertBodyDtoBuilder
     implements Builder<UpsertBodyDto, UpsertBodyDtoBuilder> {
   _$UpsertBodyDto? _$v;
+
+  UpsertBodyDtoTextColorVersionEnum? _textColorVersion;
+  UpsertBodyDtoTextColorVersionEnum? get textColorVersion =>
+      _$this._textColorVersion;
+  set textColorVersion(UpsertBodyDtoTextColorVersionEnum? textColorVersion) =>
+      _$this._textColorVersion = textColorVersion;
 
   UpsertBodyDtoMarkdownContractVersionEnum? _markdownContractVersion;
   UpsertBodyDtoMarkdownContractVersionEnum? get markdownContractVersion =>
@@ -253,6 +330,7 @@ class UpsertBodyDtoBuilder
   UpsertBodyDtoBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
+      _textColorVersion = $v.textColorVersion;
       _markdownContractVersion = $v.markdownContractVersion;
       _identityId = $v.identityId;
       _identityToken = $v.identityToken;
@@ -281,6 +359,7 @@ class UpsertBodyDtoBuilder
     final _$result =
         _$v ??
         _$UpsertBodyDto._(
+          textColorVersion: textColorVersion,
           markdownContractVersion: markdownContractVersion,
           identityId: identityId,
           identityToken: identityToken,

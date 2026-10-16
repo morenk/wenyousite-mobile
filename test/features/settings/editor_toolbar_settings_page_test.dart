@@ -57,7 +57,8 @@ void main() {
       AppRouteAccess.public,
     );
     await _drop(tester, EditorTool.image, EditorToolbarGroup.expanded, 0);
-    expect(store.saved.expanded.first, EditorTool.image);
+    expect(store.saved.expanded.take(2), [EditorTool.audio, EditorTool.image]);
+    expect(_dragTool(EditorTool.audio), findsNothing);
     router.pop();
     await tester.pumpAndSettle();
     await tester.ensureVisible(entry);
@@ -137,7 +138,11 @@ void main() {
     expect(find.byKey(const Key('toolbar-drop-indicator')), findsOneWidget);
     await mouse.up();
     await tester.pumpAndSettle();
-    expect(store.saved.expanded.first, EditorTool.heading);
+    expect(store.saved.expanded.take(2), [
+      EditorTool.audio,
+      EditorTool.heading,
+    ]);
+    expect(_dragTool(EditorTool.audio), findsNothing);
     final writes = store.writes;
     await tester.drag(_dragTool(EditorTool.italic), const Offset(-100, 0));
     await tester.pumpAndSettle();
@@ -296,7 +301,9 @@ void main() {
       EditorTool.bold,
       EditorTool.italic,
       EditorTool.sticker,
+      EditorTool.audio,
     ]);
+    expect(_dragTool(EditorTool.audio), findsNothing);
     expect(store.saved.expanded.first, EditorTool.image);
     expect(
       find.descendant(

@@ -5,6 +5,7 @@ import 'package:wenyousite_mobile/app/app_capabilities.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_write_guard.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
+import 'package:wenyousite_mobile/core/network/media_audio_mapper.dart';
 import 'package:wenyousite_mobile/core/network/media_display_mapper.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/drafts/application/content_draft_repository_ports.dart';
@@ -137,6 +138,7 @@ class ApiContentDraftRepository implements ContentDraftRepository {
       slot: dto.slot.toInt(),
       content: dto.content,
       mediaDisplays: mapMarkdownMediaDisplays(dto.mediaDisplays),
+      mediaAudios: mapMediaAudios(dto.mediaAudios),
       version: dto.version.toInt(),
       createdAt: dto.createdAt,
       updatedAt: dto.updatedAt,

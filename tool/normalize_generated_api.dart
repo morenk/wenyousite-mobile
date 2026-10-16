@@ -66,6 +66,15 @@ Future<void> main() async {
       continue;
     }
     var source = entity.readAsStringSync();
+    // dart-dio 把整数 enum 的 wire 值错误生成为字符串；使用 built_value
+    // 正式支持的 wireNumber，保证 /meta 的 audioUpload.version=1 可解码。
+    if (entity.uri.pathSegments.last == 'audio_upload_capability_dto.dart') {
+      source = source.replaceFirst(
+        "@BuiltValueEnumConst(wireName: r'1')",
+        '@BuiltValueEnumConst(wireNumber: 1)',
+      );
+      await _writeGeneratedText(entity, source);
+    }
     if (!source.contains('ApiSuccessEnvelopeCodeEnum') ||
         source.contains("model/api_success_envelope.dart';")) {
       continue;

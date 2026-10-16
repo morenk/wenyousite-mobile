@@ -2,6 +2,8 @@
 /// feature. Business-specific compose workflows stay in their owning feature.
 library;
 
+export 'presentation/editor_audio_embed_builder.dart'
+    show editorAudioOwnsPointer;
 export 'presentation/editor_embed_builders.dart' show wenyouEditorEmbedBuilders;
 export 'presentation/editor_more_tray.dart' show WenyouEditorMoreTray;
 export 'presentation/editor_pending_image_widget.dart'

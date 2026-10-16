@@ -8,6 +8,8 @@ part of 'api_meta_response_dto.dart';
 
 class _$ApiMetaResponseDto extends ApiMetaResponseDto {
   @override
+  final AudioUploadCapabilityDto? audioUpload;
+  @override
   final String contractVersion;
   @override
   final String? buildSha;
@@ -23,6 +25,7 @@ class _$ApiMetaResponseDto extends ApiMetaResponseDto {
   ]) => (ApiMetaResponseDtoBuilder()..update(updates))._build();
 
   _$ApiMetaResponseDto._({
+    this.audioUpload,
     required this.contractVersion,
     this.buildSha,
     required this.markdownContractVersion,
@@ -42,6 +45,7 @@ class _$ApiMetaResponseDto extends ApiMetaResponseDto {
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
     return other is ApiMetaResponseDto &&
+        audioUpload == other.audioUpload &&
         contractVersion == other.contractVersion &&
         buildSha == other.buildSha &&
         markdownContractVersion == other.markdownContractVersion &&
@@ -52,6 +56,7 @@ class _$ApiMetaResponseDto extends ApiMetaResponseDto {
   @override
   int get hashCode {
     var _$hash = 0;
+    _$hash = $jc(_$hash, audioUpload.hashCode);
     _$hash = $jc(_$hash, contractVersion.hashCode);
     _$hash = $jc(_$hash, buildSha.hashCode);
     _$hash = $jc(_$hash, markdownContractVersion.hashCode);
@@ -64,6 +69,7 @@ class _$ApiMetaResponseDto extends ApiMetaResponseDto {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'ApiMetaResponseDto')
+          ..add('audioUpload', audioUpload)
           ..add('contractVersion', contractVersion)
           ..add('buildSha', buildSha)
           ..add('markdownContractVersion', markdownContractVersion)
@@ -76,6 +82,12 @@ class _$ApiMetaResponseDto extends ApiMetaResponseDto {
 class ApiMetaResponseDtoBuilder
     implements Builder<ApiMetaResponseDto, ApiMetaResponseDtoBuilder> {
   _$ApiMetaResponseDto? _$v;
+
+  AudioUploadCapabilityDtoBuilder? _audioUpload;
+  AudioUploadCapabilityDtoBuilder get audioUpload =>
+      _$this._audioUpload ??= AudioUploadCapabilityDtoBuilder();
+  set audioUpload(AudioUploadCapabilityDtoBuilder? audioUpload) =>
+      _$this._audioUpload = audioUpload;
 
   String? _contractVersion;
   String? get contractVersion => _$this._contractVersion;
@@ -110,6 +122,7 @@ class ApiMetaResponseDtoBuilder
   ApiMetaResponseDtoBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
+      _audioUpload = $v.audioUpload?.toBuilder();
       _contractVersion = $v.contractVersion;
       _buildSha = $v.buildSha;
       _markdownContractVersion = $v.markdownContractVersion;
@@ -139,6 +152,7 @@ class ApiMetaResponseDtoBuilder
       _$result =
           _$v ??
           _$ApiMetaResponseDto._(
+            audioUpload: _audioUpload?.build(),
             contractVersion: BuiltValueNullFieldError.checkNotNull(
               contractVersion,
               r'ApiMetaResponseDto',
@@ -156,6 +170,9 @@ class ApiMetaResponseDtoBuilder
     } catch (_) {
       late String _$failedField;
       try {
+        _$failedField = 'audioUpload';
+        _audioUpload?.build();
+
         _$failedField = 'capabilities';
         capabilities.build();
         _$failedField = 'mobileCompatibility';

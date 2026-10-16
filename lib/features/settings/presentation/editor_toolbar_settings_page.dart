@@ -45,6 +45,8 @@ class EditorToolbarSettingsPage extends ConsumerWidget {
                     ref.watch(appCapabilitiesProvider).markdownAlignment,
                   ),
                   stickersEnabled: ref.watch(appCapabilitiesProvider).stickers,
+                  audioEnabled:
+                      ref.watch(appCapabilitiesProvider).audioUpload != null,
                   layout: state.layout,
                   enabled: !state.isSaving,
                   onChanged: (layout) => unawaited(controller.select(layout)),

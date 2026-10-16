@@ -7,6 +7,7 @@ import 'package:wenyousite_mobile/app/app_capabilities.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/application/editor_toolbar_layout.dart';
 import 'package:wenyousite_mobile/core/application/editor_toolbar_preference.dart';
+import 'package:wenyousite_mobile/core/media/audio_upload_policy.dart';
 import 'package:wenyousite_mobile/features/editor/editor.dart';
 import 'package:wenyousite_mobile/features/settings/presentation/editor_toolbar_settings_page.dart';
 
@@ -36,6 +37,7 @@ void main() {
                   AppCapabilities(
                     stickers: enabled,
                     markdownAlignment: enabled,
+                    audioUpload: enabled ? _audioPolicy : null,
                   ),
                 ),
                 editorToolbarPreferenceStoreProvider.overrideWithValue(store),
@@ -66,6 +68,7 @@ void main() {
                   onInsertImage: () async {},
                   onSaveDraft: () async {},
                   onInsertSticker: enabled ? (_) async {} : null,
+                  onInsertAudio: enabled ? () async {} : null,
                   onSubmit: () {},
                 ),
               ),
@@ -123,7 +126,10 @@ void main() {
         );
         addTearDown(container.dispose);
         final capabilities = WenyouEditorCapabilities.forAlignment(enabled);
-        final available = capabilities.availableTools(stickerCallback: enabled);
+        final available = capabilities.availableTools(
+          stickerCallback: enabled,
+          audioCallback: enabled,
+        );
         for (final reply in [true, false]) {
           final controller = QuillController.basic();
           await tester.pumpWidget(
@@ -142,6 +148,7 @@ void main() {
                       onInsertImage: () async {},
                       onSaveDraft: () async {},
                       onInsertSticker: enabled ? (_) async {} : null,
+                      onInsertAudio: enabled ? () async {} : null,
                       onSubmit: reply ? () {} : null,
                     ),
                   ),
@@ -236,3 +243,11 @@ Map<String, Rect> _capture(WidgetTester tester, {required bool preview}) {
   }
   return result;
 }
+
+final _audioPolicy = AudioUploadPolicy.parse({
+  'version': 1,
+  'maxBytes': 31457280,
+  'maxDurationMs': 600000,
+  'contentTypes': ['audio/mpeg'],
+  'outputContentType': 'audio/mpeg',
+})!;

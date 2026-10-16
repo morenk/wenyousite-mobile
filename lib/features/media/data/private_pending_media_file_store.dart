@@ -6,10 +6,12 @@ import 'package:crypto/crypto.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:wenyousite_mobile/features/media/application/pending_media_file_store_ports.dart';
+import 'package:wenyousite_mobile/features/media/domain/audio_upload_models.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
 
 /// 账号与编辑目标隔离；相册临时文件不能作为跨页面草稿的持久来源。
-class PrivatePendingMediaFileStore implements PendingMediaFileStore {
+class PrivatePendingMediaFileStore
+    implements PendingMediaFileStore, PendingAudioFileStore {
   PrivatePendingMediaFileStore({this.rootDirectory});
 
   final Directory? rootDirectory;
@@ -20,6 +22,64 @@ class PrivatePendingMediaFileStore implements PendingMediaFileStore {
     _queue = result.then<void>((_) {}, onError: (Object _, StackTrace _) {});
     return result;
   }
+
+  @override
+  Future<void> removeAudio({
+    required String accountId,
+    required String target,
+    required String attachmentId,
+  }) => _serialized(() async {
+    final directory = await _directory(accountId, target);
+    final file = File(p.join(directory.path, '${_hash(attachmentId)}.audio'));
+    if (await file.exists()) await file.delete();
+  });
+
+  @override
+  Future<AudioUploadInput> persistAudio(
+    AudioUploadInput input, {
+    required String accountId,
+    required String target,
+    required String attachmentId,
+  }) => _serialized(() async {
+    if (attachmentId.isEmpty || input.size < 1 || input.size > 31457280) {
+      throw ArgumentError.value(attachmentId);
+    }
+    final directory = await _directory(accountId, target);
+    await directory.create(recursive: true);
+    final file = File(p.join(directory.path, '${_hash(attachmentId)}.audio'));
+    if (input.path != file.path) {
+      final temporary = File('${file.path}.tmp');
+      final sink = temporary.openWrite();
+      var length = 0;
+      try {
+        await for (final chunk in File(
+          input.path,
+        ).openRead(0, input.size + 1)) {
+          length += chunk.length;
+          if (length > input.size) throw const FormatException('音频文件大小已变化');
+          sink.add(chunk);
+          await sink.flush();
+        }
+        await sink.close();
+        if (length != input.size) throw const FormatException('音频文件大小已变化');
+        await temporary.rename(file.path);
+      } on Object {
+        try {
+          await sink.close();
+        } on Object {
+          /* 保留原始失败并继续清理。 */
+        }
+        if (await temporary.exists()) await temporary.delete();
+        rethrow;
+      }
+    }
+    return AudioUploadInput(
+      filename: input.filename,
+      path: file.path,
+      size: input.size,
+      contentType: input.contentType,
+    );
+  });
 
   Future<Directory> _directory(String accountId, String target) async {
     if (accountId.isEmpty || target.isEmpty) {

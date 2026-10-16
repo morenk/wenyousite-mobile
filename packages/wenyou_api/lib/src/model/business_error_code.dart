@@ -63,6 +63,15 @@ class BusinessErrorCode extends EnumClass {
   @BuiltValueEnumConst(wireNumber: 40015)
   static const BusinessErrorCode ROLE_MENTIONS_DISABLED = _$ROLE_MENTIONS_DISABLED;
   /// 稳定业务错误码；名称和值来源于 ErrorCode
+  @BuiltValueEnumConst(wireNumber: 40016)
+  static const BusinessErrorCode TEXT_COLOR_CAPABILITY_REQUIRED = _$TEXT_COLOR_CAPABILITY_REQUIRED;
+  /// 稳定业务错误码；名称和值来源于 ErrorCode
+  @BuiltValueEnumConst(wireNumber: 40017)
+  static const BusinessErrorCode TEXT_COLOR_DISABLED = _$TEXT_COLOR_DISABLED;
+  /// 稳定业务错误码；名称和值来源于 ErrorCode
+  @BuiltValueEnumConst(wireNumber: 40018)
+  static const BusinessErrorCode INVALID_TEXT_COLOR = _$INVALID_TEXT_COLOR;
+  /// 稳定业务错误码；名称和值来源于 ErrorCode
   @BuiltValueEnumConst(wireNumber: 40100)
   static const BusinessErrorCode UNAUTHORIZED = _$UNAUTHORIZED;
   /// 稳定业务错误码；名称和值来源于 ErrorCode
@@ -299,6 +308,12 @@ class BusinessErrorCode extends EnumClass {
   /// 稳定业务错误码；名称和值来源于 ErrorCode
   @BuiltValueEnumConst(wireNumber: 42900)
   static const BusinessErrorCode RATE_LIMITED = _$RATE_LIMITED;
+  /// 稳定业务错误码；名称和值来源于 ErrorCode
+  @BuiltValueEnumConst(wireNumber: 42901)
+  static const BusinessErrorCode AUDIO_ACTIVE_LIMIT = _$AUDIO_ACTIVE_LIMIT;
+  /// 稳定业务错误码；名称和值来源于 ErrorCode
+  @BuiltValueEnumConst(wireNumber: 42902)
+  static const BusinessErrorCode AUDIO_DAILY_BYTES_LIMIT = _$AUDIO_DAILY_BYTES_LIMIT;
   /// 稳定业务错误码；名称和值来源于 ErrorCode
   @BuiltValueEnumConst(wireNumber: 50000)
   static const BusinessErrorCode INTERNAL_ERROR = _$INTERNAL_ERROR;

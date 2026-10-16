@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
 import 'package:wenyousite_mobile/core/application/visibility_cache_invalidation.dart';
+import 'package:wenyousite_mobile/core/markdown/local_audio_marker.dart';
 import 'package:wenyousite_mobile/core/markdown/local_image_marker.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_dice_contract.dart';
@@ -314,6 +315,7 @@ class PostComposerController extends StateNotifier<PostComposerState> {
   }
 
   String? _validate(String content) {
+    if (containsLocalAudioMarker(content)) return '音频尚未就绪，请等待或移除。';
     if (containsLocalImageMarker(content)) return '图片尚未就绪，请等待或移除。';
     if (MarkdownDiceContract.countMarkdownNodes(content) >
         MarkdownDiceContract.maximumNodesPerPost) {

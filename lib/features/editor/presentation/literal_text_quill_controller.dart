@@ -4,6 +4,7 @@ import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_quill/quill_delta.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_line_metadata.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_link_identity.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_paragraph_boundaries.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_clipboard_paste.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_document_alignment.dart';
@@ -235,6 +236,19 @@ class LiteralTextQuillController extends QuillController {
         }
         formatting.retain(end - sourceOffset, {
           MarkdownDeltaCodec.literalTextAttribute: true,
+          // Quill 续写只继承公开 link 属性；仅明确位于同一原链接的
+          // String 输入补回来源，外来 Delta 与相邻独立链接不能猜测合并。
+          markdownLinkIdentityKey: preservesLink
+              ? _continuedLinkIdentity(
+                  before,
+                  index,
+                  len,
+                  document
+                      .collectStyle(start, end - sourceOffset)
+                      .attributes[Attribute.link.key]
+                      ?.value,
+                )
+              : null,
           // Literal typing must not acquire Quill's automatically detected
           // links. Existing links and explicitly enabled input marks survive.
           if (!preservesLink) Attribute.link.key: null,
@@ -247,6 +261,72 @@ class LiteralTextQuillController extends QuillController {
     if (formatting.isNotEmpty) {
       document.compose(formatting, ChangeSource.local);
     }
+  }
+
+  static Object? _continuedLinkIdentity(
+    Delta before,
+    int index,
+    int length,
+    Object? insertedUrl,
+  ) {
+    if (insertedUrl is! String) return null;
+    (String, Object?)? sourceAt(int position) {
+      var offset = 0;
+      for (final operation in before.operations) {
+        final end = offset + operation.length!;
+        if (position >= offset && position < end) {
+          final text = operation.data;
+          final url = operation.attributes?[Attribute.link.key];
+          if (text is! String ||
+              text[position - offset] == '\n' ||
+              url is! String) {
+            return null;
+          }
+          return (url, operation.attributes?[markdownLinkIdentityKey]);
+        }
+        offset = end;
+      }
+      return null;
+    }
+
+    if (length == 0) {
+      final left = sourceAt(index - 1);
+      final right = sourceAt(index);
+      final matching = [
+        if (left?.$1 == insertedUrl) left!,
+        if (right?.$1 == insertedUrl) right!,
+      ];
+      if (matching.isEmpty || matching.any((item) => item != matching.first)) {
+        return null;
+      }
+      return matching.first.$2;
+    }
+    // 替换只继承完全落在同一原链接内的选区；跨链接或混合正文时保留
+    // 新输入自己的边界，不能借一个端点覆盖另一段来源。
+    final source = sourceAt(index);
+    if (source?.$1 != insertedUrl || source?.$2 == null) return null;
+    var offset = 0;
+    for (final operation in before.operations) {
+      final end = offset + operation.length!;
+      if (end > index && offset < index + length) {
+        final start = index > offset ? index : offset;
+        final stop = index + length < end ? index + length : end;
+        if ((
+                  operation.attributes?[Attribute.link.key],
+                  operation.attributes?[markdownLinkIdentityKey],
+                ) !=
+                source ||
+            operation.data is! String ||
+            (operation.data as String)
+                .substring(start - offset, stop - offset)
+                .contains('\n')) {
+          return null;
+        }
+      }
+      offset = end;
+      if (offset >= index + length) break;
+    }
+    return source!.$2;
   }
 
   static bool _containsEmbed(Object? data) => switch (data) {

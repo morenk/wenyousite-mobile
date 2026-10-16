@@ -1,3 +1,4 @@
+import 'package:wenyousite_mobile/core/media/media_audio.dart';
 import 'package:wenyousite_mobile/core/media/media_display.dart';
 import 'package:wenyousite_mobile/features/thread_identity/identity_models.dart';
 
@@ -49,6 +50,7 @@ class ThreadBodyModel {
   const ThreadBodyModel({
     required this.markdown,
     this.mediaDisplays = const {},
+    this.mediaAudios = const {},
     this.mentionLabels = const {},
     this.author,
     this.postId,
@@ -58,6 +60,7 @@ class ThreadBodyModel {
 
   final String markdown;
   final Map<String, MediaDisplay> mediaDisplays;
+  final Map<String, MediaAudio> mediaAudios;
   final Map<String, String> mentionLabels;
   final ThreadAuthorModel? author;
   final String? postId;

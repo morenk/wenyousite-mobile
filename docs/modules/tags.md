@@ -79,6 +79,8 @@
 
 ## 13. 最近审查的契约版本和后端提交
 
+2026-10-17 合并契约复核：固定 Backend `7f95563edd8f461ebb7a66d7b458ec0349e39297`／API `5.39.0-dev.20261017.1`。原 operationId 集合和成功字段保持兼容，音频新增预算错误；文本颜色为可选能力，本批不声明读取头、不开放颜色 UI，旧端读取由服务端去色并保护有色原文覆盖。此登记不代表预算后端已部署。
+
 2026-10-10 合并来源复核：通过官方同步入口固定到实际部署 Backend `b5f0e3bb0b99a3f9763b31e3080cb4d4f2e64045`，OpenAPI 仍为 `5.36.0-dev.20261005.1`。相对退役实施提交，机器契约、共享语料、生成客户端及本模块行为不变；仅来源登记更新，详见[退役验收记录](../architecture/retire-development-preview-acceptance.md)。
 
 本轮共享契约复核：OpenAPI `5.36.0-dev.20261005.1`，Backend `a624bed0eb2b118701bd593fbce2aabf3dea7321`。新增帖内多角色集合及可选发表 identityId，Markdown 5 与本模块既有消费保持；实际部署与设备验收另行登记，相关行为见[帖内身份](thread-identity.md)。

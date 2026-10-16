@@ -149,6 +149,8 @@ lib/src/model/api_pagination_meta.dart
 lib/src/model/api_success_envelope.dart
 lib/src/model/app_downloads_info200_response.dart
 lib/src/model/appeal_access_token_response_dto.dart
+lib/src/model/audio_media_dto.dart
+lib/src/model/audio_upload_capability_dto.dart
 lib/src/model/auth_change_password200_response.dart
 lib/src/model/auth_forgot_password200_response.dart
 lib/src/model/auth_list_sessions200_response.dart

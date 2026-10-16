@@ -132,6 +132,20 @@ class PostComposerEditorRegion extends StatelessWidget {
                           focusNode: editorSession.focusNode,
                           scrollController: editorSession.scrollController,
                           config: QuillEditorConfig(
+                            onTapUp: (details, _) => editorAudioOwnsPointer(
+                              context,
+                              details.globalPosition,
+                            ),
+                            onSingleLongTapStart: (details, _) =>
+                                editorAudioOwnsPointer(
+                                  context,
+                                  details.globalPosition,
+                                ),
+                            onSingleLongTapEnd: (details, _) =>
+                                editorAudioOwnsPointer(
+                                  context,
+                                  details.globalPosition,
+                                ),
                             scrollable: true,
                             expands: true,
                             autoFocus: true,
@@ -146,6 +160,8 @@ class PostComposerEditorRegion extends StatelessWidget {
                             embedBuilders: wenyouEditorEmbedBuilders(
                               mentionLabels: mentionLabels,
                               mediaDisplays: editorSession.mediaDisplays,
+                              mediaAudios: editorSession.mediaAudios,
+                              editorFocusNode: editorSession.focusNode,
                               pendingImages: pendingImages,
                             ),
                             customShortcuts: editorSession.clipboardShortcuts,

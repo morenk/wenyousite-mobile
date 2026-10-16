@@ -211,6 +211,7 @@ PostItem threadFloorAsPost(
     content: floor.body.markdown,
     mentionLabels: floor.body.mentionLabels,
     mediaDisplays: floor.body.mediaDisplays,
+    mediaAudios: floor.body.mediaAudios,
     version: floor.version,
     createdAt: floor.createdAt,
     editedAt: floor.editedAt,

@@ -73,6 +73,8 @@ users 只提供入口，app 组合路由；工具服务没有业务 API、上传
 
 ## 13. 最近审查的契约版本和后端提交
 
+2026-10-17 合并契约复核：固定 Backend `7f95563edd8f461ebb7a66d7b458ec0349e39297`／API `5.39.0-dev.20261017.1`。原 operationId 集合和成功字段保持兼容，音频新增预算错误；文本颜色为可选能力，本批不声明读取头、不开放颜色 UI，旧端读取由服务端去色并保护有色原文覆盖。此登记不代表预算后端已部署。
+
 三工具算法与逐字样例基于 Web `2aa7a81ef8d89f86f9447b0fc08e8b115d05b8a2`。双语词库固定提交与每个源文件 SHA-256 记录在 [source.json](../../contracts/toolbox/source.json)，同步入口 `tool/sync_toolbox_data.ps1 -Revision <40位SHA>` 只读取 VPS Git 已提交对象；`dart run tool/generate_toolbox_data.dart --check` 核验源摘要和生成常量一致。Faker 中文词库和温油双语词库许可证保留源码并通过 LicenseRegistry 随 App 提供。
 
 花体 v2 固定 Web `de1fb888dc830e19f3d93d53c0aa391067391449`，49 款与 352 向量的来源、逐文件摘要见 [source-fancy.json](../../contracts/toolbox/source-fancy.json)。`tool/sync_fancy_data.ps1 -Revision <40位SHA>` 只读取 VPS Git 对象，`dart run tool/generate_fancy_data.dart --check` 核验 Web manifest 全部六个来源文件与生成常量；该检查也接入 `fancy_styles_test.dart`，后续完整测试会验证漂移。MIT 许可通过 LicenseRegistry 提供。v1 的 240 向量按 [source-fancy-v1.json](../../contracts/toolbox/source-fancy-v1.json) 原 SHA 独立保留，旧八个花体样例继续回归；输入 10,000 UTF-16 上限和既有中文错误文案沿用 Mobile。
