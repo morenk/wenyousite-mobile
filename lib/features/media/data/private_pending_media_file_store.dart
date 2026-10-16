@@ -61,7 +61,7 @@ class PrivatePendingMediaFileStore
           await sink.flush();
         }
         await sink.close();
-        if (length != input.size) throw const FormatException('音频文件不完整');
+        if (length != input.size) throw const FormatException('音频文件大小已变化');
         await temporary.rename(file.path);
       } on Object {
         try {

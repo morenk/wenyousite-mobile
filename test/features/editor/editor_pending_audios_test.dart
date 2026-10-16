@@ -77,13 +77,13 @@ void main() {
   for (final code in [null, 42901, 42902]) {
     testWidgets('${code ?? '超时'}保留文件和身份，显式重试前不重放', (tester) async {
       final harness = await _mount(tester);
-      harness.repository.failure = ApiFailure(
-        userMessage: '音频操作失败，请稍后重试。',
-        reason: code == null
-            ? FailureReason.timeout
-            : FailureReason.rateLimited,
-        businessCode: code,
-      );
+      harness.repository.failure = code == null
+          ? const AudioUploadFailure(AudioUploadFailureReason.timeout)
+          : ApiFailure(
+              userMessage: '音频操作失败，请稍后重试。',
+              reason: FailureReason.rateLimited,
+              businessCode: code,
+            );
       harness.editor.insertLocalAudio('waiting');
       await harness.editor.flush();
       harness.audios.restore([
@@ -96,6 +96,7 @@ void main() {
       await harness.audios.retry('waiting');
       final item = harness.audios.items['waiting']!;
       expect(item.failure, isNotNull);
+      if (code == null) expect(item.failure, '音频上传超时，请重试。');
       expect(item.terminalFailure, isFalse);
       expect(item.input!.path, _input.path);
       expect(item.pending!.mediaId, 'server-id');

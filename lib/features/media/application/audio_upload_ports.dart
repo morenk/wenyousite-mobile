@@ -4,6 +4,8 @@ import 'package:wenyousite_mobile/core/media/audio_upload_policy.dart';
 import 'package:wenyousite_mobile/core/media/media_audio.dart';
 import 'package:wenyousite_mobile/features/media/domain/audio_upload_models.dart';
 
+export 'audio_upload_failure.dart';
+
 abstract interface class AudioUploadRepository {
   Future<MediaAudio> upload(
     AudioUploadInput? input,

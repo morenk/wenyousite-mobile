@@ -57,17 +57,17 @@ class ApiAudioUploadRepository implements AudioUploadRepository {
       }
       if (current == null || current.stage == AudioUploadStage.uploading) {
         if (policy == null) {
-          throw const ApiFailure(userMessage: '音频上传暂不可用，请稍后重试。');
+          throw const AudioUploadFailure(AudioUploadFailureReason.unavailable);
         }
         if (input == null ||
             input.size < 1 ||
             input.size > policy.maxBytes ||
             !policy.contentTypes.contains(input.contentType)) {
-          throw const ApiFailure(userMessage: '音频类型或大小不符合上传要求。');
+          throw const AudioUploadFailure(AudioUploadFailureReason.invalidInput);
         }
         if (!await File(input.path).exists() ||
             await File(input.path).length() != input.size) {
-          throw const ApiFailure(userMessage: '本机音频文件已变化，请重新选择。');
+          throw const AudioUploadFailure(AudioUploadFailureReason.fileChanged);
         }
         final previous = current;
         current = await coordinator.transfer(() async {
@@ -131,11 +131,7 @@ class ApiAudioUploadRepository implements AudioUploadRepository {
               ),
             );
           } on AudioTransferTimeout {
-            throw const ApiFailure(
-              userMessage: '音频上传超时，请重试。',
-              source: FailureSource.network,
-              reason: FailureReason.timeout,
-            );
+            throw const AudioUploadFailure(AudioUploadFailureReason.timeout);
           } finally {
             transfer.dispose();
           }
@@ -253,7 +249,9 @@ class ApiAudioUploadRepository implements AudioUploadRepository {
     'audio/wav' => CreateUploadUrlDtoContentTypeEnum.audioSlashWav,
     'audio/ogg' => CreateUploadUrlDtoContentTypeEnum.audioSlashOgg,
     'audio/flac' => CreateUploadUrlDtoContentTypeEnum.audioSlashFlac,
-    _ => throw const ApiFailure(userMessage: '音频类型不受支持。'),
+    _ => throw const AudioUploadFailure(
+      AudioUploadFailureReason.unsupportedType,
+    ),
   };
 }
 

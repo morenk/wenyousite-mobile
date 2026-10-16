@@ -100,6 +100,8 @@ galleryList：读取 GalleryList200Response / GalleryPageDto / GalleryImageDto�
 
 ## 9. 加载、空数据、错误、重试和冲突状态
 
+音频上传的本机校验、保存和传输超时使用 `AudioUploadFailureReason` 分类；网络层不携带这些新增展示文案。编辑器统一映射具体失败与恢复提示，其他 API 失败经 `UserFacingFailure` 展示；原取消、草稿保留、预算错误身份与重试语义不变。
+
 媒体绑定 409 按冲突展示失败并保留手动重试；不自动重发结果不明确的业务写入。
 
 上传准备、获取地址、对象存储直传、确认与处理阶段纳入[故障诊断](../architecture/failure-diagnostics.md)，失败记录可复制。地址、文件名、图片内容、账号及预签名查询参数不进入本地诊断或 Sentry。

@@ -33,18 +33,13 @@ final class MarkdownDeltaInlineEncoder {
 
   void add(String text, Map<String, dynamic>? attributes) {
     final identity = attributes?[markdownLinkIdentityKey];
-    if (identity != null &&
-        _linkIdentity != null &&
-        identity != _linkIdentity &&
-        attributes?['link'] == _marks['link']) {
-      flush();
-    }
+    final marks = visibleMarks(attributes);
+    final source = attributes?[MarkdownInlineCodeSource.key] as String?;
+    // 来源边界只结束链接 run，不能截断整段的规范化上下文。
+    if (!mapEquals(marks, _marks) || identity != _linkIdentity) _finishRun();
     _linkIdentity = identity;
     _hasLiteralInput |= attributes?[literalTextKey] == true;
     _keepLinkShape |= attributes?[keepLinkShapeKey] == true;
-    final marks = visibleMarks(attributes);
-    final source = attributes?[MarkdownInlineCodeSource.key] as String?;
-    if (!mapEquals(marks, _marks)) _finishRun();
     _marks = marks;
     // Quill 插字会拆分来源属性；同样式代码仍必须只输出一对分隔符。
     _codeSource = _pieces.isEmpty || source == _codeSource ? source : null;
@@ -110,7 +105,11 @@ final class MarkdownDeltaInlineEncoder {
       return null;
     }
     final link = runs.first.marks['link'];
-    if (link is! String || runs.any((run) => run.marks['link'] != link)) {
+    final identity = runs.first.linkIdentity;
+    if (link is! String ||
+        runs.any(
+          (run) => run.marks['link'] != link || run.linkIdentity != identity,
+        )) {
       return null;
     }
     final labels = [
@@ -148,7 +147,14 @@ final class MarkdownDeltaInlineEncoder {
       final source =
           MarkdownInlineCodeSource.preserved(value, _codeSource) ??
           _inlineCode(value);
-      _runs.add(MarkdownInlineRun(value, _marks, codeSource: source));
+      _runs.add(
+        MarkdownInlineRun(
+          value,
+          _marks,
+          codeSource: source,
+          linkIdentity: _linkIdentity,
+        ),
+      );
       _legacy.write(_wrap(source));
     } else {
       final core = value.trim();
@@ -169,7 +175,7 @@ final class MarkdownDeltaInlineEncoder {
       if (core.isNotEmpty) {
         encoded = _wrap(encoded);
       }
-      _runs.add(MarkdownInlineRun(value, _marks));
+      _runs.add(MarkdownInlineRun(value, _marks, linkIdentity: _linkIdentity));
       _legacy
         ..write(value.substring(0, leading))
         ..write(encoded)

@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import 'package:wenyousite_mobile/app/app_capabilities.dart';
+import 'package:wenyousite_mobile/core/application/user_facing_failure.dart';
 import 'package:wenyousite_mobile/core/media/media_audio.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/rich_editor_pending_audio_document.dart';
@@ -96,12 +97,14 @@ class EditorPendingAudios extends ChangeNotifier {
         file.filename,
       );
       if (type == null) {
-        throw const ApiFailure(userMessage: '仅支持 MP3、M4A、WAV、OGG 和 FLAC 音频。');
+        throw const AudioUploadFailure(
+          AudioUploadFailureReason.unsupportedType,
+        );
       }
       final owner = accountId;
       final store = ref.read(pendingMediaFileStoreProvider);
       if (owner == null || store is! PendingAudioFileStore) {
-        throw const ApiFailure(userMessage: '音频未能保存到本机，请重试。');
+        throw const AudioUploadFailure(AudioUploadFailureReason.localFileSave);
       }
       final id = const Uuid().v4();
       savedId = id;
@@ -153,7 +156,7 @@ class EditorPendingAudios extends ChangeNotifier {
       }
     } on Object catch (error) {
       if (current()) {
-        final message = error is ApiFailure ? error.userMessage : '音频选择失败，请重试。';
+        final message = _failureMessage(error, '音频选择失败，请重试。');
         if (selectedItem != null && ids.contains(selectedItem.id)) {
           selectedItem.failure = message;
           selectedItem.terminalFailure = true;
@@ -294,9 +297,11 @@ class EditorPendingAudios extends ChangeNotifier {
         ids.contains(item.id);
     try {
       if (!await editor.flush()) {
-        throw const ApiFailure(userMessage: '正文保存失败，请重试或移除音频。');
+        throw const AudioUploadFailure(AudioUploadFailureReason.documentSave);
       }
-      if (!await save()) throw const ApiFailure(userMessage: '本机音频状态保存失败，请重试。');
+      if (!await save()) {
+        throw const AudioUploadFailure(AudioUploadFailureReason.draftSave);
+      }
       if (!current()) return;
       final result = await ref
           .read(audioUploadRepositoryProvider)
@@ -312,7 +317,9 @@ class EditorPendingAudios extends ChangeNotifier {
               }
               item.pending = pending;
               if (!await save()) {
-                throw const ApiFailure(userMessage: '本机音频状态保存失败，请重试。');
+                throw const AudioUploadFailure(
+                  AudioUploadFailureReason.draftSave,
+                );
               }
             },
             onProgress: (progress) {
@@ -334,7 +341,7 @@ class EditorPendingAudios extends ChangeNotifier {
       }
     } on Object catch (error) {
       if (current() && !cancel.isCancelled) {
-        item.failure = error is ApiFailure ? error.userMessage : '音频上传失败，请重试。';
+        item.failure = _failureMessage(error, '音频上传失败，请重试。');
       }
     } finally {
       if (!_disposed && generation == item.generation) {
@@ -389,3 +396,19 @@ class EditorPendingAudios extends ChangeNotifier {
     super.dispose();
   }
 }
+
+String _failureMessage(Object error, String fallback) => switch (error) {
+  AudioUploadFailure(:final audioReason) => switch (audioReason) {
+    AudioUploadFailureReason.unavailable => '音频上传暂不可用，请稍后重试。',
+    AudioUploadFailureReason.invalidInput => '音频类型或大小不符合上传要求。',
+    AudioUploadFailureReason.fileChanged => '本机音频文件已变化，请重新选择。',
+    AudioUploadFailureReason.unsupportedType =>
+      '仅支持 MP3、M4A、WAV、OGG 和 FLAC 音频。',
+    AudioUploadFailureReason.timeout => '音频上传超时，请重试。',
+    AudioUploadFailureReason.localFileSave => '音频未能保存到本机，请重试。',
+    AudioUploadFailureReason.documentSave => '正文保存失败，请重试或移除音频。',
+    AudioUploadFailureReason.draftSave => '本机音频状态保存失败，请重试。',
+  },
+  final ApiFailure failure => UserFacingFailure.fromApi(failure).message,
+  _ => fallback,
+};
