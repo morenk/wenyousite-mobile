@@ -53,6 +53,12 @@
 
 现 PR102 逐层、不跟随 reparse point 的只读审计枚举 5270 个本地目录，发现 11 个 junction，均在 `build/debug-sdk/sdk-98cd51d1173ea29d`，目标仅为共享 Android SDK；无其他外部 plugin 目标。证据为 `D:/codex-artifacts/mobile-merge-20261017/pr102/audio-cleanup-junction-audit.json`。已暂停所有 Worktree 清理，保留联接与现场；SDK 由协调后的单一任务恢复，我方不并行安装或接受许可。恢复后应用源码不变，只补 APK 构建阶段，不机械重跑已通过的完整应用测试。
 
+SDK 统一恢复后只读核验 NDK `28.2.13676358`、CMake `3.22.1`、build-tools `36.0.0`、平台 `android-37.0` 和已有许可，工具可运行。Gradle 另按插件编译要求使用既有许可补齐平台 34／35。应用 `lib/android/ios/packages/pubspec` 与 `26f3121b` 完全一致，单独补 `flutter build apk --debug --target-platform android-arm64` 成功，389.6 秒，日志 `.buildlog/audio-final-sdk-recovered-build.log`。没有重跑完整测试、安装或启动应用。原完整命令的两项失败仍保留，环境构建失败已由该补验关闭；唯一尚延期项为用户明确批准的生产精确版本校验。
+
+最终 APK 外存为 `D:/codex-artifacts/mobile-merge-20261017/pr102/26f3121b-app-debug.apk`，源／副本 SHA-256 一致：`293E161EFCAB139333B2D9E3949FA88EEB4F8DB06617C75FD075B44F7B4C5444`，154882773 字节。包名 `site.wenyou.app.debug`，版本 `0.9.0-debug`／99，minSdk 26、targetSdk 36、compileSdk 37；aapt 与 ZIP 均确认仅 `arm64-v8a`。未传额外 Dart define，实际默认 API 为 `https://wenyou.site/api/v1`，该地址按线上环境保护。旧 4008 APK 未覆盖，当前包未安装。
+
+后续条件清理仅在精确合并核验后执行：先逐条核对本 Worktree 的 11 个 junction，使用独立 fixture 已验证的 `System.IO.Directory.Delete(link, recursive:false)` 只解除联接本身，核对 SDK 目标前后摘要，再以不跟随联接方式复扫；仍有联接或目标变化即保留现场，不直接执行递归 Worktree 删除。独立 fixture 的非空目标与 sentinel 摘要保持，证明位于外部证据目录的 `junction-unlink-proof-caf5ed7521664eec803336091d44f0dd/proof.json`。
+
 ## 保留边界
 
 负责人已确认原帖音频显示修复成功；本批只读手机证据仍沿原记录，本轮不操作手机。新增传输 Provider／装配不能以旧实例热重载冒充已应用。iOS 保存入口未经过 Xcode 编译；用户“刚上传单音频发送失败”的旧诊断未能唯一复现，不把模拟完成页面回归称为真实线上上传验证。最终 APK 仅交付，不安装，不自动冷启动或热重启登录应用。
