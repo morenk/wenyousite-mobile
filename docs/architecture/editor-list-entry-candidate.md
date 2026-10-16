@@ -111,3 +111,11 @@ SharedPreferences `editor.toolbar.layout.v1` 只保存版本和两组稳定 ID�
 3. 打开已有列表正文并编辑、保存、重开，确认原列表语义保留。真实业务写入由负责人手动执行，自动化仅用离线 Fake Repository。
 
 未覆盖真机软键盘、系统读屏及负责人实际历史帖子；离线 Golden 和语义断言不能代替人工验收。本候选不声称已验收或可合并，未合并或部署；仅执行明确授权的 Debug 安装与热重载。
+
+## 本批合并检查补充
+
+用户已明确授权合并及清理本批分支。工具栏历史依赖保持 Foundation v7.2.1；后续音频 PR #102 独立升级正式 v7.4.0，并以该最终应用树的完整门禁和 Android 构建收口，不发布或安装工具栏中间状态。
+
+合并最新 `dev` 后，完整 Flutter 测试首轮为 6661 项通过、1 项跳过、4 项失败。四项均是工具箱入口测试截取整个游客“我的”页面时，遗漏本功能已增加的“编辑器工具栏”偏好行；已逐张核对 400dp 明暗及 320dp 双倍字号明暗的实际、原图和差异图，仅新增该行并使其后帮助区域顺延，未改字号、间距或容差。只更新这四张基线后，`test/features/toolbox/toolbox_entry_test.dart` 的 8 项非更新比较全部通过。应用源码未变；原失败记录保留，不能将原命令写成全绿。
+
+完整检查原日志为 `.buildlog/toolbar-final-merge-gate.log`；四图更新与非更新比较分别为 `.buildlog/toolbar-toolbox-golden-update.log`、`.buildlog/toolbar-toolbox-golden-compare.log`。线上精确 API 版本／构建 SHA 校验按用户“允许本批延期该项，其余门禁通过后合并”的限定授权，保留失败事实并待部署后核验；本批未修改或关闭该检查。
