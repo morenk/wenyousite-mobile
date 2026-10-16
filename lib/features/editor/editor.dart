@@ -3,6 +3,7 @@
 library;
 
 export 'presentation/editor_embed_builders.dart' show wenyouEditorEmbedBuilders;
+export 'presentation/editor_more_tray.dart' show WenyouEditorMoreTray;
 export 'presentation/editor_pending_image_widget.dart'
     show EditorPublishWaiting;
 export 'presentation/editor_pending_images.dart' show EditorPendingImages;
@@ -20,6 +21,11 @@ export 'presentation/editor_toolbar.dart'
         WenyouEditorCapabilities,
         WenyouEditorToolbar,
         WenyouEditorToolbarController;
+export 'presentation/editor_toolbar_buttons.dart'
+    show
+        WenyouEditorToolbarButton,
+        WenyouEditorTrayButton,
+        WenyouEditorSubmitButton;
 export 'presentation/mention_suggestions.dart' show MentionSuggestions;
 export 'presentation/rich_editor_session.dart'
     show RichEditorSelectionPlacement, RichEditorSession;

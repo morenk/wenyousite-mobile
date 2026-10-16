@@ -12,6 +12,7 @@ abstract final class AppRouteLocations {
   static const diagnostics = AppRoutePaths.diagnostics;
   static const appearance = AppRoutePaths.appearance;
   static const threadFont = AppRoutePaths.threadFont;
+  static const editorToolbar = AppRoutePaths.editorToolbar;
   static const toolbox = AppRoutePaths.toolbox;
   static const moderationAppeals = AppRoutePaths.moderationAppeals;
   static const composeThread = AppRoutePaths.composeThread;
@@ -113,6 +114,7 @@ abstract final class AppRoutePaths {
   static const diagnostics = '/diagnostics';
   static const appearance = '/appearance';
   static const threadFont = '/thread-font';
+  static const editorToolbar = '/editor-toolbar';
   static const toolbox = '/tools';
   static const textToolSegment = ':toolId';
   static const moderationAppeals = '/appeals';
@@ -174,6 +176,7 @@ abstract final class AppRouteNames {
   static const diagnostics = 'diagnostics';
   static const appearance = 'appearance';
   static const threadFont = 'thread-font';
+  static const editorToolbar = 'editor-toolbar';
   static const toolbox = 'toolbox';
   static const textTool = 'text-tool';
   static const moderationAppeals = 'moderation-appeals';
