@@ -4,6 +4,7 @@ import 'package:wenyousite_mobile/core/markdown/markdown_editable_block_syntax.d
 import 'package:wenyousite_mobile/core/markdown/markdown_list_structure.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_mention_target.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_source_protection.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_text_color.dart';
 
 class MarkdownContent {
   MarkdownContent._();
@@ -447,7 +448,9 @@ class MarkdownContent {
       return false;
     }
     // 已闭合行内代码中的尖括号是可见文字，不是待执行的 HTML。
-    for (final match in _htmlToken.allMatches(_maskInlineCode(line))) {
+    for (final match in _htmlToken.allMatches(
+      MarkdownTextColor.maskValidTags(_maskInlineCode(line)),
+    )) {
       if (_isEscaped(line, match.start)) continue;
       final token = match.group(0)!;
       if (RegExp(

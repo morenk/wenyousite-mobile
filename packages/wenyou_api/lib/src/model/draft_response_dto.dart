@@ -5,6 +5,7 @@
 // ignore_for_file: unused_element
 import 'package:wenyou_api/src/model/markdown_media_display_response_dto.dart';
 import 'package:built_collection/built_collection.dart';
+import 'package:wenyou_api/src/model/audio_media_dto.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 
@@ -14,6 +15,7 @@ part 'draft_response_dto.g.dart';
 ///
 /// Properties:
 /// * [mediaDisplays] - 仅此次已授权正文中的精确来源映射；编辑保存继续使用 sourceUrl
+/// * [mediaAudios] - 本次已授权正文内的音频引用；缺失时链接按旧端规则呈现
 /// * [id]
 /// * [userId]
 /// * [slot]
@@ -26,6 +28,10 @@ abstract class DraftResponseDto implements Built<DraftResponseDto, DraftResponse
   /// 仅此次已授权正文中的精确来源映射；编辑保存继续使用 sourceUrl
   @BuiltValueField(wireName: r'mediaDisplays')
   BuiltList<MarkdownMediaDisplayResponseDto>? get mediaDisplays;
+
+  /// 本次已授权正文内的音频引用；缺失时链接按旧端规则呈现
+  @BuiltValueField(wireName: r'mediaAudios')
+  BuiltList<AudioMediaDto>? get mediaAudios;
 
   @BuiltValueField(wireName: r'id')
   String get id;
@@ -78,6 +84,13 @@ class _$DraftResponseDtoSerializer implements PrimitiveSerializer<DraftResponseD
       yield serializers.serialize(
         object.mediaDisplays,
         specifiedType: const FullType(BuiltList, [FullType(MarkdownMediaDisplayResponseDto)]),
+      );
+    }
+    if (object.mediaAudios != null) {
+      yield r'mediaAudios';
+      yield serializers.serialize(
+        object.mediaAudios,
+        specifiedType: const FullType(BuiltList, [FullType(AudioMediaDto)]),
       );
     }
     yield r'id';
@@ -144,6 +157,13 @@ class _$DraftResponseDtoSerializer implements PrimitiveSerializer<DraftResponseD
             specifiedType: const FullType(BuiltList, [FullType(MarkdownMediaDisplayResponseDto)]),
           ) as BuiltList<MarkdownMediaDisplayResponseDto>;
           result.mediaDisplays.replace(valueDes);
+          break;
+        case r'mediaAudios':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(BuiltList, [FullType(AudioMediaDto)]),
+          ) as BuiltList<AudioMediaDto>;
+          result.mediaAudios.replace(valueDes);
           break;
         case r'id':
           final valueDes = serializers.deserialize(

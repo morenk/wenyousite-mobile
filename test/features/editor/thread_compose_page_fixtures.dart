@@ -16,7 +16,9 @@ import 'package:wenyousite_mobile/core/network/session_controller.dart';
 import 'package:wenyousite_mobile/features/drafts/application/content_drafts_controller.dart';
 import 'package:wenyousite_mobile/features/drafts/data/content_draft_repository.dart';
 import 'package:wenyousite_mobile/features/drafts/domain/content_draft_models.dart';
+import 'package:wenyousite_mobile/features/editor/application/editor_text_color_preferences_ports.dart';
 import 'package:wenyousite_mobile/features/editor/data/editor_snapshot_store.dart';
+import 'package:wenyousite_mobile/features/editor/data/editor_text_color_preferences_store.dart';
 import 'package:wenyousite_mobile/features/media/application/image_crop_ports.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_ports.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
@@ -66,6 +68,9 @@ Future<void> threadComposePageTestPumpPage(
   ContentDraftsController? contentDraftsController,
   ThreadComposePageTestComposeStickerRepository? stickerRepository,
   bool markdownAlignment = false,
+  bool textColor = false,
+  ThemeData? theme,
+  double textScale = 1,
   bool withThreadRoute = false,
   MemoryPendingMediaFileStore? pendingMediaStore,
   SessionScope accountScope = const SessionScope(
@@ -76,7 +81,13 @@ Future<void> threadComposePageTestPumpPage(
   late final Widget app;
   if (stickerRepository == null && !withThreadRoute) {
     app = MaterialApp(
-      theme: AppTheme.light,
+      theme: theme ?? AppTheme.light,
+      builder: (context, child) => MediaQuery(
+        data: MediaQuery.of(
+          context,
+        ).copyWith(textScaler: TextScaler.linear(textScale)),
+        child: child!,
+      ),
       home: const RepaintBoundary(
         key: Key('compose-text-first-visual'),
         child: ThreadComposePage(),
@@ -112,12 +123,20 @@ Future<void> threadComposePageTestPumpPage(
     ProviderScope(
       overrides: [
         sessionScopeProvider.overrideWithValue(accountScope),
+        if (textColor)
+          editorTextColorPreferenceStoreProvider.overrideWithValue(
+            const SharedPreferencesEditorTextColorStore(),
+          ),
         if (pendingMediaStore != null)
           pendingMediaFileStoreProvider.overrideWithValue(pendingMediaStore)
         else
           memoryPendingMediaFileStoreOverride(),
         appCapabilitiesProvider.overrideWithValue(
-          AppCapabilities(markdownAlignment: markdownAlignment),
+          AppCapabilities(
+            markdownAlignment: markdownAlignment,
+            textColorSupported: textColor,
+            textColorWriteEnabled: textColor,
+          ),
         ),
         stickersEnabledProvider.overrideWithValue(stickerRepository != null),
         if (stickerRepository != null) ...[

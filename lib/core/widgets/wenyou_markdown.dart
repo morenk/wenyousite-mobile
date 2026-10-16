@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
@@ -16,10 +17,12 @@ import 'package:wenyousite_mobile/core/markdown/markdown_quote_line_syntax.dart'
 import 'package:wenyousite_mobile/core/markdown/markdown_reader_leading_space_syntax.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_reader_paragraph_syntax.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_source_protection.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_text_color.dart';
 import 'package:wenyousite_mobile/core/media/media_display.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_link.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_reference.dart';
 import 'package:wenyousite_mobile/core/widgets/discussion_selection_scope.dart';
+import 'package:wenyousite_mobile/core/widgets/markdown_text_color_builder.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_body_divider.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_dice_node.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_inline_text_elements.dart';
@@ -98,6 +101,7 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
   var _markdownReloadGeneration = 0;
   var _usesPlainTextFastPath = false;
   var _hasSelection = false;
+  final _colorRecognizers = <TapGestureRecognizer>[];
 
   @override
   void initState() {
@@ -164,6 +168,9 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
 
   @override
   void dispose() {
+    for (final recognizer in _colorRecognizers) {
+      recognizer.dispose();
+    }
     _selectionScope?.update(this, false);
     _diceLabels.dispose();
     _mentionLabels.dispose();
@@ -179,6 +186,10 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
   }
 
   Widget _buildBody() {
+    for (final recognizer in _colorRecognizers) {
+      recognizer.dispose();
+    }
+    _colorRecognizers.clear();
     final Widget body;
     if (_usesPlainTextFastPath) {
       final paragraphs = _normalizedData.split(_plainTextParagraphBreak);
@@ -345,6 +356,7 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
     ],
     inlineSyntaxes: [
       MarkdownReaderLeadingSpaceSyntax(),
+      MarkdownTextColorSyntax(),
       MarkdownImageOccurrenceSyntax(
         startIndex: imageStartIndex,
         references: _imageReferences,
@@ -356,6 +368,10 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
       _DiceInlineSyntax(),
     ],
     builders: {
+      MarkdownTextColor.tag: MarkdownTextColorBuilder(
+        onLink: (href) => _openLink(context, href),
+        registerRecognizer: _colorRecognizers.add,
+      ),
       'img': _OccurrenceImageBuilder((element) {
         final uri = Uri.parse(element.attributes['src']!);
         final title = element.attributes['title'];

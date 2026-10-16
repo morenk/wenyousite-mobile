@@ -40,6 +40,9 @@ class ApiMetaRepository implements MetaRepository {
             data.capabilities.roleMentionsV6Supported ?? false,
         roleMentionsWriteEnabled:
             data.capabilities.roleMentionsV6WriteEnabled ?? false,
+        textColorSupported: data.capabilities.textColorV1Supported ?? false,
+        textColorWriteEnabled:
+            data.capabilities.textColorV1WriteEnabled ?? false,
         rpIdentityProfileSupported:
             data.capabilities.rpIdentityProfileSupported ?? false,
       );

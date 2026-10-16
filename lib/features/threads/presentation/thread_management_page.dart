@@ -7,6 +7,7 @@ import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/application/user_facing_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
@@ -249,7 +250,7 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
             WenyouStatusBanner(
               key: const Key('thread-management-failure'),
               tone: WenyouStatusTone.error,
-              message: state.failure!.userMessage,
+              message: UserFacingFailure.fromApi(state.failure).message,
               detail: wenyouFailureDetail(state.failure, treatAsWrite: true),
               action: state.conflict != null
                   ? TextButton(
@@ -439,7 +440,9 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
     return showWenyouConfirmationDialog(
       context: context,
       title: '修改还没有保存',
-      message: failure?.userMessage ?? '请检查当前内容后重试，或者放弃修改并离开。',
+      message: failure == null
+          ? '请检查当前内容后重试，或者放弃修改并离开。'
+          : UserFacingFailure.fromApi(failure).message,
       confirmLabel: '放弃并离开',
       cancelLabel: '继续编辑',
       confirmKey: const Key('thread-management-discard-confirm'),

@@ -8,6 +8,10 @@ part of 'api_capabilities_response_dto.dart';
 
 class _$ApiCapabilitiesResponseDto extends ApiCapabilitiesResponseDto {
   @override
+  final bool? textColorV1Supported;
+  @override
+  final bool? textColorV1WriteEnabled;
+  @override
   final bool? rpIdentityProfileSupported;
   @override
   final bool? roleMentionsV6Supported;
@@ -25,6 +29,8 @@ class _$ApiCapabilitiesResponseDto extends ApiCapabilitiesResponseDto {
   ]) => (ApiCapabilitiesResponseDtoBuilder()..update(updates))._build();
 
   _$ApiCapabilitiesResponseDto._({
+    this.textColorV1Supported,
+    this.textColorV1WriteEnabled,
     this.rpIdentityProfileSupported,
     this.roleMentionsV6Supported,
     this.roleMentionsV6WriteEnabled,
@@ -45,6 +51,8 @@ class _$ApiCapabilitiesResponseDto extends ApiCapabilitiesResponseDto {
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
     return other is ApiCapabilitiesResponseDto &&
+        textColorV1Supported == other.textColorV1Supported &&
+        textColorV1WriteEnabled == other.textColorV1WriteEnabled &&
         rpIdentityProfileSupported == other.rpIdentityProfileSupported &&
         roleMentionsV6Supported == other.roleMentionsV6Supported &&
         roleMentionsV6WriteEnabled == other.roleMentionsV6WriteEnabled &&
@@ -56,6 +64,8 @@ class _$ApiCapabilitiesResponseDto extends ApiCapabilitiesResponseDto {
   @override
   int get hashCode {
     var _$hash = 0;
+    _$hash = $jc(_$hash, textColorV1Supported.hashCode);
+    _$hash = $jc(_$hash, textColorV1WriteEnabled.hashCode);
     _$hash = $jc(_$hash, rpIdentityProfileSupported.hashCode);
     _$hash = $jc(_$hash, roleMentionsV6Supported.hashCode);
     _$hash = $jc(_$hash, roleMentionsV6WriteEnabled.hashCode);
@@ -69,6 +79,8 @@ class _$ApiCapabilitiesResponseDto extends ApiCapabilitiesResponseDto {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'ApiCapabilitiesResponseDto')
+          ..add('textColorV1Supported', textColorV1Supported)
+          ..add('textColorV1WriteEnabled', textColorV1WriteEnabled)
           ..add('rpIdentityProfileSupported', rpIdentityProfileSupported)
           ..add('roleMentionsV6Supported', roleMentionsV6Supported)
           ..add('roleMentionsV6WriteEnabled', roleMentionsV6WriteEnabled)
@@ -83,6 +95,16 @@ class ApiCapabilitiesResponseDtoBuilder
     implements
         Builder<ApiCapabilitiesResponseDto, ApiCapabilitiesResponseDtoBuilder> {
   _$ApiCapabilitiesResponseDto? _$v;
+
+  bool? _textColorV1Supported;
+  bool? get textColorV1Supported => _$this._textColorV1Supported;
+  set textColorV1Supported(bool? textColorV1Supported) =>
+      _$this._textColorV1Supported = textColorV1Supported;
+
+  bool? _textColorV1WriteEnabled;
+  bool? get textColorV1WriteEnabled => _$this._textColorV1WriteEnabled;
+  set textColorV1WriteEnabled(bool? textColorV1WriteEnabled) =>
+      _$this._textColorV1WriteEnabled = textColorV1WriteEnabled;
 
   bool? _rpIdentityProfileSupported;
   bool? get rpIdentityProfileSupported => _$this._rpIdentityProfileSupported;
@@ -120,6 +142,8 @@ class ApiCapabilitiesResponseDtoBuilder
   ApiCapabilitiesResponseDtoBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
+      _textColorV1Supported = $v.textColorV1Supported;
+      _textColorV1WriteEnabled = $v.textColorV1WriteEnabled;
       _rpIdentityProfileSupported = $v.rpIdentityProfileSupported;
       _roleMentionsV6Supported = $v.roleMentionsV6Supported;
       _roleMentionsV6WriteEnabled = $v.roleMentionsV6WriteEnabled;
@@ -148,6 +172,8 @@ class ApiCapabilitiesResponseDtoBuilder
     final _$result =
         _$v ??
         _$ApiCapabilitiesResponseDto._(
+          textColorV1Supported: textColorV1Supported,
+          textColorV1WriteEnabled: textColorV1WriteEnabled,
           rpIdentityProfileSupported: rpIdentityProfileSupported,
           roleMentionsV6Supported: roleMentionsV6Supported,
           roleMentionsV6WriteEnabled: roleMentionsV6WriteEnabled,

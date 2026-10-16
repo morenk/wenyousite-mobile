@@ -89,6 +89,8 @@ media application 负责相册选择、格式校验、`STICKER_SOURCE` 用途和
 
 ## 13. 最近审查的契约版本和后端提交
 
+文本颜色候选契约审查：Backend `2cdedbcdecee4991634cf4b256aa0f547b06d88c`，API `5.38.0-dev.20261016.1`；共享 Markdown 版本保持 v6，新增独立文本颜色 v1 与站内 clipboard v2 保色规则。契约同步不代表已部署；未涉及颜色的模块保持原行为。
+
 2026-10-10 合并来源复核：通过官方同步入口固定到实际部署 Backend `b5f0e3bb0b99a3f9763b31e3080cb4d4f2e64045`，OpenAPI 仍为 `5.36.0-dev.20261005.1`。相对退役实施提交，机器契约、共享语料、生成客户端及本模块行为不变；仅来源登记更新，详见[退役验收记录](../architecture/retire-development-preview-acceptance.md)。
 
 本轮共享契约复核：OpenAPI `5.36.0-dev.20261005.1`，Backend `a624bed0eb2b118701bd593fbce2aabf3dea7321`。新增帖内多角色集合及可选发表 identityId，Markdown 5 与本模块既有消费保持；实际部署与设备验收另行登记，相关行为见[帖内身份](thread-identity.md)。

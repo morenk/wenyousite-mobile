@@ -22,6 +22,8 @@ class PostPublishDraft {
         'subthreadId': value.input.subthreadId,
         'content': value.input.content,
         'clientRequestId': value.input.clientRequestId,
+        if (value.input.textColorSupported != null)
+          'textColorVersion': value.input.textColorSupported! ? 1 : null,
         'parentPostId': value.input.parentPostId,
         'replyToPostId': value.input.replyToPostId,
         'identityMode': value.input.identityMode?.name,
@@ -49,6 +51,9 @@ class PostPublishDraft {
           subthreadId: input['subthreadId'] as String,
           content: input['content'] as String,
           clientRequestId: input['clientRequestId'] as String,
+          textColorSupported: input.containsKey('textColorVersion')
+              ? input['textColorVersion'] == 1
+              : null,
           parentPostId: optional(input['parentPostId']),
           replyToPostId: optional(input['replyToPostId']),
           identityMode: modeOf(input['identityMode']),

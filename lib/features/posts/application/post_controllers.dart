@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
+import 'package:wenyousite_mobile/app/app_capabilities.dart';
 import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
 import 'package:wenyousite_mobile/core/application/visibility_cache_invalidation.dart';
 import 'package:wenyousite_mobile/core/markdown/local_image_marker.dart';
@@ -23,13 +24,16 @@ class PostComposerController extends StateNotifier<PostComposerState> {
     this._repository,
     this.target, {
     String Function()? createRequestId,
+    bool Function()? textColorSupported,
   }) : _createRequestId = createRequestId ?? const Uuid().v4,
+       _textColorSupported = textColorSupported ?? (() => false),
        _requestId = (createRequestId ?? const Uuid().v4)(),
        super(PostComposerState(content: target.initialContent));
 
   final PostRepository _repository;
   final PostComposerTarget target;
   final String Function() _createRequestId;
+  final bool Function() _textColorSupported;
   String _requestId;
 
   void updateContent(String content) {
@@ -116,6 +120,7 @@ class PostComposerController extends StateNotifier<PostComposerState> {
     final input =
         pending?.input ??
         PostCreateInput(
+          textColorSupported: _textColorSupported(),
           subthreadId: target.subthreadId,
           content: state.content,
           clientRequestId: _requestId,
@@ -210,6 +215,7 @@ class PostComposerController extends StateNotifier<PostComposerState> {
         ? state.pendingCreate ??
               PendingPostCreate(
                 input: PostCreateInput(
+                  textColorSupported: _textColorSupported(),
                   subthreadId: target.subthreadId,
                   content: state.content,
                   clientRequestId: _requestId,
@@ -240,6 +246,7 @@ class PostComposerController extends StateNotifier<PostComposerState> {
       }
       if (!mounted) return null;
       final result = await _repository.upsertBody(
+        textColorSupported: pending?.input.textColorSupported,
         subthreadId: target.subthreadId,
         content: pending?.input.content ?? state.content,
         version: version,
@@ -359,6 +366,12 @@ class PostComposerController extends StateNotifier<PostComposerState> {
   }
 
   bool _isAmbiguous(ApiFailure failure) {
+    // 本地校验在发请求前失败，没有需要冻结正文等待确认的远端写入。
+    if (failure.httpStatus == null &&
+        failure.reason == FailureReason.validation &&
+        failure.effectiveSource == FailureSource.expected) {
+      return false;
+    }
     final status = failure.httpStatus;
     return status == null || status >= 500;
   }
@@ -464,7 +477,12 @@ final postComposerControllerProvider = StateNotifierProvider.autoDispose
       target,
     ) {
       ref.watch(sessionScopeProvider);
-      return PostComposerController(ref.watch(postRepositoryProvider), target);
+      return PostComposerController(
+        ref.watch(postRepositoryProvider),
+        target,
+        textColorSupported: () =>
+            ref.read(appCapabilitiesProvider).textColorSupported,
+      );
     }, dependencies: [sessionScopeProvider, postRepositoryProvider]);
 
 final postActionControllerProvider = StateNotifierProvider.autoDispose

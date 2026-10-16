@@ -296,6 +296,7 @@ class _RecordingPostRepository extends PostRepliesPageTestFakePostRepository {
 
   @override
   Future<PostItem> upsertBody({
+    bool? textColorSupported,
     required String subthreadId,
     required String content,
     int? version,

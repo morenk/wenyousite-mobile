@@ -131,6 +131,12 @@ Serializers _$serializers =
           ..add(ApiSuccessEnvelopeCodeEnum.serializer)
           ..add(AppDownloadsInfo200Response.serializer)
           ..add(AppealAccessTokenResponseDto.serializer)
+          ..add(AudioMediaDto.serializer)
+          ..add(AudioMediaDtoContentTypeEnum.serializer)
+          ..add(AudioUploadCapabilityDto.serializer)
+          ..add(AudioUploadCapabilityDtoContentTypesEnum.serializer)
+          ..add(AudioUploadCapabilityDtoOutputContentTypeEnum.serializer)
+          ..add(AudioUploadCapabilityDtoVersionEnum.serializer)
           ..add(AuthChangePassword200Response.serializer)
           ..add(AuthForgotPassword200Response.serializer)
           ..add(AuthListSessions200Response.serializer)
@@ -172,6 +178,7 @@ Serializers _$serializers =
           ..add(CreateDirectMessageDto.serializer)
           ..add(CreateDraftDto.serializer)
           ..add(CreateDraftDtoMarkdownContractVersionEnum.serializer)
+          ..add(CreateDraftDtoTextColorVersionEnum.serializer)
           ..add(CreateManagedTagDto.serializer)
           ..add(CreateMobileReleaseDto.serializer)
           ..add(CreateMobileReleaseDtoPlatformEnum.serializer)
@@ -185,6 +192,7 @@ Serializers _$serializers =
           ..add(CreatePostDto.serializer)
           ..add(CreatePostDtoIdentityModeEnum.serializer)
           ..add(CreatePostDtoMarkdownContractVersionEnum.serializer)
+          ..add(CreatePostDtoTextColorVersionEnum.serializer)
           ..add(CreateReportDto.serializer)
           ..add(CreateReportDtoReasonCodeEnum.serializer)
           ..add(CreateReportDtoTargetTypeEnum.serializer)
@@ -195,10 +203,12 @@ Serializers _$serializers =
           ..add(CreateSubthreadDtoIdentityModeEnum.serializer)
           ..add(CreateSubthreadDtoMarkdownContractVersionEnum.serializer)
           ..add(CreateSubthreadDtoPostingPolicyEnum.serializer)
+          ..add(CreateSubthreadDtoTextColorVersionEnum.serializer)
           ..add(CreateTagDto.serializer)
           ..add(CreateThreadCategoryDto.serializer)
           ..add(CreateThreadDto.serializer)
           ..add(CreateThreadDtoMarkdownContractVersionEnum.serializer)
+          ..add(CreateThreadDtoTextColorVersionEnum.serializer)
           ..add(CreateThreadDtoVisibilityEnum.serializer)
           ..add(CreateUploadUrlDto.serializer)
           ..add(CreateUploadUrlDtoContentTypeEnum.serializer)
@@ -301,6 +311,7 @@ Serializers _$serializers =
           ..add(MediaGetUploadUrl201Response.serializer)
           ..add(MediaReissueUploadUrl200Response.serializer)
           ..add(MediaResponseDto.serializer)
+          ..add(MediaResponseDtoFailureCodeEnum.serializer)
           ..add(MediaResponseDtoPurposeEnum.serializer)
           ..add(MediaResponseDtoStatusEnum.serializer)
           ..add(MentionCandidateDto.serializer)
@@ -505,6 +516,7 @@ Serializers _$serializers =
           ..add(SaveThreadAggregateDtoIdentityModeEnum.serializer)
           ..add(SaveThreadAggregateDtoMarkdownContractVersionEnum.serializer)
           ..add(SaveThreadAggregateDtoStatusEnum.serializer)
+          ..add(SaveThreadAggregateDtoTextColorVersionEnum.serializer)
           ..add(SaveThreadAggregateDtoVisibilityEnum.serializer)
           ..add(SearchAuthorResponseDto.serializer)
           ..add(SearchPostResponseDto.serializer)
@@ -634,11 +646,13 @@ Serializers _$serializers =
           ..add(UpdateContentTaxonomyDto.serializer)
           ..add(UpdateDraftDto.serializer)
           ..add(UpdateDraftDtoMarkdownContractVersionEnum.serializer)
+          ..add(UpdateDraftDtoTextColorVersionEnum.serializer)
           ..add(UpdateManagedTagDto.serializer)
           ..add(UpdateMobileReleaseDto.serializer)
           ..add(UpdateMomentDto.serializer)
           ..add(UpdatePostDto.serializer)
           ..add(UpdatePostDtoMarkdownContractVersionEnum.serializer)
+          ..add(UpdatePostDtoTextColorVersionEnum.serializer)
           ..add(UpdateRpIdentityDto.serializer)
           ..add(UpdateSiteSettingsDto.serializer)
           ..add(UpdateSubthreadDto.serializer)
@@ -653,6 +667,7 @@ Serializers _$serializers =
           ..add(UpsertBodyDto.serializer)
           ..add(UpsertBodyDtoIdentityModeEnum.serializer)
           ..add(UpsertBodyDtoMarkdownContractVersionEnum.serializer)
+          ..add(UpsertBodyDtoTextColorVersionEnum.serializer)
           ..add(UserActivitySummaryResponseDto.serializer)
           ..add(UserConditionDto.serializer)
           ..add(UserConditionDtoRoleEnum.serializer)
@@ -812,6 +827,12 @@ Serializers _$serializers =
           )
           ..addBuilderFactory(
             const FullType(BuiltList, const [
+              const FullType(AudioUploadCapabilityDtoContentTypesEnum),
+            ]),
+            () => ListBuilder<AudioUploadCapabilityDtoContentTypesEnum>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [
               const FullType(BlockedUserRecordResponseDto),
             ]),
             () => ListBuilder<BlockedUserRecordResponseDto>(),
@@ -927,10 +948,18 @@ Serializers _$serializers =
             () => ListBuilder<MarkdownMediaDisplayResponseDto>(),
           )
           ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(AudioMediaDto)]),
+            () => ListBuilder<AudioMediaDto>(),
+          )
+          ..addBuilderFactory(
             const FullType(BuiltList, const [
               const FullType(MarkdownMediaDisplayResponseDto),
             ]),
             () => ListBuilder<MarkdownMediaDisplayResponseDto>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(AudioMediaDto)]),
+            () => ListBuilder<AudioMediaDto>(),
           )
           ..addBuilderFactory(
             const FullType(BuiltList, const [
@@ -957,6 +986,10 @@ Serializers _$serializers =
             () => ListBuilder<MarkdownMediaDisplayResponseDto>(),
           )
           ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(AudioMediaDto)]),
+            () => ListBuilder<AudioMediaDto>(),
+          )
+          ..addBuilderFactory(
             const FullType(BuiltList, const [
               const FullType(MentionIdentityDisplayDto),
             ]),
@@ -967,6 +1000,10 @@ Serializers _$serializers =
               const FullType(MarkdownMediaDisplayResponseDto),
             ]),
             () => ListBuilder<MarkdownMediaDisplayResponseDto>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(AudioMediaDto)]),
+            () => ListBuilder<AudioMediaDto>(),
           )
           ..addBuilderFactory(
             const FullType(BuiltList, const [
@@ -987,22 +1024,8 @@ Serializers _$serializers =
             () => ListBuilder<MarkdownMediaDisplayResponseDto>(),
           )
           ..addBuilderFactory(
-            const FullType(BuiltList, const [
-              const FullType(DiceRollResponseDto),
-            ]),
-            () => ListBuilder<DiceRollResponseDto>(),
-          )
-          ..addBuilderFactory(
-            const FullType(BuiltList, const [
-              const FullType(MentionIdentityDisplayDto),
-            ]),
-            () => ListBuilder<MentionIdentityDisplayDto>(),
-          )
-          ..addBuilderFactory(
-            const FullType(BuiltList, const [
-              const FullType(MarkdownMediaDisplayResponseDto),
-            ]),
-            () => ListBuilder<MarkdownMediaDisplayResponseDto>(),
+            const FullType(BuiltList, const [const FullType(AudioMediaDto)]),
+            () => ListBuilder<AudioMediaDto>(),
           )
           ..addBuilderFactory(
             const FullType(BuiltList, const [
@@ -1023,6 +1046,10 @@ Serializers _$serializers =
             () => ListBuilder<MarkdownMediaDisplayResponseDto>(),
           )
           ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(AudioMediaDto)]),
+            () => ListBuilder<AudioMediaDto>(),
+          )
+          ..addBuilderFactory(
             const FullType(BuiltList, const [
               const FullType(DiceRollResponseDto),
             ]),
@@ -1039,6 +1066,32 @@ Serializers _$serializers =
               const FullType(MarkdownMediaDisplayResponseDto),
             ]),
             () => ListBuilder<MarkdownMediaDisplayResponseDto>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(AudioMediaDto)]),
+            () => ListBuilder<AudioMediaDto>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [
+              const FullType(DiceRollResponseDto),
+            ]),
+            () => ListBuilder<DiceRollResponseDto>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [
+              const FullType(MentionIdentityDisplayDto),
+            ]),
+            () => ListBuilder<MentionIdentityDisplayDto>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [
+              const FullType(MarkdownMediaDisplayResponseDto),
+            ]),
+            () => ListBuilder<MarkdownMediaDisplayResponseDto>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(AudioMediaDto)]),
+            () => ListBuilder<AudioMediaDto>(),
           )
           ..addBuilderFactory(
             const FullType(BuiltList, const [

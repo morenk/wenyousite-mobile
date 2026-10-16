@@ -48,6 +48,7 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
   bool _applyingInputs = false;
   bool _allowPop = false;
   bool _preparingPop = false;
+  bool _colorPickerOpen = false;
   ThreadComposeMetadataPanel? _metadataPanel;
   int _scheduledDocumentRevision = -1;
   bool get _uploading => _pendingImages.hasPending;
@@ -232,154 +233,225 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
       child: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 800),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              EditorPublishWaiting(images: _pendingImages),
-              ThreadComposeStatusArea(
-                state: state,
-                documentIssues: _editorSession.issues,
-                codecFailure: _editorSession.codecFailure,
-                operationFailure: _editorSession.operationFailure?.message,
-                onRefreshBootstrap: () => ref
-                    .read(threadComposeControllerProvider.notifier)
-                    .refreshBootstrap(),
-              ),
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '主题标题',
-                      key: const Key('compose-title-label'),
-                      style: Theme.of(context).textTheme.wenyouCaptionEmphasis
-                          .copyWith(color: tokens.mutedText),
-                    ),
-                    TextField(
-                      key: const Key('compose-title'),
-                      controller: _titleController,
-                      enabled: !locked,
-                      maxLength: 100,
-                      maxLines: _editorSession.hasFocus ? 1 : 3,
-                      minLines: 1,
-                      textInputAction: TextInputAction.next,
-                      style: Theme.of(context).textTheme.wenyouPageTitle,
-                      decoration: const InputDecoration(
-                        hintText: '一句话说明这个主题',
-                        counterText: '',
-                        filled: false,
-                        border: InputBorder.none,
-                        enabledBorder: InputBorder.none,
-                        disabledBorder: InputBorder.none,
-                        focusedBorder: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(vertical: 4),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              ThreadComposeMetadataBar(
-                categoryValue: selectedCategory?.name ?? '未选择',
-                visibilityValue: state.visibility.label,
-                tagsValue: state.tags.isEmpty
-                    ? '未添加'
-                    : '${state.tags.length} 个',
-                activePanel: _metadataPanel,
-                enabled: !locked,
-                onPanelChanged: (panel) {
-                  setState(() {
-                    _metadataPanel = _metadataPanel == panel ? null : panel;
-                  });
-                },
-              ),
-              _buildMetadataPanel(state, locked),
-              Expanded(
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    Semantics(
-                      textField: true,
-                      label: '主题正文编辑器',
-                      child: QuillEditor(
-                        key: const Key('compose-body'),
-                        controller: _editorSession.controller,
-                        focusNode: _editorSession.focusNode,
-                        scrollController: _editorSession.scrollController,
-                        config: QuillEditorConfig(
-                          scrollable: true,
-                          expands: true,
-                          paintCursorAboveText: true,
-                          padding: EdgeInsets.fromLTRB(
-                            horizontalPadding,
-                            tokens.space16,
-                            horizontalPadding,
-                            tokens.space16,
+          child: LayoutBuilder(
+            builder: (context, pageConstraints) {
+              // 短屏返回正文时键盘仍在，标题和元信息待键盘收起后恢复。
+              final compact =
+                  _colorPickerOpen ||
+                  pageConstraints.maxHeight <
+                      WenyouEditorTextColorContract.minimumTarget * 7;
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  EditorPublishWaiting(images: _pendingImages),
+                  ThreadComposeStatusArea(
+                    state: state,
+                    documentIssues: _editorSession.issues,
+                    codecFailure: _editorSession.codecFailure,
+                    operationFailure: _editorSession.operationFailure?.message,
+                    onRefreshBootstrap: () => ref
+                        .read(threadComposeControllerProvider.notifier)
+                        .refreshBootstrap(),
+                  ),
+                  Visibility(
+                    visible: !compact,
+                    maintainState: true,
+                    child: Column(
+                      children: [
+                        Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: horizontalPadding,
                           ),
-                          placeholder: '从这里开始写正文…',
-                          customStyles: wenyouEditorTextStyles(context),
-                          // Flutter Quill 尚未稳定开放自定义块前导渲染入口。
-                          // ignore: experimental_member_use
-                          customLeadingBlockBuilder:
-                              wenyouEditorLeadingBlockBuilder(context),
-                          embedBuilders: wenyouEditorEmbedBuilders(
-                            mentionLabels: _editorSession.mentionLabels,
-                            mediaDisplays: _editorSession.mediaDisplays,
-                            pendingImages: _pendingImages,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '主题标题',
+                                key: const Key('compose-title-label'),
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .wenyouCaptionEmphasis
+                                    .copyWith(color: tokens.mutedText),
+                              ),
+                              TextField(
+                                key: const Key('compose-title'),
+                                controller: _titleController,
+                                enabled: !locked,
+                                maxLength: 100,
+                                maxLines: _editorSession.hasFocus ? 1 : 3,
+                                minLines: 1,
+                                textInputAction: TextInputAction.next,
+                                style: Theme.of(
+                                  context,
+                                ).textTheme.wenyouPageTitle,
+                                decoration: const InputDecoration(
+                                  hintText: '一句话说明这个主题',
+                                  counterText: '',
+                                  filled: false,
+                                  border: InputBorder.none,
+                                  enabledBorder: InputBorder.none,
+                                  disabledBorder: InputBorder.none,
+                                  focusedBorder: InputBorder.none,
+                                  contentPadding: EdgeInsets.symmetric(
+                                    vertical: 4,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
-                          customShortcuts: _editorSession.clipboardShortcuts,
-                          customActions: _editorSession.clipboardActions,
-                          contextMenuBuilder: _editorSession.buildContextMenu,
+                        ),
+                        ThreadComposeMetadataBar(
+                          categoryValue: selectedCategory?.name ?? '未选择',
+                          visibilityValue: state.visibility.label,
+                          tagsValue: state.tags.isEmpty
+                              ? '未添加'
+                              : '${state.tags.length} 个',
+                          activePanel: _metadataPanel,
+                          enabled: !locked,
+                          onPanelChanged: (panel) {
+                            setState(() {
+                              _metadataPanel = _metadataPanel == panel
+                                  ? null
+                                  : panel;
+                            });
+                          },
+                        ),
+                        _buildMetadataPanel(state, locked),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    child: LayoutBuilder(
+                      builder: (context, constraints) => EditorToolArea(
+                        availableHeight: constraints.maxHeight,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Expanded(
+                              child: Stack(
+                                fit: StackFit.expand,
+                                children: [
+                                  Semantics(
+                                    textField: true,
+                                    label: '主题正文编辑器',
+                                    child: QuillEditor(
+                                      key: const Key('compose-body'),
+                                      controller: _editorSession.controller,
+                                      focusNode: _editorSession.focusNode,
+                                      scrollController:
+                                          _editorSession.scrollController,
+                                      config: QuillEditorConfig(
+                                        scrollable: true,
+                                        expands: true,
+                                        paintCursorAboveText: true,
+                                        padding: EdgeInsets.fromLTRB(
+                                          horizontalPadding,
+                                          tokens.space16,
+                                          horizontalPadding,
+                                          tokens.space16,
+                                        ),
+                                        placeholder: '从这里开始写正文…',
+                                        customStyles: wenyouEditorTextStyles(
+                                          context,
+                                        ),
+                                        // Flutter Quill 尚未稳定开放自定义块前导渲染入口。
+                                        // ignore: experimental_member_use
+                                        customLeadingBlockBuilder:
+                                            wenyouEditorLeadingBlockBuilder(
+                                              context,
+                                            ),
+                                        embedBuilders:
+                                            wenyouEditorEmbedBuilders(
+                                              mentionLabels:
+                                                  _editorSession.mentionLabels,
+                                              mediaDisplays:
+                                                  _editorSession.mediaDisplays,
+                                              pendingImages: _pendingImages,
+                                            ),
+                                        customShortcuts:
+                                            _editorSession.clipboardShortcuts,
+                                        customActions:
+                                            _editorSession.clipboardActions,
+                                        contextMenuBuilder:
+                                            _editorSession.buildContextMenu,
+                                      ),
+                                    ),
+                                  ),
+                                  MentionSuggestions(
+                                    controller: _editorSession.controller,
+                                    focusNode: _editorSession.focusNode,
+                                    threadId: state.remoteDraft?.id,
+                                    enabled: enabled,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Visibility(
+                              visible: !compact,
+                              maintainState: true,
+                              child: Padding(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: horizontalPadding,
+                                ),
+                                child: ThreadComposeLocalSaveStatus(
+                                  state: state,
+                                ),
+                              ),
+                            ),
+                            WenyouComposerDock(
+                              key: const Key('compose-toolbar'),
+                              textColor: ref.watch(
+                                editorTextColorConfigurationProvider,
+                              ),
+                              onColorPickerChanged: (open) {
+                                if (_colorPickerOpen != open) {
+                                  setState(() => _colorPickerOpen = open);
+                                }
+                              },
+                              controller: _editorSession.controller,
+                              capabilities:
+                                  WenyouEditorCapabilities.forAlignment(
+                                    ref.watch(
+                                      appCapabilitiesProvider.select(
+                                        (capabilities) =>
+                                            capabilities.markdownAlignment,
+                                      ),
+                                    ),
+                                    imageAlignment:
+                                        _editorSession.imageAlignment,
+                                  ),
+                              surface: WenyouComposerSurface.page,
+                              enabled: enabled,
+                              editorFocusNode: _editorSession.focusNode,
+                              onInsertImage: _insertImage,
+                              onInsertHorizontalRule:
+                                  _editorSession.insertHorizontalRule,
+                              onInsertSticker:
+                                  ref.watch(stickersEnabledProvider)
+                                  ? _insertSticker
+                                  : null,
+                              onSaveDraft: _openContentDrafts,
+                              draftStatusLabel: _uploading
+                                  ? _pendingImages.localSaveLabel
+                                  : ref
+                                        .watch(
+                                          contentDraftsControllerProvider(
+                                            _contentDraftSessionKey,
+                                          ),
+                                        )
+                                        .autoSaveToolbarLabel,
+                              characterCount: _editorSession.characterCount,
+                              characterLimit: 10000,
+                              toolbarController: _toolbarController,
+                            ),
+                          ],
                         ),
                       ),
                     ),
-                    MentionSuggestions(
-                      controller: _editorSession.controller,
-                      focusNode: _editorSession.focusNode,
-                      threadId: state.remoteDraft?.id,
-                      enabled: enabled,
-                    ),
-                  ],
-                ),
-              ),
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
-                child: ThreadComposeLocalSaveStatus(state: state),
-              ),
-              WenyouComposerDock(
-                key: const Key('compose-toolbar'),
-                controller: _editorSession.controller,
-                capabilities: WenyouEditorCapabilities.forAlignment(
-                  ref.watch(
-                    appCapabilitiesProvider.select(
-                      (capabilities) => capabilities.markdownAlignment,
-                    ),
                   ),
-                  imageAlignment: _editorSession.imageAlignment,
-                ),
-                surface: WenyouComposerSurface.page,
-                enabled: enabled,
-                editorFocusNode: _editorSession.focusNode,
-                onInsertImage: _insertImage,
-                onInsertHorizontalRule: _editorSession.insertHorizontalRule,
-                onInsertSticker: ref.watch(stickersEnabledProvider)
-                    ? _insertSticker
-                    : null,
-                onSaveDraft: _openContentDrafts,
-                draftStatusLabel: _uploading
-                    ? _pendingImages.localSaveLabel
-                    : ref
-                          .watch(
-                            contentDraftsControllerProvider(
-                              _contentDraftSessionKey,
-                            ),
-                          )
-                          .autoSaveToolbarLabel,
-                characterCount: _editorSession.characterCount,
-                characterLimit: 10000,
-                toolbarController: _toolbarController,
-              ),
-            ],
+                ],
+              );
+            },
           ),
         ),
       ),
