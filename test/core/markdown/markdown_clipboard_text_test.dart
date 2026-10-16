@@ -66,6 +66,35 @@ void main() {
   for (final fixture in goldenCases.where(
     (fixture) => fixture['kind'] == 'reader-copy',
   )) {
+    if (fixture['id'] == 'reader-text-color-v1') {
+      test('reader-text-color-v1 未声明颜色能力时保留未知源码字面', () {
+        // 本端不发送 X-Text-Color-Version。正常读取收到后端去色副本；
+        // 外部粘贴的原始扩展仍按既有未知 HTML 保真，不冒充颜色支持。
+        expect(
+          MarkdownClipboardText.project(fixture['markdown'] as String),
+          fixture['markdown'],
+        );
+      });
+      test('reader-text-color-v1 安全去色副本保留粗体和可见文字', () {
+        final colors =
+            jsonDecode(
+                  File(
+                    'contracts/markdown-text-color-v1-fixtures.json',
+                  ).readAsStringSync(),
+                )
+                as Map<String, dynamic>;
+        final bold = (colors['validCases'] as List<dynamic>)
+            .cast<Map<String, dynamic>>()
+            .singleWhere((item) => item['id'] == 'bold');
+        expect(bold['fallback'], '**粗体**');
+        expect(MarkdownClipboardText.project(bold['fallback'] as String), '粗体');
+        expect(
+          MarkdownClipboardText.project('**彩色粗体**'),
+          fixture['expectedPlainText'],
+        );
+      });
+      continue;
+    }
     test('${fixture['id']} 阅读态复制只写可见文本', () {
       final diceLabels = <String, String>{};
       for (final rawRoll

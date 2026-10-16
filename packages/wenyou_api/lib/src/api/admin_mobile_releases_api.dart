@@ -35,6 +35,7 @@ class AdminMobileReleasesApi {
   /// * [mobileReleaseRevisionDto]
   /// * [xCSRFToken] - 管理后台写操作必填
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -49,6 +50,7 @@ class AdminMobileReleasesApi {
     required MobileReleaseRevisionDto mobileReleaseRevisionDto,
     String? xCSRFToken,
     int? xMarkdownContractVersion,
+    int? xTextColorVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -62,6 +64,7 @@ class AdminMobileReleasesApi {
       headers: <String, dynamic>{
         if (xCSRFToken != null) r'X-CSRF-Token': xCSRFToken,
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -149,6 +152,7 @@ class AdminMobileReleasesApi {
   /// * [createMobileReleaseDto]
   /// * [xCSRFToken] - 管理后台写操作必填
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -162,6 +166,7 @@ class AdminMobileReleasesApi {
     required CreateMobileReleaseDto createMobileReleaseDto,
     String? xCSRFToken,
     int? xMarkdownContractVersion,
+    int? xTextColorVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -175,6 +180,7 @@ class AdminMobileReleasesApi {
       headers: <String, dynamic>{
         if (xCSRFToken != null) r'X-CSRF-Token': xCSRFToken,
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -262,6 +268,7 @@ class AdminMobileReleasesApi {
   /// * [id]
   /// * [xCSRFToken] - 管理后台写操作必填
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -275,6 +282,7 @@ class AdminMobileReleasesApi {
     required String id,
     String? xCSRFToken,
     int? xMarkdownContractVersion,
+    int? xTextColorVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -288,6 +296,7 @@ class AdminMobileReleasesApi {
       headers: <String, dynamic>{
         if (xCSRFToken != null) r'X-CSRF-Token': xCSRFToken,
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -357,6 +366,7 @@ class AdminMobileReleasesApi {
   /// * [limit] - 每页条数（默认 20，最大 50）
   /// * [xCSRFToken] - 管理后台写操作必填
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -372,6 +382,7 @@ class AdminMobileReleasesApi {
     num? limit = 20,
     String? xCSRFToken,
     int? xMarkdownContractVersion,
+    int? xTextColorVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -385,6 +396,7 @@ class AdminMobileReleasesApi {
       headers: <String, dynamic>{
         if (xCSRFToken != null) r'X-CSRF-Token': xCSRFToken,
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -460,6 +472,7 @@ class AdminMobileReleasesApi {
   /// * [updateMobileReleaseDto]
   /// * [xCSRFToken] - 管理后台写操作必填
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -474,6 +487,7 @@ class AdminMobileReleasesApi {
     required UpdateMobileReleaseDto updateMobileReleaseDto,
     String? xCSRFToken,
     int? xMarkdownContractVersion,
+    int? xTextColorVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -487,6 +501,7 @@ class AdminMobileReleasesApi {
       headers: <String, dynamic>{
         if (xCSRFToken != null) r'X-CSRF-Token': xCSRFToken,
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
