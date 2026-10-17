@@ -170,3 +170,21 @@ Backend #54 已按负责人明确批准合并并正式部署 `08bbf5dbcd79127076
 App 后台期间旧 attach 断开；负责人手动切回前台后，同一 PID 13380／VM 39339 恢复可达，复用本任务 5511 转发重新 attach，无启动／重启。初次 reload 返回 0 libraries，读取 VM library 清单发现新摘要模块尚未加载，因此不将该次视为更新成功。仅刷新已检查的 3 个源文件修改时间、不改变字节，重新热重载实际为 3/4731 libraries、2495ms、code 0，且只读确认新共享 library 已进入 VM。日志 `.dart_tool/thread-list-preview-attach.log` 含调试授权 URI，仅留本机忽略目录。
 
 审查当前页面下拉刷新仅调用资料、钱包和最近回复 GET 后，执行只读滚动／刷新，实际第 19 楼卡片从两段 span 源码变为“杀！ 杀！”。真机 400dp、亮色、font_scale 1.0，截图 `D:/codex-artifacts/text-color-v1/list-preview-confirmed-20261018.png` 含真实内容，仅留本机。未自动发帖、编辑、删除、签到或清草稿。本轮没有重建／安装 APK，仍以初装 7b0c585c 加当前源码与 reload 记录绑定；候选现场可见变化，负责人最终验收仍独立记录。
+
+### 2026-10-18 光标先选色与最终集成候选
+
+负责人新增要求允许先选颜色再输入。有效折叠光标（包括空正文）可选择输入色，第一个 T 选择默认色并保留其他格式；有文字选区时仍只改范围，原子元素与换行不着色。连续输入、中文组合输入和换行保留显式输入色，主动移动光标后按新位置重新计算；取消 RGB 恢复原状态，只读、能力关闭和换正文清除临时色。选色本身不改文档、不写草稿或增加空撤销步骤。纯文本粘贴使用实际提交时的输入色，结构化片段保留来源格式；最近自定义色仍最多四个。
+
+本轮已整合 `origin/dev` 的 `60a118084f680c270f0e05e6acb02659ee23d399`，合并提交 `d2c2ef0b` 保留音频、可定制工具栏和链接来源身份。独立 `chore` 提交 `7a99c643` 将契约绑定到已部署 Backend `08bbf5dbcd791270764fc2152fe9b61f683d7fa1`／API `5.39.0-dev.20261017.1`；OpenAPI 与该集成基线相同，生成 SDK 无差异。独立 `chore` 提交 `5c877c93` 锁定已批准正式发布的 Foundation `v7.5.0`，解引用提交 `fef249d8856f5ed08f55eab69a2a2ed01b2742ce`，不使用浮动分支或未发布源码。
+
+应用候选提交为 `9aa396191b9845ba055752955f563dceba175937`。直接相关 13 个测试文件共 120 项通过，日志 `.dart_tool/text-color-caret-final-regression.log`，覆盖 caret、范围、默认、取消、数字焦点、真实 Quill composing `n → ni → 你`、纯文本／富文本粘贴、多步撤销／重做、音频投影及多行输入。音频元数据投影同时重算撤销／重做端点与选区，避免清空重做或留下旧偏移；按住播放器时仅允许内部投影补偿。多字符 String 含 LF 时逐文字段应用继承及显式行内格式，显式关闭覆盖继承，不将颜色或粗斜体附到行尾；单个回车保留原块规则。阅读器仅抽取既有音频来源与单行识别职责以满足文件大小门禁，直接阅读回归 97 项通过。
+
+首轮完整门禁 `.dart_tool/text-color-caret-check-apk.log` 为 7171 通过／1 跳过／15 失败，未进入工具测试或 APK 构建。失败分别为一个旧 Backend SHA 硬编码、十个共享多行输入的 Quill 行属性断言、四张尚未更新的快翻 Golden。原始日志及 3170 项冻结清单保留。多行精确回归旧实现 10 项全部失败；仅移除 pending color 后仍有四个粗斜体组合失败，随后按非换行文字范围处理全部行内格式。继承粗体／斜体补验旧行为 11 通过／2 失败，修正后通过，显式 `bold:null` 保持关闭。完整预期同时核对可见文字、块属性、阅读、保存重开与撤销，未放宽语义守卫。四张 320/360/400/600dp 快翻 Golden 经目视批准后更新，差异包括已认可的紧凑浅色回复底栏及旧基准残留的 DEBUG 标记，不称为仅底栏像素变化。
+
+最终对冻结源码执行 `npm run check:apk -- -TestConcurrency 2` 返回 0，日志 `.dart_tool/text-color-caret-check-apk-final.log`，SHA-256 `f60bbb7c77153b73b0965e86b13c2dfe8e32fefa0319740e634a9248ec8aeb86`。Flutter 7199 通过、1 项既有显式 Sentry 联网验收跳过、0 失败（22 分 02 秒）；Windows 发布工具 49/49。契约来源、SDK 再生成、精确线上 SHA／API、格式、应用与 SDK 分析、架构、23 个模块文档和 API 覆盖全部通过；同次门禁 Debug APK 构建成功（137.5 秒）。现有 `flutter_image_compress_common` 的 KGP 未来兼容警告仍在，无构建失败。
+
+冻结清单 `.dart_tool/text-color-caret-final-frozen-inputs.json` 包含 3171 个应用、测试、契约、依赖和构建输入，SHA-256 `be8dc0ed694b39baca96e8dfa69460f0f41c2a773da714b85980c5e0e1702b51`；门禁后工作文件逐字复核 0 漂移。与应用提交绑定时，3151 个 Git blob 与检出字节相同，另 20 个脚本／生成 FILES 按仓库明确的 `eol=crlf` 规则从 Git LF 转换为 Windows CRLF；逐项验证后内容差异为 0。绑定记录 `.dart_tool/text-color-caret-final-commit-binding.json` 的 SHA-256 为 `07ddef0c8645e8299b50c8647fa8554f8f0d834bdf6aad9352d685feda2cfe20`，不把预期换行转换伪称为原始字节一致。
+
+新增真实编辑器 T 面板 320/360dp 明暗四张 `editor_caret_color_*` Golden，320dp 使用 1.5 倍字号，模拟 220dp 键盘 inset；根任务已目视，没有新增布局阻断。模拟键盘不代表系统键盘或真机验收。原系统跨应用剪贴板仍为纯文本，不新增富 HTML 传输、草稿选择页或最近色管理入口。
+
+候选 APK 为 `site.wenyou.app.debug`／“温油站 Debug”，`0.9.0-debug`／99，`arm64-v8a`，minSdk 26／targetSdk 36，152779816 字节，SHA-256 `e7cc965e16e646d1a052a15f331084c143aa533b80662fecaf5156dc6eb76987`。构建路径 `build/app/outputs/flutter-apk/app-debug.apk`，根任务独立保存并核验到 `D:/codex-artifacts/text-color-v1/wenyou-text-color-caret-0.9.0-debug-99-e7cc965e.apk`。交付时 ADB 列表为空，尚未安装、启动或热重载这份候选；没有自动线上业务写入。负责人需安装后复验空正文先选色、默认 T、RGB 取消／应用、中文键盘、换行、多次撤销与音频周围输入，PR 继续保持 Draft／待验收，不自动合并或发布。
