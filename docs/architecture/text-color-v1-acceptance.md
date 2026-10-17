@@ -188,3 +188,9 @@ App 后台期间旧 attach 断开；负责人手动切回前台后，同一 PID 
 新增真实编辑器 T 面板 320/360dp 明暗四张 `editor_caret_color_*` Golden，320dp 使用 1.5 倍字号，模拟 220dp 键盘 inset；根任务已目视，没有新增布局阻断。模拟键盘不代表系统键盘或真机验收。原系统跨应用剪贴板仍为纯文本，不新增富 HTML 传输、草稿选择页或最近色管理入口。
 
 候选 APK 为 `site.wenyou.app.debug`／“温油站 Debug”，`0.9.0-debug`／99，`arm64-v8a`，minSdk 26／targetSdk 36，152779816 字节，SHA-256 `e7cc965e16e646d1a052a15f331084c143aa533b80662fecaf5156dc6eb76987`。构建路径 `build/app/outputs/flutter-apk/app-debug.apk`，根任务独立保存并核验到 `D:/codex-artifacts/text-color-v1/wenyou-text-color-caret-0.9.0-debug-99-e7cc965e.apk`。交付时 ADB 列表为空，尚未安装、启动或热重载这份候选；没有自动线上业务写入。负责人需安装后复验空正文先选色、默认 T、RGB 取消／应用、中文键盘、换行、多次撤销与音频周围输入，PR 继续保持 Draft／待验收，不自动合并或发布。
+
+### 2026-10-18 先选色输入候选覆盖安装
+
+负责人重新连接设备后，根任务核对 `4b9c39b5`／Xiaomi `2509FPN0BC`，未发现其他 Flutter run／attach 会话。候选 `site.wenyou.app.debug`／`0.9.0-debug`（99）／arm64 与目标应用一致，使用同一份 `e7cc965e` APK 执行 `adb install -r` 返回 `Success`；设备包更新时间为 `2026-10-18 05:37:26 Asia/Shanghai`，设备内 base.apk 的 SHA-256 为 `e7cc965e16e646d1a052a15f331084c143aa533b80662fecaf5156dc6eb76987`，与已通过完整门禁的候选完全一致。
+
+安装绑定应用提交 `9aa396191b9845ba055752955f563dceba175937`，回执保存在 `D:/codex-artifacts/text-color-v1/caret-install-20261018.json`。没有重新构建、卸载、清除数据、自动启动应用或执行线上业务写入，保留原有草稿。本次仅追加安装事实，既有代码门禁与 APK 证据继续有效；PR 保持 Draft，先选色输入、默认 T、RGB、中文键盘、换行、撤销及音频周围输入仍待负责人真机验收。
