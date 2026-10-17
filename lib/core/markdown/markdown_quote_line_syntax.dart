@@ -3,7 +3,9 @@ import 'package:markdown/markdown.dart' as md;
 /// Plain text and explicit empty rows form one line layout. Stop before any
 /// structural block so heading/list/image semantics stay with their parsers.
 class MarkdownLiteralRowsSyntax extends md.BlockSyntax {
-  const MarkdownLiteralRowsSyntax();
+  const MarkdownLiteralRowsSyntax({this.isAtomicLine});
+
+  final bool Function(String)? isAtomicLine;
 
   static final _empty = RegExp(r'^<br />$');
   static final _boundary = RegExp(
@@ -22,6 +24,18 @@ class MarkdownLiteralRowsSyntax extends md.BlockSyntax {
       final line = parser.peek(offset)?.content;
       if (line == null || _boundary.hasMatch(line)) break;
       rows.add(line);
+    }
+    // 空段行与普通文字共用行布局；独立媒体需保留块身份，空段仍由
+    // 既有空段 builder 按行高显示。邻接普通文字的链接不因此被拆开。
+    final atomic = isAtomicLine;
+    if (atomic != null && parser.parentSyntax == null) {
+      for (var index = 0; index < rows.length; index++) {
+        if ((index == 0 || _empty.hasMatch(rows[index - 1])) &&
+            (index + 1 == rows.length || _empty.hasMatch(rows[index + 1])) &&
+            atomic(rows[index])) {
+          return rows.sublist(0, index);
+        }
+      }
     }
     return rows;
   }

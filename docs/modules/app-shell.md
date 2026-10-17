@@ -56,6 +56,8 @@ Android 后台消息提醒默认开启，可在账号设置按设备关闭，选
 
 独立文本颜色能力由 `/meta.capabilities.textColorV1Supported` 与 `textColorV1WriteEnabled` 映射，缺失视为 false。正文读取发送 `X-Text-Color-Version: 1`，与已有 `X-Markdown-Contract-Version: 6` 并存；后端缓存和旧端投影负责隔离有色原文。UI 只在支持时显示颜色区，关闭新写时保留读取并禁用改色。最近色存储按当前账号键隔离，由生产组合根注入编辑器端口。
 
+可选 meta.audioUpload 经真实 JSON 数字 version=1 解析为新上传能力；缺失或未知版本安全关闭入口。此开关不控制已授权正文 mediaAudios 的历史播放。生成客户端对该单一数字枚举使用 wireNumber，避免把数字 1 错当字符串。
+
 可选 `rpIdentityProfileSupported` 从 `/meta` 映射到应用能力，缺失默认 false；资料编辑与读取 UI 按此能力启用，不从版本字符串或现有多角色支持推断。角色提及的支持／新写开关继续独立控制。
 
 
@@ -170,7 +172,7 @@ Android 的 Debug、Profile 和 Release 均仅支持 `arm64-v8a`，使用 ARM64 
 
 ## 13. 最近审查的契约版本和后端提交
 
-文本颜色契约审查：Backend `d3577839dc537e21c546ee385a4c97091b58a8f7`，API `5.38.0-dev.20261016.1`；新增独立文本颜色 v1 与站内 clipboard v2 保色规则，不提升全局 Markdown 版本或替代角色提及能力。此来源已通过实际部署 SHA 的只读核验；未涉及颜色的模块保持原行为。
+合并契约复核：固定 Backend `7f95563edd8f461ebb7a66d7b458ec0349e39297`／API `5.39.0-dev.20261017.1`，合并音频预算错误与独立文本颜色能力。主题链正文保留颜色读取头、写入声明、保存校验和取色入口；音频上传、媒体展示与可定制工具栏继续保留。Foundation 固定正式 `v7.4.0`；后续精确部署来源同步另行登记。
 
 2026-10-10 合并来源复核：通过官方同步入口固定到实际部署 Backend `b5f0e3bb0b99a3f9763b31e3080cb4d4f2e64045`，OpenAPI 仍为 `5.36.0-dev.20261005.1`。相对退役实施提交，机器契约、共享语料、生成客户端及本模块行为不变；仅来源登记更新，详见[退役验收记录](../architecture/retire-development-preview-acceptance.md)。
 

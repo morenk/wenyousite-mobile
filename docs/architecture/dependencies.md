@@ -40,6 +40,16 @@ feature 内保持 `presentation → application → domain`，data 在应用边�
 
 检查入口 `tool/check_architecture.dart` 只编排规则；文件枚举、AST 依赖图、分层检查、展示检查和债务解析位于 `tool/architecture/` 的显式库。大型 Widget 测试保留原 `_test.dart` 注册入口，按完整行为场景拆分 case 库并复用 fixture 库，Golden 路径和字体初始化不变。门禁自身的回归覆盖同数量换边、多层/循环/条件导出、字符串伪 import、新增未暂存文件和手写 part，防止后续绕过。
 
+## 工具栏偏好依赖
+
+工具栏偏好设置通过 `editor.dart` 公共展示入口复用真实工具栏、托盘和能力解析，新增已审查的单向 `settings -> editor`；编辑器不依赖设置模块，布局和持久化端口仍属于 `core/application`。设置从共享 `appCapabilitiesProvider` 读取表情能力，不依赖表情收藏控制器。没有新增跨 feature 内部导入、循环或分层债务。
+
 ## 图片上传协调依赖
 
 本轮经依赖图审查新增单向 `editor -> media`：正文编辑会话消费媒体上传 application 端口、领域输入以及 `media_ui.dart` 导出的本机预览组件，媒体不反向依赖编辑器。私有文件适配器只依赖 `pending_media_file_store_ports.dart`，由应用组合根绑定。删除三个已消失的跨 feature 横幅内部导入债务；没有增加循环依赖、内部层导入债务或超限文件豁免。
+
+## 音频端口与展示边界
+
+音频播放控制器与保存端口位于 `core/application`，选择预算与上传能力值对象位于 `core/media`，供通用正文及 `/meta` 映射消费。媒体插件、文件选择与传输适配器留在 `media/data`，统一由 `app/production_overrides.dart` 绑定；共享 Widget 不反向导入 feature 实现。编辑队列只依赖 `audio_file_picker_ports.dart`、`audio_upload_ports.dart` 与已有私有文件端口；主题和回复经 `editor.dart` 使用音频命中策略。没有新增 `app_shell -> media`、循环、内部层或分层豁免。
+
+合并阶段架构门禁发现的 27 条失败按上述职责修正，保留原播放、下载、选择、上传算法；保存提示复用统一 SnackBar，失败文字改用 `wenyouCaption`，保留原紧凑标签的 0.5 字距。实际 Theme 中两者的字号 12、字重 400、行高 1.4 和颜色一致，仅 Material 默认字距为 0.5／0.4；相关旧 Golden 原样比较。音频 Golden 继续加载同一测试字体子集，标准加载入口只用于明确检查证据，不向产品打包字体。

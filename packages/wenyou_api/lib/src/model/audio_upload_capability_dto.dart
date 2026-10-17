@@ -174,7 +174,7 @@ class _$AudioUploadCapabilityDtoSerializer implements PrimitiveSerializer<AudioU
 
 class AudioUploadCapabilityDtoVersionEnum extends EnumClass {
 
-  @BuiltValueEnumConst(wireName: r'1')
+  @BuiltValueEnumConst(wireNumber: 1)
   static const AudioUploadCapabilityDtoVersionEnum n1 = _$audioUploadCapabilityDtoVersionEnum_n1;
   @BuiltValueEnumConst(wireName: r'11184809', fallback: true)
   static const AudioUploadCapabilityDtoVersionEnum unknownDefaultOpenApi = _$audioUploadCapabilityDtoVersionEnum_unknownDefaultOpenApi;

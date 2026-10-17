@@ -1,3 +1,4 @@
+import 'package:wenyousite_mobile/core/media/media_audio.dart';
 import 'package:wenyousite_mobile/core/media/media_display.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/features/thread_identity/identity_models.dart';
@@ -53,6 +54,7 @@ class PostItem {
     required this.author,
     required this.content,
     this.mediaDisplays = const {},
+    this.mediaAudios = const {},
     this.mentionLabels = const {},
     required this.version,
     required this.createdAt,
@@ -80,6 +82,7 @@ class PostItem {
   final PostAuthor author;
   final String content;
   final Map<String, MediaDisplay> mediaDisplays;
+  final Map<String, MediaAudio> mediaAudios;
   final Map<String, String> mentionLabels;
   final int version;
   final DateTime createdAt;

@@ -5,6 +5,7 @@ import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/models/discussion_window.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/discussion_window_mapper.dart';
+import 'package:wenyousite_mobile/core/network/media_audio_mapper.dart';
 import 'package:wenyousite_mobile/core/network/media_display_mapper.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/thread_identity/identity_mapping.dart';
@@ -367,6 +368,7 @@ class ApiThreadDetailRepository implements ThreadDetailRepository {
                         mediaDisplays: mapMarkdownMediaDisplays(
                           item.bodyPost!.mediaDisplays,
                         ),
+                        mediaAudios: mapMediaAudios(item.bodyPost!.mediaAudios),
                         postId: item.bodyPost!.id,
                         version: item.bodyPost!.version.toInt(),
                         diceRolls: item.bodyPost!.diceRolls
@@ -424,6 +426,7 @@ class ApiThreadDetailRepository implements ThreadDetailRepository {
       body: ThreadBodyModel(
         markdown: dto.content,
         mediaDisplays: mapMarkdownMediaDisplays(dto.mediaDisplays),
+        mediaAudios: mapMediaAudios(dto.mediaAudios),
         mentionLabels: mapMentionIdentityLabels(dto.mentionIdentities),
         diceRolls: dto.diceRolls.map(_mapDiceRoll).toList(growable: false),
       ),
@@ -441,6 +444,7 @@ class ApiThreadDetailRepository implements ThreadDetailRepository {
               body: ThreadBodyModel(
                 markdown: reply.content,
                 mediaDisplays: mapMarkdownMediaDisplays(reply.mediaDisplays),
+                mediaAudios: mapMediaAudios(reply.mediaAudios),
                 mentionLabels: mapMentionIdentityLabels(
                   reply.mentionIdentities,
                 ),
@@ -472,6 +476,7 @@ class ApiThreadDetailRepository implements ThreadDetailRepository {
       body: ThreadBodyModel(
         markdown: dto.content,
         mediaDisplays: mapMarkdownMediaDisplays(dto.mediaDisplays),
+        mediaAudios: mapMediaAudios(dto.mediaAudios),
         mentionLabels: mapMentionIdentityLabels(dto.mentionIdentities),
         diceRolls: dto.diceRolls.map(_mapDiceRoll).toList(growable: false),
       ),
@@ -492,6 +497,7 @@ class ApiThreadDetailRepository implements ThreadDetailRepository {
       body: ThreadBodyModel(
         markdown: dto.content,
         mediaDisplays: mapMarkdownMediaDisplays(dto.mediaDisplays),
+        mediaAudios: mapMediaAudios(dto.mediaAudios),
         mentionLabels: mapMentionIdentityLabels(dto.mentionIdentities),
         diceRolls: dto.diceRolls.map(_mapDiceRoll).toList(growable: false),
       ),

@@ -16,6 +16,8 @@
 
 ## 3. 页面、入口和导航关系
 
+工具栏布局候选／待负责人验收：游客“我的 → 偏好”及“账号设置 → 偏好与提醒”新增“编辑器工具栏”设置行，进入公开 `/editor-toolbar`。页面、两区排序及本机持久化由 settings 和共享偏好端口维护，不请求用户资料，不按账号或跨端同步，详见[设置](settings.md)。
+
 主题帖字号七档（2026-10-15 负责人验收通过）：“账号设置 → 偏好与提醒”与游客“我的 → 偏好”增加“主题帖字号”设置行，显示当前档位并进入公开 `/thread-font`。页面与持久化由 settings 和共享偏好端口维护；不请求用户资料，切号保留，详见[设置](settings.md)。
 
 “我的”个人功能带提供“工具箱”，与收藏夹、表情包、油卡并列；大字根据实际标签宽度换行。游客及资料加载／失败时使用独立设置样式入口，均可进入原生目录；工具箱点击不额外发起个人资料请求。详见[温油工具箱](toolbox.md)。
@@ -64,6 +66,8 @@ Android 账号设置新增“后台消息提醒”设备开关，默认开启；
 - 主要生成类型：`PublicUserResponseDto`、`CurrentUserResponseDto`、`PrivateUserResponseDto`、`ProfileCoverResponseDto`、`ProfileCoverVariantResponseDto`、`UserActivitySummaryResponseDto`、`SetProfileCoverDto`、`UpdateUserDto`、`SetAvatarDto`、`MentionCandidatesResponseDto`、`MentionCandidateDto`、`ThreadListItemResponseDto`、`RecentReplyResponseDto`、`BookmarkThreadResponseDto`、`UserFollowRecordResponseDto`、`BlockedUserRecordResponseDto` 与 `ApiPaginationMeta`。
 
 ## 6. 状态模型和数据流
+
+公开用户相关帖子投影透传可选 mediaAudios，经统一安全校验后交给正文消费；用户页摘要不主动请求音频。
 
 完整展示（负责人已验收）：头像 avatarDisplay 和主页背景 display 在仓储映射为展示 URL，修改仍提交媒体 ID；不扩展动画头像上传策略。个人最近回复保留授权 mediaDisplays 供正文消费，列表文本摘要策略不变；个人主页主题封面复用共享完整／小预览选择。见[全场景验收记录](../architecture/animation-webp-all-surfaces.md)。
 
@@ -161,7 +165,7 @@ Android 账号设置新增“后台消息提醒”设备开关，默认开启；
 
 ## 13. 最近审查的契约版本和后端提交
 
-文本颜色契约审查：Backend `d3577839dc537e21c546ee385a4c97091b58a8f7`，API `5.38.0-dev.20261016.1`；新增独立文本颜色 v1 与站内 clipboard v2 保色规则，不提升全局 Markdown 版本或替代角色提及能力。此来源已通过实际部署 SHA 的只读核验；未涉及颜色的模块保持原行为。
+合并契约复核：固定 Backend `7f95563edd8f461ebb7a66d7b458ec0349e39297`／API `5.39.0-dev.20261017.1`，合并音频预算错误与独立文本颜色能力。主题链正文保留颜色读取头、写入声明、保存校验和取色入口；音频上传、媒体展示与可定制工具栏继续保留。Foundation 固定正式 `v7.4.0`；后续精确部署来源同步另行登记。
 
 2026-10-10 合并来源复核：通过官方同步入口固定到实际部署 Backend `b5f0e3bb0b99a3f9763b31e3080cb4d4f2e64045`，OpenAPI 仍为 `5.36.0-dev.20261005.1`。相对退役实施提交，机器契约、共享语料、生成客户端及本模块行为不变；仅来源登记更新，详见[退役验收记录](../architecture/retire-development-preview-acceptance.md)。
 

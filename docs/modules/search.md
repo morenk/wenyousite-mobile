@@ -36,6 +36,8 @@
 
 正文摘要统一候选／待验收：综合接口、全局楼层搜索和主题内楼层搜索均从完整 `content` 调用 `MarkdownContent.toPlainTextPreview`，与最近回复、正文草稿共用结构化解析；完整解析受控颜色后才按 180 个 Unicode 码点截断。代码、转义和损坏标记保留字面，结构化提及继续应用身份显示映射。列表只展示摘要，原始 Markdown 保留在结果模型中，不修改服务端正文或搜索条件。
 
+帖子结果的可选 mediaAudios 经过统一校验随领域正文传递，不根据扩展名猜测音频；摘要行为不变，不在结果列表自动加载音频。
+
 完整展示（负责人已验收）：搜索用户头像优先 avatarDisplay；SearchPost 授权 mediaDisplays 映射保留在展示模型，既有文本摘要不新增加载图片。主题封面复用共享 display／preview 选择。见[全场景验收记录](../architecture/animation-webp-all-surfaces.md)。
 
 四个用户可见 Tab 独立保存 idle/loading/ready/failed 状态；动态和楼层内容额外保存不透明 cursor、hasMore、加载更多和局部错误。搜索仓储接口位于 `search/application`，`main.dart` 组合根绑定 API data 适配器，两个搜索控制器不直接导入 data。主题结果直接映射为 thread_feed 的共享主题卡模型，只消费 `coverImages` 的唯一安全 HTTP(S) 首图，并保留搜索端点自己的相关度排序。控制器共享 query 与请求代次，只有最新代次可写回状态。`ThreadPostSearchController(threadId)` 隔离每个主题的关键词、分页和请求代次；所有列表按稳定 ID 去重。后端综合搜索读模型继续保留兼容映射，但移动端不把它暴露为结果类型或入口。
@@ -96,7 +98,7 @@
 
 ## 13. 最近审查的契约版本和后端提交
 
-文本颜色契约审查：Backend `d3577839dc537e21c546ee385a4c97091b58a8f7`，API `5.38.0-dev.20261016.1`；新增独立文本颜色 v1 与站内 clipboard v2 保色规则，不提升全局 Markdown 版本或替代角色提及能力。此来源已通过实际部署 SHA 的只读核验；未涉及颜色的模块保持原行为。
+合并契约复核：固定 Backend `7f95563edd8f461ebb7a66d7b458ec0349e39297`／API `5.39.0-dev.20261017.1`，合并音频预算错误与独立文本颜色能力。主题链正文保留颜色读取头、写入声明、保存校验和取色入口；音频上传、媒体展示与可定制工具栏继续保留。Foundation 固定正式 `v7.4.0`；后续精确部署来源同步另行登记。
 
 2026-10-10 合并来源复核：通过官方同步入口固定到实际部署 Backend `b5f0e3bb0b99a3f9763b31e3080cb4d4f2e64045`，OpenAPI 仍为 `5.36.0-dev.20261005.1`。相对退役实施提交，机器契约、共享语料、生成客户端及本模块行为不变；仅来源登记更新，详见[退役验收记录](../architecture/retire-development-preview-acceptance.md)。
 

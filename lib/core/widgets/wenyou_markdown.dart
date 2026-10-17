@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -7,6 +8,7 @@ import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:markdown/markdown.dart' as md;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_alignment.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_audio_projection.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_empty_paragraphs.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_image_occurrence_syntax.dart';
@@ -18,6 +20,7 @@ import 'package:wenyousite_mobile/core/markdown/markdown_reader_leading_space_sy
 import 'package:wenyousite_mobile/core/markdown/markdown_reader_paragraph_syntax.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_source_protection.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_text_color.dart';
+import 'package:wenyousite_mobile/core/media/media_audio.dart';
 import 'package:wenyousite_mobile/core/media/media_display.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_link.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_reference.dart';
@@ -47,6 +50,7 @@ class WenyouMarkdown extends StatefulWidget {
     required this.data,
     this.diceLabels = const {},
     this.mediaDisplays = const {},
+    this.mediaAudios = const {},
     this.mentionLabels = const {},
     this.diceSemantics = const {},
     this.diceDetails = const {},
@@ -64,6 +68,7 @@ class WenyouMarkdown extends StatefulWidget {
 
   final String data;
   final Map<String, MediaDisplay> mediaDisplays;
+  final Map<String, MediaAudio> mediaAudios;
   final Map<String, String> mentionLabels;
   final Map<String, String> diceLabels;
   final Map<String, String> diceSemantics;
@@ -98,7 +103,7 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
   Map<String, md.LinkReference> _imageReferences = const {};
   MarkdownStyleSheet? _styleSheet;
   Widget? _renderedBody;
-  var _markdownReloadGeneration = 0;
+  Key? _markdownParseKey;
   var _usesPlainTextFastPath = false;
   var _hasSelection = false;
   final _colorRecognizers = <TapGestureRecognizer>[];
@@ -133,8 +138,17 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
     if (!mapEquals(oldWidget.diceDetails, widget.diceDetails)) {
       _diceDetails.value = Map.unmodifiable(widget.diceDetails);
     }
-    if (!mapEquals(oldWidget.mediaDisplays, widget.mediaDisplays)) {
+    if (!mapEquals(oldWidget.mediaDisplays, widget.mediaDisplays) ||
+        !mapEquals(oldWidget.mediaAudios, widget.mediaAudios)) {
       _renderedBody = null;
+    }
+    if (!setEquals(
+      _audioSources(oldWidget.mediaAudios),
+      _audioSources(widget.mediaAudios),
+    )) {
+      // 上游只在 data/styleSheet 改变时重建 children；可信音频集合
+      // 也会改变段落分块，必须让 AST 与 children 同步。等价 DTO 不重挂。
+      _markdownParseKey = UniqueKey();
     }
     if (!mapEquals(oldWidget.mentionLabels, widget.mentionLabels)) {
       _mentionLabels.value = Map.unmodifiable(widget.mentionLabels);
@@ -159,14 +173,6 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
   }
 
   @override
-  void reassemble() {
-    super.reassemble();
-    // 上游会缓存解析结果；热重载后重建阅读子树，让新的语法立即生效。
-    _markdownReloadGeneration++;
-    _renderedBody = null;
-  }
-
-  @override
   void dispose() {
     for (final recognizer in _colorRecognizers) {
       recognizer.dispose();
@@ -184,6 +190,19 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
     super.build(context);
     return _renderedBody ??= _buildBody();
   }
+
+  @override
+  void reassemble() {
+    super.reassemble();
+    // 阅读缓存包含解析器和 builder；Debug 热重载后重新应用渲染规则。
+    _renderedBody = null;
+    _markdownParseKey = UniqueKey();
+  }
+
+  static Set<String> _audioSources(Map<String, MediaAudio> audios) => {
+    for (final entry in audios.entries)
+      if (entry.key == entry.value.sourceUrl) entry.key,
+  };
 
   Widget _buildBody() {
     for (final recognizer in _colorRecognizers) {
@@ -211,7 +230,7 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
         behavior: HitTestBehavior.translucent,
         onTap: widget.onTapText == null ? null : _handleTapText,
         child: KeyedSubtree(
-          key: ValueKey(_markdownReloadGeneration),
+          key: _markdownParseKey,
           child: _buildMarkdownSegments(),
         ),
       );
@@ -339,6 +358,7 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
     int imageStartIndex = 0,
   }) => WenyouMarkdownBody(
     data: data,
+    mediaAudios: widget.mediaAudios,
     selectable: false,
     // MarkdownBody defaults to fitContent=true, which shrink-wraps its inner
     // paragraph Wrap. A centered/right-aligned TextAlign then has no spare
@@ -350,7 +370,9 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
     blockSyntaxes: [
       const md.SetextHeaderSyntax(),
       const MarkdownQuoteLineSyntax(_emptyParagraphTag),
-      const MarkdownLiteralRowsSyntax(),
+      MarkdownLiteralRowsSyntax(
+        isAtomicLine: widget.mediaAudios.isEmpty ? null : _isAudioLine,
+      ),
       _EmptyParagraphBlockSyntax(),
       const MarkdownReaderParagraphSyntax(),
     ],
@@ -424,6 +446,18 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
     },
     onTapLink: (_, href, _) => _openLink(context, href),
   );
+
+  bool _isAudioLine(String line) {
+    if (!line.contains('[')) return false;
+    final blocks = md.Document(
+      extensionSet: md.ExtensionSet.gitHubFlavored,
+      inlineSyntaxes: MarkdownInlineCompatibilitySyntax.create(),
+      encodeHtml: false,
+    ).parse(line);
+    return blocks.length == 1 &&
+        MarkdownAudioProjection.fromBlock(blocks.single, widget.mediaAudios) !=
+            null;
+  }
 
   void _handleTapText() {
     if (_hasSelection) {

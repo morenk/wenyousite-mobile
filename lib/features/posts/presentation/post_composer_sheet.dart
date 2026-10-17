@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_capabilities.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/application/editor_toolbar_preference.dart';
 import 'package:wenyousite_mobile/core/application/user_facing_failure.dart';
 import 'package:wenyousite_mobile/core/application/visibility_cache_invalidation.dart';
 import 'package:wenyousite_mobile/core/diagnostics/diagnostic_widgets.dart';
@@ -126,6 +127,7 @@ class PostComposerSheetState extends ConsumerState<PostComposerSheet>
     _editorSession = RichEditorSession(
       initialMarkdown: widget.target.initialContent,
       initialMediaDisplays: widget.baseline.mediaDisplays,
+      initialMediaAudios: widget.baseline.mediaAudios,
       mentionLabels: widget.baseline.mentionLabels,
       clipboardScope: _openedSessionScope,
       blockAlignment: ref.read(appCapabilitiesProvider).markdownAlignment,
@@ -228,7 +230,9 @@ class PostComposerSheetState extends ConsumerState<PostComposerSheet>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.detached) {
-      _pendingImages.pause();
+      _pendingImages.pause(
+        preserveAudioSelection: state != AppLifecycleState.detached,
+      );
       unawaited(_editorSession.flush().then((_) => _pendingImages.save()));
     } else if (state == AppLifecycleState.resumed) {
       _pendingImages.resume();
@@ -403,6 +407,7 @@ class PostComposerSheetState extends ConsumerState<PostComposerSheet>
             toolbar: WenyouComposerDock(
               key: const Key('post-composer-toolbar'),
               textColor: ref.watch(editorTextColorConfigurationProvider),
+              layout: ref.watch(editorToolbarLayoutProvider),
               controller: _editorSession.controller,
               capabilities: WenyouEditorCapabilities.forAlignment(
                 ref.watch(
@@ -419,6 +424,10 @@ class PostComposerSheetState extends ConsumerState<PostComposerSheet>
                   _editorSession.codecFailure == null,
               editorFocusNode: _editorSession.focusNode,
               onInsertImage: _insertImage,
+              onInsertAudio:
+                  ref.watch(appCapabilitiesProvider).audioUpload != null
+                  ? _pendingImages.audios.pick
+                  : null,
               onInsertHorizontalRule: _editorSession.insertHorizontalRule,
               onInsertSticker: ref.watch(stickersEnabledProvider)
                   ? _insertSticker
@@ -570,6 +579,8 @@ class PostComposerSheetState extends ConsumerState<PostComposerSheet>
     final controller = ref.read(
       postComposerControllerProvider(widget.target).notifier,
     );
+    // 发布以刚完成编码的文档为准；草稿恢复/附件完成不能依赖先前通知时机。
+    controller.updateContent(_editorSession.localMarkdown);
     final pending = ref
         .read(postComposerControllerProvider(widget.target))
         .pendingCreate;
@@ -729,6 +740,7 @@ class PostComposerSheetState extends ConsumerState<PostComposerSheet>
       widget.baseline.draftFor(
         content,
         displays: _editorSession.mediaDisplays,
+        audios: _editorSession.mediaAudios,
         publishDraft:
             _identitySelection != null ||
                 ref
@@ -787,11 +799,13 @@ class PostComposerSheetState extends ConsumerState<PostComposerSheet>
     if (!mounted) return;
     final state = ref.read(postComposerControllerProvider(widget.target));
     var restoredDisplays = _editorSession.mediaDisplays;
+    var restoredAudios = _editorSession.mediaAudios;
     await showContentDraftsSheet(
       context: context,
       draftSessionKey: _contentDraftSessionKey,
       currentContent: state.content,
       onRestoreDisplays: (values) => restoredDisplays = values,
+      onRestoreAudios: (values) => restoredAudios = values,
       onRestore: (content) {
         if (!mounted ||
             _closing ||
@@ -799,6 +813,7 @@ class PostComposerSheetState extends ConsumerState<PostComposerSheet>
           return;
         }
         _editorSession.replaceMediaDisplays(restoredDisplays);
+        _editorSession.replaceMediaAudios(restoredAudios);
         ref
             .read(postComposerControllerProvider(widget.target).notifier)
             .restoreContent(content);

@@ -1,9 +1,10 @@
 import 'dart:convert';
 
+import 'package:wenyousite_mobile/core/markdown/local_audio_marker.dart';
 import 'package:wenyousite_mobile/core/markdown/local_image_marker.dart';
-
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_dice_contract.dart';
+import 'package:wenyousite_mobile/core/media/media_audio.dart';
 import 'package:wenyousite_mobile/core/media/media_display.dart';
 
 /// Visibility accepted by the thread creation workflow.
@@ -53,6 +54,7 @@ class ThreadRemoteDraft {
     required this.defaultSubthreadVersion,
     required this.title,
     this.mediaDisplays = const {},
+    this.mediaAudios = const {},
     required this.categorySlug,
     required this.visibility,
     required this.tags,
@@ -69,6 +71,7 @@ class ThreadRemoteDraft {
   final Map<String, String> mentionLabels;
   final String title;
   final Map<String, MediaDisplay> mediaDisplays;
+  final Map<String, MediaAudio> mediaAudios;
   final String? categorySlug;
   final ThreadComposeVisibility visibility;
   final List<String> tags;
@@ -178,6 +181,7 @@ class ThreadSnapshotMetadata {
     required this.ownerId,
     required this.title,
     this.mediaDisplays = const {},
+    this.mediaAudios = const {},
     required this.categorySlug,
     required this.visibility,
     required this.tags,
@@ -187,6 +191,7 @@ class ThreadSnapshotMetadata {
   final String ownerId;
   final String title;
   final Map<String, MediaDisplay> mediaDisplays;
+  final Map<String, MediaAudio> mediaAudios;
   final String? categorySlug;
   final ThreadComposeVisibility visibility;
   final List<String> tags;
@@ -199,6 +204,7 @@ class ThreadSnapshotMetadata {
       'ownerId': ownerId,
       'title': title,
       'mediaDisplays': mediaDisplaysToJson(mediaDisplays),
+      'mediaAudios': mediaAudiosToJson(mediaAudios),
       'categorySlug': categorySlug,
       'visibility': visibility.wireValue,
       'tags': tags,
@@ -267,6 +273,7 @@ class ThreadSnapshotMetadata {
       }
       return ThreadSnapshotMetadata(
         mediaDisplays: mediaDisplaysFromJson(data['mediaDisplays']),
+        mediaAudios: mediaAudiosFromJson(data['mediaAudios']),
         ownerId: ownerId,
         title: title,
         categorySlug: categorySlug as String?,
@@ -285,6 +292,7 @@ String? validateThreadDraft({
   required String body,
   required List<String> tags,
 }) {
+  if (containsLocalAudioMarker(body)) return '音频尚未就绪，请等待或移除。';
   if (containsLocalImageMarker(body)) return '图片尚未就绪，请等待或移除。';
   if (title.trim().runes.length > 100) return '标题不能超过 100 个字符。';
   if (MarkdownContent.normalize(body).runes.length > 10000) {

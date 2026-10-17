@@ -309,6 +309,12 @@ class BusinessErrorCode extends EnumClass {
   @BuiltValueEnumConst(wireNumber: 42900)
   static const BusinessErrorCode RATE_LIMITED = _$RATE_LIMITED;
   /// 稳定业务错误码；名称和值来源于 ErrorCode
+  @BuiltValueEnumConst(wireNumber: 42901)
+  static const BusinessErrorCode AUDIO_ACTIVE_LIMIT = _$AUDIO_ACTIVE_LIMIT;
+  /// 稳定业务错误码；名称和值来源于 ErrorCode
+  @BuiltValueEnumConst(wireNumber: 42902)
+  static const BusinessErrorCode AUDIO_DAILY_BYTES_LIMIT = _$AUDIO_DAILY_BYTES_LIMIT;
+  /// 稳定业务错误码；名称和值来源于 ErrorCode
   @BuiltValueEnumConst(wireNumber: 50000)
   static const BusinessErrorCode INTERNAL_ERROR = _$INTERNAL_ERROR;
   /// 稳定业务错误码；名称和值来源于 ErrorCode

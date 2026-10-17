@@ -249,6 +249,7 @@ void registerEditorToolbarCapabilitiesAlignmentCases() {
                 capabilities:
                     WenyouEditorCapabilities.richMarkdownWithAlignment,
                 onInsertImage: () async {},
+                onInsertSticker: (_) async {},
                 onSaveDraft: () async {},
               ),
             ),
@@ -268,6 +269,9 @@ void registerEditorToolbarCapabilitiesAlignmentCases() {
       final secondRow = find.byKey(const Key('editor-more-row-1'));
       expect(firstRow, findsOneWidget);
       expect(secondRow, findsOneWidget);
+      expect(find.byTooltip('表情包').hitTestable(), findsOneWidget);
+      expect(find.byTooltip('无序列表'), findsNothing);
+      expect(find.byTooltip('有序列表'), findsNothing);
       for (final key in const [
         Key('editor-align-center'),
         Key('editor-align-right'),
@@ -279,12 +283,13 @@ void registerEditorToolbarCapabilitiesAlignmentCases() {
       }
       expect(
         find.descendant(of: firstRow, matching: find.byType(IconButton)),
-        findsNWidgets(5),
+        findsNWidgets(scenario.width < 360 ? 5 : 4),
       );
       expect(
         find.descendant(of: secondRow, matching: find.byType(IconButton)),
-        findsNWidgets(scenario.width < 360 ? 5 : 4),
+        findsNWidgets(4),
       );
+      expect(tester.takeException(), isNull);
 
       await expectLater(
         find.byKey(const Key('editor-more-tray')),

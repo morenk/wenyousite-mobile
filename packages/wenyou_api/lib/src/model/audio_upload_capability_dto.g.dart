@@ -129,11 +129,11 @@ _$audioUploadCapabilityDtoOutputContentTypeEnumSerializer =
 class _$AudioUploadCapabilityDtoVersionEnumSerializer
     implements PrimitiveSerializer<AudioUploadCapabilityDtoVersionEnum> {
   static const Map<String, Object> _toWire = const <String, Object>{
-    'n1': '1',
+    'n1': 1,
     'unknownDefaultOpenApi': '11184809',
   };
   static const Map<Object, String> _fromWire = const <Object, String>{
-    '1': 'n1',
+    1: 'n1',
     '11184809': 'unknownDefaultOpenApi',
   };
 

@@ -461,9 +461,9 @@ void registerThreadComposePagePublishingMediaCases() {
     await threadComposePageTestConfirmImageCrop(tester);
     await tester.tap(find.byKey(const Key('compose-publish')));
     await tester.pump();
-    expect(find.text('还有 1 张图片未就绪'), findsNothing);
+    expect(find.text('还有 1 个附件未就绪'), findsNothing);
     await tester.pump(const Duration(seconds: 3));
-    expect(find.text('还有 1 张图片未就绪'), findsOneWidget);
+    expect(find.text('还有 1 个附件未就绪'), findsOneWidget);
     expect(find.text('正在发布…'), findsOneWidget);
     expect(repository.createCalls, 0);
     expect(

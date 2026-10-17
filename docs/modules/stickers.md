@@ -62,6 +62,8 @@
 
 ## 10. 跨模块约束
 
+共享 StickerPostMarkdown 正文门面透传可信 mediaAudios 给普通 Markdown 播放器；收藏、插入、拖动和表情权限本身不变。
+
 本模块页面排版统一遵循[移动端视觉基线](../architecture/visual-baseline.md)中的 Foundation v6.9.0 语义文字角色，不自定义字号或直接依赖 Material 字体槽位。
 
 media application 负责相册选择、格式校验、`STICKER_SOURCE` 用途和安全上传，stickers presentation 只消费完成的 `mediaId`，不导入 media data 或 Dio；direct_messages 负责 `stickerAssetId` 独占载荷和消息展示；editor 只插入 Codec 已支持的 sticker embed；posts/threads 传入真实 postId 与 Markdown 图片 URL；moments 分别传入动态/评论 ID 与图片 mediaId。视觉只使用 Foundation v6.9.0 Token、语义图标、面板、状态和最小触控目标，不维护平行审美规范。
@@ -89,7 +91,7 @@ media application 负责相册选择、格式校验、`STICKER_SOURCE` 用途和
 
 ## 13. 最近审查的契约版本和后端提交
 
-文本颜色契约审查：Backend `d3577839dc537e21c546ee385a4c97091b58a8f7`，API `5.38.0-dev.20261016.1`；新增独立文本颜色 v1 与站内 clipboard v2 保色规则，不提升全局 Markdown 版本或替代角色提及能力。此来源已通过实际部署 SHA 的只读核验；未涉及颜色的模块保持原行为。
+合并契约复核：固定 Backend `7f95563edd8f461ebb7a66d7b458ec0349e39297`／API `5.39.0-dev.20261017.1`，合并音频预算错误与独立文本颜色能力。主题链正文保留颜色读取头、写入声明、保存校验和取色入口；音频上传、媒体展示与可定制工具栏继续保留。Foundation 固定正式 `v7.4.0`；后续精确部署来源同步另行登记。
 
 2026-10-10 合并来源复核：通过官方同步入口固定到实际部署 Backend `b5f0e3bb0b99a3f9763b31e3080cb4d4f2e64045`，OpenAPI 仍为 `5.36.0-dev.20261005.1`。相对退役实施提交，机器契约、共享语料、生成客户端及本模块行为不变；仅来源登记更新，详见[退役验收记录](../architecture/retire-development-preview-acceptance.md)。
 

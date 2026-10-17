@@ -99,6 +99,7 @@ class _GuestMePage extends StatelessWidget {
               children: [
                 _AppearanceSettingsPanel(),
                 _ThreadFontSettingsPanel(),
+                _EditorToolbarSettingsPanel(),
               ],
             ),
             WenyouSettingsGroup(
@@ -393,6 +394,7 @@ class MeSettingsPage extends ConsumerWidget {
             children: [
               const _AppearanceSettingsPanel(),
               const _ThreadFontSettingsPanel(),
+              const _EditorToolbarSettingsPanel(),
               if (backgroundReminderSupported)
                 const BackgroundReminderSettingsPanel(embedded: true),
             ],
@@ -456,6 +458,18 @@ class _AppearanceSettingsPanel extends ConsumerWidget {
       onTap: () => context.pushNamed(AppRouteNames.appearance),
     );
   }
+}
+
+class _EditorToolbarSettingsPanel extends StatelessWidget {
+  const _EditorToolbarSettingsPanel();
+
+  @override
+  Widget build(BuildContext context) => WenyouSettingsLink(
+    key: const Key('open-editor-toolbar-settings'),
+    icon: WenyouIconIds.editorHeading,
+    title: '编辑器工具栏',
+    onTap: () => context.pushNamed(AppRouteNames.editorToolbar),
+  );
 }
 
 class _ThreadFontSettingsPanel extends ConsumerWidget {
