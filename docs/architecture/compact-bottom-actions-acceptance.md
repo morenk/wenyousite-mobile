@@ -1,6 +1,6 @@
 # 主题与动态紧凑底栏
 
-状态：视觉候选／待负责人真机验收。
+状态：Debug 候选已覆盖安装／待负责人真机验收。
 
 ## 范围与来源
 
@@ -42,6 +42,14 @@
 - 包：`site.wenyou.app.debug`，应用名“温油站 Debug”，版本 `0.9.0-debug`、构建 99，仅 `arm64-v8a`；aapt 包身份核验和 apksigner 签名验证通过。
 - 本机日志：`.dart_tool/compact-candidate-apk.log`。已有 flutter_image_compress_common 插件产生未来 Kotlin 迁移提示，不影响本轮构建；本切片不升级依赖。
 - 本实现任务不接管设备；ADB 覆盖安装与设备内哈希由治理任务核验记录。本文不把构建成功视为已安装或真机验收通过。
+
+## 治理任务安装核验
+
+2026-10-18 06:28:09（Asia/Shanghai），治理任务在负责人已连接并手动打开的 Xiaomi 2509FPN0BC（设备 `4b9c39b5`）上完成 `adb install -r`，返回 `Success`。安装源为应用提交 `886296204afd4c31d7549c1d5679655f22cb63e2` 的上述 APK；`site.wenyou.app.debug` 更新时间、`0.9.0-debug`／99 身份均已核验，设备内 `base.apk` SHA-256 与候选 `589fcadb932ec0093da5748f5f789102b3b923d1659a24c3d3fd508aaa1560d0` 完全一致。
+
+此前尝试连接现有进程但未发现 VM 服务，等待 attach 已停止，没有热重载生效。安装前只读确认停留在“我的”页，未打开编辑器；本次不卸载、不清数据，草稿和应用数据保留，未由 agent 自动启动 App 或执行业务写入。设备临时截图已删除，本机截图和调试日志不提交。安装回执保存在 `D:/codex-artifacts/compact-bottom-actions/install-20261018.json`。
+
+负责人已获知需重新手动打开“温油站 Debug”查看主题及动态底栏；安装成功不代表验收通过。PR #107 保持 Draft，依赖 #106，尚未合并。
 
 ## 待验收
 
