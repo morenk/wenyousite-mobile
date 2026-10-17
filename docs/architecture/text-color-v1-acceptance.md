@@ -131,3 +131,20 @@ Auto-review 默认偏好已传递；当前协作工具没有审批配置入口�
 最终保留 `test/features/editor/editor_text_color_adjacent_blocks_test.dart` 和 `test/features/posts/post_composer_adjacent_color_restore_test.dart`，14 项通过，日志 `.dart_tool/text-color-floor19-default-restore-final.log`；两文件逐一静态分析无问题。覆盖实际 56 字符草稿的独立阅读空段／H2 字号／RGB、原样编码，108 组相邻正文／H2／H3、换行、对齐和粗体组合，6 种真实 Quill 输入顺序，以及实际页面无草稿、相同草稿、默认继承未发布草稿三条路径。新回归不调用真实业务接口。
 
 应用、Android、依赖、契约和生成客户端相对已安装 `3e136fa` 无差异，本轮只新增测试和验收记录，不重复完整门禁、重建或安装 APK。被撤回选择流程的检查／Golden 不作为最终行为证据。手机继续使用上一节核验过的 `4167ee51` 候选，未新增选择页。
+
+### 2026-10-18 空段补修的跨端复读
+
+Backend PR #54 的 `1ab948107960c1b221cf5dffd7a1d79ee9f5a277` 已通过完整检查和全部远端 CI；完整检查为 208 suites／2857 tests、26 个 E2E 套件及 12 个音频预算场景，关闭新写另行隔离验证通过，8 组隔离资源清理完成。负责人已明确批准合并和正式后端部署，包括 dev 中音频 #53 及其额度迁移；本记录不以批准代替实际部署完成。
+
+该提交新增的 8 个空段相邻排版 fixture，经 Web `48eb3e926b9a926152427849e7742ab03fa4aa43` 生产编辑配置读写，37 项通过；Mobile 使用实际 RichEditorSession 复读源文与保存文，原有 23＋新增 8 共 31 项通过。覆盖标题、无序／有序列表、引用、引用内空段及居中／右对齐。复读文件 SHA-256 为 `7dbd5cfa48ba0cde599ee1753e7c577d086f464d7c62c85daacd73e0a4f74a8d`，本机日志 `.dart_tool/text-color-empty-row-web-return-test.log`，原始产物保存于治理仓库 `docs/verification/text-color-v1/empty-row-web-return-20261018.json`。只运行离线消费者回归，没有自动发布真实正文。
+### 2026-10-18 紧凑底栏候选与覆盖安装
+
+按负责人新增反馈，主题底部楼层操作行去掉上下各 8dp 额外留白，保留至少 48dp 点击区域及系统安全区；发表入口使用 Foundation 输入框颜色／边框／圆角，显示“回复一下”，点击打开原编辑器。窄屏保留文字，放大字号自然增高，游客登录和发言权限不变。新增 320/360dp、明暗、1/1.5 倍字号共 8 张组件 Golden；2 倍字号与大额计数另验布局。此为视觉候选，负责人尚未验收。
+
+`npm run candidate:apk -- test/features/threads/thread_detail_bottom_bar_test.dart -TestConcurrency 2` 返回 0：1334 个文件格式检查无变化，应用与生成 SDK 全量分析无问题，11 项定向测试及 Debug 构建通过（190.5 秒）。日志 `.dart_tool/thread-bottom-bar-candidate-apk.log` SHA-256 `57d0dc7bc3e4ccd27d18195485aab8a1ce91f7015af910a46f0f47f4448c42be`。既有 `thread_detail_page_test.dart` 首轮 76 通过／8 失败，更新 6 张受影响整屏 Golden 和旧入口断言后 83 通过／1 失败，最终修正测试定位到真实 TextButton 语义节点，该项独立通过；84 项分阶段覆盖，不称为一次完整通过。日志分别为 `.dart_tool/thread-bottom-bar-page.log`、`thread-bottom-bar-page-updated.log`、`thread-bottom-bar-semantics.log`。文档 23 模块补检通过。
+
+3042 个冻结输入复核 0 漂移；基线 `feb8d956a26a2daf3a64531b90608a8d8a4b13ae`，唯一应用变更 `lib/features/threads/presentation/thread_detail_bottom_bar.dart` SHA-256 `b76fce85780d66cda57e84ac06660aa6155cd785577669ffc022b78f35d22eb0`。冻结清单 `.dart_tool/thread-bottom-bar-candidate-inputs.json` SHA-256 `54853a067410f66c953e30daf1e7862953b37a59271da65c1d8a7df66737ae93`。本轮纯界面反馈使用快速候选入口，未重复全量 Flutter 测试；此前 6800 项完整门禁仅绑定此前颜色候选，正式集成仍须验证最终合并树。
+
+既有 VM 服务已无法连接，Flutter attach 尝试退出，未热重载或重启应用；随后按授权生成独立 APK。包名 `site.wenyou.app.debug`／“温油站 Debug”，`0.9.0-debug`／99，arm64-v8a、minSdk 26／targetSdk 36，110484748 字节，签名核验通过，SHA-256 `7b0c585cc220a94e202c7cb662e46676a725aa42e5325b750d7116f1aadeac38`。另存 `D:/codex-artifacts/text-color-v1/wenyou-thread-bottom-bar-0.9.0-debug-99-7b0c585c.apk`。
+
+设备 `4b9c39b5` 上 `adb install -r` 成功，实际 base.apk 哈希与候选一致，手机包更新时间 `2026-10-18 01:57:55`。安装回执 `D:/codex-artifacts/text-color-v1/bottom-bar-install-20261018.json`；保留数据与草稿，没有自动启动或业务写入。已请求负责人手动打开主题页观察新版底栏；真机画面和原发布问题仍待验收。

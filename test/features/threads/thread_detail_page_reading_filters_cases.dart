@@ -63,7 +63,7 @@ void registerThreadDetailPageReadingFiltersCases() {
     await tester.tapAt(const Offset(12, 12));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('thread-floor-compose')), findsOneWidget);
-    expect(find.text('登录后发表'), findsOneWidget);
+    expect(find.text('回复一下'), findsOneWidget);
     expect(find.text('角色扮演'), findsNothing);
     expect(find.text('招募中'), findsNothing);
     expect(

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/social/domain/thread_interaction_models.dart';
@@ -44,9 +44,9 @@ class ThreadDetailBottomBar extends StatelessWidget {
           top: false,
           minimum: EdgeInsets.fromLTRB(
             wenyouHorizontalPagePadding(context),
-            tokens.space8,
+            0,
             wenyouHorizontalPagePadding(context),
-            tokens.space8,
+            0,
           ),
           child: Align(
             heightFactor: 1,
@@ -54,73 +54,92 @@ class ThreadDetailBottomBar extends StatelessWidget {
               constraints: BoxConstraints(
                 maxWidth: tokens.wideContainerMaxWidth,
               ),
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final iconOnlyCompose =
-                      constraints.maxWidth < 336 ||
-                      MediaQuery.textScalerOf(context).scale(1) > 1.3;
-                  final composeLabel = authenticated ? '发表楼层' : '登录后发表';
-                  final composeIcon = authenticated
-                      ? WenyouIconIds.actionAddComment
-                      : WenyouIconIds.actionLogin;
-                  final composeAction = authenticated
-                      ? onCompose
-                      : onRequireAuthentication;
-                  return SizedBox(
-                    width: double.infinity,
-                    child: Row(
-                      children: [
-                        ThreadInteractionActions(
-                          target: target,
-                          onRequireAuthentication: onRequireAuthentication,
-                          compact: true,
-                        ),
-                        ThreadSubscriptionControls(
-                          threadId: detail.id,
-                          hasAutomaticUpdates: detail.hasAutomaticUpdates,
-                          compact: true,
-                        ),
-                        if (canCompose) ...[
-                          SizedBox(
-                            width: iconOnlyCompose
-                                ? tokens.space4
-                                : tokens.space8,
-                          ),
-                          Expanded(
-                            child: iconOnlyCompose
-                                ? SizedBox(
-                                    height: tokens.minimumTouchTarget,
-                                    child: Align(
-                                      alignment: Alignment.centerRight,
-                                      child: IconButton(
-                                        key: const Key('thread-floor-compose'),
-                                        tooltip: composeLabel,
-                                        onPressed: composeAction,
-                                        style: IconButton.styleFrom(
-                                          minimumSize: Size.square(
-                                            tokens.minimumTouchTarget,
-                                          ),
-                                          foregroundColor: tokens.text,
-                                          backgroundColor:
-                                              tokens.accentedBackground,
-                                        ),
-                                        icon: WenyouIcon(composeIcon, size: 20),
-                                      ),
-                                    ),
-                                  )
-                                : WenyouComposerAction(
-                                    key: const Key('thread-floor-compose'),
-                                    label: composeLabel,
-                                    icon: composeIcon,
-                                    onPressed: composeAction,
-                                  ),
-                          ),
-                        ] else
-                          const Spacer(),
-                      ],
+              child: SizedBox(
+                width: double.infinity,
+                child: Row(
+                  children: [
+                    ThreadInteractionActions(
+                      target: target,
+                      onRequireAuthentication: onRequireAuthentication,
+                      compact: true,
                     ),
-                  );
-                },
+                    ThreadSubscriptionControls(
+                      threadId: detail.id,
+                      hasAutomaticUpdates: detail.hasAutomaticUpdates,
+                      compact: true,
+                    ),
+                    if (canCompose) ...[
+                      SizedBox(width: tokens.space4),
+                      Expanded(
+                        child: _ReplyFieldAction(
+                          key: const Key('thread-floor-compose'),
+                          authenticated: authenticated,
+                          onPressed: authenticated
+                              ? onCompose
+                              : onRequireAuthentication,
+                        ),
+                      ),
+                    ] else
+                      const Spacer(),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ReplyFieldAction extends StatelessWidget {
+  const _ReplyFieldAction({
+    required this.authenticated,
+    required this.onPressed,
+    super.key,
+  });
+
+  final bool authenticated;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.wenyouTokens;
+    return Tooltip(
+      message: authenticated ? '回复一下' : '登录后回复',
+      child: TextButton(
+        onPressed: onPressed,
+        style: TextButton.styleFrom(
+          minimumSize: Size.square(tokens.minimumTouchTarget),
+          padding: EdgeInsets.zero,
+          visualDensity: VisualDensity.standard,
+          foregroundColor: tokens.mutedText,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(tokens.radiusControl),
+          ),
+        ),
+        child: SizedBox(
+          width: double.infinity,
+          child: DecoratedBox(
+            key: const Key('thread-floor-compose-field'),
+            decoration: BoxDecoration(
+              color: tokens.input,
+              border: Border.all(color: tokens.border),
+              borderRadius: BorderRadius.circular(tokens.radiusControl),
+            ),
+            child: Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: tokens.space8,
+                vertical: tokens.space8,
+              ),
+              child: Text(
+                '回复一下',
+                semanticsLabel: authenticated ? '回复一下' : '回复一下，登录后发表',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(
+                  context,
+                ).textTheme.wenyouCompactBody.copyWith(color: tokens.mutedText),
               ),
             ),
           ),
