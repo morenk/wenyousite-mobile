@@ -28,7 +28,9 @@ class AudioProjectedQuillController extends LiteralTextQuillController {
   // 卡片自身的选块命令显式走父实现，不把后续键盘编辑禁掉。
   @override
   void updateSelection(TextSelection textSelection, ChangeSource source) {
-    if (_audioPointers.isEmpty) super.updateSelection(textSelection, source);
+    if (_audioPointers.isEmpty || _projecting) {
+      super.updateSelection(textSelection, source);
+    }
   }
 
   void selectAudio(TextSelection textSelection) =>
@@ -38,6 +40,12 @@ class AudioProjectedQuillController extends LiteralTextQuillController {
     if (_projecting) return;
     _projecting = true;
     try {
+      if (source == ChangeSource.remote) {
+        projectDocumentView(
+          (delta) => MarkdownAudioEmbed.project(delta, audios()),
+        );
+        return;
+      }
       final before = document.toDelta();
       final patch = before.diff(MarkdownAudioEmbed.project(before, audios()));
       if (patch.isEmpty) return;

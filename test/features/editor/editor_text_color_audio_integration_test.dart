@@ -1,10 +1,12 @@
 import 'package:flutter/services.dart';
+import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:markdown/markdown.dart' as md;
 import 'package:wenyousite_mobile/core/markdown/markdown_audio_embed.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_text_color.dart';
 import 'package:wenyousite_mobile/core/media/media_audio.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_text_color_selection.dart';
+import 'package:wenyousite_mobile/features/editor/presentation/rich_editor_pending_audio_document.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/rich_editor_session.dart';
 
 import '../../support/text_color_assertions.dart';
@@ -21,6 +23,78 @@ final _audio = MediaAudio.parse({
 })!;
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  test('迟到音频元数据投影调整偏移但不取消输入色，撤销只撤回新文字', () async {
+    final session = _session('[音频]($_url)\n\n尾');
+    final editor = session.controller;
+    editor.updateSelection(
+      TextSelection.collapsed(offset: editor.document.length - 1),
+      ChangeSource.local,
+    );
+    EditorTextColorPolicy.apply(editor, editor.selection, _red);
+    session.replaceMediaAudios({_url: _audio});
+    expect(_audioCount(session), 1);
+    expect(editor.selection.start, editor.document.length - 1);
+    final before = editor.document.toDelta();
+    final at = editor.selection.start;
+    editor.replaceText(at, 0, '红😀', TextSelection.collapsed(offset: at + 3));
+    expect(
+      editor.document.collectStyle(at, 3).attributes['color']?.value,
+      _red,
+    );
+    expect(await session.flush(), isTrue, reason: session.codecFailure);
+    final beforeUndo = editor.document.toDelta();
+    editor.undo();
+    expect(editor.document.toDelta(), before);
+    editor.redo();
+    expect(
+      editor.document.toDelta(),
+      beforeUndo,
+      reason: '重做必须恢复完整输入和格式，不能被音频再投影清空',
+    );
+    expect(
+      editor.document.collectStyle(at, 3).attributes['color']?.value,
+      _red,
+    );
+    expect(_audioCount(session), 1);
+    expect(
+      editor.document
+          .toDelta()
+          .operations
+          .where((op) => op.data is Map)
+          .every((op) => op.attributes?['color'] == null),
+      isTrue,
+    );
+  });
+
+  test('先选色再插入待上传音频并完成，媒体手势不改变光标或输入色', () async {
+    final session = _session('尾');
+    final editor = session.controller;
+    EditorTextColorPolicy.apply(editor, editor.selection, _red);
+    session.insertLocalAudio('pending');
+    expect(_audioCount(session), 1);
+    session.resolveLocalAudio('pending', _audio);
+    final afterInsert = editor.selection;
+    editor.beginAudioPointer(1);
+    editor.updateSelection(
+      const TextSelection.collapsed(offset: 0),
+      ChangeSource.local,
+    );
+    expect(editor.selection, afterInsert);
+    expect(EditorTextColorPolicy.selection(editor).color, _red);
+    editor.endAudioPointer(1);
+    await Future<void>.microtask(() {});
+    expect(await session.flush(), isTrue, reason: session.codecFailure);
+    expect(session.localMarkdown, isNot(contains('data-wenyou-color-v1')));
+    expect(
+      editor.document
+          .toDelta()
+          .operations
+          .where((op) => op.data is Map)
+          .every((op) => op.attributes?['color'] == null),
+      isTrue,
+    );
+  });
   for (final secondColor in <String?>[null, _green]) {
     test('同一来源链接混色保存时按颜色分开且不反包 span $secondColor', () async {
       final session = _session('[A**B**]($_url)');

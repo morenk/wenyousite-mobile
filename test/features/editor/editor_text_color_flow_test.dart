@@ -229,8 +229,8 @@ void main() {
     );
     await tester.pump();
     expect(
-      session.controller.document.collectStyle(7, 1).attributes['color'],
-      isNull,
+      session.controller.document.collectStyle(7, 1).attributes['color']?.value,
+      '#112233',
     );
     expect(
       session.controller.document.collectStyle(3, 4).attributes['color']?.value,

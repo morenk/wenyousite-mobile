@@ -30,7 +30,7 @@ class EditorTextColorPalette extends StatelessWidget {
     final unavailable = !writeEnabled
         ? '文字颜色暂未开放'
         : !selection.enabled
-        ? '先选中文字'
+        ? '选择文字或放置输入光标'
         : null;
     Widget choice(String? rgb, String label) {
       final selected =

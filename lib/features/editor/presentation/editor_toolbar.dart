@@ -133,6 +133,7 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
   bool _colorPickerOpen = false;
   TextSelection? _colorSelection;
   String? _colorDocument;
+  EditorTypingStyleSnapshot? _colorTypingStyle;
   late final TextEditingController _linkLabelController;
   late final TextEditingController _linkUrlController;
   late final TextEditingController _diceQuantityController;
@@ -147,6 +148,7 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
   @override
   void initState() {
     super.initState();
+    _syncTypingColorCapability();
     _linkLabelController = TextEditingController();
     _linkUrlController = TextEditingController();
     _lastSuccessfulDiceInput = _defaultEditorDiceInput;
@@ -166,6 +168,7 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
   @override
   void didUpdateWidget(covariant WenyouEditorToolbar oldWidget) {
     super.didUpdateWidget(oldWidget);
+    _syncTypingColorCapability();
     if (oldWidget.controller != widget.controller) {
       oldWidget.controller.removeListener(_onControllerChanged);
       widget.controller.addListener(_onControllerChanged);
@@ -192,6 +195,14 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
 
   void _onControllerChanged() {
     if (mounted) setState(() {});
+  }
+
+  void _syncTypingColorCapability() {
+    final controller = widget.controller;
+    if (controller is LiteralTextQuillController) {
+      controller.textColorInputEnabled =
+          widget.textColor?.writeEnabled ?? false;
+    }
   }
 
   @override
@@ -429,6 +440,15 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
           _colorDocument = jsonEncode(
             widget.controller.document.toDelta().toJson(),
           );
+          final controller = widget.controller;
+          _colorTypingStyle = controller is LiteralTextQuillController
+              ? controller.captureTypingStyle()
+              : null;
+        } else {
+          // HeadingTray 已在应用／取消时恢复原位置及输入状态。
+          _colorSelection = null;
+          _colorDocument = null;
+          _colorTypingStyle = null;
         }
         setState(() => _colorPickerOpen = open);
         widget.onColorPickerChanged?.call(open);
@@ -503,10 +523,19 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
       if (_colorSelection != null &&
           _colorDocument ==
               jsonEncode(widget.controller.document.toDelta().toJson())) {
-        widget.controller.updateSelection(_colorSelection!, ChangeSource.local);
+        final controller = widget.controller;
+        if (controller is LiteralTextQuillController) {
+          controller.restoreToolSelection(
+            _colorSelection!,
+            snapshot: _colorTypingStyle,
+          );
+        } else {
+          controller.updateSelection(_colorSelection!, ChangeSource.local);
+        }
       }
       _colorSelection = null;
       _colorDocument = null;
+      _colorTypingStyle = null;
     }
     setState(() {
       _tray = tray;

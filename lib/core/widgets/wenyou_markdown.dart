@@ -143,8 +143,8 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
       _renderedBody = null;
     }
     if (!setEquals(
-      _audioSources(oldWidget.mediaAudios),
-      _audioSources(widget.mediaAudios),
+      MarkdownAudioProjection.sourceKeys(oldWidget.mediaAudios),
+      MarkdownAudioProjection.sourceKeys(widget.mediaAudios),
     )) {
       // 上游只在 data/styleSheet 改变时重建 children；可信音频集合
       // 也会改变段落分块，必须让 AST 与 children 同步。等价 DTO 不重挂。
@@ -198,11 +198,6 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
     _renderedBody = null;
     _markdownParseKey = UniqueKey();
   }
-
-  static Set<String> _audioSources(Map<String, MediaAudio> audios) => {
-    for (final entry in audios.entries)
-      if (entry.key == entry.value.sourceUrl) entry.key,
-  };
 
   Widget _buildBody() {
     for (final recognizer in _colorRecognizers) {
@@ -371,7 +366,11 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
       const md.SetextHeaderSyntax(),
       const MarkdownQuoteLineSyntax(_emptyParagraphTag),
       MarkdownLiteralRowsSyntax(
-        isAtomicLine: widget.mediaAudios.isEmpty ? null : _isAudioLine,
+        isAtomicLine: widget.mediaAudios.isEmpty
+            ? null
+            : (line) =>
+                  MarkdownAudioProjection.fromLine(line, widget.mediaAudios) !=
+                  null,
       ),
       _EmptyParagraphBlockSyntax(),
       const MarkdownReaderParagraphSyntax(),
@@ -446,18 +445,6 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
     },
     onTapLink: (_, href, _) => _openLink(context, href),
   );
-
-  bool _isAudioLine(String line) {
-    if (!line.contains('[')) return false;
-    final blocks = md.Document(
-      extensionSet: md.ExtensionSet.gitHubFlavored,
-      inlineSyntaxes: MarkdownInlineCompatibilitySyntax.create(),
-      encodeHtml: false,
-    ).parse(line);
-    return blocks.length == 1 &&
-        MarkdownAudioProjection.fromBlock(blocks.single, widget.mediaAudios) !=
-            null;
-  }
 
   void _handleTapText() {
     if (_hasSelection) {

@@ -25,7 +25,7 @@ void main() {
       );
       for (final label in ['红色', '恢复默认色']) {
         final node = tester.getSemantics(
-          find.bySemanticsLabel(enabled ? label : '$label，先选中文字'),
+          find.bySemanticsLabel(enabled ? label : '$label，选择文字或放置输入光标'),
         );
         expect(node.getSemanticsData().hasAction(SemanticsAction.tap), enabled);
         if (enabled) {
@@ -55,7 +55,10 @@ void main() {
       );
       await tester.tap(find.byKey(const Key('editor-color-custom')));
       await tester.pumpAndSettle();
-      expect(find.text(writeEnabled ? '先选中文字' : '文字颜色暂未开放'), findsOneWidget);
+      expect(
+        find.text(writeEnabled ? '选择文字或放置输入光标' : '文字颜色暂未开放'),
+        findsOneWidget,
+      );
       expect(changes, 0);
       await tester.pumpWidget(const SizedBox.shrink());
       await tester.pumpAndSettle();

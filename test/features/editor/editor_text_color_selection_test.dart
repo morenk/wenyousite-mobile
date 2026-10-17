@@ -68,7 +68,7 @@ void main() {
     });
   });
 
-  test('空选区和只有原子或换行不可改色', () {
+  test('有效折叠光标可选输入色，只有原子或换行的范围不可改色', () {
     final editor = controller(
       Delta()
         ..insert({
@@ -77,7 +77,7 @@ void main() {
         ..insert('\n'),
       const TextSelection.collapsed(offset: 0),
     );
-    expect(EditorTextColorPolicy.selection(editor).enabled, isFalse);
+    expect(EditorTextColorPolicy.selection(editor).enabled, isTrue);
     editor.updateSelection(
       const TextSelection(baseOffset: 0, extentOffset: 2),
       ChangeSource.local,
@@ -116,7 +116,7 @@ void main() {
     expect(MarkdownDeltaCodec.encode(after), contains('data-wenyou-color-v1'));
   });
 
-  test('改色与邻近输入不合并，后续输入不继承颜色', () {
+  test('改色与邻近输入不合并，主动移位后的光标按当前位置取色', () {
     final editor = controller(
       Delta()..insert('甲\n'),
       const TextSelection.collapsed(offset: 1),
@@ -139,7 +139,7 @@ void main() {
     editor.replaceText(2, 0, '丙', const TextSelection.collapsed(offset: 3));
     expect(
       editor.document.collectStyle(2, 1).attributes['color']?.value,
-      isNull,
+      '#123456',
     );
     expect(
       editor.document.collectStyle(0, 1).attributes['color']?.value,

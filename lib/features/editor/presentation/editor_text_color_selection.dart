@@ -5,9 +5,27 @@ import 'package:wenyousite_mobile/features/editor/presentation/literal_text_quil
 
 typedef EditorTextColorSelection = ({bool enabled, bool mixed, String? color});
 
-/// 颜色只属于已选普通文字；换行、协议原子节点不参加颜色计算和修改。
+/// 范围只改变普通文字；有效光标设置待输入色，换行和原子不着色。
 abstract final class EditorTextColorPolicy {
   static EditorTextColorSelection selection(QuillController controller) {
+    if (controller.readOnly ||
+        (controller is LiteralTextQuillController &&
+            !controller.textColorInputEnabled) ||
+        !_valid(controller, controller.selection)) {
+      return (enabled: false, mixed: false, color: null);
+    }
+    if (controller.selection.isCollapsed) {
+      return (
+        enabled:
+            controller is! LiteralTextQuillController ||
+            controller.textColorInputEnabled,
+        mixed: false,
+        color: controller is LiteralTextQuillController
+            ? controller.typingColor
+            : controller.getSelectionStyle().attributes['color']?.value
+                  as String?,
+      );
+    }
     final ranges = _ranges(controller.document.toDelta(), controller.selection);
     if (ranges.isEmpty) return (enabled: false, mixed: false, color: null);
     final colors = ranges.map((range) => range.color).toSet();
@@ -25,6 +43,25 @@ abstract final class EditorTextColorPolicy {
   ) {
     if (color != null && !RegExp(r'^#[0-9A-F]{6}$').hasMatch(color)) {
       throw ArgumentError.value(color, 'color', '需要六位 RGB');
+    }
+    if (controller.readOnly ||
+        (controller is LiteralTextQuillController &&
+            !controller.textColorInputEnabled) ||
+        !_valid(controller, selection)) {
+      return false;
+    }
+    if (selection.isCollapsed) {
+      if (controller is LiteralTextQuillController) {
+        if (!controller.textColorInputEnabled) return false;
+        controller.useColorForTyping(color);
+      } else {
+        controller.formatText(
+          selection.start,
+          0,
+          Attribute.clone(Attribute.color, color),
+        );
+      }
+      return true;
     }
     final ranges = _ranges(controller.document.toDelta(), selection);
     final patch = Delta();
@@ -51,6 +88,9 @@ abstract final class EditorTextColorPolicy {
     }
     return true;
   }
+
+  static bool _valid(QuillController controller, TextSelection selection) =>
+      selection.isValid && selection.end < controller.document.length;
 
   static List<({int start, int end, String? color})> _ranges(
     Delta delta,

@@ -10,6 +10,7 @@ import 'package:wenyousite_mobile/features/editor/presentation/editor_rgb_picker
 import 'package:wenyousite_mobile/features/editor/presentation/editor_text_color_palette.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_text_color_selection.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_toolbar_buttons.dart';
+import 'package:wenyousite_mobile/features/editor/presentation/literal_text_quill_controller.dart';
 
 class EditorTextColorConfiguration {
   const EditorTextColorConfiguration({
@@ -54,6 +55,7 @@ class _WenyouEditorHeadingTrayState extends State<WenyouEditorHeadingTray> {
   List<String> _recent = const [];
   TextSelection? _selection;
   String? _document;
+  EditorTypingStyleSnapshot? _typingStyle;
   int _generation = 0;
 
   @override
@@ -97,9 +99,13 @@ class _WenyouEditorHeadingTrayState extends State<WenyouEditorHeadingTray> {
   void _openPicker() {
     _selection = widget.controller.selection;
     _document = jsonEncode(widget.controller.document.toDelta().toJson());
+    final controller = widget.controller;
+    _typingStyle = controller is LiteralTextQuillController
+        ? controller.captureTypingStyle()
+        : null;
+    widget.onPickerChanged(true);
     widget.focusNode?.unfocus();
     setState(() {});
-    widget.onPickerChanged(true);
   }
 
   void _complete() {
@@ -107,7 +113,7 @@ class _WenyouEditorHeadingTrayState extends State<WenyouEditorHeadingTray> {
     if (selection != null &&
         _document ==
             jsonEncode(widget.controller.document.toDelta().toJson())) {
-      widget.controller.updateSelection(selection, ChangeSource.local);
+      _restoreSelection(selection);
     }
     widget.onPickerChanged(false);
     widget.onComplete();
@@ -127,6 +133,7 @@ class _WenyouEditorHeadingTrayState extends State<WenyouEditorHeadingTray> {
       return;
     }
     final selection = _selection ?? widget.controller.selection;
+    if (_selection != null) _restoreSelection(selection);
     EditorTextColorPolicy.apply(widget.controller, selection, color);
     if (color != null && (custom || _recent.contains(color))) {
       ++_generation;
@@ -147,6 +154,15 @@ class _WenyouEditorHeadingTrayState extends State<WenyouEditorHeadingTray> {
     }
     _selection = null;
     _complete();
+  }
+
+  void _restoreSelection(TextSelection selection) {
+    final controller = widget.controller;
+    if (controller is LiteralTextQuillController) {
+      controller.restoreToolSelection(selection, snapshot: _typingStyle);
+    } else {
+      controller.updateSelection(selection, ChangeSource.local);
+    }
   }
 
   @override
