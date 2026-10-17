@@ -35,7 +35,9 @@ List<Widget> buildThreadDetailAppBarActions({
       onTarget: onLatestTarget,
     ),
     if (detail != null &&
-        (!detail.isCurrentUserOwner || detail.canManageThread))
+        (detail.canManageThread ||
+            (!detail.isCurrentUserOwner &&
+                (!detail.isPrivate || detail.isCurrentUserPlayer))))
       WenyouAnchoredActionBubble<ThreadDetailAppBarAction>(
         actions: [
           if (detail.canManageThread)
@@ -58,14 +60,6 @@ List<Widget> buildThreadDetailAppBarActions({
               label: '管理',
               semanticsLabel: '管理主题',
               key: Key('thread-detail-manage'),
-            ),
-          if (!detail.isCurrentUserOwner)
-            const WenyouPopoverAction(
-              value: ThreadDetailAppBarAction.tip,
-              icon: WenyouIconIds.actionTip,
-              label: '加油',
-              semanticsLabel: '为创作者加油',
-              key: Key('thread-detail-tip'),
             ),
           if (!detail.isPrivate && !detail.isCurrentUserOwner)
             const WenyouPopoverAction(

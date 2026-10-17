@@ -53,7 +53,7 @@ class ThreadInteractionActions extends ConsumerWidget {
             semanticLabel: state.isLiked
                 ? '取消喜欢，当前 ${state.likeCount} 个喜欢'
                 : '喜欢，当前 ${state.likeCount} 个喜欢',
-            padding: EdgeInsets.symmetric(horizontal: tokens.space4),
+            padding: EdgeInsets.zero,
             supporting: Text(
               formatWenyouCompactCount(state.likeCount),
               style: Theme.of(context).textTheme.wenyouUtilityCaption,
@@ -75,7 +75,7 @@ class ThreadInteractionActions extends ConsumerWidget {
                       compact: true,
                     ),
               semanticLabel: state.isBookmarked ? '取消收藏' : '收藏主题',
-              padding: EdgeInsets.symmetric(horizontal: tokens.space4),
+              padding: EdgeInsets.zero,
             ),
         ],
       );

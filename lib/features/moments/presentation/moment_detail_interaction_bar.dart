@@ -3,6 +3,7 @@ import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_interaction_toggle.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_reply_action_bar.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
 import 'package:wenyousite_mobile/features/wallet/domain/wallet_models.dart';
 
@@ -14,10 +15,12 @@ class MomentDetailInteractionBar extends StatelessWidget {
     required this.onBookmark,
     required this.onComment,
     this.onTip,
+    this.authenticated = true,
     super.key,
   });
 
   final MomentCard card;
+  final bool authenticated;
   final MomentInteractionAction? pendingAction;
   final VoidCallback onLike;
   final VoidCallback onBookmark;
@@ -30,9 +33,12 @@ class MomentDetailInteractionBar extends StatelessWidget {
     final visibleTipTotal = formatWenyouCompactCount(int.parse(card.tipTotal));
     return RepaintBoundary(
       key: const Key('moment-detail-actions'),
-      child: Row(
+      child: WenyouReplyActionBar(
         children: [
-          Expanded(
+          SizedBox(
+            width:
+                context.wenyouTokens.minimumTouchTarget +
+                context.wenyouTokens.space16,
             child: _DetailAction(
               key: const Key('moment-detail-like'),
               icon: WenyouIconIds.actionLike,
@@ -49,7 +55,10 @@ class MomentDetailInteractionBar extends StatelessWidget {
                   : null,
             ),
           ),
-          Expanded(
+          SizedBox(
+            width:
+                context.wenyouTokens.minimumTouchTarget +
+                context.wenyouTokens.space16,
             child: _DetailAction(
               key: const Key('moment-detail-bookmark'),
               icon: WenyouIconIds.actionBookmark,
@@ -66,16 +75,10 @@ class MomentDetailInteractionBar extends StatelessWidget {
                   : null,
             ),
           ),
-          Expanded(
-            child: _DetailAction(
-              key: const Key('moment-detail-comments'),
-              icon: WenyouIconIds.metricComments,
-              value: formatWenyouCompactCount(card.commentCount),
-              semanticLabel: '发表评论，${card.commentCount} 条评论',
-              onPressed: card.canInteract ? onComment : null,
-            ),
-          ),
-          Expanded(
+          SizedBox(
+            width:
+                context.wenyouTokens.minimumTouchTarget +
+                context.wenyouTokens.space16,
             child: _DetailAction(
               key: const Key('moment-detail-tip'),
               icon: onTip == null
@@ -88,6 +91,20 @@ class MomentDetailInteractionBar extends StatelessWidget {
               onPressed: card.canInteract ? onTip : null,
             ),
           ),
+          if (card.canInteract) ...[
+            SizedBox(width: context.wenyouTokens.space4),
+            Expanded(
+              child: WenyouReplyFieldAction(
+                key: const Key('moment-comment-dock'),
+                fieldKey: const Key('moment-comment-field'),
+                authenticated: authenticated,
+                semanticLabel:
+                    '回复一下，${card.commentCount} 条评论${authenticated ? '' : '，登录后发表'}',
+                onPressed: onComment,
+              ),
+            ),
+          ] else
+            const Spacer(),
         ],
       ),
     );
@@ -118,13 +135,16 @@ class _DetailAction extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
     final valueText = Flexible(
-      child: Text(
-        value,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: Theme.of(context).textTheme.wenyouUtilityCaption.copyWith(
-          color: selected ? tokens.text : tokens.mutedText,
-          fontWeight: FontWeight.w400,
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Text(
+          value,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: Theme.of(context).textTheme.wenyouUtilityCaption.copyWith(
+            color: selected ? tokens.text : tokens.mutedText,
+            fontWeight: FontWeight.w400,
+          ),
         ),
       ),
     );
@@ -144,7 +164,7 @@ class _DetailAction extends StatelessWidget {
           onPressed: onPressed,
           semanticLabel: semanticLabel,
           supporting: valueText,
-          padding: EdgeInsets.symmetric(horizontal: tokens.space4),
+          padding: EdgeInsets.zero,
           expand: true,
         ),
       );
@@ -155,7 +175,7 @@ class _DetailAction extends StatelessWidget {
         minHeight: tokens.minimumTouchTarget,
       ),
       child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: tokens.space4),
+        padding: EdgeInsets.zero,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [

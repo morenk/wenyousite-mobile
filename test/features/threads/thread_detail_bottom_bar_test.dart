@@ -4,9 +4,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_anchored_popover.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_inline_composer_dock.dart';
 import 'package:wenyousite_mobile/features/social/data/thread_interaction_repository.dart';
 import 'package:wenyousite_mobile/features/social/data/thread_subscription_repository.dart';
+import 'package:wenyousite_mobile/features/threads/application/thread_detail_controller.dart';
+import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_app_bar_actions.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_bottom_bar.dart';
 
 import '../../support/deterministic_test_fonts.dart';
@@ -14,6 +17,45 @@ import 'thread_detail_page_test_support.dart';
 
 void main() {
   setUpAll(loadDeterministicTestFonts);
+  testWidgets('加油与收藏订阅在输入框左侧并沿用原回调', (tester) async {
+    var tips = 0;
+    await _mount(tester, onTip: () => tips++);
+    final tip = find.byKey(const Key('thread-detail-tip'));
+    expect(tester.getSize(tip), const Size(48, 48));
+    expect(
+      tester.getRect(tip).right,
+      lessThan(
+        tester.getRect(find.byKey(const Key('thread-floor-compose'))).left,
+      ),
+    );
+    await tester.tap(tip);
+    expect(tips, 1);
+  });
+  testWidgets('自己的主题不提供自赏入口', (tester) async {
+    await _mount(tester, owner: true);
+    expect(find.byKey(const Key('thread-detail-tip')), findsNothing);
+    expect(find.byKey(const Key('thread-floor-compose')), findsOneWidget);
+  });
+  test('移走加油后没有剩余操作的私密读者不显示空更多菜单', () {
+    final detail = threadDetailPageTestCopyThreadDetail(
+      threadDetailPageTestDetail,
+      subthreads: threadDetailPageTestDetail.subthreads,
+      isPrivate: true,
+      isCurrentUserOwner: false,
+      isCurrentUserPlayer: false,
+    );
+    final actions = buildThreadDetailAppBarActions(
+      threadId: detail.id,
+      state: ThreadDetailState(detail: detail),
+      onSearch: () {},
+      onLatestTarget: (_) {},
+      onSelected: (_) {},
+    );
+    expect(
+      actions.whereType<WenyouAnchoredActionBubble<ThreadDetailAppBarAction>>(),
+      isEmpty,
+    );
+  });
   for (final dark in [false, true]) {
     testWidgets('${dark ? 'dark' : 'light'} 回复入口与私聊输入容器底色边框一致', (tester) async {
       await _mount(tester, dark: dark);
@@ -176,8 +218,10 @@ Future<void> _mount(
   bool authenticated = true,
   bool canCompose = true,
   bool largeCount = false,
+  bool owner = false,
   VoidCallback? onCompose,
   VoidCallback? onAuthentication,
+  VoidCallback? onTip,
 }) async {
   tester.view.devicePixelRatio = 1;
   tester.view.physicalSize = Size(width.toDouble(), 200);
@@ -222,17 +266,19 @@ Future<void> _mount(
           bottomNavigationBar: RepaintBoundary(
             key: const Key('bottom-bar-preview'),
             child: ThreadDetailBottomBar(
-              detail: largeCount
+              detail: largeCount || owner
                   ? threadDetailPageTestCopyThreadDetail(
                       threadDetailPageTestDetail,
                       subthreads: threadDetailPageTestDetail.subthreads,
-                      likeCount: 1000000,
+                      likeCount: largeCount ? 1000000 : null,
+                      isCurrentUserOwner: owner,
                     )
                   : threadDetailPageTestDetail,
               authenticated: authenticated,
               canCompose: canCompose,
               onRequireAuthentication: onAuthentication ?? () {},
               onCompose: onCompose ?? () {},
+              onTip: onTip ?? () {},
             ),
           ),
         ),
