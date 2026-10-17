@@ -14,6 +14,19 @@ import '../../support/deterministic_test_fonts.dart';
 void main() {
   setUpAll(loadDeterministicTestFonts);
 
+  testWidgets('正文草稿列表复用颜色摘要并保留代码字面', (tester) async {
+    const source =
+        '<span data-wenyou-color-v1="#D14343">**中文😀** `a < b`</span>';
+    final controller = await _readyController([
+      _draft(slot: 1, content: source),
+    ]);
+    await _pumpSheet(tester, controller, currentContent: '当前正文');
+    expect(find.text('中文😀 a < b'), findsOneWidget);
+    expect(find.textContaining('data-wenyou-color-v1'), findsNothing);
+    expect(controller.state.drafts.single.content, source);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('颜色云草稿拒绝保存时保留当前正文并显示颜色提示', (tester) async {
     const source = '<span data-wenyou-color-v1="#123456">有色正文</span>';
     final repository = _FakeRepository(

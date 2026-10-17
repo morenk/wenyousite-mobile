@@ -1,12 +1,62 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:wenyou_api/wenyou_api.dart';
+import 'package:wenyousite_mobile/app/app_theme.dart';
+import 'package:wenyousite_mobile/features/users/application/public_user_controller.dart';
 import 'package:wenyousite_mobile/features/users/data/public_user_repository.dart';
+import 'package:wenyousite_mobile/features/users/domain/public_user_models.dart';
+import 'package:wenyousite_mobile/features/users/presentation/public_user_content.dart';
 
 import '../../support/thread_cover_fixtures.dart';
 
 void main() {
+  for (final self in [false, true]) {
+    testWidgets('${self ? '我的' : '公开'}最近回复列表从完整彩色正文生成可见摘要', (tester) async {
+      const source =
+          '<span data-wenyou-color-v1="#D14343">**中文😀** [链接](https://example.com) `a < b`</span>';
+      final api = _MockUsersApi();
+      when(() => api.usersGetUserRecentReplies(id: 'user-1')).thenAnswer(
+        (_) async => _recentRepliesResponse(
+          content: source,
+          preview: source.substring(0, 30),
+        ),
+      );
+      final replies = await ApiPublicUserRepository(
+        api,
+      ).fetchRecentReplies('user-1');
+      expect(replies.single.preview, '中文😀 链接 a < b');
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.light,
+          home: Scaffold(
+            body: CustomScrollView(
+              slivers: [
+                PublicUserContentSectionSliver(
+                  tab: PublicUserContentTab.replies,
+                  state: PublicUserState(
+                    replies: PublicUserContentSection(
+                      phase: PublicUserContentPhase.ready,
+                      items: replies,
+                    ),
+                  ),
+                  isSelf: self,
+                  onRetry: () {},
+                  onLoadMore: () {},
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('中文😀 链接 a < b'), findsOneWidget);
+      expect(find.textContaining('data-wenyou-color-v1'), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+  }
+
   test('公开用户资料传递用户 ID 并完整映射统计与关系状态', () async {
     final api = _MockUsersApi();
     when(() => api.usersGetUser(id: 'user-1')).thenAnswer(

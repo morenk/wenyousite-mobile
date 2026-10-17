@@ -157,3 +157,16 @@ Backend PR #54 的 `1ab948107960c1b221cf5dffd7a1d79ee9f5a277` 已通过完整检
 只读获取真机画面确认浅底色已生效：1200×2608、density 480、400dp 宽、font_scale 1.0、亮色主题。截图 `D:/codex-artifacts/text-color-v1/thread-bottom-bar-device-soft-tone-20261018.png` 含真实业务内容，仅留本机，不入库。手机安装 APK 仍为上一节 7b0c585c；当前画面绑定本次源码摘要及 reload 回执，不能用初装哈希代表热重载后的颜色。独立转发与调试会话保留供同一反馈批次使用，本轮未重打 APK；新色调仍待负责人确认。
 
 Backend #54 已按负责人明确批准合并并正式部署 `08bbf5dbcd791270764fc2152fe9b61f683d7fa1`／API 5.39.0-dev.20261017.1。正式部署退出 0，三项异地备份及音频额度迁移成功，local/public health 200，颜色支持与新写均为 true；Web release、PID 和启动时间不变。已上线编译产物的 56 字符空段＋彩色 H2 纯函数验证通过，无线上业务写入；真实发布仍由负责人复验。此 Mobile 反馈树继续固定 API 5.38 来源，正式集成前需同步最新 dev／已发布契约并验证最终树。
+### 2026-10-18 列表摘要统一与真实最近回复复验
+
+负责人反馈最近回复显示颜色 span，并在追问后明确搜索楼层目前未发现异常；随后要求与搜索复用实现。实际代码有两套摘要：最近回复独立 AST 未注册颜色语法，搜索／草稿走通用正则。真机“我的→回复”第 19 楼卡片确实显示两个完整颜色 span，与原始相邻 H3／H2 两行一致。Backend 08bbf5d 离线核验最近回复 preview 先去色再截断、content 保源，搜索只返回完整 Markdown；无需为此修改后端或 DTO。
+
+新增 core `markdown_plain_text_preview.dart` 作为唯一 AST 处理，`MarkdownContent.toPlainTextPreview` 调用该入口，`recentReplyPreview` 只做薄封装与既有骰子结果策略。完整解析后折叠摘要空白，再按 Unicode 码点截断；严格受控颜色、标题、列表、链接、图片占位、实体、提及投影、骰子及中文 emoji 共用规则。代码／转义／普通 HTML 或损坏标签作为可见字面保留，不全局删尖括号；标准 CodeBlockSyntax 优先于自定义段落，避免 4 空格或 Tab 缩进代码中的颜色标记误解析。没有修改阅读器、Codec、契约、依赖或正文持久化。
+
+旧最近回复精确回归 10 失败／7 通过，缩进代码补验旧实现另有 2 失败，均保留日志。最终直接消费者 173/173 通过（`.dart_tool/text-color-preview-consumers-final.log`），包括真实 HTTP DTO→仓储→公开／本人最近回复列表、综合／全局／主题内搜索仓储与主题内结果页、云草稿面板、角色提及，以及 9 个独立 canonical fixture。角色提及旧正则曾把代码内节点削成昵称，现纠正为完整代码字面且不参与身份投影。首轮 fixture 代码空白期望未折叠导致一项失败，修正独立期望后通过；未降低语义要求。
+
+最终全量 `flutter analyze --fatal-infos --fatal-warnings` 无问题（29.6 秒），日志 `.dart_tool/text-color-preview-analyze-final.log`；此前中断分析和 8 条测试字符串插值 lint 失败分别保留为 `text-color-preview-analyze-interrupted.log`／`text-color-preview-analyze-lint-before.log`，测试 lint 修改后两文件 48/48 补验通过。9 个变动 Dart 文件格式无变化，23 模块文档通过，diff 检查通过。最终冻结 9 个应用／测试输入复核 0 漂移，清单 `.dart_tool/text-color-preview-source-inputs.json` SHA-256 `dd2581b329035d22b3529407522dd792510e9a7cff0aa8f5e82730974a28c051`。
+
+App 后台期间旧 attach 断开；负责人手动切回前台后，同一 PID 13380／VM 39339 恢复可达，复用本任务 5511 转发重新 attach，无启动／重启。初次 reload 返回 0 libraries，读取 VM library 清单发现新摘要模块尚未加载，因此不将该次视为更新成功。仅刷新已检查的 3 个源文件修改时间、不改变字节，重新热重载实际为 3/4731 libraries、2495ms、code 0，且只读确认新共享 library 已进入 VM。日志 `.dart_tool/thread-list-preview-attach.log` 含调试授权 URI，仅留本机忽略目录。
+
+审查当前页面下拉刷新仅调用资料、钱包和最近回复 GET 后，执行只读滚动／刷新，实际第 19 楼卡片从两段 span 源码变为“杀！ 杀！”。真机 400dp、亮色、font_scale 1.0，截图 `D:/codex-artifacts/text-color-v1/list-preview-confirmed-20261018.png` 含真实内容，仅留本机。未自动发帖、编辑、删除、签到或清草稿。本轮没有重建／安装 APK，仍以初装 7b0c585c 加当前源码与 reload 记录绑定；候选现场可见变化，负责人最终验收仍独立记录。

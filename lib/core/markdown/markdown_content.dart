@@ -2,7 +2,7 @@ import 'package:wenyousite_mobile/core/markdown/markdown_alignment.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_dice_contract.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_editable_block_syntax.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_list_structure.dart';
-import 'package:wenyousite_mobile/core/markdown/markdown_mention_target.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_plain_text_preview.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_source_protection.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_text_color.dart';
 
@@ -36,19 +36,6 @@ class MarkdownContent {
   );
   static final _diceNode = RegExp(
     r'^\[\[dice:v1:([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}):([^\]\r\n]+)\]\]',
-    caseSensitive: false,
-  );
-  static final _previewImage = RegExp(
-    r'!\[([^\]]*)\]\(\s*[^)\s]+[^)]*\)',
-    unicode: true,
-  );
-  static final _previewUrl = RegExp(
-    r'https?://[^\s<>()]+',
-    caseSensitive: false,
-    unicode: true,
-  );
-  static final _previewDice = RegExp(
-    r'\[\[dice:v1:[0-9a-f-]+:([^\]\r\n]+)\]\]',
     caseSensitive: false,
   );
   static final _taskList = RegExp(
@@ -605,66 +592,17 @@ class MarkdownContent {
     String markdown, {
     int maxLength = 180,
     Map<String, String> mentionLabels = const {},
+    Map<String, String> diceLabels = const {},
+    bool showUnresolvedDiceResult = false,
   }) {
     if (maxLength <= 0) return '';
-    final source = MarkdownAlignmentContract.removeMarkerLines(
-      normalize(markdown),
+    return markdownPlainTextPreview(
+      MarkdownSourceProtection.prepareForReader(markdown),
+      maxLength: maxLength,
+      mentionLabels: mentionLabels,
+      diceLabels: diceLabels,
+      showUnresolvedDiceResult: showUnresolvedDiceResult,
     );
-    final mask = source.contains('/users/')
-        ? MarkdownSourceProtection.analyze(
-            source.split('\n'),
-          ).maskedLines.join('\n')
-        : source;
-    var markerPrefix = '\uE000';
-    while (source.contains(markerPrefix)) {
-      markerPrefix += '\uE000';
-    }
-    final mentionText = <String, String>{};
-    final protected = source.replaceAllMapped(
-      RegExp(MarkdownMentionTarget.nodePattern),
-      (match) {
-        final label = match[1]!;
-        final target = MarkdownMentionTarget.parse(match[2]!);
-        var slashes = 0;
-        for (var i = match.start - 1; i >= 0 && source[i] == r'\'; i--) {
-          slashes++;
-        }
-        if (target == null ||
-            !target.acceptsLabel(label) ||
-            slashes.isOdd ||
-            (match.start > 0 && source[match.start - 1] == '!') ||
-            mask[match.start] != '[') {
-          return match[0]!;
-        }
-        final marker = '$markerPrefix${mentionText.length}\uE001';
-        mentionText[marker] =
-            '@${mentionLabels[target.projectionKey(label.substring(1))] ?? label.substring(1)}';
-        return marker;
-      },
-    );
-    var visible = protected
-        .replaceAllMapped(
-          _previewDice,
-          (match) => '[${match.group(1)!.trim()}]',
-        )
-        .replaceAll(_previewImage, '[图片]')
-        .replaceAllMapped(_link, (match) {
-          final label = match.group(1)!;
-          return label;
-        })
-        .replaceAll(_httpAutolink, '[链接]')
-        .replaceAll(_previewUrl, '[链接]')
-        .replaceAll(_html, ' ')
-        .replaceAll(RegExp(r'(^|\n)\s{0,3}(?:[#>+\-]|\d+[.)])\s*'), ' ')
-        .replaceAll(RegExp(r'[`*_~|]'), '')
-        .replaceAll(RegExp(r'\s+', unicode: true), ' ')
-        .trim();
-    for (final entry in mentionText.entries) {
-      visible = visible.replaceAll(entry.key, entry.value);
-    }
-    final runes = visible.runes.toList(growable: false);
-    if (runes.length <= maxLength) return visible;
-    return '${String.fromCharCodes(runes.take(maxLength - 1))}…';
   }
 
   static String renderDiceForDisplay(
