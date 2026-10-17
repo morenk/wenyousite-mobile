@@ -123,7 +123,7 @@ class _ReplyFieldAction extends StatelessWidget {
           child: DecoratedBox(
             key: const Key('thread-floor-compose-field'),
             decoration: BoxDecoration(
-              color: tokens.input,
+              color: tokens.softPanel,
               border: Border.all(color: tokens.border),
               borderRadius: BorderRadius.circular(tokens.radiusControl),
             ),

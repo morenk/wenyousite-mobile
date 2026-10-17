@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_inline_composer_dock.dart';
 import 'package:wenyousite_mobile/features/social/data/thread_interaction_repository.dart';
 import 'package:wenyousite_mobile/features/social/data/thread_subscription_repository.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_bottom_bar.dart';
@@ -13,6 +14,41 @@ import 'thread_detail_page_test_support.dart';
 
 void main() {
   setUpAll(loadDeterministicTestFonts);
+  for (final dark in [false, true]) {
+    testWidgets('${dark ? 'dark' : 'light'} 回复入口与私聊输入容器底色边框一致', (tester) async {
+      await _mount(tester, dark: dark);
+      final replyDecoration =
+          tester
+                  .widget<DecoratedBox>(
+                    find.byKey(const Key('thread-floor-compose-field')),
+                  )
+                  .decoration
+              as BoxDecoration;
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: dark ? AppTheme.dark : AppTheme.light,
+          home: const Scaffold(
+            bottomNavigationBar: WenyouInlineComposerDock(
+              dockKey: Key('private-message-input-reference'),
+              editor: SizedBox(height: 48),
+              leadingActions: [],
+              submitAction: SizedBox.shrink(),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final messageDecoration =
+          tester
+                  .widget<DecoratedBox>(
+                    find.byKey(const Key('private-message-input-reference')),
+                  )
+                  .decoration
+              as BoxDecoration;
+      expect(replyDecoration.color, messageDecoration.color);
+      expect(replyDecoration.border, messageDecoration.border);
+    });
+  }
   for (final width in [320, 360]) {
     for (final dark in [false, true]) {
       for (final scale in [1.0, 1.5]) {

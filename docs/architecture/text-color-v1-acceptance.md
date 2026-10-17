@@ -148,3 +148,12 @@ Backend PR #54 的 `1ab948107960c1b221cf5dffd7a1d79ee9f5a277` 已通过完整检
 既有 VM 服务已无法连接，Flutter attach 尝试退出，未热重载或重启应用；随后按授权生成独立 APK。包名 `site.wenyou.app.debug`／“温油站 Debug”，`0.9.0-debug`／99，arm64-v8a、minSdk 26／targetSdk 36，110484748 字节，签名核验通过，SHA-256 `7b0c585cc220a94e202c7cb662e46676a725aa42e5325b750d7116f1aadeac38`。另存 `D:/codex-artifacts/text-color-v1/wenyou-thread-bottom-bar-0.9.0-debug-99-7b0c585c.apk`。
 
 设备 `4b9c39b5` 上 `adb install -r` 成功，实际 base.apk 哈希与候选一致，手机包更新时间 `2026-10-18 01:57:55`。安装回执 `D:/codex-artifacts/text-color-v1/bottom-bar-install-20261018.json`；保留数据与草稿，没有自动启动或业务写入。已请求负责人手动打开主题页观察新版底栏；真机画面和原发布问题仍待验收。
+### 2026-10-18 私聊同色底栏与热重载
+
+负责人已确认紧凑布局“可以了”，但认为输入框底色偏深，要求与私聊一致。对照 `DirectMessageComposer` 使用的 `WenyouInlineComposerDock`，仅将底栏背景从 `tokens.input` 改为 `tokens.softPanel`，边框继续复用相同 `tokens.border`；尺寸、圆角、布局及权限行为不变。明暗两套对照真实私聊 dock 的回归在旧实现失败，改动后 13 项底栏和 6 项整屏定向回归全部通过，8 张组件和 6 张整屏 Golden 更新；两文件定向 Dart 分析通过。日志 `.dart_tool/thread-bottom-bar-tone-before.log`、`thread-bottom-bar-tone-analyze.log`、`thread-bottom-bar-tone-test.log`、`thread-bottom-bar-tone-page.log`。不重复完整构建或全量门禁。
+
+用户手动打开 App 后，新运行进程 VM 端口变为 39339；保留已有 5510→36657 转发不改，使用 `--no-rebind` 建立本任务独立 5511→39339 转发并 attach。当前调试会话归属本任务与本 Worktree，设备 4b9c39b5／包 site.wenyou.app.debug，host 5511、Flutter daemon PID 13276；未启动／重启 App 或接管其他调试会话。源文件 SHA-256 `138bef69bd83a6b73ff2bde8b3b4d4689c8e9f2eb9e265df28b60eede45ce087`，`app.restart(fullRestart:false)` 返回 code 0，Reloaded 1 of 4730 libraries，2838ms。调试授权 URI 只留本机忽略文件，不提交。
+
+只读获取真机画面确认浅底色已生效：1200×2608、density 480、400dp 宽、font_scale 1.0、亮色主题。截图 `D:/codex-artifacts/text-color-v1/thread-bottom-bar-device-soft-tone-20261018.png` 含真实业务内容，仅留本机，不入库。手机安装 APK 仍为上一节 7b0c585c；当前画面绑定本次源码摘要及 reload 回执，不能用初装哈希代表热重载后的颜色。独立转发与调试会话保留供同一反馈批次使用，本轮未重打 APK；新色调仍待负责人确认。
+
+Backend #54 已按负责人明确批准合并并正式部署 `08bbf5dbcd791270764fc2152fe9b61f683d7fa1`／API 5.39.0-dev.20261017.1。正式部署退出 0，三项异地备份及音频额度迁移成功，local/public health 200，颜色支持与新写均为 true；Web release、PID 和启动时间不变。已上线编译产物的 56 字符空段＋彩色 H2 纯函数验证通过，无线上业务写入；真实发布仍由负责人复验。此 Mobile 反馈树继续固定 API 5.38 来源，正式集成前需同步最新 dev／已发布契约并验证最终树。
