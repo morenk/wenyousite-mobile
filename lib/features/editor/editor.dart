@@ -9,6 +9,8 @@ export 'presentation/editor_more_tray.dart' show WenyouEditorMoreTray;
 export 'presentation/editor_pending_image_widget.dart'
     show EditorPublishWaiting;
 export 'presentation/editor_pending_images.dart' show EditorPendingImages;
+export 'presentation/editor_publish_preparation.dart'
+    show withPreparedEditorPublish;
 export 'presentation/editor_reader_clipboard.dart'
     show
         ReaderMarkdownClipboardWriter,

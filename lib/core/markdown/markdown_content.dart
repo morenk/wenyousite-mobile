@@ -1,6 +1,7 @@
 import 'package:wenyousite_mobile/core/markdown/markdown_alignment.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_dice_contract.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_editable_block_syntax.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_inline_code_scanner.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_list_structure.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_plain_text_preview.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_source_protection.dart';
@@ -463,48 +464,8 @@ class MarkdownContent {
     return false;
   }
 
-  static String _maskInlineCode(String line) {
-    final chars = List<String>.generate(
-      line.length,
-      (index) => line.substring(index, index + 1),
-    );
-    var index = 0;
-    while (index < line.length) {
-      if (line[index] != '`' || _isEscaped(line, index)) {
-        index += 1;
-        continue;
-      }
-      var length = 1;
-      while (index + length < line.length && line[index + length] == '`') {
-        length += 1;
-      }
-      var closing = -1;
-      var search = index + length;
-      while (search < line.length) {
-        final next = line.indexOf('`', search);
-        if (next < 0) break;
-        var end = next + 1;
-        while (end < line.length && line[end] == '`') {
-          end++;
-        }
-        // CommonMark 只用长度完全相同的反引号串闭合代码区。
-        if (end - next == length) {
-          closing = next;
-          break;
-        }
-        search = end;
-      }
-      if (closing < 0) {
-        index += length;
-        continue;
-      }
-      for (var cursor = index; cursor < closing + length; cursor++) {
-        chars[cursor] = ' ';
-      }
-      index = closing + length;
-    }
-    return chars.join();
-  }
+  static String _maskInlineCode(String line) =>
+      MarkdownInlineCodeScanner.mask(line);
 
   static bool _isEscaped(String value, int index) {
     var slashes = 0;

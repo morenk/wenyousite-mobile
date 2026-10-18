@@ -754,31 +754,34 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
     setState(() => _publishing = true);
     _editorSession.readOnly = true;
     try {
-      final readiness = _pendingImages.waitForReady();
-      final intent = _pendingImages.publishGeneration;
-      final ready = await readiness;
-      if (!mounted) return;
-      if (!ready) {
-        if (await _pendingImages.revealFirstFailure() && mounted) {
-          showWenyouSnackBar(context, '先处理未完成的图片');
-        }
-        return;
-      }
-      if (!await _editorSession.flush() || !mounted) return;
-      if (!_pendingImages.isPublishIntentCurrent(intent)) return;
-      _pendingImages.finishWaiting();
-      final threadId = await ref
-          .read(threadComposeControllerProvider.notifier)
-          .publish();
-      if (mounted && threadId != null) {
-        final cleaned = await _pendingImages.clear();
-        if (!mounted) return;
-        if (!cleaned) showWenyouSnackBar(context, _pendingImages.saveFailure!);
-        ref.invalidate(remoteThreadDraftsControllerProvider);
-        context.go(AppRouteLocations.thread(threadId));
-      }
+      await withPreparedEditorPublish(
+        waitForReady: _pendingImages.waitForReady,
+        generation: () => _pendingImages.publishGeneration,
+        isIntentCurrent: _pendingImages.isPublishIntentCurrent,
+        isActive: () => mounted,
+        flush: _editorSession.flush,
+        onNotReady: () async {
+          if (await _pendingImages.revealFirstFailure() && mounted) {
+            showWenyouSnackBar(context, '先处理未完成的图片');
+          }
+        },
+        finishWaiting: _pendingImages.finishWaiting,
+        submit: () async {
+          final threadId = await ref
+              .read(threadComposeControllerProvider.notifier)
+              .publish();
+          if (mounted && threadId != null) {
+            final cleaned = await _pendingImages.clear();
+            if (!mounted) return;
+            if (!cleaned) {
+              showWenyouSnackBar(context, _pendingImages.saveFailure!);
+            }
+            ref.invalidate(remoteThreadDraftsControllerProvider);
+            context.go(AppRouteLocations.thread(threadId));
+          }
+        },
+      );
     } finally {
-      _pendingImages.finishWaiting();
       if (mounted) setState(() => _publishing = false);
     }
   }

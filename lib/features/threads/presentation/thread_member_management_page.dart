@@ -353,17 +353,14 @@ class _MembersFatalState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return WenyouPageBody(
-      child: WenyouEmptyState(
+      child: WenyouRetryFailure(
         icon: WenyouIconIds.statusGroupUnavailable,
         title: '成员列表加载失败',
         message: failure?.userMessage ?? '请检查网络或管理权限后重试。',
-        detail: wenyouFailureDetail(failure),
-        action: OutlinedButton.icon(
-          key: const Key('thread-members-load-retry'),
-          onPressed: onRetry,
-          icon: const WenyouIcon(WenyouIconIds.actionRefresh),
-          label: const Text('重新加载'),
-        ),
+        failure: failure,
+        retryKey: const Key('thread-members-load-retry'),
+        onRetry: onRetry,
+        retryLabel: '重新加载',
       ),
     );
   }

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
+import 'package:wenyousite_mobile/core/application/cursor_page_request.dart';
 import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
 import 'package:wenyousite_mobile/core/models/paging.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
@@ -84,6 +85,7 @@ class WalletController extends StateNotifier<WalletState> {
 
   final WalletRepository _repository;
   var _epoch = 0;
+  var _transactionsEpoch = 0;
 
   Future<void> loadInitial() async {
     final epoch = ++_epoch;
@@ -109,39 +111,41 @@ class WalletController extends StateNotifier<WalletState> {
   Future<void> retryTransactions() => _loadFirstTransactions(_epoch);
 
   Future<void> loadMore() async {
-    if (state.isLoadingMore || !state.hasMore || state.cursor == null) return;
-    final epoch = _epoch;
-    state = state.copyWith(isLoadingMore: true, loadMoreFailure: null);
-    try {
-      final page = await _repository.fetchTransactions(cursor: state.cursor);
-      if (!_isCurrent(epoch)) return;
-      state = state.copyWith(
-        transactions: mergeUniqueBy(
-          state.transactions,
-          page.items,
-          keyOf: (item) => item.id,
-        ),
-        cursor: page.cursor,
-        hasMore: page.hasMore,
-        isLoadingMore: false,
-      );
-    } on ApiFailure catch (failure) {
-      if (!_isCurrent(epoch)) return;
-      if (failure.isInvalidCursor) {
-        await _loadFirstTransactions(epoch);
-        return;
-      }
-      state = state.copyWith(isLoadingMore: false, loadMoreFailure: failure);
-    } on Object catch (error) {
-      if (!_isCurrent(epoch)) return;
-      state = state.copyWith(
-        isLoadingMore: false,
-        loadMoreFailure: ApiFailure(
-          userMessage: '加载更多温油流水失败，请重试。',
-          cause: error,
-        ),
-      );
+    if (state.isLoadingMore ||
+        state.isRefreshing ||
+        state.isLoadingTransactions ||
+        !state.hasMore ||
+        state.cursor == null) {
+      return;
     }
+    final epoch = _epoch;
+    final transactionsEpoch = _transactionsEpoch;
+    state = state.copyWith(isLoadingMore: true, loadMoreFailure: null);
+    await loadCursorPage(
+      fetch: () => _repository.fetchTransactions(cursor: state.cursor),
+      isCurrent: () =>
+          _isCurrent(epoch) && transactionsEpoch == _transactionsEpoch,
+      onPage: (page) {
+        state = state.copyWith(
+          transactions: mergeUniqueBy(
+            state.transactions,
+            page.items,
+            keyOf: (item) => item.id,
+          ),
+          cursor: page.cursor,
+          hasMore: page.hasMore,
+          isLoadingMore: false,
+        );
+      },
+      onInvalidCursor: () async {
+        await _loadFirstTransactions(epoch);
+      },
+      mapFailure: (error) =>
+          ApiFailure(userMessage: '加载更多温油流水失败，请重试。', cause: error),
+      onFailure: (failure) {
+        state = state.copyWith(isLoadingMore: false, loadMoreFailure: failure);
+      },
+    );
   }
 
   Future<void> _loadSummary(int epoch) async {
@@ -164,6 +168,7 @@ class WalletController extends StateNotifier<WalletState> {
   }
 
   Future<void> _loadFirstTransactions(int epoch) async {
+    final transactionsEpoch = ++_transactionsEpoch;
     state = state.copyWith(
       isLoadingTransactions: true,
       isLoadingMore: false,
@@ -172,7 +177,7 @@ class WalletController extends StateNotifier<WalletState> {
     );
     try {
       final page = await _repository.fetchTransactions();
-      if (!_isCurrent(epoch)) return;
+      if (!_isCurrent(epoch) || transactionsEpoch != _transactionsEpoch) return;
       state = state.copyWith(
         transactions: page.items,
         cursor: page.cursor,
@@ -180,7 +185,7 @@ class WalletController extends StateNotifier<WalletState> {
         isLoadingTransactions: false,
       );
     } on Object catch (error) {
-      if (!_isCurrent(epoch)) return;
+      if (!_isCurrent(epoch) || transactionsEpoch != _transactionsEpoch) return;
       state = state.copyWith(
         isLoadingTransactions: false,
         transactionsFailure: _asFailure(error, '温油流水加载失败，请重试。'),

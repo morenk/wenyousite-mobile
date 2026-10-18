@@ -10,6 +10,7 @@ import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/application/user_facing_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_edit_conflict_dialog.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_settings_body.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_sheet.dart';
@@ -465,34 +466,19 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
     final provider = threadManagementControllerProvider(widget.threadId);
     final conflict = ref.read(provider).conflict;
     if (conflict == null) return;
-    final choice = await showDialog<_ConflictChoice>(
+    final choice = await showWenyouEditConflictDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('主题内容已经变化'),
-        content: const Text('其他位置先保存了这个主题。当前表单会继续保留，直到你明确选择。'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('继续编辑'),
-          ),
-          TextButton(
-            key: const Key('thread-management-use-latest'),
-            onPressed: () =>
-                Navigator.pop(dialogContext, _ConflictChoice.useLatest),
-            child: const Text('载入最新版'),
-          ),
-          FilledButton(
-            key: const Key('thread-management-overwrite-latest'),
-            onPressed: () =>
-                Navigator.pop(dialogContext, _ConflictChoice.overwrite),
-            child: const Text('覆盖最新版'),
-          ),
-        ],
-      ),
+      title: '主题内容已经变化',
+      message: '其他位置先保存了这个主题。当前表单会继续保留，直到你明确选择。',
+      continueEditingLabel: '继续编辑',
+      useLatestLabel: '载入最新版',
+      keepCurrentLabel: '覆盖最新版',
+      useLatestKey: const Key('thread-management-use-latest'),
+      keepCurrentKey: const Key('thread-management-overwrite-latest'),
     );
     if (!mounted || choice == null) return;
     final notifier = ref.read(provider.notifier);
-    if (choice == _ConflictChoice.useLatest) {
+    if (choice == WenyouEditConflictChoice.useLatest) {
       notifier.adoptLatest();
       _bindSnapshot(conflict.latest.thread, force: true);
       _autosave.markSaved();
@@ -539,8 +525,6 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
     if (mounted) context.pop(result);
   }
 }
-
-enum _ConflictChoice { useLatest, overwrite }
 
 class _ThreadManagementAutosaveIndicator extends StatelessWidget {
   const _ThreadManagementAutosaveIndicator({required this.coordinator});

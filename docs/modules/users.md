@@ -1,5 +1,8 @@
 # 用户与资料
 
+2026-10-19 公共流程候选：普通单向分页的请求完成、过期响应和失效游标分支共用协调函数；业务状态、权限、筛选与刷新策略保留。范围、定向回归和未验收项见[公共流程验收](../architecture/shared-flows-acceptance.md)。
+
+
 状态：`in_progress`
 
 最近回复摘要从完整 `content` 解析 Markdown，仅正文为空白时回退 `preview`；与楼层搜索和正文草稿共用 `MarkdownContent.toPlainTextPreview` 的结构化解析。实体解码一次、受控颜色取可见文字后压缩排版空白，再按最多 180 个 Unicode 码点截断，避免标记或实体提前截断。代码和反斜杠转义保持字面，普通 HTML 和损坏颜色标记不作无条件删除；图片使用占位、提及保留原子昵称、骰子使用服务端结果。颜色摘要修复候选待负责人刷新列表复验，不改写正文存储。回归覆盖见 `test/features/users/recent_reply_preview_test.dart` 与 `public_user_repository_test.dart`。
@@ -94,6 +97,8 @@ Android 账号设置新增“后台消息提醒”设备开关，默认开启；
 头像与背景走安全 HTTP(S) 图片缓存；设置或移除成功主动淘汰旧 URL，本人页面立即采用服务端结果。公开与本人资料、活动汇总、内容页签、关系列表分别只存在于当前 autoDispose Provider 生命周期，不写入 Drift 或 SharedPreferences；应用重启重新读取服务端，不保留陈旧本机媒体或统计事实。本人内容页签使用 PageStorage 与 keep-alive 保留进程内滚动和分页；资料编辑草稿仅在当前页面生命周期内保留，离页时如有未保存的简介或公开内容会先确认。页面销毁、退出、切号或会话失效会释放本人资料、关系状态、内容、待设置媒体 ID 和未提交表单。
 
 ## 9. 加载、空数据、错误、重试和冲突状态
+
+本人资料、资料编辑前读取及公开内容标签页的失败使用共享错误面板，保留隐私变更提示和原重试回调。 通用失败内容保留问题编号，取消请求不展示错误。2026-10-18 负责人真机验收通过，见[错误重试与瀑布流验收](../architecture/error-retry-waterfall-acceptance.md)。
 
 头像与背景共用 media 真实文件头校验；声明类型冲突时提示重新导出，未知文件不能仅凭扩展名进入处理。图片输入兼容性原图问题已获负责人真机验收通过，完整多入口矩阵仍待补充，见[验收记录](../architecture/image-input-compatibility-acceptance.md)。
 
