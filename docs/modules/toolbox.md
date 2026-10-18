@@ -73,7 +73,7 @@ users 只提供入口，app 组合路由；工具服务没有业务 API、上传
 
 ## 13. 最近审查的契约版本和后端提交
 
-2026-10-17 合并契约复核：固定 Backend `7f95563edd8f461ebb7a66d7b458ec0349e39297`／API `5.39.0-dev.20261017.1`。原 operationId 集合和成功字段保持兼容，音频新增预算错误；文本颜色为可选能力，本批不声明读取头、不开放颜色 UI，旧端读取由服务端去色并保护有色原文覆盖。此登记不代表预算后端已部署。
+契约复核：固定已部署 Backend `08bbf5dbcd791270764fc2152fe9b61f683d7fa1`／API `5.39.0-dev.20261017.1`，合并音频预算错误与独立文本颜色能力。主题链正文保留颜色读取头、写入声明、保存校验和取色入口；音频上传、媒体展示与可定制工具栏继续保留。Foundation 固定正式 `v7.5.0`；独占空段、相邻彩色标题与对齐边界新增共享用例，OpenAPI 与合并基线一致。
 
 三工具算法与逐字样例基于 Web `2aa7a81ef8d89f86f9447b0fc08e8b115d05b8a2`。双语词库固定提交与每个源文件 SHA-256 记录在 [source.json](../../contracts/toolbox/source.json)，同步入口 `tool/sync_toolbox_data.ps1 -Revision <40位SHA>` 只读取 VPS Git 已提交对象；`dart run tool/generate_toolbox_data.dart --check` 核验源摘要和生成常量一致。Faker 中文词库和温油双语词库许可证保留源码并通过 LicenseRegistry 随 App 提供。
 

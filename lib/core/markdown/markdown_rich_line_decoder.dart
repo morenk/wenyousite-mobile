@@ -7,6 +7,7 @@ import 'package:wenyousite_mobile/core/markdown/markdown_inline_boundary.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_inline_code_source.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_inline_compatibility_syntax.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_link_identity.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_text_color.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_reference.dart';
 
 class MarkdownRichLine {
@@ -143,6 +144,7 @@ class MarkdownRichLineDecoder {
     final spans = <MarkdownRichSpan>[];
     final nodes = md.Document(
       inlineSyntaxes: [
+        MarkdownTextColorSyntax(),
         MarkdownInlineCodeSource.syntax(),
         ...MarkdownInlineCompatibilitySyntax.create(),
       ],
@@ -193,7 +195,9 @@ class MarkdownRichLineDecoder {
     Map<String, dynamic> attributes,
   ) {
     if (text.isEmpty) return;
-    if (attributes.isEmpty || attributes['code'] == true) {
+    if (attributes.isEmpty ||
+        attributes['code'] == true ||
+        attributes.containsKey('color')) {
       output.add(MarkdownRichSpan(text, _attributesOrNull(attributes)));
       return;
     }
@@ -236,7 +240,10 @@ class MarkdownRichLineDecoder {
       }
       if (node is! md.Element || node.children == null) return false;
       final attributes = Map<String, dynamic>.from(inherited);
-      if (node.tag == 'strong') {
+      if (node.tag == MarkdownTextColor.tag) {
+        if (inherited.isNotEmpty) return false;
+        attributes['color'] = node.attributes['color'];
+      } else if (node.tag == 'strong') {
         attributes['bold'] = true;
       } else if (node.tag == 'em') {
         attributes['italic'] = true;

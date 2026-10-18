@@ -19,9 +19,14 @@ export 'package:wenyousite_mobile/features/posts/application/post_repository_por
     show PostRepository, postRepositoryProvider;
 
 class ApiPostRepository implements PostRepository {
-  ApiPostRepository(this._api, {this.roleMentionsSupported = false});
+  ApiPostRepository(
+    this._api, {
+    this.roleMentionsSupported = false,
+    this.textColorSupported = false,
+  });
 
   final bool roleMentionsSupported;
+  final bool textColorSupported;
 
   final PostsApi _api;
   static const _writeMessages = {
@@ -142,10 +147,17 @@ class ApiPostRepository implements PostRepository {
         input.content,
         supported: roleMentionsSupported,
       );
+      requireTextColorWriteSupport(
+        input.content,
+        supported: input.textColorSupported ?? textColorSupported,
+      );
       final payload = CreatePostDto((builder) {
         builder
           ..markdownContractVersion = roleMentionsSupported
               ? CreatePostDtoMarkdownContractVersionEnum.number6
+              : null
+          ..textColorVersion = (input.textColorSupported ?? textColorSupported)
+              ? CreatePostDtoTextColorVersionEnum.number1
               : null
           ..content = input.content
           ..identityId = input.identityId
@@ -192,10 +204,14 @@ class ApiPostRepository implements PostRepository {
   }) async {
     try {
       requireMentionWriteSupport(content, supported: roleMentionsSupported);
+      requireTextColorWriteSupport(content, supported: textColorSupported);
       final payload = UpdatePostDto(
         (builder) => builder
           ..markdownContractVersion = roleMentionsSupported
               ? UpdatePostDtoMarkdownContractVersionEnum.number6
+              : null
+          ..textColorVersion = textColorSupported
+              ? UpdatePostDtoTextColorVersionEnum.number1
               : null
           ..content = content
           ..version = version,
@@ -220,6 +236,7 @@ class ApiPostRepository implements PostRepository {
 
   @override
   Future<PostItem> upsertBody({
+    bool? textColorSupported,
     required String subthreadId,
     required String content,
     int? version,
@@ -229,9 +246,17 @@ class ApiPostRepository implements PostRepository {
   }) async {
     try {
       requireMentionWriteSupport(content, supported: roleMentionsSupported);
+      requireTextColorWriteSupport(
+        content,
+        supported: textColorSupported ?? this.textColorSupported,
+      );
       final payload = UpsertBodyDto((builder) {
         builder.markdownContractVersion = roleMentionsSupported
             ? UpsertBodyDtoMarkdownContractVersionEnum.number6
+            : null;
+        builder.textColorVersion =
+            (textColorSupported ?? this.textColorSupported)
+            ? UpsertBodyDtoTextColorVersionEnum.number1
             : null;
         builder.content = content;
         builder.identityId = identityId;
@@ -547,6 +572,7 @@ class ApiPostRepository implements PostRepository {
 final apiPostRepositoryProvider = Provider<PostRepository>((ref) {
   return ApiPostRepository(
     ref.watch(wenyouApiProvider).getPostsApi(),
+    textColorSupported: ref.watch(appCapabilitiesProvider).textColorSupported,
     roleMentionsSupported: ref
         .watch(appCapabilitiesProvider)
         .roleMentionsSupported,

@@ -1,6 +1,8 @@
 import 'package:markdown/markdown.dart' as md;
 import 'package:wenyousite_mobile/core/markdown/markdown_dice_contract.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_reader_paragraph_syntax.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_source_protection.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_text_color.dart';
 
 enum WenyouTextAlignment { left, center, right }
 
@@ -188,9 +190,7 @@ abstract final class MarkdownAlignmentContract {
       markdown.split('\n').where((line) => !isMarkerLine(line)).join('\n');
 
   static bool containsRegularImage(String markdown) {
-    final nodes = md.Document(
-      extensionSet: md.ExtensionSet.gitHubFlavored,
-    ).parseLines(markdown.split('\n'));
+    final nodes = _parseBlocks(markdown.split('\n'));
     return nodes.any(_hasRegularImage);
   }
 
@@ -347,7 +347,8 @@ abstract final class MarkdownAlignmentContract {
   }
 
   static bool _hasRawHtml(String line) {
-    final masked = _maskInlineCode(line);
+    // 只有已校验的颜色标签属于行内样式；损坏标记和任意 HTML 仍拒绝。
+    final masked = MarkdownTextColor.maskValidTags(_maskInlineCode(line));
     for (final match in _htmlToken.allMatches(masked)) {
       if (_isEscaped(line, match.start)) continue;
       if (RegExp(
@@ -440,11 +441,15 @@ abstract final class MarkdownAlignmentContract {
   }
 
   static md.Node? _parseSingleBlock(List<String> lines) {
-    final nodes = md.Document(
-      extensionSet: md.ExtensionSet.gitHubFlavored,
-    ).parseLines(lines);
+    final nodes = _parseBlocks(lines);
     return nodes.length == 1 ? nodes.single : null;
   }
+
+  static List<md.Node> _parseBlocks(List<String> lines) => md.Document(
+    blockSyntaxes: const [MarkdownReaderParagraphSyntax()],
+    inlineSyntaxes: [MarkdownTextColorSyntax()],
+    extensionSet: md.ExtensionSet.gitHubFlavored,
+  ).parseLines(lines);
 
   static bool _hasMeaningfulContent(md.Node? node) =>
       node != null &&

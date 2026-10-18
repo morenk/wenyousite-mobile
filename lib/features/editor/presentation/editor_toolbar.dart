@@ -18,6 +18,7 @@ import 'package:wenyousite_mobile/features/editor/presentation/editor_capabiliti
 import 'package:wenyousite_mobile/features/editor/presentation/editor_clipboard_paste.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_dice_input_tray.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_format_policy.dart';
+import 'package:wenyousite_mobile/features/editor/presentation/editor_heading_tray.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_more_tray.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_toolbar_buttons.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_toolbar_input_tray.dart';
@@ -82,6 +83,7 @@ class WenyouEditorToolbar extends StatefulWidget {
     this.onInsertHorizontalRule,
     this.editorFocusNode,
     this.onInteractionChanged,
+    this.onColorPickerChanged,
     this.onSubmit,
     this.submitEnabled,
     this.isSubmitting = false,
@@ -92,6 +94,7 @@ class WenyouEditorToolbar extends StatefulWidget {
     this.toolbarController,
     this.surface = WenyouComposerSurface.page,
     this.capabilities = WenyouEditorCapabilities.richMarkdown,
+    this.textColor,
     this.layout = const EditorToolbarLayout.defaults(),
     super.key,
   });
@@ -105,6 +108,7 @@ class WenyouEditorToolbar extends StatefulWidget {
   final bool enabled;
   final FocusNode? editorFocusNode;
   final ValueChanged<bool>? onInteractionChanged;
+  final ValueChanged<bool>? onColorPickerChanged;
   final FutureOr<void> Function()? onSubmit;
 
   /// 冻结正文的重试场景仍可使用原发表按钮，格式操作继续禁用。
@@ -117,6 +121,7 @@ class WenyouEditorToolbar extends StatefulWidget {
   final WenyouEditorToolbarController? toolbarController;
   final WenyouComposerSurface surface;
   final WenyouEditorCapabilities capabilities;
+  final EditorTextColorConfiguration? textColor;
   final EditorToolbarLayout layout;
 
   @override
@@ -125,6 +130,10 @@ class WenyouEditorToolbar extends StatefulWidget {
 
 class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
   _EditorTray _tray = _EditorTray.none;
+  bool _colorPickerOpen = false;
+  TextSelection? _colorSelection;
+  String? _colorDocument;
+  EditorTypingStyleSnapshot? _colorTypingStyle;
   late final TextEditingController _linkLabelController;
   late final TextEditingController _linkUrlController;
   late final TextEditingController _diceQuantityController;
@@ -139,6 +148,7 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
   @override
   void initState() {
     super.initState();
+    _syncTypingColorCapability();
     _linkLabelController = TextEditingController();
     _linkUrlController = TextEditingController();
     _lastSuccessfulDiceInput = _defaultEditorDiceInput;
@@ -158,6 +168,7 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
   @override
   void didUpdateWidget(covariant WenyouEditorToolbar oldWidget) {
     super.didUpdateWidget(oldWidget);
+    _syncTypingColorCapability();
     if (oldWidget.controller != widget.controller) {
       oldWidget.controller.removeListener(_onControllerChanged);
       widget.controller.addListener(_onControllerChanged);
@@ -186,6 +197,14 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
     if (mounted) setState(() {});
   }
 
+  void _syncTypingColorCapability() {
+    final controller = widget.controller;
+    if (controller is LiteralTextQuillController) {
+      controller.textColorInputEnabled =
+          widget.textColor?.writeEnabled ?? false;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
@@ -196,7 +215,10 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
             media.viewInsets.bottom == 0
         ? media.viewPadding.bottom
         : 0.0;
-    final taskTrayOpen = _tray == _EditorTray.link || _tray == _EditorTray.dice;
+    final taskTrayOpen =
+        _tray == _EditorTray.link ||
+        _tray == _EditorTray.dice ||
+        _colorPickerOpen;
     return Material(
       key: const Key('editor-toolbar-dock'),
       color: tokens.softPanel,
@@ -407,37 +429,33 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
   }
 
   Widget _buildHeadingTray(BuildContext context) {
-    final tokens = context.wenyouTokens;
-    final header = widget.controller
-        .getSelectionStyle()
-        .attributes[Attribute.header.key]
-        ?.value;
-    return Container(
-      key: const Key('editor-heading-tray'),
-      padding: EdgeInsets.all(tokens.space8),
-      decoration: BoxDecoration(
-        color: tokens.panel,
-        border: Border(top: BorderSide(color: tokens.border)),
-      ),
-      child: SegmentedButton<int>(
-        showSelectedIcon: false,
-        style: wenyouEditorSegmentedButtonStyle(context),
-        segments: const [
-          ButtonSegment(value: 0, label: Text('正文')),
-          ButtonSegment(value: 2, label: Text('H2')),
-          ButtonSegment(value: 3, label: Text('H3')),
-        ],
-        selected: {
-          header == 2
-              ? 2
-              : header == 3
-              ? 3
-              : 0,
-        },
-        onSelectionChanged: widget.enabled
-            ? (selection) => _applyHeading(selection.single)
-            : null,
-      ),
+    return WenyouEditorHeadingTray(
+      controller: widget.controller,
+      enabled: widget.enabled,
+      onHeading: _applyHeading,
+      onComplete: _closeTray,
+      onPickerChanged: (open) {
+        if (open) {
+          _colorSelection = widget.controller.selection;
+          _colorDocument = jsonEncode(
+            widget.controller.document.toDelta().toJson(),
+          );
+          final controller = widget.controller;
+          _colorTypingStyle = controller is LiteralTextQuillController
+              ? controller.captureTypingStyle()
+              : null;
+        } else {
+          // HeadingTray 已在应用／取消时恢复原位置及输入状态。
+          _colorSelection = null;
+          _colorDocument = null;
+          _colorTypingStyle = null;
+        }
+        setState(() => _colorPickerOpen = open);
+        widget.onColorPickerChanged?.call(open);
+        widget.onInteractionChanged?.call(true);
+      },
+      focusNode: widget.editorFocusNode,
+      textColor: widget.textColor,
     );
   }
 
@@ -501,14 +519,34 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
   }
 
   void _setTray(_EditorTray tray) {
+    if (tray != _EditorTray.heading) {
+      if (_colorSelection != null &&
+          _colorDocument ==
+              jsonEncode(widget.controller.document.toDelta().toJson())) {
+        final controller = widget.controller;
+        if (controller is LiteralTextQuillController) {
+          controller.restoreToolSelection(
+            _colorSelection!,
+            snapshot: _colorTypingStyle,
+          );
+        } else {
+          controller.updateSelection(_colorSelection!, ChangeSource.local);
+        }
+      }
+      _colorSelection = null;
+      _colorDocument = null;
+      _colorTypingStyle = null;
+    }
     setState(() {
       _tray = tray;
+      if (tray != _EditorTray.heading) _colorPickerOpen = false;
       _linkLabelError = null;
       _linkUrlError = null;
       _diceErrors = noEditorDiceInputErrors;
     });
     _syncToolbarController();
     widget.onInteractionChanged?.call(tray != _EditorTray.none);
+    if (tray != _EditorTray.heading) widget.onColorPickerChanged?.call(false);
     if (tray == _EditorTray.none ||
         tray == _EditorTray.heading ||
         tray == _EditorTray.more) {

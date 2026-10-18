@@ -1,4 +1,5 @@
 import 'package:markdown/markdown.dart' as md;
+import 'package:wenyousite_mobile/core/markdown/markdown_inline_compatibility_syntax.dart';
 import 'package:wenyousite_mobile/core/media/media_audio.dart';
 
 class MarkdownAudioLabelRun {
@@ -12,6 +13,24 @@ class MarkdownAudioProjection {
   final MediaAudio audio;
   final String label;
   final List<MarkdownAudioLabelRun> labelRuns;
+
+  static Set<String> sourceKeys(Map<String, MediaAudio> audios) => {
+    for (final entry in audios.entries)
+      if (entry.key == entry.value.sourceUrl) entry.key,
+  };
+
+  static MarkdownAudioProjection? fromLine(
+    String line,
+    Map<String, MediaAudio> audios,
+  ) {
+    if (!line.contains('[')) return null;
+    final blocks = md.Document(
+      extensionSet: md.ExtensionSet.gitHubFlavored,
+      inlineSyntaxes: MarkdownInlineCompatibilitySyntax.create(),
+      encodeHtml: false,
+    ).parse(line);
+    return blocks.length == 1 ? fromBlock(blocks.single, audios) : null;
+  }
 
   /// 仅调用于顶层块，列表/引用内部不递归升级。
   static MarkdownAudioProjection? fromBlock(

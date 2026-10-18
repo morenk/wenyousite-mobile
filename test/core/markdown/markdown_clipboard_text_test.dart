@@ -67,12 +67,10 @@ void main() {
     (fixture) => fixture['kind'] == 'reader-copy',
   )) {
     if (fixture['id'] == 'reader-text-color-v1') {
-      test('reader-text-color-v1 未声明颜色能力时保留未知源码字面', () {
-        // 本端不发送 X-Text-Color-Version。正常读取收到后端去色副本；
-        // 外部粘贴的原始扩展仍按既有未知 HTML 保真，不冒充颜色支持。
+      test('reader-text-color-v1 声明颜色能力后复制只投影可见文字', () {
         expect(
           MarkdownClipboardText.project(fixture['markdown'] as String),
-          fixture['markdown'],
+          fixture['expectedPlainText'],
         );
       });
       test('reader-text-color-v1 安全去色副本保留粗体和可见文字', () {

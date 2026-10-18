@@ -185,7 +185,18 @@ class PostComposerEditorRegion extends StatelessWidget {
                   ),
                   child: SingleChildScrollView(
                     physics: const NeverScrollableScrollPhysics(),
-                    child: KeyedSubtree(key: toolbarMeasureKey, child: toolbar),
+                    child: EditorToolArea(
+                      availableHeight:
+                          (canvasConstraints.maxHeight -
+                                  (MediaQuery.viewInsetsOf(context).bottom == 0
+                                      ? MediaQuery.viewPaddingOf(context).bottom
+                                      : 0))
+                              .clamp(0, double.infinity),
+                      child: KeyedSubtree(
+                        key: toolbarMeasureKey,
+                        child: toolbar,
+                      ),
+                    ),
                   ),
                 ),
               ],

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/application/user_facing_failure.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
@@ -197,7 +198,7 @@ class ThreadComposeStatusArea extends StatelessWidget {
       if (state.actionFailure != null)
         WenyouStatusBanner(
           key: const Key('compose-action-failure'),
-          message: state.actionFailure!.userMessage,
+          message: UserFacingFailure.fromApi(state.actionFailure).message,
           detail: wenyouFailureDetail(state.actionFailure, treatAsWrite: true),
           tone: WenyouStatusTone.error,
         ),

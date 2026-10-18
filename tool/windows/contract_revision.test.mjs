@@ -28,6 +28,7 @@ test('固定部署祖先导出同一 SHA，拒绝远端 dev 以外提交且不�
     fs.copyFileSync(path.join(repository, 'contracts/markdown-text-color-v1.md'), path.join(backend, 'docs/markdown-text-color-v1.md'));
     fs.copyFileSync(path.join(repository, 'contracts/thread-identity.md'), path.join(backend, 'docs/thread-identity.md'));
     fs.copyFileSync(path.join(repository, 'contracts/markdown-v6-role-mentions.md'), path.join(backend, 'docs/markdown-v6-role-mentions.md'));
+    fs.copyFileSync(path.join(repository, 'contracts/markdown-text-color-v1.md'), path.join(backend, 'docs/markdown-text-color-v1.md'));
     fs.copyFileSync(path.join(repository, 'contracts/rp-identity-profile-post.md'), path.join(backend, 'docs/rp-identity-profile-post.md'));
     git('init', '-b', 'dev');
     git('config', 'user.name', 'Contract fixture');
@@ -83,6 +84,9 @@ test('固定部署祖先导出同一 SHA，拒绝远端 dev 以外提交且不�
       'thread-identity.v1.fixtures.json',
       'markdown-v6-role-mentions.md',
       'markdown-v6-role-mentions-fixtures.json',
+      'markdown-text-color-v1.md',
+      'markdown-text-color-v1.schema.json',
+      'markdown-text-color-v1-fixtures.json',
       'rp-identity-profile-post.md',
       'rp-identity-profile-post.v1.fixtures.json',
       'fixtures/media-display/duplicate-frames.gif',

@@ -14,6 +14,8 @@ class ContractInfo {
     this.pushNotificationsEnabled = false,
     this.roleMentionsSupported = false,
     this.roleMentionsWriteEnabled = false,
+    this.textColorSupported = false,
+    this.textColorWriteEnabled = false,
     this.rpIdentityProfileSupported = false,
   });
 
@@ -28,6 +30,8 @@ class ContractInfo {
   final bool pushNotificationsEnabled;
   final bool roleMentionsSupported;
   final bool roleMentionsWriteEnabled;
+  final bool textColorSupported;
+  final bool textColorWriteEnabled;
   final bool rpIdentityProfileSupported;
 
   MobilePlatformPolicy policyFor(MobileClientPlatform platform) {

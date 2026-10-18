@@ -7,6 +7,7 @@ import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_capabilities.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/application/editor_toolbar_preference.dart';
+import 'package:wenyousite_mobile/core/application/user_facing_failure.dart';
 import 'package:wenyousite_mobile/core/application/visibility_cache_invalidation.dart';
 import 'package:wenyousite_mobile/core/diagnostics/diagnostic_widgets.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
@@ -319,7 +320,7 @@ class PostComposerSheetState extends ConsumerState<PostComposerSheet>
                     ? '本机草稿保存失败，尚未发表，请重试。'
                     : state.failure!.businessCode == 40011
                     ? '发表失败，请重试。'
-                    : state.failure!.userMessage,
+                    : UserFacingFailure.fromApi(state.failure).message,
                 detail: _requestDetail(state.failure),
                 tone: WenyouStatusTone.error,
                 action: Column(
@@ -405,6 +406,7 @@ class PostComposerSheetState extends ConsumerState<PostComposerSheet>
             toolbarMeasureKey: _toolbarMeasureKey,
             toolbar: WenyouComposerDock(
               key: const Key('post-composer-toolbar'),
+              textColor: ref.watch(editorTextColorConfigurationProvider),
               layout: ref.watch(editorToolbarLayoutProvider),
               controller: _editorSession.controller,
               capabilities: WenyouEditorCapabilities.forAlignment(

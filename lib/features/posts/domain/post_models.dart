@@ -113,6 +113,7 @@ class PostCreateInput {
     required this.subthreadId,
     required this.content,
     required this.clientRequestId,
+    this.textColorSupported,
     this.parentPostId,
     this.replyToPostId,
     this.identityToken,
@@ -123,6 +124,9 @@ class PostCreateInput {
   final String subthreadId;
   final String content;
   final String clientRequestId;
+
+  /// null 为旧草稿未记录能力；false 表示原请求明确未声明。
+  final bool? textColorSupported;
   final String? parentPostId;
   final String? replyToPostId;
   final String? identityToken;

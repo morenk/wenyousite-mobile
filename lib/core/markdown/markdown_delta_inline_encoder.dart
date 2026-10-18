@@ -12,7 +12,7 @@ final class MarkdownDeltaInlineEncoder {
 
   static const literalTextKey = 'wenyou_literal_text';
   static const keepLinkShapeKey = 'wenyou_audio_link_shape';
-  static const markKeys = {'bold', 'italic', 'strike', 'code', 'link'};
+  static const markKeys = {'bold', 'italic', 'strike', 'code', 'link', 'color'};
 
   final StringBuffer output;
   final _pieces = <({String text, bool literal})>[];
@@ -187,6 +187,11 @@ final class MarkdownDeltaInlineEncoder {
   }
 
   void _validateLink() {
+    final color = _marks['color'];
+    if (color != null &&
+        (color is! String || !RegExp(r'^#[0-9A-F]{6}$').hasMatch(color))) {
+      throw const MarkdownCodecException('文字颜色无法安全保存');
+    }
     final link = _marks['link'];
     if (link != null) {
       final uri = link is String ? Uri.tryParse(link) : null;
@@ -205,6 +210,9 @@ final class MarkdownDeltaInlineEncoder {
     if (link != null) encoded = '[$encoded]($link)';
     if (_marks['italic'] == true) encoded = '*$encoded*';
     if (_marks['bold'] == true) encoded = '**$encoded**';
+    if (_marks['color'] case final color?) {
+      encoded = '<span data-wenyou-color-v1="$color">$encoded</span>';
+    }
     return encoded;
   }
 

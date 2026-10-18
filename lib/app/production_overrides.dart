@@ -37,7 +37,9 @@ import 'package:wenyousite_mobile/features/auth/data/auth_repository.dart';
 import 'package:wenyousite_mobile/features/auth/data/password_recovery_repository.dart';
 import 'package:wenyousite_mobile/features/direct_messages/data/direct_message_repository.dart';
 import 'package:wenyousite_mobile/features/drafts/data/content_draft_repository.dart';
+import 'package:wenyousite_mobile/features/editor/application/editor_text_color_preferences_ports.dart';
 import 'package:wenyousite_mobile/features/editor/data/editor_snapshot_store.dart';
+import 'package:wenyousite_mobile/features/editor/data/editor_text_color_preferences_store.dart';
 import 'package:wenyousite_mobile/features/editor/data/mention_candidate_repository.dart';
 import 'package:wenyousite_mobile/features/home/data/home_repository.dart';
 import 'package:wenyousite_mobile/features/media/application/audio_file_picker_ports.dart';
@@ -108,6 +110,9 @@ import 'package:wenyousite_mobile/features/users/data/public_user_repository.dar
 import 'package:wenyousite_mobile/features/wallet/data/wallet_repository.dart';
 
 List<Override> productionProviderOverrides() => [
+  editorTextColorPreferenceStoreProvider.overrideWithValue(
+    const SharedPreferencesEditorTextColorStore(),
+  ),
   navigationLinkWriterProvider.overrideWith(
     (ref) => ref.watch(clipboardNavigationCoordinatorProvider).copyLink,
   ),
@@ -384,6 +389,8 @@ AppCapabilities appCapabilitiesForContract(ContractInfo? contract) {
     legacySingleThreadIdentity:
         contract?.contractVersion.startsWith('5.33.') ?? false,
     roleMentionsSupported: contract?.roleMentionsSupported ?? false,
+    textColorSupported: contract?.textColorSupported ?? false,
+    textColorWriteEnabled: contract?.textColorWriteEnabled ?? false,
     roleMentionsWriteEnabled: contract?.roleMentionsWriteEnabled ?? false,
     rpIdentityProfileSupported: contract?.rpIdentityProfileSupported ?? false,
   );
