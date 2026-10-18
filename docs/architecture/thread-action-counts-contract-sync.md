@@ -13,3 +13,5 @@
 Backend PR #55 已合并至 dev，最终固定 `6e00c4031a8f970609eef8cbf6fdefe3e6b12126`。再次执行官方同步脚本后，只有 `backend-contract.properties` 中 revision 改变，OpenAPI、Markdown fixtures、生成器输入和已生成 SDK 与 `da68203a` 完全相同。本来源 chore 保留工作区业务候选，不混入 UI 或控制器改动；完整 `check:apk` 待精确部署确认后执行。
 
 首次完整门禁在 API 覆盖登记处发现旧 5.39 审查版本尚未同步，停止于全量 Flutter 测试之前。再次逐项对比旧、新 OpenAPI 的 248 个 operationId，新增和删除均为 0；保留所有排除项目及理由，仅将登记版本更新为 5.40，重新运行严格覆盖检查。不将该元数据遗漏当作应用门禁通过，首轮日志保留，后续重跑官方完整入口。
+
+第二轮完整门禁已跑完全部 Flutter 测试：7241 通过、1 项既有跳过，仅原音频兼容测试固定旧 API 版本／后端 SHA 的来源断言失败。同步该测试到 5.40／最终 6e00c403，原有 6 个音频／颜色错误码及旧 42900 兼容断言保持，定向复验通过；应用 37f9cc9d 未改变。失败日志 `.dart_tool/action-counts-full-check-apk-final.log` 保留，后续官方完整绿色轮次另行登记，不把单项修正冒称完整门禁通过。
