@@ -16,7 +16,7 @@ Foundation 已 fetch tags，最新正式版本 v7.5.0 与 pubspec 一致；已�
 | 动态 DTO 作者/媒体 | feature 内 MomentDtoMapper 共用 PostAuthorResponseDto/MomentMediaResponseDto 映射，校验策略保留搜索文案与信息流诊断 | 定向 14 项通过，候选 |
 | 验证码冷却 | Registration、PasswordRecovery、EmailChange 共用 ResendCooldown；只共享计时，不共享业务状态或发送动作 | 定向 19 项通过，候选 |
 | Markdown inline code | content、alignment 的保护区与 inline_boundary 的闭合判断共用精确反引号扫描；不接管完整块解析 | 定向与真实页面测试通过，候选 |
-| 主题/楼层发布协调 | thread_compose_page 与 post_composer_sheet 的附件就绪、flush、发布意图和结束等待；业务写入各自拥有 | 待实施 |
+| 主题/楼层发布协调 | thread_compose_page 与 post_composer_sheet 的附件就绪、flush、发布意图和结束等待；业务写入各自拥有 | 定向与真实页面测试通过，候选 |
 | 编辑冲突选择 | moment_compose_page 与 thread_management_page 的选择弹窗；动作后果与原选项各自保留 | 待实施 |
 
 分页合理保留：首页分类加载、收藏目录/列表双 epoch、搜索各 tab 与 query epoch、通知乐观标记、私聊读取权限/轮询/双向消息窗口、主题/楼层定位讨论窗口均不是通用分页状态机。loadCursorPage 只在当前请求完成时回调，原 ApiFailure 不重映射，40007 恢复由调用者提供。刷新保留内容与失败回退仍由原业务代码决定。现有 mergeUniqueBy 保持已有条目优先；没有统一业务 key 或重排。
@@ -24,6 +24,8 @@ Foundation 已 fetch tags，最新正式版本 v7.5.0 与 pubspec 一致；已�
 附加精确回归：标签列表刷新在途又请求分页，旧实现发出一次旧 cursor 请求（测试预期 0，实际 1）；候选对 Home/Tag/MomentFeed 增加刷新锁；会话目录、钱包流水、个人页和动态详情也补齐刷新锁与旧分页 busy 清理，钱包单独首屏重试使用独立流水世代，个人页按当前 tab 世代识别刷新锁，旧分页晚于刷新成功/失败均不得回写。该场景是审计构造的并发回归，不冒充负责人原始问题。旧实现失败日志 paging-before.log、paging-other-before.log、wallet-before.log 保留（钱包初轮旧实现会等待错误发出的请求而超时，随后改为先断言请求数，精确失败为预期 2、实际 3）。收藏追加按 bookmarkId 去重，保留已有条目优先与原顺序。
 
 ## 交叉 PR
+
+发布准备的 `ready=false` 分支先于意图检查，避免附件失败取消意图后吞掉失败提示；成功路径编码前后均核对意图和活动作用域。共享函数不分配 clientRequestId，不提交内容、不清草稿。定向覆盖取消、旧世代、flush 失败与异常、作用域失效，真实主题页连点发布只产生一次创建。
 
 未合并 PR 不复制、不 cherry-pick：#108 与 post_composer_sheet 直接交叉；#104 与 moment_compose_page 直接交叉、附件就绪依赖间接交叉；#76 与 markdown_content 直接交叉且新增 MarkdownInlineSource 的范围更广，后续合并需迁移/删除重叠扫描，不能并存两套事实源。#103 的 rich_editor_session 与 #100 的 Codec/语义校验为间接依赖。后续任一先合并，另一方重审相关定向测试和最终源码门禁。
 
