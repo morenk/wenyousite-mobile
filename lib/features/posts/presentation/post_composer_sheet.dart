@@ -276,8 +276,9 @@ class PostComposerSheetState extends ConsumerState<PostComposerSheet>
         _publishing ||
         _pendingImages.restoring ||
         _initializingDraft;
+    final showIdentityBar = _identitySelection?.showComposerBar == true;
     final hasSupportContent =
-        _identitySelection != null ||
+        showIdentityBar ||
         state.failure != null ||
         _editorSession.codecFailure != null ||
         _editorSession.operationFailure != null ||
@@ -294,7 +295,7 @@ class PostComposerSheetState extends ConsumerState<PostComposerSheet>
         children: [
           PostComposerSheetHeader(
             label: widget.target.label,
-            identity: _identitySelection == null
+            identity: !showIdentityBar
                 ? null
                 : PostIdentityComposerBar(
                     selection: _identitySelection!,
