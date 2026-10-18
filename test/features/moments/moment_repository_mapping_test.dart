@@ -1,6 +1,13 @@
-part of 'moment_repository_test.dart';
+import 'package:dio/dio.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
+import 'package:wenyou_api/wenyou_api.dart';
+import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/features/moments/data/moment_repository.dart';
+import 'package:wenyousite_mobile/features/moments/data/moment_search_mapper.dart';
+import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
 
-void registerMomentMappingCases() {
+void main() {
   test('信息流与搜索共用作者媒体字段，入口错误诊断仍各自保留', () async {
     for (final kind in ['valid', 'unsafe', 'dimension']) {
       final card = _cardDto().rebuild((b) {
@@ -127,3 +134,63 @@ void registerMomentMappingCases() {
     }
   });
 }
+
+PostAuthorResponseDto _authorDto({String id = 'user-1'}) {
+  return PostAuthorResponseDto(
+    (builder) => builder
+      ..id = id
+      ..username = id == 'user-1' ? '温柔测试员' : '纸飞机'
+      ..avatar = 'https://cdn.example.com/$id-avatar.webp'
+      ..level = 4,
+  );
+}
+
+MomentMediaResponseDto _mediaDto({
+  String url = 'https://cdn.example.com/source.webp',
+}) {
+  return MomentMediaResponseDto(
+    (builder) => builder
+      ..id = 'media-1'
+      ..url = url
+      ..thumbnailUrl = 'https://cdn.example.com/thumb.webp'
+      ..feedUrl = 'https://cdn.example.com/feed.webp'
+      ..mediumUrl = 'https://cdn.example.com/medium.webp'
+      ..contentType = 'image/webp'
+      ..width = 1200
+      ..height = 800
+      ..animated = false,
+  );
+}
+
+MomentCardResponseDto _cardDto({
+  String imageUrl = 'https://cdn.example.com/source.webp',
+}) {
+  final now = DateTime.utc(2026, 8, 10, 12);
+  return MomentCardResponseDto(
+    (builder) => builder
+      ..id = 'moment-1'
+      ..authorId = 'user-1'
+      ..author.replace(_authorDto())
+      ..title = '今日微光'
+      ..contentExcerpt = '一段纯文本'
+      ..coverType = MomentCardResponseDtoCoverTypeEnum.IMAGE
+      ..textCoverTheme = MomentCardResponseDtoTextCoverThemeEnum.ROSE
+      ..coverMedia.replace(_mediaDto(url: imageUrl))
+      ..imageCount = 1
+      ..likeCount = 2
+      ..commentCount = 3
+      ..bookmarkCount = 4
+      ..tipTotal = '25'
+      ..viewerLiked = false
+      ..viewerBookmarked = true
+      ..createdAt = now
+      ..updatedAt = now,
+  );
+}
+
+class _MockMomentsApi extends Mock implements MomentsApi {}
+
+Response<T> _response<T>(String path, T data) => Response<T>(
+  requestOptions: RequestOptions(path: path),
+  data: data,
+);
