@@ -1,8 +1,9 @@
 /// 只识别行内代码定界符，不解释块、链接或 HTML，不改变 UTF-16 偏移。
 abstract final class MarkdownInlineCodeScanner {
   static int? endAt(String source, int start) {
-    if (start < 0 || start >= source.length || source[start] != '`')
+    if (start < 0 || start >= source.length || source[start] != '`') {
       return null;
+    }
     if (start > 0 &&
         source[start - 1] == '`' &&
         !_isEscaped(source, start - 1)) {

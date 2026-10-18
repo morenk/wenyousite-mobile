@@ -207,8 +207,9 @@ class PublicUserController extends StateNotifier<PublicUserState> {
     }
     final tab = state.activeTab;
     if (_refreshingTabs.containsKey(tab) &&
-        _refreshingTabs[tab] == _sectionEpochs[tab])
+        _refreshingTabs[tab] == _sectionEpochs[tab]) {
       return;
+    }
     final section = _threadSection(tab);
     if (section.phase != PublicUserContentPhase.ready ||
         section.isLoadingMore ||

@@ -20,10 +20,11 @@ void main() {
     var count = 0;
     repository.listHandler = (cursor) {
       count++;
-      if (count == 1)
+      if (count == 1) {
         return Future.value(
           CursorPage(items: [_conversation()], cursor: 'old', hasMore: true),
         );
+      }
       return cursor == null ? fresh.future : more.future;
     };
     final controller = DirectConversationListController(

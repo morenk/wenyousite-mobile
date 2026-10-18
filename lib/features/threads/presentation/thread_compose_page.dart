@@ -773,8 +773,9 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
           if (mounted && threadId != null) {
             final cleaned = await _pendingImages.clear();
             if (!mounted) return;
-            if (!cleaned)
+            if (!cleaned) {
               showWenyouSnackBar(context, _pendingImages.saveFailure!);
+            }
             ref.invalidate(remoteThreadDraftsControllerProvider);
             context.go(AppRouteLocations.thread(threadId));
           }

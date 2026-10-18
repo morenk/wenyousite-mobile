@@ -115,8 +115,9 @@ class WalletController extends StateNotifier<WalletState> {
         state.isRefreshing ||
         state.isLoadingTransactions ||
         !state.hasMore ||
-        state.cursor == null)
+        state.cursor == null) {
       return;
+    }
     final epoch = _epoch;
     final transactionsEpoch = _transactionsEpoch;
     state = state.copyWith(isLoadingMore: true, loadMoreFailure: null);

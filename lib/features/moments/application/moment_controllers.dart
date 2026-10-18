@@ -476,8 +476,9 @@ class MomentDetailController extends StateNotifier<MomentDetailState> {
   Future<void> loadMoreComments() async {
     if (state.isRefreshing ||
         state.isLoadingMoreComments ||
-        !state.hasMoreComments)
+        !state.hasMoreComments) {
       return;
+    }
     final epoch = _epoch;
     state = state.copyWith(isLoadingMoreComments: true, transientFailure: null);
     await loadCursorPage(
