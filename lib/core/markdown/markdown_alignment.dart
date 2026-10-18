@@ -1,5 +1,6 @@
 import 'package:markdown/markdown.dart' as md;
 import 'package:wenyousite_mobile/core/markdown/markdown_dice_contract.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_inline_code_scanner.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_reader_paragraph_syntax.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_source_protection.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_text_color.dart';
@@ -390,34 +391,8 @@ abstract final class MarkdownAlignmentContract {
     return false;
   }
 
-  static String _maskInlineCode(String line) {
-    final chars = List<String>.generate(
-      line.length,
-      (index) => line.substring(index, index + 1),
-    );
-    var index = 0;
-    while (index < line.length) {
-      if (line[index] != '`' || _isEscaped(line, index)) {
-        index += 1;
-        continue;
-      }
-      var length = 1;
-      while (index + length < line.length && line[index + length] == '`') {
-        length += 1;
-      }
-      final delimiter = '`' * length;
-      final closing = line.indexOf(delimiter, index + length);
-      if (closing < 0) {
-        index += length;
-        continue;
-      }
-      for (var cursor = index; cursor < closing + length; cursor++) {
-        chars[cursor] = ' ';
-      }
-      index = closing + length;
-    }
-    return chars.join();
-  }
+  static String _maskInlineCode(String line) =>
+      MarkdownInlineCodeScanner.mask(line);
 
   static bool _isEscaped(String line, int index) {
     var slashes = 0;

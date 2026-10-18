@@ -10,6 +10,47 @@ import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
 import '../../support/moment_test_draft_store.dart';
 
 void main() {
+  test('公共分页并发：动态详情刷新清除过期评论busy且不接纳旧分页', () async {
+    for (final failRefresh in [false, true]) {
+      final repository = _DetailRepository();
+      final page = CursorPage(
+        items: [_rootComment()],
+        cursor: 'old',
+        hasMore: true,
+      );
+      repository.onComments = (_) async => page;
+      final controller = MomentDetailController(
+        repository,
+        'moment-1',
+        autoStart: false,
+      );
+      await controller.load();
+      final more = Completer<CursorPage<MomentRootComment>>();
+      final fresh = Completer<CursorPage<MomentRootComment>>();
+      var calls = 0;
+      repository.onComments = (cursor) {
+        calls++;
+        return cursor == null ? fresh.future : more.future;
+      };
+      final paging = controller.loadMoreComments();
+      final refresh = controller.load();
+      await controller.loadMoreComments();
+      expect(calls, 2);
+      if (failRefresh) {
+        fresh.completeError(const ApiFailure(userMessage: '刷新失败'));
+      } else {
+        fresh.complete(page);
+      }
+      await refresh;
+      more.completeError(const ApiFailure(userMessage: '旧分页失败'));
+      await paging;
+      expect(controller.state.isLoadingMoreComments, isFalse);
+      expect(controller.state.isRefreshing, isFalse);
+      expect(controller.state.comments.length, 1);
+      controller.dispose();
+    }
+  });
+
   test('动态禁止互动时不新增点赞评论，但仍可取消已有点赞收藏', () async {
     final repository = _ReadOnlyDetailRepository();
     final controller = MomentDetailController(
@@ -299,6 +340,7 @@ class _DetailRepository extends Fake implements MomentRepository {
   final replyOrders = <MomentCommentOrder>[];
   final replyAuthorIds = <String?>[];
   final removedCommentIds = <String>[];
+  Future<CursorPage<MomentRootComment>> Function(String? cursor)? onComments;
   var commentsCalls = 0;
   var authorCalls = 0;
   var _failedComment = false;
@@ -315,6 +357,7 @@ class _DetailRepository extends Fake implements MomentRepository {
     int limit = 20,
   }) async {
     commentsCalls++;
+    if (onComments != null) return onComments!(cursor);
     orders.add(order);
     authorIds.add(authorId);
     return CursorPage(items: [_rootComment()], cursor: null, hasMore: false);

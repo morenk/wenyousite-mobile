@@ -439,7 +439,7 @@ void registerThreadComposePagePublishingMediaCases() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('点击一次发布等待图片且锁定编辑，完成后只提交一次', (tester) async {
+  testWidgets('连点发布等待图片且锁定编辑，完成后只提交一次', (tester) async {
     final repository = ThreadComposePageTestFakeRepository();
     final controller =
         await threadComposePageTestReadyController(
@@ -465,6 +465,8 @@ void registerThreadComposePagePublishingMediaCases() {
     await tester.pump(const Duration(seconds: 3));
     expect(find.text('还有 1 个附件未就绪'), findsOneWidget);
     expect(find.text('正在发布…'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('compose-publish')));
+    await tester.pump();
     expect(repository.createCalls, 0);
     expect(
       tester

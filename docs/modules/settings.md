@@ -1,5 +1,8 @@
 # 设置
 
+2026-10-19 验证码冷却内部重构候选：三个发码入口共用 ResendCooldown 计时与取消，保留发送条件、60 秒未知结果冷却、Retry-After、邮箱规范化及会话处理。冷却到零不自动重发，详见[公共流程验收](../architecture/shared-flows-acceptance.md)。
+
+
 状态：`in_progress`
 
 ## 1. 模块目标与非目标

@@ -1,5 +1,8 @@
 # 用户与资料
 
+2026-10-19 公共流程候选：普通单向分页的请求完成、过期响应和失效游标分支共用协调函数；业务状态、权限、筛选与刷新策略保留。范围、定向回归和未验收项见[公共流程验收](../architecture/shared-flows-acceptance.md)。
+
+
 状态：`in_progress`
 
 最近回复摘要从完整 `content` 解析 Markdown，仅正文为空白时回退 `preview`；与楼层搜索和正文草稿共用 `MarkdownContent.toPlainTextPreview` 的结构化解析。实体解码一次、受控颜色取可见文字后压缩排版空白，再按最多 180 个 Unicode 码点截断，避免标记或实体提前截断。代码和反斜杠转义保持字面，普通 HTML 和损坏颜色标记不作无条件删除；图片使用占位、提及保留原子昵称、骰子使用服务端结果。颜色摘要修复候选待负责人刷新列表复验，不改写正文存储。回归覆盖见 `test/features/users/recent_reply_preview_test.dart` 与 `public_user_repository_test.dart`。

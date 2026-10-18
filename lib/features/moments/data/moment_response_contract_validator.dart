@@ -1,7 +1,11 @@
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 
 class MomentResponseContractValidator {
-  const MomentResponseContractValidator();
+  const MomentResponseContractValidator() : _search = false;
+  const MomentResponseContractValidator.search() : _search = true;
+
+  final bool _search;
+  String get mediaFailureMessage => _search ? '图片加载失败，请重新搜索。' : '图片加载失败，请重新加载。';
 
   void validatePage(int limit) {
     if (limit < 1 || limit > 50) {
@@ -27,6 +31,7 @@ class MomentResponseContractValidator {
   String requiredText(String value, String label) {
     final normalized = value.trim();
     if (normalized.isEmpty) {
+      if (_search) throw ApiFailure(userMessage: '$label不能为空。');
       violation('MOMENT_REQUIRED_TEXT_MISSING');
     }
     return normalized;
@@ -53,6 +58,7 @@ class MomentResponseContractValidator {
     if (uri == null ||
         !uri.hasScheme ||
         (uri.scheme != 'https' && uri.scheme != 'http')) {
+      if (_search) throw ApiFailure(userMessage: '$label不安全，请重新搜索。');
       violation('MOMENT_UNSAFE_URL');
     }
     return uri;
@@ -61,6 +67,7 @@ class MomentResponseContractValidator {
   int positiveInteger(num value, String label) {
     final integer = value.toInt();
     if (!value.isFinite || integer != value || integer < 1) {
+      if (_search) throw ApiFailure(userMessage: '$label无效，请重新搜索。');
       violation('MOMENT_INVALID_POSITIVE_INTEGER');
     }
     return integer;
@@ -69,6 +76,7 @@ class MomentResponseContractValidator {
   int nonNegativeInteger(num value, String label) {
     final integer = value.toInt();
     if (!value.isFinite || integer != value || integer < 0) {
+      if (_search) throw ApiFailure(userMessage: '$label无效，请重新搜索。');
       violation('MOMENT_INVALID_NON_NEGATIVE_INTEGER');
     }
     return integer;
@@ -82,6 +90,7 @@ class MomentResponseContractValidator {
     String diagnosticCode, {
     String userMessage = '动态加载失败，请重新加载。',
   }) {
+    if (_search) throw ApiFailure(userMessage: userMessage);
     throw ApiFailure.contractViolation(
       userMessage: userMessage,
       diagnosticCode: diagnosticCode,

@@ -1,5 +1,8 @@
 # 认证与账号生命周期
 
+2026-10-19 验证码冷却内部重构候选：三个发码入口共用 ResendCooldown 计时与取消，保留发送条件、60 秒未知结果冷却、Retry-After、邮箱规范化及会话处理。冷却到零不自动重发，详见[公共流程验收](../architecture/shared-flows-acceptance.md)。
+
+
 移动端刷新会话显式携带 `X-Client-Platform: mobile` 并消费轮换后的双 Token；受保护请求会在 Access Token 到期前一分钟自动完成静默续期，网络或服务暂时不可用时保留本地会话，只有明确的 401 会话失效响应才要求重新登录。
 
 状态：`in_progress`

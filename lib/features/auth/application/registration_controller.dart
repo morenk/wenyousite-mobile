@@ -1,6 +1,5 @@
-import 'dart:async';
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wenyousite_mobile/core/application/resend_cooldown.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/network/session_controller.dart';
@@ -65,7 +64,11 @@ class RegistrationController extends StateNotifier<RegistrationState> {
 
   final AuthRepository _repository;
   final SessionController _sessionController;
-  Timer? _cooldownTimer;
+  late final _cooldown = ResendCooldown(
+    isActive: () => mounted,
+    onTick: (remaining) =>
+        state = state.copyWith(resendSecondsRemaining: remaining),
+  );
 
   Future<bool> requestCode(String email) {
     return _sendCode(email.trim());
@@ -184,23 +187,15 @@ class RegistrationController extends StateNotifier<RegistrationState> {
 
   void editEmail() {
     if (state.isBusy) return;
-    _cooldownTimer?.cancel();
+    _cooldown.cancel();
     state = const RegistrationState();
   }
 
-  void _startCooldown(int seconds) {
-    _cooldownTimer?.cancel();
-    if (seconds <= 0) return;
-    _cooldownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      final next = state.resendSecondsRemaining - 1;
-      if (next <= 0) timer.cancel();
-      state = state.copyWith(resendSecondsRemaining: next < 0 ? 0 : next);
-    });
-  }
+  void _startCooldown(int seconds) => _cooldown.start(seconds);
 
   @override
   void dispose() {
-    _cooldownTimer?.cancel();
+    _cooldown.cancel();
     super.dispose();
   }
 }

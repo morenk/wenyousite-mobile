@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wenyousite_mobile/core/application/cursor_page_request.dart';
 import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
 import 'package:wenyousite_mobile/core/application/request_epoch.dart';
 import 'package:wenyousite_mobile/core/application/visibility_cache_invalidation.dart';
@@ -86,42 +87,40 @@ class TagThreadsController extends StateNotifier<TagThreadsState> {
   Future<void> loadMore() async {
     if (state.phase != TagThreadsPhase.ready ||
         state.isLoadingMore ||
+        state.isRefreshing ||
         !state.hasMore) {
       return;
     }
     final epoch = _requestEpoch.current;
     state = state.copyWith(isLoadingMore: true, transientFailure: null);
-    try {
-      final page = await _repository.fetchTagThreads(
-        tagId: _tagId,
-        cursor: state.cursor,
-      );
-      if (!mounted || !_requestEpoch.isCurrent(epoch)) return;
-      state = state.copyWith(
-        items: mergeUniqueBy(state.items, page.items, keyOf: (item) => item.id),
-        cursor: page.cursor,
-        hasMore: page.hasMore,
-        isLoadingMore: false,
-      );
-    } on ApiFailure catch (failure) {
-      if (!mounted || !_requestEpoch.isCurrent(epoch)) return;
-      if (failure.isInvalidCursor) {
+    await loadCursorPage(
+      fetch: () =>
+          _repository.fetchTagThreads(tagId: _tagId, cursor: state.cursor),
+      isCurrent: () => mounted && _requestEpoch.isCurrent(epoch),
+      onPage: (page) {
+        state = state.copyWith(
+          items: mergeUniqueBy(
+            state.items,
+            page.items,
+            keyOf: (item) => item.id,
+          ),
+          cursor: page.cursor,
+          hasMore: page.hasMore,
+          isLoadingMore: false,
+        );
+      },
+      onInvalidCursor: () async {
         await refresh();
-        return;
-      }
-      state = state.copyWith(
-        isLoadingMore: false,
-        transientFailure: failure,
-        transientRetryAction: TagThreadsRetryAction.loadMore,
-      );
-    } on Object catch (error) {
-      if (!mounted || !_requestEpoch.isCurrent(epoch)) return;
-      state = state.copyWith(
-        isLoadingMore: false,
-        transientFailure: _asFailure(error, '加载更多标签主题失败，请重试。'),
-        transientRetryAction: TagThreadsRetryAction.loadMore,
-      );
-    }
+      },
+      mapFailure: (error) => _asFailure(error, '加载更多标签主题失败，请重试。'),
+      onFailure: (failure) {
+        state = state.copyWith(
+          isLoadingMore: false,
+          transientFailure: failure,
+          transientRetryAction: TagThreadsRetryAction.loadMore,
+        );
+      },
+    );
   }
 
   @override

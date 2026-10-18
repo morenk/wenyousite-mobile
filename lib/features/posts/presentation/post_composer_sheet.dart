@@ -547,35 +547,34 @@ class PostComposerSheetState extends ConsumerState<PostComposerSheet>
     setState(() => _publishing = true);
     _editorSession.readOnly = true;
     try {
-      final readiness = _pendingImages.waitForReady();
-      final intent = _pendingImages.publishGeneration;
-      final ready = await readiness;
-      if (!mounted) return;
-      if (!ready) {
-        if (await _pendingImages.revealFirstFailure() && mounted) {
-          showWenyouSnackBar(context, '先处理未完成的图片');
-        }
-        return;
-      }
-      await _submitReadyContent(intent);
+      await withPreparedEditorPublish(
+        waitForReady: _pendingImages.waitForReady,
+        generation: () => _pendingImages.publishGeneration,
+        isIntentCurrent: _pendingImages.isPublishIntentCurrent,
+        isActive: () =>
+            mounted &&
+            !_closing &&
+            ref.read(sessionScopeProvider) == _openedSessionScope,
+        flush: _editorSession.flush,
+        onNotReady: () async {
+          if (await _pendingImages.revealFirstFailure() && mounted) {
+            showWenyouSnackBar(context, '先处理未完成的图片');
+          }
+        },
+        finishWaiting: _pendingImages.finishWaiting,
+        submit: () async {
+          await _submitReadyContent();
+        },
+      );
     } finally {
-      _pendingImages.finishWaiting();
       if (mounted) setState(() => _publishing = false);
     }
   }
 
-  Future<void> _submitReadyContent(int intent) async {
+  Future<void> _submitReadyContent() async {
     if (_closing || ref.read(sessionScopeProvider) != _openedSessionScope) {
       return;
     }
-    if (!await _editorSession.flush()) return;
-    if (!mounted ||
-        _closing ||
-        ref.read(sessionScopeProvider) != _openedSessionScope ||
-        !_pendingImages.isPublishIntentCurrent(intent)) {
-      return;
-    }
-    _pendingImages.finishWaiting();
     final controller = ref.read(
       postComposerControllerProvider(widget.target).notifier,
     );
