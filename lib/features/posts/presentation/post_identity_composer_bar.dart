@@ -20,6 +20,7 @@ class PostIdentityComposerBar extends StatelessWidget {
   Widget build(BuildContext context) => AnimatedBuilder(
     animation: selection,
     builder: (context, _) {
+      if (!selection.showComposerBar) return const SizedBox.shrink();
       final identity = selection.identity;
       final tokens = context.wenyouTokens;
       final enabled = !locked && !selection.loading;

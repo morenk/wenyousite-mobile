@@ -31,6 +31,11 @@ class PostIdentitySelection extends ChangeNotifier {
   int _epoch = 0;
   bool _resolveLegacy = false;
 
+  // 未知状态保留加载/重试；已确认不可用时隐藏入口，不改写草稿选择。
+  bool get showComposerBar =>
+      collection == null ||
+      (collection!.account.enabled && collection!.account.eligible);
+
   bool get changed =>
       mode == PostIdentityMode.rp &&
       (collection?.find(identityId)?.hasRp != true ||
