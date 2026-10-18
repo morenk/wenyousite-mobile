@@ -17,7 +17,7 @@ Foundation 已 fetch tags，最新正式版本 v7.5.0 与 pubspec 一致；已�
 | 验证码冷却 | Registration、PasswordRecovery、EmailChange 共用 ResendCooldown；只共享计时，不共享业务状态或发送动作 | 定向 19 项通过，候选 |
 | Markdown inline code | content、alignment 的保护区与 inline_boundary 的闭合判断共用精确反引号扫描；不接管完整块解析 | 定向与真实页面测试通过，候选 |
 | 主题/楼层发布协调 | thread_compose_page 与 post_composer_sheet 的附件就绪、flush、发布意图和结束等待；业务写入各自拥有 | 定向与真实页面测试通过，候选 |
-| 编辑冲突选择 | moment_compose_page 与 thread_management_page 的选择弹窗；动作后果与原选项各自保留 | 待实施 |
+| 编辑冲突选择 | moment_compose_page 与 thread_management_page 共用类型化选择弹窗；动作后果与原选项各自保留 | 组件与真实页面测试通过，候选 |
 
 分页合理保留：首页分类加载、收藏目录/列表双 epoch、搜索各 tab 与 query epoch、通知乐观标记、私聊读取权限/轮询/双向消息窗口、主题/楼层定位讨论窗口均不是通用分页状态机。loadCursorPage 只在当前请求完成时回调，原 ApiFailure 不重映射，40007 恢复由调用者提供。刷新保留内容与失败回退仍由原业务代码决定。现有 mergeUniqueBy 保持已有条目优先；没有统一业务 key 或重排。
 
@@ -30,6 +30,8 @@ Foundation 已 fetch tags，最新正式版本 v7.5.0 与 pubspec 一致；已�
 未合并 PR 不复制、不 cherry-pick：#108 与 post_composer_sheet 直接交叉；#104 与 moment_compose_page 直接交叉、附件就绪依赖间接交叉；#76 与 markdown_content 直接交叉且新增 MarkdownInlineSource 的范围更广，后续合并需迁移/删除重叠扫描，不能并存两套事实源。#103 的 rich_editor_session 与 #100 的 Codec/语义校验为间接依赖。后续任一先合并，另一方重审相关定向测试和最终源码门禁。
 
 ## 验证与交付
+
+冲突弹窗只返回 useLatest、keepCurrent 或取消，不拥有业务写入；保留动态的两按钮与主题的三按钮、原文案和 Key。组件测试覆盖全部选择与返回取消，真实 moment_pages_test.dart、thread_management_page_test.dart 的业务冲突回归包含在 1536 项定向测试内。
 
 实际命令、结果和候选 SHA 在各批检查完成后补录。日志在本任务 .dart_tool/task-evidence/shared-flows（Git 忽略）。没有进行线上写入 E2E，本批尚无负责人真机验收。
 
