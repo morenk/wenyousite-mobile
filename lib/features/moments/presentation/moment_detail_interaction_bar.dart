@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/formatters/compact_action_count.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_compact_action_content.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_interaction_toggle.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_reply_action_bar.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
@@ -30,66 +32,50 @@ class MomentDetailInteractionBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final exactTipTotal = WenyouAmount.format(card.tipTotal);
-    final visibleTipTotal = formatWenyouCompactCount(int.parse(card.tipTotal));
+    final visibleTipTotal = formatCompactActionCount(int.parse(card.tipTotal));
     return RepaintBoundary(
       key: const Key('moment-detail-actions'),
       child: WenyouReplyActionBar(
         children: [
-          SizedBox(
-            width:
-                context.wenyouTokens.minimumTouchTarget +
-                context.wenyouTokens.space16,
-            child: _DetailAction(
-              key: const Key('moment-detail-like'),
-              icon: WenyouIconIds.actionLike,
-              value: formatWenyouCompactCount(card.likeCount),
-              semanticLabel:
-                  '${card.viewerLiked ? '取消点赞' : '点赞'}，${card.likeCount} 次点赞',
-              selected: card.viewerLiked,
-              kind: WenyouInteractionKind.like,
-              pending: pendingAction == MomentInteractionAction.like,
-              onPressed:
-                  pendingAction == null &&
-                      (card.canInteract || card.viewerLiked)
-                  ? onLike
-                  : null,
-            ),
+          _DetailAction(
+            key: const Key('moment-detail-like'),
+            icon: WenyouIconIds.actionLike,
+            value: formatCompactActionCount(card.likeCount),
+            semanticLabel:
+                '${card.viewerLiked ? '取消点赞' : '点赞'}，${card.likeCount} 次点赞',
+            selected: card.viewerLiked,
+            kind: WenyouInteractionKind.like,
+            pending: pendingAction == MomentInteractionAction.like,
+            onPressed:
+                pendingAction == null && (card.canInteract || card.viewerLiked)
+                ? onLike
+                : null,
           ),
-          SizedBox(
-            width:
-                context.wenyouTokens.minimumTouchTarget +
-                context.wenyouTokens.space16,
-            child: _DetailAction(
-              key: const Key('moment-detail-bookmark'),
-              icon: WenyouIconIds.actionBookmark,
-              value: formatWenyouCompactCount(card.bookmarkCount),
-              semanticLabel:
-                  '${card.viewerBookmarked ? '取消收藏' : '收藏'}，${card.bookmarkCount} 次收藏',
-              selected: card.viewerBookmarked,
-              kind: WenyouInteractionKind.bookmark,
-              pending: pendingAction == MomentInteractionAction.bookmark,
-              onPressed:
-                  pendingAction == null &&
-                      (card.canInteract || card.viewerBookmarked)
-                  ? onBookmark
-                  : null,
-            ),
+          _DetailAction(
+            key: const Key('moment-detail-bookmark'),
+            icon: WenyouIconIds.actionBookmark,
+            value: formatCompactActionCount(card.bookmarkCount),
+            semanticLabel:
+                '${card.viewerBookmarked ? '取消收藏' : '收藏'}，${card.bookmarkCount} 次收藏',
+            selected: card.viewerBookmarked,
+            kind: WenyouInteractionKind.bookmark,
+            pending: pendingAction == MomentInteractionAction.bookmark,
+            onPressed:
+                pendingAction == null &&
+                    (card.canInteract || card.viewerBookmarked)
+                ? onBookmark
+                : null,
           ),
-          SizedBox(
-            width:
-                context.wenyouTokens.minimumTouchTarget +
-                context.wenyouTokens.space16,
-            child: _DetailAction(
-              key: const Key('moment-detail-tip'),
-              icon: onTip == null
-                  ? WenyouIconIds.metricTips
-                  : WenyouIconIds.actionTip,
-              value: visibleTipTotal,
-              semanticLabel: onTip == null
-                  ? '累计获得 $exactTipTotal 升加油'
-                  : '为${card.author.username}加油，累计 $exactTipTotal 升',
-              onPressed: card.canInteract ? onTip : null,
-            ),
+          _DetailAction(
+            key: const Key('moment-detail-tip'),
+            icon: onTip == null
+                ? WenyouIconIds.metricTips
+                : WenyouIconIds.actionTip,
+            value: visibleTipTotal,
+            semanticLabel: onTip == null
+                ? '累计获得 $exactTipTotal 升加油'
+                : '为${card.author.username}加油，累计 $exactTipTotal 升',
+            onPressed: card.canInteract ? onTip : null,
           ),
           if (card.canInteract) ...[
             SizedBox(width: context.wenyouTokens.space4),
@@ -134,18 +120,12 @@ class _DetailAction extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
-    final valueText = Flexible(
-      child: FittedBox(
-        fit: BoxFit.scaleDown,
-        child: Text(
-          value,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: Theme.of(context).textTheme.wenyouUtilityCaption.copyWith(
-            color: selected ? tokens.text : tokens.mutedText,
-            fontWeight: FontWeight.w400,
-          ),
-        ),
+    final valueText = Text(
+      value,
+      maxLines: 1,
+      style: Theme.of(context).textTheme.wenyouUtilityCaption.copyWith(
+        color: selected ? tokens.text : tokens.mutedText,
+        fontWeight: FontWeight.w400,
       ),
     );
     if (kind case final interactionKind?) {
@@ -164,8 +144,8 @@ class _DetailAction extends StatelessWidget {
           onPressed: onPressed,
           semanticLabel: semanticLabel,
           supporting: valueText,
+          stackSupporting: true,
           padding: EdgeInsets.zero,
-          expand: true,
         ),
       );
     }
@@ -174,15 +154,12 @@ class _DetailAction extends StatelessWidget {
         minWidth: tokens.minimumTouchTarget,
         minHeight: tokens.minimumTouchTarget,
       ),
-      child: Padding(
-        padding: EdgeInsets.zero,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            WenyouIcon(icon, size: 20, color: tokens.mutedText),
-            SizedBox(width: tokens.space4),
-            valueText,
-          ],
+      child: Center(
+        widthFactor: 1,
+        heightFactor: 1,
+        child: WenyouCompactActionContent(
+          icon: WenyouIcon(icon, size: 20, color: tokens.mutedText),
+          supporting: valueText,
         ),
       ),
     );

@@ -122,6 +122,8 @@ class ThreadDetailController extends StateNotifier<ThreadDetailState> {
   final ThreadDetailRepository _repository;
   final String threadId;
   int _requestEpoch = 0;
+  int _actionCountsEpoch = 0;
+  ApiFailure? _actionCountsFailure;
   bool _retryBefore = false;
   String? visibleFloorId;
   bool Function()? canApplyPage;
@@ -258,9 +260,44 @@ class ThreadDetailController extends StateNotifier<ThreadDetailState> {
     }
   }
 
-  /// Refreshes counts, permissions and thread metadata without discarding the
-  /// currently loaded floor window. This is used after a successful post
-  /// mutation so the reader's scroll position remains stable.
+  /// 只读刷新统计，不重置在途互动或当前楼层窗口。
+  Future<void> refreshActionCounts() async {
+    if (state.detail == null || state.phase != ThreadDetailPhase.ready) return;
+    final requestEpoch = _requestEpoch;
+    final countsEpoch = ++_actionCountsEpoch;
+    bool isCurrent() =>
+        _isCurrent(requestEpoch) && countsEpoch == _actionCountsEpoch;
+    try {
+      final detail = await _repository.fetchThread(threadId);
+      if (!isCurrent() || state.detail == null) return;
+      final clearOwnFailure =
+          _actionCountsFailure != null &&
+          identical(state.transientFailure, _actionCountsFailure);
+      _actionCountsFailure = null;
+      state = state.copyWith(
+        detail: state.detail!.withActionCounts(
+          bookmarkCount: detail.bookmarkCount,
+          subscriberCount: detail.subscriberCount,
+        ),
+        transientFailure: clearOwnFailure ? null : state.transientFailure,
+      );
+    } on Object catch (error) {
+      if (!isCurrent()) return;
+      final failure = _asFailure(error, '主题统计刷新失败，请稍后重试。');
+      if (_isRestricted(failure)) {
+        _actionCountsFailure = null;
+        _hideRestrictedContent(failure);
+        return;
+      }
+      _actionCountsFailure = failure;
+      state = state.copyWith(
+        transientFailure: failure,
+        retryAction: ThreadDetailRetryAction.refresh,
+      );
+    }
+  }
+
+  /// 刷新统计、权限和元数据，保留当前楼层窗口及阅读位置。
   Future<void> refreshMetadata() async {
     final previousSelectedId = state.selectedSubthreadId;
     final previousIdentityEnabled = state.detail?.rpIdentityEnabled;

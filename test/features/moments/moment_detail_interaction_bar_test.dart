@@ -14,7 +14,42 @@ import '../../support/foundation_icon_finder.dart';
 void main() {
   setUpAll(loadDeterministicTestFonts);
 
-  for (final width in [320.0, 360.0]) {
+  testWidgets('动态全部真实零值显示0且与图标垂直对齐', (tester) async {
+    await _pumpBar(
+      tester,
+      card: _card(likeCount: 0, bookmarkCount: 0, tipTotal: '0'),
+      width: 320,
+      dark: true,
+      textScaler: const TextScaler.linear(2),
+      onTip: _noop,
+    );
+    expect(find.text('0'), findsNWidgets(3));
+    double? countTop;
+    for (final key in [
+      'moment-detail-like',
+      'moment-detail-bookmark',
+      'moment-detail-tip',
+    ]) {
+      final action = find.byKey(Key(key));
+      final count = find.descendant(of: action, matching: find.text('0'));
+      final icon = find.descendant(
+        of: action,
+        matching: find.byType(WenyouIcon),
+      );
+      final bounds = tester.getRect(count);
+      countTop ??= bounds.top;
+      expect(bounds.top, closeTo(countTop, .1));
+      expect(bounds.top, greaterThanOrEqualTo(tester.getRect(icon).bottom));
+      expect(bounds.center.dx, closeTo(tester.getCenter(icon).dx, .1));
+    }
+    expect(tester.takeException(), isNull);
+    await expectLater(
+      find.byKey(const Key('moment-detail-actions')),
+      matchesGoldenFile('goldens/moment_detail_bottom_bar_320_zero_counts.png'),
+    );
+  });
+
+  for (final width in [320.0, 360.0, 400.0]) {
     for (final dark in [false, true]) {
       for (final scale in [1.0, 1.5]) {
         testWidgets('$width $dark 字号$scale 底栏预览', (tester) async {
@@ -43,6 +78,21 @@ void main() {
             final size = tester.getSize(find.byKey(Key(key)));
             expect(size.width, greaterThanOrEqualTo(48));
             expect(size.height, greaterThanOrEqualTo(48));
+          }
+          expect(
+            find.ancestor(
+              of: find.text('12k'),
+              matching: find.byType(FittedBox),
+            ),
+            findsNothing,
+          );
+          if (scale == 1) {
+            expect(
+              tester
+                  .getSize(find.byKey(const Key('moment-comment-dock')))
+                  .width,
+              greaterThanOrEqualTo(width - 172),
+            );
           }
           await expectLater(
             find.byKey(const Key('moment-detail-actions')),
@@ -123,18 +173,34 @@ void main() {
       find.byKey(const Key('moment-detail-bookmark')),
       find.byKey(const Key('moment-detail-tip')),
     ];
-    final firstSize = tester.getSize(actionFinders.first);
     for (final action in actionFinders) {
       final size = tester.getSize(action);
-      expect(size.width, closeTo(firstSize.width, 0.1));
+      expect(size.width, greaterThanOrEqualTo(48));
       expect(size.height, greaterThanOrEqualTo(48));
       expect(
         tester.getCenter(action).dy,
         closeTo(tester.getCenter(actionFinders.first).dy, 0.1),
       );
+      final icon = find.descendant(
+        of: action,
+        matching: find.byType(WenyouIcon),
+      );
+      final firstIcon = find.descendant(
+        of: actionFinders.first,
+        matching: find.byType(WenyouIcon),
+      );
+      expect(
+        tester.getCenter(icon).dy,
+        closeTo(tester.getCenter(firstIcon).dy, .1),
+      );
+      final value = find.descendant(of: action, matching: find.byType(Text));
+      expect(
+        tester.getRect(value).top,
+        greaterThanOrEqualTo(tester.getRect(icon).bottom),
+      );
     }
     expect(
-      find.descendant(of: strip, matching: find.text('1.2万')),
+      find.descendant(of: strip, matching: find.text('12k')),
       findsOneWidget,
     );
     expect(
@@ -143,7 +209,7 @@ void main() {
     );
 
     expect(
-      find.descendant(of: strip, matching: find.text('12.3万')),
+      find.descendant(of: strip, matching: find.text('123k')),
       findsOneWidget,
     );
     for (final label in ['点赞', '收藏', '评论', '加油', '已获得', '升']) {
@@ -346,6 +412,45 @@ void main() {
     ]) {
       expect(tester.getSize(find.byKey(key)).height, greaterThanOrEqualTo(48));
     }
+  });
+
+  testWidgets('320dp两倍字同时显示三个四字符计数，回复保留48dp', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(320, 760);
+    addTearDown(tester.view.reset);
+    await _pumpBar(
+      tester,
+      card: _card(likeCount: 9999, bookmarkCount: 999000, tipTotal: '9900000'),
+      width: 320,
+      textScaler: const TextScaler.linear(2),
+      onTip: _noop,
+    );
+    expect(find.text('9.9k'), findsOneWidget);
+    expect(find.text('999k'), findsOneWidget);
+    expect(find.text('9.9m'), findsOneWidget);
+    expect(
+      tester.getSize(find.byKey(const Key('moment-comment-dock'))).width,
+      greaterThanOrEqualTo(48),
+    );
+    Rect? previousCount;
+    for (final value in ['9.9k', '999k', '9.9m']) {
+      final count = tester.getRect(find.text(value));
+      if (previousCount != null) {
+        expect(count.left - previousCount.right, greaterThanOrEqualTo(8));
+      }
+      previousCount = count;
+      expect(
+        find.ancestor(of: find.text(value), matching: find.byType(FittedBox)),
+        findsNothing,
+      );
+    }
+    expect(tester.takeException(), isNull);
+    await expectLater(
+      find.byKey(const Key('moment-detail-actions')),
+      matchesGoldenFile(
+        'goldens/moment_detail_bottom_bar_320_large_counts.png',
+      ),
+    );
   });
 }
 

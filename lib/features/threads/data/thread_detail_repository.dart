@@ -338,6 +338,12 @@ class ApiThreadDetailRepository implements ThreadDetailRepository {
   }
 
   ThreadDetailModel _mapThread(ThreadDetailResponseDto dto) {
+    if ((dto.bookmarkCount != null && dto.bookmarkCount! < 0) ||
+        (dto.subscriberCount != null && dto.subscriberCount! < 0)) {
+      throw const ApiFailure.invalidResponse(
+        diagnosticCode: 'threads.detail.invalid_action_counts',
+      );
+    }
     final canManageThread =
         dto.capabilities?.canManageThread ??
         (dto.currentMembership?.role ==
@@ -393,6 +399,8 @@ class ApiThreadDetailRepository implements ThreadDetailRepository {
       isLiked: dto.isLiked ?? false,
       isBookmarked: dto.isBookmarked ?? false,
       bookmarkId: dto.bookmarkId,
+      bookmarkCount: dto.bookmarkCount,
+      subscriberCount: dto.subscriberCount,
       hasAutomaticUpdates: canManageThread,
       canManageThread: canManageThread,
       isCurrentUserPlayer: dto.currentMembership?.playerMarked ?? false,
