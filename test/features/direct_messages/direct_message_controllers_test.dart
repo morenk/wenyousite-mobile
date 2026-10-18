@@ -13,6 +13,41 @@ import 'package:wenyousite_mobile/features/users/data/public_user_repository.dar
 import 'package:wenyousite_mobile/features/users/domain/public_user_models.dart';
 
 void main() {
+  test('公共分页并发：会话刷新不启动旧分页，失败后解除过期分页busy', () async {
+    final repository = _FakeDirectMessageRepository();
+    final more = Completer<CursorPage<DirectConversation>>();
+    final fresh = Completer<CursorPage<DirectConversation>>();
+    var count = 0;
+    repository.listHandler = (cursor) {
+      count++;
+      if (count == 1)
+        return Future.value(
+          CursorPage(items: [_conversation()], cursor: 'old', hasMore: true),
+        );
+      return cursor == null ? fresh.future : more.future;
+    };
+    final controller = DirectConversationListController(
+      DirectConversationView.inbox,
+      repository,
+      autoStart: false,
+    );
+    addTearDown(controller.dispose);
+    await controller.load();
+    final paging = controller.loadMore();
+    final refresh = controller.refresh();
+    await controller.loadMore();
+    expect(count, 3);
+    fresh.completeError(const ApiFailure(userMessage: '刷新失败'));
+    await refresh;
+    more.complete(
+      CursorPage(items: [_conversation(id: 'stale')], hasMore: false),
+    );
+    await paging;
+    expect(controller.state.isLoadingMore, isFalse);
+    expect(controller.state.isRefreshing, isFalse);
+    expect(controller.state.items.any((e) => e.id == 'stale'), isFalse);
+  });
+
   test('会话列表游标失效后从首屏重载且不保留重复项', () async {
     final repository = _FakeDirectMessageRepository();
     repository.listPages.add(
@@ -562,6 +597,7 @@ class _FakeDirectMessageRepository implements DirectMessageRepository {
   final List<CursorPage<DirectConversation>> listPages = [];
   final List<ApiFailure> listFailures = [];
   final List<String?> listCursors = [];
+  Future<CursorPage<DirectConversation>> Function(String? cursor)? listHandler;
   final List<String> afterAnchors = [];
   final List<String> markedReadIds = [];
   final List<DirectMessageDraft> sentDrafts = [];
@@ -574,6 +610,7 @@ class _FakeDirectMessageRepository implements DirectMessageRepository {
     int limit = 20,
   }) async {
     listCursors.add(cursor);
+    if (listHandler != null) return listHandler!(cursor);
     if (listFailures.isNotEmpty && listCursors.length == 2) {
       throw listFailures.removeAt(0);
     }

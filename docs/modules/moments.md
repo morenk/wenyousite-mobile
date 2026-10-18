@@ -1,5 +1,8 @@
 # 动态
 
+2026-10-19 公共流程候选：普通单向分页的请求完成、过期响应和失效游标分支共用协调函数；业务状态、权限、筛选与刷新策略保留。范围、定向回归和未验收项见[公共流程验收](../architecture/shared-flows-acceptance.md)。
+
+
 状态：`in_progress`
 
 紧凑底栏继续同批热重载反馈：左右 8dp，各操作按内容收缩且至少 48dp，回复前留 4dp。仅详情底栏计数改用 k／m 等短值且不缩小字体；无障碍保留完整数值，其他页面继续既有 Foundation 格式。320／360dp、明暗与大字组件画面见[反馈记录](../architecture/compact-bottom-actions-acceptance.md)，仍待负责人验收。
