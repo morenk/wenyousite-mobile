@@ -139,6 +139,8 @@ threads 页面消费主题互动和订阅控制器，moments 提供独立动态�
 
 ## 13. 最近审查的契约版本和后端提交
 
+2026-10-18 契约同步：固定 Backend `da68203a494c6d0f6d377c23399390c2cee397f3`／API `5.40.0-dev.20261018.1`；详情新增可选真实收藏与显式 THREAD 订阅总数，USER 玩家订阅及自动通知不计入。旧响应缺失保持未知，业务接入后从详情刷新权威值，见[同步记录](../architecture/thread-action-counts-contract-sync.md)。
+
 契约复核：固定已部署 Backend `08bbf5dbcd791270764fc2152fe9b61f683d7fa1`／API `5.39.0-dev.20261017.1`，合并音频预算错误与独立文本颜色能力。主题链正文保留颜色读取头、写入声明、保存校验和取色入口；音频上传、媒体展示与可定制工具栏继续保留。Foundation 固定正式 `v7.5.0`；独占空段、相邻彩色标题与对齐边界新增共享用例，OpenAPI 与合并基线一致。
 
 2026-10-10 合并来源复核：通过官方同步入口固定到实际部署 Backend `b5f0e3bb0b99a3f9763b31e3080cb4d4f2e64045`，OpenAPI 仍为 `5.36.0-dev.20261005.1`。相对退役实施提交，机器契约、共享语料、生成客户端及本模块行为不变；仅来源登记更新，详见[退役验收记录](../architecture/retire-development-preview-acceptance.md)。

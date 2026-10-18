@@ -1,5 +1,9 @@
 # 移动端变更记录
 
+## 2026-10-18 主题真实统计契约同步
+
+- 从 Backend `da68203a494c6d0f6d377c23399390c2cee397f3` 同步 API `5.40.0-dev.20261018.1`，生成主题详情可选 `bookmarkCount`／`subscriberCount`；旧响应缺字段保持未知。本 chore 不接入展示，详见[同步记录](architecture/thread-action-counts-contract-sync.md)。
+
 ## 2026-10-18 详情底栏统一（视觉候选／待验收）
 
 - 主题加油移到输入框左侧，与喜欢、收藏和订阅并排；更多菜单去掉重复入口，没有剩余操作时不显示空菜单。
