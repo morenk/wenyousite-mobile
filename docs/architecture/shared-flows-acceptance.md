@@ -33,7 +33,7 @@ Foundation 已 fetch tags，最新正式版本 v7.5.0 与 pubspec 一致；已�
 
 冲突弹窗只返回 useLatest、keepCurrent 或取消，不拥有业务写入；保留动态的两按钮与主题的三按钮、原文案和 Key。组件测试覆盖全部选择与返回取消，真实 moment_pages_test.dart、thread_management_page_test.dart 的业务冲突回归包含在 1536 项定向测试内。
 
-实际命令、结果和候选 SHA 在各批检查完成后补录。日志在本任务 .dart_tool/task-evidence/shared-flows（Git 忽略）。没有进行线上写入 E2E，本批尚无负责人真机验收。
+实际命令、结果和候选 SHA 见下。日志在本任务 .dart_tool/task-evidence/shared-flows（Git 忽略）。没有进行线上写入 E2E，本批尚无负责人真机验收。
 
 分页定向命令：`flutter test --no-pub --concurrency=2 test/core/application/cursor_page_request_test.dart test/features/tags/tag_threads_controller_test.dart test/features/home/home_feed_controller_test.dart test/features/moments/moment_controllers_test.dart test/features/moments/moment_bookmark_list_controller_test.dart test/features/social/bookmark_list_controller_test.dart test/features/users/public_user_controller_test.dart test/features/search/search_controller_test.dart test/features/notifications/notification_controllers_test.dart test/features/wallet/wallet_controllers_test.dart test/features/direct_messages/direct_message_controllers_test.dart`，94 项通过，见 paging-confirmed.log。新增回归覆盖过期成功/失败/40007、刷新失败、重新加载后旧刷新仍悬挂、按收藏 ID 去重。
 
@@ -49,3 +49,38 @@ Markdown 扫描只识别长度完全相同的反引号串闭合，保留转义�
 ```
 
 冷却定向：`flutter test --no-pub --concurrency=2 test/features/auth/registration_controller_test.dart test/features/auth/password_recovery_controller_test.dart test/features/settings/credential_security_controllers_test.dart`，19 项通过，cooldown-tests.log。覆盖冷却到零不自动发送、editEmail/dispose 取消 tick、dispose 后迟到响应不回写、确定失败 Retry-After、429/投递结果不明固定 60 秒与请求编号。注册仅 trim、找回/改邮箱 lowercase+trim、找回 seed、登录/退出与 noAutomaticReplay 保持原业务实现。
+
+编辑器广泛定向实际命令（1536 项通过）：
+
+```powershell
+flutter test --no-pub --concurrency=2 test/core/markdown test/core/widgets/wenyou_markdown_inline_code_layout_test.dart test/features/editor/editor_block_boundary_inline_code_test.dart test/features/editor/editor_inline_boundary_input_test.dart test/features/editor/editor_publish_preparation_test.dart test/features/editor/thread_compose_page_test.dart test/features/posts/post_composer_local_draft_test.dart test/features/posts/post_composer_opening_test.dart test/features/posts/post_composer_insertion_test.dart test/features/posts/post_controllers_test.dart test/core/widgets/wenyou_edit_conflict_dialog_test.dart test/features/threads/thread_management_page_test.dart test/features/moments/moment_pages_test.dart
+```
+
+补充实际命令（34 项通过）：
+
+```powershell
+flutter test --no-pub --concurrency=2 test/features/moments/moment_repository_mapping_test.dart test/features/posts/post_composer_inline_code_test.dart test/features/editor/editor_publish_preparation_test.dart test/features/editor/thread_compose_page_test.dart
+```
+
+过程检查如实记录：早期完整 analyze 与广泛测试并行造成内存压力，主动停止，退出 -1，不计为成功；架构初次发现新增手写 part 后已改为独立测试文件，复核通过。首轮完整门禁在静态分析发现六处多行 if 缺花括号后退出 1，日志 check-apk-attempt1.log；c950f00f 补齐代码块，不改变分支语义。最终检查以串行 `npm run check:apk -- -TestConcurrency 2` 的单次结果为准。
+
+## 负责人真机验收清单
+
+2026-10-19 最终完整命令 `npm run check:apk -- -TestConcurrency 2` 退出 0；Flutter **7285 通过／1 条件跳过**，Windows 工具 **49/49 通过**，ARM64 Debug APK 构建成功。完整日志 `D:\codex-worktrees\mobile-shared-flows\wenyousite-mobile\.dart_tool\task-evidence\shared-flows\check-apk.log`，SHA-256：`5DDDFA10C254BF2B3B820DCB013168085E0952956F748A078F9589F16940907B`。构建保留现有 KGP 插件迁移、SDK XML 兼容提示，未修改依赖或 Android 配置。
+
+候选 APK：`D:\codex-worktrees\mobile-shared-flows\wenyousite-mobile\build\app\outputs\flutter-apk\app-debug.apk`，112,828,150 字节；aapt 核验包名 `site.wenyou.app.debug`、版本 `0.9.0-debug`、versionCode `99`，仅 `arm64-v8a`。SHA-256：`E6D57B98E9E7D730B81AC02A5E018378E4ACBC4EC6DF8A0AC1044E2218A3D14F`。
+
+构建后 ADB 设备列表为空，目标设备 4b9c39b5 未在线；没有安装、启动或热重载会话，不记录虚构的设备内 APK 哈希与更新时间。候选未传入 API define，沿用默认 `https://wenyou.site/api/v1`；待设备可用后再按保留数据的普通 Debug 入口核验包名与安装摘要。
+
+候选应用源码：`c950f00f7d4d83402b2921e7f6ca7d06387254dc`；lib tree：`6f5686a4f5dec9b01463c63266eadbc79cb44f26`。本地 application-tree.txt 由该提交的 lib、android、packages、assets、pubspec.yaml、pubspec.lock 文件对象清单生成，SHA-256：`73914EA4FDF13E41CB7CD03FE7B00561838A748BB994731FBFE003665402744A`。后续仅验收文档变化沿用该源码证据。
+
+第二轮完整门禁的静态分析、生成客户端分析均零问题，架构检查通过，23 个模块文档完整，移动端 API 范围覆盖 175/175；生成客户端和依赖锁文件无漂移。全量测试中的 diagnostic_live_receipt_test.dart 由既有 WENYOU_VALIDATE_SENTRY 显式开关控制，本轮未开启，不执行线上 Sentry 发送。
+
+本批尚未安装或接管设备，所有项目均待负责人在本批候选验证；PR #109 的验收不替代本批验收。自动化仅组件、状态及只读契约核验，未执行线上写入 E2E。
+
+1. 首页、标签、动态、收藏、搜索和个人内容：滚动加载更多、下拉刷新、失败重试；刷新在途不追加旧列表，收藏无重复、既有顺序保持。会话目录与钱包流水检查相同行为。
+2. 同一动态在信息流与搜索核对作者、头像、封面及图片比例、动画类型；进入详情后的媒体一致。
+3. 注册、找回密码、更换邮箱：发送后冷却到零再手动发送；返回、改邮箱或离开页面后无残留计时，失败文案及可重试时机保持。
+4. 行内代码：已有多长度反引号内容打开、输入、保存、阅读和重开，逐字文字及样式保持；记录中的转义邻接限制不宣称已修复。
+5. 主题与楼层：图片仍在准备时发布，连点不重复创建；取消等待、图片失败、重试后必须再次明确发布；成功后正确清理草稿，失败保留正文。
+6. 动态和主题编辑遇到版本冲突：分别核对载入最新、保留当前／覆盖及取消；选择前不写入，取消不丢失当前正文。
