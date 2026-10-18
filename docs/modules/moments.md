@@ -1,5 +1,8 @@
 # 动态
 
+2026-10-19 映射内部重构候选：动态作者与图片 DTO 共用 MomentDtoMapper；搜索和信息流各自的错误标签、诊断码、封面及互动权限校验不变。详见[公共流程验收](../architecture/shared-flows-acceptance.md)。
+
+
 2026-10-19 公共流程候选：普通单向分页的请求完成、过期响应和失效游标分支共用协调函数；业务状态、权限、筛选与刷新策略保留。范围、定向回归和未验收项见[公共流程验收](../architecture/shared-flows-acceptance.md)。
 
 

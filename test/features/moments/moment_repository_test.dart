@@ -6,11 +6,15 @@ import 'package:wenyousite_mobile/core/domain/domain_validation_exception.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
 import 'package:wenyousite_mobile/features/moments/data/moment_repository.dart';
+import 'package:wenyousite_mobile/features/moments/data/moment_search_mapper.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
+
+part 'moment_repository_mapping_cases.dart';
 
 const _requestId = '123e4567-e89b-42d3-a456-426614174000';
 
 void main() {
+  registerMomentMappingCases();
   test('动态信息流接收后端合法40码点标题', () async {
     final api = _MockMomentsApi();
     final title = '😀' * 40;

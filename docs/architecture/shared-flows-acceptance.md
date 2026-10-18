@@ -13,7 +13,7 @@ Foundation 已 fetch tags，最新正式版本 v7.5.0 与 pubspec 一致；已�
 | 类别 | 实际重复与处理边界 | 状态 |
 | --- | --- | --- |
 | 普通游标分页 | home、tags、moments 列表/收藏及单向评论/回复、social 收藏、users 内容、search 三种分页、notifications 列表、wallet 流水、direct_messages 会话目录共 14 处请求完成/失效游标/失败分支迁入 loadCursorPage；页面保留状态、查询、epoch、写锁、顺序与合并方式 | 定向 94 项通过，候选 |
-| 动态 DTO 作者/媒体 | ApiMomentRepository 与 MomentSearchMapper 的相同 DTO 映射 | 后续独立提交 |
+| 动态 DTO 作者/媒体 | feature 内 MomentDtoMapper 共用 PostAuthorResponseDto/MomentMediaResponseDto 映射，校验策略保留搜索文案与信息流诊断 | 定向 14 项通过，候选 |
 | 验证码冷却 | Registration、PasswordRecovery、EmailChange 三套 Timer；只共享计时，不共享业务状态或发送动作 | 后续独立提交 |
 | Markdown inline code | content 的精确反引号扫描与 inline_boundary 的闭合判断；不接管完整块解析 | 待实施 |
 | 主题/楼层发布协调 | thread_compose_page 与 post_composer_sheet 的附件就绪、flush、发布意图和结束等待；业务写入各自拥有 | 待实施 |
@@ -32,3 +32,5 @@ Foundation 已 fetch tags，最新正式版本 v7.5.0 与 pubspec 一致；已�
 实际命令、结果和候选 SHA 在各批检查完成后补录。日志在本任务 .dart_tool/task-evidence/shared-flows（Git 忽略）。没有进行线上写入 E2E，本批尚无负责人真机验收。
 
 分页定向命令：`flutter test --no-pub --concurrency=2 test/core/application/cursor_page_request_test.dart test/features/tags/tag_threads_controller_test.dart test/features/home/home_feed_controller_test.dart test/features/moments/moment_controllers_test.dart test/features/moments/moment_bookmark_list_controller_test.dart test/features/social/bookmark_list_controller_test.dart test/features/users/public_user_controller_test.dart test/features/search/search_controller_test.dart test/features/notifications/notification_controllers_test.dart test/features/wallet/wallet_controllers_test.dart test/features/direct_messages/direct_message_controllers_test.dart`，94 项通过，见 paging-confirmed.log。新增回归覆盖过期成功/失败/40007、刷新失败、重新加载后旧刷新仍悬挂、按收藏 ID 去重。
+
+DTO 定向：`flutter test --no-pub --concurrency=2 test/features/moments/moment_repository_test.dart test/features/search/search_repository_test.dart`，14 项通过，dto-tests.log。新增用同一 DTO 经真实信息流 repository 与搜索 mapper 验证作者、URL/各图片变体、尺寸、动画及内容类型；不安全 URL 与宽高不成对分别保留 MOMENT_UNSAFE_URL、MOMENT_MEDIA_DIMENSION_MISMATCH 和原搜索错误标签。测试文件后拆出小型 part 保持单文件门禁，最终全量会复核。
