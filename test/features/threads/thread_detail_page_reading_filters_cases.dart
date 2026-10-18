@@ -53,7 +53,14 @@ void registerThreadDetailPageReadingFiltersCases() {
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('thread-detail-search')), findsOneWidget);
     expect(find.byKey(const Key('thread-detail-more')), findsOneWidget);
-    expect(find.byKey(const Key('thread-detail-tip')), findsNothing);
+    expect(find.byKey(const Key('thread-detail-tip')), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('thread-detail-bottom-bar')),
+        matching: find.byKey(const Key('thread-detail-tip')),
+      ),
+      findsOneWidget,
+    );
     expect(find.byKey(const Key('thread-detail-report')), findsNothing);
     await tester.tap(find.byKey(const Key('thread-detail-more')));
     await tester.pumpAndSettle();

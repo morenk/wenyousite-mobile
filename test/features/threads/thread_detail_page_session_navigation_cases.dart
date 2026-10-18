@@ -161,8 +161,11 @@ void registerThreadDetailPageSessionNavigationCases() {
     expect(tester.getCenter(navigatorFrame).dx, closeTo(160, 0.1));
     final compose = find.byKey(const Key('thread-floor-compose'));
     expect(compose, findsOneWidget);
-    expect(find.text('回复一下'), findsOneWidget);
-    expect(find.text('100万'), findsOneWidget);
+    expect(
+      find.descendant(of: compose, matching: find.text('回复')),
+      findsOneWidget,
+    );
+    expect(find.text('1m'), findsOneWidget);
     final composeButton = find.descendant(
       of: compose,
       matching: find.byType(TextButton),

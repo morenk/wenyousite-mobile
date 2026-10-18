@@ -517,6 +517,18 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
                         authenticated: session.isAuthenticated,
                         canCompose: selectedSubthread != null,
                         onRequireAuthentication: _requireLogin,
+                        onCountsChanged: () {
+                          if (!mounted) return;
+                          unawaited(
+                            ref.read(provider.notifier).refreshActionCounts(),
+                          );
+                        },
+                        onTip: () => _handleThreadAction(
+                          ThreadDetailAppBarAction.tip,
+                          state.detail!,
+                          provider,
+                          selectedSubthread: selectedSubthread,
+                        ),
                         onCompose: selectedSubthread == null
                             ? () {}
                             : () => _compose(

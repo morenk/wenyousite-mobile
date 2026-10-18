@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_compact_action_content.dart';
 
 enum WenyouInteractionKind { like, bookmark }
 
@@ -16,6 +17,7 @@ class WenyouInteractionToggle extends StatelessWidget {
     this.iconSize = 20,
     this.padding,
     this.expand = false,
+    this.stackSupporting = false,
     this.interactive = true,
     super.key,
   });
@@ -29,6 +31,7 @@ class WenyouInteractionToggle extends StatelessWidget {
   final double iconSize;
   final EdgeInsetsGeometry? padding;
   final bool expand;
+  final bool stackSupporting;
   final bool interactive;
 
   @override
@@ -41,7 +44,7 @@ class WenyouInteractionToggle extends StatelessWidget {
               : tokens.bookmark
         : tokens.mutedText;
     final enabled = interactive && onPressed != null && !pending;
-    final content = Row(
+    final inlineContent = Row(
       mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -79,6 +82,12 @@ class WenyouInteractionToggle extends StatelessWidget {
         ],
       ],
     );
+    final content = stackSupporting
+        ? WenyouCompactActionContent(
+            icon: inlineContent.children.first,
+            supporting: supporting == null ? null : inlineContent.children.last,
+          )
+        : inlineContent;
     return Semantics(
       button: interactive,
       enabled: interactive ? enabled : null,

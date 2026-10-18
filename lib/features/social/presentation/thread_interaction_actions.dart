@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/application/bookmark_folder_catalog.dart';
+import 'package:wenyousite_mobile/core/formatters/compact_action_count.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_bookmark_folder_picker.dart';
@@ -17,12 +17,16 @@ class ThreadInteractionActions extends ConsumerWidget {
     required this.target,
     required this.onRequireAuthentication,
     this.compact = false,
+    this.bookmarkCount,
+    this.onBookmarkChanged,
     super.key,
   });
 
   final ThreadInteractionTarget target;
   final VoidCallback onRequireAuthentication;
   final bool compact;
+  final int? bookmarkCount;
+  final VoidCallback? onBookmarkChanged;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -53,9 +57,10 @@ class ThreadInteractionActions extends ConsumerWidget {
             semanticLabel: state.isLiked
                 ? '取消喜欢，当前 ${state.likeCount} 个喜欢'
                 : '喜欢，当前 ${state.likeCount} 个喜欢',
-            padding: EdgeInsets.symmetric(horizontal: tokens.space4),
+            padding: EdgeInsets.zero,
+            stackSupporting: true,
             supporting: Text(
-              formatWenyouCompactCount(state.likeCount),
+              formatCompactActionCount(state.likeCount),
               style: Theme.of(context).textTheme.wenyouUtilityCaption,
             ),
           ),
@@ -74,8 +79,16 @@ class ThreadInteractionActions extends ConsumerWidget {
                       bookmarkCatalog: bookmarkCatalog,
                       compact: true,
                     ),
-              semanticLabel: state.isBookmarked ? '取消收藏' : '收藏主题',
-              padding: EdgeInsets.symmetric(horizontal: tokens.space4),
+              semanticLabel:
+                  '${state.isBookmarked ? '取消收藏' : '收藏主题'}${bookmarkCount == null ? '' : '，$bookmarkCount 人收藏'}',
+              padding: EdgeInsets.zero,
+              stackSupporting: true,
+              supporting: bookmarkCount == null
+                  ? null
+                  : Text(
+                      formatCompactActionCount(bookmarkCount!),
+                      style: Theme.of(context).textTheme.wenyouUtilityCaption,
+                    ),
             ),
         ],
       );
@@ -178,6 +191,7 @@ class ThreadInteractionActions extends ConsumerWidget {
         return;
       }
       _showSuccess(context, notifier);
+      onBookmarkChanged?.call();
       return;
     }
     final folder = await showBookmarkFolderPicker(
@@ -194,6 +208,7 @@ class ThreadInteractionActions extends ConsumerWidget {
       },
     );
     if (!context.mounted || folder == null) return;
+    onBookmarkChanged?.call();
     notifier.takeSuccessMessage();
     showWenyouSnackBar(
       context,
