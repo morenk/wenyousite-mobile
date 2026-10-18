@@ -70,9 +70,20 @@ Golden 首次生成过程中曾因测试语义句柄在 teardown 才释放触发
 
 本地完整日志：`D:\codex-worktrees\ea98\wenyousite-mobile\.dart_tool\task-evidence\error-retry-waterfall\check.log`，SHA-256：`d0f1939a6ecb91c05a21ec5f8988b94dac2c5c57b869c3c9e8fb0873aa5c3552`；同目录 `targeted.log` 为 128 项定向回归日志。日志目录被 Git 忽略，保留在本任务 Worktree，不包含在 PR 中。唯一已有跳过项是 `test/core/diagnostics/diagnostic_live_receipt_test.dart`，需要显式 `WENYOU_VALIDATE_SENTRY` 才执行真实诊断回执验证；本轮未开启该外部写入验证。
 
-## 真机未验证项与负责人步骤
+## 真机候选与负责人步骤
 
-本任务 `adb devices -l` 没有连接设备，未建立 Debug 会话，未构建／安装 APK，没有进行线上写入 E2E。仅 `/meta` 与门禁契约冒烟为线上只读；所有页面操作测试使用离线替身。
+初次提交时没有连接设备，仅完成离线组件和页面验证。负责人随后连接设备并要求热重载验收；2026-10-18 23:35 已完成以下补充，视觉候选仍待负责人验收：
+
+- 应用源码提交：`d9eb2be6d6c8431c6615f5a2f48ecdceab63aaf3`，应用文件摘要与上文一致；后续仅调整文档，未改应用代码。
+- 设备：`4b9c39b5`／`2509FPN0BC`，ARM64；目标为 `site.wenyou.app.debug`，版本 `0.9.0-debug`、versionCode `99`，与正式包数据独立。
+- 在本 Worktree 执行 `npm run dev -- -d 4b9c39b5 --machine`，经过 ADB guard 覆盖安装成功，未卸载或清数据。设备包更新时间为 `2026-10-18 23:30:34`。
+- APK：`build/app/outputs/flutter-apk/app-debug.apk`，112823010 字节；本机与设备内 base.apk SHA-256 一致：`9080f7acafc4ad2f621ac5802553f3522e87d229059a6d19cd5011bdd2093339`。此哈希标识首次安装包，热重载画面另按源码及会话记录。
+- 初始 run 安装后连接断开，应用仍运行；使用 `flutter attach -d 4b9c39b5 --app-id site.wenyou.app.debug --machine --no-dds` 成功重新接入，无重复构建或安装。应用 PID `5162`、宿主 Flutter PID `34224`、终端会话 `37362`、machine appId `6db93dcf-e892-484c-89cc-8c74572f07a8`（均为此次记录时值）。
+- machine `app.restart(fullRestart:false)` 返回 `code:0`／`Reloaded 0 libraries`，耗时 53803ms（compile 49470ms、reassemble 116ms）。源码无新增变化，因此 0 个库重载属于成功；会话保持连接以供后续展示调整。
+- 实际 API 为默认 `https://wenyou.site/api/v1`，没有自定义 Dart defines。按负责人本次明确要求，普通 Debug 的登录恢复和自动签到不再作为启动、复用或热重启的检查／审批条件；产品启动逻辑未修改，代理未自动执行发帖、上传、删除等业务写入 E2E。
+- 设备画面和结构化记录保留在被 Git 忽略的 `.dart_tool/task-evidence/error-retry-waterfall/device-after-reload.png` 与 `debug-session.json`；画面含设备个人信息，不提交。代理查看当前页面仅证明候选运行，不替代负责人对下列场景的验收。
+
+普通 Debug 规范同步更新了 `AGENTS.md` 和 `docs/live-debug.md`，`npm run docs:check` 与 `git diff --check` 通过。仅文档变化不重复执行已通过的应用完整门禁。
 
 1. 首页、全站搜索、主题内搜索和成员／子贴管理制造读取失败，核对状态、问题编号与原重试目标；恢复后原筛选和页面可继续使用。
 2. 已有内容时触发刷新或分页失败，确认内容保留、不会静默重复请求；重试忙碌时不能重复触发。
