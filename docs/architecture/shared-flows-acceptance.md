@@ -14,7 +14,7 @@ Foundation 已 fetch tags，最新正式版本 v7.5.0 与 pubspec 一致；已�
 | --- | --- | --- |
 | 普通游标分页 | home、tags、moments 列表/收藏及单向评论/回复、social 收藏、users 内容、search 三种分页、notifications 列表、wallet 流水、direct_messages 会话目录共 14 处请求完成/失效游标/失败分支迁入 loadCursorPage；页面保留状态、查询、epoch、写锁、顺序与合并方式 | 定向 94 项通过，候选 |
 | 动态 DTO 作者/媒体 | feature 内 MomentDtoMapper 共用 PostAuthorResponseDto/MomentMediaResponseDto 映射，校验策略保留搜索文案与信息流诊断 | 定向 14 项通过，候选 |
-| 验证码冷却 | Registration、PasswordRecovery、EmailChange 三套 Timer；只共享计时，不共享业务状态或发送动作 | 后续独立提交 |
+| 验证码冷却 | Registration、PasswordRecovery、EmailChange 共用 ResendCooldown；只共享计时，不共享业务状态或发送动作 | 定向 19 项通过，候选 |
 | Markdown inline code | content 的精确反引号扫描与 inline_boundary 的闭合判断；不接管完整块解析 | 待实施 |
 | 主题/楼层发布协调 | thread_compose_page 与 post_composer_sheet 的附件就绪、flush、发布意图和结束等待；业务写入各自拥有 | 待实施 |
 | 编辑冲突选择 | moment_compose_page 与 thread_management_page 的选择弹窗；动作后果与原选项各自保留 | 待实施 |
@@ -34,3 +34,5 @@ Foundation 已 fetch tags，最新正式版本 v7.5.0 与 pubspec 一致；已�
 分页定向命令：`flutter test --no-pub --concurrency=2 test/core/application/cursor_page_request_test.dart test/features/tags/tag_threads_controller_test.dart test/features/home/home_feed_controller_test.dart test/features/moments/moment_controllers_test.dart test/features/moments/moment_bookmark_list_controller_test.dart test/features/social/bookmark_list_controller_test.dart test/features/users/public_user_controller_test.dart test/features/search/search_controller_test.dart test/features/notifications/notification_controllers_test.dart test/features/wallet/wallet_controllers_test.dart test/features/direct_messages/direct_message_controllers_test.dart`，94 项通过，见 paging-confirmed.log。新增回归覆盖过期成功/失败/40007、刷新失败、重新加载后旧刷新仍悬挂、按收藏 ID 去重。
 
 DTO 定向：`flutter test --no-pub --concurrency=2 test/features/moments/moment_repository_test.dart test/features/search/search_repository_test.dart`，14 项通过，dto-tests.log。新增用同一 DTO 经真实信息流 repository 与搜索 mapper 验证作者、URL/各图片变体、尺寸、动画及内容类型；不安全 URL 与宽高不成对分别保留 MOMENT_UNSAFE_URL、MOMENT_MEDIA_DIMENSION_MISMATCH 和原搜索错误标签。测试文件后拆出小型 part 保持单文件门禁，最终全量会复核。
+
+冷却定向：`flutter test --no-pub --concurrency=2 test/features/auth/registration_controller_test.dart test/features/auth/password_recovery_controller_test.dart test/features/settings/credential_security_controllers_test.dart`，19 项通过，cooldown-tests.log。覆盖冷却到零不自动发送、editEmail/dispose 取消 tick、dispose 后迟到响应不回写、确定失败 Retry-After、429/投递结果不明固定 60 秒与请求编号。注册仅 trim、找回/改邮箱 lowercase+trim、找回 seed、登录/退出与 noAutomaticReplay 保持原业务实现。
