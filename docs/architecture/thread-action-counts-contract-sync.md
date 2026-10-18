@@ -11,3 +11,5 @@
 ## 最终合并来源
 
 Backend PR #55 已合并至 dev，最终固定 `6e00c4031a8f970609eef8cbf6fdefe3e6b12126`。再次执行官方同步脚本后，只有 `backend-contract.properties` 中 revision 改变，OpenAPI、Markdown fixtures、生成器输入和已生成 SDK 与 `da68203a` 完全相同。本来源 chore 保留工作区业务候选，不混入 UI 或控制器改动；完整 `check:apk` 待精确部署确认后执行。
+
+首次完整门禁在 API 覆盖登记处发现旧 5.39 审查版本尚未同步，停止于全量 Flutter 测试之前。再次逐项对比旧、新 OpenAPI 的 248 个 operationId，新增和删除均为 0；保留所有排除项目及理由，仅将登记版本更新为 5.40，重新运行严格覆盖检查。不将该元数据遗漏当作应用门禁通过，首轮日志保留，后续重跑官方完整入口。
