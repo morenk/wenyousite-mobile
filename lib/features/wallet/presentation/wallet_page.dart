@@ -90,17 +90,14 @@ class _WalletSummaryPanel extends StatelessWidget {
       child: summary == null
           ? state.isLoadingSummary
                 ? const _WalletLoading(label: '正在读取温油余额…')
-                : WenyouEmptyState(
+                : WenyouRetryFailure(
                     icon: WenyouIconIds.statusOffline,
                     title: '温油余额加载失败',
                     message: state.summaryFailure?.userMessage ?? '请稍后重试。',
-                    detail: wenyouFailureDetail(state.summaryFailure),
-                    action: OutlinedButton.icon(
-                      key: const Key('wallet-summary-retry'),
-                      onPressed: onRetry,
-                      icon: const WenyouIcon(WenyouIconIds.actionRefresh),
-                      label: const Text('重试余额'),
-                    ),
+                    failure: state.summaryFailure,
+                    retryKey: const Key('wallet-summary-retry'),
+                    onRetry: onRetry,
+                    retryLabel: '重试余额',
                   )
           : Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -183,14 +180,12 @@ class _WalletSummaryPanel extends StatelessWidget {
                 ),
                 if (state.summaryFailure != null) ...[
                   SizedBox(height: tokens.space12),
-                  WenyouStatusBanner(
-                    tone: WenyouStatusTone.error,
+                  WenyouRetryFailure(
+                    inline: true,
                     message: '余额刷新失败，当前仍显示上次结果。',
-                    detail: wenyouFailureDetail(state.summaryFailure),
-                    action: TextButton(
-                      onPressed: onRetry,
-                      child: const Text('重新刷新'),
-                    ),
+                    failure: state.summaryFailure,
+                    onRetry: onRetry,
+                    retryLabel: '重新刷新',
                   ),
                 ],
               ],
@@ -255,17 +250,14 @@ class _WalletTransactionsPanel extends StatelessWidget {
                 const _WalletLoading(label: '正在读取温油流水…')
               else if (state.transactions.isEmpty &&
                   state.transactionsFailure != null)
-                WenyouEmptyState(
+                WenyouRetryFailure(
                   icon: WenyouIconIds.statusOffline,
                   title: '温油流水加载失败',
                   message: state.transactionsFailure!.userMessage,
-                  detail: wenyouFailureDetail(state.transactionsFailure),
-                  action: OutlinedButton.icon(
-                    key: const Key('wallet-transactions-retry'),
-                    onPressed: onRetry,
-                    icon: const WenyouIcon(WenyouIconIds.actionRefresh),
-                    label: const Text('重试'),
-                  ),
+                  failure: state.transactionsFailure,
+                  retryKey: const Key('wallet-transactions-retry'),
+                  onRetry: onRetry,
+                  retryLabel: '重试',
                 )
               else if (state.transactions.isEmpty)
                 const WenyouEmptyState(

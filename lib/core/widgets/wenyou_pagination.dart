@@ -96,13 +96,12 @@ class WenyouLoadMoreControl extends StatelessWidget {
     final tokens = context.wenyouTokens;
     final Widget child;
     if (failure case final currentFailure?) {
-      child = WenyouFailureBanner(
+      child = WenyouRetryFailure(
+        inline: true,
         failure: currentFailure,
-        action: TextButton(
-          key: retryKey,
-          onPressed: isLoading ? null : onLoadMore,
-          child: Text(retryLabel),
-        ),
+        retryKey: retryKey,
+        onRetry: isLoading ? null : onLoadMore,
+        retryLabel: retryLabel,
       );
     } else if (isLoading) {
       child = Semantics(

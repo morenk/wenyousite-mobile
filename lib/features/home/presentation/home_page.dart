@@ -267,19 +267,15 @@ class _HomeErrorState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return WenyouPanel(
-      child: WenyouEmptyState(
-        icon: WenyouIconIds.statusOffline,
-        title: '主题列表加载失败',
-        message: failure?.userMessage ?? '请检查网络后重试。',
-        detail: wenyouFailureDetail(failure),
-        action: FilledButton.icon(
-          key: const Key('home-retry'),
-          onPressed: onRetry,
-          icon: const WenyouIcon(WenyouIconIds.actionRefresh),
-          label: const Text('重试'),
-        ),
-      ),
+    return WenyouRetryFailure(
+      panel: true,
+      icon: WenyouIconIds.statusOffline,
+      title: '主题列表加载失败',
+      message: failure?.userMessage ?? '请检查网络后重试。',
+      failure: failure,
+      retryKey: const Key('home-retry'),
+      onRetry: onRetry,
+      retryLabel: '重试',
     );
   }
 }
@@ -292,14 +288,7 @@ class _HomeTransientError extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return WenyouFailureBanner(
-      failure: failure,
-      action: TextButton.icon(
-        onPressed: onRetry,
-        icon: const WenyouIcon(WenyouIconIds.actionRefresh, size: 18),
-        label: const Text('重试'),
-      ),
-    );
+    return WenyouRetryFailure(inline: true, failure: failure, onRetry: onRetry);
   }
 }
 

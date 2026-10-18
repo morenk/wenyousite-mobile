@@ -90,19 +90,15 @@ class _StickerCollectionPageState extends ConsumerState<StickerCollectionPage> {
           ),
           StickerCollectionPhase.failed => WenyouPageBody(
             maxWidth: 680,
-            child: WenyouPanel(
-              child: WenyouEmptyState(
-                icon: WenyouIconIds.statusOffline,
-                title: '表情收藏加载失败',
-                message: state.failure?.userMessage ?? '请稍后重试。',
-                detail: wenyouFailureDetail(state.failure),
-                action: OutlinedButton.icon(
-                  key: const Key('stickers-retry'),
-                  onPressed: notifier.load,
-                  icon: const WenyouIcon(WenyouIconIds.actionRefresh),
-                  label: const Text('重试'),
-                ),
-              ),
+            child: WenyouRetryFailure(
+              panel: true,
+              icon: WenyouIconIds.statusOffline,
+              title: '表情收藏加载失败',
+              message: state.failure?.userMessage ?? '请稍后重试。',
+              failure: state.failure,
+              retryKey: const Key('stickers-retry'),
+              onRetry: notifier.load,
+              retryLabel: '重试',
             ),
           ),
           StickerCollectionPhase.ready => _buildReady(
