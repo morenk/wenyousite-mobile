@@ -143,3 +143,9 @@
 - 完整日志：`.dart_tool/action-counts-full-check-apk-verified.log`；同名副本及 `action-counts-candidate-20261018.json` 位于上述本机产物目录，不提交日志或安装包。
 
 Mobile 实现任务未安装或启动 App，由治理任务独占设备并另行记录安装。真实收藏／官方订阅总数、成功增删后的刷新、动态实机和极窄大字号回复兜底仍待负责人验收；已接受的圆角／留白结论不扩大到这些新增状态。PR #107 保持 Draft，仍依赖未合并的 #106，不自动合并、发布或部署。
+
+## 最终统计候选安装核验
+
+2026-10-18 19:49:35（设备时间，Asia/Shanghai），治理任务对本任务 Xiaomi 设备 `4b9c39b5` 执行 `adb install -r`，返回 `Success`。安装的 `site.wenyou.app.debug` 为应用提交 `81d948ac5818cdb30d0260f2409b11c3b5da92c3`／源码摘要 `37f9cc9d` 的最终统计候选，版本 `0.9.0-debug`／99。随后拉取设备内 `base.apk` 核验，SHA-256 与 `cb237f577c2fed80299462f41f957049d58aac19b02863a80569331580af0744` 完全一致；未卸载、未清除应用数据，草稿保留。
+
+安装回执为 `D:/codex-artifacts/compact-bottom-actions/installation-counts-20261018.json`，设备操作由治理任务独占。agent 未自动启动 App，已请负责人手动打开后再连接热重载；当前安装成功不代表真实计数或极窄兜底已验收。真实收藏／官方订阅总数、成功增删刷新、动态实机及极窄大字号回复入口仍待负责人确认，PR #107 保持 Draft。本次仅补安装文档与 PR 状态，不修改源码、不重跑完整门禁、不重建 APK。
