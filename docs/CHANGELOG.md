@@ -1,5 +1,9 @@
 # 移动端变更记录
 
+## 2026-10-18 主题统计最终合并来源同步
+
+- 官方脚本固定 Backend PR #55 合并提交 `6e00c4031a8f970609eef8cbf6fdefe3e6b12126`，API 5.40 契约与先前候选逐字节一致，仅更新 revision 和来源文档。生成器输入与已生成 SDK 未变化；正式部署核验及消费者完整门禁另行记录。
+
 ## 2026-10-18 主题真实统计契约同步
 
 - 从 Backend `da68203a494c6d0f6d377c23399390c2cee397f3` 同步 API `5.40.0-dev.20261018.1`，生成主题详情可选 `bookmarkCount`／`subscriberCount`；旧响应缺字段保持未知。本 chore 不接入展示，详见[同步记录](architecture/thread-action-counts-contract-sync.md)。
