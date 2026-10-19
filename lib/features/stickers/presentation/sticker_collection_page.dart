@@ -4,6 +4,7 @@ import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_settings_body.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
@@ -71,7 +72,9 @@ class _StickerCollectionPageState extends ConsumerState<StickerCollectionPage> {
     final notifier = ref.read(stickerCollectionControllerProvider.notifier);
     return WenyouSettingsTypography(
       child: Scaffold(
+        backgroundColor: wenyouPersonalPageBackground(context),
         appBar: AppBar(
+          backgroundColor: wenyouPersonalPageBackground(context),
           title: const Text('表情包'),
           actions: [
             TextButton(
@@ -145,7 +148,7 @@ class _StickerCollectionPageState extends ConsumerState<StickerCollectionPage> {
                   spacing: tokens.space12,
                   children: [
                     Text(
-                      '长按拖动排序',
+                      '长按排序',
                       style: Theme.of(context).textTheme.wenyouCaption,
                     ),
                     Text(
@@ -180,53 +183,55 @@ class _StickerCollectionPageState extends ConsumerState<StickerCollectionPage> {
                   ),
                   SizedBox(height: tokens.space12),
                 ],
-                SizedBox(height: tokens.space12),
-                StickerReorderGrid(
-                  items: collection.items,
-                  pendingTiles: [
-                    if (_pendingInput != null)
-                      _buildPendingTile(context, uploadState, state),
-                    for (final pending in collection.pendingImports)
-                      if (pending.id != _pendingImportId)
-                        _buildServerPendingTile(context, pending),
-                  ],
-                  scrollController: _scrollController,
-                  viewportKey: _viewportKey,
-                  managing: _managing,
-                  canRemove: !state.isBusy && !uploadState.isBusy,
-                  enabled:
-                      !uploadState.isBusy &&
-                      (!state.isBusy ||
-                          (state.action == StickerAction.reordering &&
-                              state.transientFailure == null)),
-                  resetSignal: state.transientFailure,
-                  onDragChanged: (value) => setState(() => _dragging = value),
-                  onReorder: notifier.reorder,
-                  onRemove: _confirmRemove,
-                  addButton: Tooltip(
-                    message: '从相册添加',
-                    child: OutlinedButton(
-                      key: const Key('stickers-add-gallery'),
-                      style: OutlinedButton.styleFrom(
-                        padding: EdgeInsets.zero,
-                        side: BorderSide(color: tokens.border),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(
-                            tokens.radiusControl,
+                WenyouPanel(
+                  padding: EdgeInsets.all(tokens.space12),
+                  child: StickerReorderGrid(
+                    items: collection.items,
+                    pendingTiles: [
+                      if (_pendingInput != null)
+                        _buildPendingTile(context, uploadState, state),
+                      for (final pending in collection.pendingImports)
+                        if (pending.id != _pendingImportId)
+                          _buildServerPendingTile(context, pending),
+                    ],
+                    scrollController: _scrollController,
+                    viewportKey: _viewportKey,
+                    managing: _managing,
+                    canRemove: !state.isBusy && !uploadState.isBusy,
+                    enabled:
+                        !uploadState.isBusy &&
+                        (!state.isBusy ||
+                            (state.action == StickerAction.reordering &&
+                                state.transientFailure == null)),
+                    resetSignal: state.transientFailure,
+                    onDragChanged: (value) => setState(() => _dragging = value),
+                    onReorder: notifier.reorder,
+                    onRemove: _confirmRemove,
+                    addButton: Tooltip(
+                      message: '从相册添加',
+                      child: OutlinedButton(
+                        key: const Key('stickers-add-gallery'),
+                        style: OutlinedButton.styleFrom(
+                          padding: EdgeInsets.zero,
+                          side: BorderSide(color: tokens.border),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(
+                              tokens.radiusControl,
+                            ),
                           ),
                         ),
-                      ),
-                      onPressed:
-                          state.isBusy ||
-                              uploadState.isBusy ||
-                              _pendingInput != null ||
-                              collection.isFull ||
-                              _dragging
-                          ? null
-                          : _addFromGallery,
-                      child: Semantics(
-                        label: '从相册添加',
-                        child: const WenyouIcon(WenyouIconIds.actionAddImage),
+                        onPressed:
+                            state.isBusy ||
+                                uploadState.isBusy ||
+                                _pendingInput != null ||
+                                collection.isFull ||
+                                _dragging
+                            ? null
+                            : _addFromGallery,
+                        child: Semantics(
+                          label: '从相册添加',
+                          child: const WenyouIcon(WenyouIconIds.actionAddImage),
+                        ),
                       ),
                     ),
                   ),
@@ -481,7 +486,11 @@ class _StickersUnavailablePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return WenyouSettingsTypography(
       child: Scaffold(
-        appBar: AppBar(title: const Text('表情包')),
+        backgroundColor: wenyouPersonalPageBackground(context),
+        appBar: AppBar(
+          backgroundColor: wenyouPersonalPageBackground(context),
+          title: const Text('表情包'),
+        ),
         body: const WenyouPageBody(
           maxWidth: 600,
           child: WenyouPanel(
