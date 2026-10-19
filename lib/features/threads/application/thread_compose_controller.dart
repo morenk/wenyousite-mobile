@@ -2,8 +2,10 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
+import 'package:wenyousite_mobile/app/app_capabilities.dart';
 import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
+import 'package:wenyousite_mobile/core/media/media_audio.dart';
 import 'package:wenyousite_mobile/core/media/media_display.dart';
 import 'package:wenyousite_mobile/core/models/editor_models.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
@@ -32,6 +34,7 @@ class ThreadComposeState {
     this.tags = const [],
     this.body = '',
     this.mediaDisplays = const {},
+    this.mediaAudios = const {},
     this.clientRequestId = '',
     this.remoteDraft,
     this.documentRevision = 0,
@@ -56,6 +59,7 @@ class ThreadComposeState {
   final List<String> tags;
   final String body;
   final Map<String, MediaDisplay> mediaDisplays;
+  final Map<String, MediaAudio> mediaAudios;
   final String clientRequestId;
   final ThreadRemoteDraft? remoteDraft;
   final int documentRevision;
@@ -87,6 +91,7 @@ class ThreadComposeState {
     List<String>? tags,
     String? body,
     Map<String, MediaDisplay>? mediaDisplays,
+    Map<String, MediaAudio>? mediaAudios,
     String? clientRequestId,
     Object? remoteDraft = _unset,
     int? documentRevision,
@@ -113,6 +118,7 @@ class ThreadComposeState {
       tags: tags ?? this.tags,
       body: body ?? this.body,
       mediaDisplays: mediaDisplays ?? this.mediaDisplays,
+      mediaAudios: mediaAudios ?? this.mediaAudios,
       clientRequestId: clientRequestId ?? this.clientRequestId,
       remoteDraft: identical(remoteDraft, _unset)
           ? this.remoteDraft
@@ -150,11 +156,13 @@ class ThreadComposeController extends StateNotifier<ThreadComposeState> {
     this._repository,
     this._snapshotStore, {
     String? knownOwnerId,
+    bool Function()? textColorSupported,
     String Function()? createRequestId,
     DateTime Function()? clock,
     Duration snapshotDebounce = const Duration(milliseconds: 700),
     bool autoStart = true,
   }) : _knownOwnerId = knownOwnerId?.isEmpty == true ? null : knownOwnerId,
+       _textColorSupported = textColorSupported ?? (() => false),
        _createRequestId = createRequestId ?? const Uuid().v4,
        _clock = clock ?? DateTime.now,
        _snapshotDebounce = Duration(
@@ -167,6 +175,7 @@ class ThreadComposeController extends StateNotifier<ThreadComposeState> {
   final ThreadComposeRepository _repository;
   final EditorSnapshotStore _snapshotStore;
   final String? _knownOwnerId;
+  final bool Function() _textColorSupported;
   final String Function() _createRequestId;
   final DateTime Function() _clock;
   final Duration _snapshotDebounce;
@@ -258,18 +267,29 @@ class ThreadComposeController extends StateNotifier<ThreadComposeState> {
   void updateTags(Iterable<String> value) =>
       _update(state.copyWith(tags: normalizeTagNames(value)));
 
-  void updateBody(String value, {Map<String, MediaDisplay>? mediaDisplays}) =>
-      _update(state.copyWith(body: value, mediaDisplays: mediaDisplays));
+  void updateBody(
+    String value, {
+    Map<String, MediaDisplay>? mediaDisplays,
+    Map<String, MediaAudio>? mediaAudios,
+  }) => _update(
+    state.copyWith(
+      body: value,
+      mediaDisplays: mediaDisplays,
+      mediaAudios: mediaAudios,
+    ),
+  );
 
   void restoreContentDraft(
     String content, {
     Map<String, MediaDisplay> mediaDisplays = const {},
+    Map<String, MediaAudio> mediaAudios = const {},
   }) {
     if (state.phase != ThreadComposePhase.ready || state.isSubmitting) return;
     final normalized = MarkdownContent.normalize(content);
     state = state.copyWith(
       body: normalized,
       mediaDisplays: mediaDisplays,
+      mediaAudios: mediaAudios,
       documentRevision: state.documentRevision + 1,
       actionFailure: null,
       successMessage: '已恢复正文草稿；标题、分类和标签保持不变。',
@@ -378,6 +398,7 @@ class ThreadComposeController extends StateNotifier<ThreadComposeState> {
         tags: remote.tags,
         body: remote.body,
         mediaDisplays: remote.mediaDisplays,
+        mediaAudios: remote.mediaAudios,
         clientRequestId: _createRequestId(),
         remoteDraft: remote,
         documentRevision: state.documentRevision + 1,
@@ -460,6 +481,7 @@ class ThreadComposeController extends StateNotifier<ThreadComposeState> {
         tags: remote.tags,
         body: remote.body,
         mediaDisplays: remote.mediaDisplays,
+        mediaAudios: remote.mediaAudios,
         documentRevision: state.documentRevision + 1,
         successMessage: '主题草稿已保存到云端。',
       );
@@ -571,6 +593,7 @@ class ThreadComposeController extends StateNotifier<ThreadComposeState> {
 
   ThreadCreatePayload _currentCreatePayload() {
     return ThreadCreatePayload(
+      textColorSupported: _textColorSupported(),
       clientRequestId: state.clientRequestId,
       title: state.title,
       categorySlug: state.categorySlug,
@@ -606,6 +629,7 @@ class ThreadComposeController extends StateNotifier<ThreadComposeState> {
       tags: metadata.tags,
       body: snapshot.body,
       mediaDisplays: metadata.mediaDisplays,
+      mediaAudios: metadata.mediaAudios,
       clientRequestId: snapshot.clientRequestId,
       remoteDraft: remote == null
           ? null
@@ -622,6 +646,7 @@ class ThreadComposeController extends StateNotifier<ThreadComposeState> {
               tags: metadata.tags,
               body: snapshot.body,
               mediaDisplays: metadata.mediaDisplays,
+              mediaAudios: metadata.mediaAudios,
             ),
       documentRevision: 1,
       restoredFromLocal: true,
@@ -641,6 +666,7 @@ class ThreadComposeController extends StateNotifier<ThreadComposeState> {
         ownerId: ownerId,
         title: source.title,
         mediaDisplays: source.mediaDisplays,
+        mediaAudios: source.mediaAudios,
         categorySlug: source.categorySlug,
         visibility: source.visibility,
         tags: source.tags,
@@ -666,6 +692,12 @@ class ThreadComposeController extends StateNotifier<ThreadComposeState> {
   }
 
   bool _isAmbiguousCreateFailure(ApiFailure failure) {
+    // 明确的本地校验拒绝尚未产生远端写入，不冻结待确认创建请求。
+    if (failure.httpStatus == null &&
+        failure.reason == FailureReason.validation &&
+        failure.effectiveSource == FailureSource.expected) {
+      return false;
+    }
     final status = failure.httpStatus;
     return status == null || status >= 500;
   }
@@ -694,6 +726,8 @@ final threadComposeControllerProvider =
           ref.watch(threadComposeRepositoryProvider),
           ref.watch(editorSnapshotStoreProvider),
           knownOwnerId: sessionScope.accountId,
+          textColorSupported: () =>
+              ref.read(appCapabilitiesProvider).textColorSupported,
         );
       },
       dependencies: [

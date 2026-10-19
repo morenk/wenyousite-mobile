@@ -9,6 +9,7 @@ import 'package:wenyousite_mobile/core/network/media_display_mapper.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/moments/application/moment_repository_ports.dart';
 import 'package:wenyousite_mobile/features/moments/data/moment_comment_context_mapper.dart';
+import 'package:wenyousite_mobile/features/moments/data/moment_dto_mapper.dart';
 import 'package:wenyousite_mobile/features/moments/data/moment_failure_messages.dart';
 import 'package:wenyousite_mobile/features/moments/data/moment_response_contract_validator.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
@@ -21,6 +22,7 @@ class ApiMomentRepository implements MomentRepository {
 
   final MomentsApi _api;
   static const _contract = MomentResponseContractValidator();
+  static const _mapper = MomentDtoMapper(_contract);
 
   @override
   Future<CursorPage<MomentCard>> fetchFeed({
@@ -367,7 +369,7 @@ class ApiMomentRepository implements MomentRepository {
       if (data == null) {
         throw const ApiFailure(userMessage: '评论作者加载失败，请稍后重试。');
       }
-      final authors = data.map(_author).toList(growable: false);
+      final authors = data.map(_mapper.author).toList(growable: false);
       _validateUnique(authors.map((item) => item.id), '评论作者列表');
       return List.unmodifiable(authors);
     } on DioException catch (error) {
@@ -509,7 +511,7 @@ class ApiMomentRepository implements MomentRepository {
     if (expectedId != null && card.id != expectedId) {
       _contractViolation('MOMENT_ID_MISMATCH');
     }
-    final images = dto.images.map(_media).toList(growable: false);
+    final images = dto.images.map(_mapper.media).toList(growable: false);
     _validateUnique(images.map((item) => item.id), '动态图片');
     if (images.length != card.imageCount || images.length > 9) {
       _contractViolation('MOMENT_IMAGE_COUNT_MISMATCH');
@@ -550,7 +552,7 @@ class ApiMomentRepository implements MomentRepository {
     required DateTime updatedAt,
   }) {
     final safeId = _requiredText(id, '动态 ID');
-    final mappedAuthor = _author(author);
+    final mappedAuthor = _mapper.author(author);
     if (_requiredText(authorId, '动态作者 ID') != mappedAuthor.id) {
       _contractViolation('MOMENT_AUTHOR_MISMATCH');
     }
@@ -567,7 +569,7 @@ class ApiMomentRepository implements MomentRepository {
       _ => _contractViolation('MOMENT_TEXT_COVER_THEME_UNKNOWN'),
     };
     final safeImageCount = _nonNegativeInteger(imageCount, '动态图片数量');
-    final mappedCover = coverMedia == null ? null : _media(coverMedia);
+    final mappedCover = coverMedia == null ? null : _mapper.media(coverMedia);
     if ((mappedCoverType == MomentCoverType.image && mappedCover == null) ||
         (mappedCoverType == MomentCoverType.text && mappedCover != null) ||
         (mappedCover != null && safeImageCount < 1) ||
@@ -709,7 +711,7 @@ class ApiMomentRepository implements MomentRepository {
       );
     }
     final text = _optionalText(content);
-    final mappedMedia = media == null ? null : _media(media);
+    final mappedMedia = media == null ? null : _mapper.media(media);
     final mappedSticker = sticker == null ? null : _sticker(sticker);
     if (mappedMedia != null && mappedSticker != null) {
       _contractViolation(
@@ -735,7 +737,7 @@ class ApiMomentRepository implements MomentRepository {
         ? null
         : MomentReplyTarget(
             id: _requiredText(replyToComment.id, '被回复评论 ID'),
-            author: _author(replyToComment.author),
+            author: _mapper.author(replyToComment.author),
           );
     if (parentId == null && replyTarget != null) {
       _contractViolation(
@@ -746,7 +748,7 @@ class ApiMomentRepository implements MomentRepository {
     return MomentComment(
       id: _requiredText(id, '评论 ID'),
       momentId: safeMomentId,
-      author: _author(author),
+      author: _mapper.author(author),
       content: text,
       media: mappedMedia,
       sticker: mappedSticker,
@@ -755,41 +757,6 @@ class ApiMomentRepository implements MomentRepository {
       deleted: deleted,
       canDelete: canDelete,
       createdAt: createdAt,
-    );
-  }
-
-  MomentAuthor _author(PostAuthorResponseDto dto) {
-    return MomentAuthor(
-      id: _requiredText(dto.id, '作者 ID'),
-      username: _requiredText(dto.username, '作者用户名'),
-      avatarUrl: _optionalHttpUri(
-        mapAvatarDisplayUrl(dto.avatar, dto.avatarDisplay),
-        '作者头像',
-      ),
-      level: _nonNegativeInteger(dto.level, '作者等级'),
-    );
-  }
-
-  MomentMedia _media(MomentMediaResponseDto dto) {
-    final width = _optionalPositiveInteger(dto.width, '图片宽度');
-    final height = _optionalPositiveInteger(dto.height, '图片高度');
-    if ((width == null) != (height == null)) {
-      _contractViolation(
-        'MOMENT_MEDIA_DIMENSION_MISMATCH',
-        userMessage: '图片加载失败，请重新加载。',
-      );
-    }
-    return MomentMedia(
-      display: mapMediaDisplay(dto.display),
-      id: _requiredText(dto.id, '图片 ID'),
-      url: _requiredHttpUri(dto.url, '图片地址'),
-      thumbnailUrl: _optionalHttpUri(dto.thumbnailUrl, '图片缩略图地址'),
-      feedUrl: _optionalHttpUri(dto.feedUrl, '图片列表地址'),
-      mediumUrl: _optionalHttpUri(dto.mediumUrl, '图片预览地址'),
-      contentType: dto.contentType?.trim(),
-      animated: dto.animated,
-      width: width,
-      height: height,
     );
   }
 
@@ -854,9 +821,6 @@ class ApiMomentRepository implements MomentRepository {
 
   String _requiredHttpUri(String value, String label) =>
       _contract.requiredHttpUri(value, label);
-
-  String? _optionalHttpUri(String? value, String label) =>
-      _contract.optionalHttpUri(value, label);
 
   int _positiveInteger(num value, String label) =>
       _contract.positiveInteger(value, label);

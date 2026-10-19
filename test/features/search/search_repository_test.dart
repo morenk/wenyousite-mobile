@@ -1,15 +1,79 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/material.dart' hide SearchController;
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:wenyou_api/wenyou_api.dart';
+import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/moments/data/moment_search_mapper.dart';
+import 'package:wenyousite_mobile/features/search/application/search_controller.dart';
 import 'package:wenyousite_mobile/features/search/data/search_repository.dart';
+import 'package:wenyousite_mobile/features/search/presentation/thread_post_search_page.dart';
 import 'package:wenyousite_mobile/features/thread_feed/thread_feed_models.dart';
 
 import '../../support/thread_cover_fixtures.dart';
 
 void main() {
+  testWidgets('楼层搜索完整彩色正文经真实仓储和列表只展示共享摘要', (tester) async {
+    const source =
+        '<span data-wenyou-color-v1="#D14343">**中文😀** [链接](https://example.com) `a < b`</span>';
+    final api = _MockSearchApi();
+    when(
+      () => api.searchSearch(q: '中文', extra: const {}),
+    ).thenAnswer((_) async => _overviewResponse(content: source));
+    when(
+      () => api.searchSearchPosts(
+        q: '中文',
+        cursor: null,
+        limit: 20,
+        extra: const {},
+      ),
+    ).thenAnswer((_) async => _postsResponse(content: source));
+    when(
+      () => api.threadSearchSearchPosts(
+        threadId: 'thread-1',
+        q: '中文',
+        cursor: null,
+        limit: 20,
+      ),
+    ).thenAnswer((_) async => _threadPostsResponse(content: source));
+    final repository = ApiSearchRepository(api);
+    final overview = await repository.searchOverview('中文');
+    final global = await repository.searchPosts('中文');
+    final thread = await repository.searchThreadPosts('thread-1', '中文');
+    for (final result in [
+      overview.posts.single,
+      global.items.single,
+      thread.items.single,
+    ]) {
+      expect(result.content, source);
+      expect(result.preview, '中文😀 链接 a < b');
+    }
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          threadPostSearchControllerProvider.overrideWith(
+            (ref, id) => ThreadPostSearchController(repository, id),
+          ),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const ThreadPostSearchPage(threadId: 'thread-1'),
+        ),
+      ),
+    );
+    await tester.enterText(
+      find.byKey(const Key('thread-search-query-input')),
+      '中文',
+    );
+    await tester.tap(find.byKey(const Key('thread-search-submit')));
+    await tester.pumpAndSettle();
+    expect(find.text('中文😀 链接 a < b'), findsOneWidget);
+    expect(find.textContaining('data-wenyou-color-v1'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
   test('动态搜索保留后端只读互动权限', () {
     final dto = _momentsResponse().data!.data.single.rebuild(
       (b) => b.canInteract = false,
@@ -172,7 +236,7 @@ Response<SearchSearchUsers200Response> _usersResponse() {
   );
 }
 
-Response<SearchSearchPosts200Response> _postsResponse() {
+Response<SearchSearchPosts200Response> _postsResponse({String? content}) {
   return Response(
     requestOptions: RequestOptions(path: '/api/v1/search/posts'),
     data: SearchSearchPosts200Response(
@@ -184,12 +248,12 @@ Response<SearchSearchPosts200Response> _postsResponse() {
             ..cursor = 'cursor-2'
             ..hasMore = true,
         )
-        ..data.add(_postDto()),
+        ..data.add(_postDto(content: content)),
     ),
   );
 }
 
-Response<SearchSearch200Response> _overviewResponse() {
+Response<SearchSearch200Response> _overviewResponse({String? content}) {
   return Response(
     requestOptions: RequestOptions(path: '/api/v1/search'),
     data: SearchSearch200Response(
@@ -200,7 +264,7 @@ Response<SearchSearch200Response> _overviewResponse() {
           (data) => data
             ..threads.add(_threadDto())
             ..users.add(_userDto())
-            ..posts.add(_postDto()),
+            ..posts.add(_postDto(content: content)),
         ),
     ),
   );
@@ -269,6 +333,7 @@ Response<SearchSearchMoments200Response> _momentsResponse({
 
 Response<ThreadSearchSearchPosts200Response> _threadPostsResponse({
   String postThreadId = 'thread-1',
+  String? content,
 }) {
   return Response(
     requestOptions: RequestOptions(
@@ -283,7 +348,7 @@ Response<ThreadSearchSearchPosts200Response> _threadPostsResponse({
             ..cursor = null
             ..hasMore = false,
         )
-        ..data.add(_postDto(threadId: postThreadId)),
+        ..data.add(_postDto(threadId: postThreadId, content: content)),
     ),
   );
 }
@@ -354,13 +419,16 @@ SearchUserResponseDto _userDto() {
   );
 }
 
-SearchPostResponseDto _postDto({String threadId = 'thread-1'}) {
+SearchPostResponseDto _postDto({
+  String threadId = 'thread-1',
+  String? content,
+}) {
   return SearchPostResponseDto(
     (post) => post
       ..id = 'post-7'
       ..kind = SearchPostResponseDtoKindEnum.FLOOR
       ..floorNumber = 7
-      ..content = '**星海正文** ![航图](https://cdn.example.com/map.jpg)'
+      ..content = content ?? '**星海正文** ![航图](https://cdn.example.com/map.jpg)'
       ..createdAt = DateTime.utc(2026, 8, 10)
       ..author.update(
         (author) => author

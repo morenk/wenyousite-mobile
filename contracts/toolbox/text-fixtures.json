@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "sourceRevision": "2aa7a81ef8d89f86f9447b0fc08e8b115d05b8a2",
+  "sourcePath": "src/lib/tools/__tests__/text-tools.test.ts",
+  "vertical": [
+    {"text":"甲乙丙丁","width":2,"height":2,"gap":1,"direction":"right","expected":"丙 甲\n丁 乙"},
+    {"text":"甲乙丙丁戊己庚辛","width":3,"height":2,"gap":1,"direction":"right","expected":"戊 丙 甲\n己 丁 乙\n\n      庚\n      辛"},
+    {"text":"甲乙丙丁戊","width":3,"height":2,"gap":1,"direction":"left","expected":"甲 丙 戊\n乙 丁   "},
+    {"text":"甲乙丙丁","width":2,"height":2,"gap":0,"direction":"right","expected":"丙甲\n丁乙"},
+    {"text":"甲乙丙丁","width":2,"height":2,"gap":3,"direction":"right","expected":"丙   甲\n丁   乙"},
+    {"text":"甲","width":1,"height":3,"gap":0,"direction":"right","expected":"甲\n  \n  "},
+    {"text":"甲乙\r\n丙丁","width":2,"height":2,"gap":1,"direction":"right","expected":"丙 甲\n丁 乙"},
+    {"text":"甲乙\n丙丁\n\n戊","width":3,"height":2,"gap":1,"direction":"right","expected":"   丙 甲\n   丁 乙\n\n      戊\n        "},
+    {"text":"\n甲\n","width":3,"height":2,"gap":1,"direction":"right","expected":"   甲   \n        "},
+    {"text":"甲\r乙","width":2,"height":2,"gap":1,"direction":"right","expected":"乙 甲\n     "},
+    {"text":"","width":2,"height":2,"gap":1,"direction":"right","expected":""},
+    {"text":"\n","width":2,"height":1,"gap":1,"direction":"right","expected":"     "},
+    {"text":"甲👨‍👩‍👧‍👦乙🇨🇳","width":2,"height":2,"gap":1,"direction":"right","expected":"乙 甲\n🇨🇳 👨‍👩‍👧‍👦"},
+    {"text":"é👍🏽","width":2,"height":1,"gap":1,"direction":"right","expected":"👍🏽 é "},
+    {"text":"A中\nB文","width":2,"height":2,"gap":1,"direction":"right","separator":" | ","expected":"B  | A \n文 | 中"},
+    {"text":"甲乙丙丁","width":2,"height":2,"gap":1,"direction":"right","separator":"🙂  ","expected":"丙🙂  甲\n丁🙂  乙"},
+    {"text":"甲乙丙丁","width":2,"height":2,"gap":1,"direction":"right","separator":"","expected":"丙甲\n丁乙"},
+    {"text":"\t甲","width":1,"height":5,"gap":1,"direction":"right","expected":"  \n  \n  \n  \n甲"}
+  ],
+  "morse": [
+    {"input":"SOS 2026","encoded":"... --- ... / ..--- ----- ..--- -....","decoded":"SOS 2026"},
+    {"input":"a/b","encoded":".- -..-. -...","decoded":"A/B"},
+    {"input":"a\r\nb","encoded":".-\n-...","decoded":"A\nB"},
+    {"input":"é","encoded":"..-..","decoded":"É"},
+    {"input":"  a   b  ","encoded":".- / -...","decoded":"A B"},
+    {"input":"","encoded":"","decoded":""}
+  ],
+  "fancy": [
+    {"input":"h","style":"italic","expected":"ℎ"},
+    {"input":"BEFHILMRego","style":"script","expected":"ℬℰℱℋℐℒℳℛℯℊℴ"},
+    {"input":"CHIRZ","style":"fraktur","expected":"ℭℌℑℜℨ"},
+    {"input":"CHNPQRZ","style":"doubleLine","expected":"ℂℍℕℙℚℝℤ"},
+    {"input":"Az09中文👨‍👩‍👧‍👦\n","style":"bold","expected":"𝐀𝐳𝟎𝟗中文👨‍👩‍👧‍👦\n"},
+    {"input":"Az09","style":"mono","expected":"𝙰𝚣𝟶𝟿"},
+    {"input":"Az09","style":"full","expected":"Ａｚ０９"},
+    {"input":"09","style":"script","expected":"09"}
+  ]
+}

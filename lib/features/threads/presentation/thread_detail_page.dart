@@ -62,7 +62,6 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
   final _targetKey = GlobalKey();
   final _countKey = GlobalKey();
   final _itemListKey = GlobalKey();
-  final _composerDrafts = <String, PostComposerDraft>{};
   final _entryTargetCoordinator = ThreadDetailEntryTargetCoordinator();
   late final _quickScroll = ReadingQuickScrollController(
     scrollController: _subthreadScroll.controller,
@@ -229,7 +228,6 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
         targetPostId != null && _entryTargetCoordinator.allowsTargetEffects;
     ref.listen(sessionScopeProvider, (previous, next) {
       if (previous == null || previous == next) return;
-      _composerDrafts.clear();
       _navigation.clear();
       _numberTarget = null;
       _targetAttempt += 1;
@@ -519,6 +517,18 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
                         authenticated: session.isAuthenticated,
                         canCompose: selectedSubthread != null,
                         onRequireAuthentication: _requireLogin,
+                        onCountsChanged: () {
+                          if (!mounted) return;
+                          unawaited(
+                            ref.read(provider.notifier).refreshActionCounts(),
+                          );
+                        },
+                        onTip: () => _handleThreadAction(
+                          ThreadDetailAppBarAction.tip,
+                          state.detail!,
+                          provider,
+                          selectedSubthread: selectedSubthread,
+                        ),
                         onCompose: selectedSubthread == null
                             ? () {}
                             : () => _compose(
@@ -753,20 +763,12 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
 
   Future<void> _compose(PostComposerTarget target) async {
     _quickScroll.close();
-    final draftKey = postComposerDraftKey(target);
     final openedSessionScope = ref.read(sessionScopeProvider);
     final result = await showPostComposerSheet(
       supportsRpIdentity:
           ref.read(_detailProvider).detail?.supportsRpIdentity ?? false,
       context: context,
       target: target,
-      initialDraft: _composerDrafts[draftKey],
-      onDraftChanged: (draft) {
-        if (!mounted || ref.read(sessionScopeProvider) != openedSessionScope) {
-          return;
-        }
-        setPostComposerDraft(_composerDrafts, draftKey, draft);
-      },
     );
     _prefetch.resume();
     if (result == null ||
@@ -774,7 +776,6 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
         ref.read(sessionScopeProvider) != openedSessionScope) {
       return;
     }
-    _composerDrafts.remove(draftKey);
     if (target.kind == PostComposerKind.createFloor) {
       ref.invalidate(postFloorDiscussionAuthorsProvider(target.subthreadId));
     }

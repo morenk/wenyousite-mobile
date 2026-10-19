@@ -309,23 +309,19 @@ class _ContentFailureState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hidden = failure?.httpStatus == 404;
-    return WenyouPanel(
-      child: WenyouEmptyState(
-        icon: hidden ? WenyouIconIds.actionHide : WenyouIconIds.statusOffline,
-        title: hidden && !isSelf
-            ? '该用户未公开${tab.description}'
-            : '${tab.description}加载失败',
-        message: hidden && !isSelf
-            ? '隐私设置可能刚刚发生变化。'
-            : (failure?.userMessage ?? '请稍后重试。'),
-        detail: wenyouFailureDetail(failure),
-        action: OutlinedButton.icon(
-          key: Key('public-user-${tab.name}-retry'),
-          onPressed: onRetry,
-          icon: const WenyouIcon(WenyouIconIds.actionRefresh),
-          label: const Text('重试'),
-        ),
-      ),
+    return WenyouRetryFailure(
+      panel: true,
+      icon: hidden ? WenyouIconIds.actionHide : WenyouIconIds.statusOffline,
+      title: hidden && !isSelf
+          ? '该用户未公开${tab.description}'
+          : '${tab.description}加载失败',
+      message: hidden && !isSelf
+          ? '隐私设置可能刚刚发生变化。'
+          : (failure?.userMessage ?? '请稍后重试。'),
+      failure: failure,
+      retryKey: Key('public-user-${tab.name}-retry'),
+      onRetry: onRetry,
+      retryLabel: '重试',
     );
   }
 }

@@ -2,9 +2,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:wenyousite_mobile/app/production_overrides.dart';
+import 'package:wenyousite_mobile/core/application/audio_download.dart';
+import 'package:wenyousite_mobile/core/application/audio_playback.dart';
 import 'package:wenyousite_mobile/core/application/profile_cache_invalidation.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/network/session_controller.dart';
+import 'package:wenyousite_mobile/features/app_shell/application/mobile_update_controller.dart';
 import 'package:wenyousite_mobile/features/app_shell/application/startup_controller.dart';
 import 'package:wenyousite_mobile/features/app_shell/domain/contract_info.dart';
 import 'package:wenyousite_mobile/features/auth/application/auth_ports.dart';
@@ -12,7 +15,14 @@ import 'package:wenyousite_mobile/features/direct_messages/application/direct_me
 import 'package:wenyousite_mobile/features/drafts/application/content_draft_repository_ports.dart';
 import 'package:wenyousite_mobile/features/editor/application/editor_snapshot_store_ports.dart';
 import 'package:wenyousite_mobile/features/home/application/home_repository_ports.dart';
+import 'package:wenyousite_mobile/features/media/application/audio_file_picker_ports.dart';
+import 'package:wenyousite_mobile/features/media/application/audio_upload_ports.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
+import 'package:wenyousite_mobile/features/media/data/audio_upload_repository.dart'
+    show ApiAudioUploadRepository;
+import 'package:wenyousite_mobile/features/media/data/device_audio_download.dart';
+import 'package:wenyousite_mobile/features/media/data/just_audio_playback_driver.dart';
+import 'package:wenyousite_mobile/features/media/data/system_audio_file_picker.dart';
 import 'package:wenyousite_mobile/features/moments/application/moment_repository_ports.dart';
 import 'package:wenyousite_mobile/features/notifications/application/notification_repository_ports.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_repository_ports.dart';
@@ -117,7 +127,20 @@ void main() {
   });
   test('生产组合根绑定启动、公开浏览、创作与消息必需端口', () {
     final container = ProviderContainer(
-      overrides: productionProviderOverrides(),
+      overrides: [
+        ...productionProviderOverrides(),
+        // 本用例验证端口绑定，不启动网络检查，避免销毁后的异步回调。
+        startupControllerProvider.overrideWith(
+          (ref) => StartupController(
+            ref.watch(metaRepositoryProvider),
+            ref.watch(appEnvironmentProvider),
+            ref.read(sessionControllerProvider.notifier),
+            mobileUpdateService: ref.watch(mobileUpdateServiceProvider),
+            dismissStore: ref.watch(recommendedUpdateDismissStoreProvider),
+            autoStart: false,
+          ),
+        ),
+      ],
     );
     addTearDown(container.dispose);
     final mandatoryPorts = <ProviderListenable<Object?>>[
@@ -135,11 +158,31 @@ void main() {
       walletRepositoryProvider,
       editorImagePickerPortProvider,
       mediaUploadGatewayPortProvider,
+      audioPlaybackProvider,
+      audioDownloadProvider,
+      audioFilePickerProvider,
+      audioUploadRepositoryProvider,
     ];
 
     for (final provider in mandatoryPorts) {
       expect(() => container.read(provider), returnsNormally);
     }
+    expect(
+      container.read(audioPlaybackProvider),
+      same(container.read(deviceAudioPlaybackProvider)),
+    );
+    expect(
+      container.read(audioDownloadProvider),
+      same(container.read(deviceAudioDownloadProvider)),
+    );
+    expect(
+      container.read(audioFilePickerProvider),
+      isA<SystemAudioFilePicker>(),
+    );
+    expect(
+      container.read(audioUploadRepositoryProvider),
+      isA<ApiAudioUploadRepository>(),
+    );
   });
 
   test('Markdown v4 启用文字块对齐，v5 再启用图片块对齐', () {

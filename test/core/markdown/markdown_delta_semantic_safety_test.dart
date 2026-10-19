@@ -1,6 +1,7 @@
 import 'package:flutter_quill/quill_delta.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_delta_inline_encoder.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_semantics.dart';
 
 void main() {
@@ -12,12 +13,17 @@ void main() {
     test('历史嵌套按全部 marks 证明后规范写回：$source', () {
       final decoded = MarkdownDeltaCodec.decode(source).delta;
       expect(decoded.operations.first.data, '甲乙');
-      expect(decoded.operations.first.attributes, {
-        'bold': true,
-        'italic': true,
-        'strike': true,
-        if (source.contains('https:')) 'link': 'https://wenyou.site/help',
-      });
+      expect(
+        MarkdownDeltaInlineEncoder.visibleMarks(
+          decoded.operations.first.attributes,
+        ),
+        {
+          'bold': true,
+          'italic': true,
+          'strike': true,
+          if (source.contains('https:')) 'link': 'https://wenyou.site/help',
+        },
+      );
       final expected = source.contains('https:')
           ? '***[~~甲乙~~](https://wenyou.site/help)***'
           : '***~~甲乙~~***';

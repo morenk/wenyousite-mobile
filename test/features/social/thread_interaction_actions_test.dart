@@ -36,6 +36,7 @@ void main() {
 
   testWidgets('登录用户点赞与收藏切换采用服务端结果并展示反馈', (tester) async {
     final repository = _FakeRepository();
+    var totalRefreshes = 0;
     final bookmarkRepository = _FakeBookmarkListRepository();
     final container = await _authenticatedContainer(
       repository,
@@ -50,6 +51,7 @@ void main() {
           home: Scaffold(
             body: ThreadInteractionActions(
               target: _target,
+              onBookmarkChanged: () => totalRefreshes++,
               onRequireAuthentication: () {},
             ),
           ),
@@ -60,6 +62,7 @@ void main() {
     await tester.tap(find.byKey(const Key('thread-interaction-like')));
     await tester.pumpAndSettle();
     expect(find.text('已喜欢 13'), findsOneWidget);
+    expect(totalRefreshes, 0);
     expect(find.text('已喜欢这个主题。'), findsOneWidget);
     await tester.pump(const Duration(seconds: 4));
     await tester.pumpAndSettle();
@@ -70,6 +73,7 @@ void main() {
     await tester.tap(find.byKey(const Key('bookmark-folder-picker-confirm')));
     await tester.pumpAndSettle();
     expect(find.text('已收藏'), findsOneWidget);
+    expect(totalRefreshes, 1);
     expect(find.text('已收藏到“默认收藏夹”。'), findsOneWidget);
     await tester.pump(const Duration(seconds: 4));
     await tester.pumpAndSettle();
@@ -86,6 +90,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('收藏'), findsOneWidget);
     expect(repository.removedBookmarkIds, ['bookmark-1']);
+    expect(totalRefreshes, 2);
   });
 
   testWidgets('首次收藏可直接选择指定收藏夹且只写一次', (tester) async {
@@ -129,6 +134,7 @@ void main() {
   });
 
   testWidgets('首次收藏加载可原地重试，写入失败恢复按钮并可重新选择', (tester) async {
+    var totalRefreshes = 0;
     final repository = _FakeRepository(bookmarkFailures: 1);
     final bookmarkRepository = _FakeBookmarkListRepository(folderFailures: 1);
     final container = await _authenticatedContainer(
@@ -144,6 +150,7 @@ void main() {
           home: Scaffold(
             body: ThreadInteractionActions(
               target: _target,
+              onBookmarkChanged: () => totalRefreshes++,
               onRequireAuthentication: () {},
             ),
           ),
@@ -167,12 +174,19 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('收藏失败，请稍后重试。'), findsOneWidget);
     expect(customFolder, findsNothing);
+    expect(totalRefreshes, 0);
+    await tester.tap(find.byKey(const Key('thread-interaction-bookmark')));
+    await tester.pumpAndSettle();
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(totalRefreshes, 0);
     await tester.tap(find.byKey(const Key('thread-interaction-bookmark')));
     await tester.pumpAndSettle();
     await tester.tap(customFolder);
     await tester.tap(find.byKey(const Key('bookmark-folder-picker-confirm')));
     await tester.pumpAndSettle();
     expect(repository.createdFolderIds, ['folder-later', 'folder-later']);
+    expect(totalRefreshes, 1);
     expect(find.text('已收藏到“稍后阅读”。'), findsOneWidget);
   });
 

@@ -204,6 +204,7 @@ void main() {
       final repository = ApiPostRepository(
         api,
         roleMentionsSupported: supports,
+        textColorSupported: supports,
       );
 
       final created = await repository.create(
@@ -267,6 +268,18 @@ void main() {
       expect(
         bodyPayload.markdownContractVersion,
         supports ? UpsertBodyDtoMarkdownContractVersionEnum.number6 : null,
+      );
+      expect(
+        createPayload.textColorVersion,
+        supports ? CreatePostDtoTextColorVersionEnum.number1 : null,
+      );
+      expect(
+        updatePayload.textColorVersion,
+        supports ? UpdatePostDtoTextColorVersionEnum.number1 : null,
+      );
+      expect(
+        bodyPayload.textColorVersion,
+        supports ? UpsertBodyDtoTextColorVersionEnum.number1 : null,
       );
       verify(() => api.postsRemove(id: 'created')).called(1);
       verify(

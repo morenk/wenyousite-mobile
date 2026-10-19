@@ -1,3 +1,4 @@
+import 'package:wenyousite_mobile/core/media/media_audio.dart';
 import 'package:wenyousite_mobile/core/media/media_display.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/features/thread_identity/identity_models.dart';
@@ -53,10 +54,12 @@ class PostItem {
     required this.author,
     required this.content,
     this.mediaDisplays = const {},
+    this.mediaAudios = const {},
     this.mentionLabels = const {},
     required this.version,
     required this.createdAt,
     required this.updatedAt,
+    this.editedAt,
     required this.isBody,
     required this.isDeleted,
     this.floorNumber,
@@ -79,10 +82,12 @@ class PostItem {
   final PostAuthor author;
   final String content;
   final Map<String, MediaDisplay> mediaDisplays;
+  final Map<String, MediaAudio> mediaAudios;
   final Map<String, String> mentionLabels;
   final int version;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final DateTime? editedAt;
   final bool isBody;
   final bool isDeleted;
   final int? floorNumber;
@@ -108,6 +113,7 @@ class PostCreateInput {
     required this.subthreadId,
     required this.content,
     required this.clientRequestId,
+    this.textColorSupported,
     this.parentPostId,
     this.replyToPostId,
     this.identityToken,
@@ -118,6 +124,9 @@ class PostCreateInput {
   final String subthreadId;
   final String content;
   final String clientRequestId;
+
+  /// null 为旧草稿未记录能力；false 表示原请求明确未声明。
+  final bool? textColorSupported;
   final String? parentPostId;
   final String? replyToPostId;
   final String? identityToken;

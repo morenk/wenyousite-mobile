@@ -10,6 +10,8 @@ class _$DraftResponseDto extends DraftResponseDto {
   @override
   final BuiltList<MarkdownMediaDisplayResponseDto>? mediaDisplays;
   @override
+  final BuiltList<AudioMediaDto>? mediaAudios;
+  @override
   final String id;
   @override
   final String userId;
@@ -30,6 +32,7 @@ class _$DraftResponseDto extends DraftResponseDto {
 
   _$DraftResponseDto._({
     this.mediaDisplays,
+    this.mediaAudios,
     required this.id,
     required this.userId,
     required this.slot,
@@ -51,6 +54,7 @@ class _$DraftResponseDto extends DraftResponseDto {
     if (identical(other, this)) return true;
     return other is DraftResponseDto &&
         mediaDisplays == other.mediaDisplays &&
+        mediaAudios == other.mediaAudios &&
         id == other.id &&
         userId == other.userId &&
         slot == other.slot &&
@@ -64,6 +68,7 @@ class _$DraftResponseDto extends DraftResponseDto {
   int get hashCode {
     var _$hash = 0;
     _$hash = $jc(_$hash, mediaDisplays.hashCode);
+    _$hash = $jc(_$hash, mediaAudios.hashCode);
     _$hash = $jc(_$hash, id.hashCode);
     _$hash = $jc(_$hash, userId.hashCode);
     _$hash = $jc(_$hash, slot.hashCode);
@@ -79,6 +84,7 @@ class _$DraftResponseDto extends DraftResponseDto {
   String toString() {
     return (newBuiltValueToStringHelper(r'DraftResponseDto')
           ..add('mediaDisplays', mediaDisplays)
+          ..add('mediaAudios', mediaAudios)
           ..add('id', id)
           ..add('userId', userId)
           ..add('slot', slot)
@@ -100,6 +106,12 @@ class DraftResponseDtoBuilder
   set mediaDisplays(
     ListBuilder<MarkdownMediaDisplayResponseDto>? mediaDisplays,
   ) => _$this._mediaDisplays = mediaDisplays;
+
+  ListBuilder<AudioMediaDto>? _mediaAudios;
+  ListBuilder<AudioMediaDto> get mediaAudios =>
+      _$this._mediaAudios ??= ListBuilder<AudioMediaDto>();
+  set mediaAudios(ListBuilder<AudioMediaDto>? mediaAudios) =>
+      _$this._mediaAudios = mediaAudios;
 
   String? _id;
   String? get id => _$this._id;
@@ -137,6 +149,7 @@ class DraftResponseDtoBuilder
     final $v = _$v;
     if ($v != null) {
       _mediaDisplays = $v.mediaDisplays?.toBuilder();
+      _mediaAudios = $v.mediaAudios?.toBuilder();
       _id = $v.id;
       _userId = $v.userId;
       _slot = $v.slot;
@@ -169,6 +182,7 @@ class DraftResponseDtoBuilder
           _$v ??
           _$DraftResponseDto._(
             mediaDisplays: _mediaDisplays?.build(),
+            mediaAudios: _mediaAudios?.build(),
             id: BuiltValueNullFieldError.checkNotNull(
               id,
               r'DraftResponseDto',
@@ -210,6 +224,8 @@ class DraftResponseDtoBuilder
       try {
         _$failedField = 'mediaDisplays';
         _mediaDisplays?.build();
+        _$failedField = 'mediaAudios';
+        _mediaAudios?.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
           r'DraftResponseDto',

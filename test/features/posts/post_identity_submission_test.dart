@@ -154,7 +154,8 @@ void main() {
       await _submit(tester);
       expect(find.text('发表身份发生变化'), findsNothing);
       expect(find.byKey(const Key('post-composer-sheet')), findsOneWidget);
-      expect(find.text('站内账号'), findsOneWidget);
+      expect(find.text('站内账号'), reason == '删除' ? findsOneWidget : findsNothing);
+      expect(find.text('发表楼层'), reason == '删除' ? findsNothing : findsOneWidget);
       expect(posts.createInputs, isEmpty);
       await _submit(tester);
       expect(posts.createInputs, hasLength(1));

@@ -15,6 +15,7 @@ import 'package:wenyousite_mobile/features/threads/data/thread_detail_repository
 import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_page.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_target_utils.dart';
+import '../../support/memory_pending_media_file_store.dart';
 import 'thread_detail_page_test_support.dart';
 
 void registerThreadDetailPageSessionNavigationCases() {
@@ -98,13 +99,14 @@ void registerThreadDetailPageSessionNavigationCases() {
     );
   });
 
-  testWidgets('320dp 与两倍字号下底栏把发表收为可读图标且保持可操作', (tester) async {
+  testWidgets('320dp 与两倍字号下底栏保持回复文字入口与可操作性', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(320, 800);
     addTearDown(tester.view.resetDevicePixelRatio);
     addTearDown(tester.view.resetPhysicalSize);
     final container = ProviderContainer(
       overrides: [
+        memoryPendingMediaFileStoreOverride(),
         stickersEnabledProvider.overrideWithValue(false),
         tokenStoreProvider.overrideWithValue(
           ThreadDetailPageTestMemoryTokenStore(),
@@ -159,9 +161,20 @@ void registerThreadDetailPageSessionNavigationCases() {
     expect(tester.getCenter(navigatorFrame).dx, closeTo(160, 0.1));
     final compose = find.byKey(const Key('thread-floor-compose'));
     expect(compose, findsOneWidget);
-    expect(find.text('发表楼层'), findsNothing);
-    expect(find.text('100万'), findsOneWidget);
-    expect(tester.getSemantics(compose).getSemanticsData().tooltip, '发表楼层');
+    expect(
+      find.descendant(of: compose, matching: find.text('回复')),
+      findsOneWidget,
+    );
+    expect(find.text('1m'), findsOneWidget);
+    final composeButton = find.descendant(
+      of: compose,
+      matching: find.byType(TextButton),
+    );
+    final composeSemantics = tester
+        .getSemantics(composeButton)
+        .getSemanticsData();
+    expect(composeSemantics.label, '回复一下');
+    expect(composeSemantics.hasAction(SemanticsAction.tap), isTrue);
 
     await tester.tap(compose);
     await tester.pumpAndSettle();
@@ -442,6 +455,7 @@ void registerThreadDetailPageSessionNavigationCases() {
   testWidgets('切号关闭主题详情旧编辑器并清空账号内存草稿', (tester) async {
     final container = ProviderContainer(
       overrides: [
+        memoryPendingMediaFileStoreOverride(),
         tokenStoreProvider.overrideWithValue(
           ThreadDetailPageTestMemoryTokenStore(),
         ),
@@ -501,6 +515,7 @@ void registerThreadDetailPageSessionNavigationCases() {
     );
     final container = ProviderContainer(
       overrides: [
+        memoryPendingMediaFileStoreOverride(),
         tokenStoreProvider.overrideWithValue(
           ThreadDetailPageTestMemoryTokenStore(),
         ),

@@ -1,7 +1,6 @@
-import 'dart:async';
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
+import 'package:wenyousite_mobile/core/application/resend_cooldown.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/auth/application/auth_ports.dart';
 
@@ -89,7 +88,11 @@ class PasswordRecoveryController extends StateNotifier<PasswordRecoveryState> {
   static const resendCooldown = Duration(seconds: 60);
 
   final PasswordRecoveryRepository _repository;
-  Timer? _cooldownTimer;
+  late final _cooldown = ResendCooldown(
+    isActive: () => mounted,
+    onTick: (remaining) =>
+        state = state.copyWith(resendSecondsRemaining: remaining),
+  );
 
   Future<bool> requestCode(String email) async {
     if (state.isBusy || state.resendSecondsRemaining > 0) return false;
@@ -154,7 +157,7 @@ class PasswordRecoveryController extends StateNotifier<PasswordRecoveryState> {
         newPassword: newPassword,
       );
       if (!mounted) return false;
-      _cooldownTimer?.cancel();
+      _cooldown.cancel();
       state = state.copyWith(clearAction: true, clearFailure: true);
       return true;
     } on Object catch (error) {
@@ -172,23 +175,11 @@ class PasswordRecoveryController extends StateNotifier<PasswordRecoveryState> {
     state = state.copyWith(clearFailure: true);
   }
 
-  void _startCooldown(int seconds) {
-    _cooldownTimer?.cancel();
-    if (seconds <= 0) return;
-    _cooldownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (!mounted) {
-        timer.cancel();
-        return;
-      }
-      final next = state.resendSecondsRemaining - 1;
-      if (next <= 0) timer.cancel();
-      state = state.copyWith(resendSecondsRemaining: next < 0 ? 0 : next);
-    });
-  }
+  void _startCooldown(int seconds) => _cooldown.start(seconds);
 
   @override
   void dispose() {
-    _cooldownTimer?.cancel();
+    _cooldown.cancel();
     super.dispose();
   }
 }

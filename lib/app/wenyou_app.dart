@@ -6,11 +6,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/app/app_router.dart';
 import 'package:wenyousite_mobile/app/app_session_bootstrap.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
-import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/application/appearance_preference.dart';
 import 'package:wenyousite_mobile/core/diagnostics/debug_diagnostic_console.dart';
-import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_instant_keyboard_insets.dart';
 import 'package:wenyousite_mobile/features/app_shell/presentation/background_notification_navigation.dart';
 import 'package:wenyousite_mobile/features/app_shell/presentation/clipboard_navigation_prompt.dart';
@@ -44,7 +42,6 @@ class _WenyouMaterialApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final environment = ref.watch(appEnvironmentProvider);
     final appearance = ref.watch(
       appearancePreferenceControllerProvider.select(
         (state) => state.preference,
@@ -101,23 +98,6 @@ class _WenyouMaterialApp extends ConsumerWidget {
                 enableDebugDiagnosticConsole
                     ? WenyouDebugDiagnosticOverlay(child: app)
                     : app,
-                if (environment.isPreview)
-                  IgnorePointer(
-                    child: SafeArea(
-                      bottom: false,
-                      child: Align(
-                        alignment: Alignment.topCenter,
-                        child: Material(
-                          color: theme.colorScheme.secondaryContainer,
-                          child: Text(
-                            '${environment.previewLabel} · ${environment.previewSnapshotAt}',
-                            textAlign: TextAlign.center,
-                            style: theme.textTheme.wenyouCaption,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
               ],
             ),
           ),

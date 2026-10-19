@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:wenyousite_mobile/core/storage/environment_storage.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_identity_preference_ports.dart';
 
 class SharedPreferencesPostIdentityStore
@@ -9,9 +8,8 @@ class SharedPreferencesPostIdentityStore
   final _values = <String, String?>{};
   Future<void> _writes = Future.value();
 
-  String _key(String accountId, String threadId) => environmentPreferenceKey(
-    'post_identity_choice_v1:${jsonEncode([accountId, threadId])}',
-  );
+  String _key(String accountId, String threadId) =>
+      'post_identity_choice_v1:${jsonEncode([accountId, threadId])}';
 
   @override
   Future<String?> read(String accountId, String threadId) async {

@@ -5,9 +5,10 @@ import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_snack_bar_activity.dart';
 
 const wenyouBriefSnackBarDuration = Duration(milliseconds: 2500);
+const wenyouQuickSnackBarDuration = Duration(milliseconds: 1500);
 const wenyouExtendedSnackBarDuration = Duration(seconds: 4);
 
-enum WenyouSnackBarPacing { brief, extended }
+enum WenyouSnackBarPacing { brief, extended, quick }
 
 enum WenyouSnackBarTone { neutral, success, error }
 
@@ -98,6 +99,8 @@ SnackBar buildWenyouSnackBar(
   final hasAction = actionLabel != null && onAction != null;
   final duration = hasAction || pacing == WenyouSnackBarPacing.extended
       ? wenyouExtendedSnackBarDuration
+      : pacing == WenyouSnackBarPacing.quick
+      ? wenyouQuickSnackBarDuration
       : wenyouBriefSnackBarDuration;
 
   final tokens = context.wenyouTokens;

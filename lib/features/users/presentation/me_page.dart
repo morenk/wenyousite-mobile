@@ -9,6 +9,7 @@ import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/application/appearance_preference.dart';
 import 'package:wenyousite_mobile/core/application/background_execution.dart';
 import 'package:wenyousite_mobile/core/application/session_logout_controller.dart';
+import 'package:wenyousite_mobile/core/application/thread_font_preference.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
@@ -91,9 +92,15 @@ class _GuestMePage extends StatelessWidget {
               ),
             ),
             SizedBox(height: context.wenyouTokens.space12),
+            const _ToolboxEntry(),
+            SizedBox(height: context.wenyouTokens.space12),
             const WenyouSettingsGroup(
               title: '偏好',
-              children: [_AppearanceSettingsPanel()],
+              children: [
+                _AppearanceSettingsPanel(),
+                _ThreadFontSettingsPanel(),
+                _EditorToolbarSettingsPanel(),
+              ],
             ),
             WenyouSettingsGroup(
               title: '帮助',
@@ -144,24 +151,24 @@ class _AuthenticatedMePage extends ConsumerWidget {
         ],
       ),
       body: switch (state.phase) {
-        MeProfilePhase.loading => const WenyouPageBody(
-          child: WenyouDetailSkeleton(label: '正在加载个人资料'),
+        MeProfilePhase.loading => const _MePageList(
+          children: [
+            _ToolboxEntry(),
+            WenyouDetailSkeleton(label: '正在加载个人资料'),
+          ],
         ),
         MeProfilePhase.failed => _MePageList(
           children: [
-            WenyouPanel(
-              child: WenyouEmptyState(
-                icon: WenyouIconIds.statusOffline,
-                title: '本人资料加载失败',
-                message: state.failure?.userMessage ?? '请稍后重试。',
-                detail: wenyouFailureDetail(state.failure),
-                action: OutlinedButton.icon(
-                  key: const Key('me-profile-retry'),
-                  onPressed: notifier.load,
-                  icon: const WenyouIcon(WenyouIconIds.actionRefresh),
-                  label: const Text('重试'),
-                ),
-              ),
+            const _ToolboxEntry(),
+            WenyouRetryFailure(
+              panel: true,
+              icon: WenyouIconIds.statusOffline,
+              title: '本人资料加载失败',
+              message: state.failure?.userMessage ?? '请稍后重试。',
+              failure: state.failure,
+              retryKey: const Key('me-profile-retry'),
+              onRetry: notifier.load,
+              retryLabel: '重试',
             ),
             const _LogoutPanel(),
           ],
@@ -236,19 +243,15 @@ class _MeEditPageState extends ConsumerState<MeEditPage> {
           ),
           MeProfilePhase.failed => _MePageList(
             children: [
-              WenyouPanel(
-                child: WenyouEmptyState(
-                  icon: WenyouIconIds.statusOffline,
-                  title: '资料加载失败',
-                  message: state.failure?.userMessage ?? '请稍后重试。',
-                  detail: wenyouFailureDetail(state.failure),
-                  action: OutlinedButton.icon(
-                    key: const Key('me-edit-retry'),
-                    onPressed: notifier.load,
-                    icon: const WenyouIcon(WenyouIconIds.actionRefresh),
-                    label: const Text('重试'),
-                  ),
-                ),
+              WenyouRetryFailure(
+                panel: true,
+                icon: WenyouIconIds.statusOffline,
+                title: '资料加载失败',
+                message: state.failure?.userMessage ?? '请稍后重试。',
+                failure: state.failure,
+                retryKey: const Key('me-edit-retry'),
+                onRetry: notifier.load,
+                retryLabel: '重试',
               ),
             ],
           ),
@@ -382,6 +385,8 @@ class MeSettingsPage extends ConsumerWidget {
             title: '偏好与提醒',
             children: [
               const _AppearanceSettingsPanel(),
+              const _ThreadFontSettingsPanel(),
+              const _EditorToolbarSettingsPanel(),
               if (backgroundReminderSupported)
                 const BackgroundReminderSettingsPanel(embedded: true),
             ],
@@ -411,6 +416,22 @@ class MeSettingsPage extends ConsumerWidget {
   }
 }
 
+class _ToolboxEntry extends StatelessWidget {
+  const _ToolboxEntry();
+
+  @override
+  Widget build(BuildContext context) => WenyouSettingsGroup(
+    children: [
+      WenyouSettingsLink(
+        key: const Key('me-open-toolbox'),
+        icon: WenyouIconIds.contentCategory,
+        title: '工具箱',
+        onTap: () => context.pushNamed(AppRouteNames.toolbox),
+      ),
+    ],
+  );
+}
+
 class _AppearanceSettingsPanel extends ConsumerWidget {
   const _AppearanceSettingsPanel();
 
@@ -427,6 +448,38 @@ class _AppearanceSettingsPanel extends ConsumerWidget {
       title: '外观',
       value: preference.label,
       onTap: () => context.pushNamed(AppRouteNames.appearance),
+    );
+  }
+}
+
+class _EditorToolbarSettingsPanel extends StatelessWidget {
+  const _EditorToolbarSettingsPanel();
+
+  @override
+  Widget build(BuildContext context) => WenyouSettingsLink(
+    key: const Key('open-editor-toolbar-settings'),
+    icon: WenyouIconIds.editorHeading,
+    title: '编辑器工具栏',
+    onTap: () => context.pushNamed(AppRouteNames.editorToolbar),
+  );
+}
+
+class _ThreadFontSettingsPanel extends ConsumerWidget {
+  const _ThreadFontSettingsPanel();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final preference = ref.watch(
+      threadFontPreferenceControllerProvider.select(
+        (state) => state.preference,
+      ),
+    );
+    return WenyouSettingsLink(
+      key: const Key('open-thread-font-settings'),
+      icon: WenyouIconIds.contentTopic,
+      title: '主题帖字号',
+      value: preference.label,
+      onTap: () => context.pushNamed(AppRouteNames.threadFont),
     );
   }
 }

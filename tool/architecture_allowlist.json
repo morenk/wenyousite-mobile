@@ -22,6 +22,7 @@
     "search->moments",
     "search->thread_feed",
     "search->thread_identity",
+    "settings->editor",
     "social->reports",
     "social->thread_feed",
     "social->thread_identity",

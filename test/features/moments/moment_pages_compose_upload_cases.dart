@@ -144,10 +144,10 @@ void registerMomentPagesComposeUploadCases() {
 
     final dock = find.byKey(const Key('moment-comment-dock'));
     expect(dock, findsOneWidget);
-    expect(find.text('发表评论…'), findsOneWidget);
+    expect(find.text('回复一下'), findsOneWidget);
     expect(tester.getBottomRight(dock).dy, lessThanOrEqualTo(760));
 
-    await tester.tap(find.byKey(const Key('moment-detail-comments')));
+    await tester.tap(find.byKey(const Key('moment-comment-dock')));
     await tester.pumpAndSettle();
     expect(find.byType(DraggableScrollableSheet), findsNothing);
     expect(find.byKey(const Key('moment-comment-dock')), findsNothing);

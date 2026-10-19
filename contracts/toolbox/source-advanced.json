@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 2,
+  "repository": "https://github.com/morenk/wenyousite-frontend",
+  "revision": "accc7f3bf6dfd87669ceefdcea4df386084525e5",
+  "files": {
+    "advanced-name-data.json": {
+      "path": "src/lib/tools/advanced-name-data.json",
+      "sha256": "159f5e46b385a8528ad42bac8bada725725a8acca401c12ba1f21e0b55c14d7e"
+    },
+    "advanced-name-manifest.json": {
+      "path": "src/lib/tools/advanced-name-manifest.json",
+      "sha256": "26e47c2df842b1697436148e151eaf8884232d8547a2eac28125951834400e5a"
+    },
+    "advanced-name-fixtures.json": {
+      "path": "src/lib/tools/advanced-name-fixtures.json",
+      "sha256": "4c6b67b832e43ea473f644111d6465c43dad03fb264e63609ea4f001171a929c"
+    },
+    "LICENSE.advanced-names.txt": {
+      "path": "src/lib/tools/name-data/LICENSE.advanced-names.txt",
+      "sha256": "c9881ee5eaf2269b53b99671bbe4cc8a9d61eb93c73d426f89963c29fb76493e"
+    },
+    "advanced-name-data-contract.md": {
+      "path": "docs/modules/advanced-name-data-contract.md",
+      "sha256": "535dfabdfe7998000811262ff9343a4e12f5ea5287c42943496a9f51fe159520"
+    }
+  }
+}

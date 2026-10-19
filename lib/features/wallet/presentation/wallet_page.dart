@@ -7,6 +7,7 @@ import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_pagination.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_settings_body.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_sliver_panel.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/wallet/application/wallet_controllers.dart';
@@ -23,7 +24,11 @@ class WalletPage extends ConsumerWidget {
     final provider = walletControllerProvider(sessionKey);
     final state = ref.watch(provider);
     return Scaffold(
-      appBar: AppBar(title: const Text('油卡')),
+      backgroundColor: wenyouPersonalPageBackground(context),
+      appBar: AppBar(
+        backgroundColor: wenyouPersonalPageBackground(context),
+        title: const Text('油卡'),
+      ),
       body: RefreshIndicator(
         onRefresh: () => ref.read(provider.notifier).refresh(),
         child: CustomScrollView(
@@ -43,8 +48,6 @@ class WalletPage extends ConsumerWidget {
                           onRetry: () =>
                               ref.read(provider.notifier).retrySummary(),
                         ),
-                        SizedBox(height: context.wenyouTokens.cardGap),
-                        const DailyCheckInStatus(),
                         SizedBox(height: context.wenyouTokens.cardGap),
                       ],
                     ),
@@ -86,115 +89,120 @@ class _WalletSummaryPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
     final summary = state.summary;
-    return WenyouPanel(
-      child: summary == null
-          ? state.isLoadingSummary
-                ? const _WalletLoading(label: '正在读取温油余额…')
-                : WenyouEmptyState(
-                    icon: WenyouIconIds.statusOffline,
-                    title: '温油余额加载失败',
-                    message: state.summaryFailure?.userMessage ?? '请稍后重试。',
-                    detail: wenyouFailureDetail(state.summaryFailure),
-                    action: OutlinedButton.icon(
-                      key: const Key('wallet-summary-retry'),
-                      onPressed: onRetry,
-                      icon: const WenyouIcon(WenyouIconIds.actionRefresh),
-                      label: const Text('重试余额'),
-                    ),
-                  )
-          : Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '温油余额',
-                            style: Theme.of(context).textTheme.wenyouCompactBody
-                                .copyWith(color: tokens.mutedText),
-                          ),
-                          SizedBox(height: tokens.space4),
-                          Semantics(
-                            label: '温油余额 ${summary.balance} 升',
-                            child: Text.rich(
-                              TextSpan(
-                                text: WenyouAmount.format(summary.balance),
-                                children: [
-                                  TextSpan(
-                                    text: ' 升',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .wenyouCompactBody
-                                        .copyWith(fontWeight: FontWeight.w500),
-                                  ),
-                                ],
-                              ),
-                              style: Theme.of(
-                                context,
-                              ).textTheme.wenyouMetricValue,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    SizedBox(width: tokens.space12),
-                    DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: tokens.accentedBackground,
-                        shape: BoxShape.circle,
-                      ),
-                      child: SizedBox.square(
-                        dimension: 52,
-                        child: WenyouIcon(
-                          WenyouIconIds.actionTip,
-                          color: tokens.brandForeground,
+    final content = summary == null
+        ? state.isLoadingSummary
+              ? const _WalletLoading(label: '正在读取温油余额…')
+              : WenyouRetryFailure(
+                  icon: WenyouIconIds.statusOffline,
+                  title: '温油余额加载失败',
+                  message: state.summaryFailure?.userMessage ?? '请稍后重试。',
+                  failure: state.summaryFailure,
+                  retryKey: const Key('wallet-summary-retry'),
+                  onRetry: onRetry,
+                  retryLabel: '重试余额',
+                )
+        : Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '温油余额',
+                          style: Theme.of(context).textTheme.wenyouCompactBody
+                              .copyWith(color: tokens.mutedText),
                         ),
+                        SizedBox(height: tokens.space4),
+                        Semantics(
+                          label: '温油余额 ${summary.balance} 升',
+                          child: Text.rich(
+                            TextSpan(
+                              text: WenyouAmount.format(summary.balance),
+                              children: [
+                                TextSpan(
+                                  text: ' 升',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .wenyouCompactBody
+                                      .copyWith(fontWeight: FontWeight.w500),
+                                ),
+                              ],
+                            ),
+                            style: Theme.of(
+                              context,
+                            ).textTheme.wenyouMetricValue,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(width: tokens.space12),
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: tokens.accentedBackground,
+                      shape: BoxShape.circle,
+                    ),
+                    child: SizedBox.square(
+                      dimension: 52,
+                      child: WenyouIcon(
+                        WenyouIconIds.actionTip,
+                        color: tokens.brandForeground,
                       ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: tokens.space16),
-                Divider(color: tokens.border),
-                SizedBox(height: tokens.space12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _SummaryStat(
-                        label: '累计收到',
-                        value:
-                            '${WenyouAmount.format(summary.receivedTipTotal)} 升',
-                      ),
-                    ),
-                    SizedBox(
-                      height: tokens.minimumTouchTarget,
-                      child: const VerticalDivider(),
-                    ),
-                    Expanded(
-                      child: _SummaryStat(
-                        label: '收到次数',
-                        value: '${summary.receivedTipCount} 次',
-                      ),
-                    ),
-                  ],
-                ),
-                if (state.summaryFailure != null) ...[
-                  SizedBox(height: tokens.space12),
-                  WenyouStatusBanner(
-                    tone: WenyouStatusTone.error,
-                    message: '余额刷新失败，当前仍显示上次结果。',
-                    detail: wenyouFailureDetail(state.summaryFailure),
-                    action: TextButton(
-                      onPressed: onRetry,
-                      child: const Text('重新刷新'),
                     ),
                   ),
                 ],
+              ),
+              SizedBox(height: tokens.space16),
+              Divider(color: tokens.border),
+              SizedBox(height: tokens.space12),
+              Row(
+                children: [
+                  Expanded(
+                    child: _SummaryStat(
+                      label: '累计收到',
+                      value:
+                          '${WenyouAmount.format(summary.receivedTipTotal)} 升',
+                    ),
+                  ),
+                  SizedBox(
+                    height: tokens.minimumTouchTarget,
+                    child: const VerticalDivider(),
+                  ),
+                  Expanded(
+                    child: _SummaryStat(
+                      label: '收到次数',
+                      value: '${summary.receivedTipCount} 次',
+                    ),
+                  ),
+                ],
+              ),
+              if (state.summaryFailure != null) ...[
+                SizedBox(height: tokens.space12),
+                WenyouRetryFailure(
+                  inline: true,
+                  message: '余额刷新失败，当前仍显示上次结果。',
+                  failure: state.summaryFailure,
+                  onRetry: onRetry,
+                  retryLabel: '重新刷新',
+                ),
               ],
-            ),
+            ],
+          );
+    return WenyouPanel(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          content,
+          SizedBox(height: tokens.space16),
+          Divider(color: tokens.border),
+          SizedBox(height: tokens.space16),
+          const DailyCheckInStatus(embedded: true),
+        ],
+      ),
     );
   }
 }
@@ -255,17 +263,14 @@ class _WalletTransactionsPanel extends StatelessWidget {
                 const _WalletLoading(label: '正在读取温油流水…')
               else if (state.transactions.isEmpty &&
                   state.transactionsFailure != null)
-                WenyouEmptyState(
+                WenyouRetryFailure(
                   icon: WenyouIconIds.statusOffline,
                   title: '温油流水加载失败',
                   message: state.transactionsFailure!.userMessage,
-                  detail: wenyouFailureDetail(state.transactionsFailure),
-                  action: OutlinedButton.icon(
-                    key: const Key('wallet-transactions-retry'),
-                    onPressed: onRetry,
-                    icon: const WenyouIcon(WenyouIconIds.actionRefresh),
-                    label: const Text('重试'),
-                  ),
+                  failure: state.transactionsFailure,
+                  retryKey: const Key('wallet-transactions-retry'),
+                  onRetry: onRetry,
+                  retryLabel: '重试',
                 )
               else if (state.transactions.isEmpty)
                 const WenyouEmptyState(
@@ -276,6 +281,20 @@ class _WalletTransactionsPanel extends StatelessWidget {
           ),
         ),
         if (state.transactions.isNotEmpty) ...[
+          if (state.transactionsFailure != null)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.only(bottom: tokens.space12),
+                child: WenyouRetryFailure(
+                  inline: true,
+                  message: '收支记录刷新失败，当前仍显示上次结果。',
+                  failure: state.transactionsFailure,
+                  onRetry: onRetry,
+                  retryLabel: '重新刷新',
+                  retryKey: const Key('wallet-transactions-refresh-retry'),
+                ),
+              ),
+            ),
           SliverList.separated(
             itemCount: state.transactions.length,
             separatorBuilder: (_, _) => Divider(color: tokens.border),
@@ -323,29 +342,99 @@ class _TransactionTile extends StatelessWidget {
         ? '对方投入 ${WenyouAmount.format(transaction.grossAmount)} 升，'
               '实际到账 ${WenyouAmount.format(transaction.recipientAmount)} 升'
         : null;
+    final amount =
+        '${income ? '+' : '−'}${WenyouAmount.format(transaction.amount)} 升';
+    final amountStyle = Theme.of(context).textTheme.wenyouUtilityCompactTitle
+        .copyWith(
+          color: income ? tokens.brandForeground : tokens.text,
+          fontWeight: FontWeight.w700,
+          fontFeatures: const [FontFeature.tabularFigures()],
+        );
     final content = Padding(
       padding: EdgeInsets.symmetric(vertical: tokens.space12),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _CounterpartyAvatar(counterparty: transaction.counterparty),
+          transaction.type == WalletTransactionType.dailyCheckIn
+              ? CircleAvatar(
+                  backgroundColor: tokens.accentedBackground,
+                  child: WenyouIcon(
+                    WenyouIconIds.economyTransaction,
+                    color: tokens.brandForeground,
+                  ),
+                )
+              : _CounterpartyAvatar(counterparty: transaction.counterparty),
           SizedBox(width: tokens.space12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  title,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.wenyouCompactTitle,
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final amountPainter = TextPainter(
+                      text: TextSpan(text: amount, style: amountStyle),
+                      textDirection: Directionality.of(context),
+                      textScaler: MediaQuery.textScalerOf(context),
+                    )..layout();
+                    final inline =
+                        amountPainter.width +
+                            tokens.space12 +
+                            MediaQuery.textScalerOf(context).scale(120) <=
+                        constraints.maxWidth;
+                    amountPainter.dispose();
+                    final titleWidget = Text(
+                      title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.wenyouCompactTitle,
+                    );
+                    final amountWidget = Text(
+                      // 窄屏按千分位分组换行，读屏仍得到完整精确金额。
+                      inline ? amount : _wrapAmountGroups(amount),
+                      semanticsLabel: amount,
+                      style: amountStyle,
+                    );
+                    return inline
+                        ? Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(child: titleWidget),
+                              SizedBox(width: tokens.space12),
+                              amountWidget,
+                            ],
+                          )
+                        : Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              titleWidget,
+                              SizedBox(height: tokens.space4),
+                              amountWidget,
+                            ],
+                          );
+                  },
                 ),
                 SizedBox(height: tokens.space4),
-                Text(
-                  formatWenyouExactTime(transaction.createdAt),
-                  style: Theme.of(
-                    context,
-                  ).textTheme.wenyouCaption.copyWith(color: tokens.mutedText),
+                Wrap(
+                  spacing: tokens.space12,
+                  runSpacing: tokens.space4,
+                  children: [
+                    Text(
+                      formatWenyouExactTime(transaction.createdAt),
+                      style: Theme.of(context).textTheme.wenyouCaption.copyWith(
+                        color: tokens.mutedText,
+                      ),
+                    ),
+                    Text(
+                      _wrapAmountGroups(
+                        '余额 ${WenyouAmount.format(transaction.balanceAfter)} 升',
+                      ),
+                      semanticsLabel:
+                          '余额 ${WenyouAmount.format(transaction.balanceAfter)} 升',
+                      style: Theme.of(context).textTheme.wenyouCaption.copyWith(
+                        color: tokens.mutedText,
+                      ),
+                    ),
+                  ],
                 ),
                 if (detail != null) ...[
                   SizedBox(height: tokens.space4),
@@ -358,29 +447,6 @@ class _TransactionTile extends StatelessWidget {
                 ],
               ],
             ),
-          ),
-          SizedBox(width: tokens.space12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                '${income ? '+' : '−'}${WenyouAmount.format(transaction.amount)} 升',
-                style: Theme.of(context).textTheme.wenyouUtilityCompactTitle
-                    .copyWith(
-                      color: income
-                          ? Theme.of(context).colorScheme.tertiary
-                          : tokens.text,
-                      fontWeight: FontWeight.w700,
-                    ),
-              ),
-              SizedBox(height: tokens.space4),
-              Text(
-                '余额 ${WenyouAmount.format(transaction.balanceAfter)} 升',
-                style: Theme.of(
-                  context,
-                ).textTheme.wenyouCaption.copyWith(color: tokens.mutedText),
-              ),
-            ],
           ),
         ],
       ),
@@ -420,6 +486,8 @@ class _TransactionTile extends StatelessWidget {
     };
   }
 }
+
+String _wrapAmountGroups(String value) => value.replaceAll(',', ',\u200b');
 
 class _CounterpartyAvatar extends StatelessWidget {
   const _CounterpartyAvatar({required this.counterparty});

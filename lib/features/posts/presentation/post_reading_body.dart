@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wenyousite_mobile/core/application/thread_font_preference.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_markdown.dart';
 import 'package:wenyousite_mobile/features/media/reading_gallery.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
@@ -6,7 +8,7 @@ import 'package:wenyousite_mobile/features/stickers/stickers.dart';
 import 'package:wenyousite_mobile/features/thread_identity/identity_widgets.dart';
 
 /// 楼层与身份资料共用正文渲染；管理、回复动作只由楼层外层提供。
-class PostReadingBody extends StatelessWidget {
+class PostReadingBody extends ConsumerWidget {
   const PostReadingBody({
     required this.post,
     required this.galleryTarget,
@@ -20,12 +22,13 @@ class PostReadingBody extends StatelessWidget {
   final VoidCallback? onLongPressNonText;
 
   @override
-  Widget build(BuildContext context) => StickerPostMarkdown(
+  Widget build(BuildContext context, WidgetRef ref) => StickerPostMarkdown(
     postId: post.id,
     postVersion: post.version,
     galleryTarget: galleryTarget,
     data: post.content,
     mediaDisplays: post.mediaDisplays,
+    mediaAudios: post.mediaAudios,
     mentionLabels: post.mentionLabels,
     onInternalLink: (uri) => openThreadReadingLink(context, uri),
     diceLabels: {
@@ -47,7 +50,7 @@ class PostReadingBody extends StatelessWidget {
           total: roll.total,
         ),
     },
-    bodyFontSize: 17,
+    bodyFontSize: ref.watch(threadBodyFontSizeProvider),
     bodyHeight: 1.8,
     onTapText: onTapText,
     onLongPressNonText: onLongPressNonText,

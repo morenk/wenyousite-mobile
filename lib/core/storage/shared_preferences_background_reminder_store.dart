@@ -1,6 +1,5 @@
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wenyousite_mobile/core/application/background_reminder_preference.dart';
-import 'package:wenyousite_mobile/core/storage/environment_storage.dart';
 
 class SharedPreferencesBackgroundReminderStore
     implements BackgroundReminderPreferenceStore {
@@ -10,19 +9,13 @@ class SharedPreferencesBackgroundReminderStore
 
   @override
   Future<bool> read() async {
-    return (await SharedPreferences.getInstance()).getBool(
-          environmentPreferenceKey(storageKey),
-        ) ??
-        true;
+    return (await SharedPreferences.getInstance()).getBool(storageKey) ?? true;
   }
 
   @override
   Future<void> write(bool enabled) async {
     final preferences = await SharedPreferences.getInstance();
-    if (!await preferences.setBool(
-      environmentPreferenceKey(storageKey),
-      enabled,
-    )) {
+    if (!await preferences.setBool(storageKey, enabled)) {
       throw StateError('Cannot save background reminder preference');
     }
   }

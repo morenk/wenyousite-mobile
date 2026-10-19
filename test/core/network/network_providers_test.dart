@@ -19,6 +19,12 @@ void main() {
       'https://wenyou.site',
     );
     expect(container.read(dioProvider).options.baseUrl, 'https://wenyou.site');
+    for (final provider in [dioProvider, refreshDioProvider]) {
+      expect(
+        container.read(provider).options.headers['X-Text-Color-Version'],
+        '1',
+      );
+    }
     expect(
       container
           .read(dioProvider)

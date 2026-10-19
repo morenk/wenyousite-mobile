@@ -7,8 +7,10 @@ import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/application/user_facing_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_edit_conflict_dialog.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_settings_body.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_sheet.dart';
@@ -249,7 +251,7 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
             WenyouStatusBanner(
               key: const Key('thread-management-failure'),
               tone: WenyouStatusTone.error,
-              message: state.failure!.userMessage,
+              message: UserFacingFailure.fromApi(state.failure).message,
               detail: wenyouFailureDetail(state.failure, treatAsWrite: true),
               action: state.conflict != null
                   ? TextButton(
@@ -439,7 +441,9 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
     return showWenyouConfirmationDialog(
       context: context,
       title: '修改还没有保存',
-      message: failure?.userMessage ?? '请检查当前内容后重试，或者放弃修改并离开。',
+      message: failure == null
+          ? '请检查当前内容后重试，或者放弃修改并离开。'
+          : UserFacingFailure.fromApi(failure).message,
       confirmLabel: '放弃并离开',
       cancelLabel: '继续编辑',
       confirmKey: const Key('thread-management-discard-confirm'),
@@ -462,34 +466,19 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
     final provider = threadManagementControllerProvider(widget.threadId);
     final conflict = ref.read(provider).conflict;
     if (conflict == null) return;
-    final choice = await showDialog<_ConflictChoice>(
+    final choice = await showWenyouEditConflictDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('主题内容已经变化'),
-        content: const Text('其他位置先保存了这个主题。当前表单会继续保留，直到你明确选择。'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('继续编辑'),
-          ),
-          TextButton(
-            key: const Key('thread-management-use-latest'),
-            onPressed: () =>
-                Navigator.pop(dialogContext, _ConflictChoice.useLatest),
-            child: const Text('载入最新版'),
-          ),
-          FilledButton(
-            key: const Key('thread-management-overwrite-latest'),
-            onPressed: () =>
-                Navigator.pop(dialogContext, _ConflictChoice.overwrite),
-            child: const Text('覆盖最新版'),
-          ),
-        ],
-      ),
+      title: '主题内容已经变化',
+      message: '其他位置先保存了这个主题。当前表单会继续保留，直到你明确选择。',
+      continueEditingLabel: '继续编辑',
+      useLatestLabel: '载入最新版',
+      keepCurrentLabel: '覆盖最新版',
+      useLatestKey: const Key('thread-management-use-latest'),
+      keepCurrentKey: const Key('thread-management-overwrite-latest'),
     );
     if (!mounted || choice == null) return;
     final notifier = ref.read(provider.notifier);
-    if (choice == _ConflictChoice.useLatest) {
+    if (choice == WenyouEditConflictChoice.useLatest) {
       notifier.adoptLatest();
       _bindSnapshot(conflict.latest.thread, force: true);
       _autosave.markSaved();
@@ -536,8 +525,6 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
     if (mounted) context.pop(result);
   }
 }
-
-enum _ConflictChoice { useLatest, overwrite }
 
 class _ThreadManagementAutosaveIndicator extends StatelessWidget {
   const _ThreadManagementAutosaveIndicator({required this.coordinator});
