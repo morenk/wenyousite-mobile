@@ -51,7 +51,7 @@
 
 ## 最终门禁与候选包
 
-本轮应用源码对应整合 merge 提交；随后仅补充提交号等文档证据。门禁及构建结束后，与冻结树 `0b7b04c793852e380f1062b96185b4204a0b4330` 比较除 `docs/**` 外全部跟踪文件，差异为零。远端 dev 再核验仍为 `6f0064507a77e2034250ee4fd9f1d382e0a063a9`；契约、生成客户端、依赖及架构豁免与该基线无差异。
+本轮应用源码提交为 `474285904863cd3380ee8f9f318928ccd06a4c7a`，是保留旧候选和最新 dev 双亲的 merge 提交；随后仅补充本记录中的提交号，不改变已验证源码。门禁及构建结束后，与冻结树 `0b7b04c793852e380f1062b96185b4204a0b4330` 比较除 `docs/**` 外全部跟踪文件，差异为零。远端 dev 再核验仍为 `6f0064507a77e2034250ee4fd9f1d382e0a063a9`；契约、生成客户端、依赖及架构豁免与该基线无差异。
 
 - APK：`D:\codex-worktrees\editor-guard-diagnostics\wenyousite-mobile\build\app\outputs\flutter-apk\app-debug.apk`
 - 应用：`温油站 Debug`；包名 `site.wenyou.app.debug`；versionName `0.10.0-debug`；versionCode `100`；仅 `arm64-v8a`。
