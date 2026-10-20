@@ -44,3 +44,10 @@ class MarkdownCodecException implements Exception {
   @override
   String toString() => 'MarkdownCodecException: $message';
 }
+
+/// 只携带兼容性判断的固定原因，不持有原文或转换后的正文。
+class MarkdownEditingBlockedException implements Exception {
+  const MarkdownEditingBlockedException(this.reason);
+
+  final String reason;
+}

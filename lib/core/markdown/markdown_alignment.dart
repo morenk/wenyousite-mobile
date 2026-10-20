@@ -1,6 +1,5 @@
 import 'package:markdown/markdown.dart' as md;
 import 'package:wenyousite_mobile/core/markdown/markdown_dice_contract.dart';
-import 'package:wenyousite_mobile/core/markdown/markdown_inline_code_scanner.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_reader_paragraph_syntax.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_source_protection.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_text_color.dart';
@@ -93,7 +92,6 @@ abstract final class MarkdownAlignmentContract {
     r'\[\[([a-z][a-z0-9_-]*):v(\d+):',
     caseSensitive: false,
   );
-  static final RegExp _htmlToken = RegExp(r'<[^>]*>');
   static final RegExp _heading = RegExp(r'^(#{2,3})[\t ]+(.+)$');
   static final RegExp _anyHeading = RegExp(r'^ {0,3}#{1,6}(?:[\t ]|$)');
   static final RegExp _list = RegExp(r'^ {0,6}(?:[-+*]|\d+[.)])[\t ]+');
@@ -187,8 +185,19 @@ abstract final class MarkdownAlignmentContract {
     WenyouTextAlignment.right => '[wenyousite-align-v1-right]: #',
   };
 
-  static String removeMarkerLines(String markdown) =>
-      markdown.split('\n').where((line) => !isMarkerLine(line)).join('\n');
+  /// 摘要只消费有效标记；无效定义须转为文字，避免被引用定义语法吞掉。
+  static String prepareForPreview(String markdown) {
+    final analysis = analyze(markdown, imageAlignment: true);
+    final markers = analysis.validMarkerLines;
+    return [
+      for (var i = 0; i < analysis.lines.length; i++)
+        if (!markers.contains(i))
+          analysis.invalidMarkerLines.contains(i) &&
+                  isMarkerLine(analysis.lines[i])
+              ? analysis.lines[i].replaceFirst('[', r'\[')
+              : analysis.lines[i],
+    ].join('\n');
+  }
 
   static bool containsRegularImage(String markdown) {
     final nodes = _parseBlocks(markdown.split('\n'));
@@ -262,7 +271,10 @@ abstract final class MarkdownAlignmentContract {
 
     final heading = _heading.firstMatch(first);
     if (heading != null) {
-      if (_hasUnsupportedParagraphSource(first)) return null;
+      if (protection.rawHtmlLines.contains(start) ||
+          _hasUnsupportedParagraphSource(protection.maskedLines[start])) {
+        return null;
+      }
       final node = _parseSingleBlock([first]);
       return _AlignmentTarget(
         endLine: start,
@@ -278,7 +290,10 @@ abstract final class MarkdownAlignmentContract {
 
     if (start + 1 < lines.length &&
         _isSetextHeading(lines[start], lines[start + 1])) {
-      if (_hasUnsupportedParagraphSource(lines[start])) return null;
+      if (protection.rawHtmlLines.contains(start) ||
+          _hasUnsupportedParagraphSource(protection.maskedLines[start])) {
+        return null;
+      }
       final node = _parseSingleBlock([lines[start], lines[start + 1]]);
       return _AlignmentTarget(
         endLine: start + 1,
@@ -300,6 +315,9 @@ abstract final class MarkdownAlignmentContract {
       end += 1;
     }
     final paragraphLines = lines.sublist(start, end + 1);
+    if (protection.rawHtmlLines.any((line) => line >= start && line <= end)) {
+      return null;
+    }
     if (protection.maskedLines
         .sublist(start, end + 1)
         .any(_hasUnsupportedParagraphSource)) {
@@ -329,17 +347,14 @@ abstract final class MarkdownAlignmentContract {
       line.startsWith('\t');
 
   static bool _hasUnescapedProtocol(String line) {
-    final masked = _maskInlineCode(line);
-    for (final match in _protocol.allMatches(masked)) {
+    for (final match in _protocol.allMatches(line)) {
       if (!_isEscaped(line, match.start)) return true;
     }
     return false;
   }
 
   static bool _hasUnsupportedParagraphSource(String line) =>
-      _hasHardBreak(line) ||
-      _hasRawHtml(line) ||
-      _hasUnsupportedInlineProtocol(line);
+      _hasHardBreak(line) || _hasUnsupportedInlineProtocol(line);
 
   static bool _hasHardBreak(String line) {
     final spaces = RegExp(r' +$').firstMatch(line)?.group(0)?.length ?? 0;
@@ -347,25 +362,8 @@ abstract final class MarkdownAlignmentContract {
     return spaces >= 2 || slashes.isOdd;
   }
 
-  static bool _hasRawHtml(String line) {
-    // 只有已校验的颜色标签属于行内样式；损坏标记和任意 HTML 仍拒绝。
-    final masked = MarkdownTextColor.maskValidTags(_maskInlineCode(line));
-    for (final match in _htmlToken.allMatches(masked)) {
-      if (_isEscaped(line, match.start)) continue;
-      if (RegExp(
-        r'^<https?://[^\s<>]+>$',
-        caseSensitive: false,
-      ).hasMatch(match.group(0)!)) {
-        continue;
-      }
-      return true;
-    }
-    return false;
-  }
-
   static bool _hasUnsupportedInlineProtocol(String line) {
-    final masked = _maskInlineCode(line);
-    for (final match in _unknownProtocol.allMatches(masked)) {
+    for (final match in _unknownProtocol.allMatches(line)) {
       if (_isEscaped(line, match.start)) continue;
       if (match.group(1)!.toLowerCase() != 'dice' || match.group(2) != '1') {
         return true;
@@ -373,7 +371,7 @@ abstract final class MarkdownAlignmentContract {
     }
 
     var index = 0;
-    final lower = masked.toLowerCase();
+    final lower = line.toLowerCase();
     while ((index = lower.indexOf('[[dice:', index)) >= 0) {
       if (_isEscaped(line, index)) {
         index += 2;
@@ -390,9 +388,6 @@ abstract final class MarkdownAlignmentContract {
     }
     return false;
   }
-
-  static String _maskInlineCode(String line) =>
-      MarkdownInlineCodeScanner.mask(line);
 
   static bool _isEscaped(String line, int index) {
     var slashes = 0;
