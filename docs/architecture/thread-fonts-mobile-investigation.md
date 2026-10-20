@@ -24,16 +24,16 @@
 
 | 字体 | 治理提供的索引页面 | 当前资源与授权状态 |
 | --- | --- | --- |
-| 侵食明朝 | [索引](https://www.maoken.com/freefonts/29703.html) | `download_blocked_login`；待 BOOTH 原 ZIP、内部许可证/RFN、覆盖及哈希核验 |
-| 冒险黑体 | [索引](https://www.maoken.com/freefonts/29709.html) | `download_blocked_login`；待 BOOTH 原 ZIP、内部许可证/RFN、覆盖及哈希核验 |
-| 白光明朝 | [索引](https://www.maoken.com/freefonts/29628.html) | `download_blocked_login`；待 BOOTH 原 ZIP、内部许可证/RFN、覆盖及哈希核验 |
+| 侵食明朝 | [索引](https://www.maoken.com/freefonts/29703.html) | 用户已提供 `ShinsyokuMincho.zip`，治理正在核验原包 SHA、内置许可、覆盖与体积 |
+| 冒险黑体 | [索引](https://www.maoken.com/freefonts/29709.html) | 用户已提供 `BoukenGothic.zip`，治理正在核验原包 SHA、内置许可、覆盖与体积 |
+| 白光明朝 | [索引](https://www.maoken.com/freefonts/29628.html) | 用户已提供 `HakkouMincho_v1.004.zip`，治理正在核验原包 SHA、内置许可、覆盖与体积 |
 | 嗷呜碎黑体 | [索引](https://www.maoken.com/freefonts/29521.html) | 治理指向官方 `howlingFounts/ShatteredDisplay`，待 audit-v4 正式资源证据 |
-| 小城拉风体 | [索引](https://www.maoken.com/freefonts/27663.html) | 授权方式待核验；不得进入子集化、WOFF2 转换或拆分流程 |
+| 小城拉风体 | [索引](https://www.maoken.com/freefonts/27663.html) | 负责人本轮确认本项目已取得使用授权，按该陈述推进接入；待正式资产与完整字体成本交接 |
 | 敬峰中山王篆 | [索引](https://www.maoken.com/freefonts/27589.html) | 治理指向官方 `jeffi369/JFZSKSealScript`，待 audit-v4 正式资源证据 |
 
-治理交接称保留的 3 款 BOOTH 字体已追溯作者 lavsic 的官方页面，页面声明 OFL 1.1，但原 ZIP 下载需用户登录提供；Mobile 尚未核验源文件、内部许可、真实哈希、中文覆盖或体积。以上索引不作为下载目录，不用预览替代完整字库，不将待核验字体标为可用，也不编造资源 ID、字符覆盖或摘要。
+治理交接称保留的 3 款 BOOTH 字体已追溯作者 lavsic 的官方页面，页面声明 OFL 1.1。用户已将完整 ZIP 下载至 `D:\Download`，治理已找到上表三份原包并正在核验；当前不再是 `download_blocked_login`，不重复请求用户下载。Mobile 等待治理交接固定 SHA 资产和 audit-v4，不将“文件已取得”写成内部许可/RFN、覆盖或体积已核验。以上索引不作为下载目录，不用预览替代完整字库，不将待核验字体标为可用，也不编造资源 ID、字符覆盖或摘要。
 
-小城拉风体须单独处理：治理提供的猫啃索引引用作者声明明确禁止修改、转换和拆分，不是 OFL。当前执行边界是禁止沿用子集／WOFF2 转换流水线，等待核验原文件嵌入、再分发授权及完整字体成本；不能因为进入目标名单就视为已获分发许可。该信息为治理交接，Mobile 未完成原始授权文件审查。
+小城拉风体的本项目使用授权依据为负责人本轮明确确认，按该陈述推进接入，不再仅因网页一般条款挂起，也不重复请求授权。此确认不改写为 OFL，不虚构授权文书或声称 Mobile 已审查原始授权文件。网页所述一般条款与本项目授权依据分别保留；具体资源处理按本项目授权及正式资产交接执行，不套用 OFL 推定修改、转换或拆分权利，当前完整字体成本仍待核验。
 
 怪聞書已退出当前目标。本仓此前仅在调查文档记录该名称，未引入其 fontId、资源目录或消费者实现；不制造已上线、需迁移或清理旧客户端的假设。后续若 Backend 已提交版本包含相关 ID，按交接的版本兼容事实处理。
 
@@ -77,7 +77,7 @@
 
 ## 必要交接
 
-1. Backend 完整提交 SHA、分支、版本化目录、首批 17 家族 audit-v4 及中文/拉丁/符号覆盖、内部许可与 RFN、TTF/OTF 正式资源、按授权允许的分发方式、大小/摘要和预览资源；小城拉风体另核验原文件嵌入与再分发授权及完整字体成本，不做子集/转换/拆分，未核验资源保持不可用。
+1. Backend 完整提交 SHA、分支、版本化目录、首批 17 家族 audit-v4 及中文/拉丁/符号覆盖、内部许可与 RFN、TTF/OTF 正式资源、按授权允许的分发方式、大小/摘要和预览资源；小城拉风体记录负责人本轮确认的项目使用授权，待正式资产和完整字体成本交接；三份 BOOTH ZIP 已取得，待固定 SHA 与审计结果，不再请求下载或授权。
 2. 字体 Markdown 标记与版本、能力门禁、读取协商、各写 DTO 声明、未知 ID/版本、停写但保留历史内容、旧客户端投影和错误语义。
 3. 字体与颜色/粗体/斜体/删除线/链接/代码、跨行/空行、转义/未知标记、原子、站内与外部剪贴板的固定语料。
 4. 保持最新已发布 Foundation；由治理交接 UI 系统字体与用户正文业务字体的边界结论。只有实际变更 Foundation 机器契约或运行产物时才等待新正式 Tag，不预设选择器接入必然需要发布新版本；未发布运行产物不作为消费者依赖。
