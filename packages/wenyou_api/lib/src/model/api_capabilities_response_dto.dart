@@ -11,6 +11,8 @@ part 'api_capabilities_response_dto.g.dart';
 /// ApiCapabilitiesResponseDto
 ///
 /// Properties:
+/// * [textColorV1Supported] - 支持独立文本颜色 v1 保源/旧端降级；缺失按 false
+/// * [textColorV1WriteEnabled] - 允许新增/修改颜色范围；关闭仍允许保留或移除已有颜色，缺失按 false
 /// * [rpIdentityProfileSupported] - 支持 RP 身份绑定本主题资料楼层及按查看者授权读取；缺失按 false，客户端不得发送 profilePostId/clearProfilePost
 /// * [roleMentionsV6Supported] - 支持 header/DTO Markdown 6 能力协商、保源和旧读安全降级；缺失按 false
 /// * [roleMentionsV6WriteEnabled] - 允许创建新的显式 ACCOUNT / RP 提及节点；与全局 Markdown 激活版本独立，缺失按 false
@@ -19,6 +21,14 @@ part 'api_capabilities_response_dto.g.dart';
 /// * [pushNotifications]
 @BuiltValue()
 abstract class ApiCapabilitiesResponseDto implements Built<ApiCapabilitiesResponseDto, ApiCapabilitiesResponseDtoBuilder> {
+  /// 支持独立文本颜色 v1 保源/旧端降级；缺失按 false
+  @BuiltValueField(wireName: r'textColorV1Supported')
+  bool? get textColorV1Supported;
+
+  /// 允许新增/修改颜色范围；关闭仍允许保留或移除已有颜色，缺失按 false
+  @BuiltValueField(wireName: r'textColorV1WriteEnabled')
+  bool? get textColorV1WriteEnabled;
+
   /// 支持 RP 身份绑定本主题资料楼层及按查看者授权读取；缺失按 false，客户端不得发送 profilePostId/clearProfilePost
   @BuiltValueField(wireName: r'rpIdentityProfileSupported')
   bool? get rpIdentityProfileSupported;
@@ -63,6 +73,20 @@ class _$ApiCapabilitiesResponseDtoSerializer implements PrimitiveSerializer<ApiC
     ApiCapabilitiesResponseDto object, {
     FullType specifiedType = FullType.unspecified,
   }) sync* {
+    if (object.textColorV1Supported != null) {
+      yield r'textColorV1Supported';
+      yield serializers.serialize(
+        object.textColorV1Supported,
+        specifiedType: const FullType(bool),
+      );
+    }
+    if (object.textColorV1WriteEnabled != null) {
+      yield r'textColorV1WriteEnabled';
+      yield serializers.serialize(
+        object.textColorV1WriteEnabled,
+        specifiedType: const FullType(bool),
+      );
+    }
     if (object.rpIdentityProfileSupported != null) {
       yield r'rpIdentityProfileSupported';
       yield serializers.serialize(
@@ -122,6 +146,20 @@ class _$ApiCapabilitiesResponseDtoSerializer implements PrimitiveSerializer<ApiC
       final key = serializedList[i] as String;
       final value = serializedList[i + 1];
       switch (key) {
+        case r'textColorV1Supported':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(bool),
+          ) as bool;
+          result.textColorV1Supported = valueDes;
+          break;
+        case r'textColorV1WriteEnabled':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(bool),
+          ) as bool;
+          result.textColorV1WriteEnabled = valueDes;
+          break;
         case r'rpIdentityProfileSupported':
           final valueDes = serializers.deserialize(
             value,

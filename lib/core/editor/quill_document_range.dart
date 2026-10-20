@@ -1,5 +1,20 @@
 import 'package:flutter_quill/flutter_quill.dart';
 
+/// 在编辑事务或视图投影前判断范围，不能把失效操作调整到其他正文。
+bool isQuillDocumentRangeValid(
+  Document document,
+  int start,
+  int length, {
+  bool includeTerminalNewline = false,
+}) {
+  final lastCursor = document.length - 1;
+  final end = includeTerminalNewline ? document.length : lastCursor;
+  return start >= 0 &&
+      length >= 0 &&
+      start <= lastCursor &&
+      length <= end - start;
+}
+
 /// 按 Quill 的 UTF-16 坐标读取可编辑范围，Embed 始终占一个 U+FFFC。
 ///
 /// 文末保护换行不属于 UI 选区；结构替换可显式包含该换行以保留块属性。
@@ -12,9 +27,12 @@ String? readQuillDocumentRange(
   int length, {
   bool includeTerminalNewline = false,
 }) {
-  final lastCursor = document.length - 1;
-  final end = includeTerminalNewline ? document.length : lastCursor;
-  if (start < 0 || length < 0 || start > lastCursor || length > end - start) {
+  if (!isQuillDocumentRangeValid(
+    document,
+    start,
+    length,
+    includeTerminalNewline: includeTerminalNewline,
+  )) {
     return null;
   }
   if (length == 0) return '';

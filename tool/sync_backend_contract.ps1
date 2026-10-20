@@ -178,8 +178,14 @@ $contractFiles = @(
   @{ Source = 'contracts/markdown-inline-combinations-v1-fixtures.json'; Destination = 'markdown-inline-combinations-v1-fixtures.json' },
   @{ Source = 'contracts/markdown-inline-combinations-v1.schema.json'; Destination = 'markdown-inline-combinations-v1.schema.json' },
   @{ Source = $editorClipboardSource; Destination = (Split-Path -Leaf $editorClipboardSource) },
+  @{ Source = 'contracts/markdown-text-color-v1-fixtures.json'; Destination = 'markdown-text-color-v1-fixtures.json' },
+  @{ Source = 'contracts/markdown-text-color-v1.schema.json'; Destination = 'markdown-text-color-v1.schema.json' },
+  @{ Source = 'docs/markdown-text-color-v1.md'; Destination = 'markdown-text-color-v1.md' },
   @{ Source = 'contracts/markdown-v5-image-alignment-fixtures.json'; Destination = 'markdown-v5-image-alignment-fixtures.json' },
   @{ Source = 'contracts/markdown-v6-role-mentions-fixtures.json'; Destination = 'markdown-v6-role-mentions-fixtures.json' },
+  @{ Source = 'contracts/markdown-text-color-v1-fixtures.json'; Destination = 'markdown-text-color-v1-fixtures.json' },
+  @{ Source = 'contracts/markdown-text-color-v1.schema.json'; Destination = 'markdown-text-color-v1.schema.json' },
+  @{ Source = 'docs/markdown-text-color-v1.md'; Destination = 'markdown-text-color-v1.md' },
   @{ Source = 'docs/markdown-v6-role-mentions.md'; Destination = 'markdown-v6-role-mentions.md' },
   @{ Source = 'contracts/markdown-editor-newline-v1-fixtures.json'; Destination = 'markdown-editor-newline-v1-fixtures.json' },
   @{ Source = 'contracts/rich-text-behavior-v1-fixtures.json'; Destination = 'rich-text-behavior-v1-fixtures.json' },
@@ -209,6 +215,9 @@ $contractFiles = @(
   @{ Source = 'docs/mobile-release-operations.md'; Destination = 'mobile-release-operations.md' },
   @{ Source = 'docs/app-download-gateway.md'; Destination = 'app-download-gateway.md' },
   @{ Source = 'docs/media-display.md'; Destination = 'media-display.md' }
+  @{ Source = 'contracts/markdown-audio-v1-fixtures.json'; Destination = 'markdown-audio-v1-fixtures.json' },
+  @{ Source = 'contracts/markdown-audio-v1.schema.json'; Destination = 'markdown-audio-v1.schema.json' },
+  @{ Source = 'docs/audio-upload.md'; Destination = 'audio-upload.md' }
 )
 
 New-Item -ItemType Directory -Force -Path $contractDirectory | Out-Null

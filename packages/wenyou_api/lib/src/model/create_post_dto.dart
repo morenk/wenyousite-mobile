@@ -12,6 +12,7 @@ part 'create_post_dto.g.dart';
 /// CreatePostDto
 ///
 /// Properties:
+/// * [textColorVersion] - 支持文本颜色 v1 无损读写；新端始终发送，包括删除全部颜色。新/原正文含颜色未声明返回 409/40016；新写受 textColorV1WriteEnabled 控制。
 /// * [markdownContractVersion] - 声明编辑器支持 Markdown 6 角色提及源的无损读取/编辑。服务端 capabilities.roleMentionsV6Supported 为 true 时新端始终发送，包括删光旧节点；未声明而新/原正文含 v6 返回 409/40014。新节点还须 roleMentionsV6WriteEnabled。
 /// * [identityId] - 本次新发言选择的帖内身份 ID；新客户端 RP 模式必须与该身份 token 一起发送。省略仅兼容旧单身份客户端；ACCOUNT 忽略，编辑旧正文不改变原身份
 /// * [identityToken] - GET 帖内身份返回的确认 token；新建正文或发言时使用。身份变化返回 409/40011，保留草稿并重新确认
@@ -22,6 +23,11 @@ part 'create_post_dto.g.dart';
 /// * [clientRequestId] - 客户端创建请求幂等键；同一次用户提交及网络重试必须复用
 @BuiltValue()
 abstract class CreatePostDto implements Built<CreatePostDto, CreatePostDtoBuilder> {
+  /// 支持文本颜色 v1 无损读写；新端始终发送，包括删除全部颜色。新/原正文含颜色未声明返回 409/40016；新写受 textColorV1WriteEnabled 控制。
+  @BuiltValueField(wireName: r'textColorVersion')
+  CreatePostDtoTextColorVersionEnum? get textColorVersion;
+  // enum textColorVersionEnum {  1,  };
+
   /// 声明编辑器支持 Markdown 6 角色提及源的无损读取/编辑。服务端 capabilities.roleMentionsV6Supported 为 true 时新端始终发送，包括删光旧节点；未声明而新/原正文含 v6 返回 409/40014。新节点还须 roleMentionsV6WriteEnabled。
   @BuiltValueField(wireName: r'markdownContractVersion')
   CreatePostDtoMarkdownContractVersionEnum? get markdownContractVersion;
@@ -79,6 +85,13 @@ class _$CreatePostDtoSerializer implements PrimitiveSerializer<CreatePostDto> {
     CreatePostDto object, {
     FullType specifiedType = FullType.unspecified,
   }) sync* {
+    if (object.textColorVersion != null) {
+      yield r'textColorVersion';
+      yield serializers.serialize(
+        object.textColorVersion,
+        specifiedType: const FullType(CreatePostDtoTextColorVersionEnum),
+      );
+    }
     if (object.markdownContractVersion != null) {
       yield r'markdownContractVersion';
       yield serializers.serialize(
@@ -156,6 +169,13 @@ class _$CreatePostDtoSerializer implements PrimitiveSerializer<CreatePostDto> {
       final key = serializedList[i] as String;
       final value = serializedList[i + 1];
       switch (key) {
+        case r'textColorVersion':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(CreatePostDtoTextColorVersionEnum),
+          ) as CreatePostDtoTextColorVersionEnum;
+          result.textColorVersion = valueDes;
+          break;
         case r'markdownContractVersion':
           final valueDes = serializers.deserialize(
             value,
@@ -239,6 +259,23 @@ class _$CreatePostDtoSerializer implements PrimitiveSerializer<CreatePostDto> {
     );
     return result.build();
   }
+}
+
+class CreatePostDtoTextColorVersionEnum extends EnumClass {
+
+  /// 支持文本颜色 v1 无损读写；新端始终发送，包括删除全部颜色。新/原正文含颜色未声明返回 409/40016；新写受 textColorV1WriteEnabled 控制。
+  @BuiltValueEnumConst(wireNumber: 1)
+  static const CreatePostDtoTextColorVersionEnum number1 = _$createPostDtoTextColorVersionEnum_number1;
+  /// 支持文本颜色 v1 无损读写；新端始终发送，包括删除全部颜色。新/原正文含颜色未声明返回 409/40016；新写受 textColorV1WriteEnabled 控制。
+  @BuiltValueEnumConst(wireNumber: 11184809, fallback: true)
+  static const CreatePostDtoTextColorVersionEnum unknownDefaultOpenApi = _$createPostDtoTextColorVersionEnum_unknownDefaultOpenApi;
+
+  static Serializer<CreatePostDtoTextColorVersionEnum> get serializer => _$createPostDtoTextColorVersionEnumSerializer;
+
+  const CreatePostDtoTextColorVersionEnum._(String name): super(name);
+
+  static BuiltSet<CreatePostDtoTextColorVersionEnum> get values => _$createPostDtoTextColorVersionEnumValues;
+  static CreatePostDtoTextColorVersionEnum valueOf(String name) => _$createPostDtoTextColorVersionEnumValueOf(name);
 }
 
 class CreatePostDtoMarkdownContractVersionEnum extends EnumClass {

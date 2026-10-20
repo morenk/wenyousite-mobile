@@ -13,6 +13,8 @@ part 'media_response_dto.g.dart';
 /// MediaResponseDto
 ///
 /// Properties:
+/// * [durationMs] - 完成音频的实际时长（毫秒）；图片或未完成时为 null
+/// * [failureCode] - 音频最终失败的受控原因；其它状态为 null
 /// * [display] - 完整 WebP 展示资源；缺少或为空时为兼容历史媒体
 /// * [id]
 /// * [userId]
@@ -31,6 +33,15 @@ part 'media_response_dto.g.dart';
 /// * [createdAt]
 @BuiltValue()
 abstract class MediaResponseDto implements Built<MediaResponseDto, MediaResponseDtoBuilder> {
+  /// 完成音频的实际时长（毫秒）；图片或未完成时为 null
+  @BuiltValueField(wireName: r'durationMs')
+  num? get durationMs;
+
+  /// 音频最终失败的受控原因；其它状态为 null
+  @BuiltValueField(wireName: r'failureCode')
+  MediaResponseDtoFailureCodeEnum? get failureCode;
+  // enum failureCodeEnum {  AUDIO_INVALID,  AUDIO_TOO_LONG,  AUDIO_PROCESSING_FAILED,  };
+
   /// 完整 WebP 展示资源；缺少或为空时为兼容历史媒体
   @BuiltValueField(wireName: r'display')
   MediaDisplayResponseDto? get display;
@@ -77,7 +88,7 @@ abstract class MediaResponseDto implements Built<MediaResponseDto, MediaResponse
 
   @BuiltValueField(wireName: r'purpose')
   MediaResponseDtoPurposeEnum get purpose;
-  // enum purposeEnum {  AVATAR,  PROFILE_COVER,  DIRECT_MESSAGE,  MOMENT,  MOMENT_COMMENT,  RICH_CONTENT,  STICKER_SOURCE,  LEGACY,  };
+  // enum purposeEnum {  AVATAR,  PROFILE_COVER,  DIRECT_MESSAGE,  MOMENT,  MOMENT_COMMENT,  RICH_CONTENT,  RICH_CONTENT_AUDIO,  STICKER_SOURCE,  LEGACY,  };
 
   /// 是否为保留动画的 GIF
   @BuiltValueField(wireName: r'animated')
@@ -113,6 +124,20 @@ class _$MediaResponseDtoSerializer implements PrimitiveSerializer<MediaResponseD
     MediaResponseDto object, {
     FullType specifiedType = FullType.unspecified,
   }) sync* {
+    if (object.durationMs != null) {
+      yield r'durationMs';
+      yield serializers.serialize(
+        object.durationMs,
+        specifiedType: const FullType.nullable(num),
+      );
+    }
+    if (object.failureCode != null) {
+      yield r'failureCode';
+      yield serializers.serialize(
+        object.failureCode,
+        specifiedType: const FullType.nullable(MediaResponseDtoFailureCodeEnum),
+      );
+    }
     if (object.display != null) {
       yield r'display';
       yield serializers.serialize(
@@ -218,6 +243,22 @@ class _$MediaResponseDtoSerializer implements PrimitiveSerializer<MediaResponseD
       final key = serializedList[i] as String;
       final value = serializedList[i + 1];
       switch (key) {
+        case r'durationMs':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(num),
+          ) as num?;
+          if (valueDes == null) continue;
+          result.durationMs = valueDes;
+          break;
+        case r'failureCode':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(MediaResponseDtoFailureCodeEnum),
+          ) as MediaResponseDtoFailureCodeEnum?;
+          if (valueDes == null) continue;
+          result.failureCode = valueDes;
+          break;
         case r'display':
           final valueDes = serializers.deserialize(
             value,
@@ -367,6 +408,29 @@ class _$MediaResponseDtoSerializer implements PrimitiveSerializer<MediaResponseD
   }
 }
 
+class MediaResponseDtoFailureCodeEnum extends EnumClass {
+
+  /// 音频最终失败的受控原因；其它状态为 null
+  @BuiltValueEnumConst(wireName: r'AUDIO_INVALID')
+  static const MediaResponseDtoFailureCodeEnum AUDIO_INVALID = _$mediaResponseDtoFailureCodeEnum_AUDIO_INVALID;
+  /// 音频最终失败的受控原因；其它状态为 null
+  @BuiltValueEnumConst(wireName: r'AUDIO_TOO_LONG')
+  static const MediaResponseDtoFailureCodeEnum AUDIO_TOO_LONG = _$mediaResponseDtoFailureCodeEnum_AUDIO_TOO_LONG;
+  /// 音频最终失败的受控原因；其它状态为 null
+  @BuiltValueEnumConst(wireName: r'AUDIO_PROCESSING_FAILED')
+  static const MediaResponseDtoFailureCodeEnum AUDIO_PROCESSING_FAILED = _$mediaResponseDtoFailureCodeEnum_AUDIO_PROCESSING_FAILED;
+  /// 音频最终失败的受控原因；其它状态为 null
+  @BuiltValueEnumConst(wireName: r'unknown_default_open_api', fallback: true)
+  static const MediaResponseDtoFailureCodeEnum unknownDefaultOpenApi = _$mediaResponseDtoFailureCodeEnum_unknownDefaultOpenApi;
+
+  static Serializer<MediaResponseDtoFailureCodeEnum> get serializer => _$mediaResponseDtoFailureCodeEnumSerializer;
+
+  const MediaResponseDtoFailureCodeEnum._(String name): super(name);
+
+  static BuiltSet<MediaResponseDtoFailureCodeEnum> get values => _$mediaResponseDtoFailureCodeEnumValues;
+  static MediaResponseDtoFailureCodeEnum valueOf(String name) => _$mediaResponseDtoFailureCodeEnumValueOf(name);
+}
+
 class MediaResponseDtoPurposeEnum extends EnumClass {
 
   @BuiltValueEnumConst(wireName: r'AVATAR')
@@ -381,6 +445,8 @@ class MediaResponseDtoPurposeEnum extends EnumClass {
   static const MediaResponseDtoPurposeEnum MOMENT_COMMENT = _$mediaResponseDtoPurposeEnum_MOMENT_COMMENT;
   @BuiltValueEnumConst(wireName: r'RICH_CONTENT')
   static const MediaResponseDtoPurposeEnum RICH_CONTENT = _$mediaResponseDtoPurposeEnum_RICH_CONTENT;
+  @BuiltValueEnumConst(wireName: r'RICH_CONTENT_AUDIO')
+  static const MediaResponseDtoPurposeEnum RICH_CONTENT_AUDIO = _$mediaResponseDtoPurposeEnum_RICH_CONTENT_AUDIO;
   @BuiltValueEnumConst(wireName: r'STICKER_SOURCE')
   static const MediaResponseDtoPurposeEnum STICKER_SOURCE = _$mediaResponseDtoPurposeEnum_STICKER_SOURCE;
   @BuiltValueEnumConst(wireName: r'LEGACY')

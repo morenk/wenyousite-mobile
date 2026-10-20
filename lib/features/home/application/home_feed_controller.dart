@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wenyousite_mobile/core/application/cursor_page_request.dart';
 import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
 import 'package:wenyousite_mobile/core/application/request_epoch.dart';
 import 'package:wenyousite_mobile/core/application/visibility_cache_invalidation.dart';
@@ -186,48 +187,41 @@ class HomeFeedController extends StateNotifier<HomeFeedState> {
   Future<void> loadMore() async {
     if (state.phase != HomeFeedPhase.ready ||
         state.isLoadingMore ||
+        state.isRefreshing ||
         !state.hasMore) {
       return;
     }
     final epoch = _requestEpoch.current;
     final query = state.query;
     state = state.copyWith(isLoadingMore: true, transientFailure: null);
-    try {
-      final page = await _repository.fetchThreads(
-        query: query,
-        cursor: state.cursor,
-      );
-      if (!mounted || !_requestEpoch.isCurrent(epoch)) return;
-      final appended = mergeUniqueBy(
-        state.items,
-        page.items,
-        keyOf: (item) => item.id,
-      );
-      state = state.copyWith(
-        items: appended,
-        cursor: page.cursor,
-        hasMore: page.hasMore,
-        isLoadingMore: false,
-      );
-    } on ApiFailure catch (failure) {
-      if (!mounted || !_requestEpoch.isCurrent(epoch)) return;
-      if (failure.isInvalidCursor) {
+    await loadCursorPage(
+      fetch: () => _repository.fetchThreads(query: query, cursor: state.cursor),
+      isCurrent: () => mounted && _requestEpoch.isCurrent(epoch),
+      onPage: (page) {
+        final appended = mergeUniqueBy(
+          state.items,
+          page.items,
+          keyOf: (item) => item.id,
+        );
+        state = state.copyWith(
+          items: appended,
+          cursor: page.cursor,
+          hasMore: page.hasMore,
+          isLoadingMore: false,
+        );
+      },
+      onInvalidCursor: () async {
         await _loadFirstPage(loadCategories: false);
-        return;
-      }
-      state = state.copyWith(
-        isLoadingMore: false,
-        transientFailure: failure,
-        transientRetryAction: HomeFeedRetryAction.loadMore,
-      );
-    } on Object catch (error) {
-      if (!mounted || !_requestEpoch.isCurrent(epoch)) return;
-      state = state.copyWith(
-        isLoadingMore: false,
-        transientFailure: _asFailure(error, '加载更多主题失败，请重试。'),
-        transientRetryAction: HomeFeedRetryAction.loadMore,
-      );
-    }
+      },
+      mapFailure: (error) => _asFailure(error, '加载更多主题失败，请重试。'),
+      onFailure: (failure) {
+        state = state.copyWith(
+          isLoadingMore: false,
+          transientFailure: failure,
+          transientRetryAction: HomeFeedRetryAction.loadMore,
+        );
+      },
+    );
   }
 
   Future<void> _loadFirstPage({required bool loadCategories}) async {

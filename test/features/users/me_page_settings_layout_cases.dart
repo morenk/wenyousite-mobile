@@ -70,6 +70,10 @@ void registerMePageSettingsLayoutCases() {
     expect(repository.fetchCalls, 0);
     expect(find.text('账号设置'), findsOneWidget);
     expect(find.text('偏好与提醒'), findsOneWidget);
+    expect(
+      find.byKey(const Key('open-editor-toolbar-settings')),
+      findsOneWidget,
+    );
     expect(find.text('账号'), findsOneWidget);
     expect(find.byKey(const Key('me-open-edit-profile')), findsOneWidget);
     expect(find.text('账号操作'), findsOneWidget);

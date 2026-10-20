@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
-import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
+import 'package:wenyousite_mobile/core/formatters/compact_action_count.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_compact_action_content.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_reply_action_bar.dart';
 import 'package:wenyousite_mobile/features/social/domain/thread_interaction_models.dart';
 import 'package:wenyousite_mobile/features/social/presentation/thread_interaction_actions.dart';
 import 'package:wenyousite_mobile/features/social/presentation/thread_subscription_controls.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.dart';
+import 'package:wenyousite_mobile/features/wallet/domain/wallet_models.dart';
 
 class ThreadDetailBottomBar extends StatelessWidget {
   const ThreadDetailBottomBar({
@@ -14,118 +18,74 @@ class ThreadDetailBottomBar extends StatelessWidget {
     required this.canCompose,
     required this.onRequireAuthentication,
     required this.onCompose,
+    this.onTip,
+    this.onCountsChanged,
     super.key,
   });
-
   final ThreadDetailModel detail;
   final bool authenticated;
   final bool canCompose;
   final VoidCallback onRequireAuthentication;
   final VoidCallback onCompose;
+  final VoidCallback? onTip;
+  final VoidCallback? onCountsChanged;
 
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
-    final target = ThreadInteractionTarget(
-      threadId: detail.id,
-      isLiked: detail.isLiked,
-      likeCount: detail.likeCount,
-      isBookmarked: detail.isBookmarked,
-      bookmarkId: detail.bookmarkId,
-    );
-    return Material(
+    return WenyouReplyActionBar(
       key: const Key('thread-detail-bottom-bar'),
-      color: tokens.panel,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          border: Border(top: BorderSide(color: tokens.border)),
-        ),
-        child: SafeArea(
-          top: false,
-          minimum: EdgeInsets.fromLTRB(
-            wenyouHorizontalPagePadding(context),
-            tokens.space8,
-            wenyouHorizontalPagePadding(context),
-            tokens.space8,
+      children: [
+        ThreadInteractionActions(
+          target: ThreadInteractionTarget(
+            threadId: detail.id,
+            isLiked: detail.isLiked,
+            likeCount: detail.likeCount,
+            isBookmarked: detail.isBookmarked,
+            bookmarkId: detail.bookmarkId,
           ),
-          child: Align(
-            heightFactor: 1,
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                maxWidth: tokens.wideContainerMaxWidth,
-              ),
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final iconOnlyCompose =
-                      constraints.maxWidth < 336 ||
-                      MediaQuery.textScalerOf(context).scale(1) > 1.3;
-                  final composeLabel = authenticated ? '发表楼层' : '登录后发表';
-                  final composeIcon = authenticated
-                      ? WenyouIconIds.actionAddComment
-                      : WenyouIconIds.actionLogin;
-                  final composeAction = authenticated
-                      ? onCompose
-                      : onRequireAuthentication;
-                  return SizedBox(
-                    width: double.infinity,
-                    child: Row(
-                      children: [
-                        ThreadInteractionActions(
-                          target: target,
-                          onRequireAuthentication: onRequireAuthentication,
-                          compact: true,
-                        ),
-                        ThreadSubscriptionControls(
-                          threadId: detail.id,
-                          hasAutomaticUpdates: detail.hasAutomaticUpdates,
-                          compact: true,
-                        ),
-                        if (canCompose) ...[
-                          SizedBox(
-                            width: iconOnlyCompose
-                                ? tokens.space4
-                                : tokens.space8,
-                          ),
-                          Expanded(
-                            child: iconOnlyCompose
-                                ? SizedBox(
-                                    height: tokens.minimumTouchTarget,
-                                    child: Align(
-                                      alignment: Alignment.centerRight,
-                                      child: IconButton(
-                                        key: const Key('thread-floor-compose'),
-                                        tooltip: composeLabel,
-                                        onPressed: composeAction,
-                                        style: IconButton.styleFrom(
-                                          minimumSize: Size.square(
-                                            tokens.minimumTouchTarget,
-                                          ),
-                                          foregroundColor: tokens.text,
-                                          backgroundColor:
-                                              tokens.accentedBackground,
-                                        ),
-                                        icon: WenyouIcon(composeIcon, size: 20),
-                                      ),
-                                    ),
-                                  )
-                                : WenyouComposerAction(
-                                    key: const Key('thread-floor-compose'),
-                                    label: composeLabel,
-                                    icon: composeIcon,
-                                    onPressed: composeAction,
-                                  ),
-                          ),
-                        ] else
-                          const Spacer(),
-                      ],
-                    ),
-                  );
-                },
+          onRequireAuthentication: onRequireAuthentication,
+          compact: true,
+          bookmarkCount: detail.bookmarkCount,
+          onBookmarkChanged: onCountsChanged,
+        ),
+        ThreadSubscriptionControls(
+          threadId: detail.id,
+          hasAutomaticUpdates: detail.hasAutomaticUpdates,
+          compact: true,
+          subscriberCount: detail.subscriberCount,
+          onThreadSubscriptionChanged: onCountsChanged,
+        ),
+        if (!detail.isCurrentUserOwner)
+          WenyouCompactActionButton(
+            key: const Key('thread-detail-tip'),
+            label: '为创作者加油，累计 ${WenyouAmount.format(detail.tipTotal)} 升',
+            onPressed: onTip,
+            icon: WenyouIcon(
+              WenyouIconIds.actionTip,
+              size: 20,
+              color: tokens.mutedText,
+            ),
+            supporting: Text(
+              formatCompactActionCount(int.parse(detail.tipTotal)),
+              style: Theme.of(context).textTheme.wenyouUtilityCaption.copyWith(
+                color: tokens.mutedText,
+                fontWeight: FontWeight.w400,
               ),
             ),
           ),
-        ),
-      ),
+        if (canCompose) ...[
+          Expanded(
+            child: WenyouReplyFieldAction(
+              key: const Key('thread-floor-compose'),
+              fieldKey: const Key('thread-floor-compose-field'),
+              authenticated: authenticated,
+              onPressed: authenticated ? onCompose : onRequireAuthentication,
+            ),
+          ),
+        ] else
+          const Spacer(),
+      ],
     );
   }
 }

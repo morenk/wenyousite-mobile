@@ -9,10 +9,12 @@ class WenyouEditorClipboardPastePlan {
   const WenyouEditorClipboardPastePlan({
     required this.delta,
     required this.replacementEnd,
+    required this.isPlainText,
   });
 
   final Delta delta;
   final int replacementEnd;
+  final bool isPlainText;
 }
 
 /// Resolves clipboard precedence and adapts complete blocks to the current
@@ -81,6 +83,7 @@ class WenyouEditorClipboardPastePlanner {
     return WenyouEditorClipboardPastePlan(
       delta: delta,
       replacementEnd: replacementEnd,
+      isPlainText: insert == null,
     );
   }
 

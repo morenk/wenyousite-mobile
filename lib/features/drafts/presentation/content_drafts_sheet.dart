@@ -4,6 +4,7 @@ import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
+import 'package:wenyousite_mobile/core/media/media_audio.dart';
 import 'package:wenyousite_mobile/core/media/media_display.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_anchored_popover.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
@@ -19,6 +20,7 @@ Future<void> showContentDraftsSheet({
   required String currentContent,
   required ValueChanged<String> onRestore,
   ValueChanged<Map<String, MediaDisplay>>? onRestoreDisplays,
+  ValueChanged<Map<String, MediaAudio>>? onRestoreAudios,
 }) {
   return showWenyouSheet<void>(
     context: context,
@@ -27,6 +29,7 @@ Future<void> showContentDraftsSheet({
       currentContent: currentContent,
       onRestore: onRestore,
       onRestoreDisplays: onRestoreDisplays,
+      onRestoreAudios: onRestoreAudios,
     ),
   );
 }
@@ -37,6 +40,7 @@ class ContentDraftsSheet extends ConsumerStatefulWidget {
     required this.currentContent,
     required this.onRestore,
     this.onRestoreDisplays,
+    this.onRestoreAudios,
     super.key,
   });
 
@@ -44,6 +48,7 @@ class ContentDraftsSheet extends ConsumerStatefulWidget {
   final String currentContent;
   final ValueChanged<String> onRestore;
   final ValueChanged<Map<String, MediaDisplay>>? onRestoreDisplays;
+  final ValueChanged<Map<String, MediaAudio>>? onRestoreAudios;
 
   @override
   ConsumerState<ContentDraftsSheet> createState() => _ContentDraftsSheetState();
@@ -101,6 +106,7 @@ class _ContentDraftsSheetState extends ConsumerState<ContentDraftsSheet> {
             currentContent: widget.currentContent,
             onRestore: widget.onRestore,
             onRestoreDisplays: widget.onRestoreDisplays,
+            onRestoreAudios: widget.onRestoreAudios,
           ),
         },
       ],
@@ -115,6 +121,7 @@ class _ReadyDrafts extends ConsumerWidget {
     required this.currentContent,
     required this.onRestore,
     this.onRestoreDisplays,
+    this.onRestoreAudios,
   });
 
   final Object draftSessionKey;
@@ -122,6 +129,7 @@ class _ReadyDrafts extends ConsumerWidget {
   final String currentContent;
   final ValueChanged<String> onRestore;
   final ValueChanged<Map<String, MediaDisplay>>? onRestoreDisplays;
+  final ValueChanged<Map<String, MediaAudio>>? onRestoreAudios;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -232,6 +240,7 @@ class _ReadyDrafts extends ConsumerWidget {
             state: state,
             onRestore: onRestore,
             onRestoreDisplays: onRestoreDisplays,
+            onRestoreAudios: onRestoreAudios,
           ),
           if (slot != state.usage.maxSlots) SizedBox(height: tokens.space8),
         ],
@@ -315,6 +324,7 @@ class _DraftSlotCard extends ConsumerWidget {
     required this.state,
     required this.onRestore,
     this.onRestoreDisplays,
+    this.onRestoreAudios,
   });
 
   final Object draftSessionKey;
@@ -325,6 +335,7 @@ class _DraftSlotCard extends ConsumerWidget {
   final ContentDraftsState state;
   final ValueChanged<String> onRestore;
   final ValueChanged<Map<String, MediaDisplay>>? onRestoreDisplays;
+  final ValueChanged<Map<String, MediaAudio>>? onRestoreAudios;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -497,6 +508,7 @@ class _DraftSlotCard extends ConsumerWidget {
       if (!confirmed || !context.mounted) return;
     }
     onRestoreDisplays?.call(fresh.mediaDisplays);
+    onRestoreAudios?.call(fresh.mediaAudios);
     onRestore(fresh.content);
     Navigator.pop(context);
   }

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
-import 'package:wenyousite_mobile/core/application/user_facing_failure.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 
@@ -28,25 +27,18 @@ class WenyouPageFailureState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final presentation = UserFacingFailure.fromApi(
-      failure,
-      title: title,
-      message: message,
-      placement: FailurePresentationPlacement.page,
-    );
+    if (failure?.isCancellation ?? false) return const SizedBox.shrink();
     return WenyouPageBody(
       maxWidth: maxWidth,
-      child: WenyouPanel(
-        child: WenyouFailureView(
-          failure: presentation,
-          icon: icon,
-          action: OutlinedButton.icon(
-            key: retryKey,
-            onPressed: onRetry,
-            icon: const WenyouIcon(WenyouIconIds.actionRefresh),
-            label: Text(retryLabel),
-          ),
-        ),
+      child: WenyouRetryFailure(
+        panel: true,
+        title: title,
+        failure: failure,
+        message: message,
+        icon: icon,
+        retryKey: retryKey,
+        retryLabel: retryLabel,
+        onRetry: onRetry,
       ),
     );
   }

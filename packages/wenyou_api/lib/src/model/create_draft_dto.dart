@@ -12,6 +12,7 @@ part 'create_draft_dto.g.dart';
 /// CreateDraftDto
 ///
 /// Properties:
+/// * [textColorVersion] - 支持文本颜色 v1 无损读写；新端始终发送，包括删除全部颜色。新/原正文含颜色未声明返回 409/40016；新写受 textColorV1WriteEnabled 控制。
 /// * [markdownContractVersion] - 声明编辑器支持 Markdown 6 角色提及源的无损读取/编辑。服务端 capabilities.roleMentionsV6Supported 为 true 时新端始终发送，包括删光旧节点；未声明而新/原正文含 v6 返回 409/40014。新节点还须 roleMentionsV6WriteEnabled。
 /// * [clientRequestId] - 客户端创建幂等键；同一次提交和网络重试必须复用
 /// * [content] - 草稿正文；待掷骰子作为内联节点包含在正文中
@@ -19,6 +20,11 @@ part 'create_draft_dto.g.dart';
 /// * [version] - 覆盖已有槽位时必填的当前乐观锁版本；创建空槽位时省略
 @BuiltValue()
 abstract class CreateDraftDto implements Built<CreateDraftDto, CreateDraftDtoBuilder> {
+  /// 支持文本颜色 v1 无损读写；新端始终发送，包括删除全部颜色。新/原正文含颜色未声明返回 409/40016；新写受 textColorV1WriteEnabled 控制。
+  @BuiltValueField(wireName: r'textColorVersion')
+  CreateDraftDtoTextColorVersionEnum? get textColorVersion;
+  // enum textColorVersionEnum {  1,  };
+
   /// 声明编辑器支持 Markdown 6 角色提及源的无损读取/编辑。服务端 capabilities.roleMentionsV6Supported 为 true 时新端始终发送，包括删光旧节点；未声明而新/原正文含 v6 返回 409/40014。新节点还须 roleMentionsV6WriteEnabled。
   @BuiltValueField(wireName: r'markdownContractVersion')
   CreateDraftDtoMarkdownContractVersionEnum? get markdownContractVersion;
@@ -63,6 +69,13 @@ class _$CreateDraftDtoSerializer implements PrimitiveSerializer<CreateDraftDto> 
     CreateDraftDto object, {
     FullType specifiedType = FullType.unspecified,
   }) sync* {
+    if (object.textColorVersion != null) {
+      yield r'textColorVersion';
+      yield serializers.serialize(
+        object.textColorVersion,
+        specifiedType: const FullType(CreateDraftDtoTextColorVersionEnum),
+      );
+    }
     if (object.markdownContractVersion != null) {
       yield r'markdownContractVersion';
       yield serializers.serialize(
@@ -119,6 +132,13 @@ class _$CreateDraftDtoSerializer implements PrimitiveSerializer<CreateDraftDto> 
       final key = serializedList[i] as String;
       final value = serializedList[i + 1];
       switch (key) {
+        case r'textColorVersion':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(CreateDraftDtoTextColorVersionEnum),
+          ) as CreateDraftDtoTextColorVersionEnum;
+          result.textColorVersion = valueDes;
+          break;
         case r'markdownContractVersion':
           final valueDes = serializers.deserialize(
             value,
@@ -181,6 +201,23 @@ class _$CreateDraftDtoSerializer implements PrimitiveSerializer<CreateDraftDto> 
     );
     return result.build();
   }
+}
+
+class CreateDraftDtoTextColorVersionEnum extends EnumClass {
+
+  /// 支持文本颜色 v1 无损读写；新端始终发送，包括删除全部颜色。新/原正文含颜色未声明返回 409/40016；新写受 textColorV1WriteEnabled 控制。
+  @BuiltValueEnumConst(wireNumber: 1)
+  static const CreateDraftDtoTextColorVersionEnum number1 = _$createDraftDtoTextColorVersionEnum_number1;
+  /// 支持文本颜色 v1 无损读写；新端始终发送，包括删除全部颜色。新/原正文含颜色未声明返回 409/40016；新写受 textColorV1WriteEnabled 控制。
+  @BuiltValueEnumConst(wireNumber: 11184809, fallback: true)
+  static const CreateDraftDtoTextColorVersionEnum unknownDefaultOpenApi = _$createDraftDtoTextColorVersionEnum_unknownDefaultOpenApi;
+
+  static Serializer<CreateDraftDtoTextColorVersionEnum> get serializer => _$createDraftDtoTextColorVersionEnumSerializer;
+
+  const CreateDraftDtoTextColorVersionEnum._(String name): super(name);
+
+  static BuiltSet<CreateDraftDtoTextColorVersionEnum> get values => _$createDraftDtoTextColorVersionEnumValues;
+  static CreateDraftDtoTextColorVersionEnum valueOf(String name) => _$createDraftDtoTextColorVersionEnumValueOf(name);
 }
 
 class CreateDraftDtoMarkdownContractVersionEnum extends EnumClass {

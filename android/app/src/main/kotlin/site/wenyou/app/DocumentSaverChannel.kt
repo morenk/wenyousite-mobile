@@ -22,6 +22,7 @@ class DocumentSaverChannel(private val activity: FlutterActivity) {
 
     private var channel: MethodChannel? = null
     private var pendingSave: PendingSave? = null
+    private val audioSaver = AudioDocumentSaver(activity)
 
     fun register(engine: FlutterEngine) {
         channel = MethodChannel(engine.dartExecutor.binaryMessenger, CHANNEL).also {
@@ -30,6 +31,7 @@ class DocumentSaverChannel(private val activity: FlutterActivity) {
     }
 
     fun dispose() {
+        audioSaver.dispose()
         channel?.setMethodCallHandler(null)
         channel = null
         pendingSave?.result?.error("engine_closed", "档案保存已中断。", null)
@@ -37,6 +39,7 @@ class DocumentSaverChannel(private val activity: FlutterActivity) {
     }
 
     fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?): Boolean {
+        if (audioSaver.onActivityResult(requestCode, resultCode, data)) return true
         if (requestCode != REQUEST_CREATE_DOCUMENT) return false
         val pending = pendingSave ?: return true
         pendingSave = null
@@ -62,6 +65,7 @@ class DocumentSaverChannel(private val activity: FlutterActivity) {
     }
 
     private fun handleCall(call: MethodCall, result: MethodChannel.Result) {
+        if (audioSaver.handle(call, result)) return
         if (call.method != "saveDocument") {
             result.notImplemented()
             return

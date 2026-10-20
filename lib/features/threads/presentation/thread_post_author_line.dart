@@ -13,6 +13,7 @@ class ThreadPostAuthorLine extends StatelessWidget {
   const ThreadPostAuthorLine({
     required this.author,
     this.time,
+    this.editedAt,
     this.compact = false,
     this.avatarKey,
     this.metadata = const [],
@@ -22,6 +23,7 @@ class ThreadPostAuthorLine extends StatelessWidget {
 
   final ThreadAuthorModel author;
   final DateTime? time;
+  final DateTime? editedAt;
   final bool compact;
   final Key? avatarKey;
   final List<Widget> metadata;
@@ -60,10 +62,11 @@ class ThreadPostAuthorLine extends StatelessWidget {
       ),
       metadata: [
         if (role != null) Text(role),
-        if (time != null)
+        if (editedAt != null || time != null)
           WenyouTimeText(
-            value: time!,
-            semanticsPrefix: '发布时间：',
+            value: editedAt ?? time!,
+            prefix: editedAt == null ? '' : '编辑于',
+            semanticsPrefix: editedAt == null ? '发布时间：' : '编辑时间：',
             style: Theme.of(
               context,
             ).textTheme.wenyouUtilityCaption.copyWith(color: tokens.mutedText),
