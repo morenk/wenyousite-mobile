@@ -5,6 +5,7 @@
 ## 来源与范围
 
 - Worktree：`D:\codex-worktrees\1528\wenyousite-mobile`；分支 `codex/20261021-thread-fonts-mobile`，PR #114。
+- 实现提交：`e665f94af0119d572abc886bb34b4e3c6beba539`。后续仅补充本验收记录，不改变应用源码或构建产物。
 - Backend PR #56：`1cf51dd752a98e3733f3dc0c83b17add75be7e46`，API `5.41.0-dev.20261021.1`；契约同步独立提交 `81e27f5e`。Foundation 最新正式 v7.6.0。
 - 最终应用源码摘要：`388c3e6445f6b1f90c6b3dd345816135c2d98284a7b092fba27142f87771d31a`。对 Git 管理及新增的 `lib/`、`packages/wenyou_api/`、`android/`、`assets/`、`pubspec.yaml`、`pubspec.lock` 共 1,966 个文件按路径排序，以 `路径 SHA-256` 的 LF 行串计算摘要；逐文件记录在 `.dart_tool/thread-fonts-source-manifest.json`。生成器完成规范化后计算，排除中间生成文件。
 - 17 款正式 ID，其中 16 款 ready，小城拉风体 `xiaocheng-lafeng` 为 pendingSource；不把研究别名写入正文。菜单使用“文楷”，不使用派生字体的保留名称。
