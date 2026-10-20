@@ -23,6 +23,7 @@ abstract final class MarkdownDeltaBlockEncoder {
       'code',
       'link',
       'color',
+      'font',
       markdownLinkIdentityKey,
       MarkdownDeltaInlineEncoder.keepLinkShapeKey,
       emptyParagraphAttribute,

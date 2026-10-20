@@ -244,6 +244,18 @@ void main() {
       );
       expect(createPayload.parentPostId, 'floor');
       expect(createPayload.replyToPostId, 'reply-target');
+      expect(
+        createPayload.textFontVersion,
+        CreatePostDtoTextFontVersionEnum.number1,
+      );
+      expect(
+        updatePayload.textFontVersion,
+        UpdatePostDtoTextFontVersionEnum.number1,
+      );
+      expect(
+        bodyPayload.textFontVersion,
+        UpsertBodyDtoTextFontVersionEnum.number1,
+      );
       expect(updatePayload.content, '编辑后的内容');
       expect(updatePayload.version, 3);
       expect(updated.version, 4);

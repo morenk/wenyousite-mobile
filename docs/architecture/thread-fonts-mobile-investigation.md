@@ -1,6 +1,6 @@
 # 主题帖字体 Mobile 接入调查
 
-状态：已收到并同步 Backend PR #56 的正式候选契约 `1cf51dd752a98e3733f3dc0c83b17add75be7e46`，开始消费者实现；尚未交付字体功能或取得真机验收。Foundation 保持最新正式 v7.6.0。
+状态：已收到并同步 Backend PR #56 的正式候选契约 `1cf51dd752a98e3733f3dc0c83b17add75be7e46`，消费者实现进入完整本地门禁；已完成 16 款实际 Flutter 预览，尚未取得真机验收。当前行为与证据见[候选记录](thread-fonts-mobile-candidate.md)。Foundation 保持最新正式 v7.6.0。
 
 正式交接：API `5.41.0-dev.20261021.1`，17 款目录中 16 款 ready、小城拉风体 pendingSource。正式 ID 为 `shattered-display`、`xiaocheng-lafeng`、`jf-zsk-seal`，替代研究别名。VPS `/tmp/thread-font-release-publish` 含正式分片与声明对象，Mobile 预览只读取这些构建资产；研究 audit3500 子集不代表正式 core 覆盖。清单 SHA-256 `ad22427e048b90f798bddafc308195786600ee006459f54144610d1bbe35d5c3`，3,207,159 B；资源基址未发布时不发字体请求。下文保留前置调查过程，当前交接状态以本段为准。
 

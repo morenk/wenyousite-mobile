@@ -408,6 +408,7 @@ class PostComposerSheetState extends ConsumerState<PostComposerSheet>
             toolbar: WenyouComposerDock(
               key: const Key('post-composer-toolbar'),
               textColor: ref.watch(editorTextColorConfigurationProvider),
+              textFont: ref.watch(appCapabilitiesProvider).textFontSupported,
               layout: ref.watch(editorToolbarLayoutProvider),
               controller: _editorSession.controller,
               capabilities: WenyouEditorCapabilities.forAlignment(

@@ -77,6 +77,10 @@ void main() {
     );
     expect(createRequest.title, '测试主题');
     expect(createRequest.category, 'TRPG');
+    expect(
+      createRequest.textFontVersion,
+      CreateThreadDtoTextFontVersionEnum.number1,
+    );
     expect(createRequest.visibility, CreateThreadDtoVisibilityEnum.PRIVATE);
     expect(createRequest.tagNames!.toList(), ['跑团', '奇幻']);
     expect(createRequest.content, _centerMarkdown);
@@ -117,6 +121,10 @@ void main() {
             as SaveThreadAggregateDto;
 
     expect(aggregateRequest.version, 7);
+    expect(
+      aggregateRequest.textFontVersion,
+      SaveThreadAggregateDtoTextFontVersionEnum.number1,
+    );
     expect(aggregateRequest.defaultSubthreadVersion, 8);
     expect(aggregateRequest.bodyVersion, 9);
     expect(aggregateRequest.title, '发布标题');

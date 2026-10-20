@@ -2,6 +2,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:markdown/markdown.dart' as md;
+import 'package:wenyousite_mobile/core/text_fonts/text_font_scope.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_inline_text_elements.dart';
 
 class MarkdownTextColorBuilder extends MarkdownElementBuilder {
@@ -19,8 +20,10 @@ class MarkdownTextColorBuilder extends MarkdownElementBuilder {
     TextStyle? preferredStyle,
     TextStyle? parentStyle,
   ) {
-    final rgb = element.attributes['color']!;
-    final color = Color(int.parse('FF${rgb.substring(1)}', radix: 16));
+    final rgb = element.attributes['color'];
+    final color = rgb == null
+        ? null
+        : Color(int.parse('FF${rgb.substring(1)}', radix: 16));
     final base = (parentStyle ?? DefaultTextStyle.of(context).style).copyWith(
       color: color,
     );
@@ -74,6 +77,7 @@ class MarkdownTextColorBuilder extends MarkdownElementBuilder {
                   text: child.textContent,
                   style: nested,
                   foregroundColor: color,
+                  preserveTextFont: element.attributes.containsKey('font'),
                 ),
               ),
             ),
@@ -82,6 +86,23 @@ class MarkdownTextColorBuilder extends MarkdownElementBuilder {
       }
       return render(child.children!, nested, tap);
     }).toList();
-    return Text.rich(TextSpan(children: render(element.children!, base, null)));
+    final font = element.attributes['font'];
+    if (font == null) {
+      return Text.rich(
+        TextSpan(children: render(element.children!, base, null)),
+      );
+    }
+    return TextFontScope(
+      texts: {font: element.textContent},
+      builder: (context, runtime) => Text.rich(
+        TextSpan(
+          children: render(
+            element.children!,
+            runtime?.style(font, base) ?? base,
+            null,
+          ),
+        ),
+      ),
+    );
   }
 }

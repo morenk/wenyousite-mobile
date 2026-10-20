@@ -341,8 +341,8 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
                                   Semantics(
                                     textField: true,
                                     label: '主题正文编辑器',
-                                    child: QuillEditor(
-                                      key: const Key('compose-body'),
+                                    child: TextFontQuillEditor(
+                                      editorKey: const Key('compose-body'),
                                       controller: _editorSession.controller,
                                       focusNode: _editorSession.focusNode,
                                       scrollController:
@@ -430,6 +430,9 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
                               textColor: ref.watch(
                                 editorTextColorConfigurationProvider,
                               ),
+                              textFont: ref
+                                  .watch(appCapabilitiesProvider)
+                                  .textFontSupported,
                               onColorPickerChanged: (open) {
                                 if (_colorPickerOpen != open) {
                                   setState(() => _colorPickerOpen = open);

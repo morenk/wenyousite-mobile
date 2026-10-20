@@ -21,10 +21,12 @@ class ApiThreadManagementRepository implements ThreadManagementRepository {
     this._threadsApi,
     this._categories, {
     this.roleMentionsSupported = false,
+    this.textFontSupported = false,
     this.textColorSupported = false,
   });
 
   final bool roleMentionsSupported;
+  final bool textFontSupported;
   final bool textColorSupported;
 
   final ThreadsApi _threadsApi;
@@ -95,6 +97,7 @@ class ApiThreadManagementRepository implements ThreadManagementRepository {
         current.body,
         supported: roleMentionsSupported,
       );
+      requireTextFontWriteSupport(current.body, supported: textFontSupported);
       requireTextColorWriteSupport(current.body, supported: textColorSupported);
       final normalizedTitle = draft.title.trim();
       if (current.defaultSubthreadId == null ||
@@ -108,6 +111,8 @@ class ApiThreadManagementRepository implements ThreadManagementRepository {
             ..markdownContractVersion = roleMentionsSupported
                 ? SaveThreadAggregateDtoMarkdownContractVersionEnum.number6
                 : null
+            ..textFontVersion =
+                SaveThreadAggregateDtoTextFontVersionEnum.number1
             ..textColorVersion = textColorSupported
                 ? SaveThreadAggregateDtoTextColorVersionEnum.number1
                 : null
@@ -324,6 +329,7 @@ final apiThreadManagementRepositoryProvider =
       return ApiThreadManagementRepository(
         api.getThreadsApi(),
         ref.watch(threadCategoryCatalogRepositoryProvider),
+        textFontSupported: ref.watch(appCapabilitiesProvider).textFontSupported,
         textColorSupported: ref
             .watch(appCapabilitiesProvider)
             .textColorSupported,

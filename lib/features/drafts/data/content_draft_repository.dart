@@ -18,10 +18,12 @@ class ApiContentDraftRepository implements ContentDraftRepository {
   ApiContentDraftRepository(
     this._api, {
     this.roleMentionsSupported = false,
+    this.textFontSupported = false,
     this.textColorSupported = false,
   });
 
   final bool roleMentionsSupported;
+  final bool textFontSupported;
   final bool textColorSupported;
 
   final DraftsApi _api;
@@ -70,12 +72,14 @@ class ApiContentDraftRepository implements ContentDraftRepository {
   }) async {
     try {
       requireMentionWriteSupport(content, supported: roleMentionsSupported);
+      requireTextFontWriteSupport(content, supported: textFontSupported);
       requireTextColorWriteSupport(content, supported: textColorSupported);
       final payload = CreateDraftDto((builder) {
         builder
           ..markdownContractVersion = roleMentionsSupported
               ? CreateDraftDtoMarkdownContractVersionEnum.number6
               : null
+          ..textFontVersion = CreateDraftDtoTextFontVersionEnum.number1
           ..textColorVersion = textColorSupported
               ? CreateDraftDtoTextColorVersionEnum.number1
               : null
@@ -104,12 +108,14 @@ class ApiContentDraftRepository implements ContentDraftRepository {
   }) async {
     try {
       requireMentionWriteSupport(content, supported: roleMentionsSupported);
+      requireTextFontWriteSupport(content, supported: textFontSupported);
       requireTextColorWriteSupport(content, supported: textColorSupported);
       final payload = UpdateDraftDto(
         (builder) => builder
           ..markdownContractVersion = roleMentionsSupported
               ? UpdateDraftDtoMarkdownContractVersionEnum.number6
               : null
+          ..textFontVersion = UpdateDraftDtoTextFontVersionEnum.number1
           ..textColorVersion = textColorSupported
               ? UpdateDraftDtoTextColorVersionEnum.number1
               : null
@@ -164,6 +170,7 @@ final apiContentDraftRepositoryProvider = Provider<ContentDraftRepository>((
 ) {
   return ApiContentDraftRepository(
     ref.watch(wenyouApiProvider).getDraftsApi(),
+    textFontSupported: ref.watch(appCapabilitiesProvider).textFontSupported,
     textColorSupported: ref.watch(appCapabilitiesProvider).textColorSupported,
     roleMentionsSupported: ref
         .watch(appCapabilitiesProvider)

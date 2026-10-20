@@ -36,3 +36,4 @@ export 'presentation/editor_toolbar_buttons.dart'
 export 'presentation/mention_suggestions.dart' show MentionSuggestions;
 export 'presentation/rich_editor_session.dart'
     show RichEditorSelectionPlacement, RichEditorSession;
+export 'presentation/text_font_quill_editor.dart';

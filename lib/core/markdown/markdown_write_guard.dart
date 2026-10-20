@@ -3,7 +3,24 @@ import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_mention_target.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_reader_paragraph_syntax.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_text_color.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_text_font.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+
+void requireTextFontWriteSupport(String content, {required bool supported}) {
+  if (supported || !content.contains('data-wenyou-font-v1')) return;
+  final delta = MarkdownDeltaCodec.decode(content).delta;
+  if (delta.operations.any(
+    (op) =>
+        op.attributes?['font'] != null ||
+        switch (op.data) {
+          {MarkdownDeltaCodec.compatibilityEmbed: {'raw': final String raw}} =>
+            MarkdownTextFont.hasUnknown(raw),
+          _ => false,
+        },
+  )) {
+    throw const ApiFailure.textFontUnavailable();
+  }
+}
 
 /// 颜色读取与写入能力独立于角色提及；旧服务不能接收恢复的有色草稿。
 void requireTextColorWriteSupport(String content, {required bool supported}) {
@@ -11,7 +28,9 @@ void requireTextColorWriteSupport(String content, {required bool supported}) {
   bool colored(List<md.Node> nodes) => nodes.any(
     (node) =>
         node is md.Element &&
-        (node.tag == MarkdownTextColor.tag || colored(node.children ?? [])),
+        ((node.tag == MarkdownTextColor.tag &&
+                node.attributes.containsKey('color')) ||
+            colored(node.children ?? [])),
   );
   final nodes = md.Document(
     inlineSyntaxes: [MarkdownTextColorSyntax()],

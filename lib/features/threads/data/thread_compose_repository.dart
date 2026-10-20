@@ -24,10 +24,12 @@ class ApiThreadComposeRepository implements ThreadComposeRepository {
     this._categories,
     this._usersApi, {
     this.roleMentionsSupported = false,
+    this.textFontSupported = false,
     this.textColorSupported = false,
   });
 
   final bool roleMentionsSupported;
+  final bool textFontSupported;
   final bool textColorSupported;
 
   final ThreadsApi _threadsApi;
@@ -167,6 +169,7 @@ class ApiThreadComposeRepository implements ThreadComposeRepository {
         payload.body,
         supported: roleMentionsSupported,
       );
+      requireTextFontWriteSupport(payload.body, supported: textFontSupported);
       requireTextColorWriteSupport(
         payload.body,
         supported: payload.textColorSupported ?? textColorSupported,
@@ -181,6 +184,7 @@ class ApiThreadComposeRepository implements ThreadComposeRepository {
             ..markdownContractVersion = roleMentionsSupported
                 ? CreateThreadDtoMarkdownContractVersionEnum.number6
                 : null
+            ..textFontVersion = CreateThreadDtoTextFontVersionEnum.number1
             ..textColorVersion =
                 (payload.textColorSupported ?? textColorSupported)
                 ? CreateThreadDtoTextColorVersionEnum.number1
@@ -219,6 +223,7 @@ class ApiThreadComposeRepository implements ThreadComposeRepository {
   }) async {
     try {
       requireMentionWriteSupport(body, supported: roleMentionsSupported);
+      requireTextFontWriteSupport(body, supported: textFontSupported);
       requireTextColorWriteSupport(body, supported: textColorSupported);
       final normalizedTitle = title.trim();
       final normalizedCategory = categorySlug?.trim();
@@ -229,6 +234,8 @@ class ApiThreadComposeRepository implements ThreadComposeRepository {
             ..markdownContractVersion = roleMentionsSupported
                 ? SaveThreadAggregateDtoMarkdownContractVersionEnum.number6
                 : null
+            ..textFontVersion =
+                SaveThreadAggregateDtoTextFontVersionEnum.number1
             ..textColorVersion = textColorSupported
                 ? SaveThreadAggregateDtoTextColorVersionEnum.number1
                 : null
@@ -327,6 +334,7 @@ final apiThreadComposeRepositoryProvider = Provider<ThreadComposeRepository>((
     api.getThreadsApi(),
     ref.watch(threadCategoryCatalogRepositoryProvider),
     api.getUsersApi(),
+    textFontSupported: ref.watch(appCapabilitiesProvider).textFontSupported,
     textColorSupported: ref.watch(appCapabilitiesProvider).textColorSupported,
     roleMentionsSupported: ref
         .watch(appCapabilitiesProvider)

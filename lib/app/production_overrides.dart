@@ -389,6 +389,8 @@ AppCapabilities appCapabilitiesForContract(ContractInfo? contract) {
     legacySingleThreadIdentity:
         contract?.contractVersion.startsWith('5.33.') ?? false,
     roleMentionsSupported: contract?.roleMentionsSupported ?? false,
+    textFontSupported: contract?.textFontSupported ?? false,
+    textFontWriteEnabled: contract?.textFontWriteEnabled ?? false,
     textColorSupported: contract?.textColorSupported ?? false,
     textColorWriteEnabled: contract?.textColorWriteEnabled ?? false,
     roleMentionsWriteEnabled: contract?.roleMentionsWriteEnabled ?? false,

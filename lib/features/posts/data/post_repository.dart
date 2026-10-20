@@ -22,10 +22,12 @@ class ApiPostRepository implements PostRepository {
   ApiPostRepository(
     this._api, {
     this.roleMentionsSupported = false,
+    this.textFontSupported = false,
     this.textColorSupported = false,
   });
 
   final bool roleMentionsSupported;
+  final bool textFontSupported;
   final bool textColorSupported;
 
   final PostsApi _api;
@@ -147,6 +149,7 @@ class ApiPostRepository implements PostRepository {
         input.content,
         supported: roleMentionsSupported,
       );
+      requireTextFontWriteSupport(input.content, supported: textFontSupported);
       requireTextColorWriteSupport(
         input.content,
         supported: input.textColorSupported ?? textColorSupported,
@@ -156,6 +159,7 @@ class ApiPostRepository implements PostRepository {
           ..markdownContractVersion = roleMentionsSupported
               ? CreatePostDtoMarkdownContractVersionEnum.number6
               : null
+          ..textFontVersion = CreatePostDtoTextFontVersionEnum.number1
           ..textColorVersion = (input.textColorSupported ?? textColorSupported)
               ? CreatePostDtoTextColorVersionEnum.number1
               : null
@@ -204,12 +208,14 @@ class ApiPostRepository implements PostRepository {
   }) async {
     try {
       requireMentionWriteSupport(content, supported: roleMentionsSupported);
+      requireTextFontWriteSupport(content, supported: textFontSupported);
       requireTextColorWriteSupport(content, supported: textColorSupported);
       final payload = UpdatePostDto(
         (builder) => builder
           ..markdownContractVersion = roleMentionsSupported
               ? UpdatePostDtoMarkdownContractVersionEnum.number6
               : null
+          ..textFontVersion = UpdatePostDtoTextFontVersionEnum.number1
           ..textColorVersion = textColorSupported
               ? UpdatePostDtoTextColorVersionEnum.number1
               : null
@@ -246,6 +252,7 @@ class ApiPostRepository implements PostRepository {
   }) async {
     try {
       requireMentionWriteSupport(content, supported: roleMentionsSupported);
+      requireTextFontWriteSupport(content, supported: textFontSupported);
       requireTextColorWriteSupport(
         content,
         supported: textColorSupported ?? this.textColorSupported,
@@ -254,6 +261,7 @@ class ApiPostRepository implements PostRepository {
         builder.markdownContractVersion = roleMentionsSupported
             ? UpsertBodyDtoMarkdownContractVersionEnum.number6
             : null;
+        builder.textFontVersion = UpsertBodyDtoTextFontVersionEnum.number1;
         builder.textColorVersion =
             (textColorSupported ?? this.textColorSupported)
             ? UpsertBodyDtoTextColorVersionEnum.number1
@@ -572,6 +580,7 @@ class ApiPostRepository implements PostRepository {
 final apiPostRepositoryProvider = Provider<PostRepository>((ref) {
   return ApiPostRepository(
     ref.watch(wenyouApiProvider).getPostsApi(),
+    textFontSupported: ref.watch(appCapabilitiesProvider).textFontSupported,
     textColorSupported: ref.watch(appCapabilitiesProvider).textColorSupported,
     roleMentionsSupported: ref
         .watch(appCapabilitiesProvider)

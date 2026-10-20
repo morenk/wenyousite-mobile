@@ -95,6 +95,7 @@ class WenyouEditorToolbar extends StatefulWidget {
     this.surface = WenyouComposerSurface.page,
     this.capabilities = WenyouEditorCapabilities.richMarkdown,
     this.textColor,
+    this.textFont = false,
     this.layout = const EditorToolbarLayout.defaults(),
     super.key,
   });
@@ -122,6 +123,7 @@ class WenyouEditorToolbar extends StatefulWidget {
   final WenyouComposerSurface surface;
   final WenyouEditorCapabilities capabilities;
   final EditorTextColorConfiguration? textColor;
+  final bool textFont;
   final EditorToolbarLayout layout;
 
   @override
@@ -456,6 +458,7 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
       },
       focusNode: widget.editorFocusNode,
       textColor: widget.textColor,
+      textFont: widget.textFont,
     );
   }
 

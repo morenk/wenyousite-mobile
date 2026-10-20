@@ -94,6 +94,18 @@ void main() {
     expect(fetched.id, 'draft-2');
     expect(updated.version, 4);
     expect(createPayloads, hasLength(2));
+    expect(
+      createPayloads.every(
+        (payload) =>
+            payload.textFontVersion ==
+            CreateDraftDtoTextFontVersionEnum.number1,
+      ),
+      isTrue,
+    );
+    expect(
+      updatePayload.textFontVersion,
+      UpdateDraftDtoTextFontVersionEnum.number1,
+    );
     expect(createPayloads.first.content, '自动正文');
     expect(createPayloads.first.clientRequestId, _requestIdOne);
     expect(createPayloads.first.slot, isNull);
