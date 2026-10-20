@@ -257,6 +257,8 @@ S5 于 2026-09-10 启动，已按要求安装 Debug 候选并核验设备内 APK
 
 ## 13. 最近审查的契约版本和后端提交
 
+2026-10-21 前置依赖同步：固定 Foundation 正式 `v7.6.0`（`1bbd5a5476b50c51d2bba1f2a218f9408a852c4a`）；相对 `v7.5.0` 的 Mobile 契约及行为保持不变。Backend 记录、镜像 `origin/dev` 与公网仍为 `6e00c4031a8f970609eef8cbf6fdefe3e6b12126`／API `5.40.0-dev.20261018.1`。帖内字体尚待已提交 Backend 协议，保持最新已发布 Foundation，仅实际变更其机器契约或运行产物时等待新正式 Tag；当前未开放入口。影响面及未验证项见[字体接入调查](../architecture/thread-fonts-mobile-investigation.md)。
+
 2026-10-18 合并来源同步：Backend PR #55 已合并，固定最终提交 `6e00c4031a8f970609eef8cbf6fdefe3e6b12126`／API `5.40.0-dev.20261018.1`。契约字节与先前候选 `da68203a` 一致，本次只更新来源元数据；消费者验证和部署核验分别记录，不改变本模块既有范围。
 
 2026-10-18 契约来源复核：固定 Backend `da68203a494c6d0f6d377c23399390c2cee397f3`／API `5.40.0-dev.20261018.1`。本次只增加主题详情可选真实收藏与官方订阅总数，不改变本模块既有操作契约；消费者接入与验证见[统计契约同步](../architecture/thread-action-counts-contract-sync.md)。
