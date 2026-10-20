@@ -7,12 +7,29 @@
 - 治理任务：`01a15a8c-53c1-7203-a4c5-6c9d5fc731de`。
 - Windows Worktree：`D:\codex-worktrees\1528\wenyousite-mobile`。
 - 分支：`codex/20261021-thread-fonts-mobile`，从 fetch 后的 `origin/dev`（`6f0064507a77e2034250ee4fd9f1d382e0a063a9`）创建。
-- 目标：主题正文、子贴、楼层和回复局部选字字体，首批 30 个支持中英的家族；默认恢复、最近使用及与合法格式组合。不改变应用 UI 系统字体，不捆入字体全集。
+- 目标：主题正文、子贴、楼层和回复局部选字字体；按负责人最新调整，首批为 15 个家族，不补足 30。默认恢复、最近使用及与合法格式组合；中英与符号覆盖按实际资源核验，缺字可读回退。不改变应用 UI 系统字体，不捆入字体全集。
 - 2026-10-21，记录的 Backend、只读镜像 `origin/dev`、公网只读 `/meta.buildSha` 均为 `6e00c4031a8f970609eef8cbf6fdefe3e6b12126`，HTTP 契约 `5.40.0-dev.20261018.1`。未发现需先同步的契约 revision 变化；尚无本目标协议 SHA。
 - Foundation 已执行 `git fetch origin --tags`；最新正式 `v7.6.0` 指向 `1bbd5a5476b50c51d2bba1f2a218f9408a852c4a`。相对 `v7.5.0` 的 Flutter 库只变更版本常量；Mobile profile、品牌资源及颜色规则保持不变。先独立升级固定 Tag 和锁文件；字体业务协议由 Backend 承担，消费者可能继续使用 `v7.6.0` UI Token，是否需要新 Foundation 发布以实际变更为准。
 - 已阅读治理 AGENTS、任务分派、本仓 AGENTS、editor 和 threads 模块文档，以及 Markdown 实现与固定契约。本仓没有 `docs/modules/markdown.md`；Markdown 属于 `lib/core/markdown`，行为文档归 editor、threads、posts 等消费者。
 - 默认 Auto-review 偏好已收到；实际宿主为 `approval_policy=never`、文件系统 unrestricted，未设置或核验 `resolvedApprovalsReviewer=auto_review`，不能声称已启用“帮我批准”。
-- 治理后续确认 VPS 到相关 HTTPS 站点的 TLS 连接阻塞，Backend/Foundation/Web 尚无协议交付；本轮止于可独立评审的正式依赖升级与调查，不等待远程恢复而持续轮询。首批每家族只采用一个默认字重。
+- 治理已通知 VPS 代理修复、Backend/Foundation/Web 原任务恢复；Mobile 尚未收到已提交 Backend 字体契约 SHA，保持当前任务、分支与 PR 等待正式交接，不持续轮询。首批每家族只采用一个默认字重。
+
+## 首批名单与资源状态
+
+本名单取代此前 30 款输入。保留 11 款：思源黑体、无界黑、朱雀仿宋、霞鹜文楷、小赖、龙藏体、流江毛草（Liu Jian Mao Cao）、铁蒺藜、缝合像素、站酷快乐体、站酷小薇体。
+
+新增 4 款：
+
+| 字体 | 治理提供的索引页面 | 当前资源状态 |
+| --- | --- | --- |
+| 侵食明朝 | https://www.maoken.com/freefonts/29703.html | 待原 ZIP 与内部许可证、RFN、覆盖及哈希核验 |
+| 冒险黑体 | https://www.maoken.com/freefonts/29709.html | 待原 ZIP 与内部许可证、RFN、覆盖及哈希核验 |
+| 怪聞書 | https://www.maoken.com/freefonts/29697.html | 待原 ZIP 与内部许可证、RFN、覆盖及哈希核验 |
+| 白光明朝 | https://www.maoken.com/freefonts/29628.html | 待原 ZIP 与内部许可证、RFN、覆盖及哈希核验 |
+
+治理交接称新增 4 款已追溯作者 lavsic 的 BOOTH 官方页面，页面声明 OFL 1.1，但原 ZIP 下载需登录；Mobile 尚未核验源文件。以上索引不作为下载目录，不用预览替代完整字库，不将这些字体标为可用，也不编造资源 ID、字符覆盖或摘要。
+
+此前被移除的 19 款不再属于首批范围。目录、测试矩阵与预算均以这 15 款和待交接的 audit-v3 为准；此前 30 款的源字库及测试子集总量不能作为新名单预算，测试子集也不视为正式资源。保留 11 款同样须经 Backend 已提交目录交接后才接入。
 
 ## 已核查的影响面
 
@@ -23,7 +40,7 @@
 | 解析 | `markdown_text_color.dart`、`markdown_rich_line_decoder.dart`、`markdown_inline_runs.dart` | 当前颜色内部禁止嵌套 HTML；需共享用例确定字体和颜色组合、顺序、交叉与非法标记 |
 | Codec | `markdown_delta_inline_encoder.dart`、`markdown_delta_block_encoder.dart`、`markdown_delta_semantics.dart` | 当前普通属性白名单没有 font；同步编码、解码、语义等价和保存保护，不能只放行属性 |
 | 编辑会话 | `literal_text_quill_controller.dart`、`rich_editor_session.dart`、`editor_text_color_selection.dart` | 范围修改跳过换行和原子；跨段一个撤销步骤；恢复默认只清字体；保留中文组合输入、选区与其他属性 |
-| 格式 UI | `editor_text_color_palette.dart`、`editor_text_color_configuration.dart`、`editor_toolbar.dart` | 现有格式面板中的轻量选择，最近使用按账号隔离；字体目录预览不能加载 30 个完整家族 |
+| 格式 UI | `editor_text_color_palette.dart`、`editor_text_color_configuration.dart`、`editor_toolbar.dart` | 现有格式面板中的轻量选择，最近使用按账号隔离；字体目录预览不能加载全部 15 个完整家族 |
 | 阅读 | `wenyou_markdown.dart`、`markdown_text_color_builder.dart`、`wenyou_markdown_body.dart` | 编辑与阅读共用已解析家族；按可见内容调度，异步加载后重排需检查滚动位置与选择 |
 | 复制与摘要 | `editor_site_clipboard.dart`、`editor_clipboard_paste.dart`、`markdown_clipboard_text.dart`、`markdown_plain_text_preview.dart` | 站内保留字体；外部 CSS 不获任意资源加载权；摘要输出可见文字，代码内标记保持字面语义 |
 | 写入与恢复 | threads 三类 repository、`post_repository.dart`、`content_draft_repository.dart`、`markdown_write_guard.dart` | 创建主题、聚合草稿、子贴、主楼/回复、正文 upsert、云草稿均接入声明与旧后端保护 |
@@ -33,7 +50,7 @@
 
 本机 Flutter SDK `services/font_loader.dart` 明确支持 TTF/OTF，通过 `dart:ui.loadFontFromList` 注册字体家族。固定 Quill 提交 `c273155025d1255335a6dd3e6ecd3700d29f103e` 的 `text_line.dart` 已把 `Attribute.font` 映射为 `TextStyle.fontFamily`，具备基础渲染入口。官方参考：[FontLoader](https://api.flutter.dev/flutter/services/FontLoader-class.html)、[loadFontFromList](https://api.flutter.dev/flutter/dart-ui/loadFontFromList.html)。
 
-这些是源码/API 可行性证据，尚非 30 个目标家族的中文覆盖、字重、渲染一致性或 Android 内存实测。
+这些是源码/API 可行性证据，尚非首批 15 个目标家族的中文覆盖、字重、渲染一致性或 Android 内存实测。
 
 - 公开 FontLoader API 没有字体卸载接口。磁盘 LRU 淘汰不能释放已经注册的引擎字体；运行时必须在加载前限制累计家族数及累计文件字节，达到上限后保留字体语义、使用可读回退，不做“淘汰后无限加载”。
 - 家族注册名应由受信目录身份与资源摘要确定，防止不同版本复用一个名字。保存的协议 ID 与本地注册名分离，具体 ID 形状等待正式契约。
@@ -44,13 +61,13 @@
 - 每家族只有一个默认字重时，仍保留用户粗体、斜体属性。需逐家族验证引擎合成/回退后的实际显示与中英字形一致性，不能通过删除格式规避缺少字重文件。
 - 缺字、未知 ID、离线及注册上限应保留原文可读与原始标记。未知协议的可编辑/只读保护须按共享契约处理，不能只靠平台静默 fallback 就允许破坏性保存。
 
-磁盘容量、驻留家族数量、累计字节预算以及可见区预取范围尚未固定；应由实际 30 家族资源大小和 Android 测量决定，不能在契约未知时制造跨端规范。
+磁盘容量、驻留家族数量、累计字节预算以及可见区预取范围尚未固定；应由新名单 15 家族的正式资源大小、分片方案和 Android 测量决定，不能按旧名单总量推算或在契约未知时制造跨端规范。
 
 现有 `wenyou_markdown.dart`、`rich_editor_session.dart` 和帖子编辑页面接近 900 行门槛，新增实现需先按职责提取组件/服务；不得追加 allowlist 或机械迁入超大 part 文件。
 
 ## 必要交接
 
-1. Backend 完整提交 SHA、分支、版本化目录、30 家族及中文/拉丁覆盖、许可、TTF/OTF 实际资源、大小/摘要和预览资源。
+1. Backend 完整提交 SHA、分支、版本化目录、首批 15 家族 audit-v3 及中文/拉丁/符号覆盖、内部许可与 RFN、TTF/OTF 正式资源、分片方案、大小/摘要和预览资源；未核验资源保持不可用。
 2. 字体 Markdown 标记与版本、能力门禁、读取协商、各写 DTO 声明、未知 ID/版本、停写但保留历史内容、旧客户端投影和错误语义。
 3. 字体与颜色/粗体/斜体/删除线/链接/代码、跨行/空行、转义/未知标记、原子、站内与外部剪贴板的固定语料。
 4. 保持最新已发布 Foundation；由治理交接 UI 系统字体与用户正文业务字体的边界结论。只有实际变更 Foundation 机器契约或运行产物时才等待新正式 Tag，不预设选择器接入必然需要发布新版本；未发布运行产物不作为消费者依赖。
