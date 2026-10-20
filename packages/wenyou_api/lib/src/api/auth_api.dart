@@ -48,6 +48,7 @@ class AuthApi {
   /// * [changePasswordDto]
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 1 读取字体原始源码；缺失只返回安全去字体副本，不能覆盖字体原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -61,6 +62,7 @@ class AuthApi {
     required ChangePasswordDto changePasswordDto,
     int? xMarkdownContractVersion,
     int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -74,6 +76,7 @@ class AuthApi {
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -155,6 +158,7 @@ class AuthApi {
   /// * [forgotPasswordDto]
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 1 读取字体原始源码；缺失只返回安全去字体副本，不能覆盖字体原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -168,6 +172,7 @@ class AuthApi {
     required ForgotPasswordDto forgotPasswordDto,
     int? xMarkdownContractVersion,
     int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -181,6 +186,7 @@ class AuthApi {
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -255,6 +261,7 @@ class AuthApi {
   /// Parameters:
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 1 读取字体原始源码；缺失只返回安全去字体副本，不能覆盖字体原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -267,6 +274,7 @@ class AuthApi {
   Future<Response<AuthListSessions200Response>> authListSessions({
     int? xMarkdownContractVersion,
     int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -280,6 +288,7 @@ class AuthApi {
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -342,6 +351,7 @@ class AuthApi {
   /// * [xClientPlatform] - 客户端类型：web（PC/手机浏览器）或 mobile（原生移动端）
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 1 读取字体原始源码；缺失只返回安全去字体副本，不能覆盖字体原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -356,6 +366,7 @@ class AuthApi {
     String? xClientPlatform,
     int? xMarkdownContractVersion,
     int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -370,6 +381,7 @@ class AuthApi {
         if (xClientPlatform != null) r'X-Client-Platform': xClientPlatform,
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -445,6 +457,7 @@ class AuthApi {
   /// * [logoutDto]
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 1 读取字体原始源码；缺失只返回安全去字体副本，不能覆盖字体原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -458,6 +471,7 @@ class AuthApi {
     required LogoutDto logoutDto,
     int? xMarkdownContractVersion,
     int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -471,6 +485,7 @@ class AuthApi {
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -552,6 +567,7 @@ class AuthApi {
   /// * [refreshDto]
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 1 读取字体原始源码；缺失只返回安全去字体副本，不能覆盖字体原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -565,6 +581,7 @@ class AuthApi {
     required RefreshDto refreshDto,
     int? xMarkdownContractVersion,
     int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -578,6 +595,7 @@ class AuthApi {
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -653,6 +671,7 @@ class AuthApi {
   /// * [changeEmailRequestDto]
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 1 读取字体原始源码；缺失只返回安全去字体副本，不能覆盖字体原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -666,6 +685,7 @@ class AuthApi {
     required ChangeEmailRequestDto changeEmailRequestDto,
     int? xMarkdownContractVersion,
     int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -679,6 +699,7 @@ class AuthApi {
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -760,6 +781,7 @@ class AuthApi {
   /// * [requestCodeDto]
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 1 读取字体原始源码；缺失只返回安全去字体副本，不能覆盖字体原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -773,6 +795,7 @@ class AuthApi {
     required RequestCodeDto requestCodeDto,
     int? xMarkdownContractVersion,
     int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -786,6 +809,7 @@ class AuthApi {
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -861,6 +885,7 @@ class AuthApi {
   /// * [resetPasswordDto]
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 1 读取字体原始源码；缺失只返回安全去字体副本，不能覆盖字体原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -874,6 +899,7 @@ class AuthApi {
     required ResetPasswordDto resetPasswordDto,
     int? xMarkdownContractVersion,
     int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -887,6 +913,7 @@ class AuthApi {
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -962,6 +989,7 @@ class AuthApi {
   /// * [id]
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 1 读取字体原始源码；缺失只返回安全去字体副本，不能覆盖字体原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -975,6 +1003,7 @@ class AuthApi {
     required String id,
     int? xMarkdownContractVersion,
     int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -988,6 +1017,7 @@ class AuthApi {
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -1050,6 +1080,7 @@ class AuthApi {
   /// * [xClientPlatform] - 客户端类型：web（PC/手机浏览器）或 mobile（原生移动端）
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 1 读取字体原始源码；缺失只返回安全去字体副本，不能覆盖字体原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -1064,6 +1095,7 @@ class AuthApi {
     String? xClientPlatform,
     int? xMarkdownContractVersion,
     int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -1078,6 +1110,7 @@ class AuthApi {
         if (xClientPlatform != null) r'X-Client-Platform': xClientPlatform,
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -1153,6 +1186,7 @@ class AuthApi {
   /// * [changeEmailVerifyDto]
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 1 读取字体原始源码；缺失只返回安全去字体副本，不能覆盖字体原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -1166,6 +1200,7 @@ class AuthApi {
     required ChangeEmailVerifyDto changeEmailVerifyDto,
     int? xMarkdownContractVersion,
     int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -1179,6 +1214,7 @@ class AuthApi {
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{

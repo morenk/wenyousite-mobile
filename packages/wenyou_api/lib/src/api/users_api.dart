@@ -55,6 +55,7 @@ class UsersApi {
   /// Parameters:
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 1 读取字体原始源码；缺失只返回安全去字体副本，不能覆盖字体原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -67,6 +68,7 @@ class UsersApi {
   Future<Response<UsersDeleteMe200Response>> usersDeleteMe({
     int? xMarkdownContractVersion,
     int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -80,6 +82,7 @@ class UsersApi {
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -141,6 +144,7 @@ class UsersApi {
   /// * [id]
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 1 读取字体原始源码；缺失只返回安全去字体副本，不能覆盖字体原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -154,6 +158,7 @@ class UsersApi {
     required String id,
     int? xMarkdownContractVersion,
     int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -167,6 +172,7 @@ class UsersApi {
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -227,6 +233,7 @@ class UsersApi {
   /// Parameters:
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 1 读取字体原始源码；缺失只返回安全去字体副本，不能覆盖字体原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -239,6 +246,7 @@ class UsersApi {
   Future<Response<UsersFollowBlocks200Response>> usersFollowBlocks({
     int? xMarkdownContractVersion,
     int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -252,6 +260,7 @@ class UsersApi {
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -313,6 +322,7 @@ class UsersApi {
   /// * [id]
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 1 读取字体原始源码；缺失只返回安全去字体副本，不能覆盖字体原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -326,6 +336,7 @@ class UsersApi {
     required String id,
     int? xMarkdownContractVersion,
     int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -339,6 +350,7 @@ class UsersApi {
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -399,6 +411,7 @@ class UsersApi {
   /// Parameters:
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 1 读取字体原始源码；缺失只返回安全去字体副本，不能覆盖字体原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -411,6 +424,7 @@ class UsersApi {
   Future<Response<UsersFollowFollowers200Response>> usersFollowFollowers({
     int? xMarkdownContractVersion,
     int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -424,6 +438,7 @@ class UsersApi {
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -484,6 +499,7 @@ class UsersApi {
   /// Parameters:
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 1 读取字体原始源码；缺失只返回安全去字体副本，不能覆盖字体原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -496,6 +512,7 @@ class UsersApi {
   Future<Response<UsersFollowFollowing200Response>> usersFollowFollowing({
     int? xMarkdownContractVersion,
     int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -509,6 +526,7 @@ class UsersApi {
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -570,6 +588,7 @@ class UsersApi {
   /// * [id]
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 1 读取字体原始源码；缺失只返回安全去字体副本，不能覆盖字体原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -583,6 +602,7 @@ class UsersApi {
     required String id,
     int? xMarkdownContractVersion,
     int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -596,6 +616,7 @@ class UsersApi {
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -657,6 +678,7 @@ class UsersApi {
   /// * [id]
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 1 读取字体原始源码；缺失只返回安全去字体副本，不能覆盖字体原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -670,6 +692,7 @@ class UsersApi {
     required String id,
     int? xMarkdownContractVersion,
     int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -683,6 +706,7 @@ class UsersApi {
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -744,6 +768,7 @@ class UsersApi {
   /// * [id]
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 1 读取字体原始源码；缺失只返回安全去字体副本，不能覆盖字体原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -757,6 +782,7 @@ class UsersApi {
     required String id,
     int? xMarkdownContractVersion,
     int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -770,6 +796,7 @@ class UsersApi {
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -831,6 +858,7 @@ class UsersApi {
   /// * [id]
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 1 读取字体原始源码；缺失只返回安全去字体副本，不能覆盖字体原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -844,6 +872,7 @@ class UsersApi {
     required String id,
     int? xMarkdownContractVersion,
     int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -857,6 +886,7 @@ class UsersApi {
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -918,6 +948,7 @@ class UsersApi {
   /// * [id]
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 1 读取字体原始源码；缺失只返回安全去字体副本，不能覆盖字体原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -931,6 +962,7 @@ class UsersApi {
     required String id,
     int? xMarkdownContractVersion,
     int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -944,6 +976,7 @@ class UsersApi {
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -1004,6 +1037,7 @@ class UsersApi {
   /// Parameters:
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 1 读取字体原始源码；缺失只返回安全去字体副本，不能覆盖字体原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -1016,6 +1050,7 @@ class UsersApi {
   Future<Response<UsersGetMe200Response>> usersGetMe({
     int? xMarkdownContractVersion,
     int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -1029,6 +1064,7 @@ class UsersApi {
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -1091,6 +1127,7 @@ class UsersApi {
   /// * [limit] - 每页条数（默认 20，最大 50）
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 1 读取字体原始源码；缺失只返回安全去字体副本，不能覆盖字体原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -1105,6 +1142,7 @@ class UsersApi {
     num? limit = 20,
     int? xMarkdownContractVersion,
     int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -1118,6 +1156,7 @@ class UsersApi {
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -1185,6 +1224,7 @@ class UsersApi {
   /// * [id]
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 1 读取字体原始源码；缺失只返回安全去字体副本，不能覆盖字体原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -1198,6 +1238,7 @@ class UsersApi {
     required String id,
     int? xMarkdownContractVersion,
     int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -1211,6 +1252,7 @@ class UsersApi {
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -1272,6 +1314,7 @@ class UsersApi {
   /// * [id]
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 1 读取字体原始源码；缺失只返回安全去字体副本，不能覆盖字体原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -1285,6 +1328,7 @@ class UsersApi {
     required String id,
     int? xMarkdownContractVersion,
     int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -1298,6 +1342,7 @@ class UsersApi {
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -1361,6 +1406,7 @@ class UsersApi {
   /// * [limit] - 每页条数（默认 20，最大 50）
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 1 读取字体原始源码；缺失只返回安全去字体副本，不能覆盖字体原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -1376,6 +1422,7 @@ class UsersApi {
     num? limit = 20,
     int? xMarkdownContractVersion,
     int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -1389,6 +1436,7 @@ class UsersApi {
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -1458,6 +1506,7 @@ class UsersApi {
   /// * [limit] - 每页条数（默认 20，最大 50）
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 1 读取字体原始源码；缺失只返回安全去字体副本，不能覆盖字体原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -1473,6 +1522,7 @@ class UsersApi {
     num? limit = 20,
     int? xMarkdownContractVersion,
     int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -1486,6 +1536,7 @@ class UsersApi {
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -1555,6 +1606,7 @@ class UsersApi {
   /// * [limit] - 每页条数（默认 20，最大 50）
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 1 读取字体原始源码；缺失只返回安全去字体副本，不能覆盖字体原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -1570,6 +1622,7 @@ class UsersApi {
     num? limit = 20,
     int? xMarkdownContractVersion,
     int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -1583,6 +1636,7 @@ class UsersApi {
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -1653,6 +1707,7 @@ class UsersApi {
   /// * [visibility] - 按公开帖或私密帖筛选已获得玩家身份的帖子。他人请求 PRIVATE 返回空列表
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 1 读取字体原始源码；缺失只返回安全去字体副本，不能覆盖字体原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -1669,6 +1724,7 @@ class UsersApi {
     String? visibility,
     int? xMarkdownContractVersion,
     int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -1682,6 +1738,7 @@ class UsersApi {
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -1750,6 +1807,7 @@ class UsersApi {
   /// * [id]
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 1 读取字体原始源码；缺失只返回安全去字体副本，不能覆盖字体原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -1763,6 +1821,7 @@ class UsersApi {
     required String id,
     int? xMarkdownContractVersion,
     int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -1776,6 +1835,7 @@ class UsersApi {
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -1839,6 +1899,7 @@ class UsersApi {
   /// * [q] - 用户名搜索关键词
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 1 读取字体原始源码；缺失只返回安全去字体副本，不能覆盖字体原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -1854,6 +1915,7 @@ class UsersApi {
     String? q,
     int? xMarkdownContractVersion,
     int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -1867,6 +1929,7 @@ class UsersApi {
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -1934,6 +1997,7 @@ class UsersApi {
   /// Parameters:
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 1 读取字体原始源码；缺失只返回安全去字体副本，不能覆盖字体原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -1946,6 +2010,7 @@ class UsersApi {
   Future<Response<UsersRemoveAvatar200Response>> usersRemoveAvatar({
     int? xMarkdownContractVersion,
     int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -1959,6 +2024,7 @@ class UsersApi {
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -2019,6 +2085,7 @@ class UsersApi {
   /// Parameters:
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 1 读取字体原始源码；缺失只返回安全去字体副本，不能覆盖字体原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -2031,6 +2098,7 @@ class UsersApi {
   Future<Response<UsersRemoveProfileCover200Response>> usersRemoveProfileCover({
     int? xMarkdownContractVersion,
     int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -2044,6 +2112,7 @@ class UsersApi {
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -2105,6 +2174,7 @@ class UsersApi {
   /// * [q] - 用户名搜索关键词
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 1 读取字体原始源码；缺失只返回安全去字体副本，不能覆盖字体原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -2118,6 +2188,7 @@ class UsersApi {
     required String q,
     int? xMarkdownContractVersion,
     int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -2131,6 +2202,7 @@ class UsersApi {
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -2197,6 +2269,7 @@ class UsersApi {
   /// * [setAvatarDto]
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 1 读取字体原始源码；缺失只返回安全去字体副本，不能覆盖字体原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -2210,6 +2283,7 @@ class UsersApi {
     required SetAvatarDto setAvatarDto,
     int? xMarkdownContractVersion,
     int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -2223,6 +2297,7 @@ class UsersApi {
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -2304,6 +2379,7 @@ class UsersApi {
   /// * [setProfileCoverDto]
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 1 读取字体原始源码；缺失只返回安全去字体副本，不能覆盖字体原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -2317,6 +2393,7 @@ class UsersApi {
     required SetProfileCoverDto setProfileCoverDto,
     int? xMarkdownContractVersion,
     int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -2330,6 +2407,7 @@ class UsersApi {
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -2411,6 +2489,7 @@ class UsersApi {
   /// * [updateUserDto]
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 1 读取字体原始源码；缺失只返回安全去字体副本，不能覆盖字体原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -2424,6 +2503,7 @@ class UsersApi {
     required UpdateUserDto updateUserDto,
     int? xMarkdownContractVersion,
     int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -2437,6 +2517,7 @@ class UsersApi {
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
         if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{

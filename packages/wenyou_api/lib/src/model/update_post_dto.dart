@@ -12,12 +12,18 @@ part 'update_post_dto.g.dart';
 /// UpdatePostDto
 ///
 /// Properties:
+/// * [textFontVersion] - 支持字体 v1 无损读写；新端始终发送，包括删除全部字体。新/原正文含字体未声明返回 409/40019；新写受 textFontV1WriteEnabled 控制。颜色组合还须 textColorVersion:1。
 /// * [textColorVersion] - 支持文本颜色 v1 无损读写；新端始终发送，包括删除全部颜色。新/原正文含颜色未声明返回 409/40016；新写受 textColorV1WriteEnabled 控制。
 /// * [markdownContractVersion] - 声明编辑器支持 Markdown 6 角色提及源的无损读取/编辑。服务端 capabilities.roleMentionsV6Supported 为 true 时新端始终发送，包括删光旧节点；未声明而新/原正文含 v6 返回 409/40014。新节点还须 roleMentionsV6WriteEnabled。
 /// * [content] - 新正文；骰子节点随正文移动或删除，新增节点由服务端结算
 /// * [version] - 乐观锁版本号（必填，前端需先 fetch 获取当前 version，传入过期版本会返回 409）
 @BuiltValue()
 abstract class UpdatePostDto implements Built<UpdatePostDto, UpdatePostDtoBuilder> {
+  /// 支持字体 v1 无损读写；新端始终发送，包括删除全部字体。新/原正文含字体未声明返回 409/40019；新写受 textFontV1WriteEnabled 控制。颜色组合还须 textColorVersion:1。
+  @BuiltValueField(wireName: r'textFontVersion')
+  UpdatePostDtoTextFontVersionEnum? get textFontVersion;
+  // enum textFontVersionEnum {  1,  };
+
   /// 支持文本颜色 v1 无损读写；新端始终发送，包括删除全部颜色。新/原正文含颜色未声明返回 409/40016；新写受 textColorV1WriteEnabled 控制。
   @BuiltValueField(wireName: r'textColorVersion')
   UpdatePostDtoTextColorVersionEnum? get textColorVersion;
@@ -59,6 +65,13 @@ class _$UpdatePostDtoSerializer implements PrimitiveSerializer<UpdatePostDto> {
     UpdatePostDto object, {
     FullType specifiedType = FullType.unspecified,
   }) sync* {
+    if (object.textFontVersion != null) {
+      yield r'textFontVersion';
+      yield serializers.serialize(
+        object.textFontVersion,
+        specifiedType: const FullType(UpdatePostDtoTextFontVersionEnum),
+      );
+    }
     if (object.textColorVersion != null) {
       yield r'textColorVersion';
       yield serializers.serialize(
@@ -106,6 +119,13 @@ class _$UpdatePostDtoSerializer implements PrimitiveSerializer<UpdatePostDto> {
       final key = serializedList[i] as String;
       final value = serializedList[i + 1];
       switch (key) {
+        case r'textFontVersion':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(UpdatePostDtoTextFontVersionEnum),
+          ) as UpdatePostDtoTextFontVersionEnum;
+          result.textFontVersion = valueDes;
+          break;
         case r'textColorVersion':
           final valueDes = serializers.deserialize(
             value,
@@ -161,6 +181,23 @@ class _$UpdatePostDtoSerializer implements PrimitiveSerializer<UpdatePostDto> {
     );
     return result.build();
   }
+}
+
+class UpdatePostDtoTextFontVersionEnum extends EnumClass {
+
+  /// 支持字体 v1 无损读写；新端始终发送，包括删除全部字体。新/原正文含字体未声明返回 409/40019；新写受 textFontV1WriteEnabled 控制。颜色组合还须 textColorVersion:1。
+  @BuiltValueEnumConst(wireNumber: 1)
+  static const UpdatePostDtoTextFontVersionEnum number1 = _$updatePostDtoTextFontVersionEnum_number1;
+  /// 支持字体 v1 无损读写；新端始终发送，包括删除全部字体。新/原正文含字体未声明返回 409/40019；新写受 textFontV1WriteEnabled 控制。颜色组合还须 textColorVersion:1。
+  @BuiltValueEnumConst(wireNumber: 11184809, fallback: true)
+  static const UpdatePostDtoTextFontVersionEnum unknownDefaultOpenApi = _$updatePostDtoTextFontVersionEnum_unknownDefaultOpenApi;
+
+  static Serializer<UpdatePostDtoTextFontVersionEnum> get serializer => _$updatePostDtoTextFontVersionEnumSerializer;
+
+  const UpdatePostDtoTextFontVersionEnum._(String name): super(name);
+
+  static BuiltSet<UpdatePostDtoTextFontVersionEnum> get values => _$updatePostDtoTextFontVersionEnumValues;
+  static UpdatePostDtoTextFontVersionEnum valueOf(String name) => _$updatePostDtoTextFontVersionEnumValueOf(name);
 }
 
 class UpdatePostDtoTextColorVersionEnum extends EnumClass {

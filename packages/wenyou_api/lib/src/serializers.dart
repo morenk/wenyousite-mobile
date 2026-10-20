@@ -450,6 +450,10 @@ import 'package:wenyou_api/src/model/tag_response_dto.dart';
 import 'package:wenyou_api/src/model/tags_create200_response.dart';
 import 'package:wenyou_api/src/model/tags_get_by_id200_response.dart';
 import 'package:wenyou_api/src/model/tags_search200_response.dart';
+import 'package:wenyou_api/src/model/text_font_catalog_dto.dart';
+import 'package:wenyou_api/src/model/text_font_family_dto.dart';
+import 'package:wenyou_api/src/model/text_font_manifest_dto.dart';
+import 'package:wenyou_api/src/model/text_fonts_get_catalog200_response.dart';
 import 'package:wenyou_api/src/model/thread_body_post_response_dto.dart';
 import 'package:wenyou_api/src/model/thread_capabilities_response_dto.dart';
 import 'package:wenyou_api/src/model/thread_categories_list200_response.dart';
@@ -1001,6 +1005,10 @@ part 'serializers.g.dart';
   TagsCreate200Response,
   TagsGetById200Response,
   TagsSearch200Response,
+  TextFontCatalogDto,
+  TextFontFamilyDto,
+  TextFontManifestDto,
+  TextFontsGetCatalog200Response,
   ThreadBodyPostResponseDto,
   ThreadCapabilitiesResponseDto,
   ThreadCategoriesList200Response,

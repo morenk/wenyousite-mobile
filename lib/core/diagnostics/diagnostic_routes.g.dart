@@ -38,6 +38,7 @@ const diagnosticApiRoutes = <String, String>{
   'GET /api/v1/health': 'healthCheck',
   'GET /api/v1/image-gallery': 'galleryList',
   'GET /api/v1/meta': 'metaGetMeta',
+  'GET /api/v1/meta/text-fonts': 'textFontsGetCatalog',
   'GET /api/v1/mobile-releases': 'mobileReleasesList',
   'GET /api/v1/moderation/decisions/mine': 'userModerationAppealsMine',
   'GET /api/v1/moments': 'momentsList',

@@ -60,6 +60,14 @@ const BusinessErrorCode _$TEXT_COLOR_DISABLED = const BusinessErrorCode._(
 const BusinessErrorCode _$INVALID_TEXT_COLOR = const BusinessErrorCode._(
   'INVALID_TEXT_COLOR',
 );
+const BusinessErrorCode _$TEXT_FONT_CAPABILITY_REQUIRED =
+    const BusinessErrorCode._('TEXT_FONT_CAPABILITY_REQUIRED');
+const BusinessErrorCode _$TEXT_FONT_DISABLED = const BusinessErrorCode._(
+  'TEXT_FONT_DISABLED',
+);
+const BusinessErrorCode _$INVALID_TEXT_FONT = const BusinessErrorCode._(
+  'INVALID_TEXT_FONT',
+);
 const BusinessErrorCode _$UNAUTHORIZED = const BusinessErrorCode._(
   'UNAUTHORIZED',
 );
@@ -333,6 +341,12 @@ BusinessErrorCode _$valueOf(String name) {
       return _$TEXT_COLOR_DISABLED;
     case 'INVALID_TEXT_COLOR':
       return _$INVALID_TEXT_COLOR;
+    case 'TEXT_FONT_CAPABILITY_REQUIRED':
+      return _$TEXT_FONT_CAPABILITY_REQUIRED;
+    case 'TEXT_FONT_DISABLED':
+      return _$TEXT_FONT_DISABLED;
+    case 'INVALID_TEXT_FONT':
+      return _$INVALID_TEXT_FONT;
     case 'UNAUTHORIZED':
       return _$UNAUTHORIZED;
     case 'TOKEN_EXPIRED':
@@ -526,6 +540,9 @@ final BuiltSet<BusinessErrorCode> _$values =
       _$TEXT_COLOR_CAPABILITY_REQUIRED,
       _$TEXT_COLOR_DISABLED,
       _$INVALID_TEXT_COLOR,
+      _$TEXT_FONT_CAPABILITY_REQUIRED,
+      _$TEXT_FONT_DISABLED,
+      _$INVALID_TEXT_FONT,
       _$UNAUTHORIZED,
       _$TOKEN_EXPIRED,
       _$TOKEN_INVALID,
@@ -637,6 +654,10 @@ class _$BusinessErrorCodeMeta {
       _$TEXT_COLOR_CAPABILITY_REQUIRED;
   BusinessErrorCode get TEXT_COLOR_DISABLED => _$TEXT_COLOR_DISABLED;
   BusinessErrorCode get INVALID_TEXT_COLOR => _$INVALID_TEXT_COLOR;
+  BusinessErrorCode get TEXT_FONT_CAPABILITY_REQUIRED =>
+      _$TEXT_FONT_CAPABILITY_REQUIRED;
+  BusinessErrorCode get TEXT_FONT_DISABLED => _$TEXT_FONT_DISABLED;
+  BusinessErrorCode get INVALID_TEXT_FONT => _$INVALID_TEXT_FONT;
   BusinessErrorCode get UNAUTHORIZED => _$UNAUTHORIZED;
   BusinessErrorCode get TOKEN_EXPIRED => _$TOKEN_EXPIRED;
   BusinessErrorCode get TOKEN_INVALID => _$TOKEN_INVALID;
@@ -769,6 +790,9 @@ class _$BusinessErrorCodeSerializer
     'TEXT_COLOR_CAPABILITY_REQUIRED': 40016,
     'TEXT_COLOR_DISABLED': 40017,
     'INVALID_TEXT_COLOR': 40018,
+    'TEXT_FONT_CAPABILITY_REQUIRED': 40019,
+    'TEXT_FONT_DISABLED': 40020,
+    'INVALID_TEXT_FONT': 40021,
     'UNAUTHORIZED': 40100,
     'TOKEN_EXPIRED': 40101,
     'TOKEN_INVALID': 40102,
@@ -874,6 +898,9 @@ class _$BusinessErrorCodeSerializer
     40016: 'TEXT_COLOR_CAPABILITY_REQUIRED',
     40017: 'TEXT_COLOR_DISABLED',
     40018: 'INVALID_TEXT_COLOR',
+    40019: 'TEXT_FONT_CAPABILITY_REQUIRED',
+    40020: 'TEXT_FONT_DISABLED',
+    40021: 'INVALID_TEXT_FONT',
     40100: 'UNAUTHORIZED',
     40101: 'TOKEN_EXPIRED',
     40102: 'TOKEN_INVALID',

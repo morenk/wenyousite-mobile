@@ -11,6 +11,8 @@ part 'api_capabilities_response_dto.g.dart';
 /// ApiCapabilitiesResponseDto
 ///
 /// Properties:
+/// * [textFontV1Supported] - 支持字体 v1 保源和旧端降级；缺失按 false
+/// * [textFontV1WriteEnabled] - 允许新增/修改字体；关闭仍可保留或移除已有字体，缺失按 false
 /// * [textColorV1Supported] - 支持独立文本颜色 v1 保源/旧端降级；缺失按 false
 /// * [textColorV1WriteEnabled] - 允许新增/修改颜色范围；关闭仍允许保留或移除已有颜色，缺失按 false
 /// * [rpIdentityProfileSupported] - 支持 RP 身份绑定本主题资料楼层及按查看者授权读取；缺失按 false，客户端不得发送 profilePostId/clearProfilePost
@@ -21,6 +23,14 @@ part 'api_capabilities_response_dto.g.dart';
 /// * [pushNotifications]
 @BuiltValue()
 abstract class ApiCapabilitiesResponseDto implements Built<ApiCapabilitiesResponseDto, ApiCapabilitiesResponseDtoBuilder> {
+  /// 支持字体 v1 保源和旧端降级；缺失按 false
+  @BuiltValueField(wireName: r'textFontV1Supported')
+  bool? get textFontV1Supported;
+
+  /// 允许新增/修改字体；关闭仍可保留或移除已有字体，缺失按 false
+  @BuiltValueField(wireName: r'textFontV1WriteEnabled')
+  bool? get textFontV1WriteEnabled;
+
   /// 支持独立文本颜色 v1 保源/旧端降级；缺失按 false
   @BuiltValueField(wireName: r'textColorV1Supported')
   bool? get textColorV1Supported;
@@ -73,6 +83,20 @@ class _$ApiCapabilitiesResponseDtoSerializer implements PrimitiveSerializer<ApiC
     ApiCapabilitiesResponseDto object, {
     FullType specifiedType = FullType.unspecified,
   }) sync* {
+    if (object.textFontV1Supported != null) {
+      yield r'textFontV1Supported';
+      yield serializers.serialize(
+        object.textFontV1Supported,
+        specifiedType: const FullType(bool),
+      );
+    }
+    if (object.textFontV1WriteEnabled != null) {
+      yield r'textFontV1WriteEnabled';
+      yield serializers.serialize(
+        object.textFontV1WriteEnabled,
+        specifiedType: const FullType(bool),
+      );
+    }
     if (object.textColorV1Supported != null) {
       yield r'textColorV1Supported';
       yield serializers.serialize(
@@ -146,6 +170,20 @@ class _$ApiCapabilitiesResponseDtoSerializer implements PrimitiveSerializer<ApiC
       final key = serializedList[i] as String;
       final value = serializedList[i + 1];
       switch (key) {
+        case r'textFontV1Supported':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(bool),
+          ) as bool;
+          result.textFontV1Supported = valueDes;
+          break;
+        case r'textFontV1WriteEnabled':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(bool),
+          ) as bool;
+          result.textFontV1WriteEnabled = valueDes;
+          break;
         case r'textColorV1Supported':
           final valueDes = serializers.deserialize(
             value,

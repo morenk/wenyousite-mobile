@@ -179,6 +179,7 @@ Serializers _$serializers =
           ..add(CreateDraftDto.serializer)
           ..add(CreateDraftDtoMarkdownContractVersionEnum.serializer)
           ..add(CreateDraftDtoTextColorVersionEnum.serializer)
+          ..add(CreateDraftDtoTextFontVersionEnum.serializer)
           ..add(CreateManagedTagDto.serializer)
           ..add(CreateMobileReleaseDto.serializer)
           ..add(CreateMobileReleaseDtoPlatformEnum.serializer)
@@ -193,6 +194,7 @@ Serializers _$serializers =
           ..add(CreatePostDtoIdentityModeEnum.serializer)
           ..add(CreatePostDtoMarkdownContractVersionEnum.serializer)
           ..add(CreatePostDtoTextColorVersionEnum.serializer)
+          ..add(CreatePostDtoTextFontVersionEnum.serializer)
           ..add(CreateReportDto.serializer)
           ..add(CreateReportDtoReasonCodeEnum.serializer)
           ..add(CreateReportDtoTargetTypeEnum.serializer)
@@ -204,11 +206,13 @@ Serializers _$serializers =
           ..add(CreateSubthreadDtoMarkdownContractVersionEnum.serializer)
           ..add(CreateSubthreadDtoPostingPolicyEnum.serializer)
           ..add(CreateSubthreadDtoTextColorVersionEnum.serializer)
+          ..add(CreateSubthreadDtoTextFontVersionEnum.serializer)
           ..add(CreateTagDto.serializer)
           ..add(CreateThreadCategoryDto.serializer)
           ..add(CreateThreadDto.serializer)
           ..add(CreateThreadDtoMarkdownContractVersionEnum.serializer)
           ..add(CreateThreadDtoTextColorVersionEnum.serializer)
+          ..add(CreateThreadDtoTextFontVersionEnum.serializer)
           ..add(CreateThreadDtoVisibilityEnum.serializer)
           ..add(CreateUploadUrlDto.serializer)
           ..add(CreateUploadUrlDtoContentTypeEnum.serializer)
@@ -517,6 +521,7 @@ Serializers _$serializers =
           ..add(SaveThreadAggregateDtoMarkdownContractVersionEnum.serializer)
           ..add(SaveThreadAggregateDtoStatusEnum.serializer)
           ..add(SaveThreadAggregateDtoTextColorVersionEnum.serializer)
+          ..add(SaveThreadAggregateDtoTextFontVersionEnum.serializer)
           ..add(SaveThreadAggregateDtoVisibilityEnum.serializer)
           ..add(SearchAuthorResponseDto.serializer)
           ..add(SearchPostResponseDto.serializer)
@@ -578,6 +583,12 @@ Serializers _$serializers =
           ..add(TagsCreate200Response.serializer)
           ..add(TagsGetById200Response.serializer)
           ..add(TagsSearch200Response.serializer)
+          ..add(TextFontCatalogDto.serializer)
+          ..add(TextFontCatalogDtoFontVersionEnum.serializer)
+          ..add(TextFontFamilyDto.serializer)
+          ..add(TextFontFamilyDtoAvailabilityEnum.serializer)
+          ..add(TextFontManifestDto.serializer)
+          ..add(TextFontsGetCatalog200Response.serializer)
           ..add(ThreadBodyPostResponseDto.serializer)
           ..add(ThreadCapabilitiesResponseDto.serializer)
           ..add(ThreadCategoriesList200Response.serializer)
@@ -647,12 +658,14 @@ Serializers _$serializers =
           ..add(UpdateDraftDto.serializer)
           ..add(UpdateDraftDtoMarkdownContractVersionEnum.serializer)
           ..add(UpdateDraftDtoTextColorVersionEnum.serializer)
+          ..add(UpdateDraftDtoTextFontVersionEnum.serializer)
           ..add(UpdateManagedTagDto.serializer)
           ..add(UpdateMobileReleaseDto.serializer)
           ..add(UpdateMomentDto.serializer)
           ..add(UpdatePostDto.serializer)
           ..add(UpdatePostDtoMarkdownContractVersionEnum.serializer)
           ..add(UpdatePostDtoTextColorVersionEnum.serializer)
+          ..add(UpdatePostDtoTextFontVersionEnum.serializer)
           ..add(UpdateRpIdentityDto.serializer)
           ..add(UpdateSiteSettingsDto.serializer)
           ..add(UpdateSubthreadDto.serializer)
@@ -668,6 +681,7 @@ Serializers _$serializers =
           ..add(UpsertBodyDtoIdentityModeEnum.serializer)
           ..add(UpsertBodyDtoMarkdownContractVersionEnum.serializer)
           ..add(UpsertBodyDtoTextColorVersionEnum.serializer)
+          ..add(UpsertBodyDtoTextFontVersionEnum.serializer)
           ..add(UserActivitySummaryResponseDto.serializer)
           ..add(UserConditionDto.serializer)
           ..add(UserConditionDtoRoleEnum.serializer)
@@ -1382,6 +1396,12 @@ Serializers _$serializers =
           ..addBuilderFactory(
             const FullType(BuiltList, const [const FullType(TagResponseDto)]),
             () => ListBuilder<TagResponseDto>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [
+              const FullType(TextFontFamilyDto),
+            ]),
+            () => ListBuilder<TextFontFamilyDto>(),
           )
           ..addBuilderFactory(
             const FullType(BuiltList, const [

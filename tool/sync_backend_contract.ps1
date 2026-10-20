@@ -170,6 +170,14 @@ $threadCategorySource = Resolve-UniqueBackendContract `
   'thread category'
 
 $contractFiles = @(
+  @{ Source = 'contracts/markdown-text-font-v1.schema.json'; Destination = 'markdown-text-font-v1.schema.json' },
+  @{ Source = 'contracts/markdown-text-font-v1-fixtures.json'; Destination = 'markdown-text-font-v1-fixtures.json' },
+  @{ Source = 'contracts/thread-font-catalog-v1.json'; Destination = 'thread-font-catalog-v1.json' },
+  @{ Source = 'contracts/thread-font-sources-v1.json'; Destination = 'thread-font-sources-v1.json' },
+  @{ Source = 'contracts/thread-font-manifest-v1.json'; Destination = 'thread-font-manifest-v1.json' },
+  @{ Source = 'contracts/thread-font-manifest-v1.schema.json'; Destination = 'thread-font-manifest-v1.schema.json' },
+  @{ Source = 'docs/markdown-text-font-v1.md'; Destination = 'markdown-text-font-v1.md' },
+  @{ Source = 'docs/thread-font-assets.md'; Destination = 'thread-font-assets.md' },
   @{ Source = 'contracts/gallery-image-occurrences.json'; Destination = 'gallery-image-occurrences.json' },
   @{ Source = 'contracts/openapi.json'; Destination = 'openapi.json' },
   @{ Source = $markdownFixtureSource; Destination = (Split-Path -Leaf $markdownFixtureSource) },

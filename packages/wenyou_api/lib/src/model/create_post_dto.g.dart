@@ -6,6 +6,35 @@ part of 'create_post_dto.dart';
 // BuiltValueGenerator
 // **************************************************************************
 
+const CreatePostDtoTextFontVersionEnum
+_$createPostDtoTextFontVersionEnum_number1 =
+    const CreatePostDtoTextFontVersionEnum._('number1');
+const CreatePostDtoTextFontVersionEnum
+_$createPostDtoTextFontVersionEnum_unknownDefaultOpenApi =
+    const CreatePostDtoTextFontVersionEnum._('unknownDefaultOpenApi');
+
+CreatePostDtoTextFontVersionEnum _$createPostDtoTextFontVersionEnumValueOf(
+  String name,
+) {
+  switch (name) {
+    case 'number1':
+      return _$createPostDtoTextFontVersionEnum_number1;
+    case 'unknownDefaultOpenApi':
+      return _$createPostDtoTextFontVersionEnum_unknownDefaultOpenApi;
+    default:
+      return _$createPostDtoTextFontVersionEnum_unknownDefaultOpenApi;
+  }
+}
+
+final BuiltSet<CreatePostDtoTextFontVersionEnum>
+_$createPostDtoTextFontVersionEnumValues =
+    BuiltSet<CreatePostDtoTextFontVersionEnum>(
+      const <CreatePostDtoTextFontVersionEnum>[
+        _$createPostDtoTextFontVersionEnum_number1,
+        _$createPostDtoTextFontVersionEnum_unknownDefaultOpenApi,
+      ],
+    );
+
 const CreatePostDtoTextColorVersionEnum
 _$createPostDtoTextColorVersionEnum_number1 =
     const CreatePostDtoTextColorVersionEnum._('number1');
@@ -95,6 +124,9 @@ _$createPostDtoIdentityModeEnumValues = BuiltSet<CreatePostDtoIdentityModeEnum>(
   ],
 );
 
+Serializer<CreatePostDtoTextFontVersionEnum>
+_$createPostDtoTextFontVersionEnumSerializer =
+    _$CreatePostDtoTextFontVersionEnumSerializer();
 Serializer<CreatePostDtoTextColorVersionEnum>
 _$createPostDtoTextColorVersionEnumSerializer =
     _$CreatePostDtoTextColorVersionEnumSerializer();
@@ -104,6 +136,39 @@ _$createPostDtoMarkdownContractVersionEnumSerializer =
 Serializer<CreatePostDtoIdentityModeEnum>
 _$createPostDtoIdentityModeEnumSerializer =
     _$CreatePostDtoIdentityModeEnumSerializer();
+
+class _$CreatePostDtoTextFontVersionEnumSerializer
+    implements PrimitiveSerializer<CreatePostDtoTextFontVersionEnum> {
+  static const Map<String, Object> _toWire = const <String, Object>{
+    'number1': 1,
+    'unknownDefaultOpenApi': 11184809,
+  };
+  static const Map<Object, String> _fromWire = const <Object, String>{
+    1: 'number1',
+    11184809: 'unknownDefaultOpenApi',
+  };
+
+  @override
+  final Iterable<Type> types = const <Type>[CreatePostDtoTextFontVersionEnum];
+  @override
+  final String wireName = 'CreatePostDtoTextFontVersionEnum';
+
+  @override
+  Object serialize(
+    Serializers serializers,
+    CreatePostDtoTextFontVersionEnum object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => _toWire[object.name] ?? object.name;
+
+  @override
+  CreatePostDtoTextFontVersionEnum deserialize(
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => CreatePostDtoTextFontVersionEnum.valueOf(
+    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
+  );
+}
 
 class _$CreatePostDtoTextColorVersionEnumSerializer
     implements PrimitiveSerializer<CreatePostDtoTextColorVersionEnum> {
@@ -210,6 +275,8 @@ class _$CreatePostDtoIdentityModeEnumSerializer
 
 class _$CreatePostDto extends CreatePostDto {
   @override
+  final CreatePostDtoTextFontVersionEnum? textFontVersion;
+  @override
   final CreatePostDtoTextColorVersionEnum? textColorVersion;
   @override
   final CreatePostDtoMarkdownContractVersionEnum? markdownContractVersion;
@@ -232,6 +299,7 @@ class _$CreatePostDto extends CreatePostDto {
       (CreatePostDtoBuilder()..update(updates))._build();
 
   _$CreatePostDto._({
+    this.textFontVersion,
     this.textColorVersion,
     this.markdownContractVersion,
     this.identityId,
@@ -253,6 +321,7 @@ class _$CreatePostDto extends CreatePostDto {
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
     return other is CreatePostDto &&
+        textFontVersion == other.textFontVersion &&
         textColorVersion == other.textColorVersion &&
         markdownContractVersion == other.markdownContractVersion &&
         identityId == other.identityId &&
@@ -267,6 +336,7 @@ class _$CreatePostDto extends CreatePostDto {
   @override
   int get hashCode {
     var _$hash = 0;
+    _$hash = $jc(_$hash, textFontVersion.hashCode);
     _$hash = $jc(_$hash, textColorVersion.hashCode);
     _$hash = $jc(_$hash, markdownContractVersion.hashCode);
     _$hash = $jc(_$hash, identityId.hashCode);
@@ -283,6 +353,7 @@ class _$CreatePostDto extends CreatePostDto {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'CreatePostDto')
+          ..add('textFontVersion', textFontVersion)
           ..add('textColorVersion', textColorVersion)
           ..add('markdownContractVersion', markdownContractVersion)
           ..add('identityId', identityId)
@@ -299,6 +370,12 @@ class _$CreatePostDto extends CreatePostDto {
 class CreatePostDtoBuilder
     implements Builder<CreatePostDto, CreatePostDtoBuilder> {
   _$CreatePostDto? _$v;
+
+  CreatePostDtoTextFontVersionEnum? _textFontVersion;
+  CreatePostDtoTextFontVersionEnum? get textFontVersion =>
+      _$this._textFontVersion;
+  set textFontVersion(CreatePostDtoTextFontVersionEnum? textFontVersion) =>
+      _$this._textFontVersion = textFontVersion;
 
   CreatePostDtoTextColorVersionEnum? _textColorVersion;
   CreatePostDtoTextColorVersionEnum? get textColorVersion =>
@@ -352,6 +429,7 @@ class CreatePostDtoBuilder
   CreatePostDtoBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
+      _textFontVersion = $v.textFontVersion;
       _textColorVersion = $v.textColorVersion;
       _markdownContractVersion = $v.markdownContractVersion;
       _identityId = $v.identityId;
@@ -383,6 +461,7 @@ class CreatePostDtoBuilder
     final _$result =
         _$v ??
         _$CreatePostDto._(
+          textFontVersion: textFontVersion,
           textColorVersion: textColorVersion,
           markdownContractVersion: markdownContractVersion,
           identityId: identityId,

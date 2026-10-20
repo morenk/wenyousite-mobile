@@ -485,6 +485,10 @@ lib/src/model/tag_response_dto.dart
 lib/src/model/tags_create200_response.dart
 lib/src/model/tags_get_by_id200_response.dart
 lib/src/model/tags_search200_response.dart
+lib/src/model/text_font_catalog_dto.dart
+lib/src/model/text_font_family_dto.dart
+lib/src/model/text_font_manifest_dto.dart
+lib/src/model/text_fonts_get_catalog200_response.dart
 lib/src/model/thread_body_post_response_dto.dart
 lib/src/model/thread_capabilities_response_dto.dart
 lib/src/model/thread_categories_list200_response.dart

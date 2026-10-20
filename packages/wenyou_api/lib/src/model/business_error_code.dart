@@ -72,6 +72,15 @@ class BusinessErrorCode extends EnumClass {
   @BuiltValueEnumConst(wireNumber: 40018)
   static const BusinessErrorCode INVALID_TEXT_COLOR = _$INVALID_TEXT_COLOR;
   /// 稳定业务错误码；名称和值来源于 ErrorCode
+  @BuiltValueEnumConst(wireNumber: 40019)
+  static const BusinessErrorCode TEXT_FONT_CAPABILITY_REQUIRED = _$TEXT_FONT_CAPABILITY_REQUIRED;
+  /// 稳定业务错误码；名称和值来源于 ErrorCode
+  @BuiltValueEnumConst(wireNumber: 40020)
+  static const BusinessErrorCode TEXT_FONT_DISABLED = _$TEXT_FONT_DISABLED;
+  /// 稳定业务错误码；名称和值来源于 ErrorCode
+  @BuiltValueEnumConst(wireNumber: 40021)
+  static const BusinessErrorCode INVALID_TEXT_FONT = _$INVALID_TEXT_FONT;
+  /// 稳定业务错误码；名称和值来源于 ErrorCode
   @BuiltValueEnumConst(wireNumber: 40100)
   static const BusinessErrorCode UNAUTHORIZED = _$UNAUTHORIZED;
   /// 稳定业务错误码；名称和值来源于 ErrorCode
