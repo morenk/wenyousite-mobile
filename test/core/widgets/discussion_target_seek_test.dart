@@ -95,7 +95,7 @@ class _SeekHarnessState extends State<_SeekHarness> {
               SliverList.builder(
                 key: listKey,
                 itemCount: 100,
-                itemBuilder: (context, index) => DiscussionKeepAlive(
+                itemBuilder: (context, index) => KeyedSubtree(
                   key: ValueKey(index),
                   child: SizedBox(
                     key: index == target ? targetKey : null,

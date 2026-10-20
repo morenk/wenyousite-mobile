@@ -52,7 +52,9 @@ class _TagThreadsPageState extends ConsumerState<TagThreadsPage> {
     final provider = tagThreadsControllerProvider(widget.tagId);
     final state = ref.watch(provider);
     return Scaffold(
+      backgroundColor: wenyouBrowsePageBackground(context),
       appBar: AppBar(
+        backgroundColor: wenyouBrowsePageBackground(context),
         title: Text(state.tag == null ? '标签主题' : '#${state.tag!.name}'),
       ),
       body: switch (state.phase) {

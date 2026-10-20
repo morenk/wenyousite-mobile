@@ -2,7 +2,7 @@
 
 温油站的 Flutter 原生客户端。正式、Debug 和 Profile APK 均仅支持 Android 8+（API 26）的 ARM64 设备，手机竖屏优先。共享 Dart 代码保持 iOS 兼容，但当前不做 iOS 验收。
 
-当前版本：`0.8.0+97`（正式版发布候选，待最终签名包真机冒烟与发布）；线上推荐仍为图集开发版 build 96，正式包源码为 `acb94a46dad59f379455ea7f6fd9adee2fc47003`，图集正文定位与真机手势仍待负责人复验。普通应用构建连接公网 API `https://wenyou.site/api/v1`；开发反馈默认使用下方的隔离预览与持续 Debug，线上自动化只读。
+当前版本：`0.10.0+100`（发布候选）。负责人已确认按已合入 `dev` 的范围准备正式版；发布范围、检查、签名制品与待验收事项见[0.10.0 发布准备](docs/architecture/mobile-0.10.0-release-preparation.md)。本轮为发布准备，尚未正式发布。普通应用构建连接公网 API `https://wenyou.site/api/v1`；开发反馈使用普通 Flutter Debug 与热重载，线上自动化只读。
 
 ## 技术基线
 
@@ -13,10 +13,10 @@
 - Drift：完整 Markdown 编辑快照和待确认幂等创建操作
 - Flutter Quill：仅作为内存编辑模型；后端、云草稿和本地快照始终保存服务端声明版本的完整 Markdown；客户端兼容 v3/v4/v5
 - flutter_secure_storage：Access/Refresh Token 单记录原子替换
-- wenyousite-foundation v7.2.1：跨端品牌资源、语义 Token、元素系统、图标注册表、三角色系统字体语义、移动 profile 与编辑器体验契约
+- wenyousite-foundation v7.5.0：跨端品牌资源、语义 Token、元素系统、图标注册表、三角色系统字体语义、移动 profile 与编辑器体验契约
 - WenyouThemeTokens：Foundation 常量到 Flutter ThemeExtension 的轻量适配层
 
-产品与模块事实从 [`docs/README.md`](docs/README.md) 开始阅读；共享审美以 Foundation 远端最新正式发布 Tag 为准，构建锁定当前 [`v7.2.1`](https://github.com/morenk/wenyousite-foundation/tree/v7.2.1)；每次 Foundation 相关实现前必须先检查远端发布并在落后时升级，完整协作约束见 [`AGENTS.md`](AGENTS.md)。
+产品与模块事实从 [`docs/README.md`](docs/README.md) 开始阅读；共享审美以 Foundation 远端最新正式发布 Tag 为准，构建锁定当前 [`v7.5.0`](https://github.com/morenk/wenyousite-foundation/tree/v7.5.0)；每次 Foundation 相关实现前必须先检查远端发布并在落后时升级，完整协作约束见 [`AGENTS.md`](AGENTS.md)。
 
 ## 本地环境
 
@@ -37,19 +37,17 @@ flutter pub get
 npm ci
 ```
 
-默认开发反馈使用隔离预览与持续 Debug。Agent 在任务 Worktree 内执行：
+日常开发不需要 Backend 快照、consumer 或预览控制器。在当前任务 Worktree 内启动普通 Flutter Debug：
 
 ```powershell
-npm run dev:start -- --session C:\private\preview-consumer.json
-npm run dev:status
-npm run dev:reload
-npm run dev:restart
-npm run dev:stop
+npm run dev -- -d <设备序号>
+# 使用已有开发 API 时显式指定；地址不可用会报错，不会切回公网。
+npm run dev -- -d <设备序号> --dart-define=API_BASE_URL=https://dev.example.test/api/v1
 ```
 
-第一次启动会编译并安装 `site.wenyou.app.debug`；后续颜色、间距与布局修改执行热重载，保留当前页面。初始化变化热重启，依赖／资源／原生变化按需重启或构建。无需每轮 APK、安装或全量门禁。多设备显式传 `--device`。描述来自 Backend 已提交的私有开发协议，实际身份不符立即停止，没有线上默认值。完整使用、故障恢复与验收记录见 [持续 Debug 开发](docs/live-debug.md)。
+此薄入口直接执行 `flutter run --debug`，透传 Flutter 参数与交互输入，只保留 Debug 包名核验和 ADB 防卸载保护。`dev:start/status/list/reload/restart/stop` 已退役。首次运行编译并覆盖安装 `site.wenyou.app.debug`，随后在原终端按 `r` 热重载、`R` 热重启、`q` 退出；不用逐轮构建 APK。API 编译配置变化需退出后重启。完整说明见 [Debug 开发](docs/live-debug.md)。
 
-原有普通应用构建仍默认使用公网 API；线上自动化只读，写入仅使用隔离预览。Windows 的 Backend 只读镜像只允许 fetch/show/diff 或契约同步，不在 Windows 修改或运行 Backend。
+未指定 API 时保持原默认公网地址 `https://wenyou.site/api/v1`。公网与 Tailnet 开发环境仍按线上保护，代理自动化只读；写入 E2E 必须使用已核验的独立环境，不能把普通 Debug 入口当作隔离证明。代理启动还须核对登录恢复、自动签到等启动副作用；不能证明只读时交由负责人自行启动，详见上述 Debug 文档。Windows 的 Backend 只读镜像只允许 fetch/show/diff 或契约同步，不在 Windows 修改或运行 Backend。
 
 ## 契约同步
 

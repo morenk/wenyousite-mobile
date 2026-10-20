@@ -6,8 +6,17 @@ import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 export 'package:wenyousite_mobile/core/widgets/wenyou_actions.dart';
 export 'package:wenyousite_mobile/core/widgets/wenyou_async_button.dart';
 export 'package:wenyousite_mobile/core/widgets/wenyou_feedback.dart';
+export 'package:wenyousite_mobile/core/widgets/wenyou_retry_failure.dart';
 export 'package:wenyousite_mobile/core/widgets/wenyou_settings_row.dart';
 export 'package:wenyousite_mobile/core/widgets/wenyou_snack_bar.dart';
+
+/// 浏览与管理页的轻底色；阅读、写作继续使用默认正文背景。
+Color wenyouBrowsePageBackground(BuildContext context) {
+  final tokens = context.wenyouTokens;
+  return Theme.of(context).brightness == Brightness.light
+      ? tokens.softPanel
+      : tokens.background;
+}
 
 double wenyouHorizontalPagePadding(
   BuildContext context, {

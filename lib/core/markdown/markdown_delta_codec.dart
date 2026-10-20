@@ -1,5 +1,6 @@
 import 'package:flutter_quill/quill_delta.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_alignment.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_audio_embed.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_canonical_literal_decoder.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_codec_types.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
@@ -15,6 +16,7 @@ import 'package:wenyousite_mobile/core/markdown/markdown_dice_contract.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_editor_document.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_editor_projection.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_inline_source.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_mention_target.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_paragraph_boundaries.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_quote_paragraphs.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_rich_line_decoder.dart';
@@ -22,7 +24,7 @@ import 'package:wenyousite_mobile/core/navigation/internal_reference.dart';
 
 export 'package:wenyousite_mobile/core/markdown/markdown_codec_types.dart';
 
-/// Markdown v4/v5 扩展节点与 Quill Delta 之间的无损协议层。
+/// Markdown v4/v5/v6 扩展节点与 Quill Delta 之间的无损协议层。
 ///
 /// 受支持的普通 Markdown 先解析为中立富文本行模型，再映射为 Quill 属性；
 /// 扩展节点提升为原子 embed；无法精确往返的语法保留源码文本。
@@ -48,9 +50,7 @@ class MarkdownDeltaCodec {
   static const _allPlayersLabel = '@全体玩家';
   static const _stickerPrefix = 'wenyousite-sticker:v1:';
 
-  static final _mention = RegExp(
-    r'^\[(@[^\]\r\n]{1,32})\]\(/users/([a-zA-Z0-9_-]+)\)',
-  );
+  static final _mention = MarkdownMentionTarget.nodeAtStart;
   static final _dice = MarkdownDiceContract.nodeAtStart;
   static final _image = RegExp(
     r'''^!\[([^\]\n]*)\]\(\s*([^\s)]+)(?:\s+["']([^"'\n]*)["'])?\s*\)''',
@@ -159,6 +159,7 @@ class MarkdownDeltaCodec {
   }
 
   static String encode(Delta delta, {bool imageAlignment = false}) {
+    delta = MarkdownAudioEmbed.expand(delta, preserveLinkShape: true);
     final encoded = _encode(delta, true, imageAlignment);
     final reopened = _decode(encoded, false, imageAlignment).delta;
     if (!MarkdownDeltaSemantics.equivalent(delta, reopened)) {
@@ -316,16 +317,16 @@ class MarkdownDeltaCodec {
 
       final remaining = line.substring(index);
       final mention = _mention.firstMatch(remaining);
-      if (mention != null) {
+      final mentionTarget = mention == null
+          ? null
+          : MarkdownMentionTarget.parse(mention.group(2)!);
+      if (mention != null &&
+          mentionTarget != null &&
+          mentionTarget.acceptsLabel(mention.group(1)!)) {
         flushText();
         final raw = mention.group(0)!;
         delta.insert({
-          mentionEmbed: {
-            'version': 1,
-            'kind': 'user',
-            'userId': mention.group(2)!,
-            'label': mention.group(1)!,
-          },
+          mentionEmbed: mentionTarget.toPayload(mention.group(1)!),
         });
         index += raw.length;
         continue;
@@ -577,11 +578,11 @@ class MarkdownDeltaCodec {
           _requiredString(payload, 'label', type),
           type,
         );
-        final userId = _stableId(
-          _requiredString(payload, 'userId', type),
-          type,
-        );
-        output.write('[$label](/users/$userId)');
+        final target = MarkdownMentionTarget.fromPayload(payload);
+        if (target == null || !target.acceptsLabel(label)) {
+          throw const MarkdownCodecException('提及无法保存，请重新选择。');
+        }
+        output.write('[$label](${target.sourceHref})');
       case diceEmbed:
         final nodeId = _requiredString(payload, 'nodeId', type).toLowerCase();
         if (!MarkdownDiceContract.uuidV4.hasMatch(nodeId)) {
@@ -698,13 +699,6 @@ class MarkdownDeltaCodec {
 
   static String _plainMarkdownLabel(String value, String type) =>
       _markdownLabel(value, type, allowAtPrefix: true);
-
-  static String _stableId(String value, String type) {
-    if (!RegExp(r'^[a-zA-Z0-9_-]+$').hasMatch(value)) {
-      throw MarkdownCodecException('$type embed 稳定 ID 不合法');
-    }
-    return value;
-  }
 
   static String _safeImageUrl(String value, String type) {
     final uri = Uri.tryParse(value);

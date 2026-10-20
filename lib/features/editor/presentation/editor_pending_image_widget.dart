@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/features/editor/presentation/editor_pending_audio_widget.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_pending_images.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
 import 'package:wenyousite_mobile/features/media/media_ui.dart';
@@ -95,24 +96,33 @@ class EditorPublishWaiting extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ListenableBuilder(
     listenable: images,
-    builder: (context, _) => images.waitingToPublish
-        ? DelayedPendingNotice(
-            waiting: true,
-            child: Row(
-              children: [
-                Expanded(child: Text('还有 ${images.pendingCount} 张图片未就绪')),
-                TextButton(
-                  onPressed: images.cancelPublish,
-                  child: const Text('取消发布'),
+    builder: (context, _) => Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        EditorPendingAudioWidget(
+          audios: images.audios,
+          locked: images.waitingToPublish,
+        ),
+        images.waitingToPublish
+            ? DelayedPendingNotice(
+                waiting: true,
+                child: Row(
+                  children: [
+                    Expanded(child: Text('还有 ${images.pendingCount} 个附件未就绪')),
+                    TextButton(
+                      onPressed: images.cancelPublish,
+                      child: const Text('取消发布'),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          )
-        : images.saveFailure != null
-        ? Text(
-            images.saveFailure!,
-            style: TextStyle(color: Theme.of(context).colorScheme.error),
-          )
-        : const SizedBox.shrink(),
+              )
+            : images.saveFailure != null
+            ? Text(
+                images.saveFailure!,
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              )
+            : const SizedBox.shrink(),
+      ],
+    ),
   );
 }

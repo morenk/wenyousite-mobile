@@ -17,6 +17,7 @@ class PostReplyFilters extends StatelessWidget {
     this.authorsLoading = false,
     this.authorsFailure,
     this.onRetryAuthors,
+    this.onLocate,
     super.key,
   });
 
@@ -28,12 +29,14 @@ class PostReplyFilters extends StatelessWidget {
   final bool authorsLoading;
   final ApiFailure? authorsFailure;
   final VoidCallback? onRetryAuthors;
+  final VoidCallback? onLocate;
 
   @override
   Widget build(BuildContext context) {
     return WenyouDiscussionListControls<PostReplyOrder>(
       countLabel: '$replyCount 条回复',
       countKey: const Key('post-replies-count'),
+      onCountPressed: onLocate,
       authorKey: const Key('post-replies-author'),
       orderKey: const Key('post-replies-order'),
       order: state.order,
@@ -50,9 +53,9 @@ class PostReplyFilters extends StatelessWidget {
         for (final author in authors)
           WenyouDiscussionAuthorOption(
             id: author.userId,
-            label: author.username,
-            supportingLabel: author.role.label,
-            avatarUrl: author.avatarUrl,
+            label: author.displayName,
+            supportingLabel: author.supportingLabel,
+            avatarUrl: author.displayAvatarUrl,
           ),
       ],
       authorsLoading: authorsLoading,

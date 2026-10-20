@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
@@ -86,6 +87,26 @@ class WenyouMarkdownImage extends StatelessWidget {
       borderRadius: BorderRadius.circular(tokens.radiusCompact),
       child: isSticker
           ? SizedBox.square(dimension: 96, child: image)
+          : display != null
+          ? LayoutBuilder(
+              builder: (context, constraints) {
+                final media = display!;
+                final scale = math.min(
+                  1.0,
+                  math.min(
+                    constraints.maxWidth / media.width,
+                    420 / media.height,
+                  ),
+                );
+                // 已验证的展示尺寸在解码前就保留相同空间，避免上方图片
+                // 完成加载后推走正在阅读的楼层；旧无尺寸内容沿用原回退。
+                return SizedBox(
+                  width: media.width * scale,
+                  height: media.height * scale,
+                  child: image,
+                );
+              },
+            )
           : ConstrainedBox(
               constraints: const BoxConstraints(maxHeight: 420),
               child: image,

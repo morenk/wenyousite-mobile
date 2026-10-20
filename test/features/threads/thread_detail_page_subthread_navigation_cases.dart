@@ -108,10 +108,23 @@ void registerThreadDetailPageSubthreadNavigationCases() {
           ),
         ),
       );
+      final trigger = find.byKey(const Key('thread-subthread-menu'));
+      final capsule = find.byKey(const Key('thread-subthread-menu-capsule'));
+      expect(
+        tester.getSize(trigger).height,
+        closeTo(tester.getSize(capsule).height.clamp(48, double.infinity), 0.1),
+      );
       await tester.tap(find.byKey(const Key('thread-subthread-menu')));
       await tester.pumpAndSettle();
       final scrollbarFinder = find.byType(Scrollbar);
       expect(scrollbarFinder, findsOneWidget);
+      expect(
+        tester.getTopLeft(scrollbarFinder).dy,
+        inInclusiveRange(
+          tester.getBottomLeft(trigger).dy + 4,
+          tester.getBottomLeft(trigger).dy + 16,
+        ),
+      );
       final scrollbar = tester.widget<Scrollbar>(scrollbarFinder);
       expect(scrollbar.thumbVisibility, isTrue);
       expect(scrollbar.scrollbarOrientation, ScrollbarOrientation.right);

@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/app/app_capabilities.dart';
 import 'package:wenyousite_mobile/app/visibility_cache_invalidation.dart';
+import 'package:wenyousite_mobile/core/application/audio_download.dart';
+import 'package:wenyousite_mobile/core/application/audio_playback.dart';
 import 'package:wenyousite_mobile/core/application/background_execution.dart';
 import 'package:wenyousite_mobile/core/application/background_online_reminders.dart';
 import 'package:wenyousite_mobile/core/application/bookmark_folder_catalog.dart';
@@ -9,12 +11,14 @@ import 'package:wenyousite_mobile/core/application/image_gallery.dart';
 import 'package:wenyousite_mobile/core/application/notification_guidance.dart';
 import 'package:wenyousite_mobile/core/application/profile_cache_invalidation.dart';
 import 'package:wenyousite_mobile/core/application/visibility_cache_invalidation.dart';
+import 'package:wenyousite_mobile/core/navigation/navigation_link_writer.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/platform/android_background_execution_gateway.dart';
 import 'package:wenyousite_mobile/core/platform/android_background_notification_gateway.dart';
 import 'package:wenyousite_mobile/core/platform/device_document_saver.dart';
 import 'package:wenyousite_mobile/core/platform/device_image_gallery.dart';
 import 'package:wenyousite_mobile/core/storage/shared_preferences_notification_guidance_store.dart';
+import 'package:wenyousite_mobile/features/app_shell/application/clipboard_navigation_coordinator.dart';
 import 'package:wenyousite_mobile/features/app_shell/application/clipboard_navigation_ports.dart';
 import 'package:wenyousite_mobile/features/app_shell/application/mobile_release_ports.dart';
 import 'package:wenyousite_mobile/features/app_shell/application/mobile_update_controller.dart';
@@ -33,30 +37,42 @@ import 'package:wenyousite_mobile/features/auth/data/auth_repository.dart';
 import 'package:wenyousite_mobile/features/auth/data/password_recovery_repository.dart';
 import 'package:wenyousite_mobile/features/direct_messages/data/direct_message_repository.dart';
 import 'package:wenyousite_mobile/features/drafts/data/content_draft_repository.dart';
+import 'package:wenyousite_mobile/features/editor/application/editor_text_color_preferences_ports.dart';
 import 'package:wenyousite_mobile/features/editor/data/editor_snapshot_store.dart';
+import 'package:wenyousite_mobile/features/editor/data/editor_text_color_preferences_store.dart';
 import 'package:wenyousite_mobile/features/editor/data/mention_candidate_repository.dart';
 import 'package:wenyousite_mobile/features/home/data/home_repository.dart';
+import 'package:wenyousite_mobile/features/media/application/audio_file_picker_ports.dart';
+import 'package:wenyousite_mobile/features/media/application/audio_upload_ports.dart';
 import 'package:wenyousite_mobile/features/media/application/avatar_image_ports.dart';
 import 'package:wenyousite_mobile/features/media/application/image_crop_ports.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
 import 'package:wenyousite_mobile/features/media/application/pending_media_file_store_ports.dart';
 import 'package:wenyousite_mobile/features/media/application/profile_cover_image_ports.dart';
 import 'package:wenyousite_mobile/features/media/application/reading_gallery_controller.dart';
+import 'package:wenyousite_mobile/features/media/data/audio_upload_repository.dart'
+    show apiAudioUploadRepositoryProvider;
+import 'package:wenyousite_mobile/features/media/data/device_audio_download.dart';
 import 'package:wenyousite_mobile/features/media/data/editor_image_picker.dart';
 import 'package:wenyousite_mobile/features/media/data/image_crop_processor.dart';
+import 'package:wenyousite_mobile/features/media/data/just_audio_playback_driver.dart';
 import 'package:wenyousite_mobile/features/media/data/media_upload_repository.dart';
 import 'package:wenyousite_mobile/features/media/data/private_pending_media_file_store.dart';
 import 'package:wenyousite_mobile/features/media/data/profile_cover_image_picker.dart';
 import 'package:wenyousite_mobile/features/media/data/reading_gallery_repository.dart';
+import 'package:wenyousite_mobile/features/media/data/system_audio_file_picker.dart';
 import 'package:wenyousite_mobile/features/moderation/data/moderation_appeal_repository.dart';
 import 'package:wenyousite_mobile/features/moments/application/moment_draft_store_ports.dart';
 import 'package:wenyousite_mobile/features/moments/data/moment_bookmark_repository.dart';
 import 'package:wenyousite_mobile/features/moments/data/moment_draft_store.dart';
 import 'package:wenyousite_mobile/features/moments/data/moment_repository.dart';
 import 'package:wenyousite_mobile/features/notifications/data/notification_repository.dart';
+import 'package:wenyousite_mobile/features/posts/application/post_identity_preference_ports.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_thread_context_ports.dart';
 import 'package:wenyousite_mobile/features/posts/data/post_discussion_author_repository.dart';
 import 'package:wenyousite_mobile/features/posts/data/post_repository.dart';
+import 'package:wenyousite_mobile/features/posts/data/shared_preferences_post_identity_store.dart';
+import 'package:wenyousite_mobile/features/posts/presentation/post_identity_profile_preview.dart';
 import 'package:wenyousite_mobile/features/reports/data/report_repository.dart';
 import 'package:wenyousite_mobile/features/search/data/search_repository.dart';
 import 'package:wenyousite_mobile/features/settings/application/settings_repository_ports.dart';
@@ -75,6 +91,9 @@ import 'package:wenyousite_mobile/features/thread_feed/application/cover_animati
 import 'package:wenyousite_mobile/features/thread_feed/data/device_cover_animation_source.dart';
 import 'package:wenyousite_mobile/features/thread_feed/data/thread_category_catalog_repository.dart';
 import 'package:wenyousite_mobile/features/thread_feed/thread_feed_catalog.dart';
+import 'package:wenyousite_mobile/features/thread_identity/data/thread_identity_repository.dart';
+import 'package:wenyousite_mobile/features/thread_identity/identity_ports.dart';
+import 'package:wenyousite_mobile/features/thread_identity/identity_profile.dart';
 import 'package:wenyousite_mobile/features/threads/data/subthread_management_repository.dart';
 import 'package:wenyousite_mobile/features/threads/data/thread_compose_repository.dart';
 import 'package:wenyousite_mobile/features/threads/data/thread_detail_repository.dart';
@@ -91,6 +110,15 @@ import 'package:wenyousite_mobile/features/users/data/public_user_repository.dar
 import 'package:wenyousite_mobile/features/wallet/data/wallet_repository.dart';
 
 List<Override> productionProviderOverrides() => [
+  editorTextColorPreferenceStoreProvider.overrideWithValue(
+    const SharedPreferencesEditorTextColorStore(),
+  ),
+  navigationLinkWriterProvider.overrideWith(
+    (ref) => ref.watch(clipboardNavigationCoordinatorProvider).copyLink,
+  ),
+  postIdentityPreferenceStoreProvider.overrideWith(
+    (ref) => SharedPreferencesPostIdentityStore(),
+  ),
   mobileUpdateNoticeStoreProvider.overrideWithValue(
     const SharedPreferencesMobileUpdateNoticeStore(),
   ),
@@ -214,6 +242,8 @@ List<Override> productionProviderOverrides() => [
       return PostThreadContext(
         isPrivate: detail.isPrivate,
         canManageThread: detail.canManageThread,
+        supportsRpIdentity: detail.supportsRpIdentity,
+        ownerId: detail.owner.id,
       );
     };
   }),
@@ -260,6 +290,26 @@ List<Override> productionProviderOverrides() => [
   threadDetailRepositoryProvider.overrideWith(
     (ref) => ref.watch(apiThreadDetailRepositoryProvider),
   ),
+  threadIdentityRepositoryProvider.overrideWith(
+    (ref) => ref.watch(apiThreadIdentityRepositoryProvider),
+  ),
+  identityProfilePostLookupProvider.overrideWith((ref) {
+    final repository = ref.watch(postRepositoryProvider);
+    return (postId) async {
+      final post = await repository.fetchPost(postId);
+      return post.isDeleted
+          ? null
+          : IdentityProfilePostTarget(id: post.id, threadId: post.threadId);
+    };
+  }),
+  identityProfilePreviewBuilderProvider.overrideWithValue(
+    ({required threadId, required postId, required onOpenPost}) =>
+        PostIdentityProfilePreview(
+          threadId: threadId,
+          postId: postId,
+          onOpenPost: onOpenPost,
+        ),
+  ),
   postDiscussionAuthorDirectoryProvider.overrideWith(
     (ref) => ref.watch(apiPostDiscussionAuthorDirectoryProvider),
   ),
@@ -274,6 +324,16 @@ List<Override> productionProviderOverrides() => [
   ),
   walletRepositoryProvider.overrideWith(
     (ref) => ref.watch(apiWalletRepositoryProvider),
+  ),
+  audioPlaybackProvider.overrideWith(
+    (ref) => ref.watch(deviceAudioPlaybackProvider),
+  ),
+  audioDownloadProvider.overrideWith(
+    (ref) => ref.watch(deviceAudioDownloadProvider),
+  ),
+  audioFilePickerProvider.overrideWith((ref) => const SystemAudioFilePicker()),
+  audioUploadRepositoryProvider.overrideWith(
+    (ref) => ref.watch(apiAudioUploadRepositoryProvider),
   ),
   avatarImagePickerPortProvider.overrideWith(
     (ref) => ref.watch(avatarImagePickerProvider),
@@ -319,10 +379,19 @@ List<Override> productionProviderOverrides() => [
 
 AppCapabilities appCapabilitiesForContract(ContractInfo? contract) {
   return AppCapabilities(
+    audioUpload: contract?.audioUpload,
     stickers: contract?.stickersEnabled ?? false,
     directMessages: contract?.directMessagesEnabled ?? false,
     pushNotifications: contract?.pushNotificationsEnabled ?? false,
     markdownAlignment: (contract?.markdownContractVersion ?? 0) >= 4,
     markdownImageAlignment: (contract?.markdownContractVersion ?? 0) >= 5,
+    // 仅已知的单身份契约使用旧入口，集合请求失败不能触发降级。
+    legacySingleThreadIdentity:
+        contract?.contractVersion.startsWith('5.33.') ?? false,
+    roleMentionsSupported: contract?.roleMentionsSupported ?? false,
+    textColorSupported: contract?.textColorSupported ?? false,
+    textColorWriteEnabled: contract?.textColorWriteEnabled ?? false,
+    roleMentionsWriteEnabled: contract?.roleMentionsWriteEnabled ?? false,
+    rpIdentityProfileSupported: contract?.rpIdentityProfileSupported ?? false,
   );
 }

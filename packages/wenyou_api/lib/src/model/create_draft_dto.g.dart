@@ -6,7 +6,143 @@ part of 'create_draft_dto.dart';
 // BuiltValueGenerator
 // **************************************************************************
 
+const CreateDraftDtoTextColorVersionEnum
+_$createDraftDtoTextColorVersionEnum_number1 =
+    const CreateDraftDtoTextColorVersionEnum._('number1');
+const CreateDraftDtoTextColorVersionEnum
+_$createDraftDtoTextColorVersionEnum_unknownDefaultOpenApi =
+    const CreateDraftDtoTextColorVersionEnum._('unknownDefaultOpenApi');
+
+CreateDraftDtoTextColorVersionEnum _$createDraftDtoTextColorVersionEnumValueOf(
+  String name,
+) {
+  switch (name) {
+    case 'number1':
+      return _$createDraftDtoTextColorVersionEnum_number1;
+    case 'unknownDefaultOpenApi':
+      return _$createDraftDtoTextColorVersionEnum_unknownDefaultOpenApi;
+    default:
+      return _$createDraftDtoTextColorVersionEnum_unknownDefaultOpenApi;
+  }
+}
+
+final BuiltSet<CreateDraftDtoTextColorVersionEnum>
+_$createDraftDtoTextColorVersionEnumValues =
+    BuiltSet<CreateDraftDtoTextColorVersionEnum>(
+      const <CreateDraftDtoTextColorVersionEnum>[
+        _$createDraftDtoTextColorVersionEnum_number1,
+        _$createDraftDtoTextColorVersionEnum_unknownDefaultOpenApi,
+      ],
+    );
+
+const CreateDraftDtoMarkdownContractVersionEnum
+_$createDraftDtoMarkdownContractVersionEnum_number6 =
+    const CreateDraftDtoMarkdownContractVersionEnum._('number6');
+const CreateDraftDtoMarkdownContractVersionEnum
+_$createDraftDtoMarkdownContractVersionEnum_unknownDefaultOpenApi =
+    const CreateDraftDtoMarkdownContractVersionEnum._('unknownDefaultOpenApi');
+
+CreateDraftDtoMarkdownContractVersionEnum
+_$createDraftDtoMarkdownContractVersionEnumValueOf(String name) {
+  switch (name) {
+    case 'number6':
+      return _$createDraftDtoMarkdownContractVersionEnum_number6;
+    case 'unknownDefaultOpenApi':
+      return _$createDraftDtoMarkdownContractVersionEnum_unknownDefaultOpenApi;
+    default:
+      return _$createDraftDtoMarkdownContractVersionEnum_unknownDefaultOpenApi;
+  }
+}
+
+final BuiltSet<CreateDraftDtoMarkdownContractVersionEnum>
+_$createDraftDtoMarkdownContractVersionEnumValues =
+    BuiltSet<CreateDraftDtoMarkdownContractVersionEnum>(
+      const <CreateDraftDtoMarkdownContractVersionEnum>[
+        _$createDraftDtoMarkdownContractVersionEnum_number6,
+        _$createDraftDtoMarkdownContractVersionEnum_unknownDefaultOpenApi,
+      ],
+    );
+
+Serializer<CreateDraftDtoTextColorVersionEnum>
+_$createDraftDtoTextColorVersionEnumSerializer =
+    _$CreateDraftDtoTextColorVersionEnumSerializer();
+Serializer<CreateDraftDtoMarkdownContractVersionEnum>
+_$createDraftDtoMarkdownContractVersionEnumSerializer =
+    _$CreateDraftDtoMarkdownContractVersionEnumSerializer();
+
+class _$CreateDraftDtoTextColorVersionEnumSerializer
+    implements PrimitiveSerializer<CreateDraftDtoTextColorVersionEnum> {
+  static const Map<String, Object> _toWire = const <String, Object>{
+    'number1': 1,
+    'unknownDefaultOpenApi': 11184809,
+  };
+  static const Map<Object, String> _fromWire = const <Object, String>{
+    1: 'number1',
+    11184809: 'unknownDefaultOpenApi',
+  };
+
+  @override
+  final Iterable<Type> types = const <Type>[CreateDraftDtoTextColorVersionEnum];
+  @override
+  final String wireName = 'CreateDraftDtoTextColorVersionEnum';
+
+  @override
+  Object serialize(
+    Serializers serializers,
+    CreateDraftDtoTextColorVersionEnum object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => _toWire[object.name] ?? object.name;
+
+  @override
+  CreateDraftDtoTextColorVersionEnum deserialize(
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => CreateDraftDtoTextColorVersionEnum.valueOf(
+    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
+  );
+}
+
+class _$CreateDraftDtoMarkdownContractVersionEnumSerializer
+    implements PrimitiveSerializer<CreateDraftDtoMarkdownContractVersionEnum> {
+  static const Map<String, Object> _toWire = const <String, Object>{
+    'number6': 6,
+    'unknownDefaultOpenApi': 11184809,
+  };
+  static const Map<Object, String> _fromWire = const <Object, String>{
+    6: 'number6',
+    11184809: 'unknownDefaultOpenApi',
+  };
+
+  @override
+  final Iterable<Type> types = const <Type>[
+    CreateDraftDtoMarkdownContractVersionEnum,
+  ];
+  @override
+  final String wireName = 'CreateDraftDtoMarkdownContractVersionEnum';
+
+  @override
+  Object serialize(
+    Serializers serializers,
+    CreateDraftDtoMarkdownContractVersionEnum object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => _toWire[object.name] ?? object.name;
+
+  @override
+  CreateDraftDtoMarkdownContractVersionEnum deserialize(
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => CreateDraftDtoMarkdownContractVersionEnum.valueOf(
+    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
+  );
+}
+
 class _$CreateDraftDto extends CreateDraftDto {
+  @override
+  final CreateDraftDtoTextColorVersionEnum? textColorVersion;
+  @override
+  final CreateDraftDtoMarkdownContractVersionEnum? markdownContractVersion;
   @override
   final String? clientRequestId;
   @override
@@ -20,6 +156,8 @@ class _$CreateDraftDto extends CreateDraftDto {
       (CreateDraftDtoBuilder()..update(updates))._build();
 
   _$CreateDraftDto._({
+    this.textColorVersion,
+    this.markdownContractVersion,
     this.clientRequestId,
     required this.content,
     this.slot,
@@ -36,6 +174,8 @@ class _$CreateDraftDto extends CreateDraftDto {
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
     return other is CreateDraftDto &&
+        textColorVersion == other.textColorVersion &&
+        markdownContractVersion == other.markdownContractVersion &&
         clientRequestId == other.clientRequestId &&
         content == other.content &&
         slot == other.slot &&
@@ -45,6 +185,8 @@ class _$CreateDraftDto extends CreateDraftDto {
   @override
   int get hashCode {
     var _$hash = 0;
+    _$hash = $jc(_$hash, textColorVersion.hashCode);
+    _$hash = $jc(_$hash, markdownContractVersion.hashCode);
     _$hash = $jc(_$hash, clientRequestId.hashCode);
     _$hash = $jc(_$hash, content.hashCode);
     _$hash = $jc(_$hash, slot.hashCode);
@@ -56,6 +198,8 @@ class _$CreateDraftDto extends CreateDraftDto {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'CreateDraftDto')
+          ..add('textColorVersion', textColorVersion)
+          ..add('markdownContractVersion', markdownContractVersion)
           ..add('clientRequestId', clientRequestId)
           ..add('content', content)
           ..add('slot', slot)
@@ -67,6 +211,19 @@ class _$CreateDraftDto extends CreateDraftDto {
 class CreateDraftDtoBuilder
     implements Builder<CreateDraftDto, CreateDraftDtoBuilder> {
   _$CreateDraftDto? _$v;
+
+  CreateDraftDtoTextColorVersionEnum? _textColorVersion;
+  CreateDraftDtoTextColorVersionEnum? get textColorVersion =>
+      _$this._textColorVersion;
+  set textColorVersion(CreateDraftDtoTextColorVersionEnum? textColorVersion) =>
+      _$this._textColorVersion = textColorVersion;
+
+  CreateDraftDtoMarkdownContractVersionEnum? _markdownContractVersion;
+  CreateDraftDtoMarkdownContractVersionEnum? get markdownContractVersion =>
+      _$this._markdownContractVersion;
+  set markdownContractVersion(
+    CreateDraftDtoMarkdownContractVersionEnum? markdownContractVersion,
+  ) => _$this._markdownContractVersion = markdownContractVersion;
 
   String? _clientRequestId;
   String? get clientRequestId => _$this._clientRequestId;
@@ -92,6 +249,8 @@ class CreateDraftDtoBuilder
   CreateDraftDtoBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
+      _textColorVersion = $v.textColorVersion;
+      _markdownContractVersion = $v.markdownContractVersion;
       _clientRequestId = $v.clientRequestId;
       _content = $v.content;
       _slot = $v.slot;
@@ -118,6 +277,8 @@ class CreateDraftDtoBuilder
     final _$result =
         _$v ??
         _$CreateDraftDto._(
+          textColorVersion: textColorVersion,
+          markdownContractVersion: markdownContractVersion,
           clientRequestId: clientRequestId,
           content: BuiltValueNullFieldError.checkNotNull(
             content,

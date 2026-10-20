@@ -63,7 +63,11 @@ class _SearchPageState extends ConsumerState<SearchPage> {
       }
     });
     return Scaffold(
-      appBar: AppBar(title: const Text('搜索')),
+      backgroundColor: wenyouBrowsePageBackground(context),
+      appBar: AppBar(
+        backgroundColor: wenyouBrowsePageBackground(context),
+        title: const Text('搜索'),
+      ),
       body: Column(
         children: [
           Padding(
@@ -621,7 +625,7 @@ class _PostResultCard extends StatelessWidget {
             ),
             SizedBox(height: tokens.space12),
             Text(
-              '${item.authorName} · '
+              '${item.authorLabel} · '
               '${item.floorNumber == null ? '楼中楼' : '#${item.floorNumber}'}',
               style: Theme.of(context).textTheme.wenyouCaption,
             ),
@@ -676,19 +680,15 @@ class _SearchErrorState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return WenyouPanel(
-      child: WenyouEmptyState(
-        icon: WenyouIconIds.statusOffline,
-        title: '搜索失败',
-        message: failure?.userMessage ?? '请检查网络后重试。',
-        detail: wenyouFailureDetail(failure),
-        action: OutlinedButton.icon(
-          key: const Key('search-retry'),
-          onPressed: onRetry,
-          icon: const WenyouIcon(WenyouIconIds.actionRefresh),
-          label: const Text('重试'),
-        ),
-      ),
+    return WenyouRetryFailure(
+      panel: true,
+      icon: WenyouIconIds.statusOffline,
+      title: '搜索失败',
+      message: failure?.userMessage ?? '请检查网络后重试。',
+      failure: failure,
+      retryKey: const Key('search-retry'),
+      onRetry: onRetry,
+      retryLabel: '重试',
     );
   }
 }

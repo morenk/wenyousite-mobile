@@ -5,8 +5,10 @@
 // ignore_for_file: unused_element
 import 'package:wenyou_api/src/model/markdown_media_display_response_dto.dart';
 import 'package:built_collection/built_collection.dart';
+import 'package:wenyou_api/src/model/mention_identity_display_dto.dart';
 import 'package:wenyou_api/src/model/search_author_response_dto.dart';
 import 'package:wenyou_api/src/model/search_subthread_reference_response_dto.dart';
+import 'package:wenyou_api/src/model/audio_media_dto.dart';
 import 'package:wenyou_api/src/model/search_thread_reference_response_dto.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
@@ -16,7 +18,9 @@ part 'search_post_response_dto.g.dart';
 /// SearchPostResponseDto
 ///
 /// Properties:
+/// * [mentionIdentities]
 /// * [mediaDisplays] - 已授权正文的精确来源映射
+/// * [mediaAudios] - 本次已授权正文内的音频引用；缺失时链接按旧端规则呈现
 /// * [kind] - BODY 为正文，FLOOR 为主楼层或楼中楼
 /// * [id] - 帖子 ID
 /// * [floorNumber] - 楼层号；正文与楼中楼为 null
@@ -28,9 +32,16 @@ part 'search_post_response_dto.g.dart';
 /// * [subthread] - 所属子贴
 @BuiltValue()
 abstract class SearchPostResponseDto implements Built<SearchPostResponseDto, SearchPostResponseDtoBuilder> {
+  @BuiltValueField(wireName: r'mentionIdentities')
+  BuiltList<MentionIdentityDisplayDto>? get mentionIdentities;
+
   /// 已授权正文的精确来源映射
   @BuiltValueField(wireName: r'mediaDisplays')
   BuiltList<MarkdownMediaDisplayResponseDto>? get mediaDisplays;
+
+  /// 本次已授权正文内的音频引用；缺失时链接按旧端规则呈现
+  @BuiltValueField(wireName: r'mediaAudios')
+  BuiltList<AudioMediaDto>? get mediaAudios;
 
   /// BODY 为正文，FLOOR 为主楼层或楼中楼
   @BuiltValueField(wireName: r'kind')
@@ -92,11 +103,25 @@ class _$SearchPostResponseDtoSerializer implements PrimitiveSerializer<SearchPos
     SearchPostResponseDto object, {
     FullType specifiedType = FullType.unspecified,
   }) sync* {
+    if (object.mentionIdentities != null) {
+      yield r'mentionIdentities';
+      yield serializers.serialize(
+        object.mentionIdentities,
+        specifiedType: const FullType(BuiltList, [FullType(MentionIdentityDisplayDto)]),
+      );
+    }
     if (object.mediaDisplays != null) {
       yield r'mediaDisplays';
       yield serializers.serialize(
         object.mediaDisplays,
         specifiedType: const FullType(BuiltList, [FullType(MarkdownMediaDisplayResponseDto)]),
+      );
+    }
+    if (object.mediaAudios != null) {
+      yield r'mediaAudios';
+      yield serializers.serialize(
+        object.mediaAudios,
+        specifiedType: const FullType(BuiltList, [FullType(AudioMediaDto)]),
       );
     }
     yield r'kind';
@@ -167,12 +192,26 @@ class _$SearchPostResponseDtoSerializer implements PrimitiveSerializer<SearchPos
       final key = serializedList[i] as String;
       final value = serializedList[i + 1];
       switch (key) {
+        case r'mentionIdentities':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(BuiltList, [FullType(MentionIdentityDisplayDto)]),
+          ) as BuiltList<MentionIdentityDisplayDto>;
+          result.mentionIdentities.replace(valueDes);
+          break;
         case r'mediaDisplays':
           final valueDes = serializers.deserialize(
             value,
             specifiedType: const FullType(BuiltList, [FullType(MarkdownMediaDisplayResponseDto)]),
           ) as BuiltList<MarkdownMediaDisplayResponseDto>;
           result.mediaDisplays.replace(valueDes);
+          break;
+        case r'mediaAudios':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(BuiltList, [FullType(AudioMediaDto)]),
+          ) as BuiltList<AudioMediaDto>;
+          result.mediaAudios.replace(valueDes);
           break;
         case r'kind':
           final valueDes = serializers.deserialize(

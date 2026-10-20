@@ -2,7 +2,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_invitation_models.dart';
 
 abstract interface class ThreadInvitationRepository {
-  Future<ThreadInvitationLink> generateLink(String threadId);
+  Future<ThreadInvitationLink> ensureLink(String threadId);
+
+  Future<ThreadInvitationLink> resetLink(String threadId);
 
   Future<ThreadInvitationPreview> preview(String token);
 
@@ -19,7 +21,12 @@ class _UnboundThreadInvitationRepository implements ThreadInvitationRepository {
   const _UnboundThreadInvitationRepository();
 
   @override
-  Future<ThreadInvitationLink> generateLink(String threadId) {
+  Future<ThreadInvitationLink> ensureLink(String threadId) {
+    return Future.error(_error());
+  }
+
+  @override
+  Future<ThreadInvitationLink> resetLink(String threadId) {
     return Future.error(_error());
   }
 

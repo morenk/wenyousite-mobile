@@ -4,9 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
-import 'package:wenyousite_mobile/core/widgets/wenyou_discussion_scroll_policy.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_markdown.dart';
-
 import '../../support/deterministic_test_fonts.dart';
 
 void main() {
@@ -334,7 +332,7 @@ void main() {
     expect(paragraph.selections, isEmpty);
   });
 
-  testWidgets('长讨论楼层滑出缓存邻域后仍驻留且回来不重建', (tester) async {
+  testWidgets('长讨论楼层滑出缓存邻域后释放，回来只重建邻近正文', (tester) async {
     final controller = ScrollController();
     final builds = <int, int>{};
     final disposals = <int>{};
@@ -349,7 +347,7 @@ void main() {
             scrollCacheExtent: const ScrollCacheExtent.viewport(2.0),
             itemExtent: 160,
             itemCount: 60,
-            itemBuilder: (context, index) => DiscussionKeepAlive(
+            itemBuilder: (context, index) => KeyedSubtree(
               child: _LifecycleProbe(
                 key: ValueKey('markdown-$index'),
                 index: index,
@@ -372,10 +370,10 @@ void main() {
     controller.jumpTo(controller.position.maxScrollExtent);
     await tester.pump();
 
-    expect(disposals, isNot(contains(0)));
+    expect(disposals, contains(0));
     expect(
       find.byKey(const ValueKey('markdown-0'), skipOffstage: false),
-      findsOneWidget,
+      findsNothing,
     );
     expect(find.byKey(const ValueKey('markdown-59')), findsOneWidget);
 
@@ -383,7 +381,7 @@ void main() {
     await tester.pump();
 
     expect(find.byKey(const ValueKey('markdown-0')), findsOneWidget);
-    expect(builds[0], 1);
+    expect(builds[0], 2);
 
     await tester.pumpWidget(const SizedBox.shrink());
     expect(disposals, contains(0));

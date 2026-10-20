@@ -1,9 +1,9 @@
-import 'package:markdown/markdown.dart' as md;
 import 'package:wenyousite_mobile/core/markdown/markdown_alignment.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_dice_contract.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_editable_block_syntax.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_inline_source.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_list_structure.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_plain_text_preview.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_source_protection.dart';
 
 class MarkdownContent {
@@ -12,7 +12,7 @@ class MarkdownContent {
   static final _emptyImage = RegExp(r'!\[[^\]]*\]\(\s*\)');
   static final _emptyLink = RegExp(r'\[[^\]]*\]\(\s*\)');
   static final _image = RegExp(r'!\[[^\]]*\]\(\s*[^)\s]+[^)]*\)');
-  static final _link = RegExp(r'\[([^\]]+)\]\(\s*[^)\s]+[^)]*\)');
+  static final _link = RegExp(r'\[([^\]]+)\]\(\s*([^)\s]+)[^)]*\)');
   static final _httpAutolink = RegExp(
     r'<https?://[^\s<>]+>',
     caseSensitive: false,
@@ -35,19 +35,6 @@ class MarkdownContent {
   );
   static final _diceNode = RegExp(
     r'^\[\[dice:v1:([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}):([^\]\r\n]+)\]\]',
-    caseSensitive: false,
-  );
-  static final _previewImage = RegExp(
-    r'!\[([^\]]*)\]\(\s*[^)\s]+[^)]*\)',
-    unicode: true,
-  );
-  static final _previewUrl = RegExp(
-    r'https?://[^\s<>()]+',
-    caseSensitive: false,
-    unicode: true,
-  );
-  static final _previewDice = RegExp(
-    r'\[\[dice:v1:[0-9a-f-]+:([^\]\r\n]+)\]\]',
     caseSensitive: false,
   );
   static final _taskList = RegExp(
@@ -539,31 +526,23 @@ class MarkdownContent {
   static bool isSafeImage(Uri uri) =>
       uri.scheme == 'https' || uri.scheme == 'http';
 
-  static String toPlainTextPreview(String markdown, {int maxLength = 180}) {
+  static String toPlainTextPreview(
+    String markdown, {
+    int maxLength = 180,
+    Map<String, String> mentionLabels = const {},
+    Map<String, String> diceLabels = const {},
+    bool showUnresolvedDiceResult = false,
+  }) {
     if (maxLength <= 0) return '';
-    final projection =
-        MarkdownInlineSource.stripHtml(
-              MarkdownAlignmentContract.removeMarkerLines(normalize(markdown)),
-            )
-            .replaceAllMapped(
-              _previewDice,
-              (match) => '[${match.group(1)!.trim()}]',
-            )
-            .replaceAll(_previewImage, '[图片]')
-            .replaceAllMapped(_link, (match) => match.group(1) ?? '[链接]')
-            .replaceAll(_httpAutolink, '[链接]')
-            .replaceAll(_previewUrl, '[链接]')
-            .replaceAll(RegExp(r'(^|\n)\s{0,3}(?:[#>+\-]|\d+[.)])\s*'), ' ');
-    final visible = md.Document(encodeHtml: false)
-        .parseInline(projection)
-        .map((node) => node.textContent)
-        .join()
-        .replaceAll(RegExp(r'[`*_~|]'), '')
-        .replaceAll(RegExp(r'\s+', unicode: true), ' ')
-        .trim();
-    final runes = visible.runes.toList(growable: false);
-    if (runes.length <= maxLength) return visible;
-    return '${String.fromCharCodes(runes.take(maxLength - 1))}…';
+    return markdownPlainTextPreview(
+      MarkdownAlignmentContract.prepareForPreview(
+        MarkdownSourceProtection.prepareForReader(markdown),
+      ),
+      maxLength: maxLength,
+      mentionLabels: mentionLabels,
+      diceLabels: diceLabels,
+      showUnresolvedDiceResult: showUnresolvedDiceResult,
+    );
   }
 
   static String renderDiceForDisplay(

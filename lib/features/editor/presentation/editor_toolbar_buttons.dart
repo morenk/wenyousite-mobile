@@ -32,8 +32,8 @@ class WenyouEditorToolbarButton extends StatelessWidget {
       onPressed: enabled ? () => onPressed() : null,
       isSelected: selected,
       style: _editorIconButtonStyle(tokens, selected: selected),
-      selectedIcon: WenyouIcon(icon, color: tokens.like),
-      icon: WenyouIcon(icon, color: tokens.text),
+      selectedIcon: WenyouIcon(icon),
+      icon: WenyouIcon(icon),
       tooltip: label,
     );
   }
@@ -92,9 +92,9 @@ class WenyouEditorTrayButton extends StatelessWidget {
       tooltip: label,
       isSelected: selected,
       style: _editorIconButtonStyle(tokens, selected: selected),
-      selectedIcon: WenyouIcon(icon, color: tokens.like),
+      selectedIcon: WenyouIcon(icon),
       onPressed: enabled ? onPressed : null,
-      icon: WenyouIcon(icon, color: tokens.text),
+      icon: WenyouIcon(icon),
     );
   }
 }
@@ -133,13 +133,22 @@ ButtonStyle _editorIconButtonStyle(
   required bool selected,
 }) {
   return ButtonStyle(
-    backgroundColor: WidgetStatePropertyAll(Colors.transparent),
+    backgroundColor: WidgetStateProperty.resolveWith(
+      (states) => !states.contains(WidgetState.disabled) && selected
+          ? tokens.accentedBackground
+          : Colors.transparent,
+    ),
     foregroundColor: WidgetStateProperty.resolveWith(
       (states) => states.contains(WidgetState.disabled)
           ? tokens.mutedText
           : selected
-          ? tokens.like
+          ? tokens.onAccentedBackground
           : tokens.text,
+    ),
+    shape: WidgetStatePropertyAll(
+      RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(tokens.radiusControl),
+      ),
     ),
   );
 }

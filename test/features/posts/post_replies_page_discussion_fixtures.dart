@@ -11,6 +11,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/app/app_capabilities.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
+import 'package:wenyousite_mobile/core/navigation/navigation_link_writer.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/network/session_remote.dart';
 import 'package:wenyousite_mobile/core/storage/token_store.dart';
@@ -27,8 +28,11 @@ import 'package:wenyousite_mobile/features/posts/presentation/post_replies_page.
 import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
 import 'package:wenyousite_mobile/features/stickers/application/sticker_repository_ports.dart';
 import 'package:wenyousite_mobile/features/stickers/domain/sticker_models.dart';
+import 'package:wenyousite_mobile/features/thread_identity/identity_models.dart';
+import 'package:wenyousite_mobile/features/thread_identity/identity_ports.dart';
 
 import '../../support/button_finder.dart';
+import '../../support/discussion_window_fixture.dart';
 import '../../support/memory_pending_media_file_store.dart';
 import 'post_replies_page_upload_operations.dart';
 
@@ -37,11 +41,16 @@ Future<ProviderContainer> postRepliesPageTestPostContainer(
   String? userId,
   PostRepliesPageTestFakeStickerRepository? stickerRepository,
   ReaderMarkdownClipboardWriter? clipboardWriter,
+  NavigationLinkWriter? linkWriter,
   bool markdownAlignment = false,
   bool markdownImageAlignment = false,
+  ThreadIdentityRepository? identityRepository,
+  List<Override> extraOverrides = const [],
 }) async {
   final container = ProviderContainer(
     overrides: [
+      if (identityRepository != null)
+        threadIdentityRepositoryProvider.overrideWithValue(identityRepository),
       memoryPendingMediaFileStoreOverride(),
       appCapabilitiesProvider.overrideWithValue(
         AppCapabilities(
@@ -73,10 +82,13 @@ Future<ProviderContainer> postRepliesPageTestPostContainer(
         (_) async =>
             const PostThreadContext(isPrivate: false, canManageThread: false),
       ),
+      if (linkWriter != null)
+        navigationLinkWriterProvider.overrideWithValue(linkWriter),
       if (clipboardWriter != null)
         readerMarkdownClipboardWriterProvider.overrideWithValue(
           clipboardWriter,
         ),
+      ...extraOverrides,
     ],
   );
   if (userId != null) {
@@ -196,7 +208,9 @@ typedef PostRepliesPageTestUpdateHandler =
       required int version,
     });
 
-class PostRepliesPageTestFakePostRepository implements PostRepository {
+class PostRepliesPageTestFakePostRepository
+    with PostWindowFixture
+    implements PostRepository {
   PostRepliesPageTestFakePostRepository({
     this.createCompleter,
     this.onFetchPost,
@@ -305,9 +319,13 @@ class PostRepliesPageTestFakePostRepository implements PostRepository {
 
   @override
   Future<PostItem> upsertBody({
+    bool? textColorSupported,
     required String subthreadId,
     required String content,
     int? version,
+    String? identityToken,
+    String? identityId,
+    PostIdentityMode? identityMode,
   }) {
     throw UnsupportedError('not used');
   }
@@ -490,6 +508,7 @@ PostItem postRepliesPageTestReply(
   PostAuthor author, {
   int version = 1,
   bool isDeleted = false,
+  DateTime? editedAt,
 }) {
   final createdAt = DateTime.utc(
     2026,
@@ -506,6 +525,7 @@ PostItem postRepliesPageTestReply(
     version: version,
     createdAt: createdAt,
     updatedAt: createdAt,
+    editedAt: editedAt,
     isBody: false,
     isDeleted: isDeleted,
     parentPostId: 'root',

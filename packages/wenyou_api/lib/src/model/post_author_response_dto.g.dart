@@ -8,6 +8,8 @@ part of 'post_author_response_dto.dart';
 
 class _$PostAuthorResponseDto extends PostAuthorResponseDto {
   @override
+  final RpIdentityResponseDto? rpIdentity;
+  @override
   final MediaDisplayResponseDto? avatarDisplay;
   @override
   final String id;
@@ -23,6 +25,7 @@ class _$PostAuthorResponseDto extends PostAuthorResponseDto {
   ]) => (PostAuthorResponseDtoBuilder()..update(updates))._build();
 
   _$PostAuthorResponseDto._({
+    this.rpIdentity,
     this.avatarDisplay,
     required this.id,
     required this.username,
@@ -42,6 +45,7 @@ class _$PostAuthorResponseDto extends PostAuthorResponseDto {
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
     return other is PostAuthorResponseDto &&
+        rpIdentity == other.rpIdentity &&
         avatarDisplay == other.avatarDisplay &&
         id == other.id &&
         username == other.username &&
@@ -52,6 +56,7 @@ class _$PostAuthorResponseDto extends PostAuthorResponseDto {
   @override
   int get hashCode {
     var _$hash = 0;
+    _$hash = $jc(_$hash, rpIdentity.hashCode);
     _$hash = $jc(_$hash, avatarDisplay.hashCode);
     _$hash = $jc(_$hash, id.hashCode);
     _$hash = $jc(_$hash, username.hashCode);
@@ -64,6 +69,7 @@ class _$PostAuthorResponseDto extends PostAuthorResponseDto {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'PostAuthorResponseDto')
+          ..add('rpIdentity', rpIdentity)
           ..add('avatarDisplay', avatarDisplay)
           ..add('id', id)
           ..add('username', username)
@@ -76,6 +82,12 @@ class _$PostAuthorResponseDto extends PostAuthorResponseDto {
 class PostAuthorResponseDtoBuilder
     implements Builder<PostAuthorResponseDto, PostAuthorResponseDtoBuilder> {
   _$PostAuthorResponseDto? _$v;
+
+  RpIdentityResponseDtoBuilder? _rpIdentity;
+  RpIdentityResponseDtoBuilder get rpIdentity =>
+      _$this._rpIdentity ??= RpIdentityResponseDtoBuilder();
+  set rpIdentity(RpIdentityResponseDtoBuilder? rpIdentity) =>
+      _$this._rpIdentity = rpIdentity;
 
   MediaDisplayResponseDtoBuilder? _avatarDisplay;
   MediaDisplayResponseDtoBuilder get avatarDisplay =>
@@ -106,6 +118,7 @@ class PostAuthorResponseDtoBuilder
   PostAuthorResponseDtoBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
+      _rpIdentity = $v.rpIdentity?.toBuilder();
       _avatarDisplay = $v.avatarDisplay?.toBuilder();
       _id = $v.id;
       _username = $v.username;
@@ -135,6 +148,7 @@ class PostAuthorResponseDtoBuilder
       _$result =
           _$v ??
           _$PostAuthorResponseDto._(
+            rpIdentity: _rpIdentity?.build(),
             avatarDisplay: _avatarDisplay?.build(),
             id: BuiltValueNullFieldError.checkNotNull(
               id,
@@ -156,6 +170,8 @@ class PostAuthorResponseDtoBuilder
     } catch (_) {
       late String _$failedField;
       try {
+        _$failedField = 'rpIdentity';
+        _rpIdentity?.build();
         _$failedField = 'avatarDisplay';
         _avatarDisplay?.build();
       } catch (e) {

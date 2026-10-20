@@ -6,6 +6,7 @@ import UIKit
 @objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
   private var imageGalleryChannel: ImageGalleryChannel?
   private var clipboardNavigationChannel: FlutterMethodChannel?
+  private var audioDocumentSaver: AudioDocumentSaverChannel?
 
   override func application(
     _ application: UIApplication,
@@ -44,6 +45,7 @@ import UIKit
     }
     imageGalleryChannel = ImageGalleryChannel(messenger: registrar.messenger())
     imageGalleryChannel?.register()
+    audioDocumentSaver = AudioDocumentSaverChannel(messenger: registrar.messenger())
     clipboardNavigationChannel = FlutterMethodChannel(
       name: "site.wenyou.app/clipboard_navigation",
       binaryMessenger: registrar.messenger()
@@ -52,6 +54,14 @@ import UIKit
       let pasteboard = UIPasteboard.general
       switch call.method {
       case "getChangeToken":
+        result("ios:\(pasteboard.changeCount)")
+      case "writeText":
+        guard let arguments = call.arguments as? [String: Any],
+              let text = arguments["text"] as? String else {
+          result(FlutterError(code: "invalid_text", message: "复制内容不可用。", details: nil))
+          return
+        }
+        pasteboard.string = text
         result("ios:\(pasteboard.changeCount)")
       case "readSnapshot":
         guard let text = pasteboard.string else {
@@ -66,6 +76,88 @@ import UIKit
         result(FlutterMethodNotImplemented)
       }
     }
+  }
+}
+
+/// 系统导出私有 MP3 文件，iOS 13 可用，不申请相册或全盘权限。
+private final class AudioDocumentSaverChannel: NSObject, UIDocumentPickerDelegate,
+  UIAdaptivePresentationControllerDelegate {
+  private let channel: FlutterMethodChannel
+  private var pending: FlutterResult?
+  private var operationId: String?
+  private weak var picker: UIDocumentPickerViewController?
+
+  init(messenger: FlutterBinaryMessenger) {
+    channel = FlutterMethodChannel(name: "site.wenyou.app/document_saver", binaryMessenger: messenger)
+    super.init()
+    channel.setMethodCallHandler { [weak self] call, result in
+      guard let self else {
+        result(FlutterError(code: "unavailable", message: "保存服务不可用。", details: nil))
+        return
+      }
+      if call.method == "cancelAudio" {
+        if let arguments = call.arguments as? [String: Any],
+           arguments["id"] as? String == self.operationId {
+          self.picker?.dismiss(animated: false)
+          self.finish(false)
+        }
+        result(nil)
+      } else if call.method == "saveAudio" {
+        self.save(call, result: result)
+      } else { result(FlutterMethodNotImplemented) }
+    }
+  }
+
+  private func save(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
+    guard pending == nil,
+      let args = call.arguments as? [String: Any],
+      let id = args["id"] as? String,
+      let path = args["filePath"] as? String,
+      let name = args["fileName"] as? String,
+      args["mimeType"] as? String == "audio/mpeg",
+      (name as NSString).lastPathComponent == name,
+      (name as NSString).pathExtension.lowercased() == "mp3"
+    else {
+      result(FlutterError(code: "invalid_audio", message: "音频保存参数不可用。", details: nil))
+      return
+    }
+    let source = URL(fileURLWithPath: path).resolvingSymlinksInPath().standardizedFileURL
+    let temporary = URL(fileURLWithPath: NSTemporaryDirectory()).resolvingSymlinksInPath().standardizedFileURL
+    let cache = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first?
+      .resolvingSymlinksInPath().standardizedFileURL
+    let roots = [temporary.path, cache?.path].compactMap { $0 }
+    guard roots.contains(where: { source.path.hasPrefix($0.hasSuffix("/") ? $0 : $0 + "/") }),
+      source.pathExtension.lowercased() == "mp3",
+      let attributes = try? FileManager.default.attributesOfItem(atPath: source.path),
+      let size = attributes[.size] as? NSNumber, size.intValue > 0,
+      size.intValue <= 30 * 1024 * 1024,
+      var presenter = UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene })
+        .flatMap({ $0.windows }).first(where: { $0.isKeyWindow })?.rootViewController
+    else {
+      result(FlutterError(code: "invalid_audio", message: "音频文件不可用。", details: nil))
+      return
+    }
+    while let next = presenter.presentedViewController { presenter = next }
+    let controller = UIDocumentPickerViewController(url: source, in: .exportToService)
+    controller.delegate = self
+    operationId = id
+    pending = result
+    picker = controller
+    presenter.present(controller, animated: true)
+    controller.presentationController?.delegate = self
+  }
+
+  func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
+    finish(!urls.isEmpty)
+  }
+  func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) { finish(false) }
+  func presentationControllerDidDismiss(_ presentationController: UIPresentationController) { finish(false) }
+  private func finish(_ saved: Bool) {
+    let completion = pending
+    pending = nil
+    operationId = nil
+    picker = nil
+    completion?(saved)
   }
 }
 

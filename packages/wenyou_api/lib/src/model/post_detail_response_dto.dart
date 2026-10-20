@@ -9,8 +9,10 @@ import 'package:wenyou_api/src/model/post_count_response_dto.dart';
 import 'package:wenyou_api/src/model/post_thread_response_dto.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:wenyou_api/src/model/parent_post_response_dto.dart';
+import 'package:wenyou_api/src/model/mention_identity_display_dto.dart';
 import 'package:wenyou_api/src/model/post_subthread_response_dto.dart';
 import 'package:wenyou_api/src/model/post_author_response_dto.dart';
+import 'package:wenyou_api/src/model/audio_media_dto.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 
@@ -19,13 +21,16 @@ part 'post_detail_response_dto.g.dart';
 /// PostDetailResponseDto
 ///
 /// Properties:
+/// * [mentionIdentities] - 渲染 canonical mention 的按 userId + 原始 label 映射，编辑继续保存原正文
 /// * [mediaDisplays] - 仅此次已授权正文中的精确来源映射；编辑保存继续使用 sourceUrl
+/// * [mediaAudios] - 本次已授权正文内的音频引用；缺失时链接按旧端规则呈现
 /// * [id]
 /// * [threadId]
 /// * [subthreadId]
 /// * [authorId]
 /// * [kind]
 /// * [floorNumber]
+/// * [replyNumber] - 根楼内固定回复编号，排序筛选与删除不重编号；主楼与正文为 null
 /// * [parentPostId]
 /// * [replyToPostId]
 /// * [clientRequestId] - 客户端创建请求幂等键；正文帖和旧客户端帖子为 null
@@ -34,6 +39,7 @@ part 'post_detail_response_dto.g.dart';
 /// * [version] - 乐观锁版本
 /// * [createdAt]
 /// * [updatedAt]
+/// * [editedAt] - 最后一次成功保存且规范化正文实际改变的服务端时间；历史与未编辑帖子为 null
 /// * [pinnedAt] - 主楼层置顶到当前子贴的时间；正文和楼中楼回复为 null
 /// * [deletedAt]
 /// * [author]
@@ -43,9 +49,17 @@ part 'post_detail_response_dto.g.dart';
 /// * [count]
 @BuiltValue()
 abstract class PostDetailResponseDto implements Built<PostDetailResponseDto, PostDetailResponseDtoBuilder> {
+  /// 渲染 canonical mention 的按 userId + 原始 label 映射，编辑继续保存原正文
+  @BuiltValueField(wireName: r'mentionIdentities')
+  BuiltList<MentionIdentityDisplayDto>? get mentionIdentities;
+
   /// 仅此次已授权正文中的精确来源映射；编辑保存继续使用 sourceUrl
   @BuiltValueField(wireName: r'mediaDisplays')
   BuiltList<MarkdownMediaDisplayResponseDto>? get mediaDisplays;
+
+  /// 本次已授权正文内的音频引用；缺失时链接按旧端规则呈现
+  @BuiltValueField(wireName: r'mediaAudios')
+  BuiltList<AudioMediaDto>? get mediaAudios;
 
   @BuiltValueField(wireName: r'id')
   String get id;
@@ -65,6 +79,10 @@ abstract class PostDetailResponseDto implements Built<PostDetailResponseDto, Pos
 
   @BuiltValueField(wireName: r'floorNumber')
   num? get floorNumber;
+
+  /// 根楼内固定回复编号，排序筛选与删除不重编号；主楼与正文为 null
+  @BuiltValueField(wireName: r'replyNumber')
+  num? get replyNumber;
 
   @BuiltValueField(wireName: r'parentPostId')
   String? get parentPostId;
@@ -93,6 +111,10 @@ abstract class PostDetailResponseDto implements Built<PostDetailResponseDto, Pos
 
   @BuiltValueField(wireName: r'updatedAt')
   DateTime get updatedAt;
+
+  /// 最后一次成功保存且规范化正文实际改变的服务端时间；历史与未编辑帖子为 null
+  @BuiltValueField(wireName: r'editedAt')
+  DateTime? get editedAt;
 
   /// 主楼层置顶到当前子贴的时间；正文和楼中楼回复为 null
   @BuiltValueField(wireName: r'pinnedAt')
@@ -139,11 +161,25 @@ class _$PostDetailResponseDtoSerializer implements PrimitiveSerializer<PostDetai
     PostDetailResponseDto object, {
     FullType specifiedType = FullType.unspecified,
   }) sync* {
+    if (object.mentionIdentities != null) {
+      yield r'mentionIdentities';
+      yield serializers.serialize(
+        object.mentionIdentities,
+        specifiedType: const FullType(BuiltList, [FullType(MentionIdentityDisplayDto)]),
+      );
+    }
     if (object.mediaDisplays != null) {
       yield r'mediaDisplays';
       yield serializers.serialize(
         object.mediaDisplays,
         specifiedType: const FullType(BuiltList, [FullType(MarkdownMediaDisplayResponseDto)]),
+      );
+    }
+    if (object.mediaAudios != null) {
+      yield r'mediaAudios';
+      yield serializers.serialize(
+        object.mediaAudios,
+        specifiedType: const FullType(BuiltList, [FullType(AudioMediaDto)]),
       );
     }
     yield r'id';
@@ -176,6 +212,13 @@ class _$PostDetailResponseDtoSerializer implements PrimitiveSerializer<PostDetai
       object.floorNumber,
       specifiedType: const FullType.nullable(num),
     );
+    if (object.replyNumber != null) {
+      yield r'replyNumber';
+      yield serializers.serialize(
+        object.replyNumber,
+        specifiedType: const FullType.nullable(num),
+      );
+    }
     yield r'parentPostId';
     yield object.parentPostId == null ? null : serializers.serialize(
       object.parentPostId,
@@ -216,6 +259,13 @@ class _$PostDetailResponseDtoSerializer implements PrimitiveSerializer<PostDetai
       object.updatedAt,
       specifiedType: const FullType(DateTime),
     );
+    if (object.editedAt != null) {
+      yield r'editedAt';
+      yield serializers.serialize(
+        object.editedAt,
+        specifiedType: const FullType.nullable(DateTime),
+      );
+    }
     if (object.pinnedAt != null) {
       yield r'pinnedAt';
       yield serializers.serialize(
@@ -276,12 +326,26 @@ class _$PostDetailResponseDtoSerializer implements PrimitiveSerializer<PostDetai
       final key = serializedList[i] as String;
       final value = serializedList[i + 1];
       switch (key) {
+        case r'mentionIdentities':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(BuiltList, [FullType(MentionIdentityDisplayDto)]),
+          ) as BuiltList<MentionIdentityDisplayDto>;
+          result.mentionIdentities.replace(valueDes);
+          break;
         case r'mediaDisplays':
           final valueDes = serializers.deserialize(
             value,
             specifiedType: const FullType(BuiltList, [FullType(MarkdownMediaDisplayResponseDto)]),
           ) as BuiltList<MarkdownMediaDisplayResponseDto>;
           result.mediaDisplays.replace(valueDes);
+          break;
+        case r'mediaAudios':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(BuiltList, [FullType(AudioMediaDto)]),
+          ) as BuiltList<AudioMediaDto>;
+          result.mediaAudios.replace(valueDes);
           break;
         case r'id':
           final valueDes = serializers.deserialize(
@@ -325,6 +389,14 @@ class _$PostDetailResponseDtoSerializer implements PrimitiveSerializer<PostDetai
           ) as num?;
           if (valueDes == null) continue;
           result.floorNumber = valueDes;
+          break;
+        case r'replyNumber':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(num),
+          ) as num?;
+          if (valueDes == null) continue;
+          result.replyNumber = valueDes;
           break;
         case r'parentPostId':
           final valueDes = serializers.deserialize(
@@ -384,6 +456,14 @@ class _$PostDetailResponseDtoSerializer implements PrimitiveSerializer<PostDetai
             specifiedType: const FullType(DateTime),
           ) as DateTime;
           result.updatedAt = valueDes;
+          break;
+        case r'editedAt':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(DateTime),
+          ) as DateTime?;
+          if (valueDes == null) continue;
+          result.editedAt = valueDes;
           break;
         case r'pinnedAt':
           final valueDes = serializers.deserialize(

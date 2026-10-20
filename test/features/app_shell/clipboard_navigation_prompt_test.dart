@@ -179,6 +179,13 @@ class _FakeClipboardGateway implements ClipboardNavigationGateway {
   int snapshotReads = 0;
 
   @override
+  Future<String?> writeText(String value) async {
+    text = value;
+    changeToken = 'android:copied';
+    return changeToken;
+  }
+
+  @override
   Future<String?> readChangeToken() async => changeToken;
 
   @override

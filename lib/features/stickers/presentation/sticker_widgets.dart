@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/media/media_audio.dart';
 import 'package:wenyousite_mobile/core/media/media_display.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
@@ -298,6 +299,8 @@ class StickerPostMarkdown extends ConsumerWidget {
     this.postVersion = 1,
     this.galleryTarget,
     this.mediaDisplays = const {},
+    this.mediaAudios = const {},
+    this.mentionLabels = const {},
     this.diceLabels = const {},
     this.diceSemantics = const {},
     this.diceDetails = const {},
@@ -316,6 +319,8 @@ class StickerPostMarkdown extends ConsumerWidget {
   final ReadingGalleryTarget? galleryTarget;
   final String data;
   final Map<String, MediaDisplay> mediaDisplays;
+  final Map<String, MediaAudio> mediaAudios;
+  final Map<String, String> mentionLabels;
   final Map<String, String> diceLabels;
   final Map<String, String> diceSemantics;
   final Map<String, WenyouDiceRollDetail> diceDetails;
@@ -357,6 +362,8 @@ class StickerPostMarkdown extends ConsumerWidget {
                         ),
             ),
       mediaDisplays: mediaDisplays,
+      mediaAudios: mediaAudios,
+      mentionLabels: mentionLabels,
       diceLabels: diceLabels,
       diceSemantics: diceSemantics,
       diceDetails: diceDetails,

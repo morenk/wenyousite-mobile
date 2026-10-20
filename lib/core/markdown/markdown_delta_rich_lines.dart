@@ -1,7 +1,9 @@
 import 'package:flutter_quill/quill_delta.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_codec_types.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_delta_inline_encoder.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_line_metadata.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_inline_boundary.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_inline_source.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_rich_line_decoder.dart';
 
 /// 将中立富文本行映射为 Delta，并通过重新解析验证可编辑语义。
@@ -13,7 +15,20 @@ final class MarkdownDeltaRichLines {
     for (final span in richLine.spans) {
       final portal = span.internalReference;
       if (portal == null) {
-        delta.insert(span.text, span.attributes);
+        // 标签形可见文字保留来源，取消代码格式后也不能变成样式。
+        // 原样保留的兼容源码不走此处。
+        final literalHtml =
+            span.text.contains('<') &&
+            MarkdownInlineSource.analyze(span.text).html.isNotEmpty;
+        delta.insert(
+          span.text,
+          literalHtml
+              ? {
+                  ...?span.attributes,
+                  MarkdownDeltaInlineEncoder.literalTextKey: true,
+                }
+              : span.attributes,
+        );
       } else {
         delta.insert({
           internalReferenceEmbed: {

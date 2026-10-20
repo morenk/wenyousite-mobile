@@ -6,6 +6,9 @@
 import 'package:wenyou_api/src/model/markdown_media_display_response_dto.dart';
 import 'package:wenyou_api/src/model/dice_roll_response_dto.dart';
 import 'package:built_collection/built_collection.dart';
+import 'package:wenyou_api/src/model/mention_identity_display_dto.dart';
+import 'package:wenyou_api/src/model/post_author_response_dto.dart';
+import 'package:wenyou_api/src/model/audio_media_dto.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 
@@ -14,16 +17,30 @@ part 'thread_body_post_response_dto.g.dart';
 /// ThreadBodyPostResponseDto
 ///
 /// Properties:
+/// * [author]
+/// * [mentionIdentities] - 渲染 canonical mention 的按 userId + 原始 label 映射，编辑继续保存原正文
 /// * [mediaDisplays] - 仅此次已授权正文中的精确来源映射；编辑保存继续使用 sourceUrl
+/// * [mediaAudios] - 本次已授权正文内的音频引用；缺失时链接按旧端规则呈现
 /// * [id]
 /// * [content]
 /// * [version]
 /// * [diceRolls]
 @BuiltValue()
 abstract class ThreadBodyPostResponseDto implements Built<ThreadBodyPostResponseDto, ThreadBodyPostResponseDtoBuilder> {
+  @BuiltValueField(wireName: r'author')
+  PostAuthorResponseDto? get author;
+
+  /// 渲染 canonical mention 的按 userId + 原始 label 映射，编辑继续保存原正文
+  @BuiltValueField(wireName: r'mentionIdentities')
+  BuiltList<MentionIdentityDisplayDto>? get mentionIdentities;
+
   /// 仅此次已授权正文中的精确来源映射；编辑保存继续使用 sourceUrl
   @BuiltValueField(wireName: r'mediaDisplays')
   BuiltList<MarkdownMediaDisplayResponseDto>? get mediaDisplays;
+
+  /// 本次已授权正文内的音频引用；缺失时链接按旧端规则呈现
+  @BuiltValueField(wireName: r'mediaAudios')
+  BuiltList<AudioMediaDto>? get mediaAudios;
 
   @BuiltValueField(wireName: r'id')
   String get id;
@@ -60,11 +77,32 @@ class _$ThreadBodyPostResponseDtoSerializer implements PrimitiveSerializer<Threa
     ThreadBodyPostResponseDto object, {
     FullType specifiedType = FullType.unspecified,
   }) sync* {
+    if (object.author != null) {
+      yield r'author';
+      yield serializers.serialize(
+        object.author,
+        specifiedType: const FullType(PostAuthorResponseDto),
+      );
+    }
+    if (object.mentionIdentities != null) {
+      yield r'mentionIdentities';
+      yield serializers.serialize(
+        object.mentionIdentities,
+        specifiedType: const FullType(BuiltList, [FullType(MentionIdentityDisplayDto)]),
+      );
+    }
     if (object.mediaDisplays != null) {
       yield r'mediaDisplays';
       yield serializers.serialize(
         object.mediaDisplays,
         specifiedType: const FullType(BuiltList, [FullType(MarkdownMediaDisplayResponseDto)]),
+      );
+    }
+    if (object.mediaAudios != null) {
+      yield r'mediaAudios';
+      yield serializers.serialize(
+        object.mediaAudios,
+        specifiedType: const FullType(BuiltList, [FullType(AudioMediaDto)]),
       );
     }
     yield r'id';
@@ -110,12 +148,33 @@ class _$ThreadBodyPostResponseDtoSerializer implements PrimitiveSerializer<Threa
       final key = serializedList[i] as String;
       final value = serializedList[i + 1];
       switch (key) {
+        case r'author':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(PostAuthorResponseDto),
+          ) as PostAuthorResponseDto;
+          result.author.replace(valueDes);
+          break;
+        case r'mentionIdentities':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(BuiltList, [FullType(MentionIdentityDisplayDto)]),
+          ) as BuiltList<MentionIdentityDisplayDto>;
+          result.mentionIdentities.replace(valueDes);
+          break;
         case r'mediaDisplays':
           final valueDes = serializers.deserialize(
             value,
             specifiedType: const FullType(BuiltList, [FullType(MarkdownMediaDisplayResponseDto)]),
           ) as BuiltList<MarkdownMediaDisplayResponseDto>;
           result.mediaDisplays.replace(valueDes);
+          break;
+        case r'mediaAudios':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(BuiltList, [FullType(AudioMediaDto)]),
+          ) as BuiltList<AudioMediaDto>;
+          result.mediaAudios.replace(valueDes);
           break;
         case r'id':
           final valueDes = serializers.deserialize(

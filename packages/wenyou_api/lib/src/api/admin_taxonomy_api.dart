@@ -35,6 +35,8 @@ class AdminTaxonomyApi {
   /// Parameters:
   /// * [createThreadCategoryDto]
   /// * [xCSRFToken] - 管理后台写操作必填
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -47,6 +49,8 @@ class AdminTaxonomyApi {
   Future<Response<AdminTaxonomyCreateCategory201Response>> adminTaxonomyCreateCategory({
     required CreateThreadCategoryDto createThreadCategoryDto,
     String? xCSRFToken,
+    int? xMarkdownContractVersion,
+    int? xTextColorVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -59,6 +63,8 @@ class AdminTaxonomyApi {
       method: r'POST',
       headers: <String, dynamic>{
         if (xCSRFToken != null) r'X-CSRF-Token': xCSRFToken,
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -145,6 +151,8 @@ class AdminTaxonomyApi {
   /// Parameters:
   /// * [createManagedTagDto]
   /// * [xCSRFToken] - 管理后台写操作必填
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -157,6 +165,8 @@ class AdminTaxonomyApi {
   Future<Response<AdminTaxonomyCreateTag201Response>> adminTaxonomyCreateTag({
     required CreateManagedTagDto createManagedTagDto,
     String? xCSRFToken,
+    int? xMarkdownContractVersion,
+    int? xTextColorVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -169,6 +179,8 @@ class AdminTaxonomyApi {
       method: r'POST',
       headers: <String, dynamic>{
         if (xCSRFToken != null) r'X-CSRF-Token': xCSRFToken,
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -254,6 +266,8 @@ class AdminTaxonomyApi {
   ///
   /// Parameters:
   /// * [xCSRFToken] - 管理后台写操作必填
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -265,6 +279,8 @@ class AdminTaxonomyApi {
   /// Throws [DioException] if API call or serialization fails
   Future<Response<AdminTaxonomyListCategories200Response>> adminTaxonomyListCategories({
     String? xCSRFToken,
+    int? xMarkdownContractVersion,
+    int? xTextColorVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -277,6 +293,8 @@ class AdminTaxonomyApi {
       method: r'GET',
       headers: <String, dynamic>{
         if (xCSRFToken != null) r'X-CSRF-Token': xCSRFToken,
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -342,6 +360,8 @@ class AdminTaxonomyApi {
   ///
   /// Parameters:
   /// * [xCSRFToken] - 管理后台写操作必填
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -353,6 +373,8 @@ class AdminTaxonomyApi {
   /// Throws [DioException] if API call or serialization fails
   Future<Response<AdminTaxonomyListTags200Response>> adminTaxonomyListTags({
     String? xCSRFToken,
+    int? xMarkdownContractVersion,
+    int? xTextColorVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -365,6 +387,8 @@ class AdminTaxonomyApi {
       method: r'GET',
       headers: <String, dynamic>{
         if (xCSRFToken != null) r'X-CSRF-Token': xCSRFToken,
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -432,6 +456,8 @@ class AdminTaxonomyApi {
   /// * [id]
   /// * [updateThreadCategoryDto]
   /// * [xCSRFToken] - 管理后台写操作必填
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -445,6 +471,8 @@ class AdminTaxonomyApi {
     required String id,
     required UpdateThreadCategoryDto updateThreadCategoryDto,
     String? xCSRFToken,
+    int? xMarkdownContractVersion,
+    int? xTextColorVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -457,6 +485,8 @@ class AdminTaxonomyApi {
       method: r'PATCH',
       headers: <String, dynamic>{
         if (xCSRFToken != null) r'X-CSRF-Token': xCSRFToken,
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -544,6 +574,8 @@ class AdminTaxonomyApi {
   /// * [id]
   /// * [updateManagedTagDto]
   /// * [xCSRFToken] - 管理后台写操作必填
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -557,6 +589,8 @@ class AdminTaxonomyApi {
     required String id,
     required UpdateManagedTagDto updateManagedTagDto,
     String? xCSRFToken,
+    int? xMarkdownContractVersion,
+    int? xTextColorVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -569,6 +603,8 @@ class AdminTaxonomyApi {
       method: r'PATCH',
       headers: <String, dynamic>{
         if (xCSRFToken != null) r'X-CSRF-Token': xCSRFToken,
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
         ...?headers,
       },
       extra: <String, dynamic>{

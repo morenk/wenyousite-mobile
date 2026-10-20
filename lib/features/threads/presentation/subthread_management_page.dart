@@ -11,6 +11,7 @@ import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_reorder_feedback.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_settings_body.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/threads/application/subthread_management_controller.dart';
 import 'package:wenyousite_mobile/features/threads/domain/subthread_management_models.dart';
@@ -23,7 +24,11 @@ class SubthreadManagementPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('子贴管理')),
+      backgroundColor: wenyouPersonalPageBackground(context),
+      appBar: AppBar(
+        backgroundColor: wenyouPersonalPageBackground(context),
+        title: const Text('子贴管理'),
+      ),
       body: SubthreadManagementContent(threadId: threadId),
     );
   }
@@ -130,19 +135,22 @@ class _SubthreadDirectory extends ConsumerWidget {
                     ),
               itemBuilder: (context, index) {
                 final item = items[index];
-                return Column(
+                return Padding(
                   key: ValueKey(item.id),
-                  children: [
-                    _SubthreadRow(
-                      threadId: threadId,
-                      item: item,
-                      index: index,
-                      itemCount: items.length,
-                      state: state,
-                    ),
-                    if (index < items.length - 1)
-                      Divider(height: 1, color: tokens.border),
-                  ],
+                  padding: EdgeInsets.only(
+                    bottom: index < items.length - 1 ? tokens.space12 : 0,
+                  ),
+                  child: WenyouSettingsGroup(
+                    children: [
+                      _SubthreadRow(
+                        threadId: threadId,
+                        item: item,
+                        index: index,
+                        itemCount: items.length,
+                        state: state,
+                      ),
+                    ],
+                  ),
                 );
               },
             ),
@@ -298,17 +306,14 @@ class _SubthreadsFatalState extends StatelessWidget {
   Widget build(BuildContext context) {
     return WenyouPageBody(
       maxWidth: 520,
-      child: WenyouEmptyState(
+      child: WenyouRetryFailure(
         icon: WenyouIconIds.contentList,
         title: '子贴管理暂时不可用',
         message: failure?.userMessage ?? '请检查网络后重试。',
-        detail: wenyouFailureDetail(failure),
-        action: FilledButton.icon(
-          key: const Key('subthread-management-retry'),
-          onPressed: onRetry,
-          icon: const WenyouIcon(WenyouIconIds.actionRefresh),
-          label: const Text('重试'),
-        ),
+        failure: failure,
+        retryKey: const Key('subthread-management-retry'),
+        onRetry: onRetry,
+        retryLabel: '重试',
       ),
     );
   }

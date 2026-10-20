@@ -182,21 +182,14 @@ class _FailureState extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return WenyouPanel(
-      child: WenyouEmptyState(
-        icon: WenyouIconIds.statusOffline,
-        title: '治理决定加载失败',
-        message: state.failure?.userMessage ?? '请稍后重试。',
-        detail: wenyouFailureDetail(state.failure),
-        action: OutlinedButton.icon(
-          key: const Key('appeal-retry'),
-          onPressed: ref
-              .read(moderationAppealControllerProvider.notifier)
-              .retry,
-          icon: const WenyouIcon(WenyouIconIds.actionRefresh),
-          label: const Text('重试'),
-        ),
-      ),
+    return WenyouRetryFailure(
+      panel: true,
+      icon: WenyouIconIds.statusOffline,
+      title: '治理决定加载失败',
+      message: state.failure?.userMessage ?? '请稍后重试。',
+      failure: state.failure,
+      retryKey: const Key('appeal-retry'),
+      onRetry: ref.read(moderationAppealControllerProvider.notifier).retry,
     );
   }
 }

@@ -1,5 +1,7 @@
 import 'package:flutter_quill/quill_delta.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_audio_embed.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_mention_target.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_reference.dart';
 
 /// Projects Markdown or an editor Delta to the text visible to a reader.
@@ -11,15 +13,19 @@ abstract final class MarkdownClipboardText {
   static String project(
     String markdown, {
     Map<String, String> diceLabels = const {},
+    Map<String, String> mentionLabels = const {},
   }) => projectDelta(
     MarkdownDeltaCodec.decode(markdown, imageAlignment: true).delta,
     diceLabels: diceLabels,
+    mentionLabels: mentionLabels,
   );
 
   static String projectDelta(
     Delta delta, {
     Map<String, String> diceLabels = const {},
+    Map<String, String> mentionLabels = const {},
   }) {
+    delta = MarkdownAudioEmbed.expand(delta);
     final lines = <String>[];
     final line = StringBuffer();
     var omitLine = false;
@@ -60,7 +66,12 @@ abstract final class MarkdownClipboardText {
       final payload = Map<String, dynamic>.from(rawPayload);
       switch (type) {
         case MarkdownDeltaCodec.mentionEmbed:
-          line.write(payload['label'] as String? ?? '@全体玩家');
+          final label = payload['label'] as String? ?? '@全体玩家';
+          final display = MarkdownMentionTarget.projectedLabel(
+            payload,
+            mentionLabels,
+          );
+          line.write(display == null ? label : '@$display');
         case MarkdownDeltaCodec.diceEmbed:
           final nodeId = (payload['nodeId'] as String?)?.toLowerCase();
           final notation = payload['notation'] as String? ?? '骰子';

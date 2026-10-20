@@ -1,8 +1,11 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyou_api/wenyou_api.dart';
+import 'package:wenyousite_mobile/app/app_capabilities.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_write_guard.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
+import 'package:wenyousite_mobile/core/network/media_audio_mapper.dart';
 import 'package:wenyousite_mobile/core/network/media_display_mapper.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/drafts/application/content_draft_repository_ports.dart';
@@ -12,7 +15,14 @@ export 'package:wenyousite_mobile/features/drafts/application/content_draft_repo
     show ContentDraftRepository, contentDraftRepositoryProvider;
 
 class ApiContentDraftRepository implements ContentDraftRepository {
-  ApiContentDraftRepository(this._api);
+  ApiContentDraftRepository(
+    this._api, {
+    this.roleMentionsSupported = false,
+    this.textColorSupported = false,
+  });
+
+  final bool roleMentionsSupported;
+  final bool textColorSupported;
 
   final DraftsApi _api;
 
@@ -59,8 +69,16 @@ class ApiContentDraftRepository implements ContentDraftRepository {
     required String clientRequestId,
   }) async {
     try {
+      requireMentionWriteSupport(content, supported: roleMentionsSupported);
+      requireTextColorWriteSupport(content, supported: textColorSupported);
       final payload = CreateDraftDto((builder) {
         builder
+          ..markdownContractVersion = roleMentionsSupported
+              ? CreateDraftDtoMarkdownContractVersionEnum.number6
+              : null
+          ..textColorVersion = textColorSupported
+              ? CreateDraftDtoTextColorVersionEnum.number1
+              : null
           ..content = content
           ..clientRequestId = clientRequestId;
         if (slot != null) builder.slot = slot;
@@ -85,8 +103,16 @@ class ApiContentDraftRepository implements ContentDraftRepository {
     required int version,
   }) async {
     try {
+      requireMentionWriteSupport(content, supported: roleMentionsSupported);
+      requireTextColorWriteSupport(content, supported: textColorSupported);
       final payload = UpdateDraftDto(
         (builder) => builder
+          ..markdownContractVersion = roleMentionsSupported
+              ? UpdateDraftDtoMarkdownContractVersionEnum.number6
+              : null
+          ..textColorVersion = textColorSupported
+              ? UpdateDraftDtoTextColorVersionEnum.number1
+              : null
           ..content = content
           ..version = version,
       );
@@ -125,6 +151,7 @@ class ApiContentDraftRepository implements ContentDraftRepository {
       slot: dto.slot.toInt(),
       content: dto.content,
       mediaDisplays: mapMarkdownMediaDisplays(dto.mediaDisplays),
+      mediaAudios: mapMediaAudios(dto.mediaAudios),
       version: dto.version.toInt(),
       createdAt: dto.createdAt,
       updatedAt: dto.updatedAt,
@@ -135,5 +162,11 @@ class ApiContentDraftRepository implements ContentDraftRepository {
 final apiContentDraftRepositoryProvider = Provider<ContentDraftRepository>((
   ref,
 ) {
-  return ApiContentDraftRepository(ref.watch(wenyouApiProvider).getDraftsApi());
+  return ApiContentDraftRepository(
+    ref.watch(wenyouApiProvider).getDraftsApi(),
+    textColorSupported: ref.watch(appCapabilitiesProvider).textColorSupported,
+    roleMentionsSupported: ref
+        .watch(appCapabilitiesProvider)
+        .roleMentionsSupported,
+  );
 });

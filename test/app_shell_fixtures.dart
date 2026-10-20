@@ -125,6 +125,7 @@ class AppShellTestFakeMobileUpdateService
     this.clientPlatform = MobileClientPlatform.android,
     this.releaseAvailable = true,
     this.targetVersion,
+    this.availabilityMessage,
     this.availabilityCompleter,
   });
 
@@ -132,6 +133,7 @@ class AppShellTestFakeMobileUpdateService
   final MobileClientPlatform clientPlatform;
   bool releaseAvailable;
   final String? targetVersion;
+  final String? availabilityMessage;
   final Completer<MobileUpdateAvailability>? availabilityCompleter;
   int launchCalls = 0;
   int availabilityChecks = 0;
@@ -148,7 +150,7 @@ class AppShellTestFakeMobileUpdateService
     if (pending != null) return pending.future;
     return releaseAvailable
         ? MobileUpdateAvailability.available(targetVersion: targetVersion)
-        : const MobileUpdateAvailability.preparing();
+        : MobileUpdateAvailability.preparing(userMessage: availabilityMessage);
   }
 
   @override

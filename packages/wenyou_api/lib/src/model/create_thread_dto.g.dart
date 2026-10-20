@@ -6,6 +6,62 @@ part of 'create_thread_dto.dart';
 // BuiltValueGenerator
 // **************************************************************************
 
+const CreateThreadDtoTextColorVersionEnum
+_$createThreadDtoTextColorVersionEnum_number1 =
+    const CreateThreadDtoTextColorVersionEnum._('number1');
+const CreateThreadDtoTextColorVersionEnum
+_$createThreadDtoTextColorVersionEnum_unknownDefaultOpenApi =
+    const CreateThreadDtoTextColorVersionEnum._('unknownDefaultOpenApi');
+
+CreateThreadDtoTextColorVersionEnum
+_$createThreadDtoTextColorVersionEnumValueOf(String name) {
+  switch (name) {
+    case 'number1':
+      return _$createThreadDtoTextColorVersionEnum_number1;
+    case 'unknownDefaultOpenApi':
+      return _$createThreadDtoTextColorVersionEnum_unknownDefaultOpenApi;
+    default:
+      return _$createThreadDtoTextColorVersionEnum_unknownDefaultOpenApi;
+  }
+}
+
+final BuiltSet<CreateThreadDtoTextColorVersionEnum>
+_$createThreadDtoTextColorVersionEnumValues =
+    BuiltSet<CreateThreadDtoTextColorVersionEnum>(
+      const <CreateThreadDtoTextColorVersionEnum>[
+        _$createThreadDtoTextColorVersionEnum_number1,
+        _$createThreadDtoTextColorVersionEnum_unknownDefaultOpenApi,
+      ],
+    );
+
+const CreateThreadDtoMarkdownContractVersionEnum
+_$createThreadDtoMarkdownContractVersionEnum_number6 =
+    const CreateThreadDtoMarkdownContractVersionEnum._('number6');
+const CreateThreadDtoMarkdownContractVersionEnum
+_$createThreadDtoMarkdownContractVersionEnum_unknownDefaultOpenApi =
+    const CreateThreadDtoMarkdownContractVersionEnum._('unknownDefaultOpenApi');
+
+CreateThreadDtoMarkdownContractVersionEnum
+_$createThreadDtoMarkdownContractVersionEnumValueOf(String name) {
+  switch (name) {
+    case 'number6':
+      return _$createThreadDtoMarkdownContractVersionEnum_number6;
+    case 'unknownDefaultOpenApi':
+      return _$createThreadDtoMarkdownContractVersionEnum_unknownDefaultOpenApi;
+    default:
+      return _$createThreadDtoMarkdownContractVersionEnum_unknownDefaultOpenApi;
+  }
+}
+
+final BuiltSet<CreateThreadDtoMarkdownContractVersionEnum>
+_$createThreadDtoMarkdownContractVersionEnumValues =
+    BuiltSet<CreateThreadDtoMarkdownContractVersionEnum>(
+      const <CreateThreadDtoMarkdownContractVersionEnum>[
+        _$createThreadDtoMarkdownContractVersionEnum_number6,
+        _$createThreadDtoMarkdownContractVersionEnum_unknownDefaultOpenApi,
+      ],
+    );
+
 const CreateThreadDtoVisibilityEnum _$createThreadDtoVisibilityEnum_PUBLIC =
     const CreateThreadDtoVisibilityEnum._('PUBLIC');
 const CreateThreadDtoVisibilityEnum _$createThreadDtoVisibilityEnum_PRIVATE =
@@ -38,9 +94,85 @@ _$createThreadDtoVisibilityEnumValues = BuiltSet<CreateThreadDtoVisibilityEnum>(
   ],
 );
 
+Serializer<CreateThreadDtoTextColorVersionEnum>
+_$createThreadDtoTextColorVersionEnumSerializer =
+    _$CreateThreadDtoTextColorVersionEnumSerializer();
+Serializer<CreateThreadDtoMarkdownContractVersionEnum>
+_$createThreadDtoMarkdownContractVersionEnumSerializer =
+    _$CreateThreadDtoMarkdownContractVersionEnumSerializer();
 Serializer<CreateThreadDtoVisibilityEnum>
 _$createThreadDtoVisibilityEnumSerializer =
     _$CreateThreadDtoVisibilityEnumSerializer();
+
+class _$CreateThreadDtoTextColorVersionEnumSerializer
+    implements PrimitiveSerializer<CreateThreadDtoTextColorVersionEnum> {
+  static const Map<String, Object> _toWire = const <String, Object>{
+    'number1': 1,
+    'unknownDefaultOpenApi': 11184809,
+  };
+  static const Map<Object, String> _fromWire = const <Object, String>{
+    1: 'number1',
+    11184809: 'unknownDefaultOpenApi',
+  };
+
+  @override
+  final Iterable<Type> types = const <Type>[
+    CreateThreadDtoTextColorVersionEnum,
+  ];
+  @override
+  final String wireName = 'CreateThreadDtoTextColorVersionEnum';
+
+  @override
+  Object serialize(
+    Serializers serializers,
+    CreateThreadDtoTextColorVersionEnum object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => _toWire[object.name] ?? object.name;
+
+  @override
+  CreateThreadDtoTextColorVersionEnum deserialize(
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => CreateThreadDtoTextColorVersionEnum.valueOf(
+    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
+  );
+}
+
+class _$CreateThreadDtoMarkdownContractVersionEnumSerializer
+    implements PrimitiveSerializer<CreateThreadDtoMarkdownContractVersionEnum> {
+  static const Map<String, Object> _toWire = const <String, Object>{
+    'number6': 6,
+    'unknownDefaultOpenApi': 11184809,
+  };
+  static const Map<Object, String> _fromWire = const <Object, String>{
+    6: 'number6',
+    11184809: 'unknownDefaultOpenApi',
+  };
+
+  @override
+  final Iterable<Type> types = const <Type>[
+    CreateThreadDtoMarkdownContractVersionEnum,
+  ];
+  @override
+  final String wireName = 'CreateThreadDtoMarkdownContractVersionEnum';
+
+  @override
+  Object serialize(
+    Serializers serializers,
+    CreateThreadDtoMarkdownContractVersionEnum object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => _toWire[object.name] ?? object.name;
+
+  @override
+  CreateThreadDtoMarkdownContractVersionEnum deserialize(
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => CreateThreadDtoMarkdownContractVersionEnum.valueOf(
+    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
+  );
+}
 
 class _$CreateThreadDtoVisibilityEnumSerializer
     implements PrimitiveSerializer<CreateThreadDtoVisibilityEnum> {
@@ -79,6 +211,10 @@ class _$CreateThreadDtoVisibilityEnumSerializer
 
 class _$CreateThreadDto extends CreateThreadDto {
   @override
+  final CreateThreadDtoTextColorVersionEnum? textColorVersion;
+  @override
+  final CreateThreadDtoMarkdownContractVersionEnum? markdownContractVersion;
+  @override
   final String? clientRequestId;
   @override
   final String? title;
@@ -97,6 +233,8 @@ class _$CreateThreadDto extends CreateThreadDto {
       (CreateThreadDtoBuilder()..update(updates))._build();
 
   _$CreateThreadDto._({
+    this.textColorVersion,
+    this.markdownContractVersion,
     this.clientRequestId,
     this.title,
     this.category,
@@ -116,6 +254,8 @@ class _$CreateThreadDto extends CreateThreadDto {
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
     return other is CreateThreadDto &&
+        textColorVersion == other.textColorVersion &&
+        markdownContractVersion == other.markdownContractVersion &&
         clientRequestId == other.clientRequestId &&
         title == other.title &&
         category == other.category &&
@@ -128,6 +268,8 @@ class _$CreateThreadDto extends CreateThreadDto {
   @override
   int get hashCode {
     var _$hash = 0;
+    _$hash = $jc(_$hash, textColorVersion.hashCode);
+    _$hash = $jc(_$hash, markdownContractVersion.hashCode);
     _$hash = $jc(_$hash, clientRequestId.hashCode);
     _$hash = $jc(_$hash, title.hashCode);
     _$hash = $jc(_$hash, category.hashCode);
@@ -142,6 +284,8 @@ class _$CreateThreadDto extends CreateThreadDto {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'CreateThreadDto')
+          ..add('textColorVersion', textColorVersion)
+          ..add('markdownContractVersion', markdownContractVersion)
           ..add('clientRequestId', clientRequestId)
           ..add('title', title)
           ..add('category', category)
@@ -156,6 +300,19 @@ class _$CreateThreadDto extends CreateThreadDto {
 class CreateThreadDtoBuilder
     implements Builder<CreateThreadDto, CreateThreadDtoBuilder> {
   _$CreateThreadDto? _$v;
+
+  CreateThreadDtoTextColorVersionEnum? _textColorVersion;
+  CreateThreadDtoTextColorVersionEnum? get textColorVersion =>
+      _$this._textColorVersion;
+  set textColorVersion(CreateThreadDtoTextColorVersionEnum? textColorVersion) =>
+      _$this._textColorVersion = textColorVersion;
+
+  CreateThreadDtoMarkdownContractVersionEnum? _markdownContractVersion;
+  CreateThreadDtoMarkdownContractVersionEnum? get markdownContractVersion =>
+      _$this._markdownContractVersion;
+  set markdownContractVersion(
+    CreateThreadDtoMarkdownContractVersionEnum? markdownContractVersion,
+  ) => _$this._markdownContractVersion = markdownContractVersion;
 
   String? _clientRequestId;
   String? get clientRequestId => _$this._clientRequestId;
@@ -196,6 +353,8 @@ class CreateThreadDtoBuilder
   CreateThreadDtoBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
+      _textColorVersion = $v.textColorVersion;
+      _markdownContractVersion = $v.markdownContractVersion;
       _clientRequestId = $v.clientRequestId;
       _title = $v.title;
       _category = $v.category;
@@ -227,6 +386,8 @@ class CreateThreadDtoBuilder
       _$result =
           _$v ??
           _$CreateThreadDto._(
+            textColorVersion: textColorVersion,
+            markdownContractVersion: markdownContractVersion,
             clientRequestId: clientRequestId,
             title: title,
             category: category,

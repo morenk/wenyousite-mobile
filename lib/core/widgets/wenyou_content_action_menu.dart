@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/core/navigation/navigation_link_writer.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_anchored_popover.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_modal_action_menu.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_snack_bar.dart';
@@ -115,6 +117,22 @@ class PostCardActionMenu extends StatelessWidget {
       anchorBuilder: anchorBuilder,
     );
   }
+}
+
+Future<void> copyPostCardLink(
+  BuildContext context,
+  String value,
+  String successMessage,
+) {
+  final writer = ProviderScope.containerOf(
+    context,
+    listen: false,
+  ).read(navigationLinkWriterProvider);
+  return copyPostCardContent(
+    context,
+    successMessage,
+    write: () => writer(value),
+  );
 }
 
 Future<void> copyPostCardValue(

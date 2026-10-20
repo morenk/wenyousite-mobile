@@ -7,6 +7,7 @@ import 'package:wenyousite_mobile/core/network/media_display_mapper.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/notifications/application/notification_repository_ports.dart';
 import 'package:wenyousite_mobile/features/notifications/domain/notification_models.dart';
+import 'package:wenyousite_mobile/features/thread_identity/identity_mapping.dart';
 
 export 'package:wenyousite_mobile/features/notifications/application/notification_repository_ports.dart'
     show NotificationRepository, notificationRepositoryProvider;
@@ -119,6 +120,7 @@ class ApiNotificationRepository implements NotificationRepository {
           : NotificationPayload(
               action: payload.action,
               actorName: payload.actorName,
+              rpIdentity: mapRpIdentity(payload.rpIdentity),
               replyTargetUserId: payload.replyTargetUserId,
               replyTargetName: payload.replyTargetName,
               preview: payload.preview,

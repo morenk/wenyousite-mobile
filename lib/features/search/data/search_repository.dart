@@ -5,6 +5,7 @@ import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/network/api_call.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
+import 'package:wenyousite_mobile/core/network/media_audio_mapper.dart';
 import 'package:wenyousite_mobile/core/network/media_display_mapper.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/moments/data/moment_search_mapper.dart';
@@ -13,6 +14,7 @@ import 'package:wenyousite_mobile/features/search/application/search_repository_
 import 'package:wenyousite_mobile/features/search/domain/search_models.dart';
 import 'package:wenyousite_mobile/features/thread_feed/thread_feed_mapping.dart';
 import 'package:wenyousite_mobile/features/thread_feed/thread_feed_models.dart';
+import 'package:wenyousite_mobile/features/thread_identity/identity_mapping.dart';
 
 export 'package:wenyousite_mobile/features/search/application/search_repository_ports.dart'
     show SearchRepository, searchRepositoryProvider;
@@ -238,9 +240,14 @@ class ApiSearchRepository implements SearchRepository {
       parentPostId: dto.parentPostId,
       content: dto.content,
       mediaDisplays: mapMarkdownMediaDisplays(dto.mediaDisplays),
-      preview: MarkdownContent.toPlainTextPreview(dto.content),
+      mediaAudios: mapMediaAudios(dto.mediaAudios),
+      preview: MarkdownContent.toPlainTextPreview(
+        dto.content,
+        mentionLabels: mapMentionIdentityLabels(dto.mentionIdentities),
+      ),
       authorId: dto.author.id,
       authorName: dto.author.username,
+      rpIdentity: mapRpIdentity(dto.author.rpIdentity),
       threadId: dto.thread.id,
       threadTitle: dto.thread.title,
       subthreadId: dto.subthread.id,

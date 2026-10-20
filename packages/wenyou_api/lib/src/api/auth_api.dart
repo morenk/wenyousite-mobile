@@ -46,6 +46,8 @@ class AuthApi {
   ///
   /// Parameters:
   /// * [changePasswordDto]
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -57,6 +59,8 @@ class AuthApi {
   /// Throws [DioException] if API call or serialization fails
   Future<Response<AuthChangePassword200Response>> authChangePassword({
     required ChangePasswordDto changePasswordDto,
+    int? xMarkdownContractVersion,
+    int? xTextColorVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -68,6 +72,8 @@ class AuthApi {
     final _options = Options(
       method: r'POST',
       headers: <String, dynamic>{
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -147,6 +153,8 @@ class AuthApi {
   ///
   /// Parameters:
   /// * [forgotPasswordDto]
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -158,6 +166,8 @@ class AuthApi {
   /// Throws [DioException] if API call or serialization fails
   Future<Response<AuthForgotPassword200Response>> authForgotPassword({
     required ForgotPasswordDto forgotPasswordDto,
+    int? xMarkdownContractVersion,
+    int? xTextColorVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -169,6 +179,8 @@ class AuthApi {
     final _options = Options(
       method: r'POST',
       headers: <String, dynamic>{
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -241,6 +253,8 @@ class AuthApi {
   ///
   ///
   /// Parameters:
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -251,6 +265,8 @@ class AuthApi {
   /// Returns a [Future] containing a [Response] with a [AuthListSessions200Response] as data
   /// Throws [DioException] if API call or serialization fails
   Future<Response<AuthListSessions200Response>> authListSessions({
+    int? xMarkdownContractVersion,
+    int? xTextColorVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -262,6 +278,8 @@ class AuthApi {
     final _options = Options(
       method: r'GET',
       headers: <String, dynamic>{
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -322,6 +340,8 @@ class AuthApi {
   /// Parameters:
   /// * [loginDto]
   /// * [xClientPlatform] - 客户端类型：web（PC/手机浏览器）或 mobile（原生移动端）
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -334,6 +354,8 @@ class AuthApi {
   Future<Response<AuthLogin200Response>> authLogin({
     required LoginDto loginDto,
     String? xClientPlatform,
+    int? xMarkdownContractVersion,
+    int? xTextColorVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -346,6 +368,8 @@ class AuthApi {
       method: r'POST',
       headers: <String, dynamic>{
         if (xClientPlatform != null) r'X-Client-Platform': xClientPlatform,
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -419,6 +443,8 @@ class AuthApi {
   ///
   /// Parameters:
   /// * [logoutDto]
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -430,6 +456,8 @@ class AuthApi {
   /// Throws [DioException] if API call or serialization fails
   Future<Response<AuthLogout200Response>> authLogout({
     required LogoutDto logoutDto,
+    int? xMarkdownContractVersion,
+    int? xTextColorVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -441,6 +469,8 @@ class AuthApi {
     final _options = Options(
       method: r'POST',
       headers: <String, dynamic>{
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -520,6 +550,8 @@ class AuthApi {
   ///
   /// Parameters:
   /// * [refreshDto]
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -531,6 +563,8 @@ class AuthApi {
   /// Throws [DioException] if API call or serialization fails
   Future<Response<AuthRefresh200Response>> authRefresh({
     required RefreshDto refreshDto,
+    int? xMarkdownContractVersion,
+    int? xTextColorVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -542,6 +576,8 @@ class AuthApi {
     final _options = Options(
       method: r'POST',
       headers: <String, dynamic>{
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -615,6 +651,8 @@ class AuthApi {
   ///
   /// Parameters:
   /// * [changeEmailRequestDto]
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -626,6 +664,8 @@ class AuthApi {
   /// Throws [DioException] if API call or serialization fails
   Future<Response<AuthRequestChangeEmailCode200Response>> authRequestChangeEmailCode({
     required ChangeEmailRequestDto changeEmailRequestDto,
+    int? xMarkdownContractVersion,
+    int? xTextColorVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -637,6 +677,8 @@ class AuthApi {
     final _options = Options(
       method: r'POST',
       headers: <String, dynamic>{
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -716,6 +758,8 @@ class AuthApi {
   ///
   /// Parameters:
   /// * [requestCodeDto]
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -727,6 +771,8 @@ class AuthApi {
   /// Throws [DioException] if API call or serialization fails
   Future<Response<AuthRequestCode200Response>> authRequestCode({
     required RequestCodeDto requestCodeDto,
+    int? xMarkdownContractVersion,
+    int? xTextColorVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -738,6 +784,8 @@ class AuthApi {
     final _options = Options(
       method: r'POST',
       headers: <String, dynamic>{
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -811,6 +859,8 @@ class AuthApi {
   ///
   /// Parameters:
   /// * [resetPasswordDto]
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -822,6 +872,8 @@ class AuthApi {
   /// Throws [DioException] if API call or serialization fails
   Future<Response<AuthResetPassword200Response>> authResetPassword({
     required ResetPasswordDto resetPasswordDto,
+    int? xMarkdownContractVersion,
+    int? xTextColorVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -833,6 +885,8 @@ class AuthApi {
     final _options = Options(
       method: r'POST',
       headers: <String, dynamic>{
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -906,6 +960,8 @@ class AuthApi {
   ///
   /// Parameters:
   /// * [id]
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -917,6 +973,8 @@ class AuthApi {
   /// Throws [DioException] if API call or serialization fails
   Future<Response<AuthRevokeSession200Response>> authRevokeSession({
     required String id,
+    int? xMarkdownContractVersion,
+    int? xTextColorVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -928,6 +986,8 @@ class AuthApi {
     final _options = Options(
       method: r'DELETE',
       headers: <String, dynamic>{
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -988,6 +1048,8 @@ class AuthApi {
   /// Parameters:
   /// * [verifyAndCompleteDto]
   /// * [xClientPlatform] - 客户端类型：web（PC/手机浏览器）或 mobile（原生移动端）
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -1000,6 +1062,8 @@ class AuthApi {
   Future<Response<AuthVerifyAndComplete200Response>> authVerifyAndComplete({
     required VerifyAndCompleteDto verifyAndCompleteDto,
     String? xClientPlatform,
+    int? xMarkdownContractVersion,
+    int? xTextColorVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -1012,6 +1076,8 @@ class AuthApi {
       method: r'POST',
       headers: <String, dynamic>{
         if (xClientPlatform != null) r'X-Client-Platform': xClientPlatform,
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -1085,6 +1151,8 @@ class AuthApi {
   ///
   /// Parameters:
   /// * [changeEmailVerifyDto]
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -1096,6 +1164,8 @@ class AuthApi {
   /// Throws [DioException] if API call or serialization fails
   Future<Response<AuthVerifyChangeEmail200Response>> authVerifyChangeEmail({
     required ChangeEmailVerifyDto changeEmailVerifyDto,
+    int? xMarkdownContractVersion,
+    int? xTextColorVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -1107,6 +1177,8 @@ class AuthApi {
     final _options = Options(
       method: r'POST',
       headers: <String, dynamic>{
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
         ...?headers,
       },
       extra: <String, dynamic>{

@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/core/application/visibility_cache_invalidation.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_discussion_author.dart';
 
 abstract interface class PostDiscussionAuthorDirectory {
@@ -16,13 +16,13 @@ final postDiscussionAuthorDirectoryProvider =
 final postFloorDiscussionAuthorsProvider = FutureProvider.autoDispose
     .family<List<PostDiscussionAuthor>, String>(
       (ref, subthreadId) async {
-        ref.watch(sessionScopeProvider);
+        ref.watch(viewerScopeProvider);
         return ref
             .watch(postDiscussionAuthorDirectoryProvider)
             .fetchFloorAuthors(subthreadId);
       },
       dependencies: [
-        sessionScopeProvider,
+        viewerScopeProvider,
         postDiscussionAuthorDirectoryProvider,
       ],
     );
@@ -30,13 +30,13 @@ final postFloorDiscussionAuthorsProvider = FutureProvider.autoDispose
 final postReplyDiscussionAuthorsProvider = FutureProvider.autoDispose
     .family<List<PostDiscussionAuthor>, String>(
       (ref, rootPostId) async {
-        ref.watch(sessionScopeProvider);
+        ref.watch(viewerScopeProvider);
         return ref
             .watch(postDiscussionAuthorDirectoryProvider)
             .fetchReplyAuthors(rootPostId);
       },
       dependencies: [
-        sessionScopeProvider,
+        viewerScopeProvider,
         postDiscussionAuthorDirectoryProvider,
       ],
     );

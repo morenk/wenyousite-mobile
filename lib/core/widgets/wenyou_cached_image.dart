@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:wenyousite_mobile/core/config/app_environment.dart';
 
 /// Cached network image tuned for scrollable content.
 ///
@@ -46,10 +45,7 @@ class WenyouCachedImage extends StatefulWidget {
   State<WenyouCachedImage> createState() => _WenyouCachedImageState();
 
   static Future<bool> evictFromCache(String imageUrl) {
-    return CachedNetworkImage.evictFromCache(
-      imageUrl,
-      cacheKey: AppEnvironment.fromDefines().storageName(imageUrl),
-    );
+    return CachedNetworkImage.evictFromCache(imageUrl, cacheKey: imageUrl);
   }
 }
 
@@ -80,7 +76,7 @@ class _WenyouCachedImageState extends State<WenyouCachedImage> {
     return CachedNetworkImage(
       key: ValueKey((imageUrl, _generation)),
       imageUrl: imageUrl,
-      cacheKey: AppEnvironment.fromDefines().storageName(imageUrl),
+      cacheKey: imageUrl,
       imageBuilder: widget.onImageReady == null
           ? null
           : (context, provider) {

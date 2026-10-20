@@ -34,6 +34,8 @@ class SubthreadsApi {
   /// Parameters:
   /// * [threadId]
   /// * [createSubthreadDto]
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -46,6 +48,8 @@ class SubthreadsApi {
   Future<Response<SubthreadsCreate201Response>> subthreadsCreate({
     required String threadId,
     required CreateSubthreadDto createSubthreadDto,
+    int? xMarkdownContractVersion,
+    int? xTextColorVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -57,6 +61,8 @@ class SubthreadsApi {
     final _options = Options(
       method: r'POST',
       headers: <String, dynamic>{
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -136,6 +142,8 @@ class SubthreadsApi {
   ///
   /// Parameters:
   /// * [threadId]
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -147,6 +155,8 @@ class SubthreadsApi {
   /// Throws [DioException] if API call or serialization fails
   Future<Response<SubthreadsFindAll200Response>> subthreadsFindAll({
     required String threadId,
+    int? xMarkdownContractVersion,
+    int? xTextColorVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -158,6 +168,8 @@ class SubthreadsApi {
     final _options = Options(
       method: r'GET',
       headers: <String, dynamic>{
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -217,6 +229,8 @@ class SubthreadsApi {
   ///
   /// Parameters:
   /// * [id]
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -228,6 +242,8 @@ class SubthreadsApi {
   /// Throws [DioException] if API call or serialization fails
   Future<Response<SubthreadsFindById200Response>> subthreadsFindById({
     required String id,
+    int? xMarkdownContractVersion,
+    int? xTextColorVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -239,6 +255,8 @@ class SubthreadsApi {
     final _options = Options(
       method: r'GET',
       headers: <String, dynamic>{
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -298,6 +316,8 @@ class SubthreadsApi {
   ///
   /// Parameters:
   /// * [id]
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -309,6 +329,8 @@ class SubthreadsApi {
   /// Throws [DioException] if API call or serialization fails
   Future<Response<SubthreadsRemove200Response>> subthreadsRemove({
     required String id,
+    int? xMarkdownContractVersion,
+    int? xTextColorVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -320,6 +342,8 @@ class SubthreadsApi {
     final _options = Options(
       method: r'DELETE',
       headers: <String, dynamic>{
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -380,6 +404,8 @@ class SubthreadsApi {
   /// Parameters:
   /// * [threadId]
   /// * [reorderSubthreadsDto]
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -392,6 +418,8 @@ class SubthreadsApi {
   Future<Response<SubthreadsReorder200Response>> subthreadsReorder({
     required String threadId,
     required ReorderSubthreadsDto reorderSubthreadsDto,
+    int? xMarkdownContractVersion,
+    int? xTextColorVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -403,6 +431,8 @@ class SubthreadsApi {
     final _options = Options(
       method: r'PUT',
       headers: <String, dynamic>{
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -483,6 +513,8 @@ class SubthreadsApi {
   /// Parameters:
   /// * [id]
   /// * [updateSubthreadDto]
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -495,6 +527,8 @@ class SubthreadsApi {
   Future<Response<SubthreadsUpdate200Response>> subthreadsUpdate({
     required String id,
     required UpdateSubthreadDto updateSubthreadDto,
+    int? xMarkdownContractVersion,
+    int? xTextColorVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -506,6 +540,8 @@ class SubthreadsApi {
     final _options = Options(
       method: r'PATCH',
       headers: <String, dynamic>{
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
         ...?headers,
       },
       extra: <String, dynamic>{

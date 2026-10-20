@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:wenyousite_mobile/core/config/app_environment.dart';
 
 class SessionTokens {
   const SessionTokens({required this.accessToken, required this.refreshToken});
@@ -19,12 +18,9 @@ abstract interface class TokenStore {
 }
 
 class SecureTokenStore implements TokenStore {
-  SecureTokenStore(this._storage, {AppEnvironment? environment})
-    : _sessionKey = (environment ?? AppEnvironment.fromDefines()).storageName(
-        'wenyou_mobile_session_v1',
-      );
+  SecureTokenStore(this._storage);
 
-  final String _sessionKey;
+  static const _sessionKey = 'wenyou_mobile_session_v1';
   final FlutterSecureStorage _storage;
 
   @override

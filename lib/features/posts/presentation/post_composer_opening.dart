@@ -6,12 +6,18 @@ import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
+import 'package:wenyousite_mobile/features/media/application/pending_media_file_store_ports.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_composer_draft.dart';
+import 'package:wenyousite_mobile/features/posts/application/post_composer_drafts.dart';
+import 'package:wenyousite_mobile/features/posts/application/post_composer_local_draft.dart';
+import 'package:wenyousite_mobile/features/posts/application/post_publish_draft.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_repository_ports.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
 
 typedef PostComposerOpeningBuilder =
     Widget Function(BuildContext context, PreparedPostComposer composer);
+
+const postDraftTargetBlockedMessage = '这篇主题有未完成的发表，请回到原发表位置重试。';
 
 class PostComposerOpening extends ConsumerStatefulWidget {
   const PostComposerOpening({
@@ -36,11 +42,16 @@ class _PostComposerOpeningState extends ConsumerState<PostComposerOpening> {
   PreparedPostComposer? _prepared;
   PostComposerBaseline? _divergedBaseline;
   ApiFailure? _failure;
+  var _targetBlocked = false;
   late final Object _openedSessionScope;
   ModalRoute<Object?>? _outerRoute;
   NavigatorState? _outerNavigator;
   var _loading = true;
   var _epoch = 0;
+  String? _localDraftTarget;
+  bool _isolatedLegacyDraft = false;
+  PostComposerDraft? get _initialDraft =>
+      _isolatedLegacyDraft ? null : widget.initialDraft;
 
   @override
   void initState() {
@@ -72,6 +83,7 @@ class _PostComposerOpeningState extends ConsumerState<PostComposerOpening> {
     return _OpeningSurface(
       loading: _loading,
       failure: _failure,
+      targetBlocked: _targetBlocked,
       hasDivergedDraft: _divergedBaseline != null,
       onClose: () => Navigator.of(context).pop(),
       onRetry: _load,
@@ -85,16 +97,41 @@ class _PostComposerOpeningState extends ConsumerState<PostComposerOpening> {
     setState(() {
       _loading = true;
       _failure = null;
+      _targetBlocked = false;
       _divergedBaseline = null;
     });
-    if (!_requiresLatest) {
-      _prepare(null);
-      return;
-    }
     try {
-      final latest = await _fetchLatest();
-      if (!mounted || epoch != _epoch) return;
+      final accountId = ref.read(sessionScopeProvider).accountId;
+      if (accountId != null && isSharedPostComposerTarget(widget.target)) {
+        final local = await preparePostComposerLocalDraft(
+          store: ref.read(pendingMediaFileStoreProvider),
+          accountId: accountId,
+          target: widget.target,
+        );
+        if (!mounted || ref.read(sessionScopeProvider) != _openedSessionScope) {
+          return;
+        }
+        _localDraftTarget = local.target;
+        _isolatedLegacyDraft = local.isolated;
+      }
+      final pending = _initialDraft?.publishDraft?.pending;
+      if (pending != null &&
+          !pendingPostMatchesTarget(pending, widget.target)) {
+        throw const PostDraftTargetBlocked();
+      }
+      final latest = _requiresLatest ? await _fetchLatest() : null;
+      if (!mounted ||
+          epoch != _epoch ||
+          ref.read(sessionScopeProvider) != _openedSessionScope) {
+        return;
+      }
       _prepare(latest);
+    } on PostDraftTargetBlocked {
+      if (!mounted || epoch != _epoch) return;
+      setState(() {
+        _loading = false;
+        _targetBlocked = true;
+      });
     } on Object catch (error) {
       if (!mounted || epoch != _epoch) return;
       setState(() {
@@ -138,11 +175,13 @@ class _PostComposerOpeningState extends ConsumerState<PostComposerOpening> {
         : PostComposerBaseline(
             content: latest.content,
             mediaDisplays: latest.mediaDisplays,
+            mediaAudios: latest.mediaAudios,
+            mentionLabels: latest.mentionLabels,
             postId: latest.id,
             version: latest.version,
           );
     final resolution = resolvePostComposerDraft(
-      draft: widget.initialDraft,
+      draft: _initialDraft,
       baseline: baseline,
     );
     if (resolution == PostComposerDraftResolution.diverged) {
@@ -153,12 +192,18 @@ class _PostComposerOpeningState extends ConsumerState<PostComposerOpening> {
       return;
     }
     final content = resolution == PostComposerDraftResolution.restore
-        ? widget.initialDraft!.content
+        ? _initialDraft!.content
         : baseline.content;
     if (resolution == PostComposerDraftResolution.saved) {
       widget.onDraftChanged?.call(null);
     }
-    _open(content: content, baseline: baseline);
+    _open(
+      content: content,
+      baseline: baseline,
+      publishDraft: resolution == PostComposerDraftResolution.restore
+          ? _initialDraft?.publishDraft
+          : null,
+    );
   }
 
   void _useLatest() {
@@ -170,19 +215,27 @@ class _PostComposerOpeningState extends ConsumerState<PostComposerOpening> {
 
   void _keepLocal() {
     final baseline = _divergedBaseline;
-    final draft = widget.initialDraft;
+    final draft = _initialDraft;
     if (baseline == null || draft == null) return;
-    _open(content: draft.content, baseline: baseline);
+    _open(
+      content: draft.content,
+      baseline: baseline,
+      publishDraft: draft.publishDraft,
+    );
   }
 
   void _open({
     required String content,
     required PostComposerBaseline baseline,
+    PostPublishDraft? publishDraft,
   }) {
     setState(() {
       _loading = false;
       _divergedBaseline = null;
       _prepared = PreparedPostComposer(
+        localDraftTarget: _localDraftTarget,
+        isolatedLegacyDraft: _isolatedLegacyDraft,
+        publishDraft: publishDraft,
         target: postComposerTargetWithBaseline(
           target: widget.target,
           content: content,
@@ -191,11 +244,16 @@ class _PostComposerOpeningState extends ConsumerState<PostComposerOpening> {
         ),
         baseline: PostComposerBaseline(
           content: baseline.content,
+          mentionLabels: baseline.mentionLabels,
           postId: baseline.postId,
           version: baseline.version,
           mediaDisplays: {
-            ...?widget.initialDraft?.mediaDisplays,
+            ...?_initialDraft?.mediaDisplays,
             ...baseline.mediaDisplays,
+          },
+          mediaAudios: {
+            ...?_initialDraft?.mediaAudios,
+            ...baseline.mediaAudios,
           },
         ),
       );
@@ -207,6 +265,7 @@ class _OpeningSurface extends StatelessWidget {
   const _OpeningSurface({
     required this.loading,
     required this.failure,
+    required this.targetBlocked,
     required this.hasDivergedDraft,
     required this.onClose,
     required this.onRetry,
@@ -216,6 +275,7 @@ class _OpeningSurface extends StatelessWidget {
 
   final bool loading;
   final ApiFailure? failure;
+  final bool targetBlocked;
   final bool hasDivergedDraft;
   final VoidCallback onClose;
   final VoidCallback onRetry;
@@ -256,6 +316,12 @@ class _OpeningSurface extends StatelessWidget {
                   const Center(child: CircularProgressIndicator()),
                   SizedBox(height: tokens.space12),
                   const Text('正在读取最新正文…', textAlign: TextAlign.center),
+                ] else if (targetBlocked) ...[
+                  const WenyouStatusBanner(
+                    key: Key('post-composer-target-blocked'),
+                    message: postDraftTargetBlockedMessage,
+                    tone: WenyouStatusTone.error,
+                  ),
                 ] else if (hasDivergedDraft) ...[
                   const WenyouStatusBanner(
                     key: Key('post-composer-draft-diverged'),

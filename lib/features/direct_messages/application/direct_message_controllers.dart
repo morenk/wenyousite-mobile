@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
-
+import 'package:wenyousite_mobile/core/application/cursor_page_request.dart';
 import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
 import 'package:wenyousite_mobile/core/application/visibility_cache_invalidation.dart';
 import 'package:wenyousite_mobile/core/application/write_reconciler.dart';
@@ -65,7 +65,7 @@ class DirectConversationListController
 
   Future<void> refresh() async {
     final epoch = ++_epoch;
-    final before = state;
+    final before = state.copyWith(isLoadingMore: false);
     if (before.phase != DirectConversationListPhase.ready) {
       await load();
       return;
@@ -93,43 +93,41 @@ class DirectConversationListController
   Future<void> loadMore() async {
     if (state.phase != DirectConversationListPhase.ready ||
         state.isLoadingMore ||
+        state.isRefreshing ||
         !state.hasMore) {
       return;
     }
     final epoch = _epoch;
     final before = state;
     state = before.copyWith(isLoadingMore: true, transientFailure: null);
-    try {
-      final page = await _repository.fetchConversations(
-        view: _view,
-        cursor: before.cursor,
-      );
-      if (!mounted || epoch != _epoch) return;
-      state = DirectConversationListState(
-        phase: DirectConversationListPhase.ready,
-        view: _view,
-        items: mergeUniqueBy(
-          before.items,
-          page.items,
-          keyOf: (item) => item.id,
-        ),
-        cursor: page.cursor,
-        hasMore: page.hasMore,
-      );
-    } on ApiFailure catch (failure) {
-      if (!mounted || epoch != _epoch) return;
-      if (failure.isInvalidCursor) {
+    await loadCursorPage(
+      fetch: () =>
+          _repository.fetchConversations(view: _view, cursor: before.cursor),
+      isCurrent: () => mounted && epoch == _epoch,
+      onPage: (page) {
+        state = DirectConversationListState(
+          phase: DirectConversationListPhase.ready,
+          view: _view,
+          items: mergeUniqueBy(
+            before.items,
+            page.items,
+            keyOf: (item) => item.id,
+          ),
+          cursor: page.cursor,
+          hasMore: page.hasMore,
+        );
+      },
+      onInvalidCursor: () async {
         await refresh();
-        return;
-      }
-      state = before.copyWith(isLoadingMore: false, transientFailure: failure);
-    } on Object catch (error) {
-      if (!mounted || epoch != _epoch) return;
-      state = before.copyWith(
-        isLoadingMore: false,
-        transientFailure: mapApplicationFailure(error, '更多私聊会话加载失败。'),
-      );
-    }
+      },
+      mapFailure: (error) => mapApplicationFailure(error, '更多私聊会话加载失败。'),
+      onFailure: (failure) {
+        state = before.copyWith(
+          isLoadingMore: false,
+          transientFailure: failure,
+        );
+      },
+    );
   }
 }
 

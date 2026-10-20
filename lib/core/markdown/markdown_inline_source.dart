@@ -1,4 +1,6 @@
 import 'package:markdown/markdown.dart' as md;
+import 'package:wenyousite_mobile/core/markdown/markdown_inline_code_scanner.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_text_color.dart';
 
 typedef MarkdownSourceRange = ({int start, int end});
 
@@ -37,10 +39,14 @@ final class MarkdownInlineSource {
       source.contains('<') ? _replace(source, analyze(source).html) : source;
 
   /// 编辑器中的可见文字（如由 `&lt;` 解码的 `<tag>`）写回时不能变成 HTML。
-  static String escapeHtml(String source) {
+  static String escapeHtml(String source, {bool preserveTextColor = false}) {
     if (!source.contains('<')) return source;
+    final htmlSource = preserveTextColor
+        ? MarkdownTextColor.maskValidTags(source)
+        : source;
     var result = source;
     for (final range in analyze(source).html.reversed) {
+      if (htmlSource.substring(range.start, range.end).trim().isEmpty) continue;
       result = result.replaceRange(
         range.start,
         range.end,
@@ -70,6 +76,19 @@ final class MarkdownInlineSource {
 class _Code extends md.CodeSyntax {
   _Code(this.onRange);
   final void Function(MarkdownSourceRange) onRange;
+  @override
+  bool tryMatch(md.InlineParser parser, [int? startMatchPos]) {
+    final start = startMatchPos ?? parser.pos;
+    final end = MarkdownInlineCodeScanner.endAt(parser.source, start);
+    if (end == null) return false;
+    // CodeSyntax 的前一字符检查不区分已转义反引号，边界交给共享扫描器。
+    final match = pattern.matchAsPrefix(parser.source, start);
+    if (match == null || match.end != end) return false;
+    parser.writeText();
+    if (onMatch(parser, match)) parser.consume(end - start);
+    return true;
+  }
+
   @override
   bool onMatch(md.InlineParser parser, Match match) {
     onRange((start: match.start, end: match.end));

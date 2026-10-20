@@ -10,7 +10,7 @@ PostComposerTarget postReplyTarget(PostItem root, PostItem target) {
     replyToPostId: target.id,
     version: null,
     initialContent: '',
-    label: '回复 @${target.author.username}',
+    label: '回复 @${target.author.displayName}',
   );
 }
 

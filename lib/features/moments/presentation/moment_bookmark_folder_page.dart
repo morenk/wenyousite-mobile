@@ -3,9 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:waterfall_flow/waterfall_flow.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
-import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/application/bookmark_folder_catalog_controller.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_bookmark_folder_picker.dart';
@@ -16,6 +14,7 @@ import 'package:wenyousite_mobile/features/moments/application/moment_bookmark_l
 import 'package:wenyousite_mobile/features/moments/application/moment_bookmark_repository_ports.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_waterfall_card.dart';
+import 'package:wenyousite_mobile/features/moments/presentation/moment_waterfall_sliver.dart';
 
 class MomentBookmarkFolderPage extends ConsumerStatefulWidget {
   const MomentBookmarkFolderPage({
@@ -36,10 +35,6 @@ class MomentBookmarkFolderPage extends ConsumerStatefulWidget {
 
 class _MomentBookmarkFolderPageState
     extends ConsumerState<MomentBookmarkFolderPage> {
-  bool get _usesTwoColumnWaterfall =>
-      WenyouCollectionContract.mobileDomainLayoutExceptions['moments-feed'] ==
-      'two-column-waterfall';
-
   @override
   Widget build(BuildContext context) {
     final provider = momentBookmarkListControllerProvider(widget.folderId);
@@ -65,7 +60,9 @@ class _MomentBookmarkFolderPageState
     );
     if (widget.embedded) return body;
     return Scaffold(
+      backgroundColor: wenyouBrowsePageBackground(context),
       appBar: AppBar(
+        backgroundColor: wenyouBrowsePageBackground(context),
         title: Text(folderName ?? widget.initialFolderName ?? '动态收藏夹'),
       ),
       body: body,
@@ -120,15 +117,7 @@ class _MomentBookmarkFolderPageState
     String? folderName,
   ) {
     if (state.phase == MomentBookmarkListPhase.loading) {
-      return [
-        SliverToBoxAdapter(
-          child: WenyouContentFrame(
-            top: context.wenyouTokens.space16,
-            bottom: context.wenyouTokens.space32,
-            child: const WenyouListSkeleton(label: '正在加载动态收藏'),
-          ),
-        ),
-      ];
+      return const [MomentWaterfallLoadingSliver(label: '正在加载动态收藏')];
     }
     if (state.phase == MomentBookmarkListPhase.failed) {
       return [
@@ -137,19 +126,15 @@ class _MomentBookmarkFolderPageState
           child: WenyouContentFrame(
             top: 16,
             bottom: 80,
-            child: WenyouPanel(
-              child: WenyouEmptyState(
-                icon: WenyouIconIds.statusOffline,
-                title: '动态收藏加载失败',
-                message: state.failure?.userMessage ?? '请稍后重试。',
-                detail: wenyouFailureDetail(state.failure),
-                action: OutlinedButton.icon(
-                  key: const Key('moment-bookmark-folder-retry'),
-                  onPressed: ref.read(provider.notifier).load,
-                  icon: const WenyouIcon(WenyouIconIds.actionRefresh),
-                  label: const Text('重试'),
-                ),
-              ),
+            child: WenyouRetryFailure(
+              panel: true,
+              icon: WenyouIconIds.statusOffline,
+              title: '动态收藏加载失败',
+              message: state.failure?.userMessage ?? '请稍后重试。',
+              failure: state.failure,
+              retryKey: const Key('moment-bookmark-folder-retry'),
+              onRetry: ref.read(provider.notifier).load,
+              retryLabel: '重试',
             ),
           ),
         ),
@@ -173,58 +158,31 @@ class _MomentBookmarkFolderPageState
         ),
       ];
     }
-    final itemIndexByKey = <Key, int>{
-      for (var index = 0; index < state.items.length; index++)
-        Key('moment-bookmark-card-${state.items[index].id}'): index,
-      const Key('moment-bookmark-footer'): state.items.length,
-    };
     return [
-      SliverPadding(
-        padding: EdgeInsets.fromLTRB(
-          _horizontalPadding(context),
-          context.wenyouTokens.space8,
-          _horizontalPadding(context),
-          0,
-        ),
-        sliver: SliverWaterfallFlow(
-          gridDelegate: SliverWaterfallFlowDelegateWithFixedCrossAxisCount(
-            crossAxisCount: _usesTwoColumnWaterfall ? 2 : 1,
-            mainAxisSpacing: context.wenyouTokens.cardGap,
-            crossAxisSpacing: context.wenyouTokens.cardGap,
-            lastChildLayoutTypeBuilder: (index) => index == state.items.length
-                ? LastChildLayoutType.fullCrossAxisExtent
-                : LastChildLayoutType.none,
-          ),
-          delegate: SliverChildBuilderDelegate(
-            (context, index) {
-              if (index == state.items.length) {
-                return KeyedSubtree(
-                  key: const Key('moment-bookmark-footer'),
-                  child: _footer(context, state, provider),
-                );
-              }
-              final card = state.items[index];
-              return MomentWaterfallCard(
-                key: Key('moment-bookmark-card-${card.id}'),
-                moment: card,
-                managePending: state.pendingMomentId == card.id,
-                manageEnabled: !state.isBusy,
-                onTap: () => context.pushNamed(
-                  'moment-detail',
-                  pathParameters: {'momentId': card.id},
-                ),
-                onAuthorTap: () => context.pushNamed(
-                  'user-profile',
-                  pathParameters: {'userId': card.author.id},
-                ),
-                onManage: () => _manage(card, provider, folderName),
-              );
-            },
-            childCount: state.items.length + 1,
-            addAutomaticKeepAlives: false,
-            findChildIndexCallback: (key) => itemIndexByKey[key],
-          ),
-        ),
+      MomentWaterfallSliver(
+        itemKeys: [
+          for (final item in state.items)
+            Key('moment-bookmark-card-${item.id}'),
+        ],
+        footerKey: const Key('moment-bookmark-footer'),
+        footer: _footer(context, state, provider),
+        itemBuilder: (context, index) {
+          final card = state.items[index];
+          return MomentWaterfallCard(
+            moment: card,
+            managePending: state.pendingMomentId == card.id,
+            manageEnabled: !state.isBusy,
+            onTap: () => context.pushNamed(
+              'moment-detail',
+              pathParameters: {'momentId': card.id},
+            ),
+            onAuthorTap: () => context.pushNamed(
+              'user-profile',
+              pathParameters: {'userId': card.author.id},
+            ),
+            onManage: () => _manage(card, provider, folderName),
+          );
+        },
       ),
     ];
   }
@@ -329,13 +287,5 @@ class _MomentBookmarkFolderPageState
           )
           .refresh(),
     );
-  }
-
-  double _horizontalPadding(BuildContext context) {
-    final width = MediaQuery.sizeOf(context).width;
-    final base = wenyouHorizontalPagePadding(context, availableWidth: width);
-    final available = width - base * 2;
-    final contentWidth = available < 600 ? available : 600.0;
-    return (width - contentWidth) / 2;
   }
 }

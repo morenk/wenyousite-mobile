@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/features/wallet/application/wallet_controllers.dart';
 import 'package:wenyousite_mobile/features/wallet/data/wallet_repository.dart';
 import 'package:wenyousite_mobile/features/wallet/domain/wallet_models.dart';
 import 'package:wenyousite_mobile/features/wallet/presentation/wallet_page.dart';
@@ -19,37 +22,41 @@ void main() {
     (name: 'light', mode: ThemeMode.light),
     (name: 'dark', mode: ThemeMode.dark),
   ]) {
-    testWidgets('360dp 我的温油${themeCase.name}圆角截图', (tester) async {
-      tester.view.devicePixelRatio = 1;
-      tester.view.physicalSize = const Size(360, 900);
-      addTearDown(tester.view.resetDevicePixelRatio);
-      addTearDown(tester.view.resetPhysicalSize);
+    for (final width in [320.0, 360.0, 400.0]) {
+      testWidgets('$width dp 油卡${themeCase.name}视觉候选', (tester) async {
+        tester.view.devicePixelRatio = 1;
+        tester.view.physicalSize = Size(width, 900);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        addTearDown(tester.view.resetPhysicalSize);
 
-      await tester.pumpWidget(
-        _walletApp(
-          _WalletPageRepository(
-            balance: '1250',
-            // 截图固定本地显示时间，不让 runner 时区改变文字像素。
-            // 普通业务夹具仍保留 UTC，下面单独验证转本地的页面语义。
-            transactions: [
-              _daily(createdAt: DateTime(2026, 8, 10, 9, 2)),
-              _expense(createdAt: DateTime(2026, 8, 10, 10, 3)),
-              _income(createdAt: DateTime(2026, 8, 10, 11, 4)),
-            ],
+        await tester.pumpWidget(
+          _walletApp(
+            _WalletPageRepository(
+              balance: '1250',
+              // 截图固定本地显示时间，不让 runner 时区改变文字像素。
+              // 普通业务夹具仍保留 UTC，下面单独验证转本地的页面语义。
+              transactions: [
+                _daily(createdAt: DateTime(2026, 8, 10, 9, 2)),
+                _expense(createdAt: DateTime(2026, 8, 10, 10, 3)),
+                _income(createdAt: DateTime(2026, 8, 10, 11, 4)),
+              ],
+            ),
+            themeMode: themeCase.mode,
           ),
-          themeMode: themeCase.mode,
-        ),
-      );
-      await tester.pumpAndSettle();
-      expect(tester.takeException(), isNull);
-      for (final time in ['09:02', '10:03', '11:04']) {
-        expect(find.text('2026-08-10 $time'), findsOneWidget);
-      }
-      await expectLater(
-        find.byType(Scaffold).first,
-        matchesGoldenFile('goldens/wallet_360_${themeCase.name}.png'),
-      );
-    });
+        );
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        for (final time in ['09:02', '10:03', '11:04']) {
+          expect(find.text('2026-08-10 $time'), findsOneWidget);
+        }
+        await expectLater(
+          find.byType(Scaffold).first,
+          matchesGoldenFile(
+            'goldens/wallet_${width.toInt()}_${themeCase.name}.png',
+          ),
+        );
+      });
+    }
   }
 
   testWidgets('钱包流水将 UTC 时间转为本地时分', (tester) async {
@@ -175,6 +182,111 @@ void main() {
     expect(find.text('9,007,199,254,740,993 升'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('320dp 大字长流水金额完整换行且保留精确余额与日期', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(320, 900);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    await tester.pumpWidget(
+      _walletApp(
+        _WalletPageRepository(
+          balance: '1250',
+          transactions: [_largeTransaction()],
+        ),
+        textScale: 2,
+        themeMode: ThemeMode.dark,
+      ),
+    );
+    await tester.pumpAndSettle();
+    const amountLabel = '−9,223,372,036,854,775,807 升';
+    final amount = find.text(amountLabel.replaceAll(',', ',\u200b'));
+    await tester.ensureVisible(amount);
+    await tester.pumpAndSettle();
+    expect(amount, findsOneWidget);
+    expect(
+      find.text('余额 9,223,372,036,854,775,807 升'.replaceAll(',', ',\u200b')),
+      findsOneWidget,
+    );
+    expect(find.text('2026-08-10 10:03'), findsOneWidget);
+    expect(tester.widget<Text>(amount).maxLines, isNull);
+    expect(tester.widget<Text>(amount).semanticsLabel, amountLabel);
+    expect(tester.takeException(), isNull);
+    await expectLater(
+      find.byType(Scaffold),
+      matchesGoldenFile('goldens/wallet_320_dark_large_amount.png'),
+    );
+  });
+
+  testWidgets('流水刷新失败保留旧记录并能独立重试', (tester) async {
+    final repository = _WalletPageRepository(failTransactionsOnRefresh: true);
+    await tester.pumpWidget(_walletApp(repository));
+    await tester.pumpAndSettle();
+    final container = ProviderScope.containerOf(
+      tester.element(find.byType(WalletPage)),
+    );
+    await container
+        .read(walletControllerProvider('authenticated-session').notifier)
+        .refresh();
+    await tester.pumpAndSettle();
+    expect(find.text('每日在线签到'), findsOneWidget);
+    expect(find.text('收支记录刷新失败，当前仍显示上次结果。'), findsOneWidget);
+    await tester.ensureVisible(
+      find.byKey(const Key('wallet-transactions-refresh-retry')),
+    );
+    await tester.tap(
+      find.byKey(const Key('wallet-transactions-refresh-retry')),
+    );
+    await tester.pumpAndSettle();
+    expect(repository.transactionCalls, 3);
+    expect(repository.summaryCalls, 2);
+    expect(find.text('收支记录刷新失败，当前仍显示上次结果。'), findsNothing);
+  });
+
+  testWidgets('合并展示后签到失败仍保留独立重试和余额', (tester) async {
+    final repository = _WalletPageRepository(failCheckIn: true);
+    await tester.pumpWidget(_walletApp(repository));
+    await tester.pumpAndSettle();
+    final container = ProviderScope.containerOf(
+      tester.element(find.byType(WalletPage)),
+    );
+    final controller = container.read(dailyCheckInControllerProvider.notifier);
+    await controller.checkIn('2026-08-10');
+    await tester.pumpAndSettle();
+    expect(find.text('9,007,199,254,740,993 升'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('wallet-check-in-retry')));
+    await tester.pumpAndSettle();
+    expect(controller.state.retryRevision, 1);
+    expect(repository.checkInCalls, 1);
+  });
+
+  testWidgets('收支记录继续导航至原目标', (tester) async {
+    final router = GoRouter(
+      initialLocation: '/wallet',
+      routes: [
+        GoRoute(path: '/wallet', builder: (_, _) => const WalletPage()),
+        GoRoute(
+          path: AppRouteLocations.thread('thread-1'),
+          builder: (_, _) => const Scaffold(body: Text('目标主题')),
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          walletRepositoryProvider.overrideWithValue(
+            _WalletPageRepository(balance: '1250'),
+          ),
+        ],
+        child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('投入给「测试主题帖」'));
+    await tester.pumpAndSettle();
+    expect(find.text('目标主题'), findsOneWidget);
+  });
 }
 
 Widget _walletApp(
@@ -205,6 +317,8 @@ class _WalletPageRepository extends Fake implements WalletRepository {
     this.longList = false,
     this.balance = '9007199254740993',
     this.transactions,
+    this.failTransactionsOnRefresh = false,
+    this.failCheckIn = false,
   });
 
   final bool failSummaryOnce;
@@ -212,6 +326,22 @@ class _WalletPageRepository extends Fake implements WalletRepository {
   final String balance;
   final List<WalletTransaction>? transactions;
   var summaryCalls = 0;
+  final bool failTransactionsOnRefresh;
+  final bool failCheckIn;
+  var transactionCalls = 0;
+  var checkInCalls = 0;
+
+  @override
+  Future<DailyCheckInResult> checkIn() async {
+    checkInCalls++;
+    if (failCheckIn) {
+      throw const ApiFailure(
+        userMessage: '网络不可用',
+        reason: FailureReason.offline,
+      );
+    }
+    throw UnimplementedError();
+  }
 
   @override
   Future<WalletSummary> fetchWallet() async {
@@ -234,6 +364,10 @@ class _WalletPageRepository extends Fake implements WalletRepository {
     String? cursor,
     int limit = 20,
   }) async {
+    transactionCalls++;
+    if (failTransactionsOnRefresh && transactionCalls == 2) {
+      throw const ApiFailure(userMessage: '加载失败');
+    }
     return CursorPage(
       items:
           transactions ??
@@ -245,6 +379,23 @@ class _WalletPageRepository extends Fake implements WalletRepository {
     );
   }
 }
+
+WalletTransaction _largeTransaction() => WalletTransaction(
+  id: 'large',
+  type: WalletTransactionType.tip,
+  direction: WalletTransactionDirection.expense,
+  amount: '9223372036854775807',
+  grossAmount: '9223372036854775807',
+  recipientAmount: '9223372036854775805',
+  platformAmount: '2',
+  balanceAfter: '9223372036854775807',
+  target: const WalletTransactionTarget(
+    type: WalletTargetType.thread,
+    id: 'thread-1',
+    title: '很长的主题帖标题用于验证窄屏流水',
+  ),
+  createdAt: DateTime(2026, 8, 10, 10, 3),
+);
 
 WalletTransaction _daily({String id = 'daily', DateTime? createdAt}) =>
     WalletTransaction(

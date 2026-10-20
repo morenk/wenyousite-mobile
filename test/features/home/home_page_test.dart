@@ -522,13 +522,39 @@ void main() {
       matchesGoldenFile('goldens/home_card_cover_360.png'),
     );
   });
+
+  for (final width in [320.0, 360.0]) {
+    for (final dark in [false, true]) {
+      final tone = dark ? 'dark' : 'light';
+      testWidgets('$width dp 首页轻表面 $tone 无溢出', (tester) async {
+        tester.view.devicePixelRatio = 1;
+        tester.view.physicalSize = Size(width, 800);
+        addTearDown(tester.view.reset);
+        await tester.pumpWidget(
+          _homeApp(
+            _FakeHomeRepository(items: [_thread, _secondThread]),
+            dark: dark,
+          ),
+        );
+        await tester.pumpAndSettle();
+        await _settleHomeBrandMark(tester);
+        expect(tester.takeException(), isNull);
+        await expectLater(
+          find.byKey(const Key('home-text-first-visual')),
+          matchesGoldenFile(
+            'goldens/home_soft_surfaces_${width.toInt()}_$tone.png',
+          ),
+        );
+      });
+    }
+  }
 }
 
-Widget _homeApp(HomeRepository repository) {
+Widget _homeApp(HomeRepository repository, {bool dark = false}) {
   return ProviderScope(
     overrides: [homeRepositoryProvider.overrideWithValue(repository)],
     child: MaterialApp(
-      theme: AppTheme.light,
+      theme: dark ? AppTheme.dark : AppTheme.light,
       home: const RepaintBoundary(
         key: Key('home-text-first-visual'),
         child: HomePage(),

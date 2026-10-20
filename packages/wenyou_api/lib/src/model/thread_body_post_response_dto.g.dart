@@ -8,7 +8,13 @@ part of 'thread_body_post_response_dto.dart';
 
 class _$ThreadBodyPostResponseDto extends ThreadBodyPostResponseDto {
   @override
+  final PostAuthorResponseDto? author;
+  @override
+  final BuiltList<MentionIdentityDisplayDto>? mentionIdentities;
+  @override
   final BuiltList<MarkdownMediaDisplayResponseDto>? mediaDisplays;
+  @override
+  final BuiltList<AudioMediaDto>? mediaAudios;
   @override
   final String id;
   @override
@@ -23,7 +29,10 @@ class _$ThreadBodyPostResponseDto extends ThreadBodyPostResponseDto {
   ]) => (ThreadBodyPostResponseDtoBuilder()..update(updates))._build();
 
   _$ThreadBodyPostResponseDto._({
+    this.author,
+    this.mentionIdentities,
     this.mediaDisplays,
+    this.mediaAudios,
     required this.id,
     required this.content,
     required this.version,
@@ -42,7 +51,10 @@ class _$ThreadBodyPostResponseDto extends ThreadBodyPostResponseDto {
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
     return other is ThreadBodyPostResponseDto &&
+        author == other.author &&
+        mentionIdentities == other.mentionIdentities &&
         mediaDisplays == other.mediaDisplays &&
+        mediaAudios == other.mediaAudios &&
         id == other.id &&
         content == other.content &&
         version == other.version &&
@@ -52,7 +64,10 @@ class _$ThreadBodyPostResponseDto extends ThreadBodyPostResponseDto {
   @override
   int get hashCode {
     var _$hash = 0;
+    _$hash = $jc(_$hash, author.hashCode);
+    _$hash = $jc(_$hash, mentionIdentities.hashCode);
     _$hash = $jc(_$hash, mediaDisplays.hashCode);
+    _$hash = $jc(_$hash, mediaAudios.hashCode);
     _$hash = $jc(_$hash, id.hashCode);
     _$hash = $jc(_$hash, content.hashCode);
     _$hash = $jc(_$hash, version.hashCode);
@@ -64,7 +79,10 @@ class _$ThreadBodyPostResponseDto extends ThreadBodyPostResponseDto {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'ThreadBodyPostResponseDto')
+          ..add('author', author)
+          ..add('mentionIdentities', mentionIdentities)
           ..add('mediaDisplays', mediaDisplays)
+          ..add('mediaAudios', mediaAudios)
           ..add('id', id)
           ..add('content', content)
           ..add('version', version)
@@ -78,12 +96,30 @@ class ThreadBodyPostResponseDtoBuilder
         Builder<ThreadBodyPostResponseDto, ThreadBodyPostResponseDtoBuilder> {
   _$ThreadBodyPostResponseDto? _$v;
 
+  PostAuthorResponseDtoBuilder? _author;
+  PostAuthorResponseDtoBuilder get author =>
+      _$this._author ??= PostAuthorResponseDtoBuilder();
+  set author(PostAuthorResponseDtoBuilder? author) => _$this._author = author;
+
+  ListBuilder<MentionIdentityDisplayDto>? _mentionIdentities;
+  ListBuilder<MentionIdentityDisplayDto> get mentionIdentities =>
+      _$this._mentionIdentities ??= ListBuilder<MentionIdentityDisplayDto>();
+  set mentionIdentities(
+    ListBuilder<MentionIdentityDisplayDto>? mentionIdentities,
+  ) => _$this._mentionIdentities = mentionIdentities;
+
   ListBuilder<MarkdownMediaDisplayResponseDto>? _mediaDisplays;
   ListBuilder<MarkdownMediaDisplayResponseDto> get mediaDisplays =>
       _$this._mediaDisplays ??= ListBuilder<MarkdownMediaDisplayResponseDto>();
   set mediaDisplays(
     ListBuilder<MarkdownMediaDisplayResponseDto>? mediaDisplays,
   ) => _$this._mediaDisplays = mediaDisplays;
+
+  ListBuilder<AudioMediaDto>? _mediaAudios;
+  ListBuilder<AudioMediaDto> get mediaAudios =>
+      _$this._mediaAudios ??= ListBuilder<AudioMediaDto>();
+  set mediaAudios(ListBuilder<AudioMediaDto>? mediaAudios) =>
+      _$this._mediaAudios = mediaAudios;
 
   String? _id;
   String? get id => _$this._id;
@@ -110,7 +146,10 @@ class ThreadBodyPostResponseDtoBuilder
   ThreadBodyPostResponseDtoBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
+      _author = $v.author?.toBuilder();
+      _mentionIdentities = $v.mentionIdentities?.toBuilder();
       _mediaDisplays = $v.mediaDisplays?.toBuilder();
+      _mediaAudios = $v.mediaAudios?.toBuilder();
       _id = $v.id;
       _content = $v.content;
       _version = $v.version;
@@ -139,7 +178,10 @@ class ThreadBodyPostResponseDtoBuilder
       _$result =
           _$v ??
           _$ThreadBodyPostResponseDto._(
+            author: _author?.build(),
+            mentionIdentities: _mentionIdentities?.build(),
             mediaDisplays: _mediaDisplays?.build(),
+            mediaAudios: _mediaAudios?.build(),
             id: BuiltValueNullFieldError.checkNotNull(
               id,
               r'ThreadBodyPostResponseDto',
@@ -160,8 +202,14 @@ class ThreadBodyPostResponseDtoBuilder
     } catch (_) {
       late String _$failedField;
       try {
+        _$failedField = 'author';
+        _author?.build();
+        _$failedField = 'mentionIdentities';
+        _mentionIdentities?.build();
         _$failedField = 'mediaDisplays';
         _mediaDisplays?.build();
+        _$failedField = 'mediaAudios';
+        _mediaAudios?.build();
 
         _$failedField = 'diceRolls';
         diceRolls.build();

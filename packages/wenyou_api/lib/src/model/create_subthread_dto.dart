@@ -12,6 +12,11 @@ part 'create_subthread_dto.g.dart';
 /// CreateSubthreadDto
 ///
 /// Properties:
+/// * [textColorVersion] - 支持文本颜色 v1 无损读写；新端始终发送，包括删除全部颜色。新/原正文含颜色未声明返回 409/40016；新写受 textColorV1WriteEnabled 控制。
+/// * [markdownContractVersion] - 声明编辑器支持 Markdown 6 角色提及源的无损读取/编辑。服务端 capabilities.roleMentionsV6Supported 为 true 时新端始终发送，包括删光旧节点；未声明而新/原正文含 v6 返回 409/40014。新节点还须 roleMentionsV6WriteEnabled。
+/// * [identityId] - 本次新发言选择的帖内身份 ID；新客户端 RP 模式必须与该身份 token 一起发送。省略仅兼容旧单身份客户端；ACCOUNT 忽略，编辑旧正文不改变原身份
+/// * [identityToken] - GET 帖内身份返回的确认 token；新建正文或发言时使用。身份变化返回 409/40011，保留草稿并重新确认
+/// * [identityMode] - 本次新发言身份；ACCOUNT 明确使用站内账号且不校验 RP token，RP 要求有效帖内身份和 identityToken。省略沿用旧确认规则；编辑已有正文忽略此字段
 /// * [clientRequestId] - 客户端创建幂等键；同一次提交和网络重试必须复用
 /// * [title] - 子贴标题
 /// * [content] - 子贴正文（kind=BODY，可选，留空仅创建空子贴）
@@ -19,6 +24,29 @@ part 'create_subthread_dto.g.dart';
 /// * [postingPolicy] - PARTICIPANTS=所有参与人可发帖, COLLABORATORS=仅协作者可发帖, PLAYERS=仅被标记为玩家的参与人可发帖
 @BuiltValue()
 abstract class CreateSubthreadDto implements Built<CreateSubthreadDto, CreateSubthreadDtoBuilder> {
+  /// 支持文本颜色 v1 无损读写；新端始终发送，包括删除全部颜色。新/原正文含颜色未声明返回 409/40016；新写受 textColorV1WriteEnabled 控制。
+  @BuiltValueField(wireName: r'textColorVersion')
+  CreateSubthreadDtoTextColorVersionEnum? get textColorVersion;
+  // enum textColorVersionEnum {  1,  };
+
+  /// 声明编辑器支持 Markdown 6 角色提及源的无损读取/编辑。服务端 capabilities.roleMentionsV6Supported 为 true 时新端始终发送，包括删光旧节点；未声明而新/原正文含 v6 返回 409/40014。新节点还须 roleMentionsV6WriteEnabled。
+  @BuiltValueField(wireName: r'markdownContractVersion')
+  CreateSubthreadDtoMarkdownContractVersionEnum? get markdownContractVersion;
+  // enum markdownContractVersionEnum {  6,  };
+
+  /// 本次新发言选择的帖内身份 ID；新客户端 RP 模式必须与该身份 token 一起发送。省略仅兼容旧单身份客户端；ACCOUNT 忽略，编辑旧正文不改变原身份
+  @BuiltValueField(wireName: r'identityId')
+  String? get identityId;
+
+  /// GET 帖内身份返回的确认 token；新建正文或发言时使用。身份变化返回 409/40011，保留草稿并重新确认
+  @BuiltValueField(wireName: r'identityToken')
+  String? get identityToken;
+
+  /// 本次新发言身份；ACCOUNT 明确使用站内账号且不校验 RP token，RP 要求有效帖内身份和 identityToken。省略沿用旧确认规则；编辑已有正文忽略此字段
+  @BuiltValueField(wireName: r'identityMode')
+  CreateSubthreadDtoIdentityModeEnum? get identityMode;
+  // enum identityModeEnum {  ACCOUNT,  RP,  };
+
   /// 客户端创建幂等键；同一次提交和网络重试必须复用
   @BuiltValueField(wireName: r'clientRequestId')
   String? get clientRequestId;
@@ -64,6 +92,41 @@ class _$CreateSubthreadDtoSerializer implements PrimitiveSerializer<CreateSubthr
     CreateSubthreadDto object, {
     FullType specifiedType = FullType.unspecified,
   }) sync* {
+    if (object.textColorVersion != null) {
+      yield r'textColorVersion';
+      yield serializers.serialize(
+        object.textColorVersion,
+        specifiedType: const FullType(CreateSubthreadDtoTextColorVersionEnum),
+      );
+    }
+    if (object.markdownContractVersion != null) {
+      yield r'markdownContractVersion';
+      yield serializers.serialize(
+        object.markdownContractVersion,
+        specifiedType: const FullType(CreateSubthreadDtoMarkdownContractVersionEnum),
+      );
+    }
+    if (object.identityId != null) {
+      yield r'identityId';
+      yield serializers.serialize(
+        object.identityId,
+        specifiedType: const FullType(String),
+      );
+    }
+    if (object.identityToken != null) {
+      yield r'identityToken';
+      yield serializers.serialize(
+        object.identityToken,
+        specifiedType: const FullType(String),
+      );
+    }
+    if (object.identityMode != null) {
+      yield r'identityMode';
+      yield serializers.serialize(
+        object.identityMode,
+        specifiedType: const FullType(CreateSubthreadDtoIdentityModeEnum),
+      );
+    }
     if (object.clientRequestId != null) {
       yield r'clientRequestId';
       yield serializers.serialize(
@@ -120,6 +183,41 @@ class _$CreateSubthreadDtoSerializer implements PrimitiveSerializer<CreateSubthr
       final key = serializedList[i] as String;
       final value = serializedList[i + 1];
       switch (key) {
+        case r'textColorVersion':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(CreateSubthreadDtoTextColorVersionEnum),
+          ) as CreateSubthreadDtoTextColorVersionEnum;
+          result.textColorVersion = valueDes;
+          break;
+        case r'markdownContractVersion':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(CreateSubthreadDtoMarkdownContractVersionEnum),
+          ) as CreateSubthreadDtoMarkdownContractVersionEnum;
+          result.markdownContractVersion = valueDes;
+          break;
+        case r'identityId':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(String),
+          ) as String;
+          result.identityId = valueDes;
+          break;
+        case r'identityToken':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(String),
+          ) as String;
+          result.identityToken = valueDes;
+          break;
+        case r'identityMode':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(CreateSubthreadDtoIdentityModeEnum),
+          ) as CreateSubthreadDtoIdentityModeEnum;
+          result.identityMode = valueDes;
+          break;
         case r'clientRequestId':
           final valueDes = serializers.deserialize(
             value,
@@ -182,6 +280,60 @@ class _$CreateSubthreadDtoSerializer implements PrimitiveSerializer<CreateSubthr
     );
     return result.build();
   }
+}
+
+class CreateSubthreadDtoTextColorVersionEnum extends EnumClass {
+
+  /// 支持文本颜色 v1 无损读写；新端始终发送，包括删除全部颜色。新/原正文含颜色未声明返回 409/40016；新写受 textColorV1WriteEnabled 控制。
+  @BuiltValueEnumConst(wireNumber: 1)
+  static const CreateSubthreadDtoTextColorVersionEnum number1 = _$createSubthreadDtoTextColorVersionEnum_number1;
+  /// 支持文本颜色 v1 无损读写；新端始终发送，包括删除全部颜色。新/原正文含颜色未声明返回 409/40016；新写受 textColorV1WriteEnabled 控制。
+  @BuiltValueEnumConst(wireNumber: 11184809, fallback: true)
+  static const CreateSubthreadDtoTextColorVersionEnum unknownDefaultOpenApi = _$createSubthreadDtoTextColorVersionEnum_unknownDefaultOpenApi;
+
+  static Serializer<CreateSubthreadDtoTextColorVersionEnum> get serializer => _$createSubthreadDtoTextColorVersionEnumSerializer;
+
+  const CreateSubthreadDtoTextColorVersionEnum._(String name): super(name);
+
+  static BuiltSet<CreateSubthreadDtoTextColorVersionEnum> get values => _$createSubthreadDtoTextColorVersionEnumValues;
+  static CreateSubthreadDtoTextColorVersionEnum valueOf(String name) => _$createSubthreadDtoTextColorVersionEnumValueOf(name);
+}
+
+class CreateSubthreadDtoMarkdownContractVersionEnum extends EnumClass {
+
+  /// 声明编辑器支持 Markdown 6 角色提及源的无损读取/编辑。服务端 capabilities.roleMentionsV6Supported 为 true 时新端始终发送，包括删光旧节点；未声明而新/原正文含 v6 返回 409/40014。新节点还须 roleMentionsV6WriteEnabled。
+  @BuiltValueEnumConst(wireNumber: 6)
+  static const CreateSubthreadDtoMarkdownContractVersionEnum number6 = _$createSubthreadDtoMarkdownContractVersionEnum_number6;
+  /// 声明编辑器支持 Markdown 6 角色提及源的无损读取/编辑。服务端 capabilities.roleMentionsV6Supported 为 true 时新端始终发送，包括删光旧节点；未声明而新/原正文含 v6 返回 409/40014。新节点还须 roleMentionsV6WriteEnabled。
+  @BuiltValueEnumConst(wireNumber: 11184809, fallback: true)
+  static const CreateSubthreadDtoMarkdownContractVersionEnum unknownDefaultOpenApi = _$createSubthreadDtoMarkdownContractVersionEnum_unknownDefaultOpenApi;
+
+  static Serializer<CreateSubthreadDtoMarkdownContractVersionEnum> get serializer => _$createSubthreadDtoMarkdownContractVersionEnumSerializer;
+
+  const CreateSubthreadDtoMarkdownContractVersionEnum._(String name): super(name);
+
+  static BuiltSet<CreateSubthreadDtoMarkdownContractVersionEnum> get values => _$createSubthreadDtoMarkdownContractVersionEnumValues;
+  static CreateSubthreadDtoMarkdownContractVersionEnum valueOf(String name) => _$createSubthreadDtoMarkdownContractVersionEnumValueOf(name);
+}
+
+class CreateSubthreadDtoIdentityModeEnum extends EnumClass {
+
+  /// 本次新发言身份；ACCOUNT 明确使用站内账号且不校验 RP token，RP 要求有效帖内身份和 identityToken。省略沿用旧确认规则；编辑已有正文忽略此字段
+  @BuiltValueEnumConst(wireName: r'ACCOUNT')
+  static const CreateSubthreadDtoIdentityModeEnum ACCOUNT = _$createSubthreadDtoIdentityModeEnum_ACCOUNT;
+  /// 本次新发言身份；ACCOUNT 明确使用站内账号且不校验 RP token，RP 要求有效帖内身份和 identityToken。省略沿用旧确认规则；编辑已有正文忽略此字段
+  @BuiltValueEnumConst(wireName: r'RP')
+  static const CreateSubthreadDtoIdentityModeEnum RP = _$createSubthreadDtoIdentityModeEnum_RP;
+  /// 本次新发言身份；ACCOUNT 明确使用站内账号且不校验 RP token，RP 要求有效帖内身份和 identityToken。省略沿用旧确认规则；编辑已有正文忽略此字段
+  @BuiltValueEnumConst(wireName: r'unknown_default_open_api', fallback: true)
+  static const CreateSubthreadDtoIdentityModeEnum unknownDefaultOpenApi = _$createSubthreadDtoIdentityModeEnum_unknownDefaultOpenApi;
+
+  static Serializer<CreateSubthreadDtoIdentityModeEnum> get serializer => _$createSubthreadDtoIdentityModeEnumSerializer;
+
+  const CreateSubthreadDtoIdentityModeEnum._(String name): super(name);
+
+  static BuiltSet<CreateSubthreadDtoIdentityModeEnum> get values => _$createSubthreadDtoIdentityModeEnumValues;
+  static CreateSubthreadDtoIdentityModeEnum valueOf(String name) => _$createSubthreadDtoIdentityModeEnumValueOf(name);
 }
 
 class CreateSubthreadDtoPostingPolicyEnum extends EnumClass {

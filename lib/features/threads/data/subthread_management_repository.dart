@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyou_api/wenyou_api.dart';
+import 'package:wenyousite_mobile/app/app_capabilities.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
@@ -13,7 +14,15 @@ export 'package:wenyousite_mobile/features/threads/application/subthread_managem
 
 class ApiSubthreadManagementRepository
     implements SubthreadManagementRepository {
-  ApiSubthreadManagementRepository(this._threadsApi, this._subthreadsApi);
+  ApiSubthreadManagementRepository(
+    this._threadsApi,
+    this._subthreadsApi, {
+    this.roleMentionsSupported = false,
+    this.textColorSupported = false,
+  });
+
+  final bool roleMentionsSupported;
+  final bool textColorSupported;
 
   final ThreadsApi _threadsApi;
   final SubthreadsApi _subthreadsApi;
@@ -123,6 +132,12 @@ class ApiSubthreadManagementRepository
         extra: ApiRequestPolicy.idempotentCreate.extra,
         createSubthreadDto: CreateSubthreadDto((builder) {
           builder
+            ..markdownContractVersion = roleMentionsSupported
+                ? CreateSubthreadDtoMarkdownContractVersionEnum.number6
+                : null
+            ..textColorVersion = textColorSupported
+                ? CreateSubthreadDtoTextColorVersionEnum.number1
+                : null
             ..clientRequestId = clientRequestId
             ..title = draft.normalizedTitle
             ..postingPolicy = _mapCreatePolicy(draft.postingPolicy);
@@ -308,5 +323,11 @@ final apiSubthreadManagementRepositoryProvider =
       return ApiSubthreadManagementRepository(
         api.getThreadsApi(),
         api.getSubthreadsApi(),
+        textColorSupported: ref
+            .watch(appCapabilitiesProvider)
+            .textColorSupported,
+        roleMentionsSupported: ref
+            .watch(appCapabilitiesProvider)
+            .roleMentionsSupported,
       );
     });

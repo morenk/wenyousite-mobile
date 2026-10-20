@@ -3,6 +3,8 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_text_color.dart';
+import 'package:wenyousite_mobile/core/widgets/markdown_text_color_builder.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_markdown.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_markdown_inline_builder.dart';
 
@@ -11,7 +13,7 @@ import '../../support/deterministic_test_fonts.dart';
 void main() {
   setUpAll(loadDeterministicTestFonts);
 
-  testWidgets('所有自定义行内元素必须注册统一排版入口', (tester) async {
+  testWidgets('原子行内元素使用统一入口，颜色仅作为可折行文字样式注册', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
         theme: AppTheme.light,
@@ -25,7 +27,16 @@ void main() {
       (entry) => !entry.value.isBlockElement(),
     );
     expect(inlineBuilders, isNotEmpty);
+    expect(
+      renderer.builders[MarkdownTextColor.tag],
+      isA<MarkdownTextColorBuilder>(),
+    );
     for (final entry in inlineBuilders) {
+      // 只有受控颜色范围返回 Text.rich，由渲染器合入同一段；原子元素仍走统一入口。
+      if (entry.key == MarkdownTextColor.tag) {
+        expect(entry.value, isA<MarkdownTextColorBuilder>());
+        continue;
+      }
       expect(
         entry.value,
         isA<WenyouMarkdownInlineBuilder>(),
@@ -40,6 +51,10 @@ void main() {
     '删除线': '~~样式~~',
     '普通链接': '[样式](https://wenyou.site/help)',
     '行内代码': '`code`',
+    '彩色正文': '<span data-wenyou-color-v1="#123456">样式</span>',
+    '彩色链接':
+        '<span data-wenyou-color-v1="#123456">[样式](https://wenyou.site/help)</span>',
+    '彩色代码': '<span data-wenyou-color-v1="#123456">`code`</span>',
     '用户提及': '[@张三](/users/user-zhang)',
     '全体提及': '@全体玩家',
     '站内传送门': '[入口](/threads/cmsewdo0h000x7qv6aa77ll1v)',

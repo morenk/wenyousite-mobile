@@ -33,7 +33,11 @@ class BookmarkListPage extends ConsumerWidget {
     final title =
         state.folderById(folderId)?.name ?? initialFolderName ?? '收藏夹';
     return Scaffold(
-      appBar: AppBar(title: Text(title)),
+      backgroundColor: wenyouBrowsePageBackground(context),
+      appBar: AppBar(
+        backgroundColor: wenyouBrowsePageBackground(context),
+        title: Text(title),
+      ),
       body: BookmarkListView(folderId: folderId),
     );
   }
@@ -64,19 +68,15 @@ class BookmarkListView extends ConsumerWidget {
       ),
       BookmarkListPhase.failed => WenyouPageBody(
         maxWidth: 600,
-        child: WenyouPanel(
-          child: WenyouEmptyState(
-            icon: WenyouIconIds.statusOffline,
-            title: '收藏列表加载失败',
-            message: state.failure?.userMessage ?? '请稍后重试。',
-            detail: wenyouFailureDetail(state.failure),
-            action: OutlinedButton.icon(
-              key: const Key('bookmark-list-retry'),
-              onPressed: notifier.load,
-              icon: const WenyouIcon(WenyouIconIds.actionRefresh),
-              label: const Text('重试'),
-            ),
-          ),
+        child: WenyouRetryFailure(
+          panel: true,
+          icon: WenyouIconIds.statusOffline,
+          title: '收藏列表加载失败',
+          message: state.failure?.userMessage ?? '请稍后重试。',
+          failure: state.failure,
+          retryKey: const Key('bookmark-list-retry'),
+          onRetry: notifier.load,
+          retryLabel: '重试',
         ),
       ),
       BookmarkListPhase.ready => _ReadyBookmarkList(
@@ -190,16 +190,13 @@ class _ReadyBookmarkList extends StatelessWidget {
           if (state.folderFailure != null) ...[
             SizedBox(height: tokens.space12),
             _CenteredContent(
-              child: WenyouStatusBanner(
-                tone: WenyouStatusTone.error,
+              child: WenyouRetryFailure(
+                inline: true,
                 message: state.folderFailure!.userMessage,
-                detail: wenyouFailureDetail(state.folderFailure),
-                action: TextButton.icon(
-                  key: const Key('bookmark-folders-retry'),
-                  onPressed: state.isBusy ? null : onRetryFolders,
-                  icon: const WenyouIcon(WenyouIconIds.actionRefresh, size: 18),
-                  label: const Text('重试分类'),
-                ),
+                failure: state.folderFailure,
+                retryKey: const Key('bookmark-folders-retry'),
+                onRetry: state.isBusy ? null : onRetryFolders,
+                retryLabel: '重试分类',
               ),
             ),
           ],
@@ -230,36 +227,26 @@ class _ReadyBookmarkList extends StatelessWidget {
             )
           else if (state.failure != null && state.items.isEmpty)
             _CenteredContent(
-              child: WenyouPanel(
-                child: WenyouEmptyState(
-                  icon: WenyouIconIds.statusOffline,
-                  title: '这个收藏夹加载失败',
-                  message: state.failure!.userMessage,
-                  detail: wenyouFailureDetail(state.failure),
-                  action: OutlinedButton.icon(
-                    key: const Key('bookmark-selected-folder-retry'),
-                    onPressed: state.isBusy ? null : onRetryList,
-                    icon: const WenyouIcon(WenyouIconIds.actionRefresh),
-                    label: const Text('重试'),
-                  ),
-                ),
+              child: WenyouRetryFailure(
+                panel: true,
+                icon: WenyouIconIds.statusOffline,
+                title: '这个收藏夹加载失败',
+                message: state.failure!.userMessage,
+                failure: state.failure,
+                retryKey: const Key('bookmark-selected-folder-retry'),
+                onRetry: state.isBusy ? null : onRetryList,
+                retryLabel: '重试',
               ),
             )
           else ...[
             if (state.failure != null) ...[
               _CenteredContent(
-                child: WenyouStatusBanner(
-                  tone: WenyouStatusTone.error,
+                child: WenyouRetryFailure(
+                  inline: true,
                   message: state.failure!.userMessage,
-                  detail: wenyouFailureDetail(state.failure),
-                  action: TextButton.icon(
-                    onPressed: state.isBusy ? null : onRetryList,
-                    icon: const WenyouIcon(
-                      WenyouIconIds.actionRefresh,
-                      size: 18,
-                    ),
-                    label: const Text('重试'),
-                  ),
+                  failure: state.failure,
+                  onRetry: state.isBusy ? null : onRetryList,
+                  retryLabel: '重试',
                 ),
               ),
               SizedBox(height: tokens.space12),

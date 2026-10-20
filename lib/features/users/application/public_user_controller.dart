@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wenyousite_mobile/core/application/cursor_page_request.dart';
 import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
 import 'package:wenyousite_mobile/core/application/visibility_cache_invalidation.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
@@ -117,6 +118,7 @@ class PublicUserController extends StateNotifier<PublicUserState> {
 
   Future<void> load() async {
     final epoch = ++_profileEpoch;
+    _refreshingTabs.clear();
     final previousTab = state.activeTab;
     state = PublicUserState(
       activeTab: previousTab,
@@ -204,6 +206,10 @@ class PublicUserController extends StateNotifier<PublicUserState> {
       return;
     }
     final tab = state.activeTab;
+    if (_refreshingTabs.containsKey(tab) &&
+        _refreshingTabs[tab] == _sectionEpochs[tab]) {
+      return;
+    }
     final section = _threadSection(tab);
     if (section.phase != PublicUserContentPhase.ready ||
         section.isLoadingMore ||
@@ -222,51 +228,41 @@ class PublicUserController extends StateNotifier<PublicUserState> {
         isLoadingMore: true,
       ),
     );
-    try {
-      final page = await _fetchThreadPage(tab, cursor: section.cursor);
-      if (!_isSectionCurrent(epoch, tab, sectionEpoch)) return;
-      _setThreadSection(
-        tab,
-        PublicUserContentSection(
-          phase: PublicUserContentPhase.ready,
-          items: mergeUniqueBy(
-            section.items,
-            page.items,
-            keyOf: (item) => item.id,
+    await loadCursorPage(
+      fetch: () => _fetchThreadPage(tab, cursor: section.cursor),
+      isCurrent: () => _isSectionCurrent(epoch, tab, sectionEpoch),
+      onPage: (page) {
+        _setThreadSection(
+          tab,
+          PublicUserContentSection(
+            phase: PublicUserContentPhase.ready,
+            items: mergeUniqueBy(
+              section.items,
+              page.items,
+              keyOf: (item) => item.id,
+            ),
+            cursor: page.cursor,
+            hasMore: page.hasMore,
           ),
-          cursor: page.cursor,
-          hasMore: page.hasMore,
-        ),
-      );
-    } on ApiFailure catch (failure) {
-      if (!_isSectionCurrent(epoch, tab, sectionEpoch)) return;
-      if (failure.isInvalidCursor) {
+        );
+      },
+      onInvalidCursor: () async {
         await _loadThreadTab(tab, epoch);
-        return;
-      }
-      _setThreadSection(
-        tab,
-        PublicUserContentSection(
-          phase: section.phase,
-          items: section.items,
-          cursor: section.cursor,
-          hasMore: section.hasMore,
-          failure: failure,
-        ),
-      );
-    } on Object catch (error) {
-      if (!_isSectionCurrent(epoch, tab, sectionEpoch)) return;
-      _setThreadSection(
-        tab,
-        PublicUserContentSection(
-          phase: section.phase,
-          items: section.items,
-          cursor: section.cursor,
-          hasMore: section.hasMore,
-          failure: _asFailure(error, '加载更多用户内容失败，请重试。'),
-        ),
-      );
-    }
+      },
+      mapFailure: (error) => _asFailure(error, '加载更多用户内容失败，请重试。'),
+      onFailure: (failure) {
+        _setThreadSection(
+          tab,
+          PublicUserContentSection(
+            phase: section.phase,
+            items: section.items,
+            cursor: section.cursor,
+            hasMore: section.hasMore,
+            failure: failure,
+          ),
+        );
+      },
+    );
   }
 
   Future<void> _refreshContent(
@@ -311,6 +307,8 @@ class PublicUserController extends StateNotifier<PublicUserState> {
     }
   }
 
+  final _refreshingTabs = <PublicUserContentTab, int>{};
+
   Future<ApiFailure?> _refreshTab(
     PublicUserContentTab tab,
     int profileEpoch,
@@ -322,6 +320,20 @@ class PublicUserController extends StateNotifier<PublicUserState> {
       return _sectionFailure(tab);
     }
     final sectionEpoch = _nextSectionEpoch(tab);
+    _refreshingTabs[tab] = sectionEpoch;
+    if (tab != PublicUserContentTab.replies) {
+      final before = _threadSection(tab);
+      _setThreadSection(
+        tab,
+        PublicUserContentSection(
+          phase: before.phase,
+          items: before.items,
+          cursor: before.cursor,
+          hasMore: before.hasMore,
+          failure: before.failure,
+        ),
+      );
+    }
     try {
       if (tab == PublicUserContentTab.replies) {
         final items = await _repository.fetchRecentReplies(userId);
@@ -349,6 +361,8 @@ class PublicUserController extends StateNotifier<PublicUserState> {
     } on Object catch (error) {
       if (!_isSectionCurrent(profileEpoch, tab, sectionEpoch)) return null;
       return _asFailure(error, '${tab.description}刷新失败，请稍后重试。');
+    } finally {
+      if (_refreshingTabs[tab] == sectionEpoch) _refreshingTabs.remove(tab);
     }
   }
 

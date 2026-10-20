@@ -1,14 +1,18 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/core/application/visibility_cache_invalidation.dart';
 
 class PostThreadContext {
   const PostThreadContext({
     required this.isPrivate,
     required this.canManageThread,
+    this.supportsRpIdentity = false,
+    this.ownerId,
   });
 
   final bool isPrivate;
   final bool canManageThread;
+  final bool supportsRpIdentity;
+  final String? ownerId;
 
   bool get canReport => !isPrivate;
 }
@@ -25,6 +29,6 @@ final postThreadContextLookupProvider = Provider<PostThreadContextLookup>((
 
 final postThreadContextProvider = FutureProvider.autoDispose
     .family<PostThreadContext, String>((ref, threadId) {
-      ref.watch(sessionScopeProvider);
+      ref.watch(viewerScopeProvider);
       return ref.watch(postThreadContextLookupProvider)(threadId);
-    }, dependencies: [postThreadContextLookupProvider, sessionScopeProvider]);
+    }, dependencies: [postThreadContextLookupProvider, viewerScopeProvider]);

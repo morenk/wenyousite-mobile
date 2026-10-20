@@ -146,6 +146,7 @@ class StartupController extends StateNotifier<StartupState> {
         previous.contract!,
         update: previous.update,
         isRechecking: true,
+        recheckMessage: previous.recheckMessage,
       );
     }
     try {
@@ -192,8 +193,10 @@ class StartupController extends StateNotifier<StartupState> {
         !_environment.supportsContract(contract.contractVersion) ||
         !_environment.supportsMarkdown(contract.markdownContractVersion);
     if (requiresUpdate) {
+      String? availabilityMessage;
       if (update != null) {
         final availability = await _checkAvailability(update);
+        availabilityMessage = availability.userMessage;
         if (availability.isAvailable) {
           return (
             state: StartupState.updateRequired(contract, availability.update),
@@ -202,7 +205,11 @@ class StartupController extends StateNotifier<StartupState> {
         }
       }
       return (
-        state: StartupState.updateWaiting(contract, update: update),
+        state: StartupState.updateWaiting(
+          contract,
+          update: update,
+          recheckMessage: availabilityMessage,
+        ),
         pendingRecommendation: null,
       );
     }
@@ -226,25 +233,28 @@ class StartupController extends StateNotifier<StartupState> {
     );
   }
 
-  Future<({MobileUpdateInfo update, bool isAvailable})> _checkAvailability(
-    MobileUpdateInfo update,
-  ) async {
+  Future<({MobileUpdateInfo update, bool isAvailable, String? userMessage})>
+  _checkAvailability(MobileUpdateInfo update) async {
     if (!update.canStartUpdate) {
-      return (update: update, isAvailable: false);
+      return (update: update, isAvailable: false, userMessage: null);
     }
     final service = _mobileUpdateService;
     final checker = service is MobileUpdateAvailabilityChecker
         ? service as MobileUpdateAvailabilityChecker
         : null;
     if (checker == null) {
-      return (update: update, isAvailable: true);
+      return (update: update, isAvailable: true, userMessage: null);
     }
     final availability = await checker.checkAvailability(update);
     if (!availability.isAvailable) {
-      return (update: update, isAvailable: false);
+      return (
+        update: update,
+        isAvailable: false,
+        userMessage: availability.userMessage,
+      );
     }
     update = update.withTargetVersion(availability.targetVersion);
-    return (update: update, isAvailable: true);
+    return (update: update, isAvailable: true, userMessage: null);
   }
 
   void _startPendingRecommendation(

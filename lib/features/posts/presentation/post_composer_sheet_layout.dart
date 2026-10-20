@@ -11,10 +11,12 @@ class PostComposerSheetHeader extends StatelessWidget {
     required this.expanded,
     required this.onResize,
     required this.onToggleExpanded,
+    this.identity,
     super.key,
   });
 
   final String label;
+  final Widget? identity;
   final bool expanded;
   final ValueChanged<double>? onResize;
   final VoidCallback? onToggleExpanded;
@@ -44,18 +46,20 @@ class PostComposerSheetHeader extends StatelessWidget {
               ),
             ),
           ),
-          SizedBox(
-            height: tokens.minimumTouchTarget,
+          ConstrainedBox(
+            constraints: BoxConstraints(minHeight: tokens.minimumTouchTarget),
             child: Row(
               children: [
                 SizedBox(width: tokens.space16),
                 Expanded(
-                  child: Text(
-                    label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.wenyouRowTitle,
-                  ),
+                  child:
+                      identity ??
+                      Text(
+                        label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.wenyouRowTitle,
+                      ),
                 ),
                 IconButton(
                   key: const Key('post-composer-expand'),
@@ -80,6 +84,7 @@ class PostComposerEditorRegion extends StatelessWidget {
   const PostComposerEditorRegion({
     required this.editorSession,
     this.pendingImages,
+    this.mentionLabels = const {},
     required this.label,
     required this.placeholder,
     required this.threadId,
@@ -92,6 +97,7 @@ class PostComposerEditorRegion extends StatelessWidget {
 
   final RichEditorSession editorSession;
   final EditorPendingImages? pendingImages;
+  final Map<String, String> mentionLabels;
   final String label;
   final String placeholder;
   final String threadId;
@@ -126,6 +132,20 @@ class PostComposerEditorRegion extends StatelessWidget {
                           focusNode: editorSession.focusNode,
                           scrollController: editorSession.scrollController,
                           config: QuillEditorConfig(
+                            onTapUp: (details, _) => editorAudioOwnsPointer(
+                              context,
+                              details.globalPosition,
+                            ),
+                            onSingleLongTapStart: (details, _) =>
+                                editorAudioOwnsPointer(
+                                  context,
+                                  details.globalPosition,
+                                ),
+                            onSingleLongTapEnd: (details, _) =>
+                                editorAudioOwnsPointer(
+                                  context,
+                                  details.globalPosition,
+                                ),
                             scrollable: true,
                             expands: true,
                             autoFocus: true,
@@ -138,7 +158,10 @@ class PostComposerEditorRegion extends StatelessWidget {
                             customLeadingBlockBuilder:
                                 wenyouEditorLeadingBlockBuilder(context),
                             embedBuilders: wenyouEditorEmbedBuilders(
+                              mentionLabels: mentionLabels,
                               mediaDisplays: editorSession.mediaDisplays,
+                              mediaAudios: editorSession.mediaAudios,
+                              editorFocusNode: editorSession.focusNode,
                               pendingImages: pendingImages,
                             ),
                             customShortcuts: editorSession.clipboardShortcuts,
@@ -162,7 +185,18 @@ class PostComposerEditorRegion extends StatelessWidget {
                   ),
                   child: SingleChildScrollView(
                     physics: const NeverScrollableScrollPhysics(),
-                    child: KeyedSubtree(key: toolbarMeasureKey, child: toolbar),
+                    child: EditorToolArea(
+                      availableHeight:
+                          (canvasConstraints.maxHeight -
+                                  (MediaQuery.viewInsetsOf(context).bottom == 0
+                                      ? MediaQuery.viewPaddingOf(context).bottom
+                                      : 0))
+                              .clamp(0, double.infinity),
+                      child: KeyedSubtree(
+                        key: toolbarMeasureKey,
+                        child: toolbar,
+                      ),
+                    ),
                   ),
                 ),
               ],

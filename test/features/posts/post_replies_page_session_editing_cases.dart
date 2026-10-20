@@ -42,6 +42,7 @@ void registerPostRepliesPageSessionEditingCases() {
           content,
           postRepliesPageTestAuthor,
           version: version + 1,
+          editedAt: DateTime(2025, 2, 3),
         );
       },
     );
@@ -77,6 +78,11 @@ void registerPostRepliesPageSessionEditingCases() {
       '自己的回复',
     );
     expect(
+      repository.replies.singleWhere((post) => post.id == 'reply-own').editedAt,
+      isNull,
+    );
+    expect(find.textContaining('编辑于'), findsNothing);
+    expect(
       MarkdownDeltaCodec.encode(
         tester
             .state<QuillEditorState>(
@@ -97,6 +103,7 @@ void registerPostRepliesPageSessionEditingCases() {
     expect(find.byKey(const Key('post-composer-sheet')), findsNothing);
     expect(find.text('编辑失败后保留的内容'), findsOneWidget);
     expect(find.text('自己的回复'), findsNothing);
+    expect(find.textContaining('编辑于2025-02-03'), findsOneWidget);
   });
 
   testWidgets('会话切换丢弃旧账号迟到首屏并立即加载新会话', (tester) async {
@@ -342,7 +349,7 @@ void registerPostRepliesPageSessionEditingCases() {
     for (final markdown in tester.widgetList<WenyouMarkdown>(
       find.byType(WenyouMarkdown),
     )) {
-      expect(markdown.bodyFontSize, 17);
+      expect(markdown.bodyFontSize, 16);
       expect(markdown.bodyHeight, 1.8);
     }
     final countCenter = tester.getCenter(
@@ -392,8 +399,9 @@ void registerPostRepliesPageSessionEditingCases() {
 
     await tester.tap(find.byKey(const Key('post-reply-compose')));
     await tester.pump();
-    expect(find.byKey(const Key('post-composer-sheet')), findsOneWidget);
+    expect(find.byKey(const Key('post-composer-opening')), findsOneWidget);
     await tester.pumpAndSettle();
+    expect(find.byKey(const Key('post-composer-sheet')), findsOneWidget);
     expect(find.text('回复 @楼层作者'), findsWidgets);
     expect(find.text('回复会平级挂在当前主楼层下。'), findsNothing);
     expect(
@@ -489,7 +497,8 @@ void registerPostRepliesPageSessionEditingCases() {
 
     expect(repository.updateRequests.single.version, 1);
     expect(find.text('编辑后的新回复'), findsOneWidget);
-    expect(authorDirectory.replyCalls, 2);
+    // 完成编辑后的阅读刷新也重新投影当前身份目录。
+    expect(authorDirectory.replyCalls, 3);
 
     await tester.ensureVisible(find.byKey(const Key('post-reply-created')));
     await postRepliesPageTestLongPressPostMetadata(tester, 'created');
@@ -502,7 +511,7 @@ void registerPostRepliesPageSessionEditingCases() {
 
     expect(repository.removedIds, ['created']);
     expect(find.text('编辑后的新回复'), findsNothing);
-    expect(authorDirectory.replyCalls, 3);
+    expect(authorDirectory.replyCalls, 4);
     expect(tester.takeException(), isNull);
   });
 }

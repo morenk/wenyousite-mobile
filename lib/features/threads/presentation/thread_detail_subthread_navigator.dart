@@ -65,6 +65,7 @@ class ThreadSubthreadNavigator extends StatelessWidget {
             anchorBuilder: (context, isOpen) => ConstrainedBox(
               constraints: BoxConstraints(minHeight: tokens.minimumTouchTarget),
               child: Center(
+                heightFactor: 1,
                 child: Container(
                   key: const Key('thread-subthread-menu-capsule'),
                   constraints: const BoxConstraints(minHeight: 36),

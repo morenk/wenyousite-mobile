@@ -79,7 +79,11 @@ class _$PostDetailResponseDtoKindEnumSerializer
 
 class _$PostDetailResponseDto extends PostDetailResponseDto {
   @override
+  final BuiltList<MentionIdentityDisplayDto>? mentionIdentities;
+  @override
   final BuiltList<MarkdownMediaDisplayResponseDto>? mediaDisplays;
+  @override
+  final BuiltList<AudioMediaDto>? mediaAudios;
   @override
   final String id;
   @override
@@ -92,6 +96,8 @@ class _$PostDetailResponseDto extends PostDetailResponseDto {
   final PostDetailResponseDtoKindEnum kind;
   @override
   final num? floorNumber;
+  @override
+  final num? replyNumber;
   @override
   final String? parentPostId;
   @override
@@ -108,6 +114,8 @@ class _$PostDetailResponseDto extends PostDetailResponseDto {
   final DateTime createdAt;
   @override
   final DateTime updatedAt;
+  @override
+  final DateTime? editedAt;
   @override
   final DateTime? pinnedAt;
   @override
@@ -128,13 +136,16 @@ class _$PostDetailResponseDto extends PostDetailResponseDto {
   ]) => (PostDetailResponseDtoBuilder()..update(updates))._build();
 
   _$PostDetailResponseDto._({
+    this.mentionIdentities,
     this.mediaDisplays,
+    this.mediaAudios,
     required this.id,
     required this.threadId,
     required this.subthreadId,
     required this.authorId,
     required this.kind,
     this.floorNumber,
+    this.replyNumber,
     this.parentPostId,
     this.replyToPostId,
     this.clientRequestId,
@@ -143,6 +154,7 @@ class _$PostDetailResponseDto extends PostDetailResponseDto {
     required this.version,
     required this.createdAt,
     required this.updatedAt,
+    this.editedAt,
     this.pinnedAt,
     this.deletedAt,
     required this.author,
@@ -164,13 +176,16 @@ class _$PostDetailResponseDto extends PostDetailResponseDto {
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
     return other is PostDetailResponseDto &&
+        mentionIdentities == other.mentionIdentities &&
         mediaDisplays == other.mediaDisplays &&
+        mediaAudios == other.mediaAudios &&
         id == other.id &&
         threadId == other.threadId &&
         subthreadId == other.subthreadId &&
         authorId == other.authorId &&
         kind == other.kind &&
         floorNumber == other.floorNumber &&
+        replyNumber == other.replyNumber &&
         parentPostId == other.parentPostId &&
         replyToPostId == other.replyToPostId &&
         clientRequestId == other.clientRequestId &&
@@ -179,6 +194,7 @@ class _$PostDetailResponseDto extends PostDetailResponseDto {
         version == other.version &&
         createdAt == other.createdAt &&
         updatedAt == other.updatedAt &&
+        editedAt == other.editedAt &&
         pinnedAt == other.pinnedAt &&
         deletedAt == other.deletedAt &&
         author == other.author &&
@@ -191,13 +207,16 @@ class _$PostDetailResponseDto extends PostDetailResponseDto {
   @override
   int get hashCode {
     var _$hash = 0;
+    _$hash = $jc(_$hash, mentionIdentities.hashCode);
     _$hash = $jc(_$hash, mediaDisplays.hashCode);
+    _$hash = $jc(_$hash, mediaAudios.hashCode);
     _$hash = $jc(_$hash, id.hashCode);
     _$hash = $jc(_$hash, threadId.hashCode);
     _$hash = $jc(_$hash, subthreadId.hashCode);
     _$hash = $jc(_$hash, authorId.hashCode);
     _$hash = $jc(_$hash, kind.hashCode);
     _$hash = $jc(_$hash, floorNumber.hashCode);
+    _$hash = $jc(_$hash, replyNumber.hashCode);
     _$hash = $jc(_$hash, parentPostId.hashCode);
     _$hash = $jc(_$hash, replyToPostId.hashCode);
     _$hash = $jc(_$hash, clientRequestId.hashCode);
@@ -206,6 +225,7 @@ class _$PostDetailResponseDto extends PostDetailResponseDto {
     _$hash = $jc(_$hash, version.hashCode);
     _$hash = $jc(_$hash, createdAt.hashCode);
     _$hash = $jc(_$hash, updatedAt.hashCode);
+    _$hash = $jc(_$hash, editedAt.hashCode);
     _$hash = $jc(_$hash, pinnedAt.hashCode);
     _$hash = $jc(_$hash, deletedAt.hashCode);
     _$hash = $jc(_$hash, author.hashCode);
@@ -220,13 +240,16 @@ class _$PostDetailResponseDto extends PostDetailResponseDto {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'PostDetailResponseDto')
+          ..add('mentionIdentities', mentionIdentities)
           ..add('mediaDisplays', mediaDisplays)
+          ..add('mediaAudios', mediaAudios)
           ..add('id', id)
           ..add('threadId', threadId)
           ..add('subthreadId', subthreadId)
           ..add('authorId', authorId)
           ..add('kind', kind)
           ..add('floorNumber', floorNumber)
+          ..add('replyNumber', replyNumber)
           ..add('parentPostId', parentPostId)
           ..add('replyToPostId', replyToPostId)
           ..add('clientRequestId', clientRequestId)
@@ -235,6 +258,7 @@ class _$PostDetailResponseDto extends PostDetailResponseDto {
           ..add('version', version)
           ..add('createdAt', createdAt)
           ..add('updatedAt', updatedAt)
+          ..add('editedAt', editedAt)
           ..add('pinnedAt', pinnedAt)
           ..add('deletedAt', deletedAt)
           ..add('author', author)
@@ -250,12 +274,25 @@ class PostDetailResponseDtoBuilder
     implements Builder<PostDetailResponseDto, PostDetailResponseDtoBuilder> {
   _$PostDetailResponseDto? _$v;
 
+  ListBuilder<MentionIdentityDisplayDto>? _mentionIdentities;
+  ListBuilder<MentionIdentityDisplayDto> get mentionIdentities =>
+      _$this._mentionIdentities ??= ListBuilder<MentionIdentityDisplayDto>();
+  set mentionIdentities(
+    ListBuilder<MentionIdentityDisplayDto>? mentionIdentities,
+  ) => _$this._mentionIdentities = mentionIdentities;
+
   ListBuilder<MarkdownMediaDisplayResponseDto>? _mediaDisplays;
   ListBuilder<MarkdownMediaDisplayResponseDto> get mediaDisplays =>
       _$this._mediaDisplays ??= ListBuilder<MarkdownMediaDisplayResponseDto>();
   set mediaDisplays(
     ListBuilder<MarkdownMediaDisplayResponseDto>? mediaDisplays,
   ) => _$this._mediaDisplays = mediaDisplays;
+
+  ListBuilder<AudioMediaDto>? _mediaAudios;
+  ListBuilder<AudioMediaDto> get mediaAudios =>
+      _$this._mediaAudios ??= ListBuilder<AudioMediaDto>();
+  set mediaAudios(ListBuilder<AudioMediaDto>? mediaAudios) =>
+      _$this._mediaAudios = mediaAudios;
 
   String? _id;
   String? get id => _$this._id;
@@ -280,6 +317,10 @@ class PostDetailResponseDtoBuilder
   num? _floorNumber;
   num? get floorNumber => _$this._floorNumber;
   set floorNumber(num? floorNumber) => _$this._floorNumber = floorNumber;
+
+  num? _replyNumber;
+  num? get replyNumber => _$this._replyNumber;
+  set replyNumber(num? replyNumber) => _$this._replyNumber = replyNumber;
 
   String? _parentPostId;
   String? get parentPostId => _$this._parentPostId;
@@ -316,6 +357,10 @@ class PostDetailResponseDtoBuilder
   DateTime? _updatedAt;
   DateTime? get updatedAt => _$this._updatedAt;
   set updatedAt(DateTime? updatedAt) => _$this._updatedAt = updatedAt;
+
+  DateTime? _editedAt;
+  DateTime? get editedAt => _$this._editedAt;
+  set editedAt(DateTime? editedAt) => _$this._editedAt = editedAt;
 
   DateTime? _pinnedAt;
   DateTime? get pinnedAt => _$this._pinnedAt;
@@ -359,13 +404,16 @@ class PostDetailResponseDtoBuilder
   PostDetailResponseDtoBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
+      _mentionIdentities = $v.mentionIdentities?.toBuilder();
       _mediaDisplays = $v.mediaDisplays?.toBuilder();
+      _mediaAudios = $v.mediaAudios?.toBuilder();
       _id = $v.id;
       _threadId = $v.threadId;
       _subthreadId = $v.subthreadId;
       _authorId = $v.authorId;
       _kind = $v.kind;
       _floorNumber = $v.floorNumber;
+      _replyNumber = $v.replyNumber;
       _parentPostId = $v.parentPostId;
       _replyToPostId = $v.replyToPostId;
       _clientRequestId = $v.clientRequestId;
@@ -374,6 +422,7 @@ class PostDetailResponseDtoBuilder
       _version = $v.version;
       _createdAt = $v.createdAt;
       _updatedAt = $v.updatedAt;
+      _editedAt = $v.editedAt;
       _pinnedAt = $v.pinnedAt;
       _deletedAt = $v.deletedAt;
       _author = $v.author.toBuilder();
@@ -405,7 +454,9 @@ class PostDetailResponseDtoBuilder
       _$result =
           _$v ??
           _$PostDetailResponseDto._(
+            mentionIdentities: _mentionIdentities?.build(),
             mediaDisplays: _mediaDisplays?.build(),
+            mediaAudios: _mediaAudios?.build(),
             id: BuiltValueNullFieldError.checkNotNull(
               id,
               r'PostDetailResponseDto',
@@ -432,6 +483,7 @@ class PostDetailResponseDtoBuilder
               'kind',
             ),
             floorNumber: floorNumber,
+            replyNumber: replyNumber,
             parentPostId: parentPostId,
             replyToPostId: replyToPostId,
             clientRequestId: clientRequestId,
@@ -456,6 +508,7 @@ class PostDetailResponseDtoBuilder
               r'PostDetailResponseDto',
               'updatedAt',
             ),
+            editedAt: editedAt,
             pinnedAt: pinnedAt,
             deletedAt: deletedAt,
             author: author.build(),
@@ -467,8 +520,12 @@ class PostDetailResponseDtoBuilder
     } catch (_) {
       late String _$failedField;
       try {
+        _$failedField = 'mentionIdentities';
+        _mentionIdentities?.build();
         _$failedField = 'mediaDisplays';
         _mediaDisplays?.build();
+        _$failedField = 'mediaAudios';
+        _mediaAudios?.build();
 
         _$failedField = 'diceRolls';
         diceRolls.build();

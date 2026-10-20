@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_management_repository_ports.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_management_models.dart';
 
@@ -19,6 +20,7 @@ class ThreadManagementController extends StateNotifier<ThreadManagementState> {
     state = const ThreadManagementState.loading();
     try {
       final bootstrap = await _repository.load(_threadId);
+      if (!mounted) return;
       if (!bootstrap.thread.canManage) {
         throw const ApiFailure(
           userMessage: '当前账号没有管理这个主题的权限。',
@@ -31,6 +33,7 @@ class ThreadManagementController extends StateNotifier<ThreadManagementState> {
         bootstrap: bootstrap,
       );
     } on ApiFailure catch (failure) {
+      if (!mounted) return;
       state = ThreadManagementState(
         phase: ThreadManagementPhase.failed,
         failure: failure,
@@ -55,6 +58,7 @@ class ThreadManagementController extends StateNotifier<ThreadManagementState> {
         current: bootstrap.thread,
         draft: draft,
       );
+      if (!mounted) return false;
       state = state.copyWith(
         bootstrap: bootstrap.copyWith(thread: updated),
         isSaving: false,
@@ -62,6 +66,7 @@ class ThreadManagementController extends StateNotifier<ThreadManagementState> {
       );
       return true;
     } on ApiFailure catch (failure) {
+      if (!mounted) return false;
       if (failure.businessCode == 40002 || failure.httpStatus == 409) {
         await _resolveConflict(failure, draft);
       } else {
@@ -77,12 +82,14 @@ class ThreadManagementController extends StateNotifier<ThreadManagementState> {
   ) async {
     try {
       final latest = await _repository.load(_threadId);
+      if (!mounted) return;
       state = state.copyWith(
         isSaving: false,
         failure: conflictFailure,
         conflict: ThreadManagementConflict(latest: latest, pending: pending),
       );
     } on ApiFailure catch (reloadFailure) {
+      if (!mounted) return;
       state = state.copyWith(
         isSaving: false,
         failure: reloadFailure,
@@ -105,12 +112,14 @@ class ThreadManagementController extends StateNotifier<ThreadManagementState> {
         current: conflict.latest.thread,
         draft: draft,
       );
+      if (!mounted) return false;
       state = state.copyWith(
         bootstrap: conflict.latest.copyWith(thread: updated),
         isSaving: false,
       );
       return true;
     } on ApiFailure catch (failure) {
+      if (!mounted) return false;
       if (failure.businessCode == 40002 || failure.httpStatus == 409) {
         await _resolveConflict(failure, draft);
       } else {
@@ -157,12 +166,13 @@ class ThreadManagementController extends StateNotifier<ThreadManagementState> {
 }
 
 final threadManagementControllerProvider = StateNotifierProvider.autoDispose
-    .family<ThreadManagementController, ThreadManagementState, String>((
-      ref,
-      threadId,
-    ) {
-      return ThreadManagementController(
-        threadId,
-        ref.watch(threadManagementRepositoryProvider),
-      );
-    }, dependencies: [threadManagementRepositoryProvider]);
+    .family<ThreadManagementController, ThreadManagementState, String>(
+      (ref, threadId) {
+        ref.watch(sessionScopeProvider);
+        return ThreadManagementController(
+          threadId,
+          ref.watch(threadManagementRepositoryProvider),
+        );
+      },
+      dependencies: [threadManagementRepositoryProvider, sessionScopeProvider],
+    );

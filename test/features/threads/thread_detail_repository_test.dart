@@ -6,7 +6,10 @@ import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/threads/data/thread_detail_repository.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.dart';
 
+import 'thread_action_counts_repository_cases.dart';
+
 void main() {
+  registerThreadActionCountsRepositoryCases(_threadDetail);
   test('主题详情映射字段、过滤已删除子贴并按 sortOrder 排序', () async {
     final threadsApi = _MockThreadsApi();
     final postsApi = _MockPostsApi();
@@ -25,6 +28,8 @@ void main() {
     expect(detail.owner.id, 'owner-1');
     expect(detail.owner.username, '温柔测试员');
     expect(detail.owner.avatarUrl, 'https://cdn.example.com/owner.png');
+    expect(detail.owner.rpIdentity, isNull);
+    expect(detail.owner.displayName, '温柔测试员');
     expect(detail.owner.level, 4);
     expect(detail.categorySlug, 'RPG');
     expect(detail.status, ThreadDetailStatus.closed);
@@ -560,6 +565,14 @@ ThreadDetailResponseDto _threadDetail() {
           username: '温柔测试员',
           level: 4,
           avatar: 'https://cdn.example.com/owner.png',
+        ).rebuild(
+          (owner) => owner.rpIdentity.replace(
+            RpIdentityResponseDto(
+              (role) => role
+                ..id = 'legacy-owner-role'
+                ..nickname = '不代表账号的角色',
+            ),
+          ),
         ),
       )
       ..subthreads.addAll([

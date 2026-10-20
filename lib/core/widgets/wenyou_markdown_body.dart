@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:markdown/markdown.dart' as md;
+import 'package:wenyousite_mobile/core/markdown/markdown_audio_projection.dart';
+import 'package:wenyousite_mobile/core/media/media_audio.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_audio_player.dart';
 
 /// flutter_markdown_plus 1.0.12 对所有段落强制固定 strut；多行代码、
 /// 表情等 WidgetSpan 的实际高度会被忽略。通过公开 build 扩展点适配
 /// 支持的正文、标题、引用和列表容器，不改解析、事件或节点内容。
 class WenyouMarkdownBody extends MarkdownBody {
   const WenyouMarkdownBody({
+    this.mediaAudios = const {},
     required super.data,
     super.selectable,
     super.fitContent,
@@ -19,6 +23,7 @@ class WenyouMarkdownBody extends MarkdownBody {
     super.imageBuilder,
     super.key,
   });
+  final Map<String, MediaAudio> mediaAudios;
 
   @override
   Widget build(BuildContext context, List<Widget>? children) {
@@ -33,6 +38,23 @@ class WenyouMarkdownBody extends MarkdownBody {
     final mapped = <Widget>[];
     for (var index = 0; index < (children?.length ?? 0); index++) {
       final child = children![index];
+      if (children.length == blocks.length * 2 - 1 && index.isEven) {
+        final audio = MarkdownAudioProjection.fromBlock(
+          blocks[index ~/ 2],
+          mediaAudios,
+        );
+        if (audio != null) {
+          mapped.add(
+            WenyouAudioPlayer(
+              key: ValueKey('audio-${index ~/ 2}-${audio.audio.mediaId}'),
+              audio: audio.audio,
+              label: audio.label,
+              labelRuns: audio.labelRuns,
+            ),
+          );
+          continue;
+        }
+      }
       if (children.length == blocks.length * 2 - 1 &&
           index.isOdd &&
           child is SizedBox &&

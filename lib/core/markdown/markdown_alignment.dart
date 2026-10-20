@@ -1,6 +1,8 @@
 import 'package:markdown/markdown.dart' as md;
 import 'package:wenyousite_mobile/core/markdown/markdown_dice_contract.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_reader_paragraph_syntax.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_source_protection.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_text_color.dart';
 
 enum WenyouTextAlignment { left, center, right }
 
@@ -183,19 +185,22 @@ abstract final class MarkdownAlignmentContract {
     WenyouTextAlignment.right => '[wenyousite-align-v1-right]: #',
   };
 
-  static String removeMarkerLines(String markdown) {
+  /// 摘要只消费有效标记；无效定义须转为文字，避免被引用定义语法吞掉。
+  static String prepareForPreview(String markdown) {
     final analysis = analyze(markdown, imageAlignment: true);
     final markers = analysis.validMarkerLines;
     return [
       for (var i = 0; i < analysis.lines.length; i++)
-        if (!markers.contains(i)) analysis.lines[i],
+        if (!markers.contains(i))
+          analysis.invalidMarkerLines.contains(i) &&
+                  isMarkerLine(analysis.lines[i])
+              ? analysis.lines[i].replaceFirst('[', r'\[')
+              : analysis.lines[i],
     ].join('\n');
   }
 
   static bool containsRegularImage(String markdown) {
-    final nodes = md.Document(
-      extensionSet: md.ExtensionSet.gitHubFlavored,
-    ).parseLines(markdown.split('\n'));
+    final nodes = _parseBlocks(markdown.split('\n'));
     return nodes.any(_hasRegularImage);
   }
 
@@ -406,11 +411,15 @@ abstract final class MarkdownAlignmentContract {
   }
 
   static md.Node? _parseSingleBlock(List<String> lines) {
-    final nodes = md.Document(
-      extensionSet: md.ExtensionSet.gitHubFlavored,
-    ).parseLines(lines);
+    final nodes = _parseBlocks(lines);
     return nodes.length == 1 ? nodes.single : null;
   }
+
+  static List<md.Node> _parseBlocks(List<String> lines) => md.Document(
+    blockSyntaxes: const [MarkdownReaderParagraphSyntax()],
+    inlineSyntaxes: [MarkdownTextColorSyntax()],
+    extensionSet: md.ExtensionSet.gitHubFlavored,
+  ).parseLines(lines);
 
   static bool _hasMeaningfulContent(md.Node? node) =>
       node != null &&

@@ -31,6 +31,8 @@ class AdminApi {
   /// Parameters:
   /// * [xCSRFToken] - 管理后台写操作必填
   /// * [cursor] - 分页游标
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -43,6 +45,8 @@ class AdminApi {
   Future<Response<AdminGetHistory200Response>> adminGetHistory({
     String? xCSRFToken,
     String? cursor,
+    int? xMarkdownContractVersion,
+    int? xTextColorVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -55,6 +59,8 @@ class AdminApi {
       method: r'GET',
       headers: <String, dynamic>{
         if (xCSRFToken != null) r'X-CSRF-Token': xCSRFToken,
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -125,6 +131,8 @@ class AdminApi {
   ///
   /// Parameters:
   /// * [xCSRFToken] - 管理后台写操作必填
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -136,6 +144,8 @@ class AdminApi {
   /// Throws [DioException] if API call or serialization fails
   Future<Response<AdminIndex200Response>> adminIndex({
     String? xCSRFToken,
+    int? xMarkdownContractVersion,
+    int? xTextColorVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -148,6 +158,8 @@ class AdminApi {
       method: r'GET',
       headers: <String, dynamic>{
         if (xCSRFToken != null) r'X-CSRF-Token': xCSRFToken,
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -214,6 +226,8 @@ class AdminApi {
   /// Parameters:
   /// * [sendSystemNotificationDto]
   /// * [xCSRFToken] - 管理后台写操作必填
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -226,6 +240,8 @@ class AdminApi {
   Future<Response<AdminPreviewRecipients201Response>> adminPreviewRecipients({
     required SendSystemNotificationDto sendSystemNotificationDto,
     String? xCSRFToken,
+    int? xMarkdownContractVersion,
+    int? xTextColorVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -238,6 +254,8 @@ class AdminApi {
       method: r'POST',
       headers: <String, dynamic>{
         if (xCSRFToken != null) r'X-CSRF-Token': xCSRFToken,
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -324,6 +342,8 @@ class AdminApi {
   /// Parameters:
   /// * [q] - 用户名或邮箱关键词
   /// * [xCSRFToken] - 管理后台写操作必填
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -336,6 +356,8 @@ class AdminApi {
   Future<Response<AdminSearchUsers200Response>> adminSearchUsers({
     required String q,
     String? xCSRFToken,
+    int? xMarkdownContractVersion,
+    int? xTextColorVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -348,6 +370,8 @@ class AdminApi {
       method: r'GET',
       headers: <String, dynamic>{
         if (xCSRFToken != null) r'X-CSRF-Token': xCSRFToken,
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -419,6 +443,8 @@ class AdminApi {
   /// Parameters:
   /// * [sendSystemNotificationDto]
   /// * [xCSRFToken] - 管理后台写操作必填
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -431,6 +457,8 @@ class AdminApi {
   Future<Response<AdminSendSystemNotification201Response>> adminSendSystemNotification({
     required SendSystemNotificationDto sendSystemNotificationDto,
     String? xCSRFToken,
+    int? xMarkdownContractVersion,
+    int? xTextColorVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -443,6 +471,8 @@ class AdminApi {
       method: r'POST',
       headers: <String, dynamic>{
         if (xCSRFToken != null) r'X-CSRF-Token': xCSRFToken,
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
         ...?headers,
       },
       extra: <String, dynamic>{

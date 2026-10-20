@@ -5,12 +5,8 @@ import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 
 /// 个人区页面在浅色模式使用 Foundation 柔和底色，深色沿用原背景。
-Color wenyouPersonalPageBackground(BuildContext context) {
-  final tokens = context.wenyouTokens;
-  return Theme.of(context).brightness == Brightness.light
-      ? tokens.softPanel
-      : tokens.background;
-}
+Color wenyouPersonalPageBackground(BuildContext context) =>
+    wenyouBrowsePageBackground(context);
 
 /// 独立设置页共用内容宽度、滚动、安全区和底部留白。
 class WenyouSettingsBody extends StatelessWidget {

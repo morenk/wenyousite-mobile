@@ -1,6 +1,7 @@
 import 'package:markdown/markdown.dart' as md;
 import 'package:wenyousite_mobile/core/markdown/markdown_container_quote_syntax.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_inline_source.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_text_color.dart';
 
 /// 保护区来自实际块和行内解析消费范围，URL/title 内的反引号不参与配对。
 final class MarkdownSourceProtection {
@@ -232,7 +233,17 @@ final class MarkdownSourceProtection {
 
     visit(inline.code, code: true);
     visit(inline.metadata);
-    visit(inline.html, html: true);
+    // 仅完整通过颜色契约校验的标签是样式；未知／损坏 HTML 仍保护原文。
+    final htmlSource = source.contains('<span data-wenyou-color-v1=')
+        ? MarkdownTextColor.maskValidTags(source)
+        : source;
+    visit(
+      inline.html.where(
+        (range) =>
+            htmlSource.substring(range.start, range.end).trim().isNotEmpty,
+      ),
+      html: true,
+    );
   }
 }
 
@@ -321,9 +332,8 @@ class _Paragraph extends md.ParagraphSyntax {
   md.Node? parse(md.BlockParser parser) {
     final start = result.position(parser);
     final node = super.parse(parser);
-    if (node != null) {
-      result.inspectInline(parser, start, result.position(parser));
-    }
+    // Setext 标题的正文已被消费，只是等下一条语法收取下划线后再建节点。
+    result.inspectInline(parser, start, result.position(parser));
     return node;
   }
 }

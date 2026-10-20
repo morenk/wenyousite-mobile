@@ -14,17 +14,40 @@ import 'package:wenyousite_mobile/features/settings/presentation/change_email_pa
 import 'package:wenyousite_mobile/features/settings/presentation/change_password_page.dart';
 import 'package:wenyousite_mobile/features/settings/presentation/delete_account_page.dart';
 import 'package:wenyousite_mobile/features/settings/presentation/diagnostic_settings_page.dart';
+import 'package:wenyousite_mobile/features/settings/presentation/editor_toolbar_settings_page.dart';
 import 'package:wenyousite_mobile/features/settings/presentation/login_sessions_page.dart';
+import 'package:wenyousite_mobile/features/settings/presentation/thread_font_settings_page.dart';
 import 'package:wenyousite_mobile/features/social/domain/user_relation_list_models.dart';
 import 'package:wenyousite_mobile/features/social/presentation/bookmark_list_page.dart';
 import 'package:wenyousite_mobile/features/social/presentation/user_relation_list_page.dart';
 import 'package:wenyousite_mobile/features/stickers/presentation/sticker_collection_page.dart';
+import 'package:wenyousite_mobile/features/toolbox/domain/text_tool.dart';
+import 'package:wenyousite_mobile/features/toolbox/presentation/text_tool_page.dart';
+import 'package:wenyousite_mobile/features/toolbox/presentation/toolbox_page.dart';
 import 'package:wenyousite_mobile/features/users/presentation/me_content_dashboard.dart';
 import 'package:wenyousite_mobile/features/users/presentation/me_page.dart';
 import 'package:wenyousite_mobile/features/users/presentation/public_user_page.dart';
 import 'package:wenyousite_mobile/features/wallet/presentation/wallet_page.dart';
 
 List<RouteBase> buildAccountRoutes(Ref ref) => [
+  GoRoute(
+    path: AppRoutePaths.toolbox,
+    name: AppRouteNames.toolbox,
+    builder: (context, state) => const ToolboxPage(),
+    routes: [
+      GoRoute(
+        path: AppRoutePaths.textToolSegment,
+        name: AppRouteNames.textTool,
+        redirect: (context, state) =>
+            TextTool.fromId(state.pathParameters['toolId']) == null
+            ? AppRouteLocations.toolbox
+            : null,
+        builder: (context, state) => TextToolPage(
+          tool: TextTool.fromId(state.pathParameters['toolId'])!,
+        ),
+      ),
+    ],
+  ),
   // 旧地址只安全回到可用入口，不保留隐藏的说明或历史页面。
   GoRoute(
     path: AppRoutePaths.retiredMobileReleases,
@@ -38,6 +61,16 @@ List<RouteBase> buildAccountRoutes(Ref ref) => [
     path: AppRouteLocations.diagnostics,
     name: AppRouteNames.diagnostics,
     builder: (context, state) => const DiagnosticSettingsPage(),
+  ),
+  GoRoute(
+    path: AppRouteLocations.threadFont,
+    name: AppRouteNames.threadFont,
+    builder: (context, state) => const ThreadFontSettingsPage(),
+  ),
+  GoRoute(
+    path: AppRouteLocations.editorToolbar,
+    name: AppRouteNames.editorToolbar,
+    builder: (context, state) => const EditorToolbarSettingsPage(),
   ),
   GoRoute(
     path: AppRouteLocations.appearance,

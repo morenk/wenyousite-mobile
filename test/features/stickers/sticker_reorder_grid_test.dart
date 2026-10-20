@@ -3,12 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
+import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
 import 'package:wenyousite_mobile/features/stickers/presentation/sticker_collection_page.dart';
 import 'package:wenyousite_mobile/features/stickers/presentation/sticker_reorder_grid.dart';
 
 import '../../support/deterministic_test_fonts.dart';
+import 'sticker_image_fixture.dart';
 import 'sticker_reorder_test_support.dart';
 
 void main() {
@@ -168,9 +170,9 @@ void main() {
     expect(repository.writes, isEmpty);
   });
 
-  for (final width in [360.0, 400.0, 600.0]) {
+  for (final width in [320.0, 360.0, 400.0, 600.0]) {
     testWidgets('$width dp 紧凑网格视觉基线', (tester) async {
-      await _pumpPage(tester, width: width);
+      await _pumpPage(tester, width: width, images: true);
       expect(
         tester.getTopLeft(_tile('a')).dy,
         tester.getTopLeft(_tile('b')).dy,
@@ -187,7 +189,7 @@ void main() {
   }
 
   testWidgets('黑夜与大字管理模式布局和移除命中区', (tester) async {
-    await _pumpPage(tester, dark: true, textScale: 2);
+    await _pumpPage(tester, dark: true, textScale: 2, images: true);
     expect(find.byKey(const ValueKey('sticker-remove-a')), findsNothing);
     await tester.tap(find.byKey(const Key('stickers-manage')));
     await tester.pumpAndSettle();
@@ -243,6 +245,7 @@ Future<ReorderTestRepository> _pumpPage(
   bool reducedMotion = false,
   bool dark = false,
   double textScale = 1,
+  bool images = false,
 }) async {
   tester.view.devicePixelRatio = 1;
   tester.view.physicalSize = Size(width, 760);
@@ -252,6 +255,18 @@ Future<ReorderTestRepository> _pumpPage(
     ..current = stickerCollection(
       order: [for (var i = 0; i < count; i++) String.fromCharCode(97 + i)],
     );
+  if (images) {
+    final tokens = AppTheme.light.extension<WenyouThemeTokens>()!;
+    final padding = width < tokens.regularHorizontalPaddingFrom
+        ? tokens.compactHorizontalPadding
+        : tokens.regularHorizontalPadding;
+    final gridWidth = width - padding * 2 - tokens.space12 * 2;
+    final columns = (gridWidth / (tokens.minimumTouchTarget + tokens.space16))
+        .floor()
+        .clamp(3, 8);
+    final size = (gridWidth - (columns - 1) * tokens.space8) / columns;
+    await cacheStickerFixtures(tester, repository.current.items, size.ceil());
+  }
   await tester.pumpWidget(
     ProviderScope(
       overrides: [

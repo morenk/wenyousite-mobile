@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
@@ -136,6 +135,8 @@ void registerEditorToolbarCommandsSelectionCases() {
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('editor-more-tray')), findsOneWidget);
       expect(find.byKey(const Key('editor-horizontal-rule')), findsOneWidget);
+      expect(find.byTooltip('无序列表'), findsNothing);
+      expect(find.byTooltip('有序列表'), findsNothing);
       final moreTray = find.byKey(const Key('editor-more-tray'));
       expect(
         find.descendant(of: moreTray, matching: find.byTooltip('表情包')),
@@ -249,7 +250,8 @@ void registerEditorToolbarCommandsSelectionCases() {
     expect(find.byTooltip('正文草稿'), findsOneWidget);
     expect(find.byTooltip('引用'), findsOneWidget);
     expect(find.byTooltip('分隔线'), findsOneWidget);
-    expect(find.byTooltip('无序列表'), findsOneWidget);
+    expect(find.byTooltip('无序列表'), findsNothing);
+    expect(find.byTooltip('有序列表'), findsNothing);
 
     await tester.tap(find.byKey(const Key('editor-horizontal-rule')));
     await tester.pump();
@@ -259,7 +261,7 @@ void registerEditorToolbarCommandsSelectionCases() {
     );
   });
 
-  testWidgets('工具栏真实点击可创建、切换并取消全部正文格式', (tester) async {
+  testWidgets('工具栏真实点击可创建、切换并取消可见正文格式', (tester) async {
     tester.view.physicalSize = const Size(400, 800);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -326,9 +328,12 @@ void registerEditorToolbarCommandsSelectionCases() {
     );
     expect(
       boldButton.style!.backgroundColor!.resolve({WidgetState.selected}),
-      Colors.transparent,
+      tokens.accentedBackground,
     );
-    expect((boldButton.selectedIcon! as WenyouIcon).color, tokens.like);
+    expect(
+      boldButton.style!.foregroundColor!.resolve({WidgetState.selected}),
+      tokens.onAccentedBackground,
+    );
     await tester.tap(find.byKey(const Key('editor-bold')));
     await tester.pump();
     expect(inlineAttributes(), isNot(contains('bold')));
@@ -361,13 +366,6 @@ void registerEditorToolbarCommandsSelectionCases() {
     await tapQuote();
     expect(blockAttributes(), isNot(contains('blockquote')));
 
-    await tapMore('无序列表');
-    expect(blockAttributes()['list'], 'bullet');
-    await tapMore('有序列表');
-    expect(blockAttributes()['list'], 'ordered');
-    await tapMore('有序列表');
-    expect(blockAttributes(), isNot(contains('list')));
-
     await tapMore('行内代码');
     expect(inlineAttributes()['code'], true);
     final inlineCodeButton = tester.widget<IconButton>(
@@ -378,9 +376,12 @@ void registerEditorToolbarCommandsSelectionCases() {
     );
     expect(
       inlineCodeButton.style!.backgroundColor!.resolve({WidgetState.selected}),
-      Colors.transparent,
+      tokens.accentedBackground,
     );
-    expect((inlineCodeButton.selectedIcon! as WenyouIcon).color, tokens.like);
+    expect(
+      inlineCodeButton.style!.foregroundColor!.resolve({WidgetState.selected}),
+      tokens.onAccentedBackground,
+    );
     await tester.tap(find.byKey(const Key('editor-bold')));
     await tester.pump();
     expect(inlineAttributes()['code'], true);

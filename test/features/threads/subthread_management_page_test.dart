@@ -300,12 +300,16 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  for (final width in [360.0, 400.0, 600.0]) {
+  for (final width in [320.0, 360.0, 400.0, 600.0]) {
     testWidgets('$width dp 子贴目录无布局溢出', (tester) async {
       tester.view.devicePixelRatio = 1;
       tester.view.physicalSize = Size(width, 860);
       addTearDown(tester.view.resetDevicePixelRatio);
       addTearDown(tester.view.resetPhysicalSize);
+      if (width == 320) {
+        tester.platformDispatcher.textScaleFactorTestValue = 2;
+        addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+      }
       await _pumpWorkspace(tester, _FakeRepository());
 
       expect(tester.takeException(), isNull);
@@ -313,27 +317,35 @@ void main() {
     });
   }
 
-  testWidgets('360dp 子贴目录紧凑视觉基线', (tester) async {
-    tester.view.devicePixelRatio = 1;
-    tester.view.physicalSize = const Size(360, 800);
-    addTearDown(tester.view.resetDevicePixelRatio);
-    addTearDown(tester.view.resetPhysicalSize);
-    await _pumpWorkspace(
-      tester,
-      _FakeRepository(initial: _initialBootstrap(includeThird: true)),
-    );
+  for (final dark in [false, true]) {
+    testWidgets('360dp 子贴目录卡片视觉基线 $dark', (tester) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(360, 800);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.view.resetPhysicalSize);
+      await _pumpWorkspace(
+        tester,
+        _FakeRepository(initial: _initialBootstrap(includeThird: true)),
+        dark: dark,
+      );
 
-    await expectLater(
-      find.byType(Scaffold).last,
-      matchesGoldenFile('goldens/subthread_management_list_360.png'),
-    );
-  });
+      await expectLater(
+        find.byType(Scaffold).last,
+        matchesGoldenFile(
+          dark
+              ? 'goldens/subthread_management_list_360_dark.png'
+              : 'goldens/subthread_management_list_360.png',
+        ),
+      );
+    });
+  }
 }
 
 Future<ProviderContainer> _pumpWorkspace(
   WidgetTester tester,
-  SubthreadManagementRepository repository,
-) async {
+  SubthreadManagementRepository repository, {
+  bool dark = false,
+}) async {
   final container = ProviderContainer(
     overrides: [
       subthreadManagementRepositoryProvider.overrideWithValue(repository),
@@ -367,7 +379,10 @@ Future<ProviderContainer> _pumpWorkspace(
   await tester.pumpWidget(
     UncontrolledProviderScope(
       container: container,
-      child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
+      child: MaterialApp.router(
+        theme: dark ? AppTheme.dark : AppTheme.light,
+        routerConfig: router,
+      ),
     ),
   );
   await tester.pumpAndSettle();

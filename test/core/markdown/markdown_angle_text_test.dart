@@ -173,4 +173,49 @@ void main() {
     }
     expect(MarkdownContent.toPlainTextPreview('$marker\n正文'), '正文');
   });
+
+  for (final prefix in ['', '$marker\n']) {
+    for (final html in [
+      '前 <tag> 后',
+      '前 <!-- comment --> 后',
+      '前 <?instruction?> 后',
+    ]) {
+      test('Setext 标题里的实际 HTML 仍保护：$prefix / $html', () {
+        expect(
+          MarkdownContent.unsupportedLineIndexes('$prefix$html\n---'),
+          isNotEmpty,
+        );
+      });
+    }
+    for (final literal in ['<tag>', '[[custom:v1:x]]']) {
+      test('Setext 标题里的代码示例不触发 HTML 或协议误判：$prefix / $literal', () {
+        final source = '$prefix前 `$literal` 后\n---';
+        expect(MarkdownContent.unsupportedLineIndexes(source), isEmpty);
+        void check(Document document) {
+          expect(document.toPlainText(), '前 $literal 后\n');
+          expect(
+            document.collectStyle(2, literal.length).attributes['code']?.value,
+            true,
+          );
+          expect(document.collectStyle(0, 1).attributes['header']?.value, 2);
+          if (prefix.isNotEmpty) {
+            expect(
+              document.collectStyle(0, 1).attributes['align']?.value,
+              'center',
+            );
+          }
+        }
+
+        final decoded = MarkdownDeltaCodec.decode(source);
+        check(Document.fromDelta(decoded.delta));
+        check(
+          Document.fromDelta(
+            MarkdownDeltaCodec.decode(
+              MarkdownDeltaCodec.encode(decoded.delta),
+            ).delta,
+          ),
+        );
+      });
+    }
+  }
 }

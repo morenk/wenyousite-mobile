@@ -1,18 +1,32 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyou_api/wenyou_api.dart';
+import 'package:wenyousite_mobile/app/app_capabilities.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_write_guard.dart';
+import 'package:wenyousite_mobile/core/models/discussion_window.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
+import 'package:wenyousite_mobile/core/network/discussion_window_mapper.dart';
+import 'package:wenyousite_mobile/core/network/media_audio_mapper.dart';
 import 'package:wenyousite_mobile/core/network/media_display_mapper.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_repository_ports.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
+import 'package:wenyousite_mobile/features/thread_identity/identity_mapping.dart';
+import 'package:wenyousite_mobile/features/thread_identity/identity_models.dart';
 
 export 'package:wenyousite_mobile/features/posts/application/post_repository_ports.dart'
     show PostRepository, postRepositoryProvider;
 
 class ApiPostRepository implements PostRepository {
-  ApiPostRepository(this._api);
+  ApiPostRepository(
+    this._api, {
+    this.roleMentionsSupported = false,
+    this.textColorSupported = false,
+  });
+
+  final bool roleMentionsSupported;
+  final bool textColorSupported;
 
   final PostsApi _api;
   static const _writeMessages = {
@@ -21,6 +35,62 @@ class ApiPostRepository implements PostRepository {
     40006: '图片或表情无法保存，请重新选择后再试。',
     40009: '正文格式无法保存，请调整图片或文字排版后重试。',
   };
+
+  @override
+  Future<DiscussionWindow<PostItem>> fetchReplyWindow({
+    required String rootPostId,
+    int? number,
+    String? postId,
+    String? cursor,
+    int limit = 20,
+    PostReplyOrder order = PostReplyOrder.oldest,
+    String? authorId,
+  }) async {
+    try {
+      final dto = (await _api.postsFindReplyWindow(
+        id: rootPostId,
+        number: number,
+        postId: postId,
+        cursor: cursor,
+        limit: limit,
+        order: order.apiValue,
+        authorId: authorId,
+      )).data?.data;
+      if (dto == null ||
+          dto.items.any(
+            (item) =>
+                item.replyNumber == null ||
+                item.replyNumber != item.replyNumber!.toInt(),
+          ) ||
+          dto.pinnedItems.isNotEmpty ||
+          (authorId != null &&
+              dto.items.any((item) => item.authorId != authorId))) {
+        throw const ApiFailure.invalidResponse(
+          diagnosticCode: 'replies.window.invalid_scope',
+        );
+      }
+      _validateReplyPage(dto.items, rootPostId: rootPostId);
+      return mapDiscussionWindow(
+        items: dto.items.map(_mapReply).toList(),
+        pinnedItems: const [],
+        total: dto.total,
+        maxNumber: dto.maxNumber,
+        targetId: dto.target?.id,
+        targetNumber: dto.target?.number,
+        beforeCursor: dto.beforeCursor,
+        afterCursor: dto.afterCursor,
+        hasBefore: dto.hasBefore,
+        hasAfter: dto.hasAfter,
+        limit: limit,
+        requestedNumber: number,
+        requestedId: postId,
+        idOf: (item) => item.id,
+        numberOf: (item) => item.replyNumber,
+      );
+    } on DioException catch (error) {
+      throw ApiFailure.fromDio(error);
+    }
+  }
 
   @override
   Future<PostItem> fetchPost(String postId) async {
@@ -73,9 +143,30 @@ class ApiPostRepository implements PostRepository {
   @override
   Future<PostItem> create(PostCreateInput input) async {
     try {
+      requireMentionWriteSupport(
+        input.content,
+        supported: roleMentionsSupported,
+      );
+      requireTextColorWriteSupport(
+        input.content,
+        supported: input.textColorSupported ?? textColorSupported,
+      );
       final payload = CreatePostDto((builder) {
         builder
+          ..markdownContractVersion = roleMentionsSupported
+              ? CreatePostDtoMarkdownContractVersionEnum.number6
+              : null
+          ..textColorVersion = (input.textColorSupported ?? textColorSupported)
+              ? CreatePostDtoTextColorVersionEnum.number1
+              : null
           ..content = input.content
+          ..identityId = input.identityId
+          ..identityToken = input.identityToken
+          ..identityMode = switch (input.identityMode) {
+            PostIdentityMode.account => CreatePostDtoIdentityModeEnum.ACCOUNT,
+            PostIdentityMode.rp => CreatePostDtoIdentityModeEnum.RP,
+            null => null,
+          }
           ..clientRequestId = input.clientRequestId;
         if (input.parentPostId != null) {
           builder.parentPostId = input.parentPostId;
@@ -112,8 +203,16 @@ class ApiPostRepository implements PostRepository {
     required int version,
   }) async {
     try {
+      requireMentionWriteSupport(content, supported: roleMentionsSupported);
+      requireTextColorWriteSupport(content, supported: textColorSupported);
       final payload = UpdatePostDto(
         (builder) => builder
+          ..markdownContractVersion = roleMentionsSupported
+              ? UpdatePostDtoMarkdownContractVersionEnum.number6
+              : null
+          ..textColorVersion = textColorSupported
+              ? UpdatePostDtoTextColorVersionEnum.number1
+              : null
           ..content = content
           ..version = version,
       );
@@ -137,13 +236,36 @@ class ApiPostRepository implements PostRepository {
 
   @override
   Future<PostItem> upsertBody({
+    bool? textColorSupported,
     required String subthreadId,
     required String content,
     int? version,
+    String? identityToken,
+    String? identityId,
+    PostIdentityMode? identityMode,
   }) async {
     try {
+      requireMentionWriteSupport(content, supported: roleMentionsSupported);
+      requireTextColorWriteSupport(
+        content,
+        supported: textColorSupported ?? this.textColorSupported,
+      );
       final payload = UpsertBodyDto((builder) {
+        builder.markdownContractVersion = roleMentionsSupported
+            ? UpsertBodyDtoMarkdownContractVersionEnum.number6
+            : null;
+        builder.textColorVersion =
+            (textColorSupported ?? this.textColorSupported)
+            ? UpsertBodyDtoTextColorVersionEnum.number1
+            : null;
         builder.content = content;
+        builder.identityId = identityId;
+        builder.identityToken = identityToken;
+        builder.identityMode = switch (identityMode) {
+          PostIdentityMode.account => UpsertBodyDtoIdentityModeEnum.ACCOUNT,
+          PostIdentityMode.rp => UpsertBodyDtoIdentityModeEnum.RP,
+          null => null,
+        };
         if (version != null) builder.version = version;
       });
       final dto = (await _api.postsUpsertBody(
@@ -332,6 +454,8 @@ class ApiPostRepository implements PostRepository {
   PostItem _mapPost(PostResponseDto dto) {
     return PostItem(
       mediaDisplays: mapMarkdownMediaDisplays(dto.mediaDisplays),
+      mediaAudios: mapMediaAudios(dto.mediaAudios),
+      mentionLabels: mapMentionIdentityLabels(dto.mentionIdentities),
       id: dto.id,
       threadId: dto.threadId,
       subthreadId: dto.subthreadId,
@@ -339,10 +463,12 @@ class ApiPostRepository implements PostRepository {
       content: dto.content,
       version: dto.version.toInt(),
       createdAt: dto.createdAt,
+      editedAt: dto.editedAt,
       updatedAt: dto.updatedAt,
       isBody: dto.kind == PostResponseDtoKindEnum.BODY,
       isDeleted: dto.deletedAt != null,
       floorNumber: dto.floorNumber?.toInt(),
+      replyNumber: dto.replyNumber?.toInt(),
       pinnedAt: dto.pinnedAt,
       parentPostId: dto.parentPostId,
       replyToPostId: dto.replyToPostId,
@@ -354,6 +480,8 @@ class ApiPostRepository implements PostRepository {
   PostItem _mapReply(ReplyResponseDto dto) {
     return PostItem(
       mediaDisplays: mapMarkdownMediaDisplays(dto.mediaDisplays),
+      mediaAudios: mapMediaAudios(dto.mediaAudios),
+      mentionLabels: mapMentionIdentityLabels(dto.mentionIdentities),
       id: dto.id,
       threadId: dto.threadId,
       subthreadId: dto.subthreadId,
@@ -361,10 +489,12 @@ class ApiPostRepository implements PostRepository {
       content: dto.content,
       version: dto.version.toInt(),
       createdAt: dto.createdAt,
+      editedAt: dto.editedAt,
       updatedAt: dto.updatedAt,
       isBody: dto.kind == ReplyResponseDtoKindEnum.BODY,
       isDeleted: dto.deletedAt != null,
       floorNumber: dto.floorNumber?.toInt(),
+      replyNumber: dto.replyNumber?.toInt(),
       pinnedAt: dto.pinnedAt,
       parentPostId: dto.parentPostId,
       replyToPostId: dto.replyToPostId,
@@ -379,6 +509,8 @@ class ApiPostRepository implements PostRepository {
   PostItem _mapDetail(PostDetailResponseDto dto) {
     return PostItem(
       mediaDisplays: mapMarkdownMediaDisplays(dto.mediaDisplays),
+      mediaAudios: mapMediaAudios(dto.mediaAudios),
+      mentionLabels: mapMentionIdentityLabels(dto.mentionIdentities),
       id: dto.id,
       threadId: dto.threadId,
       subthreadId: dto.subthreadId,
@@ -386,10 +518,12 @@ class ApiPostRepository implements PostRepository {
       content: dto.content,
       version: dto.version.toInt(),
       createdAt: dto.createdAt,
+      editedAt: dto.editedAt,
       updatedAt: dto.updatedAt,
       isBody: dto.kind == PostDetailResponseDtoKindEnum.BODY,
       isDeleted: dto.deletedAt != null,
       floorNumber: dto.floorNumber?.toInt(),
+      replyNumber: dto.replyNumber?.toInt(),
       pinnedAt: dto.pinnedAt,
       parentPostId: dto.parentPostId,
       replyToPostId: dto.replyToPostId,
@@ -397,6 +531,7 @@ class ApiPostRepository implements PostRepository {
       replyCount: dto.count.replies.toInt(),
       threadTitle: dto.thread.title,
       subthreadTitle: dto.subthread.title,
+      parentFloorNumber: dto.parentPost?.floorNumber?.toInt(),
       diceRolls: dto.diceRolls.map(_mapDice).toList(growable: false),
     );
   }
@@ -405,6 +540,7 @@ class ApiPostRepository implements PostRepository {
     return PostAuthor(
       id: dto.id,
       username: dto.username,
+      rpIdentity: mapRpIdentity(dto.rpIdentity),
       level: dto.level.toInt(),
       avatarUrl: _safeHttpUrl(
         mapAvatarDisplayUrl(dto.avatar, dto.avatarDisplay),
@@ -434,5 +570,11 @@ class ApiPostRepository implements PostRepository {
 }
 
 final apiPostRepositoryProvider = Provider<PostRepository>((ref) {
-  return ApiPostRepository(ref.watch(wenyouApiProvider).getPostsApi());
+  return ApiPostRepository(
+    ref.watch(wenyouApiProvider).getPostsApi(),
+    textColorSupported: ref.watch(appCapabilitiesProvider).textColorSupported,
+    roleMentionsSupported: ref
+        .watch(appCapabilitiesProvider)
+        .roleMentionsSupported,
+  );
 });

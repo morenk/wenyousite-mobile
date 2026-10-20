@@ -16,6 +16,7 @@ class ThreadFloorFilters extends StatelessWidget {
     required this.onOrderChanged,
     required this.onAuthorChanged,
     required this.onRetryAuthors,
+    this.onLocate,
     super.key,
   });
 
@@ -25,6 +26,7 @@ class ThreadFloorFilters extends StatelessWidget {
   final ValueChanged<ThreadFloorOrder> onOrderChanged;
   final ValueChanged<String?> onAuthorChanged;
   final VoidCallback onRetryAuthors;
+  final VoidCallback? onLocate;
 
   @override
   Widget build(BuildContext context) {
@@ -40,6 +42,7 @@ class ThreadFloorFilters extends StatelessWidget {
         child: WenyouDiscussionListControls<ThreadFloorOrder>(
           countLabel: '$floorCount 层',
           countKey: const Key('thread-floors-count'),
+          onCountPressed: onLocate,
           authorKey: const Key('thread-floors-author'),
           orderKey: const Key('thread-floors-order'),
           order: state.floorOrder,
@@ -56,9 +59,9 @@ class ThreadFloorFilters extends StatelessWidget {
             for (final author in authors.valueOrNull ?? const [])
               WenyouDiscussionAuthorOption(
                 id: author.userId,
-                label: author.username,
-                supportingLabel: author.role.label,
-                avatarUrl: author.avatarUrl,
+                label: author.displayName,
+                supportingLabel: author.supportingLabel,
+                avatarUrl: author.displayAvatarUrl,
               ),
           ],
           enabled: !state.isLoadingFloors && !state.isLoadingMore,

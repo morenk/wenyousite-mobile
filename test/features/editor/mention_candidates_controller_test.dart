@@ -14,7 +14,10 @@ void main() {
     );
     expect(detectActiveMentionQuery('mail@example', 12), isNull);
     expect(detectActiveMentionQuery(r'\@转义', 4), isNull);
-    expect(detectActiveMentionQuery('@包含 空格', 6), isNull);
+    expect(detectActiveMentionQuery('@包含 空格', 6)?.query, '包含 空格');
+    expect(detectActiveMentionQuery('@包含[括号', 6), isNull);
+    expect(detectActiveMentionQuery('@${'😀' * 24}', 49)?.query, '😀' * 24);
+    expect(detectActiveMentionQuery('@${'😀' * 25}', 51), isNull);
     expect(detectActiveMentionQuery('@', 1)?.query, isEmpty);
   });
 

@@ -1,4 +1,6 @@
+import 'package:wenyousite_mobile/core/media/media_audio.dart';
 import 'package:wenyousite_mobile/core/media/media_display.dart';
+import 'package:wenyousite_mobile/features/thread_identity/identity_models.dart';
 
 class ThreadAuthorModel {
   const ThreadAuthorModel({
@@ -6,12 +8,17 @@ class ThreadAuthorModel {
     required this.username,
     required this.level,
     this.avatarUrl,
+    this.rpIdentity,
   });
 
   final String id;
   final String username;
   final int level;
   final String? avatarUrl;
+  final RpIdentity? rpIdentity;
+  String get displayName => rpIdentity?.nickname ?? username;
+  String? get displayAvatarUrl =>
+      rpIdentity != null ? rpIdentity!.avatarUrl : avatarUrl;
 }
 
 enum ThreadDetailStatus {
@@ -43,6 +50,9 @@ class ThreadBodyModel {
   const ThreadBodyModel({
     required this.markdown,
     this.mediaDisplays = const {},
+    this.mediaAudios = const {},
+    this.mentionLabels = const {},
+    this.author,
     this.postId,
     this.version,
     this.diceRolls = const [],
@@ -50,6 +60,9 @@ class ThreadBodyModel {
 
   final String markdown;
   final Map<String, MediaDisplay> mediaDisplays;
+  final Map<String, MediaAudio> mediaAudios;
+  final Map<String, String> mentionLabels;
+  final ThreadAuthorModel? author;
   final String? postId;
   final int? version;
   final List<ThreadDiceRollModel> diceRolls;
@@ -103,6 +116,8 @@ class ThreadDetailModel {
     this.isLiked = false,
     this.isBookmarked = false,
     this.bookmarkId,
+    this.bookmarkCount,
+    this.subscriberCount,
     this.hasAutomaticUpdates = false,
     this.canManageThread = false,
     this.isCurrentUserPlayer = false,
@@ -110,6 +125,7 @@ class ThreadDetailModel {
     this.currentUserId,
     this.categorySlug,
     this.defaultSubthreadId,
+    this.rpIdentityEnabled,
   });
 
   final String id;
@@ -124,6 +140,8 @@ class ThreadDetailModel {
   final bool isLiked;
   final bool isBookmarked;
   final String? bookmarkId;
+  final int? bookmarkCount;
+  final int? subscriberCount;
   final bool hasAutomaticUpdates;
   final bool canManageThread;
   final bool isCurrentUserPlayer;
@@ -136,8 +154,46 @@ class ThreadDetailModel {
   final List<ThreadTagModel> tags;
   final List<ThreadSubthreadModel> subthreads;
   final String? defaultSubthreadId;
+  final bool? rpIdentityEnabled;
+  bool get supportsRpIdentity => rpIdentityEnabled != null;
   final DateTime createdAt;
   final DateTime updatedAt;
+
+  /// 只更新总数，保留当前互动投影及阅读元信息。
+  ThreadDetailModel withActionCounts({
+    required int? bookmarkCount,
+    required int? subscriberCount,
+  }) => ThreadDetailModel(
+    id: id,
+    title: title,
+    owner: owner,
+    categorySlug: categorySlug,
+    status: status,
+    isPrivate: isPrivate,
+    isPinned: isPinned,
+    viewCount: viewCount,
+    likeCount: likeCount,
+    isLiked: isLiked,
+    isBookmarked: isBookmarked,
+    bookmarkId: bookmarkId,
+    hasAutomaticUpdates: hasAutomaticUpdates,
+    canManageThread: canManageThread,
+    isCurrentUserPlayer: isCurrentUserPlayer,
+    isCurrentUserOwner: isCurrentUserOwner,
+    currentUserId: currentUserId,
+    tipTotal: tipTotal,
+    memberCount: memberCount,
+    playerCount: playerCount,
+    postCount: postCount,
+    tags: tags,
+    subthreads: subthreads,
+    defaultSubthreadId: defaultSubthreadId,
+    rpIdentityEnabled: rpIdentityEnabled,
+    createdAt: createdAt,
+    updatedAt: updatedAt,
+    bookmarkCount: bookmarkCount,
+    subscriberCount: subscriberCount,
+  );
 
   ThreadSubthreadModel? subthreadById(String? id) {
     if (id == null) return null;
@@ -160,6 +216,7 @@ class ThreadReplyModel {
     required this.author,
     required this.body,
     required this.createdAt,
+    this.editedAt,
     required this.isDeleted,
     this.version = 1,
     this.replyToUsername,
@@ -169,6 +226,7 @@ class ThreadReplyModel {
   final ThreadAuthorModel author;
   final ThreadBodyModel body;
   final DateTime createdAt;
+  final DateTime? editedAt;
   final bool isDeleted;
   final int version;
   final String? replyToUsername;
@@ -181,6 +239,7 @@ class ThreadFloorModel {
     required this.author,
     required this.body,
     required this.createdAt,
+    this.editedAt,
     required this.isDeleted,
     required this.replyCount,
     required this.replies,
@@ -193,6 +252,7 @@ class ThreadFloorModel {
   final ThreadAuthorModel author;
   final ThreadBodyModel body;
   final DateTime createdAt;
+  final DateTime? editedAt;
   final bool isDeleted;
   final int replyCount;
   final List<ThreadReplyModel> replies;

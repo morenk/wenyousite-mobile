@@ -218,7 +218,7 @@ void registerThreadDetailPageManagementClipboardCases() {
     await tester.tapAt(const Offset(12, 12));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('thread-floor-compose')), findsOneWidget);
-    expect(find.text('发表楼层'), findsOneWidget);
+    expect(find.text('回复一下'), findsOneWidget);
     await tester.tap(find.byKey(const Key('thread-floor-compose')));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('post-composer-body')), findsOneWidget);
@@ -465,7 +465,12 @@ void registerThreadDetailPageManagementClipboardCases() {
       threadDetailPageTestDetailApp(
         ThreadDetailPageTestFakeThreadDetailRepository(),
         clipboardWriter:
-            ({required markdown, required diceLabels, required scope}) async {
+            ({
+              required markdown,
+              required diceLabels,
+              required mentionLabels,
+              required scope,
+            }) async {
               copiedMarkdown.add(markdown);
             },
       ),

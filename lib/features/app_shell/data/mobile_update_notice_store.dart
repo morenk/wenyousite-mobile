@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:wenyousite_mobile/core/storage/environment_storage.dart';
 import 'package:wenyousite_mobile/features/app_shell/application/mobile_update_notice_ports.dart';
 import 'package:wenyousite_mobile/features/app_shell/domain/mobile_update.dart';
 import 'package:wenyousite_mobile/features/app_shell/domain/mobile_update_notice.dart';
@@ -11,7 +10,7 @@ class SharedPreferencesMobileUpdateNoticeStore
   const SharedPreferencesMobileUpdateNoticeStore();
 
   String _key(MobileClientPlatform platform) =>
-      environmentPreferenceKey('mobile_update_notice_v1_${platform.name}');
+      'mobile_update_notice_v1_${platform.name}';
 
   @override
   Future<MobileUpdateNoticeRecord?> read(MobileClientPlatform platform) async {
