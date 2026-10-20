@@ -16,20 +16,22 @@
 
 ## 首批名单与资源状态
 
-本名单取代此前 30 款输入。保留 11 款：思源黑体、无界黑、朱雀仿宋、霞鹜文楷、小赖、龙藏体、流江毛草（Liu Jian Mao Cao）、铁蒺藜、缝合像素、站酷快乐体、站酷小薇体。
+本名单取代此前 30 款输入。治理已交接 audit-v3 阶段结果，以下 11 款已完成研究侧核验：思源黑体、无界黑、朱雀仿宋、霞鹜文楷、小赖、龙藏体、流江毛草（Liu Jian Mao Cao）、铁蒺藜、缝合像素、站酷快乐体、站酷小薇体。
 
 新增 4 款：
 
 | 字体 | 治理提供的索引页面 | 当前资源状态 |
 | --- | --- | --- |
-| 侵食明朝 | https://www.maoken.com/freefonts/29703.html | 待原 ZIP 与内部许可证、RFN、覆盖及哈希核验 |
-| 冒险黑体 | https://www.maoken.com/freefonts/29709.html | 待原 ZIP 与内部许可证、RFN、覆盖及哈希核验 |
-| 怪聞書 | https://www.maoken.com/freefonts/29697.html | 待原 ZIP 与内部许可证、RFN、覆盖及哈希核验 |
-| 白光明朝 | https://www.maoken.com/freefonts/29628.html | 待原 ZIP 与内部许可证、RFN、覆盖及哈希核验 |
+| 侵食明朝 | https://www.maoken.com/freefonts/29703.html | `download_blocked_login`；待原 ZIP 与内部许可证、RFN、覆盖及哈希核验 |
+| 冒险黑体 | https://www.maoken.com/freefonts/29709.html | `download_blocked_login`；待原 ZIP 与内部许可证、RFN、覆盖及哈希核验 |
+| 怪聞書 | https://www.maoken.com/freefonts/29697.html | `download_blocked_login`；待原 ZIP 与内部许可证、RFN、覆盖及哈希核验 |
+| 白光明朝 | https://www.maoken.com/freefonts/29628.html | `download_blocked_login`；待原 ZIP 与内部许可证、RFN、覆盖及哈希核验 |
 
 治理交接称新增 4 款已追溯作者 lavsic 的 BOOTH 官方页面，页面声明 OFL 1.1，但原 ZIP 下载需登录；Mobile 尚未核验源文件。以上索引不作为下载目录，不用预览替代完整字库，不将这些字体标为可用，也不编造资源 ID、字符覆盖或摘要。
 
-此前被移除的 19 款不再属于首批范围。目录、测试矩阵与预算均以这 15 款和待交接的 audit-v3 为准；此前 30 款的源字库及测试子集总量不能作为新名单预算，测试子集也不视为正式资源。保留 11 款同样须经 Backend 已提交目录交接后才接入。
+此前被移除的 19 款不再属于首批范围。目录、测试矩阵与预算均以这 15 款和 audit-v3 证据为准；此前 30 款的源字库及测试子集总量不能作为新名单预算，测试子集也不视为正式资源。保留 11 款同样须经 Backend 已提交目录交接后才接入。新增 4 款需用户登录提供 BOOTH 原 ZIP，尚无真实哈希、中文覆盖或体积；正式机器目录以 Backend 提交为准。
+
+治理提供的已知 11 款、3615 码点实验子集合计 SFNT `18,710,648 B`、WOFF2 `9,640,808 B`；这仅是 11 款实验文件成本，不是 15 款总量，也不是运行内存。证据来源为治理工作区 `audit-v3/font-audit-evidence.json` 的阶段交接，Mobile 未将其导入应用或当作正式资源。无资源依赖的工作不必等待新研究版本，消费者协议实现仍等待 Backend 已提交契约。
 
 ## 已核查的影响面
 
