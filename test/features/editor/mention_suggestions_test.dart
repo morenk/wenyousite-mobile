@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
+import 'package:flutter_quill/quill_delta.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
@@ -8,10 +9,105 @@ import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
 import 'package:wenyousite_mobile/features/editor/data/mention_candidate_repository.dart';
 import 'package:wenyousite_mobile/features/editor/domain/mention_models.dart';
+import 'package:wenyousite_mobile/features/editor/presentation/editor_embed_builders.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/mention_suggestions.dart';
+import 'package:wenyousite_mobile/features/editor/presentation/rich_editor_session.dart';
 import '../../support/deterministic_test_fonts.dart';
 
 void main() {
+  testWidgets('跨行与原子提及后 IME 组合输入保持 Emoji 和插入坐标', (tester) async {
+    final session = RichEditorSession(
+      initialMarkdown: '第一行\n\n[@旧](/users/user-old) 😀 ',
+      onMarkdownChanged: (_) {},
+    );
+    addTearDown(session.dispose);
+    addTearDown(() async => tester.pumpWidget(const SizedBox.shrink()));
+    final controller = session.controller;
+    final plainText = controller.document.toPlainText();
+    final prefix = plainText.substring(0, plainText.length - 1);
+    final repository = _FakeRepository();
+    controller.updateSelection(
+      TextSelection.collapsed(offset: prefix.length),
+      ChangeSource.local,
+    );
+    await _pumpPanel(
+      tester,
+      repository: repository,
+      controller: controller,
+      focusNode: session.focusNode,
+      threadId: 'thread-1',
+      withEditorCanvas: true,
+    );
+    session.focusNode.requestFocus();
+    await tester.pump();
+    for (final composing in ['a', '爱']) {
+      tester.testTextInput.updateEditingValue(
+        TextEditingValue(
+          text: '$prefix@$composing\n',
+          selection: TextSelection.collapsed(offset: prefix.length + 2),
+          composing: TextRange(
+            start: prefix.length + 1,
+            end: prefix.length + 2,
+          ),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 2));
+      await tester.pump();
+      expect(repository.queries.last, ('thread-1', composing));
+      expect(controller.document.toPlainText(), '$prefix@$composing\n');
+      expect(tester.takeException(), isNull);
+    }
+    await tester.tap(find.byKey(const Key('mention-user-user-default')));
+    await tester.pump();
+    expect(controller.document.toPlainText(), '$prefix\uFFFC \n');
+    expect(controller.selection.baseOffset, prefix.length + 2);
+    expect(await session.flush(), isTrue);
+    expect(
+      session.localMarkdown,
+      '第一行\n\n[@旧](/users/user-old) 😀 [@温油用户](/users/user-default)&#32;',
+    );
+    final reopened = RichEditorSession(
+      initialMarkdown: session.localMarkdown,
+      onMarkdownChanged: (_) {},
+    );
+    addTearDown(reopened.dispose);
+    expect(reopened.controller.document.toPlainText(), '$prefix\uFFFC \n');
+    expect(tester.takeException(), isNull);
+    session.focusNode.unfocus();
+    await tester.pump();
+  });
+
+  for (final cursor in [-1, 8, 80]) {
+    testWidgets('文档缩短后的失效光标 $cursor 不查询提及且不改正文', (tester) async {
+      final document = Document.fromDelta(
+        Delta()
+          ..insert('a')
+          ..insert('@b', {'bold': true})
+          ..insert('\n'),
+      );
+      final controller = QuillController(
+        document: document,
+        selection: TextSelection.collapsed(offset: cursor),
+      );
+      final before = document.toDelta().toJson();
+      final repository = _FakeRepository();
+      final focusNode = FocusNode();
+      addTearDown(controller.dispose);
+      addTearDown(focusNode.dispose);
+      await _pumpPanel(
+        tester,
+        repository: repository,
+        controller: controller,
+        focusNode: focusNode,
+        threadId: 'thread-1',
+      );
+      await tester.pump(const Duration(milliseconds: 2));
+      expect(tester.takeException(), isNull);
+      expect(repository.queries, isEmpty);
+      expect(document.toDelta().toJson(), before);
+    });
+  }
+
   for (final dark in [false, true]) {
     testWidgets('同名角色明暗菜单只插入第二个稳定目标 $dark', (tester) async {
       tester.view.devicePixelRatio = 1;
@@ -456,6 +552,8 @@ Future<void> _pumpPanel(
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
+        localizationsDelegates:
+            FlutterQuillLocalizations.localizationsDelegates,
         theme: dark ? AppTheme.dark : AppTheme.light,
         home: MediaQuery(
           data: MediaQueryData.fromView(
@@ -473,9 +571,10 @@ Future<void> _pumpPanel(
                         controller: controller,
                         focusNode: focusNode,
                         scrollController: ScrollController(),
-                        config: const QuillEditorConfig(
+                        config: QuillEditorConfig(
                           expands: true,
                           scrollable: true,
+                          embedBuilders: wenyouEditorEmbedBuilders(),
                         ),
                       ),
                     ),

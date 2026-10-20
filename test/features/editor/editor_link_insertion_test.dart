@@ -16,6 +16,42 @@ import '../../support/editor_link_toolbar.dart';
 void main() {
   setUpAll(loadDeterministicTestFonts);
 
+  for (final replacement in ['短', '已被替换的正文']) {
+    testWidgets('链接托盘保留的选区过期时不覆盖变化后的正文：$replacement', (tester) async {
+      final session = RichEditorSession(
+        initialMarkdown: '原来较长的正文',
+        onMarkdownChanged: (_) {},
+      );
+      addTearDown(session.dispose);
+      session.controller.updateSelection(
+        const TextSelection(baseOffset: 2, extentOffset: 7),
+        ChangeSource.local,
+      );
+      await _pumpEditor(tester, session);
+      await tester.tap(find.byKey(const Key('editor-more')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('链接'));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.widgetWithText(TextField, '链接地址'),
+        'https://example.com',
+      );
+      session.controller.replaceText(
+        0,
+        session.controller.document.length - 1,
+        replacement,
+        const TextSelection.collapsed(offset: 1),
+      );
+      await tester.pump();
+      final before = session.controller.document.toDelta().toJson();
+      await tester.tap(find.byKey(const Key('editor-link-insert')));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(session.controller.document.toDelta().toJson(), before);
+      expect(find.text('正文已发生变化，请重新选择文字'), findsOneWidget);
+    });
+  }
+
   for (final target in const [
     '/threads/cmsewdo0h000x7qv6aa77ll1v?post=cmsewdqcr001a7qv6cy0y38bd',
     '/threads/cmsewdo0h000x7qv6aa77ll1v?subthread=cmsewdp4i00147qv6gjc85l9p&post=cmsewdqcr001a7qv6cy0y38bd',

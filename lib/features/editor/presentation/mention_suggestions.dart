@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/editor/quill_document_range.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
@@ -201,10 +202,12 @@ class _MentionSuggestionsState extends ConsumerState<MentionSuggestions> {
     // 24 个 Unicode 字符最多占 48 个 UTF-16 单元，另保留 @ 和前边界。
     // 只读取末尾窗口，避免每次输入都展开整篇正文。
     final windowStart = cursor > 50 ? cursor - 50 : 0;
-    final text = widget.controller.document.getPlainText(
+    final text = readQuillDocumentRange(
+      widget.controller.document,
       windowStart,
       cursor - windowStart,
     );
+    if (text == null) return null;
     final local = detectActiveMentionQuery(text, text.length);
     if (local == null) return null;
     return ActiveMentionQuery(
