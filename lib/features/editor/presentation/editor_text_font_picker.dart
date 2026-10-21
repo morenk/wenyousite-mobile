@@ -8,6 +8,7 @@ import 'package:wenyousite_mobile/app/app_capabilities.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_text_font.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/core/text_fonts/text_font_manifest.dart';
 import 'package:wenyousite_mobile/core/text_fonts/text_font_service.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_text_font_selection.dart';
@@ -98,22 +99,32 @@ class EditorTextFontPicker extends ConsumerWidget {
                     title: const Text('重新加载字体'),
                     onTap: () => Navigator.pop(context, '__retry'),
                   ),
-                for (final font in fonts)
-                  ListTile(
-                    title: Text(font.name),
-                    subtitle:
-                        !font.ready || !MarkdownTextFont.ids.contains(font.id)
-                        ? const Text('暂不可用')
-                        : recent.contains(font.id)
-                        ? const Text('最近使用')
-                        : null,
-                    enabled:
-                        writeEnabled &&
-                        font.ready &&
-                        runtime.assetsAvailable &&
-                        MarkdownTextFont.ids.contains(font.id),
-                    onTap: () => Navigator.pop(context, font.id),
-                  ),
+                for (final language in [...TextFontLanguage.values, null]) ...[
+                  if (fonts.any((f) => f.language == language))
+                    ListTile(
+                      key: Key(
+                        'editor-font-group-${language?.name ?? 'other'}',
+                      ),
+                      title: Text(language?.label ?? '未分类'),
+                    ),
+                  for (final font in fonts.where((f) => f.language == language))
+                    ListTile(
+                      key: Key('editor-font-${font.id}'),
+                      title: Text(font.name),
+                      subtitle:
+                          !font.ready || !MarkdownTextFont.ids.contains(font.id)
+                          ? const Text('暂不可用')
+                          : recent.contains(font.id)
+                          ? const Text('最近使用')
+                          : null,
+                      enabled:
+                          writeEnabled &&
+                          font.ready &&
+                          runtime.assetsAvailable &&
+                          MarkdownTextFont.ids.contains(font.id),
+                      onTap: () => Navigator.pop(context, font.id),
+                    ),
+                ],
               ],
             ),
           ),

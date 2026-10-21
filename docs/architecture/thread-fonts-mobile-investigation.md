@@ -1,6 +1,6 @@
 # 主题帖字体 Mobile 接入调查
 
-状态：按治理交接的负责人 revision 5 调整为目标 29 款与中文／日文／英文分组，等待 Backend 提交稳定分类元数据、完整名单和固定 SHA，当前未改造机器契约或硬编码新名单。上一批 17 款候选实现与 16 款实际 Flutter 预览保留为历史证据，尚未取得真机验收，详见[候选记录](thread-fonts-mobile-candidate.md)。上一批固定 Foundation v7.6.0；开始新一批视觉实现前再次核验远端正式 Tag。
+状态：已收到并同步 Backend revision 5 `a192628fc1484990871a8d159a7324446cdf0b05`／API `5.41.0-dev.20261021.2`，29 款目录含中文 13、日文 10、英文 6，当前 28 款资源 ready；语言分组与小城原件预算正在本任务实现和验证，怪盗最终资源待交接。当前证据见[revision 5 候选记录](thread-fonts-mobile-r5-candidate.md)。上一批 17 款候选、16 款预览和 APK 保留在[历史记录](thread-fonts-mobile-candidate.md)，不能代表本批。已重新 fetch Foundation 远端与 tags，最新正式版本仍为 v7.6.0，并阅读该 Tag CHANGELOG；无需升级依赖。
 
 上一批正式交接：Backend `1cf51dd752a98e3733f3dc0c83b17add75be7e46`／API `5.41.0-dev.20261021.1`，17 款目录中 16 款 ready、小城拉风体 pendingSource。正式 ID 为 `shattered-display`、`xiaocheng-lafeng`、`jf-zsk-seal`，替代研究别名。VPS `/tmp/thread-font-release-publish` 含正式分片与声明对象；研究 audit3500 子集不代表正式 core 覆盖。清单 SHA-256 `ad22427e048b90f798bddafc308195786600ee006459f54144610d1bbe35d5c3`，3,207,159 B。该版本及下方旧调查不代表 revision 5 已接入。
 
@@ -8,9 +8,9 @@
 
 - 移除未发布候选中的站酷小薇体 `zcoolxiaowei`，加入怪盗予告黑体（治理提供官方 BOOTH 编号 7920588，源文件取得中）；再加入治理统一交接的 12 款（日文 6、英文 6），总目标 29。新字体正式 ID 不由 Mobile 自行命名。
 - 中文／日文／英文按主要设计语言分组，不按是否含汉字推断，也不代表字形覆盖。侵食明朝、白光明朝、冒险黑体与怪盗予告黑体归日文；其余分组以 Backend 已提交目录元数据为准，不在页面维护平行分类表。
-- 治理已收到 `D:/Download/小城拉风体_猫啃网.zip`，负责核验与固定 SHA 交接；沿用负责人既有授权，不重复询问。当前移动端旧目录的 pendingSource 状态保持原始证据，收到正式契约后再同步。
+- 治理已核验小城原件并通过 Backend 正式交接：SHA `cf4a4215e562d6de6e3ee88f25fc5d47d77668d28eb3a0f2533c7290de307423`，18,410,600 B，`deliveryMode=original`。沿用负责人既有授权，不改写字体内部名称、DSIG 或 fsType，不加工源字体。
 - 2026-10-21 更新 Mobile 远端引用后确认：`zcoolxiaowei` 的移动端 ID 实现首次出现于本任务 `e665f94a`，最新 `origin/dev` 无对应目录记录；PR #114 为 OPEN/DRAFT，未合并。因此按未发布候选调整，不虚构上线退役迁移；已有候选本地内容继续遵循未知 ID 保留原文的通用边界。
-- 同一 Worktree、分支和 PR 继续推进。待固定 Backend SHA 后独立同步契约、生成客户端，再接入目录元数据解析、语言分组选择器和正式 ID 白名单。分片、许可声明、来源锁及移除项语义必须来自同次正式交接。
+- 同一 Worktree、分支和 PR 继续推进。已独立提交 revision 5 契约同步 `069564bf` 并重新生成客户端；目录元数据解析、语言分组选择器、正式 ID 白名单与原件例外继续在后续实现提交中验证。怪盗最终源包已由治理收到，等待 Backend 最终 29-ready 锁，不自行推断资源身份。
 - 保持按需加载与现有进程预算，不因目录扩为 29 款预加载全集或提高上限。保留上一批真实截图，补充新增字体及语言分组受影响画面。
 - 本批稳定后集中运行门禁，必须复核 `test/features/threads/thread_detail_stack_test.dart` 的字体版本载荷期望和 `tool/windows/contract_revision.test.mjs` 的新文档夹具。公网版本不匹配是独立未满足项，不自行部署；不对每次名单更新机械重复全量门禁。
 - 旧 APK 体积增长已完成只读 ZIP 核验，原因与证据见[候选记录的体积核验](thread-fonts-mobile-candidate.md#apk-体积增长核验)。本次未重构建；最终候选集中核验打包空填充回收情况。

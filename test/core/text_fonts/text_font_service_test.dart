@@ -43,7 +43,7 @@ void main() {
               TextFontCatalogDto(
                 (b) => b
                   ..fontVersion = TextFontCatalogDtoFontVersionEnum.n1
-                  ..catalogVersion = '1.0.0'
+                  ..catalogVersion = '1.1.0'
                   ..assetBaseUrl = 'https://assets.example/'
                   ..fonts.replace([])
                   ..manifest.replace(
@@ -61,7 +61,7 @@ void main() {
     );
     final service = TextFontService(api, cache: cache);
     final first = await service.load();
-    expect(first.manifest!.fonts.length, 17);
+    expect(first.manifest!.fonts.length, 29);
     first.requests = 17;
     first.registeredBytes = 1000;
     expect(identical(await service.retry(), first), isTrue);
@@ -75,7 +75,7 @@ void main() {
     );
     final offline = await TextFontService(api, cache: cache).load();
     expect(offline.assetsAvailable, isFalse);
-    expect(offline.manifest!.fonts.length, 17);
+    expect(offline.manifest!.fonts.length, 29);
     expect(offline.requests, 0);
   });
 }

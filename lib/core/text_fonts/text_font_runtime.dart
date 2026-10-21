@@ -25,6 +25,10 @@ class TextFontRuntime extends ChangeNotifier {
   int requests = 0;
   int downloadedBytes = 0;
   int registeredBytes = 0;
+  // 普通 24 MiB 与原件额度独立累计；失败不能归还或挪用。
+  int _originalReservedBytes = 0;
+  int _originalDownloadedBytes = 0;
+  int _originalRegisteredBytes = 0;
   final families = <String>{};
   final _registered = <String>{};
   final _failed = <String>{};
@@ -32,6 +36,9 @@ class TextFontRuntime extends ChangeNotifier {
   Future<void> _queue = Future<void>.value();
 
   int get registeredFaces => _registered.length;
+  int get originalReservedBytes => _originalReservedBytes;
+  int get originalDownloadedBytes => _originalDownloadedBytes;
+  int get originalRegisteredBytes => _originalRegisteredBytes;
 
   void updateManifest(TextFontManifest? value) {
     manifest = value;
@@ -79,15 +86,26 @@ class TextFontRuntime extends ChangeNotifier {
   }
 
   Future<Uint8List> asset(TextFontAsset descriptor) async {
+    // 原件只能经家族/分片/许可检查后一次性预留，不能借公共资源入口重试。
+    if (descriptor.isOriginal) throw const TextFontUnavailable();
+    return _asset(descriptor);
+  }
+
+  Future<Uint8List> _asset(TextFontAsset descriptor) async {
     final cached = await cache.read(descriptor);
     if (cached != null) return cached;
     if (!assetsAvailable ||
         requests >= 64 ||
-        downloadedBytes + descriptor.bytes > 24 * 1024 * 1024) {
+        (!descriptor.isOriginal &&
+            downloadedBytes + descriptor.bytes > 24 * 1024 * 1024)) {
       throw const TextFontUnavailable();
     }
     requests++;
-    downloadedBytes += descriptor.bytes;
+    if (descriptor.isOriginal) {
+      _originalDownloadedBytes += descriptor.bytes;
+    } else {
+      downloadedBytes += descriptor.bytes;
+    }
     // 串行队列使下载并发保持 1（契约上限 2），损坏缓存只下载一次。
     final bytes = await download(
       descriptor,
@@ -131,13 +149,24 @@ class TextFontRuntime extends ChangeNotifier {
       }
     }
     for (final shard in needed) {
+      final original = shard.asset.isOriginal;
       if (_registered.length >= 32 ||
-          registeredBytes + shard.asset.bytes > 24 * 1024 * 1024) {
+          (original
+              ? _originalReservedBytes != 0
+              : registeredBytes + shard.asset.bytes > 24 * 1024 * 1024)) {
         break;
       }
-      final bytes = await asset(shard.asset);
+      if (original) {
+        // 下载或缓存首次注册之前预留，失败/超时也永久消耗本进程额度。
+        _originalReservedBytes = TextFontOriginal.bytes;
+      }
+      final bytes = await _asset(shard.asset);
       // 原生注册失败也不能假定内存已释放，先保守消耗预算。
-      registeredBytes += bytes.length;
+      if (original) {
+        _originalRegisteredBytes += bytes.length;
+      } else {
+        registeredBytes += bytes.length;
+      }
       _registered.add(shard.family);
       try {
         await register(shard.family, bytes);

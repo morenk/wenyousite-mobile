@@ -5,7 +5,6 @@ abstract final class MarkdownTextFont {
   static const ids = {
     'source-han-sans',
     'zcoolkuaile',
-    'zcoolxiaowei',
     'longcang',
     'liujianmaocao',
     'wenkai',
@@ -20,6 +19,19 @@ abstract final class MarkdownTextFont {
     'shattered-display',
     'xiaocheng-lafeng',
     'jf-zsk-seal',
+    'kaitou-yokoku-gothic',
+    'yuji-boku',
+    'dotgothic16',
+    'hachi-maru-pop',
+    'reggae-one',
+    'train-one',
+    'rampart-one',
+    'unifraktur-cook',
+    'great-vibes',
+    'special-elite',
+    'monoton',
+    'orbitron',
+    'rye',
   };
 
   static bool hasUnknown(String source) {

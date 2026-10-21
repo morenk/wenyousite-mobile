@@ -35,11 +35,14 @@ void main() {
                   {
                     'id': ids[i],
                     'name': '字体$i',
+                    'designLanguage': 'zh',
+                    'deliveryMode': 'subset',
                     'availability': 'ready',
                     'notices': [asset().toJson()],
                     'shards': [
                       for (var j = 0; j < shards; j++)
                         {
+                          'id': 'core',
                           'family': 'WYF1-$i-core-$j',
                           'mobile': asset().toJson(),
                           'unicodeRanges': ['U+4E00-9FFF'],
@@ -64,14 +67,26 @@ void main() {
     final actual = TextFontManifest(
       File('contracts/thread-font-manifest-v1.json').readAsBytesSync(),
     );
-    expect(actual.fonts.length, 17);
-    expect(actual.fonts.values.where((f) => f.ready).length, 16);
-    expect(actual.fonts['xiaocheng-lafeng']!.ready, isFalse);
+    expect(actual.fonts.length, 29);
+    expect(actual.fonts.values.where((f) => f.ready).length, 28);
+    expect(actual.fonts['xiaocheng-lafeng']!.ready, isTrue);
+    expect(actual.fonts['kaitou-yokoku-gothic']!.ready, isFalse);
+    for (final (language, count) in [
+      (TextFontLanguage.zh, 13),
+      (TextFontLanguage.ja, 10),
+      (TextFontLanguage.en, 6),
+    ]) {
+      expect(
+        actual.fonts.values.where((f) => f.language == language).length,
+        count,
+      );
+    }
     expect(
       actual.fonts['jf-zsk-seal']!.shards.any((s) => s.contains(65)),
       isFalse,
     );
     for (final id in ['shinsyoku-mincho', 'bouken-gothic', 'hakkou-mincho']) {
+      expect(actual.fonts[id]!.language, TextFontLanguage.ja);
       expect(
         actual.fonts[id]!.shards.any((s) => s.contains('汉'.runes.single)),
         isFalse,
