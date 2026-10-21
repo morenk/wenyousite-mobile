@@ -54,6 +54,10 @@ Android 后台消息提醒默认开启，可在账号设置按设备关闭，选
 
 ## 6. 状态模型和数据流
 
+独立文本颜色能力由 `/meta.capabilities.textColorV1Supported` 与 `textColorV1WriteEnabled` 映射，缺失视为 false。正文读取发送 `X-Text-Color-Version: 1`，与已有 `X-Markdown-Contract-Version: 6` 并存；后端缓存和旧端投影负责隔离有色原文。UI 只在支持时显示颜色区，关闭新写时保留读取并禁用改色。最近色存储按当前账号键隔离，由生产组合根注入编辑器端口。
+
+可选 meta.audioUpload 经真实 JSON 数字 version=1 解析为新上传能力；缺失或未知版本安全关闭入口。此开关不控制已授权正文 mediaAudios 的历史播放。生成客户端对该单一数字枚举使用 wireNumber，避免把数字 1 错当字符串。
+
 可选 `rpIdentityProfileSupported` 从 `/meta` 映射到应用能力，缺失默认 false；资料编辑与读取 UI 按此能力启用，不从版本字符串或现有多角色支持推断。角色提及的支持／新写开关继续独立控制。
 
 
@@ -98,6 +102,8 @@ Android Manifest 明确关闭全量备份，Android 11 及以下和 Android 12+ 
 设备开关由 BackgroundReminderPreferenceController 管理，SharedPreferences 键为 background.reminder.enabled.v1，缺省开启；读取失败先关闭并提供重试，写入中停止提醒且禁止重复操作，写入失败恢复原选择。后台消息指纹只存当前进程；退出/切号清除基线但不清除设备选择。
 
 ## 9. 加载、空数据、错误、重试和冲突状态
+
+收藏夹目录首次读取失败使用共享错误面板，保留收藏类型与原重试回调。 通用失败内容保留问题编号，取消请求不展示错误。2026-10-18 负责人真机验收通过，见[错误重试与瀑布流验收](../architecture/error-retry-waterfall-acceptance.md)。
 
 私有下载适配候选／待验收：429 的 `X-Download-Limit-Reason=device_daily_limit` 显示“此设备今日下载次数已用完，请在北京时间次日零点后重试。”，`ip_daily_limit` 显示“当前网络今日下载次数已用完，请在北京时间次日零点后重试。”；字节预算、频率、并发、带宽以及未知／缺失原因仍显示“下载请求较多，请稍后重试。”。503 继续显示“安装包暂时无法下载，请稍后重试。”，不因附带原因头改判。原因只读响应头，HEAD 无正文和 GET 空 429 均可处理。
 
@@ -167,6 +173,12 @@ Android 的 Debug、Profile 和 Release 均仅支持 `arm64-v8a`，使用 ARM64 
 当前已完成构建策略门禁、全局亮色/黑夜外观、推荐更新忽略、Android HTTPS 在线下载、双层完整性/身份校验与系统安装器、iOS TestFlight 外跳、本地一键发布入口；后台常驻与横幅提醒为候选／待负责人验收。Debug 构建使用独立 `site.wenyou.app.debug` 包名，Profile 性能构建使用 `site.wenyou.app.profile`，两者都避免占用正式更新链；完整门禁与发布入口均会核对线上契约、后端 revision 和 Markdown 版本。自动测试以伪 APK 固定下载与缓存状态机，Android 原生包解析、系统覆盖和后台尽力轮询仍需用 Android 8+ 真机完成最终验收；iOS 构建与上传必须在配置签名的 macOS 上执行。后台 30 秒节拍依赖当前 Flutter 进程与系统调度，留在最近任务不代表 Dart isolate 会持续运行；Doze、厂商省电、网络中断或进程终止都可能延迟/停止检查，不承诺实时送达。V1 不申请豁免、不做 App Links、FCM、WebSocket 或开机恢复。Profile 基线只覆盖固定离线关键交互，不能替代全部真实业务路径的人工手感验收。原生启动层在 Flutter 首帧前仍是静态白色。
 
 ## 13. 最近审查的契约版本和后端提交
+
+2026-10-18 合并来源同步：Backend PR #55 已合并，固定最终提交 `6e00c4031a8f970609eef8cbf6fdefe3e6b12126`／API `5.40.0-dev.20261018.1`。契约字节与先前候选 `da68203a` 一致，本次只更新来源元数据；消费者验证和部署核验分别记录，不改变本模块既有范围。
+
+2026-10-18 契约来源复核：固定 Backend `da68203a494c6d0f6d377c23399390c2cee397f3`／API `5.40.0-dev.20261018.1`。本次只增加主题详情可选真实收藏与官方订阅总数，不改变本模块既有操作契约；消费者接入与验证见[统计契约同步](../architecture/thread-action-counts-contract-sync.md)。
+
+契约复核：固定已部署 Backend `08bbf5dbcd791270764fc2152fe9b61f683d7fa1`／API `5.39.0-dev.20261017.1`，合并音频预算错误与独立文本颜色能力。主题链正文保留颜色读取头、写入声明、保存校验和取色入口；音频上传、媒体展示与可定制工具栏继续保留。Foundation 固定正式 `v7.5.0`；独占空段、相邻彩色标题与对齐边界新增共享用例，OpenAPI 与合并基线一致。
 
 2026-10-10 合并来源复核：通过官方同步入口固定到实际部署 Backend `b5f0e3bb0b99a3f9763b31e3080cb4d4f2e64045`，OpenAPI 仍为 `5.36.0-dev.20261005.1`。相对退役实施提交，机器契约、共享语料、生成客户端及本模块行为不变；仅来源登记更新，详见[退役验收记录](../architecture/retire-development-preview-acceptance.md)。
 

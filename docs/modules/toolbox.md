@@ -73,6 +73,12 @@ users 只提供入口，app 组合路由；工具服务没有业务 API、上传
 
 ## 13. 最近审查的契约版本和后端提交
 
+2026-10-18 合并来源同步：Backend PR #55 已合并，固定最终提交 `6e00c4031a8f970609eef8cbf6fdefe3e6b12126`／API `5.40.0-dev.20261018.1`。契约字节与先前候选 `da68203a` 一致，本次只更新来源元数据；消费者验证和部署核验分别记录，不改变本模块既有范围。
+
+2026-10-18 契约来源复核：固定 Backend `da68203a494c6d0f6d377c23399390c2cee397f3`／API `5.40.0-dev.20261018.1`。本次只增加主题详情可选真实收藏与官方订阅总数，不改变本模块既有操作契约；消费者接入与验证见[统计契约同步](../architecture/thread-action-counts-contract-sync.md)。
+
+契约复核：固定已部署 Backend `08bbf5dbcd791270764fc2152fe9b61f683d7fa1`／API `5.39.0-dev.20261017.1`，合并音频预算错误与独立文本颜色能力。主题链正文保留颜色读取头、写入声明、保存校验和取色入口；音频上传、媒体展示与可定制工具栏继续保留。Foundation 固定正式 `v7.5.0`；独占空段、相邻彩色标题与对齐边界新增共享用例，OpenAPI 与合并基线一致。
+
 三工具算法与逐字样例基于 Web `2aa7a81ef8d89f86f9447b0fc08e8b115d05b8a2`。双语词库固定提交与每个源文件 SHA-256 记录在 [source.json](../../contracts/toolbox/source.json)，同步入口 `tool/sync_toolbox_data.ps1 -Revision <40位SHA>` 只读取 VPS Git 已提交对象；`dart run tool/generate_toolbox_data.dart --check` 核验源摘要和生成常量一致。Faker 中文词库和温油双语词库许可证保留源码并通过 LicenseRegistry 随 App 提供。
 
 花体 v2 固定 Web `de1fb888dc830e19f3d93d53c0aa391067391449`，49 款与 352 向量的来源、逐文件摘要见 [source-fancy.json](../../contracts/toolbox/source-fancy.json)。`tool/sync_fancy_data.ps1 -Revision <40位SHA>` 只读取 VPS Git 对象，`dart run tool/generate_fancy_data.dart --check` 核验 Web manifest 全部六个来源文件与生成常量；该检查也接入 `fancy_styles_test.dart`，后续完整测试会验证漂移。MIT 许可通过 LicenseRegistry 提供。v1 的 240 向量按 [source-fancy-v1.json](../../contracts/toolbox/source-fancy-v1.json) 原 SHA 独立保留，旧八个花体样例继续回归；输入 10,000 UTF-16 上限和既有中文错误文案沿用 Mobile。

@@ -2,11 +2,24 @@
 
 状态：候选／待负责人验收；不关闭 Sentry issue，不合并或部署。
 
+## 2026-10-21 最新 dev 整合
+
+- 沿用原分支 `codex/20261015-sentry-upload-recovery` 与 PR #104，从原 HEAD `ecb9251152b6107133da0326c71ea0e8d93e5237` 使用 merge 整合 `origin/dev` `6f0064507a77e2034250ee4fd9f1d382e0a063a9`，不改写共享历史、不吸收其他候选 PR。
+- 本轮固定来源为 Backend `6e00c4031a8f970609eef8cbf6fdefe3e6b12126`／契约 `5.40.0-dev.20261018.1`，保留基线生成客户端、依赖、原生配置及版本 `0.10.0+100`。只读 `GET https://wenyou.site/api/v1/meta` 核对相同 buildSha／contractVersion；服务端 Markdown 为 5，本地来源版本与客户端既有兼容声明维持基线。
+- 两处冲突为编辑器及媒体模块文档，逐段保留音频流程和图片恢复说明。生产代码自动合入后逐项核对公共发布准备、文字颜色与音频投影；音频专用上传／重签、主题和帖子公共发布入口与最新 dev 一致，未回退新功能。
+- 旧红证据仍可对应本轮未修实现：`d7168b61` 与最新 `6f006450` 的 `lib/features/media/data/media_upload_repository.dart` 均为 Git blob `f7776e4f52a03c7a08cada6a0da15e96ee308661`。原 `upload-baseline.log` 的 PUT 超时用例预期媒体 ID 为 `media-one`、实际 null，失败属于业务断言；本轮仍需在整合后的最终源码验证新绿。
+- 新增 `test/features/editor/editor_pending_images_test.dart` 组合回归：有彩色正文和已完成音频时，图片失败使公共发布返回失败，明确重试复用媒体身份，附件完成不自动发布；再次明确发布才提交一次，核对实际 `onMarkdownChanged` 提交输出与会话一致，并保留完整彩色文字片段、音频与图片。本轮定向组合已通过。独立只读审查核对真实等待／重试／发布调用契约，未发现确定阻断；音频覆盖链接和元数据保留，不包含播放或投影视觉验收。
+- 独立只读审查已核对生产代码：音频仍参与附件就绪、保存和生命周期；图片显式重签与自动恢复边界、取消／切号保护、最新生成接口兼容未发现确定阻断。审查没有执行 Dart、Flutter、代码生成或 Gradle。
+- 本轮先对本工作区执行原生 `dart run build_runner clean`、`npm ci`、`flutter pub get` 和新增测试格式检查，均退出 0；未修改共享缓存，契约、生成客户端、锁文件及原生配置相对 `6f006450` 无额外差异。
+- 定向命令：`flutter test --no-pub --concurrency=1 test/features/media test/features/editor/editor_pending_images_test.dart test/features/editor/editor_image_upload_completion_test.dart test/features/editor/editor_publish_preparation_test.dart test/features/editor/editor_text_color_audio_integration_test.dart test/features/editor/editor_pending_audios_test.dart test/features/moments/moment_upload_experience_test.dart test/features/moments/moment_comment_attachment_lifecycle_test.dart test/features/direct_messages/direct_message_media_test.dart`，264 项通过、0 失败、退出 0，测试阶段耗时 1:54。日志 `D:/codex-worktrees/mobile-sentry-upload/upload-targeted-dev-integration-20261021-1.log`，SHA-256 `6EF051539175D3F15CD8BB5429F306BC418DEDD5F54FA85637E908F4258370A7`。首次编译加载耗时较长，核验本任务编译进程继续运行后正常完成，未停止、清缓存或重跑掩盖结果。
+- 本组按 #103 → #100 → #101 → #104 串行执行；#104 已接手检查槽。本轮最终应用 SHA、官方 `npm run check:apk`、全量测试计数与新 APK 摘要尚待填写。下方 2026-10-16 的日志和 APK 仅为历史证据，不代替本轮检查。
+- 审批偏好为 Auto-review，但治理从本轮 `turn_context`（`01a15a6d-7d01-7ce0-9841-d21461295583`）核验实际为 `approval_policy=never`、`approvals_reviewer=user`、`sandbox_policy=danger-full-access`。宿主无支持的配置入口，Auto-review 未启用；没有修改全局配置。
+
 ## 范围与来源
 
-- Mobile 基线：`d7168b61ea1b547e737585d2e9b250f1b3bd24e2`，发布版 `0.9.0+99`。
-- 已验证应用源码提交：`1048245349359d3939fe34bb0772253963489815`。后续仅补充交付记录；官方完整门禁与下述 APK 均对应此应用源码。
-- Backend 固定来源及公网只读 `/meta`：`b5f0e3bb0b99a3f9763b31e3080cb4d4f2e64045`，API `5.36.0-dev.20261005.1`。HTTP API、Markdown 和数据库不变。
+- 首轮 Mobile 基线：`d7168b61ea1b547e737585d2e9b250f1b3bd24e2`，发布版 `0.9.0+99`。
+- 首轮已验证应用源码提交：`1048245349359d3939fe34bb0772253963489815`。2026-10-16 的官方完整门禁与下述历史 APK 均对应此应用源码。
+- 首轮 Backend 固定来源及当时公网只读 `/meta`：`b5f0e3bb0b99a3f9763b31e3080cb4d4f2e64045`，API `5.36.0-dev.20261005.1`。本候选不改变 HTTP API、Markdown 和数据库。
 - [27](https://momo-af.sentry.io/issues/WENYOUSITE-MOBILE-27) 为对象存储 PUT 连接超时。构造回归证实旧实现 PUT 失败后丢失已分配的媒体身份；缺少线上原始图片、设备网络及完整步骤，不能把构造回归等同原事件精确复现。
 - [2P](https://momo-af.sentry.io/issues/WENYOUSITE-MOBILE-2P) 为 10 月 11 日申请上传地址 500，不属于 10 月 14 日 14:00–17:00（北京时间）维护窗口。只读管理日志已按 requestId `36e16041-68d6-45e3-8917-54de6a466301` 关联到 `MaxRetriesPerRequestError`（Redis）。同分钟有短暂 500，后续分钟恢复成功响应；Redis 请求失败的底层原因及当时部署版本仍待核验。Redis 容器同日 11:15–11:40 UTC 的现存 23 行日志包含正常持久化，未见启动、停机或错误记录，不足以判断客户端连接失败的原因。当前后端已有 Redis 超时与离线队列隔离实现；本轮没有后端源码或基础设施变更。
 - 负责人追加的用户截图：北京时间 10 月 16 日 00:40:05、诊断编号 `90a36583-9e4f-40f9-9d90-ea07cf111be0` 精确匹配 [MOBILE-4](https://momo-af.sentry.io/issues/WENYOUSITE-MOBILE-4/?eventId=90a365839e4f40f99d90ea07cf111be0)，来自旧版 `0.7.1+95`，`SocketException / apiWrite.request / responseReceived=false / apiEnvelopeReceived=false`。旧记录缺少接口、Dio 类型与调用堆栈；无法据此定位申请地址、确认还是发布阶段，亦不能据此认定图片格式或大小有误。后端 16:35–16:45 UTC 日志未检索到 requestId `0dc86efc-d2f3-4ba5-b6ed-954faa6d183c`；此项不足以证明具体网络根因。另两条本机加载失败编号未在 Sentry 检索到，保留待用户复制详情；不得并入 27/2P 后宣称已修复。

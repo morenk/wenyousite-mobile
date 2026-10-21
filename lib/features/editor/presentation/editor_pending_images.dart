@@ -3,8 +3,10 @@ import 'dart:async';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
+import 'package:wenyousite_mobile/core/media/media_audio.dart';
 import 'package:wenyousite_mobile/core/media/media_display.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/features/editor/presentation/editor_pending_audios.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/rich_editor_pending_document.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/rich_editor_session.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
@@ -40,7 +42,24 @@ class EditorPendingImages extends ChangeNotifier {
     this.restoreMetadata,
   }) : scope = ref.read(sessionScopeProvider),
        accountId = ref.read(sessionScopeProvider).accountId {
+    audios = EditorPendingAudios(
+      ref: ref,
+      editor: editor,
+      accountId: accountId,
+      target: target,
+      isCurrent: () => isCurrent,
+      save: save,
+    )..addListener(_audioChanged);
     editor.addListener(_documentChanged);
+  }
+
+  late final EditorPendingAudios audios;
+
+  void _audioChanged() {
+    if (_disposed) return;
+    _checkReady();
+    _scheduleSave();
+    notifyListeners();
   }
 
   final WidgetRef ref;
@@ -58,6 +77,7 @@ class EditorPendingImages extends ChangeNotifier {
       _imageAnchors.putIfAbsent(id, () => GlobalKey());
 
   Future<bool> revealFirstFailure() async {
+    if (audios.hasFailure) return true;
     for (final id in ids) {
       final item = images[id];
       if (item != null && !item.missing && item.state.failure == null) continue;
@@ -98,8 +118,8 @@ class EditorPendingImages extends ChangeNotifier {
   Completer<bool>? _ready;
 
   Set<String> get ids => editor.localImageIds;
-  bool get hasPending => ids.isNotEmpty;
-  int get pendingCount => ids.length;
+  bool get hasPending => ids.isNotEmpty || audios.hasPending;
+  int get pendingCount => ids.length + audios.ids.length;
   bool get isCurrent => !_disposed && ref.read(sessionScopeProvider) == scope;
   String? get _accountId => accountId;
 
@@ -158,7 +178,9 @@ class EditorPendingImages extends ChangeNotifier {
       editor.applyExternalMarkdown(
         markdown,
         mediaDisplays: mediaDisplaysFromJson(payload['mediaDisplays']),
+        mediaAudios: mediaAudiosFromJson(payload['mediaAudios']),
       );
+      audios.restore(payload['audios']);
       if (!hasPending) editor.onMarkdownChanged(markdown);
       for (final id in ids) {
         final item = images.putIfAbsent(
@@ -167,6 +189,7 @@ class EditorPendingImages extends ChangeNotifier {
         );
         if (item.input != null) unawaited(_run(item));
       }
+      audios.documentChanged();
     } on Object {
       if (isCurrent) saveFailure = '本机草稿读取失败，请重试后再编辑。';
     } finally {
@@ -302,6 +325,7 @@ class EditorPendingImages extends ChangeNotifier {
     scheduleMicrotask(() {
       _scheduled = false;
       if (!isCurrent) return;
+      audios.documentChanged();
       for (final item in images.values) {
         if (!ids.contains(item.id)) {
           if (item.active) _pauseItem(item);
@@ -347,9 +371,11 @@ class EditorPendingImages extends ChangeNotifier {
 
   void _checkReady() {
     if (!waitingToPublish || _ready?.isCompleted != false) return;
-    if (ids.any(
-      (id) => images[id]?.missing != false || images[id]?.state.failure != null,
-    )) {
+    if (audios.hasFailure ||
+        ids.any(
+          (id) =>
+              images[id]?.missing != false || images[id]?.state.failure != null,
+        )) {
       cancelPublish();
     } else if (!hasPending) {
       _ready!.complete(true);
@@ -392,6 +418,8 @@ class EditorPendingImages extends ChangeNotifier {
       if (baseline != null) 'baseline': baseline,
       'markdown': editor.localMarkdown,
       'mediaDisplays': mediaDisplaysToJson(editor.mediaDisplays),
+      'mediaAudios': mediaAudiosToJson(editor.mediaAudios),
+      'audios': audios.toJson(),
       if (captureMetadata != null) 'metadata': captureMetadata!(),
       'images': [
         for (final item in images.values)
@@ -423,6 +451,7 @@ class EditorPendingImages extends ChangeNotifier {
   }
 
   Future<bool> clear({bool published = true}) async {
+    audios.pause();
     _cleared = true;
     _paused = true;
     _saveTimer?.cancel();
@@ -458,13 +487,16 @@ class EditorPendingImages extends ChangeNotifier {
   }
 
   void startNewDraft() {
+    audios.clear();
+    audios.resume();
     images.clear();
     _cleared = false;
     _paused = false;
     _saveEnabled = true;
   }
 
-  void pause() {
+  void pause({bool preserveAudioSelection = false}) {
+    audios.pause(cancelSelection: !preserveAudioSelection);
     _paused = true;
     cancelPublish();
     for (final item in images.values) {
@@ -475,6 +507,7 @@ class EditorPendingImages extends ChangeNotifier {
   void resume() {
     if (!isCurrent || _cleared) return;
     _paused = false;
+    audios.resume();
     _documentChanged();
   }
 
@@ -496,6 +529,8 @@ class EditorPendingImages extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
+    audios.removeListener(_audioChanged);
+    audios.dispose();
     _publishGeneration++;
     if (_ready?.isCompleted == false) _ready!.complete(false);
     for (final item in images.values) {

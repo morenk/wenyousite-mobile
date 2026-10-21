@@ -10,6 +10,8 @@ class _$RecentReplyResponseDto extends RecentReplyResponseDto {
   @override
   final BuiltList<MarkdownMediaDisplayResponseDto>? mediaDisplays;
   @override
+  final BuiltList<AudioMediaDto>? mediaAudios;
+  @override
   final String id;
   @override
   final DateTime createdAt;
@@ -38,6 +40,7 @@ class _$RecentReplyResponseDto extends RecentReplyResponseDto {
 
   _$RecentReplyResponseDto._({
     this.mediaDisplays,
+    this.mediaAudios,
     required this.id,
     required this.createdAt,
     this.floorNumber,
@@ -64,6 +67,7 @@ class _$RecentReplyResponseDto extends RecentReplyResponseDto {
     if (identical(other, this)) return true;
     return other is RecentReplyResponseDto &&
         mediaDisplays == other.mediaDisplays &&
+        mediaAudios == other.mediaAudios &&
         id == other.id &&
         createdAt == other.createdAt &&
         floorNumber == other.floorNumber &&
@@ -81,6 +85,7 @@ class _$RecentReplyResponseDto extends RecentReplyResponseDto {
   int get hashCode {
     var _$hash = 0;
     _$hash = $jc(_$hash, mediaDisplays.hashCode);
+    _$hash = $jc(_$hash, mediaAudios.hashCode);
     _$hash = $jc(_$hash, id.hashCode);
     _$hash = $jc(_$hash, createdAt.hashCode);
     _$hash = $jc(_$hash, floorNumber.hashCode);
@@ -100,6 +105,7 @@ class _$RecentReplyResponseDto extends RecentReplyResponseDto {
   String toString() {
     return (newBuiltValueToStringHelper(r'RecentReplyResponseDto')
           ..add('mediaDisplays', mediaDisplays)
+          ..add('mediaAudios', mediaAudios)
           ..add('id', id)
           ..add('createdAt', createdAt)
           ..add('floorNumber', floorNumber)
@@ -125,6 +131,12 @@ class RecentReplyResponseDtoBuilder
   set mediaDisplays(
     ListBuilder<MarkdownMediaDisplayResponseDto>? mediaDisplays,
   ) => _$this._mediaDisplays = mediaDisplays;
+
+  ListBuilder<AudioMediaDto>? _mediaAudios;
+  ListBuilder<AudioMediaDto> get mediaAudios =>
+      _$this._mediaAudios ??= ListBuilder<AudioMediaDto>();
+  set mediaAudios(ListBuilder<AudioMediaDto>? mediaAudios) =>
+      _$this._mediaAudios = mediaAudios;
 
   String? _id;
   String? get id => _$this._id;
@@ -184,6 +196,7 @@ class RecentReplyResponseDtoBuilder
     final $v = _$v;
     if ($v != null) {
       _mediaDisplays = $v.mediaDisplays?.toBuilder();
+      _mediaAudios = $v.mediaAudios?.toBuilder();
       _id = $v.id;
       _createdAt = $v.createdAt;
       _floorNumber = $v.floorNumber;
@@ -220,6 +233,7 @@ class RecentReplyResponseDtoBuilder
           _$v ??
           _$RecentReplyResponseDto._(
             mediaDisplays: _mediaDisplays?.build(),
+            mediaAudios: _mediaAudios?.build(),
             id: BuiltValueNullFieldError.checkNotNull(
               id,
               r'RecentReplyResponseDto',
@@ -261,6 +275,8 @@ class RecentReplyResponseDtoBuilder
       try {
         _$failedField = 'mediaDisplays';
         _mediaDisplays?.build();
+        _$failedField = 'mediaAudios';
+        _mediaAudios?.build();
 
         _$failedField = 'thread';
         thread.build();

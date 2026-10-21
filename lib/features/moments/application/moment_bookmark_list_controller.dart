@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wenyousite_mobile/core/application/cursor_page_request.dart';
 import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
 import 'package:wenyousite_mobile/core/application/visibility_cache_invalidation.dart';
 import 'package:wenyousite_mobile/core/models/paging.dart';
@@ -154,38 +155,34 @@ class MomentBookmarkListController
       transientFailure: null,
       loadMoreFailure: null,
     );
-    try {
-      final page = await _repository.fetchPage(
-        folderId: state.folderId,
-        cursor: state.cursor,
-      );
-      if (!mounted || epoch != _epoch) return;
-      state = state.copyWith(
-        items: mergeUniqueBy(state.items, page.items, keyOf: (item) => item.id),
-        cursor: page.cursor,
-        hasMore: page.hasMore,
-        isLoadingMore: false,
-      );
-    } on ApiFailure catch (failure) {
-      if (!mounted || epoch != _epoch) return;
-      if (failure.isInvalidCursor) {
+    await loadCursorPage(
+      fetch: () =>
+          _repository.fetchPage(folderId: state.folderId, cursor: state.cursor),
+      isCurrent: () => mounted && epoch == _epoch,
+      onPage: (page) {
+        state = state.copyWith(
+          items: mergeUniqueBy(
+            state.items,
+            page.items,
+            keyOf: (item) => item.id,
+          ),
+          cursor: page.cursor,
+          hasMore: page.hasMore,
+          isLoadingMore: false,
+        );
+      },
+      onInvalidCursor: () async {
         await _loadFirst(refreshing: state.items.isNotEmpty);
-        return;
-      }
-      state = state.copyWith(
-        isLoadingMore: false,
-        transientFailure: failure,
-        loadMoreFailure: failure,
-      );
-    } on Object catch (error) {
-      if (!mounted || epoch != _epoch) return;
-      final failure = mapApplicationFailure(error, '加载更多动态收藏失败，请重试。');
-      state = state.copyWith(
-        isLoadingMore: false,
-        transientFailure: failure,
-        loadMoreFailure: failure,
-      );
-    }
+      },
+      mapFailure: (error) => mapApplicationFailure(error, '加载更多动态收藏失败，请重试。'),
+      onFailure: (failure) {
+        state = state.copyWith(
+          isLoadingMore: false,
+          transientFailure: failure,
+          loadMoreFailure: failure,
+        );
+      },
+    );
   }
 
   Future<bool> move(MomentCard card, String folderId) async {

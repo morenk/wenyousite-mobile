@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:uuid/uuid.dart';
@@ -8,6 +10,38 @@ import 'package:wenyousite_mobile/features/wallet/data/wallet_repository.dart';
 import 'package:wenyousite_mobile/features/wallet/domain/wallet_models.dart';
 
 void main() {
+  test('公共分页并发：流水刷新及单独重试均阻止旧游标并丢弃迟到分页', () async {
+    for (final retryOnly in [false, true]) {
+      final repository = _ControllerWalletRepository();
+      final controller = WalletController(repository, autoStart: false);
+      await controller.loadInitial();
+      final more = Completer<CursorPage<WalletTransaction>>();
+      final fresh = Completer<CursorPage<WalletTransaction>>();
+      var calls = 0;
+      repository.onTransactions = (cursor) {
+        calls++;
+        return cursor == null ? fresh.future : more.future;
+      };
+      final paging = controller.loadMore();
+      final refresh = retryOnly
+          ? controller.retryTransactions()
+          : controller.refresh();
+      final blocked = controller.loadMore();
+      expect(calls, 2);
+      fresh.complete(
+        CursorPage(items: [_transaction('fresh')], hasMore: false),
+      );
+      await refresh;
+      more.complete(CursorPage(items: [_transaction('stale')], hasMore: false));
+      await paging;
+      await blocked;
+      expect(controller.state.transactions.single.id, 'fresh');
+      expect(controller.state.isLoadingMore, isFalse);
+      expect(controller.state.isLoadingTransactions, isFalse);
+      controller.dispose();
+    }
+  });
+
   test('钱包余额与流水独立失败，重试和分页保留已加载结果', () async {
     final repository = _ControllerWalletRepository(failSummaryOnce: true);
     final controller = WalletController(repository, autoStart: false);
@@ -129,6 +163,8 @@ class _ControllerWalletRepository extends Fake implements WalletRepository {
 
   final bool failSummaryOnce;
   final bool invalidCursorOnce;
+  Future<CursorPage<WalletTransaction>> Function(String? cursor)?
+  onTransactions;
   var summaryCalls = 0;
   var firstPageCalls = 0;
   var cursorCalls = 0;
@@ -151,6 +187,7 @@ class _ControllerWalletRepository extends Fake implements WalletRepository {
     String? cursor,
     int limit = 20,
   }) async {
+    if (onTransactions != null) return onTransactions!(cursor);
     if (cursor == null) {
       firstPageCalls += 1;
       return CursorPage(

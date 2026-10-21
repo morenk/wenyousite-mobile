@@ -43,7 +43,7 @@ galleryList：读取 GalleryList200Response / GalleryPageDto / GalleryImageDto�
 
 跨模块入口使用 `reading_gallery.dart` 公开门面；收藏动作由来源模块注入并接收当前 `ReadingGalleryImage`，媒体模块不依赖表情收藏内部状态。
 
-- 媒体管线：`mediaGetUploadUrl`、`mediaConfirmUpload`、`mediaGetMedia`、`mediaReissueUploadUrl`；同一媒体重签与重传为候选／待负责人验收。
+- 媒体管线：`mediaGetUploadUrl`、`mediaConfirmUpload`、`mediaGetMedia`、`mediaReissueUploadUrl`；图片同一媒体重签与重传为候选／待负责人验收；音频候选沿用原 mediaId 重签。
 - 头像：`usersSetAvatar`、`usersRemoveAvatar`。
 - 主页背景：`usersSetProfileCover`、`usersRemoveProfileCover`。
 - 主要生成类型：`CreateUploadUrlDto`（含 purpose）、`ConfirmUploadDto`、`MediaResponseDto`（含 purpose/animated 与派生 URL）、`SetAvatarDto`、`SetProfileCoverDto`、`PrivateUserResponseDto`。
@@ -51,6 +51,28 @@ galleryList：读取 GalleryList200Response / GalleryPageDto / GalleryImageDto�
 ## 6. 状态模型和数据流
 
 上传恢复候选：PUT 前即保留媒体身份与归一化文件摘要；网络失败、重签失败及对象缺失不会另建媒体。明确重试先查询同 ID，仍待上传时重签原对象；恢复草稿不申请、重签或 PUT，无身份附件等待手动重试，待重传附件只查询。旧 pending 沿用同 ID 幂等确认/处理查询；只有服务端明确 FAILED 才释放旧身份并允许手动重新上传。预签名地址不持久化。详见 [Sentry 上传恢复候选](../architecture/sentry-upload-recovery-candidate.md)。
+
+音频上传／保存下载统一为请求起点起 5 分钟总时限、30 秒无字节增长时限，独立连接时限 15 秒；仅真实字节增长刷新无进展计时，相同进度／空 chunk 不能续命。内部超时只取消本次传输，保留队列失败、文件和 mediaId；用户取消不显示失败。流读取静默时也会取消订阅，完成／失败／取消清理计时与监听。只调整音频客户端，不修改图片超时。
+
+确认后的处理查询按 1／2／4／8／10 秒递增并封顶，不并发、不因 60 次或 120 秒转为失败。前台活动会话继续查询；后台、离页、取消、换账号停止请求与等待。恢复页面不会自动 PUT／确认，沿已有显式继续入口恢复原 mediaId；真实网络失败可重试，服务端 FAILED 才进入重新选择终态。`42901` 活动名额不足、`42902` UTC 日准入额度不足均保留本机文件和身份，不能自动新建或重复上传。
+
+正文音频使用独立流式上传管线：Android SAF 在后台以 64 KiB 缓冲复制到本任务缓存，按声明大小及实际读取的 30 MiB 预算早停，取消关闭流并删除自有临时文件；其他平台使用 file_selector。选择结果有显式释放租约，24 小时前的自有 UUID 缓存可回收，不删除来源文件。私有草稿文件按账号和编辑目标保存。上传复用预签名 PUT、确认、同 mediaId 续查／重签；最多十分钟，输入 MP3/M4A/WAV/OGG/FLAC，由 Backend 验证并生成唯一 MP3 播放副本。
+
+有效文件选择完成即在编辑正文显示本机音频卡片，准备、上传、处理与失败状态来自原队列；私有保存完成前不上传。卡片沿用最终播放器的单行标题、纯色表面与进度位置，轨道为实际上传进度，处理中显示已上传完成，失败／暂停不归零。未完成卡片没有可用播放／seek／下载，不请求音源；取消、继续、重试／重新选择仍走原状态机，完成后原位变播放器。原发布链接故障的实际运行证据为可信投影命中但 AST 为 `p[a,br]`；阅读现将顶层独占音频与相邻协议空段分别渲染，空段高度保持，引用／列表内部不受影响。
+
+阅读解析缓存必须与可信音频集合一致：flutter_markdown_plus 只随 data／styleSheet 更新缓存 children，而 mediaAudios 也影响段落分块。因此有效来源集合变化时重建解析子树；等价 DTO 刷新不重挂、不打断播放，Debug reassemble 同步刷新。旧卡片 dispose 后以微任务按 owner 释放，避免树锁定期间同步通知刚挂的新组件；旧 owner 不停止新目标。
+
+播放器使用 Foundation surface／compact／body／utility 角色，极淡边界与弱 accent 圆形播放底；标题、细轨道及等宽时长对齐，播放与进度命中均为 48dp，标签 marks 保留。
+
+编辑与阅读共用播放器，标题显示正文持久化的原文件名标签；编辑态不显示保存入口，阅读态右侧 48dp 图标按需“保存到本地”，只有点击才进行无认证、无 Cookie 的 HTTP 流下载；校验 MIME、投影大小及 30 MiB 预算，逐跳复核最多五次重定向，重定向不重置总期限。文件先写自有 UUID 私有目录，完成后才交系统保存器，取消与失败清理临时源。Android 独立 ACTION_CREATE_DOCUMENT 通道后台复用 BoundedAudioCopy，不改变 ZIP 保存；取消／引擎销毁与完成竞态只回调一次，删除部分目标失败时尝试截断并记录不含 URI 的诊断。iOS 13 使用 UIDocumentPicker 导出私有文件，无新增插件或权限；Windows 未做 Xcode 编译。桌面沿 file_selector 选择目标并流式写暂存，确认替换前保留旧文件。导出名保留原主体，清理目录字符、方向控制、Windows 保留名与末尾点空格，扩展统一真实 MP3，不把转码副本伪装为 WAV／FLAC。取消不提示失败，失败可显式重试。
+
+进度拖动目标使用局部 ValueNotifier，仅重绘进度与时间；已就绪后的 buffering 不禁用 Slider，移动时不发原生 seek，松手提交最终目标。标题视觉下移 2dp；窄屏／两倍字体下轨道不足 80dp 时将时间移到下方，保留标题和进度命中。真机卡顿与保存仍待负责人复验。
+
+明暗主题和播放／暂停均使用纯色 panel 表面，不使用渐变；边界 180ms easeOut，按钮内部按压为 96%、图标 120ms 交叉淡入淡出，不改变命中范围。进度圆点在拖动／键盘聚焦时从 4dp 半径变为 6dp，无阴影或循环呼吸。时间使用 tabular figures 并预留总时长宽度，拖动目标原位显示；拖动中和当前 seek 确认前不被旧位置事件覆盖，连续 seek 串行，失败／取消／失焦／切换目标清理交互，未收到位置回报最多等待三秒。键盘与读屏可调整真实进度。
+
+减少动态时关闭缩放、过渡和 Slider 视觉 ticker，圆点保持正常半径、焦点仍有边界提示；加载保持按钮内静态指示。滚出视口仅停视觉 ticker，不增加滚动停播行为；后台、离页的既有停止播放规则不变。
+
+播放器仅在点击后创建 just_audio 并请求 sourceUrl，不预取正文音频；全局只保留一个活动播放目标。离页、进入后台、音频中断或耳机断开调用 stop 终止加载／缓冲，不自动恢复。暂停／继续保留进度，完成后重播从零开始。有效历史 mediaAudios 的播放不受 audioUpload 能力开关影响。
 
 全屏图集候选：正文按子贴（正文与主楼层）或某楼层回复讨论分组，动态按正文、一级评论、某评论回复分组；不跨层级。点击立即使用已加载原图，独立 `ReadingGalleryController` 后台取得锚点及双向游标，跟随打开时的排序与作者筛选。正文 AST 普通图片序号保留重复 URL，排除贴纸、代码与未发布路径；共享 occurrences fixtures 验证后端一致性。图片的稳定展示键使用来源、版本和出现位置，前插页不改变当前图片，活动触摸期间集合前插取消本次导航意图。
 
@@ -79,6 +101,8 @@ galleryList：读取 GalleryList200Response / GalleryPageDto / GalleryImageDto�
 预签名 URL 与归一化缓存不持久化；本轮创作入口在应用私有目录保留确认选择后的附件文件、处理身份和本机草稿，按账号与目标隔离。Android 只在打开系统选图器前以 SharedPreferences 记录不含路径或内容的编辑用途；冷启动通过 `retrieveLostData()` 恢复系统返回的选择句柄，由原创作入口询问“继续使用 / 放弃”，绝不自动上传或发布。上传完成后富正文仍只把服务端主 URL 随完整 Markdown 写入快照，避免破坏媒体引用绑定；动态本机草稿可保存服务端明确返回的派生 URL 和动画标记。滚动内容按用途优先 thumbnail/feed/medium，加载失败时才按响应中已有地址逐级回退，显式全屏查看优先主 URL；客户端不猜测对象键。头像媒体 ID 只在当前 autoDispose 状态中保留到设置成功或页面释放。头像设置/移除成功立即采用服务端结果并淘汰旧 URL 缓存。
 
 ## 9. 加载、空数据、错误、重试和冲突状态
+
+音频上传的本机校验、保存和传输超时使用 `AudioUploadFailureReason` 分类；网络层不携带这些新增展示文案。编辑器统一映射具体失败与恢复提示，其他 API 失败经 `UserFacingFailure` 展示；原取消、草稿保留、预算错误身份与重试语义不变。
 
 媒体绑定 409 按冲突展示失败并保留手动重试；不自动重发结果不明确的业务写入。
 
@@ -135,6 +159,12 @@ galleryList：读取 GalleryList200Response / GalleryPageDto / GalleryImageDto�
 服务端用户 DTO 未提供头像或主页背景的 thumbnail/medium 字段，因此资料页只使用明确原地址。原图、预览、取景框与失败上传输入只在当前页面/autoDispose 生命周期内短暂保留，也不提供后台队列；页面释放、主动取消后需重新选择，进程在 Android 系统选图期间被终止时仅保底恢复富正文、动态/评论和私聊的待选文件，头像与主页背景仍需重新选择。`flutter_image_compress` 没有取消在途 native 编码的接口：用户取消后不会开始对象存储上传且迟到结果会被丢弃，但已经进入平台编码的任务仍可能运行到返回；当前以全局单路准备、像素上限和 Debug 分阶段计时控制与观测风险，是否进一步降低像素阈值需以 Profile/Release 大图数据决定。当前 `flutter_image_compress_common` 仍由插件应用 Kotlin Gradle Plugin，Flutter 已提示未来需迁移到 Built-in Kotlin；现有可解析版本尚未提供该迁移，后续按上游兼容版本单独处理。同一 `mediaId` 的对象缺失恢复、重签、重传与取消边界已进入独立高风险候选，待负责人真机验收；详见 Sentry 上传恢复候选。契约 5.26 新增内容图片图集查询，但当前查看器仍只浏览调用页面已经加载的图片；跨页双向游标、锚点失效与索引未就绪恢复需在独立媒体切片接入。相册文件访问由 `image_picker` 与 Android 系统 Photo Picker 管理。
 
 ## 13. 最近审查的契约版本和后端提交
+
+2026-10-18 合并来源同步：Backend PR #55 已合并，固定最终提交 `6e00c4031a8f970609eef8cbf6fdefe3e6b12126`／API `5.40.0-dev.20261018.1`。契约字节与先前候选 `da68203a` 一致，本次只更新来源元数据；消费者验证和部署核验分别记录，不改变本模块既有范围。
+
+2026-10-18 契约来源复核：固定 Backend `da68203a494c6d0f6d377c23399390c2cee397f3`／API `5.40.0-dev.20261018.1`。本次只增加主题详情可选真实收藏与官方订阅总数，不改变本模块既有操作契约；消费者接入与验证见[统计契约同步](../architecture/thread-action-counts-contract-sync.md)。
+
+契约复核：固定已部署 Backend `08bbf5dbcd791270764fc2152fe9b61f683d7fa1`／API `5.39.0-dev.20261017.1`，合并音频预算错误与独立文本颜色能力。主题链正文保留颜色读取头、写入声明、保存校验和取色入口；音频上传、媒体展示与可定制工具栏继续保留。Foundation 固定正式 `v7.5.0`；独占空段、相邻彩色标题与对齐边界新增共享用例，OpenAPI 与合并基线一致。
 
 2026-10-10 合并来源复核：通过官方同步入口固定到实际部署 Backend `b5f0e3bb0b99a3f9763b31e3080cb4d4f2e64045`，OpenAPI 仍为 `5.36.0-dev.20261005.1`。相对退役实施提交，机器契约、共享语料、生成客户端及本模块行为不变；仅来源登记更新，详见[退役验收记录](../architecture/retire-development-preview-acceptance.md)。
 

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
+import 'package:wenyousite_mobile/core/markdown/local_audio_marker.dart';
 import 'package:wenyousite_mobile/core/markdown/local_image_marker.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_dice_contract.dart';
@@ -497,6 +498,7 @@ class ContentDraftsController extends StateNotifier<ContentDraftsState> {
   }
 
   String? _contentValidationFailure(String content, {bool allowEmpty = true}) {
+    if (containsLocalAudioMarker(content)) return '音频尚未就绪，已保存在本机。';
     if (containsLocalImageMarker(content)) return '图片尚未就绪，已保存在本机。';
     if (!MarkdownContent.hasVisibleContent(content)) {
       return allowEmpty ? null : '当前正文为空，先写一点内容再保存。';

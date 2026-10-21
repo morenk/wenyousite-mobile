@@ -14,6 +14,42 @@ import '../../support/deterministic_test_fonts.dart';
 void main() {
   setUpAll(loadDeterministicTestFonts);
 
+  testWidgets('正文草稿列表复用颜色摘要并保留代码字面', (tester) async {
+    const source =
+        '<span data-wenyou-color-v1="#D14343">**中文😀** `a < b`</span>';
+    final controller = await _readyController([
+      _draft(slot: 1, content: source),
+    ]);
+    await _pumpSheet(tester, controller, currentContent: '当前正文');
+    expect(find.text('中文😀 a < b'), findsOneWidget);
+    expect(find.textContaining('data-wenyou-color-v1'), findsNothing);
+    expect(controller.state.drafts.single.content, source);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('颜色云草稿拒绝保存时保留当前正文并显示颜色提示', (tester) async {
+    const source = '<span data-wenyou-color-v1="#123456">有色正文</span>';
+    final repository = _FakeRepository(
+      [],
+      createFailure: const ApiFailure.textColorUnavailable(),
+    );
+    final controller = ContentDraftsController(repository, autoStart: false);
+    await controller.load();
+    await _pumpSheet(tester, controller, currentContent: source);
+    await tester.tap(find.byKey(const Key('content-drafts-quick-save')));
+    await tester.pumpAndSettle();
+    expect(find.text('暂时无法保存文字颜色，草稿已保留。'), findsOneWidget);
+    expect(controller.state.actionFailure?.businessCode, 40016);
+    expect(controller.state.usage.usedSlots, 0);
+    expect(
+      tester
+          .widget<ContentDraftsSheet>(find.byType(ContentDraftsSheet))
+          .currentContent,
+      source,
+    );
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('320dp 两倍字号快捷保存完整容纳文案', (tester) async {
     tester.view.physicalSize = const Size(320, 800);
     tester.view.devicePixelRatio = 1;
@@ -303,12 +339,14 @@ class _FakeRepository implements ContentDraftRepository {
     this.conflictOnce = false,
     this.freshContent = '云端最新版',
     this.freshDisplays = const {},
+    this.createFailure,
   }) : _drafts = [...drafts];
 
   final List<ContentDraft> _drafts;
   final bool conflictOnce;
   final String freshContent;
   final Map<String, MediaDisplay> freshDisplays;
+  final ApiFailure? createFailure;
   final List<int?> createdSlots = [];
   final List<String> removedIds = [];
   final List<int> removeVersions = [];
@@ -322,6 +360,7 @@ class _FakeRepository implements ContentDraftRepository {
     required String clientRequestId,
   }) async {
     createdSlots.add(slot);
+    if (createFailure case final failure?) throw failure;
     final selected = slot ?? 2;
     final saved = _draft(slot: selected, content: content, version: 1);
     _drafts.add(saved);

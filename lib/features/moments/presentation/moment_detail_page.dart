@@ -209,45 +209,7 @@ class _MomentDetailPageState extends ConsumerState<MomentDetailPage> {
                         child: ReadingPositionAnchor(
                           controller: _quickScroll,
                           label: '动态正文',
-                          child: _MomentDetailPanel(
-                            detail: state.detail!,
-                            pendingAction: state.pendingMomentAction,
-                            onTip:
-                                state.detail!.canEdit ||
-                                    !state.detail!.card.canInteract
-                                ? null
-                                : () => unawaited(
-                                    showWenyouTipFlow(
-                                      context: context,
-                                      ref: ref,
-                                      target: TipTarget.moment(
-                                        id: state.detail!.card.id,
-                                        recipientUserId:
-                                            state.detail!.card.author.id,
-                                      ),
-                                      recipientName:
-                                          state.detail!.card.author.username,
-                                      returnTo: _location,
-                                      onSuccess: (_) =>
-                                          ref.read(provider.notifier).load(),
-                                    ),
-                                  ),
-                            onLike: () => _authenticated(
-                              () => ref.read(provider.notifier).toggleLike(),
-                            ),
-                            onBookmark: () => _authenticated(() {
-                              unawaited(
-                                _toggleBookmark(
-                                  ref.read(provider.notifier),
-                                  wasBookmarked:
-                                      state.detail!.card.viewerBookmarked,
-                                  canInteract: state.detail!.card.canInteract,
-                                ),
-                              );
-                            }),
-                            onComment: () =>
-                                _authenticated(() => _openCommentComposer()),
-                          ),
+                          child: _MomentDetailPanel(detail: state.detail!),
                         ),
                       ),
                     ),
@@ -347,12 +309,7 @@ class _MomentDetailPageState extends ConsumerState<MomentDetailPage> {
                         ),
                       ),
                     SliverToBoxAdapter(
-                      child: SizedBox(
-                        height:
-                            context.wenyouTokens.minimumTouchTarget +
-                            context.wenyouTokens.space32 +
-                            context.wenyouTokens.space16,
-                      ),
+                      child: SizedBox(height: context.wenyouTokens.space16),
                     ),
                   ],
                 ),
@@ -361,23 +318,45 @@ class _MomentDetailPageState extends ConsumerState<MomentDetailPage> {
           ),
         ),
       },
-      floatingActionButton: KeyedSubtree(
-        key: _composeObstructionKey,
-        child:
-            state.phase == MomentLoadPhase.ready &&
-                state.detail!.card.canInteract &&
-                !_commentComposerOpen
-            ? WenyouComposerAction(
-                key: const Key('moment-comment-dock'),
-                label: session.isAuthenticated ? '发表评论…' : '登录后发表评论',
-                icon: session.isAuthenticated
-                    ? WenyouIconIds.metricComments
-                    : WenyouIconIds.actionLogin,
-                onPressed: () => _authenticated(() => _openCommentComposer()),
-              )
-            : const SizedBox.shrink(),
-      ),
-      floatingActionButtonAnimator: FloatingActionButtonAnimator.noAnimation,
+      bottomNavigationBar:
+          state.phase == MomentLoadPhase.ready && !_commentComposerOpen
+          ? KeyedSubtree(
+              key: _composeObstructionKey,
+              child: MomentDetailInteractionBar(
+                card: state.detail!.card,
+                authenticated: session.isAuthenticated,
+                pendingAction: state.pendingMomentAction,
+                onTip: state.detail!.canEdit || !state.detail!.card.canInteract
+                    ? null
+                    : () => unawaited(
+                        showWenyouTipFlow(
+                          context: context,
+                          ref: ref,
+                          target: TipTarget.moment(
+                            id: state.detail!.card.id,
+                            recipientUserId: state.detail!.card.author.id,
+                          ),
+                          recipientName: state.detail!.card.author.username,
+                          returnTo: _location,
+                          onSuccess: (_) => ref.read(provider.notifier).load(),
+                        ),
+                      ),
+                onLike: () => _authenticated(
+                  () => ref.read(provider.notifier).toggleLike(),
+                ),
+                onBookmark: () => _authenticated(() {
+                  unawaited(
+                    _toggleBookmark(
+                      ref.read(provider.notifier),
+                      wasBookmarked: state.detail!.card.viewerBookmarked,
+                      canInteract: state.detail!.card.canInteract,
+                    ),
+                  );
+                }),
+                onComment: () => _authenticated(() => _openCommentComposer()),
+              ),
+            )
+          : null,
     );
     return PopScope<Object?>(
       canPop: canPop,
@@ -612,21 +591,9 @@ class _MomentDetailPageState extends ConsumerState<MomentDetailPage> {
 }
 
 class _MomentDetailPanel extends StatelessWidget {
-  const _MomentDetailPanel({
-    required this.detail,
-    required this.pendingAction,
-    required this.onLike,
-    required this.onBookmark,
-    required this.onComment,
-    this.onTip,
-  });
+  const _MomentDetailPanel({required this.detail});
 
   final MomentDetail detail;
-  final MomentInteractionAction? pendingAction;
-  final VoidCallback onLike;
-  final VoidCallback onBookmark;
-  final VoidCallback onComment;
-  final VoidCallback? onTip;
 
   @override
   Widget build(BuildContext context) {
@@ -678,16 +645,6 @@ class _MomentDetailPanel extends StatelessWidget {
             ),
           ),
         ],
-        SizedBox(height: tokens.space16),
-        const Divider(height: 1),
-        MomentDetailInteractionBar(
-          card: card,
-          pendingAction: pendingAction,
-          onLike: onLike,
-          onBookmark: onBookmark,
-          onComment: onComment,
-          onTip: onTip,
-        ),
       ],
     );
   }

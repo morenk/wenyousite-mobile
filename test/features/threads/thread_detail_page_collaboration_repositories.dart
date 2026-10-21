@@ -180,6 +180,9 @@ ThreadDetailModel threadDetailPageTestCopyThreadDetail(
   bool? isCurrentUserOwner,
   String? currentUserId,
   int? likeCount,
+  String? tipTotal,
+  int? bookmarkCount,
+  int? subscriberCount,
   int? postCount,
 }) {
   return ThreadDetailModel(
@@ -200,7 +203,9 @@ ThreadDetailModel threadDetailPageTestCopyThreadDetail(
     isCurrentUserPlayer: isCurrentUserPlayer ?? source.isCurrentUserPlayer,
     isCurrentUserOwner: isCurrentUserOwner ?? source.isCurrentUserOwner,
     currentUserId: currentUserId ?? source.currentUserId,
-    tipTotal: source.tipTotal,
+    tipTotal: tipTotal ?? source.tipTotal,
+    bookmarkCount: bookmarkCount ?? source.bookmarkCount,
+    subscriberCount: subscriberCount ?? source.subscriberCount,
     memberCount: source.memberCount,
     playerCount: source.playerCount,
     postCount: postCount ?? source.postCount,
@@ -390,6 +395,7 @@ class ThreadDetailPageTestFakePostRepository
 
   @override
   Future<PostItem> upsertBody({
+    bool? textColorSupported,
     required String subthreadId,
     required String content,
     int? version,
@@ -453,6 +459,7 @@ class ThreadDetailPageTestCreatingPostRepository
 
   @override
   Future<PostItem> upsertBody({
+    bool? textColorSupported,
     required String subthreadId,
     required String content,
     int? version,

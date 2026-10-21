@@ -99,6 +99,7 @@ class _GuestMePage extends StatelessWidget {
               children: [
                 _AppearanceSettingsPanel(),
                 _ThreadFontSettingsPanel(),
+                _EditorToolbarSettingsPanel(),
               ],
             ),
             WenyouSettingsGroup(
@@ -159,19 +160,15 @@ class _AuthenticatedMePage extends ConsumerWidget {
         MeProfilePhase.failed => _MePageList(
           children: [
             const _ToolboxEntry(),
-            WenyouPanel(
-              child: WenyouEmptyState(
-                icon: WenyouIconIds.statusOffline,
-                title: '本人资料加载失败',
-                message: state.failure?.userMessage ?? '请稍后重试。',
-                detail: wenyouFailureDetail(state.failure),
-                action: OutlinedButton.icon(
-                  key: const Key('me-profile-retry'),
-                  onPressed: notifier.load,
-                  icon: const WenyouIcon(WenyouIconIds.actionRefresh),
-                  label: const Text('重试'),
-                ),
-              ),
+            WenyouRetryFailure(
+              panel: true,
+              icon: WenyouIconIds.statusOffline,
+              title: '本人资料加载失败',
+              message: state.failure?.userMessage ?? '请稍后重试。',
+              failure: state.failure,
+              retryKey: const Key('me-profile-retry'),
+              onRetry: notifier.load,
+              retryLabel: '重试',
             ),
             const _LogoutPanel(),
           ],
@@ -246,19 +243,15 @@ class _MeEditPageState extends ConsumerState<MeEditPage> {
           ),
           MeProfilePhase.failed => _MePageList(
             children: [
-              WenyouPanel(
-                child: WenyouEmptyState(
-                  icon: WenyouIconIds.statusOffline,
-                  title: '资料加载失败',
-                  message: state.failure?.userMessage ?? '请稍后重试。',
-                  detail: wenyouFailureDetail(state.failure),
-                  action: OutlinedButton.icon(
-                    key: const Key('me-edit-retry'),
-                    onPressed: notifier.load,
-                    icon: const WenyouIcon(WenyouIconIds.actionRefresh),
-                    label: const Text('重试'),
-                  ),
-                ),
+              WenyouRetryFailure(
+                panel: true,
+                icon: WenyouIconIds.statusOffline,
+                title: '资料加载失败',
+                message: state.failure?.userMessage ?? '请稍后重试。',
+                failure: state.failure,
+                retryKey: const Key('me-edit-retry'),
+                onRetry: notifier.load,
+                retryLabel: '重试',
               ),
             ],
           ),
@@ -393,6 +386,7 @@ class MeSettingsPage extends ConsumerWidget {
             children: [
               const _AppearanceSettingsPanel(),
               const _ThreadFontSettingsPanel(),
+              const _EditorToolbarSettingsPanel(),
               if (backgroundReminderSupported)
                 const BackgroundReminderSettingsPanel(embedded: true),
             ],
@@ -456,6 +450,18 @@ class _AppearanceSettingsPanel extends ConsumerWidget {
       onTap: () => context.pushNamed(AppRouteNames.appearance),
     );
   }
+}
+
+class _EditorToolbarSettingsPanel extends StatelessWidget {
+  const _EditorToolbarSettingsPanel();
+
+  @override
+  Widget build(BuildContext context) => WenyouSettingsLink(
+    key: const Key('open-editor-toolbar-settings'),
+    icon: WenyouIconIds.editorHeading,
+    title: '编辑器工具栏',
+    onTap: () => context.pushNamed(AppRouteNames.editorToolbar),
+  );
 }
 
 class _ThreadFontSettingsPanel extends ConsumerWidget {

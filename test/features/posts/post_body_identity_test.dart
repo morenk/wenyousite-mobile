@@ -28,6 +28,7 @@ void main() {
     final calls = <Map<Symbol, dynamic>>[];
     when(
       () => repository.upsertBody(
+        textColorSupported: any(named: 'textColorSupported'),
         subthreadId: 'sub',
         content: any(named: 'content'),
         version: null,
@@ -39,7 +40,11 @@ void main() {
       calls.add(invocation.namedArguments);
       throw const ApiFailure(userMessage: '连接中断');
     });
-    var controller = PostComposerController(repository, _target);
+    var controller = PostComposerController(
+      repository,
+      _target,
+      textColorSupported: () => true,
+    );
     PostPublishDraft? saved;
     await controller.submit(
       identityMode: PostIdentityMode.rp,
@@ -69,6 +74,7 @@ void main() {
     expect(calls.last[#identityToken], 'old');
     expect(calls.last[#identityId], 'role-old');
     expect(calls.last[#version], isNull);
+    expect(calls.last[#textColorSupported], isTrue);
   });
 
   test('首次BODY已存在的冲突不自动获取新version覆盖他人正文', () async {
@@ -76,6 +82,7 @@ void main() {
     var writes = 0;
     when(
       () => repository.upsertBody(
+        textColorSupported: any(named: 'textColorSupported'),
         subthreadId: 'sub',
         content: '正文',
         version: null,

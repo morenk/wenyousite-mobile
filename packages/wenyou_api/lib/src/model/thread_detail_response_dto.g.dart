@@ -194,6 +194,10 @@ class _$ThreadDetailResponseDto extends ThreadDetailResponseDto {
   @override
   final num likeCount;
   @override
+  final int? bookmarkCount;
+  @override
+  final int? subscriberCount;
+  @override
   final String tipTotal;
   @override
   final String? defaultSubthreadId;
@@ -244,6 +248,8 @@ class _$ThreadDetailResponseDto extends ThreadDetailResponseDto {
     required this.viewCount,
     required this.version,
     required this.likeCount,
+    this.bookmarkCount,
+    this.subscriberCount,
     required this.tipTotal,
     this.defaultSubthreadId,
     required this.createdAt,
@@ -288,6 +294,8 @@ class _$ThreadDetailResponseDto extends ThreadDetailResponseDto {
         viewCount == other.viewCount &&
         version == other.version &&
         likeCount == other.likeCount &&
+        bookmarkCount == other.bookmarkCount &&
+        subscriberCount == other.subscriberCount &&
         tipTotal == other.tipTotal &&
         defaultSubthreadId == other.defaultSubthreadId &&
         createdAt == other.createdAt &&
@@ -323,6 +331,8 @@ class _$ThreadDetailResponseDto extends ThreadDetailResponseDto {
     _$hash = $jc(_$hash, viewCount.hashCode);
     _$hash = $jc(_$hash, version.hashCode);
     _$hash = $jc(_$hash, likeCount.hashCode);
+    _$hash = $jc(_$hash, bookmarkCount.hashCode);
+    _$hash = $jc(_$hash, subscriberCount.hashCode);
     _$hash = $jc(_$hash, tipTotal.hashCode);
     _$hash = $jc(_$hash, defaultSubthreadId.hashCode);
     _$hash = $jc(_$hash, createdAt.hashCode);
@@ -360,6 +370,8 @@ class _$ThreadDetailResponseDto extends ThreadDetailResponseDto {
           ..add('viewCount', viewCount)
           ..add('version', version)
           ..add('likeCount', likeCount)
+          ..add('bookmarkCount', bookmarkCount)
+          ..add('subscriberCount', subscriberCount)
           ..add('tipTotal', tipTotal)
           ..add('defaultSubthreadId', defaultSubthreadId)
           ..add('createdAt', createdAt)
@@ -448,6 +460,16 @@ class ThreadDetailResponseDtoBuilder
   num? _likeCount;
   num? get likeCount => _$this._likeCount;
   set likeCount(num? likeCount) => _$this._likeCount = likeCount;
+
+  int? _bookmarkCount;
+  int? get bookmarkCount => _$this._bookmarkCount;
+  set bookmarkCount(int? bookmarkCount) =>
+      _$this._bookmarkCount = bookmarkCount;
+
+  int? _subscriberCount;
+  int? get subscriberCount => _$this._subscriberCount;
+  set subscriberCount(int? subscriberCount) =>
+      _$this._subscriberCount = subscriberCount;
 
   String? _tipTotal;
   String? get tipTotal => _$this._tipTotal;
@@ -544,6 +566,8 @@ class ThreadDetailResponseDtoBuilder
       _viewCount = $v.viewCount;
       _version = $v.version;
       _likeCount = $v.likeCount;
+      _bookmarkCount = $v.bookmarkCount;
+      _subscriberCount = $v.subscriberCount;
       _tipTotal = $v.tipTotal;
       _defaultSubthreadId = $v.defaultSubthreadId;
       _createdAt = $v.createdAt;
@@ -634,6 +658,8 @@ class ThreadDetailResponseDtoBuilder
               r'ThreadDetailResponseDto',
               'likeCount',
             ),
+            bookmarkCount: bookmarkCount,
+            subscriberCount: subscriberCount,
             tipTotal: BuiltValueNullFieldError.checkNotNull(
               tipTotal,
               r'ThreadDetailResponseDto',

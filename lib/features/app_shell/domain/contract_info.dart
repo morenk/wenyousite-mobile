@@ -1,3 +1,4 @@
+import 'package:wenyousite_mobile/core/media/audio_upload_policy.dart';
 import 'package:wenyousite_mobile/features/app_shell/domain/mobile_update.dart';
 
 class ContractInfo {
@@ -5,6 +6,7 @@ class ContractInfo {
     required this.contractVersion,
     required this.markdownContractVersion,
     this.buildSha,
+    this.audioUpload,
     this.android = const MobilePlatformPolicy(),
     this.ios = const MobilePlatformPolicy(),
     this.stickersEnabled = false,
@@ -12,12 +14,15 @@ class ContractInfo {
     this.pushNotificationsEnabled = false,
     this.roleMentionsSupported = false,
     this.roleMentionsWriteEnabled = false,
+    this.textColorSupported = false,
+    this.textColorWriteEnabled = false,
     this.rpIdentityProfileSupported = false,
   });
 
   final String contractVersion;
   final int markdownContractVersion;
   final String? buildSha;
+  final AudioUploadPolicy? audioUpload;
   final MobilePlatformPolicy android;
   final MobilePlatformPolicy ios;
   final bool stickersEnabled;
@@ -25,6 +30,8 @@ class ContractInfo {
   final bool pushNotificationsEnabled;
   final bool roleMentionsSupported;
   final bool roleMentionsWriteEnabled;
+  final bool textColorSupported;
+  final bool textColorWriteEnabled;
   final bool rpIdentityProfileSupported;
 
   MobilePlatformPolicy policyFor(MobileClientPlatform platform) {

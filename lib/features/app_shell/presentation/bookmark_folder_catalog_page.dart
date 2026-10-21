@@ -151,15 +151,13 @@ class _BookmarkFolderCatalogPageState
                 wenyouHorizontalPagePadding(context),
                 0,
               ),
-              child: WenyouStatusBanner(
+              child: WenyouRetryFailure(
                 key: const Key('bookmark-folder-refresh-failure'),
-                tone: WenyouStatusTone.error,
+                inline: true,
                 message: state.failure!.userMessage,
-                detail: wenyouFailureDetail(state.failure),
-                action: TextButton(
-                  onPressed: state.isBusy ? null : notifier.refresh,
-                  child: const Text('重新刷新'),
-                ),
+                failure: state.failure,
+                onRetry: state.isBusy ? null : notifier.refresh,
+                retryLabel: '重新刷新',
               ),
             ),
           Expanded(child: _body(state, notifier, selectedFolder)),
@@ -194,19 +192,15 @@ class _BookmarkFolderCatalogPageState
       ),
       BookmarkFolderCatalogPhase.failed => WenyouPageBody(
         maxWidth: 600,
-        child: WenyouPanel(
-          child: WenyouEmptyState(
-            icon: WenyouIconIds.statusOffline,
-            title: '收藏加载失败',
-            message: state.failure?.userMessage ?? '请稍后重试。',
-            detail: wenyouFailureDetail(state.failure),
-            action: OutlinedButton.icon(
-              key: Key('bookmark-folder-catalog-retry-${_kind.name}'),
-              onPressed: notifier.load,
-              icon: const WenyouIcon(WenyouIconIds.actionRefresh),
-              label: const Text('重试'),
-            ),
-          ),
+        child: WenyouRetryFailure(
+          panel: true,
+          icon: WenyouIconIds.statusOffline,
+          title: '收藏加载失败',
+          message: state.failure?.userMessage ?? '请稍后重试。',
+          failure: state.failure,
+          retryKey: Key('bookmark-folder-catalog-retry-${_kind.name}'),
+          onRetry: notifier.load,
+          retryLabel: '重试',
         ),
       ),
       BookmarkFolderCatalogPhase.ready =>
