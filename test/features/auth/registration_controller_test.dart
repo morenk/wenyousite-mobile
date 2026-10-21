@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/session_controller.dart';
@@ -9,6 +10,67 @@ import 'package:wenyousite_mobile/features/auth/application/registration_control
 import 'package:wenyousite_mobile/features/auth/data/auth_repository.dart';
 
 void main() {
+  test('冷却到零不自动重发，修改邮箱与dispose取消计时', () {
+    fakeAsync((time) {
+      final repository = _FakeAuthRepository();
+      final controller = _controller(repository);
+      unawaited(controller.requestCode('Case@Example.com'));
+      time.flushMicrotasks();
+      time.elapse(const Duration(seconds: 60));
+      expect(controller.state.resendSecondsRemaining, 0);
+      expect(repository.requestCodeCalls, 1);
+      unawaited(controller.resendCode());
+      time.flushMicrotasks();
+      controller.editEmail();
+      time.elapse(const Duration(seconds: 2));
+      expect(controller.state.resendSecondsRemaining, 0);
+      expect(controller.state.step, RegistrationStep.email);
+      unawaited(controller.requestCode('new@example.com'));
+      time.flushMicrotasks();
+      controller.dispose();
+      time.elapse(const Duration(minutes: 2));
+      expect(repository.requestCodeCalls, 3);
+      expect(time.periodicTimerCount, 0);
+    });
+  });
+
+  test('确定失败使用Retry-After，保留原失败且不自动重发', () {
+    fakeAsync((time) {
+      const failure = ApiFailure(
+        userMessage: '稍后重试',
+        businessCode: 40001,
+        retryAfter: Duration(seconds: 3),
+        requestId: 'retry-after',
+      );
+      final repository = _FakeAuthRepository(
+        onRequestCode: (_) => Future.error(failure),
+      );
+      final controller = _controller(repository);
+      unawaited(controller.requestCode('Case@Example.com'));
+      time.flushMicrotasks();
+      expect(controller.state.failure, same(failure));
+      expect(controller.state.resendSecondsRemaining, 3);
+      time.elapse(const Duration(seconds: 3));
+      expect(controller.state.resendSecondsRemaining, 0);
+      expect(repository.lastEmail, 'Case@Example.com');
+      expect(repository.requestCodeCalls, 1);
+      controller.dispose();
+    });
+  });
+
+  test('dispose之后的发码成功不再创建冷却计时器', () async {
+    final pending = Completer<RegistrationCodeInfo>();
+    final controller = _controller(
+      _FakeAuthRepository(onRequestCode: (_) => pending.future),
+    );
+    final request = controller.requestCode('new@example.com');
+    controller.dispose();
+    pending.complete(
+      const RegistrationCodeInfo(expiresIn: Duration(minutes: 15)),
+    );
+    expect(await request, isFalse);
+  });
+
   test('验证码请求规范化邮箱并进入带冷却的验证步骤', () async {
     final repository = _FakeAuthRepository();
     final controller = _controller(repository);

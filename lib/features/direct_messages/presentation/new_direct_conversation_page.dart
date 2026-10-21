@@ -226,21 +226,17 @@ class _TargetFailure extends StatelessWidget {
   Widget build(BuildContext context) {
     return WenyouPageBody(
       maxWidth: 600,
-      child: WenyouPanel(
-        child: WenyouEmptyState(
-          icon: state.failure?.httpStatus == 404
-              ? WenyouIconIds.statusUserUnavailable
-              : WenyouIconIds.statusOffline,
-          title: state.failure?.httpStatus == 404 ? '无法向该用户发起私聊' : '联系状态加载失败',
-          message: state.failure?.userMessage ?? '请稍后重试。',
-          detail: wenyouFailureDetail(state.failure),
-          action: OutlinedButton.icon(
-            key: const Key('direct-message-new-retry'),
-            onPressed: onRetry,
-            icon: const WenyouIcon(WenyouIconIds.actionRefresh),
-            label: const Text('重试'),
-          ),
-        ),
+      child: WenyouRetryFailure(
+        panel: true,
+        icon: state.failure?.httpStatus == 404
+            ? WenyouIconIds.statusUserUnavailable
+            : WenyouIconIds.statusOffline,
+        title: state.failure?.httpStatus == 404 ? '无法向该用户发起私聊' : '联系状态加载失败',
+        message: state.failure?.userMessage ?? '请稍后重试。',
+        failure: state.failure,
+        retryKey: const Key('direct-message-new-retry'),
+        onRetry: onRetry,
+        retryLabel: '重试',
       ),
     );
   }

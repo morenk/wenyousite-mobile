@@ -132,6 +132,20 @@ class PostComposerEditorRegion extends StatelessWidget {
                           focusNode: editorSession.focusNode,
                           scrollController: editorSession.scrollController,
                           config: QuillEditorConfig(
+                            onTapUp: (details, _) => editorAudioOwnsPointer(
+                              context,
+                              details.globalPosition,
+                            ),
+                            onSingleLongTapStart: (details, _) =>
+                                editorAudioOwnsPointer(
+                                  context,
+                                  details.globalPosition,
+                                ),
+                            onSingleLongTapEnd: (details, _) =>
+                                editorAudioOwnsPointer(
+                                  context,
+                                  details.globalPosition,
+                                ),
                             scrollable: true,
                             expands: true,
                             autoFocus: true,
@@ -146,6 +160,8 @@ class PostComposerEditorRegion extends StatelessWidget {
                             embedBuilders: wenyouEditorEmbedBuilders(
                               mentionLabels: mentionLabels,
                               mediaDisplays: editorSession.mediaDisplays,
+                              mediaAudios: editorSession.mediaAudios,
+                              editorFocusNode: editorSession.focusNode,
                               pendingImages: pendingImages,
                             ),
                             customShortcuts: editorSession.clipboardShortcuts,
@@ -169,7 +185,18 @@ class PostComposerEditorRegion extends StatelessWidget {
                   ),
                   child: SingleChildScrollView(
                     physics: const NeverScrollableScrollPhysics(),
-                    child: KeyedSubtree(key: toolbarMeasureKey, child: toolbar),
+                    child: EditorToolArea(
+                      availableHeight:
+                          (canvasConstraints.maxHeight -
+                                  (MediaQuery.viewInsetsOf(context).bottom == 0
+                                      ? MediaQuery.viewPaddingOf(context).bottom
+                                      : 0))
+                              .clamp(0, double.infinity),
+                      child: KeyedSubtree(
+                        key: toolbarMeasureKey,
+                        child: toolbar,
+                      ),
+                    ),
                   ),
                 ),
               ],

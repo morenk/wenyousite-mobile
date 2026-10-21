@@ -1,7 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wenyousite_mobile/core/media/audio_upload_policy.dart';
 
 class AppCapabilities {
   const AppCapabilities({
+    this.audioUpload,
     this.stickers = false,
     this.directMessages = false,
     this.pushNotifications = false,
@@ -10,10 +12,13 @@ class AppCapabilities {
     this.legacySingleThreadIdentity = false,
     this.roleMentionsSupported = false,
     this.roleMentionsWriteEnabled = false,
+    this.textColorSupported = false,
+    this.textColorWriteEnabled = false,
     this.rpIdentityProfileSupported = false,
   });
 
   final bool stickers;
+  final AudioUploadPolicy? audioUpload;
   final bool directMessages;
   final bool pushNotifications;
   final bool markdownAlignment;
@@ -21,6 +26,8 @@ class AppCapabilities {
   final bool legacySingleThreadIdentity;
   final bool roleMentionsSupported;
   final bool roleMentionsWriteEnabled;
+  final bool textColorSupported;
+  final bool textColorWriteEnabled;
   final bool rpIdentityProfileSupported;
 }
 

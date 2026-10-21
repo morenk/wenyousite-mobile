@@ -151,6 +151,8 @@ export 'package:wenyou_api/src/model/api_pagination_meta.dart';
 export 'package:wenyou_api/src/model/api_success_envelope.dart';
 export 'package:wenyou_api/src/model/app_downloads_info200_response.dart';
 export 'package:wenyou_api/src/model/appeal_access_token_response_dto.dart';
+export 'package:wenyou_api/src/model/audio_media_dto.dart';
+export 'package:wenyou_api/src/model/audio_upload_capability_dto.dart';
 export 'package:wenyou_api/src/model/auth_change_password200_response.dart';
 export 'package:wenyou_api/src/model/auth_forgot_password200_response.dart';
 export 'package:wenyou_api/src/model/auth_list_sessions200_response.dart';

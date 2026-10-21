@@ -1,12 +1,19 @@
 import 'package:flutter/foundation.dart';
 import 'package:markdown/markdown.dart' as md;
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_text_color.dart';
 
 class MarkdownInlineRun {
-  const MarkdownInlineRun(this.text, this.marks, {this.codeSource});
+  const MarkdownInlineRun(
+    this.text,
+    this.marks, {
+    this.codeSource,
+    this.linkIdentity,
+  });
   final String text;
   final Map<String, dynamic> marks;
   final String? codeSource;
+  final Object? linkIdentity;
 }
 
 /// 对写入的定界符执行独立阅读检查，避免把编码器自身的往返当作阅读证明。
@@ -44,22 +51,30 @@ abstract final class MarkdownInlineRuns {
         continue;
       }
       final core = run.text.trim();
-      final left = leftEdges[index];
-      final right = rightEdges[index];
+      final left = {...leftEdges[index], 'color': ?run.marks['color']};
+      final right = {...rightEdges[index], 'color': ?run.marks['color']};
       if (core.isEmpty) {
         result.add(
           MarkdownInlineRun(run.text, {
             for (final entry in left.entries)
               if (right[entry.key] == entry.value) entry.key: entry.value,
-          }),
+          }, linkIdentity: run.linkIdentity),
         );
         continue;
       }
       final leading = run.text.length - run.text.trimLeft().length;
       result.addAll([
-        MarkdownInlineRun(run.text.substring(0, leading), left),
-        MarkdownInlineRun(core, run.marks),
-        MarkdownInlineRun(run.text.substring(leading + core.length), right),
+        MarkdownInlineRun(
+          run.text.substring(0, leading),
+          left,
+          linkIdentity: run.linkIdentity,
+        ),
+        MarkdownInlineRun(core, run.marks, linkIdentity: run.linkIdentity),
+        MarkdownInlineRun(
+          run.text.substring(leading + core.length),
+          right,
+          linkIdentity: run.linkIdentity,
+        ),
       ]);
     }
     return result.where((run) => run.text.isNotEmpty).toList();
@@ -78,12 +93,17 @@ abstract final class MarkdownInlineRuns {
             'del' => 'strike',
             'code' => 'code',
             'a' => 'link',
+            MarkdownTextColor.tag => 'color',
             _ => null,
           };
           if (key == null || node.children == null) return false;
           if (!visit(node.children!, {
             ...marks,
-            key: key == 'link' ? node.attributes['href'] : true,
+            key: key == 'link'
+                ? node.attributes['href']
+                : key == 'color'
+                ? node.attributes['color']
+                : true,
           })) {
             return false;
           }
@@ -95,6 +115,7 @@ abstract final class MarkdownInlineRuns {
     }
 
     final nodes = md.Document(
+      inlineSyntaxes: [MarkdownTextColorSyntax()],
       extensionSet: md.ExtensionSet.gitHubFlavored,
       encodeHtml: false,
     ).parseInline(source);
@@ -132,6 +153,7 @@ abstract final class MarkdownInlineRuns {
   }) {
     final output = StringBuffer();
     var active = <MapEntry<String, dynamic>>[];
+    Object? linkIdentity;
     var endsInBacktick = false;
     void close(int prefix) {
       for (final mark in active.skip(prefix).toList().reversed) {
@@ -141,6 +163,7 @@ abstract final class MarkdownInlineRuns {
           'italic' => italic,
           'strike' => '~~',
           'link' => '](${mark.value})',
+          'color' => '</span>',
           _ => '',
         });
       }
@@ -148,14 +171,15 @@ abstract final class MarkdownInlineRuns {
 
     for (final run in runs.where((run) => run.text.isNotEmpty)) {
       final next = [
-        for (final key in ['bold', 'italic', 'link', 'strike'])
+        for (final key in ['color', 'bold', 'italic', 'link', 'strike'])
           if (run.marks[key] != null) MapEntry(key, run.marks[key]),
       ];
       var prefix = 0;
       while (prefix < active.length &&
           prefix < next.length &&
           active[prefix].key == next[prefix].key &&
-          active[prefix].value == next[prefix].value) {
+          active[prefix].value == next[prefix].value &&
+          (active[prefix].key != 'link' || linkIdentity == run.linkIdentity)) {
         prefix++;
       }
       close(prefix);
@@ -166,10 +190,12 @@ abstract final class MarkdownInlineRuns {
           'italic' => italic,
           'strike' => '~~',
           'link' => '[',
+          'color' => '<span data-wenyou-color-v1="${mark.value}">',
           _ => '',
         });
       }
       active = next;
+      linkIdentity = run.linkIdentity;
       final content =
           run.codeSource ??
           _protectedText(

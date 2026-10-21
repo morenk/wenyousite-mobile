@@ -1,4 +1,5 @@
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
+import 'package:wenyousite_mobile/core/media/media_audio.dart';
 import 'package:wenyousite_mobile/core/media/media_display.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_publish_draft.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
@@ -7,6 +8,7 @@ class PostComposerDraft {
   const PostComposerDraft({
     required this.content,
     this.mediaDisplays = const {},
+    this.mediaAudios = const {},
     required this.baseContent,
     required this.basePostId,
     required this.baseVersion,
@@ -15,6 +17,7 @@ class PostComposerDraft {
 
   final String content;
   final Map<String, MediaDisplay> mediaDisplays;
+  final Map<String, MediaAudio> mediaAudios;
   final String baseContent;
   final String? basePostId;
   final int? baseVersion;
@@ -25,6 +28,7 @@ class PostComposerBaseline {
   const PostComposerBaseline({
     required this.content,
     this.mediaDisplays = const {},
+    this.mediaAudios = const {},
     this.mentionLabels = const {},
     required this.postId,
     required this.version,
@@ -32,6 +36,7 @@ class PostComposerBaseline {
 
   final String content;
   final Map<String, MediaDisplay> mediaDisplays;
+  final Map<String, MediaAudio> mediaAudios;
   final Map<String, String> mentionLabels;
   final String? postId;
   final int? version;
@@ -39,6 +44,7 @@ class PostComposerBaseline {
   PostComposerDraft? draftFor(
     String content, {
     Map<String, MediaDisplay>? displays,
+    Map<String, MediaAudio>? audios,
     PostPublishDraft? publishDraft,
   }) {
     if (_sameMarkdown(content, this.content) && publishDraft == null) {
@@ -47,6 +53,7 @@ class PostComposerBaseline {
     return PostComposerDraft(
       content: content,
       mediaDisplays: displays ?? mediaDisplays,
+      mediaAudios: audios ?? mediaAudios,
       baseContent: this.content,
       basePostId: postId,
       baseVersion: version,

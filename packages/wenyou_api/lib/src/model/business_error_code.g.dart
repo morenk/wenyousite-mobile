@@ -52,6 +52,14 @@ const BusinessErrorCode _$MARKDOWN_CAPABILITY_REQUIRED =
 const BusinessErrorCode _$ROLE_MENTIONS_DISABLED = const BusinessErrorCode._(
   'ROLE_MENTIONS_DISABLED',
 );
+const BusinessErrorCode _$TEXT_COLOR_CAPABILITY_REQUIRED =
+    const BusinessErrorCode._('TEXT_COLOR_CAPABILITY_REQUIRED');
+const BusinessErrorCode _$TEXT_COLOR_DISABLED = const BusinessErrorCode._(
+  'TEXT_COLOR_DISABLED',
+);
+const BusinessErrorCode _$INVALID_TEXT_COLOR = const BusinessErrorCode._(
+  'INVALID_TEXT_COLOR',
+);
 const BusinessErrorCode _$UNAUTHORIZED = const BusinessErrorCode._(
   'UNAUTHORIZED',
 );
@@ -270,6 +278,12 @@ const BusinessErrorCode _$CONTENT_WRITES_PAUSED = const BusinessErrorCode._(
 const BusinessErrorCode _$RATE_LIMITED = const BusinessErrorCode._(
   'RATE_LIMITED',
 );
+const BusinessErrorCode _$AUDIO_ACTIVE_LIMIT = const BusinessErrorCode._(
+  'AUDIO_ACTIVE_LIMIT',
+);
+const BusinessErrorCode _$AUDIO_DAILY_BYTES_LIMIT = const BusinessErrorCode._(
+  'AUDIO_DAILY_BYTES_LIMIT',
+);
 const BusinessErrorCode _$INTERNAL_ERROR = const BusinessErrorCode._(
   'INTERNAL_ERROR',
 );
@@ -313,6 +327,12 @@ BusinessErrorCode _$valueOf(String name) {
       return _$MARKDOWN_CAPABILITY_REQUIRED;
     case 'ROLE_MENTIONS_DISABLED':
       return _$ROLE_MENTIONS_DISABLED;
+    case 'TEXT_COLOR_CAPABILITY_REQUIRED':
+      return _$TEXT_COLOR_CAPABILITY_REQUIRED;
+    case 'TEXT_COLOR_DISABLED':
+      return _$TEXT_COLOR_DISABLED;
+    case 'INVALID_TEXT_COLOR':
+      return _$INVALID_TEXT_COLOR;
     case 'UNAUTHORIZED':
       return _$UNAUTHORIZED;
     case 'TOKEN_EXPIRED':
@@ -471,6 +491,10 @@ BusinessErrorCode _$valueOf(String name) {
       return _$CONTENT_WRITES_PAUSED;
     case 'RATE_LIMITED':
       return _$RATE_LIMITED;
+    case 'AUDIO_ACTIVE_LIMIT':
+      return _$AUDIO_ACTIVE_LIMIT;
+    case 'AUDIO_DAILY_BYTES_LIMIT':
+      return _$AUDIO_DAILY_BYTES_LIMIT;
     case 'INTERNAL_ERROR':
       return _$INTERNAL_ERROR;
     case 'unknownDefaultOpenApi':
@@ -499,6 +523,9 @@ final BuiltSet<BusinessErrorCode> _$values =
       _$RP_IDENTITY_LIMIT,
       _$MARKDOWN_CAPABILITY_REQUIRED,
       _$ROLE_MENTIONS_DISABLED,
+      _$TEXT_COLOR_CAPABILITY_REQUIRED,
+      _$TEXT_COLOR_DISABLED,
+      _$INVALID_TEXT_COLOR,
       _$UNAUTHORIZED,
       _$TOKEN_EXPIRED,
       _$TOKEN_INVALID,
@@ -578,6 +605,8 @@ final BuiltSet<BusinessErrorCode> _$values =
       _$REGISTRATION_PAUSED,
       _$CONTENT_WRITES_PAUSED,
       _$RATE_LIMITED,
+      _$AUDIO_ACTIVE_LIMIT,
+      _$AUDIO_DAILY_BYTES_LIMIT,
       _$INTERNAL_ERROR,
       _$unknownDefaultOpenApi,
     ]);
@@ -604,6 +633,10 @@ class _$BusinessErrorCodeMeta {
   BusinessErrorCode get MARKDOWN_CAPABILITY_REQUIRED =>
       _$MARKDOWN_CAPABILITY_REQUIRED;
   BusinessErrorCode get ROLE_MENTIONS_DISABLED => _$ROLE_MENTIONS_DISABLED;
+  BusinessErrorCode get TEXT_COLOR_CAPABILITY_REQUIRED =>
+      _$TEXT_COLOR_CAPABILITY_REQUIRED;
+  BusinessErrorCode get TEXT_COLOR_DISABLED => _$TEXT_COLOR_DISABLED;
+  BusinessErrorCode get INVALID_TEXT_COLOR => _$INVALID_TEXT_COLOR;
   BusinessErrorCode get UNAUTHORIZED => _$UNAUTHORIZED;
   BusinessErrorCode get TOKEN_EXPIRED => _$TOKEN_EXPIRED;
   BusinessErrorCode get TOKEN_INVALID => _$TOKEN_INVALID;
@@ -696,6 +729,8 @@ class _$BusinessErrorCodeMeta {
   BusinessErrorCode get REGISTRATION_PAUSED => _$REGISTRATION_PAUSED;
   BusinessErrorCode get CONTENT_WRITES_PAUSED => _$CONTENT_WRITES_PAUSED;
   BusinessErrorCode get RATE_LIMITED => _$RATE_LIMITED;
+  BusinessErrorCode get AUDIO_ACTIVE_LIMIT => _$AUDIO_ACTIVE_LIMIT;
+  BusinessErrorCode get AUDIO_DAILY_BYTES_LIMIT => _$AUDIO_DAILY_BYTES_LIMIT;
   BusinessErrorCode get INTERNAL_ERROR => _$INTERNAL_ERROR;
   BusinessErrorCode get unknownDefaultOpenApi => _$unknownDefaultOpenApi;
   BusinessErrorCode valueOf(String name) => _$valueOf(name);
@@ -731,6 +766,9 @@ class _$BusinessErrorCodeSerializer
     'RP_IDENTITY_LIMIT': 40013,
     'MARKDOWN_CAPABILITY_REQUIRED': 40014,
     'ROLE_MENTIONS_DISABLED': 40015,
+    'TEXT_COLOR_CAPABILITY_REQUIRED': 40016,
+    'TEXT_COLOR_DISABLED': 40017,
+    'INVALID_TEXT_COLOR': 40018,
     'UNAUTHORIZED': 40100,
     'TOKEN_EXPIRED': 40101,
     'TOKEN_INVALID': 40102,
@@ -810,6 +848,8 @@ class _$BusinessErrorCodeSerializer
     'REGISTRATION_PAUSED': 40924,
     'CONTENT_WRITES_PAUSED': 40925,
     'RATE_LIMITED': 42900,
+    'AUDIO_ACTIVE_LIMIT': 42901,
+    'AUDIO_DAILY_BYTES_LIMIT': 42902,
     'INTERNAL_ERROR': 50000,
     'unknownDefaultOpenApi': 11184809,
   };
@@ -831,6 +871,9 @@ class _$BusinessErrorCodeSerializer
     40013: 'RP_IDENTITY_LIMIT',
     40014: 'MARKDOWN_CAPABILITY_REQUIRED',
     40015: 'ROLE_MENTIONS_DISABLED',
+    40016: 'TEXT_COLOR_CAPABILITY_REQUIRED',
+    40017: 'TEXT_COLOR_DISABLED',
+    40018: 'INVALID_TEXT_COLOR',
     40100: 'UNAUTHORIZED',
     40101: 'TOKEN_EXPIRED',
     40102: 'TOKEN_INVALID',
@@ -910,6 +953,8 @@ class _$BusinessErrorCodeSerializer
     40924: 'REGISTRATION_PAUSED',
     40925: 'CONTENT_WRITES_PAUSED',
     42900: 'RATE_LIMITED',
+    42901: 'AUDIO_ACTIVE_LIMIT',
+    42902: 'AUDIO_DAILY_BYTES_LIMIT',
     50000: 'INTERNAL_ERROR',
     11184809: 'unknownDefaultOpenApi',
   };

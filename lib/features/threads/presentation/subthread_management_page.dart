@@ -306,17 +306,14 @@ class _SubthreadsFatalState extends StatelessWidget {
   Widget build(BuildContext context) {
     return WenyouPageBody(
       maxWidth: 520,
-      child: WenyouEmptyState(
+      child: WenyouRetryFailure(
         icon: WenyouIconIds.contentList,
         title: '子贴管理暂时不可用',
         message: failure?.userMessage ?? '请检查网络后重试。',
-        detail: wenyouFailureDetail(failure),
-        action: FilledButton.icon(
-          key: const Key('subthread-management-retry'),
-          onPressed: onRetry,
-          icon: const WenyouIcon(WenyouIconIds.actionRefresh),
-          label: const Text('重试'),
-        ),
+        failure: failure,
+        retryKey: const Key('subthread-management-retry'),
+        onRetry: onRetry,
+        retryLabel: '重试',
       ),
     );
   }

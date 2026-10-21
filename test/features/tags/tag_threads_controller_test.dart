@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
@@ -7,6 +9,53 @@ import 'package:wenyousite_mobile/features/tags/data/tag_repository.dart';
 import 'package:wenyousite_mobile/features/tags/domain/tag_models.dart';
 
 void main() {
+  test('刷新在途不使用旧游标启动分页', () async {
+    final repository = _FakeTagRepository();
+    final controller = TagThreadsController(
+      'tag-1',
+      repository,
+      autoStart: false,
+    );
+    addTearDown(controller.dispose);
+    await controller.loadInitial();
+    repository.refreshPending = Completer<TagThreadsBootstrap>();
+    final refresh = controller.refresh();
+    await controller.loadMore();
+    expect(repository.pageCalls, 0);
+    expect(controller.state.items.map((item) => item.id), ['thread-1']);
+    repository.refreshPending!.complete(_bootstrap);
+    await refresh;
+  });
+
+  test('分页迟到成功或失败不能覆盖刷新后的列表', () async {
+    for (final fail in [false, true]) {
+      final repository = _FakeTagRepository();
+      final controller = TagThreadsController(
+        'tag-1',
+        repository,
+        autoStart: false,
+      );
+      await controller.loadInitial();
+      repository.pagePending = Completer<CursorPage<ThreadFeedCardModel>>();
+      final more = controller.loadMore();
+      await controller.refresh();
+      if (fail) {
+        repository.pagePending!.completeError(
+          const ApiFailure(userMessage: '旧分页失败'),
+        );
+      } else {
+        repository.pagePending!.complete(
+          CursorPage(items: [_thread2], hasMore: false),
+        );
+      }
+      await more;
+      expect(controller.state.items.map((item) => item.id), ['thread-1']);
+      expect(controller.state.transientFailure, isNull);
+      expect(controller.state.isLoadingMore, isFalse);
+      controller.dispose();
+    }
+  });
+
   test('标签主题首屏和下一页按主题 ID 去重', () async {
     final repository = _FakeTagRepository();
     final controller = TagThreadsController(
@@ -53,6 +102,9 @@ class _FakeTagRepository implements TagRepository {
 
   final ApiFailure? loadMoreFailure;
   int initialCalls = 0;
+  int pageCalls = 0;
+  Completer<TagThreadsBootstrap>? refreshPending;
+  Completer<CursorPage<ThreadFeedCardModel>>? pagePending;
 
   @override
   Future<CursorPage<ThreadFeedCardModel>> fetchTagThreads({
@@ -60,6 +112,8 @@ class _FakeTagRepository implements TagRepository {
     String? cursor,
     int limit = 20,
   }) async {
+    pageCalls++;
+    if (pagePending != null) return pagePending!.future;
     if (loadMoreFailure != null) throw loadMoreFailure!;
     return CursorPage(items: [_thread1, _thread2], hasMore: false);
   }
@@ -67,6 +121,7 @@ class _FakeTagRepository implements TagRepository {
   @override
   Future<TagThreadsBootstrap> loadTagThreads(String tagId) async {
     initialCalls += 1;
+    if (refreshPending != null) return refreshPending!.future;
     return TagThreadsBootstrap(
       tag: _tag,
       categories: const [
@@ -157,4 +212,10 @@ final _thread2 = ThreadFeedCardModel(
   postCount: 3,
   tipTotal: '0',
   lastActivityAt: DateTime.utc(2026, 8, 10),
+);
+
+final _bootstrap = TagThreadsBootstrap(
+  tag: _tag,
+  categories: const [],
+  page: CursorPage(items: [_thread1], cursor: 'next', hasMore: true),
 );

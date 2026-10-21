@@ -18,3 +18,5 @@
 - Latin、Oriya、Javanese、Yi、Canadian、Hebrew、Thai、Georgian、Cherokee、Lisu 使用 [notofonts/noto-fonts](https://github.com/notofonts/noto-fonts/tree/ffebf8c1ee449e544955a7e813c54f9b73848eac) 对应 `hinted/ttf/<家族>/<家族>-Regular.ttf`；Latin 为 NotoSans，Canadian 为 NotoSansCanadianAboriginal，其余为 NotoSans 加对应名称。许可见 `LICENSE.NotoAdditional.txt`。
 
 每个源文件 SHA-256、输出 SHA-256 和确切 Unicode 子集记录于 `toolbox-font-source.json`，用 fontTools 4.66.1 的 Subsetter 加载所列码点，layout_features/name_IDs/name_languages 均为 `*`、notdef_outline=true，其余默认。输出 name ID 1/4/6 重命名为文件名（无扩展名）；Latin 额外保留 ASCII 基字母，让组合重音和逐字标记在同一测试字体内排版。清单的彝文、加拿大原住民音节、希腊／西里尔、部首与扩展 B 的 𠘨 均核对 cmap；U+FE0E 是无独立轮廓的文本变体选择符，不需要补可见字形。本轮只更新四张旧花体页面与四张工具目录 Golden，新增八张分类、两张 Zalgo 结果和四张时间顺序 Golden。
+
+音频候选使用独立 `WenyouGoldenAudioText.ttf` 和 `audio_test_fonts.dart`，基于相同历史 Noto Sans SC 来源及 fontTools 4.66.1 参数，保留原 1277 个 cmap 并加入音频控件与本轮正文 Golden 所需字形，现为 1282 个。原测试字体与其他模块 Golden 不变；此测试资源不进入 pubspec 或 APK。

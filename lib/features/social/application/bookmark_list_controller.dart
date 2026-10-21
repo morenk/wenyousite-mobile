@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wenyousite_mobile/core/application/cursor_page_request.dart';
 import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
 import 'package:wenyousite_mobile/core/application/visibility_cache_invalidation.dart';
+import 'package:wenyousite_mobile/core/models/paging.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/social/application/bookmark_list_repository_ports.dart';
 import 'package:wenyousite_mobile/features/social/application/social_states.dart';
@@ -184,28 +186,33 @@ class BookmarkListController extends StateNotifier<BookmarkListState> {
     final epoch = _listEpoch;
     final oldItems = state.items;
     state = state.copyWith(isLoadingMore: true, loadMoreFailure: null);
-    try {
-      final page = await _repository.fetchPage(
+    await loadCursorPage(
+      fetch: () => _repository.fetchPage(
         cursor: state.cursor,
         folderId: state.selectedFolderId,
-      );
-      if (!mounted || epoch != _listEpoch) return;
-      state = state.copyWith(
-        items: List.unmodifiable([...oldItems, ...page.items]),
-        cursor: page.cursor,
-        hasMore: page.hasMore,
-        isLoadingMore: false,
-      );
-    } on Object catch (error) {
-      if (!mounted || epoch != _listEpoch) return;
-      final failure = _asFailure(error, '更多收藏加载失败，请稍后重试。');
-      if (failure.isInvalidCursor) {
+      ),
+      isCurrent: () => mounted && epoch == _listEpoch,
+      onPage: (page) {
+        state = state.copyWith(
+          items: mergeUniqueBy(
+            oldItems,
+            page.items,
+            keyOf: (item) => item.bookmarkId,
+          ),
+          cursor: page.cursor,
+          hasMore: page.hasMore,
+          isLoadingMore: false,
+        );
+      },
+      onInvalidCursor: () async {
         state = state.copyWith(isLoadingMore: false);
         await _loadSelectedFolder(state.selectedFolderId);
-        return;
-      }
-      state = state.copyWith(isLoadingMore: false, loadMoreFailure: failure);
-    }
+      },
+      mapFailure: (error) => _asFailure(error, '更多收藏加载失败，请稍后重试。'),
+      onFailure: (failure) {
+        state = state.copyWith(isLoadingMore: false, loadMoreFailure: failure);
+      },
+    );
   }
 
   Future<BookmarkFolderItem?> createFolder(String name) async {

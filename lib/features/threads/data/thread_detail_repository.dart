@@ -5,6 +5,7 @@ import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/models/discussion_window.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/discussion_window_mapper.dart';
+import 'package:wenyousite_mobile/core/network/media_audio_mapper.dart';
 import 'package:wenyousite_mobile/core/network/media_display_mapper.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/thread_identity/identity_mapping.dart';
@@ -337,6 +338,12 @@ class ApiThreadDetailRepository implements ThreadDetailRepository {
   }
 
   ThreadDetailModel _mapThread(ThreadDetailResponseDto dto) {
+    if ((dto.bookmarkCount != null && dto.bookmarkCount! < 0) ||
+        (dto.subscriberCount != null && dto.subscriberCount! < 0)) {
+      throw const ApiFailure.invalidResponse(
+        diagnosticCode: 'threads.detail.invalid_action_counts',
+      );
+    }
     final canManageThread =
         dto.capabilities?.canManageThread ??
         (dto.currentMembership?.role ==
@@ -367,6 +374,7 @@ class ApiThreadDetailRepository implements ThreadDetailRepository {
                         mediaDisplays: mapMarkdownMediaDisplays(
                           item.bodyPost!.mediaDisplays,
                         ),
+                        mediaAudios: mapMediaAudios(item.bodyPost!.mediaAudios),
                         postId: item.bodyPost!.id,
                         version: item.bodyPost!.version.toInt(),
                         diceRolls: item.bodyPost!.diceRolls
@@ -391,6 +399,8 @@ class ApiThreadDetailRepository implements ThreadDetailRepository {
       isLiked: dto.isLiked ?? false,
       isBookmarked: dto.isBookmarked ?? false,
       bookmarkId: dto.bookmarkId,
+      bookmarkCount: dto.bookmarkCount,
+      subscriberCount: dto.subscriberCount,
       hasAutomaticUpdates: canManageThread,
       canManageThread: canManageThread,
       isCurrentUserPlayer: dto.currentMembership?.playerMarked ?? false,
@@ -424,10 +434,12 @@ class ApiThreadDetailRepository implements ThreadDetailRepository {
       body: ThreadBodyModel(
         markdown: dto.content,
         mediaDisplays: mapMarkdownMediaDisplays(dto.mediaDisplays),
+        mediaAudios: mapMediaAudios(dto.mediaAudios),
         mentionLabels: mapMentionIdentityLabels(dto.mentionIdentities),
         diceRolls: dto.diceRolls.map(_mapDiceRoll).toList(growable: false),
       ),
       createdAt: dto.createdAt,
+      editedAt: dto.editedAt,
       isDeleted: dto.deletedAt != null,
       version: dto.version.toInt(),
       pinnedAt: dto.pinnedAt,
@@ -440,6 +452,7 @@ class ApiThreadDetailRepository implements ThreadDetailRepository {
               body: ThreadBodyModel(
                 markdown: reply.content,
                 mediaDisplays: mapMarkdownMediaDisplays(reply.mediaDisplays),
+                mediaAudios: mapMediaAudios(reply.mediaAudios),
                 mentionLabels: mapMentionIdentityLabels(
                   reply.mentionIdentities,
                 ),
@@ -448,6 +461,7 @@ class ApiThreadDetailRepository implements ThreadDetailRepository {
                     .toList(growable: false),
               ),
               createdAt: reply.createdAt,
+              editedAt: reply.editedAt,
               isDeleted: reply.deletedAt != null,
               version: reply.version.toInt(),
               replyToUsername: reply.replyToPost == null
@@ -470,10 +484,12 @@ class ApiThreadDetailRepository implements ThreadDetailRepository {
       body: ThreadBodyModel(
         markdown: dto.content,
         mediaDisplays: mapMarkdownMediaDisplays(dto.mediaDisplays),
+        mediaAudios: mapMediaAudios(dto.mediaAudios),
         mentionLabels: mapMentionIdentityLabels(dto.mentionIdentities),
         diceRolls: dto.diceRolls.map(_mapDiceRoll).toList(growable: false),
       ),
       createdAt: dto.createdAt,
+      editedAt: dto.editedAt,
       isDeleted: dto.deletedAt != null,
       version: dto.version.toInt(),
       pinnedAt: dto.pinnedAt,
@@ -489,10 +505,12 @@ class ApiThreadDetailRepository implements ThreadDetailRepository {
       body: ThreadBodyModel(
         markdown: dto.content,
         mediaDisplays: mapMarkdownMediaDisplays(dto.mediaDisplays),
+        mediaAudios: mapMediaAudios(dto.mediaAudios),
         mentionLabels: mapMentionIdentityLabels(dto.mentionIdentities),
         diceRolls: dto.diceRolls.map(_mapDiceRoll).toList(growable: false),
       ),
       createdAt: dto.createdAt,
+      editedAt: dto.editedAt,
       isDeleted: dto.deletedAt != null,
       version: dto.version.toInt(),
       replyToUsername: null,

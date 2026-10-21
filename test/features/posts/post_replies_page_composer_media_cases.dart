@@ -636,9 +636,9 @@ void registerPostRepliesPageComposerMediaCases() {
           expect(find.textContaining('安全处理'), findsNothing);
           await tester.tap(find.byKey(const Key('editor-submit')));
           await tester.pump();
-          expect(find.text('还有 1 张图片未就绪'), findsNothing);
+          expect(find.text('还有 1 个附件未就绪'), findsNothing);
           await tester.pump(const Duration(seconds: 3));
-          expect(find.text('还有 1 张图片未就绪'), findsOneWidget);
+          expect(find.text('还有 1 个附件未就绪'), findsOneWidget);
           expect(editor.controller.readOnly, isTrue);
           expect(repository.createInputs, isEmpty);
           if (cancelWait) {

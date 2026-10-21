@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/features/media/application/pending_media_file_store_ports.dart';
 import 'package:wenyousite_mobile/features/media/data/private_pending_media_file_store.dart';
+import 'package:wenyousite_mobile/features/media/domain/audio_upload_models.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
 
 void main() {
@@ -14,6 +15,54 @@ void main() {
     store = PrivatePendingMediaFileStore(rootDirectory: directory);
   });
   tearDown(() => directory.delete(recursive: true));
+
+  test('音频私有流副本按归属清理，拒绝文件增长且保留用户原文件', () async {
+    final source = await File(
+      '${directory.path}/original.mp3',
+    ).writeAsBytes(List.filled(100000, 8));
+    AudioUploadInput input(int size) => AudioUploadInput(
+      filename: '../original.mp3',
+      path: source.path,
+      size: size,
+      contentType: 'audio/mpeg',
+    );
+    final saved = await store.persistAudio(
+      input(100000),
+      accountId: 'one',
+      target: 'reply',
+      attachmentId: 'audio-id',
+    );
+    expect(await File(saved.path).length(), 100000);
+    await store.removeAudio(
+      accountId: 'two',
+      target: 'reply',
+      attachmentId: 'audio-id',
+    );
+    expect(await File(saved.path).exists(), isTrue);
+    await store.removeAudio(
+      accountId: 'one',
+      target: 'reply',
+      attachmentId: 'audio-id',
+    );
+    expect(await File(saved.path).exists(), isFalse);
+    expect(await source.exists(), isTrue);
+    await expectLater(
+      store.persistAudio(
+        input(1),
+        accountId: 'one',
+        target: 'reply',
+        attachmentId: 'changed',
+      ),
+      throwsFormatException,
+    );
+    expect(
+      await directory
+          .list(recursive: true)
+          .where((file) => file.path.endsWith('.tmp'))
+          .isEmpty,
+      isTrue,
+    );
+  });
 
   test('私有图片和草稿按账号及编辑目标隔离，删除只影响指定草稿', () async {
     final input = MediaUploadInput(

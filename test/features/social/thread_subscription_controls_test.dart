@@ -12,11 +12,171 @@ import 'package:wenyousite_mobile/core/network/session_remote.dart';
 import 'package:wenyousite_mobile/core/storage/token_store.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
+import 'package:wenyousite_mobile/features/social/application/thread_subscription_controller.dart';
 import 'package:wenyousite_mobile/features/social/data/thread_subscription_repository.dart';
 import 'package:wenyousite_mobile/features/social/domain/thread_subscription_models.dart';
 import 'package:wenyousite_mobile/features/social/presentation/thread_subscription_controls.dart';
 
 void main() {
+  testWidgets('紧凑订阅仅官方成功增删刷新总数，玩家及取消不刷新', (tester) async {
+    final repository = _FakeRepository();
+    final container = await _authenticatedContainer(repository);
+    addTearDown(container.dispose);
+    var refreshes = 0;
+    await tester.pumpWidget(
+      _app(
+        container,
+        compact: true,
+        onThreadSubscriptionChanged: () => refreshes++,
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('thread-subscription-menu')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('thread-subscription-official')));
+    await tester.pumpAndSettle();
+    expect(refreshes, 1);
+    await tester.tap(
+      find.byKey(const Key('thread-subscription-user-player-1')),
+    );
+    await tester.pumpAndSettle();
+    expect(refreshes, 1);
+    await tester.tap(find.byKey(const Key('thread-subscription-official')));
+    await tester.pumpAndSettle();
+    expect(refreshes, 2);
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(refreshes, 2);
+  });
+  testWidgets('订阅写入失败不会触发总数刷新', (tester) async {
+    final container = await _authenticatedContainer(
+      _FakeRepository(failWrite: true),
+    );
+    addTearDown(container.dispose);
+    var refreshes = 0;
+    await tester.pumpWidget(
+      _app(container, onThreadSubscriptionChanged: () => refreshes++),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('thread-subscription-official')));
+    await tester.pumpAndSettle();
+    expect(refreshes, 0);
+  });
+  for (final compact in [false, true]) {
+    testWidgets('不确定写入后手动确认只读刷新真实总数 compact=$compact', (tester) async {
+      final repository = _FakeRepository(uncertainWrite: true);
+      final container = await _authenticatedContainer(repository);
+      addTearDown(container.dispose);
+      var refreshes = 0;
+      await tester.pumpWidget(
+        _app(
+          container,
+          compact: compact,
+          onThreadSubscriptionChanged: () => refreshes++,
+        ),
+      );
+      await tester.pumpAndSettle();
+      if (compact) {
+        await tester.tap(find.byKey(const Key('thread-subscription-menu')));
+        await tester.pumpAndSettle();
+      }
+      await tester.tap(find.byKey(const Key('thread-subscription-official')));
+      await tester.pumpAndSettle();
+      expect(refreshes, 0);
+      repository.subscriptions = [
+        ThreadSubscriptionRecord(
+          id: 'confirmed',
+          threadId: 'thread-1',
+          type: ThreadSubscriptionType.thread,
+          createdAt: DateTime.utc(2026),
+        ),
+      ];
+      await tester.tap(
+        find.byKey(const Key('thread-subscription-refresh-result')),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        container
+            .read(threadSubscriptionControllerProvider('thread-1'))
+            .isThreadSubscribed,
+        isTrue,
+      );
+      expect(refreshes, 1);
+      expect(repository.createCalls, 1);
+    });
+  }
+  for (final leavePage in [false, true]) {
+    testWidgets('不确定订阅手动确认失败或离页不刷新总数 leave=$leavePage', (tester) async {
+      final repository = _FakeRepository(uncertainWrite: true);
+      final container = await _authenticatedContainer(repository);
+      addTearDown(container.dispose);
+      var refreshes = 0;
+      await tester.pumpWidget(
+        _app(container, onThreadSubscriptionChanged: () => refreshes++),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('thread-subscription-official')));
+      await tester.pumpAndSettle();
+      final pending = Completer<List<ThreadSubscriptionRecord>>();
+      if (leavePage) {
+        repository.nextSubscriptions = pending.future;
+      } else {
+        repository.failLoad = true;
+      }
+      await tester.tap(
+        find.byKey(const Key('thread-subscription-refresh-result')),
+      );
+      if (leavePage) {
+        await tester.pumpWidget(const SizedBox.shrink());
+        pending.complete([]);
+      }
+      await tester.pumpAndSettle();
+      expect(refreshes, 0);
+      expect(repository.createCalls, 1);
+      expect(tester.takeException(), isNull);
+    });
+  }
+  testWidgets('紧凑订阅失败保留48dp重试入口与语义', (tester) async {
+    final repository = _FakeRepository(failLoad: true);
+    final container = await _authenticatedContainer(repository);
+    addTearDown(container.dispose);
+    await tester.pumpWidget(_app(container, compact: true));
+    await tester.pumpAndSettle();
+    final retry = find.byKey(const Key('thread-subscription-retry'));
+    expect(tester.getSize(retry).width, greaterThanOrEqualTo(48));
+    expect(tester.getSemantics(retry).label, contains('订阅状态加载失败'));
+    await tester.tap(retry);
+    await tester.pumpAndSettle();
+    expect(repository.loadCalls, 2);
+    expect(repository.createCalls, 0);
+  });
+  testWidgets('紧凑订阅在途禁用菜单，完成后恢复', (tester) async {
+    final pending = Completer<ThreadSubscriptionRecord>();
+    final repository = _FakeRepository(createCompleter: pending);
+    final container = await _authenticatedContainer(repository);
+    addTearDown(container.dispose);
+    await tester.pumpWidget(_app(container, compact: true));
+    await tester.pumpAndSettle();
+    final action = container
+        .read(threadSubscriptionControllerProvider('thread-1').notifier)
+        .toggleThread();
+    await tester.pump();
+    final menu = find.byKey(const Key('thread-subscription-menu'));
+    final button = find.descendant(of: menu, matching: find.byType(TextButton));
+    expect(tester.widget<TextButton>(button).onPressed, isNull);
+    pending.complete(
+      ThreadSubscriptionRecord(
+        id: 'official-1',
+        threadId: 'thread-1',
+        type: ThreadSubscriptionType.thread,
+        createdAt: DateTime.utc(2026),
+      ),
+    );
+    await action;
+    await tester.pumpAndSettle();
+    expect(tester.widget<TextButton>(button).onPressed, isNotNull);
+    expect(repository.createCalls, 1);
+  });
   testWidgets('320dp 两倍字号订阅抽屉可关闭和返回，未操作不写入', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(320, 800);
@@ -353,6 +513,8 @@ Widget _guestApp(ThreadSubscriptionRepository repository) {
 Widget _app(
   ProviderContainer container, {
   bool hasAutomaticUpdates = false,
+  bool compact = false,
+  VoidCallback? onThreadSubscriptionChanged,
   GlobalKey<NavigatorState>? navigatorKey,
 }) {
   return UncontrolledProviderScope(
@@ -364,6 +526,8 @@ Widget _app(
         body: ThreadSubscriptionControls(
           threadId: 'thread-1',
           hasAutomaticUpdates: hasAutomaticUpdates,
+          compact: compact,
+          onThreadSubscriptionChanged: onThreadSubscriptionChanged,
         ),
       ),
     ),
@@ -396,7 +560,9 @@ class _FakeRepository implements ThreadSubscriptionRepository {
     this.createCompleter,
   });
 
-  final bool failLoad;
+  bool failLoad;
+  List<ThreadSubscriptionRecord> subscriptions = [];
+  Future<List<ThreadSubscriptionRecord>>? nextSubscriptions;
   final bool failCandidates;
   final bool failWrite;
   final bool uncertainWrite;
@@ -411,13 +577,16 @@ class _FakeRepository implements ThreadSubscriptionRepository {
     String threadId,
   ) async {
     loadCalls += 1;
+    final pending = nextSubscriptions;
+    nextSubscriptions = null;
+    if (pending != null) return pending;
     if (failLoad) {
       throw const ApiFailure(
         userMessage: '订阅状态加载失败',
         requestId: 'load-request-id',
       );
     }
-    return [];
+    return subscriptions;
   }
 
   @override

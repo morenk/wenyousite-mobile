@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wenyousite_mobile/core/application/cursor_page_request.dart';
 import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
 import 'package:wenyousite_mobile/core/application/request_epoch.dart';
 import 'package:wenyousite_mobile/core/application/visibility_cache_invalidation.dart';
@@ -155,32 +156,35 @@ class NotificationListController extends StateNotifier<NotificationListState> {
     final epoch = _requestEpoch.current;
     final before = state;
     state = _readyFrom(before, isLoadingMore: true, clearFailures: true);
-    try {
-      final page = await _repository.fetchPage(
-        filter: before.filter,
-        cursor: before.cursor,
-      );
-      if (!mounted || !_requestEpoch.isCurrent(epoch)) return;
-      state = NotificationListState(
-        phase: NotificationListPhase.ready,
-        filter: before.filter,
-        items: mergeUniqueBy(
-          before.items,
-          page.items,
-          keyOf: (item) => item.id,
-        ),
-        cursor: page.cursor,
-        hasMore: page.hasMore,
-      );
-    } on Object catch (error) {
-      if (!mounted || !_requestEpoch.isCurrent(epoch)) return;
-      final failure = mapApplicationFailure(error, '更多通知加载失败，请稍后重试。');
-      if (failure.isInvalidCursor) {
+    await loadCursorPage(
+      fetch: () =>
+          _repository.fetchPage(filter: before.filter, cursor: before.cursor),
+      isCurrent: () => mounted && _requestEpoch.isCurrent(epoch),
+      onPage: (page) {
+        state = NotificationListState(
+          phase: NotificationListPhase.ready,
+          filter: before.filter,
+          items: mergeUniqueBy(
+            before.items,
+            page.items,
+            keyOf: (item) => item.id,
+          ),
+          cursor: page.cursor,
+          hasMore: page.hasMore,
+        );
+      },
+      onInvalidCursor: () async {
         await load(filter: before.filter);
-        return;
-      }
-      state = _readyFrom(before, loadMoreFailure: failure, clearFailures: true);
-    }
+      },
+      mapFailure: (error) => mapApplicationFailure(error, '更多通知加载失败，请稍后重试。'),
+      onFailure: (failure) {
+        state = _readyFrom(
+          before,
+          loadMoreFailure: failure,
+          clearFailures: true,
+        );
+      },
+    );
   }
 
   Future<bool> markRead(String id) async {

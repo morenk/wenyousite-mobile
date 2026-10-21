@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
+import 'package:wenyousite_mobile/core/application/cursor_page_request.dart';
 import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
 import 'package:wenyousite_mobile/core/application/visibility_cache_invalidation.dart';
 import 'package:wenyousite_mobile/core/application/write_reconciler.dart';
@@ -99,40 +100,40 @@ class MomentFeedController extends StateNotifier<MomentFeedState> {
   Future<void> loadMore() async {
     if (state.phase != MomentLoadPhase.ready ||
         state.isLoadingMore ||
+        state.isRefreshing ||
         state.pendingMomentActions.isNotEmpty ||
         !state.hasMore) {
       return;
     }
     final epoch = _epoch;
     state = state.copyWith(isLoadingMore: true, transientFailure: null);
-    try {
-      final page = await _fetch(cursor: state.cursor);
-      if (!mounted || epoch != _epoch) return;
-      state = state.copyWith(
-        items: mergeUniqueBy(state.items, page.items, keyOf: (item) => item.id),
-        cursor: page.cursor,
-        hasMore: page.hasMore,
-        isLoadingMore: false,
-      );
-    } on ApiFailure catch (failure) {
-      if (!mounted || epoch != _epoch) return;
-      if (failure.isInvalidCursor) {
+    await loadCursorPage(
+      fetch: () => _fetch(cursor: state.cursor),
+      isCurrent: () => mounted && epoch == _epoch,
+      onPage: (page) {
+        state = state.copyWith(
+          items: mergeUniqueBy(
+            state.items,
+            page.items,
+            keyOf: (item) => item.id,
+          ),
+          cursor: page.cursor,
+          hasMore: page.hasMore,
+          isLoadingMore: false,
+        );
+      },
+      onInvalidCursor: () async {
         await _loadFirstPage(refreshing: state.items.isNotEmpty);
-        return;
-      }
-      state = state.copyWith(
-        isLoadingMore: false,
-        transientFailure: failure,
-        retryAction: MomentFeedRetryAction.loadMore,
-      );
-    } on Object catch (error) {
-      if (!mounted || epoch != _epoch) return;
-      state = state.copyWith(
-        isLoadingMore: false,
-        transientFailure: _asFailure(error, '加载更多动态失败，请重试。'),
-        retryAction: MomentFeedRetryAction.loadMore,
-      );
-    }
+      },
+      mapFailure: (error) => _asFailure(error, '加载更多动态失败，请重试。'),
+      onFailure: (failure) {
+        state = state.copyWith(
+          isLoadingMore: false,
+          transientFailure: failure,
+          retryAction: MomentFeedRetryAction.loadMore,
+        );
+      },
+    );
   }
 
   Future<bool> toggleLike(MomentCard card) {
@@ -418,6 +419,7 @@ class MomentDetailController extends StateNotifier<MomentDetailState> {
     state = state.copyWith(
       phase: retained == null ? MomentLoadPhase.loading : MomentLoadPhase.ready,
       isRefreshing: retained != null,
+      isLoadingMoreComments: false,
       failure: null,
       transientFailure: null,
     );
@@ -472,43 +474,43 @@ class MomentDetailController extends StateNotifier<MomentDetailState> {
   }
 
   Future<void> loadMoreComments() async {
-    if (state.isLoadingMoreComments || !state.hasMoreComments) return;
+    if (state.isRefreshing ||
+        state.isLoadingMoreComments ||
+        !state.hasMoreComments) {
+      return;
+    }
     final epoch = _epoch;
     state = state.copyWith(isLoadingMoreComments: true, transientFailure: null);
-    try {
-      final page = await _repository.fetchComments(
+    await loadCursorPage(
+      fetch: () => _repository.fetchComments(
         momentId: momentId,
         order: state.commentOrder,
         cursor: state.commentCursor,
-      );
-      if (!mounted || epoch != _epoch) return;
-      state = state.copyWith(
-        comments: mergeUniqueBy(
-          state.comments,
-          page.items,
-          keyOf: (item) => item.id,
-        ),
-        commentCursor: page.cursor,
-        hasMoreComments: page.hasMore,
-        isLoadingMoreComments: false,
-      );
-    } on ApiFailure catch (failure) {
-      if (!mounted || epoch != _epoch) return;
-      if (failure.isInvalidCursor) {
+      ),
+      isCurrent: () => mounted && epoch == _epoch,
+      onPage: (page) {
+        state = state.copyWith(
+          comments: mergeUniqueBy(
+            state.comments,
+            page.items,
+            keyOf: (item) => item.id,
+          ),
+          commentCursor: page.cursor,
+          hasMoreComments: page.hasMore,
+          isLoadingMoreComments: false,
+        );
+      },
+      onInvalidCursor: () async {
         await _reloadComments();
-        return;
-      }
-      state = state.copyWith(
-        isLoadingMoreComments: false,
-        transientFailure: failure,
-      );
-    } on Object catch (error) {
-      if (!mounted || epoch != _epoch) return;
-      state = state.copyWith(
-        isLoadingMoreComments: false,
-        transientFailure: _asFailure(error, '加载更多评论失败，请重试。'),
-      );
-    }
+      },
+      mapFailure: (error) => _asFailure(error, '加载更多评论失败，请重试。'),
+      onFailure: (failure) {
+        state = state.copyWith(
+          isLoadingMoreComments: false,
+          transientFailure: failure,
+        );
+      },
+    );
   }
 
   Future<void> loadReplies(String rootCommentId) async {
@@ -523,38 +525,37 @@ class MomentDetailController extends StateNotifier<MomentDetailState> {
       failure: null,
     );
     state = state.copyWith(replyPages: Map.unmodifiable(pages));
-    try {
-      final page = await _repository.fetchReplies(
+    await loadCursorPage(
+      fetch: () => _repository.fetchReplies(
         momentId: momentId,
         rootCommentId: rootCommentId,
         order: MomentCommentOrder.oldest,
         cursor: loadMore ? before.cursor : null,
-      );
-      if (!mounted || epoch != _epoch) return;
-      final updated = {...state.replyPages};
-      updated[rootCommentId] = MomentReplyPageState(
-        items: mergeUniqueBy(
-          loadMore ? before.items : const <MomentComment>[],
-          page.items,
-          keyOf: (item) => item.id,
-        ),
-        cursor: page.cursor,
-        hasMore: page.hasMore,
-      );
-      state = state.copyWith(replyPages: Map.unmodifiable(updated));
-    } on ApiFailure catch (failure) {
-      if (!mounted || epoch != _epoch) return;
-      if (failure.isInvalidCursor) {
+      ),
+      isCurrent: () => mounted && epoch == _epoch,
+      onPage: (page) {
+        final updated = {...state.replyPages};
+        updated[rootCommentId] = MomentReplyPageState(
+          items: mergeUniqueBy(
+            loadMore ? before.items : const <MomentComment>[],
+            page.items,
+            keyOf: (item) => item.id,
+          ),
+          cursor: page.cursor,
+          hasMore: page.hasMore,
+        );
+        state = state.copyWith(replyPages: Map.unmodifiable(updated));
+      },
+      onInvalidCursor: () async {
         final reset = {...state.replyPages}..remove(rootCommentId);
         state = state.copyWith(replyPages: Map.unmodifiable(reset));
         await loadReplies(rootCommentId);
-        return;
-      }
-      _setReplyFailure(rootCommentId, failure);
-    } on Object catch (error) {
-      if (!mounted || epoch != _epoch) return;
-      _setReplyFailure(rootCommentId, _asFailure(error, '楼中楼加载失败，请重试。'));
-    }
+      },
+      mapFailure: (error) => _asFailure(error, '楼中楼加载失败，请重试。'),
+      onFailure: (failure) {
+        _setReplyFailure(rootCommentId, failure);
+      },
+    );
   }
 
   Future<bool> toggleLike() => _runMomentAction(bookmark: false);
