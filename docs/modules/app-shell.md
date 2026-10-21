@@ -2,7 +2,7 @@
 
 状态：`in_progress`
 
-2026-10-22 动态字体候选／待真机验收：固定 Backend `7c9719e44dbdc62ede77056fe93a98551133d0e9`／API `5.43.0-dev.20261022.2`。解析textFontV2Supported与textFontV2WriteEnabled，缺失按false；读取能力与新字体选择开关独立。字体服务与引擎追加账本跨Provider/账号变化保持，前后台触发状态复核。v1 固定映射、防降级与撤回兼容已接入；本地检查与构建已执行，公网兼容与产品 Android 同会话验收待完成，见[持续加载记录](../architecture/thread-fonts-mobile-continuous-loading.md)。
+2026-10-22 动态字体候选／待真机验收：固定 Backend `62a0313a75c85e42dfa39cd09b7cc90ae5c34186`／API `5.43.0-dev.20261022.3`。解析textFontV2Supported与textFontV2WriteEnabled，缺失按false；读取能力与新字体选择开关独立。字体服务与引擎追加账本跨Provider/账号变化保持，前后台触发状态复核。v1 固定映射、防降级与撤回兼容已接入；本地检查与构建已执行，公网兼容与产品 Android 同会话验收待完成，见[持续加载记录](../architecture/thread-fonts-mobile-continuous-loading.md)。
 
 2026-09-28 重复空说明弹窗修复已获负责人真机验收通过，绑定正式候选 `0.8.0+97` / APK SHA-256 `401dae520edeadaa51fda47e7556bedb2604b007ecb1e023f5d64eae22643e87`，返回桌面再进及划掉后台重开均不再弹空壳；当前源码相关门禁通过，按负责人最新指令准备合并，详见[一次说明验收](../architecture/mobile-update-once-dialogs-acceptance.md)。
 

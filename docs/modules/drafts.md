@@ -2,7 +2,7 @@
 
 状态：`in_progress`
 
-2026-10-22 动态字体候选／待真机验收：固定 Backend `7c9719e44dbdc62ede77056fe93a98551133d0e9`／API `5.43.0-dev.20261022.2`。本地及云草稿保存完整v1/v2混合Markdown，创建/更新DTO声明字体能力2；未知、停用或撤回的原范围保源。服务不支持v2时阻止有损保存。v1 固定映射、防降级与撤回兼容已接入；本地检查与构建已执行，公网兼容与产品 Android 同会话验收待完成，见[持续加载记录](../architecture/thread-fonts-mobile-continuous-loading.md)。
+2026-10-22 动态字体候选／待真机验收：固定 Backend `62a0313a75c85e42dfa39cd09b7cc90ae5c34186`／API `5.43.0-dev.20261022.3`。本地及云草稿保存完整v1/v2混合Markdown，创建/更新DTO声明字体能力2；未知、停用或撤回的原范围保源。服务不支持v2时阻止有损保存。v1 固定映射、防降级与撤回兼容已接入；本地检查与构建已执行，公网兼容与产品 Android 同会话验收待完成，见[持续加载记录](../architecture/thread-fonts-mobile-continuous-loading.md)。
 
 ## 1. 模块目标与非目标
 

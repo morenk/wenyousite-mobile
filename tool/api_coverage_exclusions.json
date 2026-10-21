@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "contractVersion": "5.43.0-dev.20261022.2",
+  "contractVersion": "5.43.0-dev.20261022.3",
   "exclusions": [
     { "operationId": "textFontsV2GetCatalog", "category": "streamed_font_metadata", "reason": "DynamicFontCatalog 使用共享限流传输读取64KiB分页信封，经生成DTO校验后原子替换完整目录。" },
     { "operationId": "textFontsV2GetVersion", "category": "streamed_font_metadata", "reason": "动态版本按需点查走共享限流传输、ETag及64KiB流式上限，经生成DTO与状态规则校验。" },
