@@ -65,6 +65,16 @@ class ApiFailure implements Exception {
         diagnosticCode: diagnosticCode,
       );
 
+  /// 本地能力检查拒绝发送彩色正文，保留草稿等待兼容服务。
+  const ApiFailure.textColorUnavailable()
+    : this(
+        source: FailureSource.expected,
+        reason: FailureReason.validation,
+        recoveryAction: FailureRecoveryAction.keepDraft,
+        businessCode: 40016,
+        diagnosticCode: 'TEXT_COLOR_V1_UNAVAILABLE',
+      );
+
   factory ApiFailure.contractViolation({
     required String userMessage,
     required String diagnosticCode,
@@ -459,6 +469,11 @@ class ApiFailure implements Exception {
     FailureReason reason,
     int? businessCode,
   ) {
+    if (businessCode == 40016 ||
+        businessCode == 40017 ||
+        businessCode == 40018) {
+      return FailureRecoveryAction.keepDraft;
+    }
     if (businessCode == 40108 || businessCode == 40109) {
       return FailureRecoveryAction.appeal;
     }

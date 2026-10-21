@@ -259,19 +259,15 @@ class _ThreadSearchError extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return WenyouPanel(
-      child: WenyouEmptyState(
-        icon: WenyouIconIds.statusOffline,
-        title: '主题内搜索失败',
-        message: failure?.userMessage ?? '请检查网络后重试。',
-        detail: wenyouFailureDetail(failure),
-        action: OutlinedButton.icon(
-          key: const Key('thread-search-retry'),
-          onPressed: onRetry,
-          icon: const WenyouIcon(WenyouIconIds.actionRefresh),
-          label: const Text('重试'),
-        ),
-      ),
+    return WenyouRetryFailure(
+      panel: true,
+      icon: WenyouIconIds.statusOffline,
+      title: '主题内搜索失败',
+      message: failure?.userMessage ?? '请检查网络后重试。',
+      failure: failure,
+      retryKey: const Key('thread-search-retry'),
+      onRetry: onRetry,
+      retryLabel: '重试',
     );
   }
 }

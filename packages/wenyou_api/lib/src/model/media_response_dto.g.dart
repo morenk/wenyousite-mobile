@@ -6,6 +6,47 @@ part of 'media_response_dto.dart';
 // BuiltValueGenerator
 // **************************************************************************
 
+const MediaResponseDtoFailureCodeEnum
+_$mediaResponseDtoFailureCodeEnum_AUDIO_INVALID =
+    const MediaResponseDtoFailureCodeEnum._('AUDIO_INVALID');
+const MediaResponseDtoFailureCodeEnum
+_$mediaResponseDtoFailureCodeEnum_AUDIO_TOO_LONG =
+    const MediaResponseDtoFailureCodeEnum._('AUDIO_TOO_LONG');
+const MediaResponseDtoFailureCodeEnum
+_$mediaResponseDtoFailureCodeEnum_AUDIO_PROCESSING_FAILED =
+    const MediaResponseDtoFailureCodeEnum._('AUDIO_PROCESSING_FAILED');
+const MediaResponseDtoFailureCodeEnum
+_$mediaResponseDtoFailureCodeEnum_unknownDefaultOpenApi =
+    const MediaResponseDtoFailureCodeEnum._('unknownDefaultOpenApi');
+
+MediaResponseDtoFailureCodeEnum _$mediaResponseDtoFailureCodeEnumValueOf(
+  String name,
+) {
+  switch (name) {
+    case 'AUDIO_INVALID':
+      return _$mediaResponseDtoFailureCodeEnum_AUDIO_INVALID;
+    case 'AUDIO_TOO_LONG':
+      return _$mediaResponseDtoFailureCodeEnum_AUDIO_TOO_LONG;
+    case 'AUDIO_PROCESSING_FAILED':
+      return _$mediaResponseDtoFailureCodeEnum_AUDIO_PROCESSING_FAILED;
+    case 'unknownDefaultOpenApi':
+      return _$mediaResponseDtoFailureCodeEnum_unknownDefaultOpenApi;
+    default:
+      return _$mediaResponseDtoFailureCodeEnum_unknownDefaultOpenApi;
+  }
+}
+
+final BuiltSet<MediaResponseDtoFailureCodeEnum>
+_$mediaResponseDtoFailureCodeEnumValues =
+    BuiltSet<MediaResponseDtoFailureCodeEnum>(
+      const <MediaResponseDtoFailureCodeEnum>[
+        _$mediaResponseDtoFailureCodeEnum_AUDIO_INVALID,
+        _$mediaResponseDtoFailureCodeEnum_AUDIO_TOO_LONG,
+        _$mediaResponseDtoFailureCodeEnum_AUDIO_PROCESSING_FAILED,
+        _$mediaResponseDtoFailureCodeEnum_unknownDefaultOpenApi,
+      ],
+    );
+
 const MediaResponseDtoPurposeEnum _$mediaResponseDtoPurposeEnum_AVATAR =
     const MediaResponseDtoPurposeEnum._('AVATAR');
 const MediaResponseDtoPurposeEnum _$mediaResponseDtoPurposeEnum_PROFILE_COVER =
@@ -18,6 +59,9 @@ const MediaResponseDtoPurposeEnum _$mediaResponseDtoPurposeEnum_MOMENT_COMMENT =
     const MediaResponseDtoPurposeEnum._('MOMENT_COMMENT');
 const MediaResponseDtoPurposeEnum _$mediaResponseDtoPurposeEnum_RICH_CONTENT =
     const MediaResponseDtoPurposeEnum._('RICH_CONTENT');
+const MediaResponseDtoPurposeEnum
+_$mediaResponseDtoPurposeEnum_RICH_CONTENT_AUDIO =
+    const MediaResponseDtoPurposeEnum._('RICH_CONTENT_AUDIO');
 const MediaResponseDtoPurposeEnum _$mediaResponseDtoPurposeEnum_STICKER_SOURCE =
     const MediaResponseDtoPurposeEnum._('STICKER_SOURCE');
 const MediaResponseDtoPurposeEnum _$mediaResponseDtoPurposeEnum_LEGACY =
@@ -40,6 +84,8 @@ MediaResponseDtoPurposeEnum _$mediaResponseDtoPurposeEnumValueOf(String name) {
       return _$mediaResponseDtoPurposeEnum_MOMENT_COMMENT;
     case 'RICH_CONTENT':
       return _$mediaResponseDtoPurposeEnum_RICH_CONTENT;
+    case 'RICH_CONTENT_AUDIO':
+      return _$mediaResponseDtoPurposeEnum_RICH_CONTENT_AUDIO;
     case 'STICKER_SOURCE':
       return _$mediaResponseDtoPurposeEnum_STICKER_SOURCE;
     case 'LEGACY':
@@ -60,6 +106,7 @@ _$mediaResponseDtoPurposeEnumValues =
       _$mediaResponseDtoPurposeEnum_MOMENT,
       _$mediaResponseDtoPurposeEnum_MOMENT_COMMENT,
       _$mediaResponseDtoPurposeEnum_RICH_CONTENT,
+      _$mediaResponseDtoPurposeEnum_RICH_CONTENT_AUDIO,
       _$mediaResponseDtoPurposeEnum_STICKER_SOURCE,
       _$mediaResponseDtoPurposeEnum_LEGACY,
       _$mediaResponseDtoPurposeEnum_unknownDefaultOpenApi,
@@ -103,11 +150,51 @@ final BuiltSet<MediaResponseDtoStatusEnum> _$mediaResponseDtoStatusEnumValues =
       _$mediaResponseDtoStatusEnum_unknownDefaultOpenApi,
     ]);
 
+Serializer<MediaResponseDtoFailureCodeEnum>
+_$mediaResponseDtoFailureCodeEnumSerializer =
+    _$MediaResponseDtoFailureCodeEnumSerializer();
 Serializer<MediaResponseDtoPurposeEnum>
 _$mediaResponseDtoPurposeEnumSerializer =
     _$MediaResponseDtoPurposeEnumSerializer();
 Serializer<MediaResponseDtoStatusEnum> _$mediaResponseDtoStatusEnumSerializer =
     _$MediaResponseDtoStatusEnumSerializer();
+
+class _$MediaResponseDtoFailureCodeEnumSerializer
+    implements PrimitiveSerializer<MediaResponseDtoFailureCodeEnum> {
+  static const Map<String, Object> _toWire = const <String, Object>{
+    'AUDIO_INVALID': 'AUDIO_INVALID',
+    'AUDIO_TOO_LONG': 'AUDIO_TOO_LONG',
+    'AUDIO_PROCESSING_FAILED': 'AUDIO_PROCESSING_FAILED',
+    'unknownDefaultOpenApi': 'unknown_default_open_api',
+  };
+  static const Map<Object, String> _fromWire = const <Object, String>{
+    'AUDIO_INVALID': 'AUDIO_INVALID',
+    'AUDIO_TOO_LONG': 'AUDIO_TOO_LONG',
+    'AUDIO_PROCESSING_FAILED': 'AUDIO_PROCESSING_FAILED',
+    'unknown_default_open_api': 'unknownDefaultOpenApi',
+  };
+
+  @override
+  final Iterable<Type> types = const <Type>[MediaResponseDtoFailureCodeEnum];
+  @override
+  final String wireName = 'MediaResponseDtoFailureCodeEnum';
+
+  @override
+  Object serialize(
+    Serializers serializers,
+    MediaResponseDtoFailureCodeEnum object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => _toWire[object.name] ?? object.name;
+
+  @override
+  MediaResponseDtoFailureCodeEnum deserialize(
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => MediaResponseDtoFailureCodeEnum.valueOf(
+    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
+  );
+}
 
 class _$MediaResponseDtoPurposeEnumSerializer
     implements PrimitiveSerializer<MediaResponseDtoPurposeEnum> {
@@ -118,6 +205,7 @@ class _$MediaResponseDtoPurposeEnumSerializer
     'MOMENT': 'MOMENT',
     'MOMENT_COMMENT': 'MOMENT_COMMENT',
     'RICH_CONTENT': 'RICH_CONTENT',
+    'RICH_CONTENT_AUDIO': 'RICH_CONTENT_AUDIO',
     'STICKER_SOURCE': 'STICKER_SOURCE',
     'LEGACY': 'LEGACY',
     'unknownDefaultOpenApi': 'unknown_default_open_api',
@@ -129,6 +217,7 @@ class _$MediaResponseDtoPurposeEnumSerializer
     'MOMENT': 'MOMENT',
     'MOMENT_COMMENT': 'MOMENT_COMMENT',
     'RICH_CONTENT': 'RICH_CONTENT',
+    'RICH_CONTENT_AUDIO': 'RICH_CONTENT_AUDIO',
     'STICKER_SOURCE': 'STICKER_SOURCE',
     'LEGACY': 'LEGACY',
     'unknown_default_open_api': 'unknownDefaultOpenApi',
@@ -197,6 +286,10 @@ class _$MediaResponseDtoStatusEnumSerializer
 
 class _$MediaResponseDto extends MediaResponseDto {
   @override
+  final num? durationMs;
+  @override
+  final MediaResponseDtoFailureCodeEnum? failureCode;
+  @override
   final MediaDisplayResponseDto? display;
   @override
   final String id;
@@ -234,6 +327,8 @@ class _$MediaResponseDto extends MediaResponseDto {
   ]) => (MediaResponseDtoBuilder()..update(updates))._build();
 
   _$MediaResponseDto._({
+    this.durationMs,
+    this.failureCode,
     this.display,
     required this.id,
     required this.userId,
@@ -263,6 +358,8 @@ class _$MediaResponseDto extends MediaResponseDto {
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
     return other is MediaResponseDto &&
+        durationMs == other.durationMs &&
+        failureCode == other.failureCode &&
         display == other.display &&
         id == other.id &&
         userId == other.userId &&
@@ -284,6 +381,8 @@ class _$MediaResponseDto extends MediaResponseDto {
   @override
   int get hashCode {
     var _$hash = 0;
+    _$hash = $jc(_$hash, durationMs.hashCode);
+    _$hash = $jc(_$hash, failureCode.hashCode);
     _$hash = $jc(_$hash, display.hashCode);
     _$hash = $jc(_$hash, id.hashCode);
     _$hash = $jc(_$hash, userId.hashCode);
@@ -307,6 +406,8 @@ class _$MediaResponseDto extends MediaResponseDto {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'MediaResponseDto')
+          ..add('durationMs', durationMs)
+          ..add('failureCode', failureCode)
           ..add('display', display)
           ..add('id', id)
           ..add('userId', userId)
@@ -330,6 +431,15 @@ class _$MediaResponseDto extends MediaResponseDto {
 class MediaResponseDtoBuilder
     implements Builder<MediaResponseDto, MediaResponseDtoBuilder> {
   _$MediaResponseDto? _$v;
+
+  num? _durationMs;
+  num? get durationMs => _$this._durationMs;
+  set durationMs(num? durationMs) => _$this._durationMs = durationMs;
+
+  MediaResponseDtoFailureCodeEnum? _failureCode;
+  MediaResponseDtoFailureCodeEnum? get failureCode => _$this._failureCode;
+  set failureCode(MediaResponseDtoFailureCodeEnum? failureCode) =>
+      _$this._failureCode = failureCode;
 
   MediaDisplayResponseDtoBuilder? _display;
   MediaDisplayResponseDtoBuilder get display =>
@@ -405,6 +515,8 @@ class MediaResponseDtoBuilder
   MediaResponseDtoBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
+      _durationMs = $v.durationMs;
+      _failureCode = $v.failureCode;
       _display = $v.display?.toBuilder();
       _id = $v.id;
       _userId = $v.userId;
@@ -445,6 +557,8 @@ class MediaResponseDtoBuilder
       _$result =
           _$v ??
           _$MediaResponseDto._(
+            durationMs: durationMs,
+            failureCode: failureCode,
             display: _display?.build(),
             id: BuiltValueNullFieldError.checkNotNull(
               id,

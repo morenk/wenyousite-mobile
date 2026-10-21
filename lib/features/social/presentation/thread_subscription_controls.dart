@@ -4,10 +4,12 @@ import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/application/write_reconciler.dart';
+import 'package:wenyousite_mobile/core/formatters/compact_action_count.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/network/session_controller.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_compact_action_content.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_level_badge.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_sheet.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
@@ -18,12 +20,16 @@ class ThreadSubscriptionControls extends ConsumerWidget {
     required this.threadId,
     required this.hasAutomaticUpdates,
     this.compact = false,
+    this.subscriberCount,
+    this.onThreadSubscriptionChanged,
     super.key,
   });
 
   final String threadId;
   final bool hasAutomaticUpdates;
   final bool compact;
+  final int? subscriberCount;
+  final VoidCallback? onThreadSubscriptionChanged;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -39,37 +45,47 @@ class ThreadSubscriptionControls extends ConsumerWidget {
 
     if (compact) {
       return switch (state.phase) {
-        ThreadSubscriptionPhase.loading => const SizedBox.square(
+        ThreadSubscriptionPhase.loading => const WenyouCompactActionButton(
           key: Key('thread-subscription-loading'),
-          dimension: 48,
-          child: Center(
-            child: SizedBox.square(
-              dimension: 20,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            ),
+          label: '正在加载订阅状态',
+          onPressed: null,
+          icon: SizedBox.square(
+            dimension: 20,
+            child: CircularProgressIndicator(strokeWidth: 2),
           ),
         ),
-        ThreadSubscriptionPhase.failed => IconButton(
+        ThreadSubscriptionPhase.failed => WenyouCompactActionButton(
           key: const Key('thread-subscription-retry'),
           onPressed: notifier.load,
-          tooltip: '订阅状态加载失败，点击重试',
-          icon: const WenyouIcon(WenyouIconIds.statusNotificationsOff),
-          color: Theme.of(context).colorScheme.error,
+          label: '订阅状态加载失败，点击重试',
+          icon: WenyouIcon(
+            WenyouIconIds.statusNotificationsOff,
+            size: 20,
+            color: Theme.of(context).colorScheme.error,
+          ),
         ),
-        ThreadSubscriptionPhase.ready => IconButton(
+        ThreadSubscriptionPhase.ready => WenyouCompactActionButton(
           key: const Key('thread-subscription-menu'),
           onPressed: state.isPending
               ? null
               : () => _showPlayerSheet(context, ref, includeThreadToggle: true),
-          tooltip: !state.isThreadSubscribed ? '管理更新订阅' : '已订阅官方更新，管理订阅',
+          label:
+              '${!state.isThreadSubscribed ? '管理更新订阅' : '已订阅官方更新，管理订阅'}${subscriberCount == null ? '' : '，$subscriberCount 人订阅官方更新'}',
+          supporting: subscriberCount == null
+              ? null
+              : Text(
+                  formatCompactActionCount(subscriberCount!),
+                  style: Theme.of(context).textTheme.wenyouUtilityCaption,
+                ),
           icon: WenyouIcon(
             !state.isThreadSubscribed
                 ? WenyouIconIds.statusNotifications
                 : WenyouIconIds.statusNotificationsActive,
+            size: 20,
+            color: !state.isThreadSubscribed
+                ? tokens.mutedText
+                : tokens.brandForeground,
           ),
-          color: !state.isThreadSubscribed
-              ? tokens.mutedText
-              : tokens.brandForeground,
         ),
       };
     }
@@ -150,7 +166,13 @@ class ThreadSubscriptionControls extends ConsumerWidget {
                 outcome: state.actionOutcome!,
                 failure: state.actionOutcomeFailure,
                 requestId: state.actionRequestId,
-                onRefresh: notifier.load,
+                onRefresh: () => _refreshConfirmedCounts(
+                  context,
+                  ref,
+                  notifier,
+                  threadId,
+                  onThreadSubscriptionChanged,
+                ),
               ),
             ],
           ],
@@ -166,6 +188,7 @@ class ThreadSubscriptionControls extends ConsumerWidget {
     final succeeded = await notifier.toggleThread();
     if (!context.mounted || !succeeded) return;
     _showSuccess(context, notifier);
+    onThreadSubscriptionChanged?.call();
   }
 
   Future<void> _showPlayerSheet(
@@ -180,6 +203,12 @@ class ThreadSubscriptionControls extends ConsumerWidget {
         threadId: threadId,
         openedScope: openedScope,
         includeThreadToggle: includeThreadToggle,
+        onThreadSubscriptionChanged: () {
+          if (context.mounted &&
+              ref.read(sessionScopeProvider) == openedScope) {
+            onThreadSubscriptionChanged?.call();
+          }
+        },
       ),
     );
   }
@@ -190,11 +219,13 @@ class _PlayerSubscriptionSheet extends ConsumerWidget {
     required this.threadId,
     required this.openedScope,
     this.includeThreadToggle = false,
+    this.onThreadSubscriptionChanged,
   });
 
   final String threadId;
   final SessionScope openedScope;
   final bool includeThreadToggle;
+  final VoidCallback? onThreadSubscriptionChanged;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -236,7 +267,13 @@ class _PlayerSubscriptionSheet extends ConsumerWidget {
                   outcome: state.actionOutcome!,
                   failure: state.actionOutcomeFailure,
                   requestId: state.actionRequestId,
-                  onRefresh: notifier.load,
+                  onRefresh: () => _refreshConfirmedCounts(
+                    context,
+                    ref,
+                    notifier,
+                    threadId,
+                    onThreadSubscriptionChanged,
+                  ),
                 ),
               ],
               SizedBox(height: tokens.space12),
@@ -349,6 +386,7 @@ class _PlayerSubscriptionSheet extends ConsumerWidget {
     final succeeded = await notifier.toggleThread();
     if (!context.mounted || !succeeded) return;
     _showSuccess(context, notifier);
+    onThreadSubscriptionChanged?.call();
   }
 }
 
@@ -439,4 +477,25 @@ void _showSuccess(BuildContext context, ThreadSubscriptionController notifier) {
   final message = notifier.takeSuccessMessage();
   if (message == null) return;
   showWenyouSnackBar(context, message, tone: WenyouSnackBarTone.success);
+}
+
+Future<void> _refreshConfirmedCounts(
+  BuildContext context,
+  WidgetRef ref,
+  ThreadSubscriptionController notifier,
+  String threadId,
+  VoidCallback? onCountsChanged,
+) async {
+  final scope = ref.read(sessionScopeProvider);
+  final provider = threadSubscriptionControllerProvider(threadId);
+  if (ref.read(provider).isPending) return;
+  await notifier.load();
+  if (!context.mounted || ref.read(sessionScopeProvider) != scope) return;
+  if (!identical(ref.read(provider.notifier), notifier)) return;
+  final state = ref.read(provider);
+  if (state.phase == ThreadSubscriptionPhase.ready &&
+      !state.isPending &&
+      state.actionOutcome == null) {
+    onCountsChanged?.call();
+  }
 }

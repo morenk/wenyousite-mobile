@@ -393,7 +393,7 @@ void registerMomentPagesFeedBookmarksCases() {
       greaterThanOrEqualTo(48),
     );
     expect(find.byKey(const Key('moment-comment-dock')), findsOneWidget);
-    expect(find.text('登录后发表评论'), findsOneWidget);
+    expect(find.text('回复一下'), findsOneWidget);
     expect(find.byKey(const Key('moment-detail-login')), findsNothing);
 
     await tester.tap(find.byKey(const Key('moment-comments-order')));

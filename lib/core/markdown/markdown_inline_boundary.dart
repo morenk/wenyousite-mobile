@@ -1,3 +1,5 @@
+import 'package:wenyousite_mobile/core/markdown/markdown_inline_code_scanner.dart';
+
 /// Restores supported emphasis syntax when strict CommonMark flanking rules
 /// leave a delimiter literal beside punctuation.
 ///
@@ -300,12 +302,8 @@ abstract final class MarkdownInlineBoundary {
     return null;
   }
 
-  static int? _codeSpanEnd(String source, int index) {
-    final runLength = _runLength(source, index, '`');
-    final delimiter = '`' * runLength;
-    final closing = source.indexOf(delimiter, index + runLength);
-    return closing < 0 ? null : closing + runLength;
-  }
+  static int? _codeSpanEnd(String source, int index) =>
+      MarkdownInlineCodeScanner.endAt(source, index);
 
   static int? _linkLikeEnd(
     String source,

@@ -4,9 +4,24 @@ import 'package:flutter_quill/quill_delta.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/core/diagnostics/diagnostic_sentry_sender.dart';
 import 'package:wenyousite_mobile/core/diagnostics/failure_diagnostics.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_codec_structure.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 
 void main() {
+  test('纯颜色文字计入样式数量但不采集颜色值或正文', () {
+    final structure = MarkdownCodecStructure.inspect(
+      Delta()
+        ..insert('private-body', {'color': '#D14343'})
+        ..insert('\n'),
+    );
+    final safe = sanitizeDiagnosticFields(structure.diagnosticFields);
+    expect(safe['codecStyledRuns'], 1);
+    expect(safe['codecLines'], 1);
+    final serialized = jsonEncode(safe);
+    expect(serialized, isNot(contains('private-body')));
+    expect(serialized, isNot(contains('#D14343')));
+  });
+
   test('无损失败只采集结构数量及固定差异类别，保留原堆栈', () async {
     final diagnostics = FailureDiagnostics();
     addTearDown(diagnostics.dispose);

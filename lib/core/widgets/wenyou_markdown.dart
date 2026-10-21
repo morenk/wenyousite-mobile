@@ -1,11 +1,14 @@
 import 'dart:async';
+
 import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:markdown/markdown.dart' as md;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_alignment.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_audio_projection.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_empty_paragraphs.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_image_occurrence_syntax.dart';
@@ -13,12 +16,16 @@ import 'package:wenyousite_mobile/core/markdown/markdown_inline_boundary.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_inline_compatibility_syntax.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_mention_target.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_quote_line_syntax.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_reader_leading_space_syntax.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_reader_paragraph_syntax.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_source_protection.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_text_color.dart';
+import 'package:wenyousite_mobile/core/media/media_audio.dart';
 import 'package:wenyousite_mobile/core/media/media_display.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_link.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_reference.dart';
 import 'package:wenyousite_mobile/core/widgets/discussion_selection_scope.dart';
+import 'package:wenyousite_mobile/core/widgets/markdown_text_color_builder.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_body_divider.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_dice_node.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_inline_text_elements.dart';
@@ -43,6 +50,7 @@ class WenyouMarkdown extends StatefulWidget {
     required this.data,
     this.diceLabels = const {},
     this.mediaDisplays = const {},
+    this.mediaAudios = const {},
     this.mentionLabels = const {},
     this.diceSemantics = const {},
     this.diceDetails = const {},
@@ -60,6 +68,7 @@ class WenyouMarkdown extends StatefulWidget {
 
   final String data;
   final Map<String, MediaDisplay> mediaDisplays;
+  final Map<String, MediaAudio> mediaAudios;
   final Map<String, String> mentionLabels;
   final Map<String, String> diceLabels;
   final Map<String, String> diceSemantics;
@@ -94,8 +103,10 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
   Map<String, md.LinkReference> _imageReferences = const {};
   MarkdownStyleSheet? _styleSheet;
   Widget? _renderedBody;
+  Key? _markdownParseKey;
   var _usesPlainTextFastPath = false;
   var _hasSelection = false;
+  final _colorRecognizers = <TapGestureRecognizer>[];
 
   @override
   void initState() {
@@ -127,8 +138,17 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
     if (!mapEquals(oldWidget.diceDetails, widget.diceDetails)) {
       _diceDetails.value = Map.unmodifiable(widget.diceDetails);
     }
-    if (!mapEquals(oldWidget.mediaDisplays, widget.mediaDisplays)) {
+    if (!mapEquals(oldWidget.mediaDisplays, widget.mediaDisplays) ||
+        !mapEquals(oldWidget.mediaAudios, widget.mediaAudios)) {
       _renderedBody = null;
+    }
+    if (!setEquals(
+      MarkdownAudioProjection.sourceKeys(oldWidget.mediaAudios),
+      MarkdownAudioProjection.sourceKeys(widget.mediaAudios),
+    )) {
+      // 上游只在 data/styleSheet 改变时重建 children；可信音频集合
+      // 也会改变段落分块，必须让 AST 与 children 同步。等价 DTO 不重挂。
+      _markdownParseKey = UniqueKey();
     }
     if (!mapEquals(oldWidget.mentionLabels, widget.mentionLabels)) {
       _mentionLabels.value = Map.unmodifiable(widget.mentionLabels);
@@ -154,6 +174,9 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
 
   @override
   void dispose() {
+    for (final recognizer in _colorRecognizers) {
+      recognizer.dispose();
+    }
     _selectionScope?.update(this, false);
     _diceLabels.dispose();
     _mentionLabels.dispose();
@@ -168,7 +191,19 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
     return _renderedBody ??= _buildBody();
   }
 
+  @override
+  void reassemble() {
+    super.reassemble();
+    // 阅读缓存包含解析器和 builder；Debug 热重载后重新应用渲染规则。
+    _renderedBody = null;
+    _markdownParseKey = UniqueKey();
+  }
+
   Widget _buildBody() {
+    for (final recognizer in _colorRecognizers) {
+      recognizer.dispose();
+    }
+    _colorRecognizers.clear();
     final Widget body;
     if (_usesPlainTextFastPath) {
       final paragraphs = _normalizedData.split(_plainTextParagraphBreak);
@@ -189,7 +224,10 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
       body = GestureDetector(
         behavior: HitTestBehavior.translucent,
         onTap: widget.onTapText == null ? null : _handleTapText,
-        child: _buildMarkdownSegments(),
+        child: KeyedSubtree(
+          key: _markdownParseKey,
+          child: _buildMarkdownSegments(),
+        ),
       );
     }
     return KeyedSubtree(
@@ -315,6 +353,7 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
     int imageStartIndex = 0,
   }) => WenyouMarkdownBody(
     data: data,
+    mediaAudios: widget.mediaAudios,
     selectable: false,
     // MarkdownBody defaults to fitContent=true, which shrink-wraps its inner
     // paragraph Wrap. A centered/right-aligned TextAlign then has no spare
@@ -326,11 +365,19 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
     blockSyntaxes: [
       const md.SetextHeaderSyntax(),
       const MarkdownQuoteLineSyntax(_emptyParagraphTag),
-      const MarkdownLiteralRowsSyntax(),
+      MarkdownLiteralRowsSyntax(
+        isAtomicLine: widget.mediaAudios.isEmpty
+            ? null
+            : (line) =>
+                  MarkdownAudioProjection.fromLine(line, widget.mediaAudios) !=
+                  null,
+      ),
       _EmptyParagraphBlockSyntax(),
       const MarkdownReaderParagraphSyntax(),
     ],
     inlineSyntaxes: [
+      MarkdownReaderLeadingSpaceSyntax(),
+      MarkdownTextColorSyntax(),
       MarkdownImageOccurrenceSyntax(
         startIndex: imageStartIndex,
         references: _imageReferences,
@@ -342,6 +389,10 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
       _DiceInlineSyntax(),
     ],
     builders: {
+      MarkdownTextColor.tag: MarkdownTextColorBuilder(
+        onLink: (href) => _openLink(context, href),
+        registerRecognizer: _colorRecognizers.add,
+      ),
       'img': _OccurrenceImageBuilder((element) {
         final uri = Uri.parse(element.attributes['src']!);
         final title = element.attributes['title'];

@@ -1,9 +1,11 @@
 import 'package:wenyousite_mobile/core/markdown/markdown_alignment.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_dice_contract.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_editable_block_syntax.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_inline_code_scanner.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_list_structure.dart';
-import 'package:wenyousite_mobile/core/markdown/markdown_mention_target.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_plain_text_preview.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_source_protection.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_text_color.dart';
 
 class MarkdownContent {
   MarkdownContent._();
@@ -35,19 +37,6 @@ class MarkdownContent {
   );
   static final _diceNode = RegExp(
     r'^\[\[dice:v1:([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}):([^\]\r\n]+)\]\]',
-    caseSensitive: false,
-  );
-  static final _previewImage = RegExp(
-    r'!\[([^\]]*)\]\(\s*[^)\s]+[^)]*\)',
-    unicode: true,
-  );
-  static final _previewUrl = RegExp(
-    r'https?://[^\s<>()]+',
-    caseSensitive: false,
-    unicode: true,
-  );
-  static final _previewDice = RegExp(
-    r'\[\[dice:v1:[0-9a-f-]+:([^\]\r\n]+)\]\]',
     caseSensitive: false,
   );
   static final _taskList = RegExp(
@@ -447,7 +436,9 @@ class MarkdownContent {
       return false;
     }
     // 已闭合行内代码中的尖括号是可见文字，不是待执行的 HTML。
-    for (final match in _htmlToken.allMatches(_maskInlineCode(line))) {
+    for (final match in _htmlToken.allMatches(
+      MarkdownTextColor.maskValidTags(_maskInlineCode(line)),
+    )) {
       if (_isEscaped(line, match.start)) continue;
       final token = match.group(0)!;
       if (RegExp(
@@ -473,48 +464,8 @@ class MarkdownContent {
     return false;
   }
 
-  static String _maskInlineCode(String line) {
-    final chars = List<String>.generate(
-      line.length,
-      (index) => line.substring(index, index + 1),
-    );
-    var index = 0;
-    while (index < line.length) {
-      if (line[index] != '`' || _isEscaped(line, index)) {
-        index += 1;
-        continue;
-      }
-      var length = 1;
-      while (index + length < line.length && line[index + length] == '`') {
-        length += 1;
-      }
-      var closing = -1;
-      var search = index + length;
-      while (search < line.length) {
-        final next = line.indexOf('`', search);
-        if (next < 0) break;
-        var end = next + 1;
-        while (end < line.length && line[end] == '`') {
-          end++;
-        }
-        // CommonMark 只用长度完全相同的反引号串闭合代码区。
-        if (end - next == length) {
-          closing = next;
-          break;
-        }
-        search = end;
-      }
-      if (closing < 0) {
-        index += length;
-        continue;
-      }
-      for (var cursor = index; cursor < closing + length; cursor++) {
-        chars[cursor] = ' ';
-      }
-      index = closing + length;
-    }
-    return chars.join();
-  }
+  static String _maskInlineCode(String line) =>
+      MarkdownInlineCodeScanner.mask(line);
 
   static bool _isEscaped(String value, int index) {
     var slashes = 0;
@@ -602,66 +553,17 @@ class MarkdownContent {
     String markdown, {
     int maxLength = 180,
     Map<String, String> mentionLabels = const {},
+    Map<String, String> diceLabels = const {},
+    bool showUnresolvedDiceResult = false,
   }) {
     if (maxLength <= 0) return '';
-    final source = MarkdownAlignmentContract.removeMarkerLines(
-      normalize(markdown),
+    return markdownPlainTextPreview(
+      MarkdownSourceProtection.prepareForReader(markdown),
+      maxLength: maxLength,
+      mentionLabels: mentionLabels,
+      diceLabels: diceLabels,
+      showUnresolvedDiceResult: showUnresolvedDiceResult,
     );
-    final mask = source.contains('/users/')
-        ? MarkdownSourceProtection.analyze(
-            source.split('\n'),
-          ).maskedLines.join('\n')
-        : source;
-    var markerPrefix = '\uE000';
-    while (source.contains(markerPrefix)) {
-      markerPrefix += '\uE000';
-    }
-    final mentionText = <String, String>{};
-    final protected = source.replaceAllMapped(
-      RegExp(MarkdownMentionTarget.nodePattern),
-      (match) {
-        final label = match[1]!;
-        final target = MarkdownMentionTarget.parse(match[2]!);
-        var slashes = 0;
-        for (var i = match.start - 1; i >= 0 && source[i] == r'\'; i--) {
-          slashes++;
-        }
-        if (target == null ||
-            !target.acceptsLabel(label) ||
-            slashes.isOdd ||
-            (match.start > 0 && source[match.start - 1] == '!') ||
-            mask[match.start] != '[') {
-          return match[0]!;
-        }
-        final marker = '$markerPrefix${mentionText.length}\uE001';
-        mentionText[marker] =
-            '@${mentionLabels[target.projectionKey(label.substring(1))] ?? label.substring(1)}';
-        return marker;
-      },
-    );
-    var visible = protected
-        .replaceAllMapped(
-          _previewDice,
-          (match) => '[${match.group(1)!.trim()}]',
-        )
-        .replaceAll(_previewImage, '[图片]')
-        .replaceAllMapped(_link, (match) {
-          final label = match.group(1)!;
-          return label;
-        })
-        .replaceAll(_httpAutolink, '[链接]')
-        .replaceAll(_previewUrl, '[链接]')
-        .replaceAll(_html, ' ')
-        .replaceAll(RegExp(r'(^|\n)\s{0,3}(?:[#>+\-]|\d+[.)])\s*'), ' ')
-        .replaceAll(RegExp(r'[`*_~|]'), '')
-        .replaceAll(RegExp(r'\s+', unicode: true), ' ')
-        .trim();
-    for (final entry in mentionText.entries) {
-      visible = visible.replaceAll(entry.key, entry.value);
-    }
-    final runes = visible.runes.toList(growable: false);
-    if (runes.length <= maxLength) return visible;
-    return '${String.fromCharCodes(runes.take(maxLength - 1))}…';
   }
 
   static String renderDiceForDisplay(

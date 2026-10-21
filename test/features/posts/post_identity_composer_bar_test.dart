@@ -4,7 +4,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
-import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_identity_selection.dart';
 import 'package:wenyousite_mobile/features/posts/presentation/post_composer_sheet_layout.dart';
 import 'package:wenyousite_mobile/features/posts/presentation/post_identity_composer_bar.dart';
@@ -172,7 +171,7 @@ void main() {
           accountName: '站内用户',
         ),
       );
-      expect(find.text('站内用户'), findsOneWidget);
+      expect(find.text('站内用户'), eligible ? findsOneWidget : findsNothing);
       expect(
         find.byKey(const Key('post-composer-identity-mode')),
         eligible ? findsOneWidget : findsNothing,
@@ -196,7 +195,7 @@ void main() {
     });
   }
 
-  testWidgets('RP不可用时顶部回到站内头像和用户名，不显示状态提示并保留草稿', (tester) async {
+  testWidgets('RP不可用时身份区域不占空间，不显示状态提示并保留草稿', (tester) async {
     final selection = await pumpBar(
       tester,
       restored: PostIdentityMode.rp,
@@ -214,14 +213,39 @@ void main() {
     expect(selection.acceptedToken, 'old');
     expect(find.text('帖内身份已变化，待确认'), findsNothing);
     expect(find.text('站内身份'), findsNothing);
-    expect(find.text('站内用户'), findsOneWidget);
-    expect(
-      tester.widget<WenyouAvatar>(find.byType(WenyouAvatar)).avatarUrl,
-      'https://images.invalid/account.png',
-    );
+    expect(find.text('站内用户'), findsNothing);
+    expect(tester.getSize(find.byType(PostIdentityComposerBar)).height, 0);
     expect(find.byKey(const Key('post-identity-option-rp')), findsNothing);
     expect(find.byKey(const Key('post-composer-identity-mode')), findsNothing);
   });
+
+  for (final flags in [(false, true), (true, false)]) {
+    testWidgets('开关与资格独立控制入口，残留角色不使身份栏可见 $flags', (tester) async {
+      final selection = await pumpBar(
+        tester,
+        restored: PostIdentityMode.rp,
+        identity: ThreadIdentityState(
+          threadId: 'thread',
+          userId: 'account',
+          enabled: flags.$1,
+          eligible: flags.$2,
+          canEdit: false,
+          accountName: '站内用户',
+          display: const RpIdentity(id: 'rp', nickname: '旧角色'),
+        ),
+      );
+      expect(selection.collection!.identities, hasLength(1));
+      expect(selection.mode, PostIdentityMode.rp);
+      expect(selection.acceptedToken, 'old');
+      expect(find.text('站内用户'), findsNothing);
+      expect(find.text('旧角色'), findsNothing);
+      expect(
+        find.byKey(const Key('post-composer-identity-mode')),
+        findsNothing,
+      );
+      expect(tester.getSize(find.byType(PostIdentityComposerBar)).height, 0);
+    });
+  }
 
   for (final dark in [false, true]) {
     testWidgets('360dp身份栏视觉候选 $dark', (tester) async {

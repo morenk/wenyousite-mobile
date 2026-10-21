@@ -8,6 +8,24 @@ import 'package:wenyousite_mobile/features/social/data/bookmark_list_repository.
 import 'package:wenyousite_mobile/features/social/domain/bookmark_list_models.dart';
 
 void main() {
+  test('分页按收藏ID去重并保留已有项顺序', () async {
+    final repository = _FakeRepository(
+      fetchHandler: ({cursor, folderId}) async => CursorPage(
+        items: cursor == null ? [_item('b1')] : [_item('b1'), _item('b2')],
+        cursor: cursor == null ? 'next' : null,
+        hasMore: cursor == null,
+      ),
+    );
+    final controller = BookmarkListController(
+      repository,
+      initialFolderId: 'folder-default',
+    );
+    addTearDown(controller.dispose);
+    await _settle();
+    await controller.loadMore();
+    expect(controller.state.items.map((e) => e.bookmarkId), ['b1', 'b2']);
+  });
+
   for (final move in [false, true]) {
     test('收藏列表立即移除与更新数量，失败恢复位置和游标：移动 $move', () async {
       final gate = Completer<void>();

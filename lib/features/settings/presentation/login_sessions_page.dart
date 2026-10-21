@@ -26,19 +26,15 @@ class LoginSessionsPage extends ConsumerWidget {
         ),
         LoginSessionsPhase.failed => WenyouPageBody(
           maxWidth: 600,
-          child: WenyouPanel(
-            child: WenyouEmptyState(
-              icon: WenyouIconIds.actionDevices,
-              title: '登录终端加载失败',
-              message: state.failure?.userMessage ?? '请稍后重试。',
-              detail: wenyouFailureDetail(state.failure),
-              action: OutlinedButton.icon(
-                key: const Key('login-sessions-retry'),
-                onPressed: notifier.load,
-                icon: const WenyouIcon(WenyouIconIds.actionRefresh),
-                label: const Text('重试'),
-              ),
-            ),
+          child: WenyouRetryFailure(
+            panel: true,
+            icon: WenyouIconIds.actionDevices,
+            title: '登录终端加载失败',
+            message: state.failure?.userMessage ?? '请稍后重试。',
+            failure: state.failure,
+            retryKey: const Key('login-sessions-retry'),
+            onRetry: notifier.load,
+            retryLabel: '重试',
           ),
         ),
         LoginSessionsPhase.ready => _ReadyLoginSessions(

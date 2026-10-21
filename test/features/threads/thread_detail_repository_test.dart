@@ -6,7 +6,10 @@ import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/threads/data/thread_detail_repository.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.dart';
 
+import 'thread_action_counts_repository_cases.dart';
+
 void main() {
+  registerThreadActionCountsRepositoryCases(_threadDetail);
   test('主题详情映射字段、过滤已删除子贴并按 sortOrder 排序', () async {
     final threadsApi = _MockThreadsApi();
     final postsApi = _MockPostsApi();

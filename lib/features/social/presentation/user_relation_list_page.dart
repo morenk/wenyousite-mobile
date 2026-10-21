@@ -40,19 +40,15 @@ class UserRelationListPage extends ConsumerWidget {
         ),
         UserRelationListPhase.failed => WenyouPageBody(
           maxWidth: 600,
-          child: WenyouPanel(
-            child: WenyouEmptyState(
-              icon: WenyouIconIds.statusOffline,
-              title: '${_title(target.kind)}加载失败',
-              message: state.failure?.userMessage ?? '请稍后重试。',
-              detail: wenyouFailureDetail(state.failure),
-              action: OutlinedButton.icon(
-                key: const Key('user-relation-list-retry'),
-                onPressed: notifier.load,
-                icon: const WenyouIcon(WenyouIconIds.actionRefresh),
-                label: const Text('重试'),
-              ),
-            ),
+          child: WenyouRetryFailure(
+            panel: true,
+            icon: WenyouIconIds.statusOffline,
+            title: '${_title(target.kind)}加载失败',
+            message: state.failure?.userMessage ?? '请稍后重试。',
+            failure: state.failure,
+            retryKey: const Key('user-relation-list-retry'),
+            onRetry: notifier.load,
+            retryLabel: '重试',
           ),
         ),
         UserRelationListPhase.ready => _ReadyRelationList(

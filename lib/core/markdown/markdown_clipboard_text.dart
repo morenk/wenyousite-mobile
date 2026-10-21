@@ -1,4 +1,5 @@
 import 'package:flutter_quill/quill_delta.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_audio_embed.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_mention_target.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_reference.dart';
@@ -24,6 +25,7 @@ abstract final class MarkdownClipboardText {
     Map<String, String> diceLabels = const {},
     Map<String, String> mentionLabels = const {},
   }) {
+    delta = MarkdownAudioEmbed.expand(delta);
     final lines = <String>[];
     final line = StringBuffer();
     var omitLine = false;

@@ -12,6 +12,37 @@ import '../../support/deterministic_test_fonts.dart';
 void main() {
   setUpAll(loadDeterministicTestFonts);
 
+  testWidgets('仅底栏模式将数字下置，默认仍为图文同行', (tester) async {
+    for (final stacked in [false, true]) {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.light,
+          home: Scaffold(
+            body: Center(
+              child: WenyouInteractionToggle(
+                kind: WenyouInteractionKind.like,
+                selected: false,
+                semanticLabel: '喜欢，12345 次',
+                onPressed: _noop,
+                supporting: const Text('12k'),
+                stackSupporting: stacked,
+              ),
+            ),
+          ),
+        ),
+      );
+      final icon = tester.getRect(find.byType(WenyouInteractionIcon));
+      final count = tester.getRect(find.text('12k'));
+      if (stacked) {
+        expect(count.top, greaterThanOrEqualTo(icon.bottom));
+        expect(count.center.dx, closeTo(icon.center.dx, .1));
+      } else {
+        expect(count.left, greaterThan(icon.right));
+        expect(count.center.dy, closeTo(icon.center.dy, .1));
+      }
+    }
+  });
+
   testWidgets('选中互动使用 Foundation 语义色、实心资产与最小点按区', (tester) async {
     await tester.pumpWidget(
       MaterialApp(

@@ -70,6 +70,93 @@ class EditorSelectionHistory {
     _prune(controller.document);
   }
 
+  /// 远端元数据只改变音频的视图表示。把原生历史每个端点投影到同一
+  /// 表示后重建差值，既不增加撤销步，也不把收缩前的偏移留在旧栈。
+  void projectView(QuillController controller, Delta Function(Delta) project) {
+    _syncDocument(controller.document);
+    final document = controller.document;
+    final before = document.toDelta();
+    final projected = project(before);
+    final patch = before.diff(projected);
+    if (patch.isEmpty) return;
+    final history = document.history;
+    final mappings = HashMap<Delta, _Selections>.identity();
+
+    List<Delta> transformStack(List<Delta> entries, {required bool undo}) {
+      var current = before;
+      var currentProjected = projected;
+      final transformed = <Delta>[];
+      for (final entry in entries.reversed) {
+        final next = current.compose(entry);
+        final nextProjected = project(next);
+        final replacement = currentProjected.diff(nextProjected);
+        if (replacement.isNotEmpty) {
+          transformed.add(replacement);
+          final saved = _selections[entry];
+          if (saved != null) {
+            final currentPatch = current.diff(currentProjected);
+            final nextPatch = next.diff(nextProjected);
+            mappings[replacement] = _Selections(
+              _projectSelection(
+                saved.before,
+                undo ? nextPatch : currentPatch,
+                undo ? nextProjected.length : currentProjected.length,
+              ),
+              _projectSelection(
+                saved.after,
+                undo ? currentPatch : nextPatch,
+                undo ? currentProjected.length : nextProjected.length,
+              ),
+            );
+          }
+        }
+        current = next;
+        currentProjected = nextProjected;
+      }
+      return transformed.reversed.toList();
+    }
+
+    // 所有计算先完成；投影失败不能留下半更新的正文、历史或选区映射。
+    final undo = transformStack(history.stack.undo, undo: true);
+    final redo = transformStack(history.stack.redo, undo: false);
+    final selected = _projectSelection(
+      controller.selection,
+      patch,
+      projected.length,
+    );
+    final ignored = history.ignoreChange;
+    history.ignoreChange = true;
+    try {
+      document.compose(patch, ChangeSource.remote);
+    } finally {
+      history.ignoreChange = ignored;
+    }
+    history.stack.undo
+      ..clear()
+      ..addAll(undo);
+    history.stack.redo
+      ..clear()
+      ..addAll(redo);
+    history.lastRecorded = 0;
+    _selections
+      ..clear()
+      ..addAll(mappings);
+    controller.updateSelection(selected, ChangeSource.remote);
+  }
+
+  static TextSelection _projectSelection(
+    TextSelection selection,
+    Delta patch,
+    int length,
+  ) => selection.copyWith(
+    baseOffset: patch
+        .transformPosition(selection.baseOffset)
+        .clamp(0, length - 1),
+    extentOffset: patch
+        .transformPosition(selection.extentOffset)
+        .clamp(0, length - 1),
+  );
+
   void _syncDocument(Document document) {
     if (identical(_document, document)) return;
     _document = document;

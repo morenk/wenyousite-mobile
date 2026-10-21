@@ -1,5 +1,6 @@
 import 'package:flutter_quill/quill_delta.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_alignment.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_audio_embed.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_canonical_literal_decoder.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_codec_structure.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_codec_types.dart';
@@ -159,6 +160,7 @@ class MarkdownDeltaCodec {
 
   static String encode(Delta delta, {bool imageAlignment = false}) {
     try {
+      delta = MarkdownAudioEmbed.expand(delta, preserveLinkShape: true);
       final encoded = _encode(delta, true, imageAlignment);
       final reopened = _decode(encoded, false, imageAlignment).delta;
       if (!MarkdownDeltaSemantics.equivalent(delta, reopened)) {

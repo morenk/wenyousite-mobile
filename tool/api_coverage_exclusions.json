@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "contractVersion": "5.36.0-dev.20261005.1",
+  "contractVersion": "5.40.0-dev.20261018.1",
   "exclusions": [
     { "operationId": "appDownloadsInfo", "category": "web_download_page", "reason": "Web 下载入口读取全局发布状态；Mobile 继续由 /meta 决定更新策略，无 Cookie 的 HEAD/GET 不增加 info 前置调用。" },
     { "operationId": "appDownloadsHead", "category": "streamed_apk_update", "reason": "Mobile 使用独立下载 Dio 对 /meta 指定的文件 URL 执行 HEAD，保留旧 APP 元数据校验，不调用生成 JSON API。" },
@@ -69,7 +69,6 @@
     { "operationId": "notificationCampaignCancel", "category": "admin_product", "reason": "移动端 V1 不承载管理产品。" },
     { "operationId": "adminModerationExportAuditLogs", "category": "admin_product", "reason": "移动端 V1 不承载管理产品。" },
     { "operationId": "clientContentModerationHide", "category": "planned_moderation", "reason": "后端 4.9.0 新增移动端管理员直接隐藏内容；需先接入可信角色投影、内容操作入口与高风险确认切片。" },
-    { "operationId": "mediaReissueUploadUrl", "category": "planned_media", "reason": "后端 5.4.0 新增同一 mediaId 重签上传地址；需与 MEDIA_OBJECT_MISSING 识别、同文件重传和取消恢复作为独立高风险上传切片接入。" },
     { "operationId": "usersGetUserMomentBookmarks", "category": "planned_moments", "reason": "后端 5.2.0 新增公开动态收藏分页；本人动态收藏目录、筛选分页与管理已接入，公开列表仍需与用户主页动态收藏分区、隐私空态和分页定位作为独立切片接入。" },
     { "operationId": "usersGetMyCollaboratedThreads", "category": "planned_threads", "reason": "后端 5.9.0 新增本人协作主题分页；需与资料入口、协作者任免通知、权限撤销后的管理页退出和列表刷新作为同一切片接入。" },
     { "operationId": "draftsFindAll", "category": "superseded_aggregate", "reason": "正文草稿改用 draftsState 在同一服务端快照内读取草稿与槽位用量，避免两次请求产生版本漂移；不再单独读取草稿列表。" },

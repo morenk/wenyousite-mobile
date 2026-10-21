@@ -520,8 +520,9 @@ class _PostAuthorLine extends StatelessWidget {
       metadata: [
         if (role != null) Text(role),
         WenyouTimeText(
-          value: post.createdAt,
+          value: post.editedAt ?? post.createdAt,
           reference: timeReference,
+          prefix: post.editedAt == null ? '' : '编辑于',
           semanticsPrefix: [
             if (root) '楼层 ${post.floorNumber ?? '-'}',
             if (!root && post.replyNumber != null) '回复编号 ${post.replyNumber}',
@@ -529,7 +530,7 @@ class _PostAuthorLine extends StatelessWidget {
               '回复 ${post.replyToAuthor!.displayName}'
             else if (!root)
               '回复',
-            '发布时间：',
+            post.editedAt == null ? '发布时间：' : '编辑时间：',
           ].join('，'),
           style: Theme.of(
             context,

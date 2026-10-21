@@ -43,7 +43,14 @@ final class MarkdownCodecStructure {
         continue;
       }
       if (op.attributes?.keys.any(
-            const {'bold', 'italic', 'strike', 'code', 'link'}.contains,
+            const {
+              'bold',
+              'italic',
+              'strike',
+              'code',
+              'link',
+              'color',
+            }.contains,
           ) ==
           true) {
         styledRuns++;

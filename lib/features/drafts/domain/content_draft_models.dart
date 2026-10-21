@@ -1,3 +1,4 @@
+import 'package:wenyousite_mobile/core/media/media_audio.dart';
 import 'package:wenyousite_mobile/core/media/media_display.dart';
 
 class ContentDraft {
@@ -7,6 +8,7 @@ class ContentDraft {
     required this.slot,
     required this.content,
     this.mediaDisplays = const {},
+    this.mediaAudios = const {},
     required this.version,
     required this.createdAt,
     required this.updatedAt,
@@ -17,6 +19,7 @@ class ContentDraft {
   final int slot;
   final String content;
   final Map<String, MediaDisplay> mediaDisplays;
+  final Map<String, MediaAudio> mediaAudios;
   final int version;
   final DateTime createdAt;
   final DateTime updatedAt;
