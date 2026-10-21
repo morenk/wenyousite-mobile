@@ -79,8 +79,6 @@ class _$TextFontRuntimePolicyDto extends TextFontRuntimePolicyDto {
   @override
   final String manifestSha256;
   @override
-  final FontOriginalAssetDto originalAsset;
-  @override
   final FontWebRuntimeDto web;
   @override
   final FontMobileRuntimeDto mobile;
@@ -94,7 +92,6 @@ class _$TextFontRuntimePolicyDto extends TextFontRuntimePolicyDto {
   _$TextFontRuntimePolicyDto._({
     required this.policyVersion,
     required this.manifestSha256,
-    required this.originalAsset,
     required this.web,
     required this.mobile,
     required this.retry,
@@ -114,7 +111,6 @@ class _$TextFontRuntimePolicyDto extends TextFontRuntimePolicyDto {
     return other is TextFontRuntimePolicyDto &&
         policyVersion == other.policyVersion &&
         manifestSha256 == other.manifestSha256 &&
-        originalAsset == other.originalAsset &&
         web == other.web &&
         mobile == other.mobile &&
         retry == other.retry;
@@ -125,7 +121,6 @@ class _$TextFontRuntimePolicyDto extends TextFontRuntimePolicyDto {
     var _$hash = 0;
     _$hash = $jc(_$hash, policyVersion.hashCode);
     _$hash = $jc(_$hash, manifestSha256.hashCode);
-    _$hash = $jc(_$hash, originalAsset.hashCode);
     _$hash = $jc(_$hash, web.hashCode);
     _$hash = $jc(_$hash, mobile.hashCode);
     _$hash = $jc(_$hash, retry.hashCode);
@@ -138,7 +133,6 @@ class _$TextFontRuntimePolicyDto extends TextFontRuntimePolicyDto {
     return (newBuiltValueToStringHelper(r'TextFontRuntimePolicyDto')
           ..add('policyVersion', policyVersion)
           ..add('manifestSha256', manifestSha256)
-          ..add('originalAsset', originalAsset)
           ..add('web', web)
           ..add('mobile', mobile)
           ..add('retry', retry))
@@ -161,12 +155,6 @@ class TextFontRuntimePolicyDtoBuilder
   String? get manifestSha256 => _$this._manifestSha256;
   set manifestSha256(String? manifestSha256) =>
       _$this._manifestSha256 = manifestSha256;
-
-  FontOriginalAssetDtoBuilder? _originalAsset;
-  FontOriginalAssetDtoBuilder get originalAsset =>
-      _$this._originalAsset ??= FontOriginalAssetDtoBuilder();
-  set originalAsset(FontOriginalAssetDtoBuilder? originalAsset) =>
-      _$this._originalAsset = originalAsset;
 
   FontWebRuntimeDtoBuilder? _web;
   FontWebRuntimeDtoBuilder get web =>
@@ -192,7 +180,6 @@ class TextFontRuntimePolicyDtoBuilder
     if ($v != null) {
       _policyVersion = $v.policyVersion;
       _manifestSha256 = $v.manifestSha256;
-      _originalAsset = $v.originalAsset.toBuilder();
       _web = $v.web.toBuilder();
       _mobile = $v.mobile.toBuilder();
       _retry = $v.retry.toBuilder();
@@ -230,7 +217,6 @@ class TextFontRuntimePolicyDtoBuilder
               r'TextFontRuntimePolicyDto',
               'manifestSha256',
             ),
-            originalAsset: originalAsset.build(),
             web: web.build(),
             mobile: mobile.build(),
             retry: retry.build(),
@@ -238,8 +224,6 @@ class TextFontRuntimePolicyDtoBuilder
     } catch (_) {
       late String _$failedField;
       try {
-        _$failedField = 'originalAsset';
-        originalAsset.build();
         _$failedField = 'web';
         web.build();
         _$failedField = 'mobile';

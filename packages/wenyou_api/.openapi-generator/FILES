@@ -261,7 +261,6 @@ lib/src/model/floor_window_response_dto.dart
 lib/src/model/font_mobile_registration_dto.dart
 lib/src/model/font_mobile_runtime_dto.dart
 lib/src/model/font_network_window_dto.dart
-lib/src/model/font_original_asset_dto.dart
 lib/src/model/font_registration_snapshot_dto.dart
 lib/src/model/font_retry_policy_dto.dart
 lib/src/model/font_snapshot_safety_ceiling_dto.dart

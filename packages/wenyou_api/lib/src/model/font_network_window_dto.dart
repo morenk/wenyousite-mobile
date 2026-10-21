@@ -13,11 +13,12 @@ part 'font_network_window_dto.g.dart';
 ///
 /// Properties:
 /// * [windowMs] - 滚动时间窗口；续额不重置驻留或原生注册账本
-/// * [maxRequests] - 包含元数据、通知文件、原件、失败和重试的请求预留次数
-/// * [maxBytes] - 普通窗口预留字节；Mobile 原件计入此额度，Web 原件使用独立额度
-/// * [originalWindowBytes] - Web 原件独立额度；Mobile 固定 0，原件计入普通 24 MiB。失败不即时退款，窗口到期可再尝试
+/// * [maxRequests] - 包含元数据、通知文件、失败和重试的请求预留次数
+/// * [maxBytes] - 窗口预留字节；所有当前分片与通知均使用此额度
 /// * [maxConcurrent]
-/// * [timeoutMs]
+/// * [timeoutMode] - 仅非空正文数据块重置 idle；响应头及空块不算进度，排队不计时
+/// * [timeoutMs] - 实际请求开始后等待首个有效字节、以及连续无有效字节进度的时限；不是总传输时限
+/// * [maxTransferMs] - 从实际请求开始到响应体结束的独立总时限，持续有进度也不得续期；元数据与字体均适用
 @BuiltValue()
 abstract class FontNetworkWindowDto implements Built<FontNetworkWindowDto, FontNetworkWindowDtoBuilder> {
   /// 滚动时间窗口；续额不重置驻留或原生注册账本
@@ -25,27 +26,33 @@ abstract class FontNetworkWindowDto implements Built<FontNetworkWindowDto, FontN
   FontNetworkWindowDtoWindowMsEnum get windowMs;
   // enum windowMsEnum {  60000,  };
 
-  /// 包含元数据、通知文件、原件、失败和重试的请求预留次数
+  /// 包含元数据、通知文件、失败和重试的请求预留次数
   @BuiltValueField(wireName: r'maxRequests')
   FontNetworkWindowDtoMaxRequestsEnum get maxRequests;
   // enum maxRequestsEnum {  64,  };
 
-  /// 普通窗口预留字节；Mobile 原件计入此额度，Web 原件使用独立额度
+  /// 窗口预留字节；所有当前分片与通知均使用此额度
   @BuiltValueField(wireName: r'maxBytes')
   int get maxBytes;
-
-  /// Web 原件独立额度；Mobile 固定 0，原件计入普通 24 MiB。失败不即时退款，窗口到期可再尝试
-  @BuiltValueField(wireName: r'originalWindowBytes')
-  FontNetworkWindowDtoOriginalWindowBytesEnum get originalWindowBytes;
-  // enum originalWindowBytesEnum {  0,  18410600,  };
 
   @BuiltValueField(wireName: r'maxConcurrent')
   FontNetworkWindowDtoMaxConcurrentEnum get maxConcurrent;
   // enum maxConcurrentEnum {  1,  2,  };
 
+  /// 仅非空正文数据块重置 idle；响应头及空块不算进度，排队不计时
+  @BuiltValueField(wireName: r'timeoutMode')
+  FontNetworkWindowDtoTimeoutModeEnum get timeoutMode;
+  // enum timeoutModeEnum {  idle-with-total-cap,  };
+
+  /// 实际请求开始后等待首个有效字节、以及连续无有效字节进度的时限；不是总传输时限
   @BuiltValueField(wireName: r'timeoutMs')
   FontNetworkWindowDtoTimeoutMsEnum get timeoutMs;
   // enum timeoutMsEnum {  15000,  };
+
+  /// 从实际请求开始到响应体结束的独立总时限，持续有进度也不得续期；元数据与字体均适用
+  @BuiltValueField(wireName: r'maxTransferMs')
+  FontNetworkWindowDtoMaxTransferMsEnum get maxTransferMs;
+  // enum maxTransferMsEnum {  600000,  };
 
   FontNetworkWindowDto._();
 
@@ -85,20 +92,25 @@ class _$FontNetworkWindowDtoSerializer implements PrimitiveSerializer<FontNetwor
       object.maxBytes,
       specifiedType: const FullType(int),
     );
-    yield r'originalWindowBytes';
-    yield serializers.serialize(
-      object.originalWindowBytes,
-      specifiedType: const FullType(FontNetworkWindowDtoOriginalWindowBytesEnum),
-    );
     yield r'maxConcurrent';
     yield serializers.serialize(
       object.maxConcurrent,
       specifiedType: const FullType(FontNetworkWindowDtoMaxConcurrentEnum),
     );
+    yield r'timeoutMode';
+    yield serializers.serialize(
+      object.timeoutMode,
+      specifiedType: const FullType(FontNetworkWindowDtoTimeoutModeEnum),
+    );
     yield r'timeoutMs';
     yield serializers.serialize(
       object.timeoutMs,
       specifiedType: const FullType(FontNetworkWindowDtoTimeoutMsEnum),
+    );
+    yield r'maxTransferMs';
+    yield serializers.serialize(
+      object.maxTransferMs,
+      specifiedType: const FullType(FontNetworkWindowDtoMaxTransferMsEnum),
     );
   }
 
@@ -144,13 +156,6 @@ class _$FontNetworkWindowDtoSerializer implements PrimitiveSerializer<FontNetwor
           ) as int;
           result.maxBytes = valueDes;
           break;
-        case r'originalWindowBytes':
-          final valueDes = serializers.deserialize(
-            value,
-            specifiedType: const FullType(FontNetworkWindowDtoOriginalWindowBytesEnum),
-          ) as FontNetworkWindowDtoOriginalWindowBytesEnum;
-          result.originalWindowBytes = valueDes;
-          break;
         case r'maxConcurrent':
           final valueDes = serializers.deserialize(
             value,
@@ -158,12 +163,26 @@ class _$FontNetworkWindowDtoSerializer implements PrimitiveSerializer<FontNetwor
           ) as FontNetworkWindowDtoMaxConcurrentEnum;
           result.maxConcurrent = valueDes;
           break;
+        case r'timeoutMode':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(FontNetworkWindowDtoTimeoutModeEnum),
+          ) as FontNetworkWindowDtoTimeoutModeEnum;
+          result.timeoutMode = valueDes;
+          break;
         case r'timeoutMs':
           final valueDes = serializers.deserialize(
             value,
             specifiedType: const FullType(FontNetworkWindowDtoTimeoutMsEnum),
           ) as FontNetworkWindowDtoTimeoutMsEnum;
           result.timeoutMs = valueDes;
+          break;
+        case r'maxTransferMs':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(FontNetworkWindowDtoMaxTransferMsEnum),
+          ) as FontNetworkWindowDtoMaxTransferMsEnum;
+          result.maxTransferMs = valueDes;
           break;
         default:
           unhandled.add(key);
@@ -213,10 +232,10 @@ class FontNetworkWindowDtoWindowMsEnum extends EnumClass {
 
 class FontNetworkWindowDtoMaxRequestsEnum extends EnumClass {
 
-  /// 包含元数据、通知文件、原件、失败和重试的请求预留次数
+  /// 包含元数据、通知文件、失败和重试的请求预留次数
   @BuiltValueEnumConst(wireName: r'64')
   static const FontNetworkWindowDtoMaxRequestsEnum n64 = _$fontNetworkWindowDtoMaxRequestsEnum_n64;
-  /// 包含元数据、通知文件、原件、失败和重试的请求预留次数
+  /// 包含元数据、通知文件、失败和重试的请求预留次数
   @BuiltValueEnumConst(wireName: r'11184809', fallback: true)
   static const FontNetworkWindowDtoMaxRequestsEnum unknownDefaultOpenApi = _$fontNetworkWindowDtoMaxRequestsEnum_unknownDefaultOpenApi;
 
@@ -226,26 +245,6 @@ class FontNetworkWindowDtoMaxRequestsEnum extends EnumClass {
 
   static BuiltSet<FontNetworkWindowDtoMaxRequestsEnum> get values => _$fontNetworkWindowDtoMaxRequestsEnumValues;
   static FontNetworkWindowDtoMaxRequestsEnum valueOf(String name) => _$fontNetworkWindowDtoMaxRequestsEnumValueOf(name);
-}
-
-class FontNetworkWindowDtoOriginalWindowBytesEnum extends EnumClass {
-
-  /// Web 原件独立额度；Mobile 固定 0，原件计入普通 24 MiB。失败不即时退款，窗口到期可再尝试
-  @BuiltValueEnumConst(wireName: r'0')
-  static const FontNetworkWindowDtoOriginalWindowBytesEnum n0 = _$fontNetworkWindowDtoOriginalWindowBytesEnum_n0;
-  /// Web 原件独立额度；Mobile 固定 0，原件计入普通 24 MiB。失败不即时退款，窗口到期可再尝试
-  @BuiltValueEnumConst(wireName: r'18410600')
-  static const FontNetworkWindowDtoOriginalWindowBytesEnum n18410600 = _$fontNetworkWindowDtoOriginalWindowBytesEnum_n18410600;
-  /// Web 原件独立额度；Mobile 固定 0，原件计入普通 24 MiB。失败不即时退款，窗口到期可再尝试
-  @BuiltValueEnumConst(wireName: r'11184809', fallback: true)
-  static const FontNetworkWindowDtoOriginalWindowBytesEnum unknownDefaultOpenApi = _$fontNetworkWindowDtoOriginalWindowBytesEnum_unknownDefaultOpenApi;
-
-  static Serializer<FontNetworkWindowDtoOriginalWindowBytesEnum> get serializer => _$fontNetworkWindowDtoOriginalWindowBytesEnumSerializer;
-
-  const FontNetworkWindowDtoOriginalWindowBytesEnum._(String name): super(name);
-
-  static BuiltSet<FontNetworkWindowDtoOriginalWindowBytesEnum> get values => _$fontNetworkWindowDtoOriginalWindowBytesEnumValues;
-  static FontNetworkWindowDtoOriginalWindowBytesEnum valueOf(String name) => _$fontNetworkWindowDtoOriginalWindowBytesEnumValueOf(name);
 }
 
 class FontNetworkWindowDtoMaxConcurrentEnum extends EnumClass {
@@ -265,10 +264,29 @@ class FontNetworkWindowDtoMaxConcurrentEnum extends EnumClass {
   static FontNetworkWindowDtoMaxConcurrentEnum valueOf(String name) => _$fontNetworkWindowDtoMaxConcurrentEnumValueOf(name);
 }
 
+class FontNetworkWindowDtoTimeoutModeEnum extends EnumClass {
+
+  /// 仅非空正文数据块重置 idle；响应头及空块不算进度，排队不计时
+  @BuiltValueEnumConst(wireName: r'idle-with-total-cap')
+  static const FontNetworkWindowDtoTimeoutModeEnum idleWithTotalCap = _$fontNetworkWindowDtoTimeoutModeEnum_idleWithTotalCap;
+  /// 仅非空正文数据块重置 idle；响应头及空块不算进度，排队不计时
+  @BuiltValueEnumConst(wireName: r'unknown_default_open_api', fallback: true)
+  static const FontNetworkWindowDtoTimeoutModeEnum unknownDefaultOpenApi = _$fontNetworkWindowDtoTimeoutModeEnum_unknownDefaultOpenApi;
+
+  static Serializer<FontNetworkWindowDtoTimeoutModeEnum> get serializer => _$fontNetworkWindowDtoTimeoutModeEnumSerializer;
+
+  const FontNetworkWindowDtoTimeoutModeEnum._(String name): super(name);
+
+  static BuiltSet<FontNetworkWindowDtoTimeoutModeEnum> get values => _$fontNetworkWindowDtoTimeoutModeEnumValues;
+  static FontNetworkWindowDtoTimeoutModeEnum valueOf(String name) => _$fontNetworkWindowDtoTimeoutModeEnumValueOf(name);
+}
+
 class FontNetworkWindowDtoTimeoutMsEnum extends EnumClass {
 
+  /// 实际请求开始后等待首个有效字节、以及连续无有效字节进度的时限；不是总传输时限
   @BuiltValueEnumConst(wireName: r'15000')
   static const FontNetworkWindowDtoTimeoutMsEnum n15000 = _$fontNetworkWindowDtoTimeoutMsEnum_n15000;
+  /// 实际请求开始后等待首个有效字节、以及连续无有效字节进度的时限；不是总传输时限
   @BuiltValueEnumConst(wireName: r'11184809', fallback: true)
   static const FontNetworkWindowDtoTimeoutMsEnum unknownDefaultOpenApi = _$fontNetworkWindowDtoTimeoutMsEnum_unknownDefaultOpenApi;
 
@@ -278,4 +296,21 @@ class FontNetworkWindowDtoTimeoutMsEnum extends EnumClass {
 
   static BuiltSet<FontNetworkWindowDtoTimeoutMsEnum> get values => _$fontNetworkWindowDtoTimeoutMsEnumValues;
   static FontNetworkWindowDtoTimeoutMsEnum valueOf(String name) => _$fontNetworkWindowDtoTimeoutMsEnumValueOf(name);
+}
+
+class FontNetworkWindowDtoMaxTransferMsEnum extends EnumClass {
+
+  /// 从实际请求开始到响应体结束的独立总时限，持续有进度也不得续期；元数据与字体均适用
+  @BuiltValueEnumConst(wireName: r'600000')
+  static const FontNetworkWindowDtoMaxTransferMsEnum n600000 = _$fontNetworkWindowDtoMaxTransferMsEnum_n600000;
+  /// 从实际请求开始到响应体结束的独立总时限，持续有进度也不得续期；元数据与字体均适用
+  @BuiltValueEnumConst(wireName: r'11184809', fallback: true)
+  static const FontNetworkWindowDtoMaxTransferMsEnum unknownDefaultOpenApi = _$fontNetworkWindowDtoMaxTransferMsEnum_unknownDefaultOpenApi;
+
+  static Serializer<FontNetworkWindowDtoMaxTransferMsEnum> get serializer => _$fontNetworkWindowDtoMaxTransferMsEnumSerializer;
+
+  const FontNetworkWindowDtoMaxTransferMsEnum._(String name): super(name);
+
+  static BuiltSet<FontNetworkWindowDtoMaxTransferMsEnum> get values => _$fontNetworkWindowDtoMaxTransferMsEnumValues;
+  static FontNetworkWindowDtoMaxTransferMsEnum valueOf(String name) => _$fontNetworkWindowDtoMaxTransferMsEnumValueOf(name);
 }

@@ -226,7 +226,6 @@ import 'package:wenyou_api/src/model/floor_window_response_dto.dart';
 import 'package:wenyou_api/src/model/font_mobile_registration_dto.dart';
 import 'package:wenyou_api/src/model/font_mobile_runtime_dto.dart';
 import 'package:wenyou_api/src/model/font_network_window_dto.dart';
-import 'package:wenyou_api/src/model/font_original_asset_dto.dart';
 import 'package:wenyou_api/src/model/font_registration_snapshot_dto.dart';
 import 'package:wenyou_api/src/model/font_retry_policy_dto.dart';
 import 'package:wenyou_api/src/model/font_snapshot_safety_ceiling_dto.dart';
@@ -792,7 +791,6 @@ part 'serializers.g.dart';
   FontMobileRegistrationDto,
   FontMobileRuntimeDto,
   FontNetworkWindowDto,
-  FontOriginalAssetDto,
   FontRegistrationSnapshotDto,
   FontRetryPolicyDto,
   FontSnapshotSafetyCeilingDto,

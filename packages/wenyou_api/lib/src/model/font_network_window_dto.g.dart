@@ -63,42 +63,6 @@ _$fontNetworkWindowDtoMaxRequestsEnumValues =
       ],
     );
 
-const FontNetworkWindowDtoOriginalWindowBytesEnum
-_$fontNetworkWindowDtoOriginalWindowBytesEnum_n0 =
-    const FontNetworkWindowDtoOriginalWindowBytesEnum._('n0');
-const FontNetworkWindowDtoOriginalWindowBytesEnum
-_$fontNetworkWindowDtoOriginalWindowBytesEnum_n18410600 =
-    const FontNetworkWindowDtoOriginalWindowBytesEnum._('n18410600');
-const FontNetworkWindowDtoOriginalWindowBytesEnum
-_$fontNetworkWindowDtoOriginalWindowBytesEnum_unknownDefaultOpenApi =
-    const FontNetworkWindowDtoOriginalWindowBytesEnum._(
-      'unknownDefaultOpenApi',
-    );
-
-FontNetworkWindowDtoOriginalWindowBytesEnum
-_$fontNetworkWindowDtoOriginalWindowBytesEnumValueOf(String name) {
-  switch (name) {
-    case 'n0':
-      return _$fontNetworkWindowDtoOriginalWindowBytesEnum_n0;
-    case 'n18410600':
-      return _$fontNetworkWindowDtoOriginalWindowBytesEnum_n18410600;
-    case 'unknownDefaultOpenApi':
-      return _$fontNetworkWindowDtoOriginalWindowBytesEnum_unknownDefaultOpenApi;
-    default:
-      return _$fontNetworkWindowDtoOriginalWindowBytesEnum_unknownDefaultOpenApi;
-  }
-}
-
-final BuiltSet<FontNetworkWindowDtoOriginalWindowBytesEnum>
-_$fontNetworkWindowDtoOriginalWindowBytesEnumValues =
-    BuiltSet<FontNetworkWindowDtoOriginalWindowBytesEnum>(
-      const <FontNetworkWindowDtoOriginalWindowBytesEnum>[
-        _$fontNetworkWindowDtoOriginalWindowBytesEnum_n0,
-        _$fontNetworkWindowDtoOriginalWindowBytesEnum_n18410600,
-        _$fontNetworkWindowDtoOriginalWindowBytesEnum_unknownDefaultOpenApi,
-      ],
-    );
-
 const FontNetworkWindowDtoMaxConcurrentEnum
 _$fontNetworkWindowDtoMaxConcurrentEnum_n1 =
     const FontNetworkWindowDtoMaxConcurrentEnum._('n1');
@@ -133,6 +97,34 @@ _$fontNetworkWindowDtoMaxConcurrentEnumValues =
       ],
     );
 
+const FontNetworkWindowDtoTimeoutModeEnum
+_$fontNetworkWindowDtoTimeoutModeEnum_idleWithTotalCap =
+    const FontNetworkWindowDtoTimeoutModeEnum._('idleWithTotalCap');
+const FontNetworkWindowDtoTimeoutModeEnum
+_$fontNetworkWindowDtoTimeoutModeEnum_unknownDefaultOpenApi =
+    const FontNetworkWindowDtoTimeoutModeEnum._('unknownDefaultOpenApi');
+
+FontNetworkWindowDtoTimeoutModeEnum
+_$fontNetworkWindowDtoTimeoutModeEnumValueOf(String name) {
+  switch (name) {
+    case 'idleWithTotalCap':
+      return _$fontNetworkWindowDtoTimeoutModeEnum_idleWithTotalCap;
+    case 'unknownDefaultOpenApi':
+      return _$fontNetworkWindowDtoTimeoutModeEnum_unknownDefaultOpenApi;
+    default:
+      return _$fontNetworkWindowDtoTimeoutModeEnum_unknownDefaultOpenApi;
+  }
+}
+
+final BuiltSet<FontNetworkWindowDtoTimeoutModeEnum>
+_$fontNetworkWindowDtoTimeoutModeEnumValues =
+    BuiltSet<FontNetworkWindowDtoTimeoutModeEnum>(
+      const <FontNetworkWindowDtoTimeoutModeEnum>[
+        _$fontNetworkWindowDtoTimeoutModeEnum_idleWithTotalCap,
+        _$fontNetworkWindowDtoTimeoutModeEnum_unknownDefaultOpenApi,
+      ],
+    );
+
 const FontNetworkWindowDtoTimeoutMsEnum
 _$fontNetworkWindowDtoTimeoutMsEnum_n15000 =
     const FontNetworkWindowDtoTimeoutMsEnum._('n15000');
@@ -162,21 +154,52 @@ _$fontNetworkWindowDtoTimeoutMsEnumValues =
       ],
     );
 
+const FontNetworkWindowDtoMaxTransferMsEnum
+_$fontNetworkWindowDtoMaxTransferMsEnum_n600000 =
+    const FontNetworkWindowDtoMaxTransferMsEnum._('n600000');
+const FontNetworkWindowDtoMaxTransferMsEnum
+_$fontNetworkWindowDtoMaxTransferMsEnum_unknownDefaultOpenApi =
+    const FontNetworkWindowDtoMaxTransferMsEnum._('unknownDefaultOpenApi');
+
+FontNetworkWindowDtoMaxTransferMsEnum
+_$fontNetworkWindowDtoMaxTransferMsEnumValueOf(String name) {
+  switch (name) {
+    case 'n600000':
+      return _$fontNetworkWindowDtoMaxTransferMsEnum_n600000;
+    case 'unknownDefaultOpenApi':
+      return _$fontNetworkWindowDtoMaxTransferMsEnum_unknownDefaultOpenApi;
+    default:
+      return _$fontNetworkWindowDtoMaxTransferMsEnum_unknownDefaultOpenApi;
+  }
+}
+
+final BuiltSet<FontNetworkWindowDtoMaxTransferMsEnum>
+_$fontNetworkWindowDtoMaxTransferMsEnumValues =
+    BuiltSet<FontNetworkWindowDtoMaxTransferMsEnum>(
+      const <FontNetworkWindowDtoMaxTransferMsEnum>[
+        _$fontNetworkWindowDtoMaxTransferMsEnum_n600000,
+        _$fontNetworkWindowDtoMaxTransferMsEnum_unknownDefaultOpenApi,
+      ],
+    );
+
 Serializer<FontNetworkWindowDtoWindowMsEnum>
 _$fontNetworkWindowDtoWindowMsEnumSerializer =
     _$FontNetworkWindowDtoWindowMsEnumSerializer();
 Serializer<FontNetworkWindowDtoMaxRequestsEnum>
 _$fontNetworkWindowDtoMaxRequestsEnumSerializer =
     _$FontNetworkWindowDtoMaxRequestsEnumSerializer();
-Serializer<FontNetworkWindowDtoOriginalWindowBytesEnum>
-_$fontNetworkWindowDtoOriginalWindowBytesEnumSerializer =
-    _$FontNetworkWindowDtoOriginalWindowBytesEnumSerializer();
 Serializer<FontNetworkWindowDtoMaxConcurrentEnum>
 _$fontNetworkWindowDtoMaxConcurrentEnumSerializer =
     _$FontNetworkWindowDtoMaxConcurrentEnumSerializer();
+Serializer<FontNetworkWindowDtoTimeoutModeEnum>
+_$fontNetworkWindowDtoTimeoutModeEnumSerializer =
+    _$FontNetworkWindowDtoTimeoutModeEnumSerializer();
 Serializer<FontNetworkWindowDtoTimeoutMsEnum>
 _$fontNetworkWindowDtoTimeoutMsEnumSerializer =
     _$FontNetworkWindowDtoTimeoutMsEnumSerializer();
+Serializer<FontNetworkWindowDtoMaxTransferMsEnum>
+_$fontNetworkWindowDtoMaxTransferMsEnumSerializer =
+    _$FontNetworkWindowDtoMaxTransferMsEnumSerializer();
 
 class _$FontNetworkWindowDtoWindowMsEnumSerializer
     implements PrimitiveSerializer<FontNetworkWindowDtoWindowMsEnum> {
@@ -246,44 +269,6 @@ class _$FontNetworkWindowDtoMaxRequestsEnumSerializer
   );
 }
 
-class _$FontNetworkWindowDtoOriginalWindowBytesEnumSerializer
-    implements
-        PrimitiveSerializer<FontNetworkWindowDtoOriginalWindowBytesEnum> {
-  static const Map<String, Object> _toWire = const <String, Object>{
-    'n0': '0',
-    'n18410600': '18410600',
-    'unknownDefaultOpenApi': '11184809',
-  };
-  static const Map<Object, String> _fromWire = const <Object, String>{
-    '0': 'n0',
-    '18410600': 'n18410600',
-    '11184809': 'unknownDefaultOpenApi',
-  };
-
-  @override
-  final Iterable<Type> types = const <Type>[
-    FontNetworkWindowDtoOriginalWindowBytesEnum,
-  ];
-  @override
-  final String wireName = 'FontNetworkWindowDtoOriginalWindowBytesEnum';
-
-  @override
-  Object serialize(
-    Serializers serializers,
-    FontNetworkWindowDtoOriginalWindowBytesEnum object, {
-    FullType specifiedType = FullType.unspecified,
-  }) => _toWire[object.name] ?? object.name;
-
-  @override
-  FontNetworkWindowDtoOriginalWindowBytesEnum deserialize(
-    Serializers serializers,
-    Object serialized, {
-    FullType specifiedType = FullType.unspecified,
-  }) => FontNetworkWindowDtoOriginalWindowBytesEnum.valueOf(
-    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
-  );
-}
-
 class _$FontNetworkWindowDtoMaxConcurrentEnumSerializer
     implements PrimitiveSerializer<FontNetworkWindowDtoMaxConcurrentEnum> {
   static const Map<String, Object> _toWire = const <String, Object>{
@@ -321,6 +306,41 @@ class _$FontNetworkWindowDtoMaxConcurrentEnumSerializer
   );
 }
 
+class _$FontNetworkWindowDtoTimeoutModeEnumSerializer
+    implements PrimitiveSerializer<FontNetworkWindowDtoTimeoutModeEnum> {
+  static const Map<String, Object> _toWire = const <String, Object>{
+    'idleWithTotalCap': 'idle-with-total-cap',
+    'unknownDefaultOpenApi': 'unknown_default_open_api',
+  };
+  static const Map<Object, String> _fromWire = const <Object, String>{
+    'idle-with-total-cap': 'idleWithTotalCap',
+    'unknown_default_open_api': 'unknownDefaultOpenApi',
+  };
+
+  @override
+  final Iterable<Type> types = const <Type>[
+    FontNetworkWindowDtoTimeoutModeEnum,
+  ];
+  @override
+  final String wireName = 'FontNetworkWindowDtoTimeoutModeEnum';
+
+  @override
+  Object serialize(
+    Serializers serializers,
+    FontNetworkWindowDtoTimeoutModeEnum object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => _toWire[object.name] ?? object.name;
+
+  @override
+  FontNetworkWindowDtoTimeoutModeEnum deserialize(
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => FontNetworkWindowDtoTimeoutModeEnum.valueOf(
+    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
+  );
+}
+
 class _$FontNetworkWindowDtoTimeoutMsEnumSerializer
     implements PrimitiveSerializer<FontNetworkWindowDtoTimeoutMsEnum> {
   static const Map<String, Object> _toWire = const <String, Object>{
@@ -354,6 +374,41 @@ class _$FontNetworkWindowDtoTimeoutMsEnumSerializer
   );
 }
 
+class _$FontNetworkWindowDtoMaxTransferMsEnumSerializer
+    implements PrimitiveSerializer<FontNetworkWindowDtoMaxTransferMsEnum> {
+  static const Map<String, Object> _toWire = const <String, Object>{
+    'n600000': '600000',
+    'unknownDefaultOpenApi': '11184809',
+  };
+  static const Map<Object, String> _fromWire = const <Object, String>{
+    '600000': 'n600000',
+    '11184809': 'unknownDefaultOpenApi',
+  };
+
+  @override
+  final Iterable<Type> types = const <Type>[
+    FontNetworkWindowDtoMaxTransferMsEnum,
+  ];
+  @override
+  final String wireName = 'FontNetworkWindowDtoMaxTransferMsEnum';
+
+  @override
+  Object serialize(
+    Serializers serializers,
+    FontNetworkWindowDtoMaxTransferMsEnum object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => _toWire[object.name] ?? object.name;
+
+  @override
+  FontNetworkWindowDtoMaxTransferMsEnum deserialize(
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => FontNetworkWindowDtoMaxTransferMsEnum.valueOf(
+    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
+  );
+}
+
 class _$FontNetworkWindowDto extends FontNetworkWindowDto {
   @override
   final FontNetworkWindowDtoWindowMsEnum windowMs;
@@ -362,11 +417,13 @@ class _$FontNetworkWindowDto extends FontNetworkWindowDto {
   @override
   final int maxBytes;
   @override
-  final FontNetworkWindowDtoOriginalWindowBytesEnum originalWindowBytes;
-  @override
   final FontNetworkWindowDtoMaxConcurrentEnum maxConcurrent;
   @override
+  final FontNetworkWindowDtoTimeoutModeEnum timeoutMode;
+  @override
   final FontNetworkWindowDtoTimeoutMsEnum timeoutMs;
+  @override
+  final FontNetworkWindowDtoMaxTransferMsEnum maxTransferMs;
 
   factory _$FontNetworkWindowDto([
     void Function(FontNetworkWindowDtoBuilder)? updates,
@@ -376,9 +433,10 @@ class _$FontNetworkWindowDto extends FontNetworkWindowDto {
     required this.windowMs,
     required this.maxRequests,
     required this.maxBytes,
-    required this.originalWindowBytes,
     required this.maxConcurrent,
+    required this.timeoutMode,
     required this.timeoutMs,
+    required this.maxTransferMs,
   }) : super._();
   @override
   FontNetworkWindowDto rebuild(
@@ -396,9 +454,10 @@ class _$FontNetworkWindowDto extends FontNetworkWindowDto {
         windowMs == other.windowMs &&
         maxRequests == other.maxRequests &&
         maxBytes == other.maxBytes &&
-        originalWindowBytes == other.originalWindowBytes &&
         maxConcurrent == other.maxConcurrent &&
-        timeoutMs == other.timeoutMs;
+        timeoutMode == other.timeoutMode &&
+        timeoutMs == other.timeoutMs &&
+        maxTransferMs == other.maxTransferMs;
   }
 
   @override
@@ -407,9 +466,10 @@ class _$FontNetworkWindowDto extends FontNetworkWindowDto {
     _$hash = $jc(_$hash, windowMs.hashCode);
     _$hash = $jc(_$hash, maxRequests.hashCode);
     _$hash = $jc(_$hash, maxBytes.hashCode);
-    _$hash = $jc(_$hash, originalWindowBytes.hashCode);
     _$hash = $jc(_$hash, maxConcurrent.hashCode);
+    _$hash = $jc(_$hash, timeoutMode.hashCode);
     _$hash = $jc(_$hash, timeoutMs.hashCode);
+    _$hash = $jc(_$hash, maxTransferMs.hashCode);
     _$hash = $jf(_$hash);
     return _$hash;
   }
@@ -420,9 +480,10 @@ class _$FontNetworkWindowDto extends FontNetworkWindowDto {
           ..add('windowMs', windowMs)
           ..add('maxRequests', maxRequests)
           ..add('maxBytes', maxBytes)
-          ..add('originalWindowBytes', originalWindowBytes)
           ..add('maxConcurrent', maxConcurrent)
-          ..add('timeoutMs', timeoutMs))
+          ..add('timeoutMode', timeoutMode)
+          ..add('timeoutMs', timeoutMs)
+          ..add('maxTransferMs', maxTransferMs))
         .toString();
   }
 }
@@ -445,23 +506,27 @@ class FontNetworkWindowDtoBuilder
   int? get maxBytes => _$this._maxBytes;
   set maxBytes(int? maxBytes) => _$this._maxBytes = maxBytes;
 
-  FontNetworkWindowDtoOriginalWindowBytesEnum? _originalWindowBytes;
-  FontNetworkWindowDtoOriginalWindowBytesEnum? get originalWindowBytes =>
-      _$this._originalWindowBytes;
-  set originalWindowBytes(
-    FontNetworkWindowDtoOriginalWindowBytesEnum? originalWindowBytes,
-  ) => _$this._originalWindowBytes = originalWindowBytes;
-
   FontNetworkWindowDtoMaxConcurrentEnum? _maxConcurrent;
   FontNetworkWindowDtoMaxConcurrentEnum? get maxConcurrent =>
       _$this._maxConcurrent;
   set maxConcurrent(FontNetworkWindowDtoMaxConcurrentEnum? maxConcurrent) =>
       _$this._maxConcurrent = maxConcurrent;
 
+  FontNetworkWindowDtoTimeoutModeEnum? _timeoutMode;
+  FontNetworkWindowDtoTimeoutModeEnum? get timeoutMode => _$this._timeoutMode;
+  set timeoutMode(FontNetworkWindowDtoTimeoutModeEnum? timeoutMode) =>
+      _$this._timeoutMode = timeoutMode;
+
   FontNetworkWindowDtoTimeoutMsEnum? _timeoutMs;
   FontNetworkWindowDtoTimeoutMsEnum? get timeoutMs => _$this._timeoutMs;
   set timeoutMs(FontNetworkWindowDtoTimeoutMsEnum? timeoutMs) =>
       _$this._timeoutMs = timeoutMs;
+
+  FontNetworkWindowDtoMaxTransferMsEnum? _maxTransferMs;
+  FontNetworkWindowDtoMaxTransferMsEnum? get maxTransferMs =>
+      _$this._maxTransferMs;
+  set maxTransferMs(FontNetworkWindowDtoMaxTransferMsEnum? maxTransferMs) =>
+      _$this._maxTransferMs = maxTransferMs;
 
   FontNetworkWindowDtoBuilder() {
     FontNetworkWindowDto._defaults(this);
@@ -473,9 +538,10 @@ class FontNetworkWindowDtoBuilder
       _windowMs = $v.windowMs;
       _maxRequests = $v.maxRequests;
       _maxBytes = $v.maxBytes;
-      _originalWindowBytes = $v.originalWindowBytes;
       _maxConcurrent = $v.maxConcurrent;
+      _timeoutMode = $v.timeoutMode;
       _timeoutMs = $v.timeoutMs;
+      _maxTransferMs = $v.maxTransferMs;
       _$v = null;
     }
     return this;
@@ -513,20 +579,25 @@ class FontNetworkWindowDtoBuilder
             r'FontNetworkWindowDto',
             'maxBytes',
           ),
-          originalWindowBytes: BuiltValueNullFieldError.checkNotNull(
-            originalWindowBytes,
-            r'FontNetworkWindowDto',
-            'originalWindowBytes',
-          ),
           maxConcurrent: BuiltValueNullFieldError.checkNotNull(
             maxConcurrent,
             r'FontNetworkWindowDto',
             'maxConcurrent',
           ),
+          timeoutMode: BuiltValueNullFieldError.checkNotNull(
+            timeoutMode,
+            r'FontNetworkWindowDto',
+            'timeoutMode',
+          ),
           timeoutMs: BuiltValueNullFieldError.checkNotNull(
             timeoutMs,
             r'FontNetworkWindowDto',
             'timeoutMs',
+          ),
+          maxTransferMs: BuiltValueNullFieldError.checkNotNull(
+            maxTransferMs,
+            r'FontNetworkWindowDto',
+            'maxTransferMs',
           ),
         );
     replace(_$result);

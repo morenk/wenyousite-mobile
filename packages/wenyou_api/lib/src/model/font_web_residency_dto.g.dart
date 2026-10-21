@@ -57,8 +57,8 @@ _$fontWebResidencyDtoScopeEnumValues =
     ]);
 
 const FontWebResidencyDtoMaxFamiliesEnum
-_$fontWebResidencyDtoMaxFamiliesEnum_n29 =
-    const FontWebResidencyDtoMaxFamiliesEnum._('n29');
+_$fontWebResidencyDtoMaxFamiliesEnum_n28 =
+    const FontWebResidencyDtoMaxFamiliesEnum._('n28');
 const FontWebResidencyDtoMaxFamiliesEnum
 _$fontWebResidencyDtoMaxFamiliesEnum_unknownDefaultOpenApi =
     const FontWebResidencyDtoMaxFamiliesEnum._('unknownDefaultOpenApi');
@@ -67,8 +67,8 @@ FontWebResidencyDtoMaxFamiliesEnum _$fontWebResidencyDtoMaxFamiliesEnumValueOf(
   String name,
 ) {
   switch (name) {
-    case 'n29':
-      return _$fontWebResidencyDtoMaxFamiliesEnum_n29;
+    case 'n28':
+      return _$fontWebResidencyDtoMaxFamiliesEnum_n28;
     case 'unknownDefaultOpenApi':
       return _$fontWebResidencyDtoMaxFamiliesEnum_unknownDefaultOpenApi;
     default:
@@ -80,7 +80,7 @@ final BuiltSet<FontWebResidencyDtoMaxFamiliesEnum>
 _$fontWebResidencyDtoMaxFamiliesEnumValues =
     BuiltSet<FontWebResidencyDtoMaxFamiliesEnum>(
       const <FontWebResidencyDtoMaxFamiliesEnum>[
-        _$fontWebResidencyDtoMaxFamiliesEnum_n29,
+        _$fontWebResidencyDtoMaxFamiliesEnum_n28,
         _$fontWebResidencyDtoMaxFamiliesEnum_unknownDefaultOpenApi,
       ],
     );
@@ -141,34 +141,6 @@ _$fontWebResidencyDtoMaxSfntBytesEnumValues =
       ],
     );
 
-const FontWebResidencyDtoOriginalSfntBytesEnum
-_$fontWebResidencyDtoOriginalSfntBytesEnum_n18410600 =
-    const FontWebResidencyDtoOriginalSfntBytesEnum._('n18410600');
-const FontWebResidencyDtoOriginalSfntBytesEnum
-_$fontWebResidencyDtoOriginalSfntBytesEnum_unknownDefaultOpenApi =
-    const FontWebResidencyDtoOriginalSfntBytesEnum._('unknownDefaultOpenApi');
-
-FontWebResidencyDtoOriginalSfntBytesEnum
-_$fontWebResidencyDtoOriginalSfntBytesEnumValueOf(String name) {
-  switch (name) {
-    case 'n18410600':
-      return _$fontWebResidencyDtoOriginalSfntBytesEnum_n18410600;
-    case 'unknownDefaultOpenApi':
-      return _$fontWebResidencyDtoOriginalSfntBytesEnum_unknownDefaultOpenApi;
-    default:
-      return _$fontWebResidencyDtoOriginalSfntBytesEnum_unknownDefaultOpenApi;
-  }
-}
-
-final BuiltSet<FontWebResidencyDtoOriginalSfntBytesEnum>
-_$fontWebResidencyDtoOriginalSfntBytesEnumValues =
-    BuiltSet<FontWebResidencyDtoOriginalSfntBytesEnum>(
-      const <FontWebResidencyDtoOriginalSfntBytesEnum>[
-        _$fontWebResidencyDtoOriginalSfntBytesEnum_n18410600,
-        _$fontWebResidencyDtoOriginalSfntBytesEnum_unknownDefaultOpenApi,
-      ],
-    );
-
 Serializer<FontWebResidencyDtoModeEnum>
 _$fontWebResidencyDtoModeEnumSerializer =
     _$FontWebResidencyDtoModeEnumSerializer();
@@ -184,9 +156,6 @@ _$fontWebResidencyDtoMaxFacesEnumSerializer =
 Serializer<FontWebResidencyDtoMaxSfntBytesEnum>
 _$fontWebResidencyDtoMaxSfntBytesEnumSerializer =
     _$FontWebResidencyDtoMaxSfntBytesEnumSerializer();
-Serializer<FontWebResidencyDtoOriginalSfntBytesEnum>
-_$fontWebResidencyDtoOriginalSfntBytesEnumSerializer =
-    _$FontWebResidencyDtoOriginalSfntBytesEnumSerializer();
 
 class _$FontWebResidencyDtoModeEnumSerializer
     implements PrimitiveSerializer<FontWebResidencyDtoModeEnum> {
@@ -257,11 +226,11 @@ class _$FontWebResidencyDtoScopeEnumSerializer
 class _$FontWebResidencyDtoMaxFamiliesEnumSerializer
     implements PrimitiveSerializer<FontWebResidencyDtoMaxFamiliesEnum> {
   static const Map<String, Object> _toWire = const <String, Object>{
-    'n29': '29',
+    'n28': '28',
     'unknownDefaultOpenApi': '11184809',
   };
   static const Map<Object, String> _fromWire = const <Object, String>{
-    '29': 'n29',
+    '28': 'n28',
     '11184809': 'unknownDefaultOpenApi',
   };
 
@@ -355,41 +324,6 @@ class _$FontWebResidencyDtoMaxSfntBytesEnumSerializer
   );
 }
 
-class _$FontWebResidencyDtoOriginalSfntBytesEnumSerializer
-    implements PrimitiveSerializer<FontWebResidencyDtoOriginalSfntBytesEnum> {
-  static const Map<String, Object> _toWire = const <String, Object>{
-    'n18410600': '18410600',
-    'unknownDefaultOpenApi': '11184809',
-  };
-  static const Map<Object, String> _fromWire = const <Object, String>{
-    '18410600': 'n18410600',
-    '11184809': 'unknownDefaultOpenApi',
-  };
-
-  @override
-  final Iterable<Type> types = const <Type>[
-    FontWebResidencyDtoOriginalSfntBytesEnum,
-  ];
-  @override
-  final String wireName = 'FontWebResidencyDtoOriginalSfntBytesEnum';
-
-  @override
-  Object serialize(
-    Serializers serializers,
-    FontWebResidencyDtoOriginalSfntBytesEnum object, {
-    FullType specifiedType = FullType.unspecified,
-  }) => _toWire[object.name] ?? object.name;
-
-  @override
-  FontWebResidencyDtoOriginalSfntBytesEnum deserialize(
-    Serializers serializers,
-    Object serialized, {
-    FullType specifiedType = FullType.unspecified,
-  }) => FontWebResidencyDtoOriginalSfntBytesEnum.valueOf(
-    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
-  );
-}
-
 class _$FontWebResidencyDto extends FontWebResidencyDto {
   @override
   final FontWebResidencyDtoModeEnum mode;
@@ -401,8 +335,6 @@ class _$FontWebResidencyDto extends FontWebResidencyDto {
   final FontWebResidencyDtoMaxFacesEnum maxFaces;
   @override
   final FontWebResidencyDtoMaxSfntBytesEnum maxSfntBytes;
-  @override
-  final FontWebResidencyDtoOriginalSfntBytesEnum originalSfntBytes;
 
   factory _$FontWebResidencyDto([
     void Function(FontWebResidencyDtoBuilder)? updates,
@@ -414,7 +346,6 @@ class _$FontWebResidencyDto extends FontWebResidencyDto {
     required this.maxFamilies,
     required this.maxFaces,
     required this.maxSfntBytes,
-    required this.originalSfntBytes,
   }) : super._();
   @override
   FontWebResidencyDto rebuild(
@@ -433,8 +364,7 @@ class _$FontWebResidencyDto extends FontWebResidencyDto {
         scope == other.scope &&
         maxFamilies == other.maxFamilies &&
         maxFaces == other.maxFaces &&
-        maxSfntBytes == other.maxSfntBytes &&
-        originalSfntBytes == other.originalSfntBytes;
+        maxSfntBytes == other.maxSfntBytes;
   }
 
   @override
@@ -445,7 +375,6 @@ class _$FontWebResidencyDto extends FontWebResidencyDto {
     _$hash = $jc(_$hash, maxFamilies.hashCode);
     _$hash = $jc(_$hash, maxFaces.hashCode);
     _$hash = $jc(_$hash, maxSfntBytes.hashCode);
-    _$hash = $jc(_$hash, originalSfntBytes.hashCode);
     _$hash = $jf(_$hash);
     return _$hash;
   }
@@ -457,8 +386,7 @@ class _$FontWebResidencyDto extends FontWebResidencyDto {
           ..add('scope', scope)
           ..add('maxFamilies', maxFamilies)
           ..add('maxFaces', maxFaces)
-          ..add('maxSfntBytes', maxSfntBytes)
-          ..add('originalSfntBytes', originalSfntBytes))
+          ..add('maxSfntBytes', maxSfntBytes))
         .toString();
   }
 }
@@ -490,13 +418,6 @@ class FontWebResidencyDtoBuilder
   set maxSfntBytes(FontWebResidencyDtoMaxSfntBytesEnum? maxSfntBytes) =>
       _$this._maxSfntBytes = maxSfntBytes;
 
-  FontWebResidencyDtoOriginalSfntBytesEnum? _originalSfntBytes;
-  FontWebResidencyDtoOriginalSfntBytesEnum? get originalSfntBytes =>
-      _$this._originalSfntBytes;
-  set originalSfntBytes(
-    FontWebResidencyDtoOriginalSfntBytesEnum? originalSfntBytes,
-  ) => _$this._originalSfntBytes = originalSfntBytes;
-
   FontWebResidencyDtoBuilder() {
     FontWebResidencyDto._defaults(this);
   }
@@ -509,7 +430,6 @@ class FontWebResidencyDtoBuilder
       _maxFamilies = $v.maxFamilies;
       _maxFaces = $v.maxFaces;
       _maxSfntBytes = $v.maxSfntBytes;
-      _originalSfntBytes = $v.originalSfntBytes;
       _$v = null;
     }
     return this;
@@ -556,11 +476,6 @@ class FontWebResidencyDtoBuilder
             maxSfntBytes,
             r'FontWebResidencyDto',
             'maxSfntBytes',
-          ),
-          originalSfntBytes: BuiltValueNullFieldError.checkNotNull(
-            originalSfntBytes,
-            r'FontWebResidencyDto',
-            'originalSfntBytes',
           ),
         );
     replace(_$result);

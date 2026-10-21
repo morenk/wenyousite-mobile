@@ -1,5 +1,12 @@
 # 移动端变更记录
 
+## 2026-10-22 28 款字体及进度超时契约同步
+
+- 固定 Backend `f27898ec3b168b9e027b5d5abef43a0d3dafa242`／API `5.42.0-dev.20261022.1`，目录/manifest 1.2.0，Mobile 868 个资产／184,645,488 B。
+- 同步严格策略、传输轨迹夹具及退役审计。当前目录移除小城，保留历史正文身份与旧 v1；v2 使用 15 秒无进度／600 秒总上限。
+- 已执行精确 revision 同步、`npm ci`、`npm run api:validate`、`npm run api:generate`；业务接入和真机验收另列候选，不表示已经启用或发布。
+
+
 ## 2026-10-22 字体运行策略 v2 契约同步
 
 - 固定 Backend `d86734e5aa229c5401a092096b8845b3d17546b0`／API `5.42.0-dev.20261021.1`，新增 `GET /meta/text-fonts/runtime-policy` 与生成 DTO。

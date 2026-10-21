@@ -3,7 +3,6 @@
 //
 
 // ignore_for_file: unused_element
-import 'package:wenyou_api/src/model/font_original_asset_dto.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:wenyou_api/src/model/font_retry_policy_dto.dart';
 import 'package:wenyou_api/src/model/font_mobile_runtime_dto.dart';
@@ -18,7 +17,6 @@ part 'text_font_runtime_policy_dto.g.dart';
 /// Properties:
 /// * [policyVersion] - 独立运行策略；未识别版本时继续 legacy limits
 /// * [manifestSha256] - 必须等于已校验目录描述符和 manifest 实际 SHA；不匹配不启用策略
-/// * [originalAsset]
 /// * [web]
 /// * [mobile]
 /// * [retry]
@@ -32,9 +30,6 @@ abstract class TextFontRuntimePolicyDto implements Built<TextFontRuntimePolicyDt
   /// 必须等于已校验目录描述符和 manifest 实际 SHA；不匹配不启用策略
   @BuiltValueField(wireName: r'manifestSha256')
   String get manifestSha256;
-
-  @BuiltValueField(wireName: r'originalAsset')
-  FontOriginalAssetDto get originalAsset;
 
   @BuiltValueField(wireName: r'web')
   FontWebRuntimeDto get web;
@@ -77,11 +72,6 @@ class _$TextFontRuntimePolicyDtoSerializer implements PrimitiveSerializer<TextFo
     yield serializers.serialize(
       object.manifestSha256,
       specifiedType: const FullType(String),
-    );
-    yield r'originalAsset';
-    yield serializers.serialize(
-      object.originalAsset,
-      specifiedType: const FullType(FontOriginalAssetDto),
     );
     yield r'web';
     yield serializers.serialize(
@@ -134,13 +124,6 @@ class _$TextFontRuntimePolicyDtoSerializer implements PrimitiveSerializer<TextFo
             specifiedType: const FullType(String),
           ) as String;
           result.manifestSha256 = valueDes;
-          break;
-        case r'originalAsset':
-          final valueDes = serializers.deserialize(
-            value,
-            specifiedType: const FullType(FontOriginalAssetDto),
-          ) as FontOriginalAssetDto;
-          result.originalAsset.replace(valueDes);
           break;
         case r'web':
           final valueDes = serializers.deserialize(

@@ -88,6 +88,7 @@ test('固定部署祖先导出同一 SHA，拒绝远端 dev 以外提交且不�
       'thread-font-sources-v1.schema.json',
       'thread-font-manifest-v1.json',
       'thread-font-manifest-v1.schema.json',
+      'archive/thread-font-xiaocheng-lafeng-v1.json',
       'thread-font-assets.md',
       'thread-font-runtime-policy-v2.json',
       'thread-font-runtime-policy-v2.schema.json',

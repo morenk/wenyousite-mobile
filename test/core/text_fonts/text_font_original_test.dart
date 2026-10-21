@@ -22,12 +22,12 @@ void main() {
   Map<String, dynamic> original() {
     final json =
         jsonDecode(
-              File('contracts/thread-font-manifest-v1.json').readAsStringSync(),
+              File(
+                'contracts/archive/thread-font-xiaocheng-lafeng-v1.json',
+              ).readAsStringSync(),
             )
             as Map<String, dynamic>;
-    return (json['fonts'] as List).cast<Map<String, dynamic>>().singleWhere(
-      (f) => f['id'] == TextFontOriginal.id,
-    );
+    return json['font'] as Map<String, dynamic>;
   }
 
   TextFontManifest manifest() => TextFontManifest(

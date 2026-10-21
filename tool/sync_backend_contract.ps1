@@ -182,6 +182,7 @@ $contractFiles = @(
   @{ Source = 'contracts/thread-font-sources-v1.schema.json'; Destination = 'thread-font-sources-v1.schema.json' },
   @{ Source = 'contracts/thread-font-manifest-v1.json'; Destination = 'thread-font-manifest-v1.json' },
   @{ Source = 'contracts/thread-font-manifest-v1.schema.json'; Destination = 'thread-font-manifest-v1.schema.json' },
+  @{ Source = 'contracts/archive/thread-font-xiaocheng-lafeng-v1.json'; Destination = 'archive/thread-font-xiaocheng-lafeng-v1.json' },
   @{ Source = 'docs/markdown-text-font-v1.md'; Destination = 'markdown-text-font-v1.md' },
   @{ Source = 'docs/thread-font-assets.md'; Destination = 'thread-font-assets.md' },
   @{ Source = 'contracts/gallery-image-occurrences.json'; Destination = 'gallery-image-occurrences.json' },

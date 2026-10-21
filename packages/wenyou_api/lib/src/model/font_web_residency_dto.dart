@@ -14,10 +14,9 @@ part 'font_web_residency_dto.g.dart';
 /// Properties:
 /// * [mode]
 /// * [scope] - 同一文档的多个阅读窗口共用一个运行时
-/// * [maxFamilies] - 当前目录全部家族均可参与活动集合，不是历史累计次数；原件也占一个名额
+/// * [maxFamilies] - 当前目录全部家族均可参与活动集合，不是历史累计次数
 /// * [maxFaces] - 活动与待注册 face 数；只有实际解除注册并释放引用后才归还
 /// * [maxSfntBytes] - 普通片按移动 SFNT 字节预占；经哈希校验后与 WOFF2.totalSfntSize 取较大值，解码前补足；不是压缩字节或引擎 RSS
-/// * [originalSfntBytes] - 固定原件独占的驻留输入额度，不可借给其他资源
 @BuiltValue()
 abstract class FontWebResidencyDto implements Built<FontWebResidencyDto, FontWebResidencyDtoBuilder> {
   @BuiltValueField(wireName: r'mode')
@@ -29,10 +28,10 @@ abstract class FontWebResidencyDto implements Built<FontWebResidencyDto, FontWeb
   FontWebResidencyDtoScopeEnum get scope;
   // enum scopeEnum {  document,  };
 
-  /// 当前目录全部家族均可参与活动集合，不是历史累计次数；原件也占一个名额
+  /// 当前目录全部家族均可参与活动集合，不是历史累计次数
   @BuiltValueField(wireName: r'maxFamilies')
   FontWebResidencyDtoMaxFamiliesEnum get maxFamilies;
-  // enum maxFamiliesEnum {  29,  };
+  // enum maxFamiliesEnum {  28,  };
 
   /// 活动与待注册 face 数；只有实际解除注册并释放引用后才归还
   @BuiltValueField(wireName: r'maxFaces')
@@ -43,11 +42,6 @@ abstract class FontWebResidencyDto implements Built<FontWebResidencyDto, FontWeb
   @BuiltValueField(wireName: r'maxSfntBytes')
   FontWebResidencyDtoMaxSfntBytesEnum get maxSfntBytes;
   // enum maxSfntBytesEnum {  16777216,  };
-
-  /// 固定原件独占的驻留输入额度，不可借给其他资源
-  @BuiltValueField(wireName: r'originalSfntBytes')
-  FontWebResidencyDtoOriginalSfntBytesEnum get originalSfntBytes;
-  // enum originalSfntBytesEnum {  18410600,  };
 
   FontWebResidencyDto._();
 
@@ -96,11 +90,6 @@ class _$FontWebResidencyDtoSerializer implements PrimitiveSerializer<FontWebResi
     yield serializers.serialize(
       object.maxSfntBytes,
       specifiedType: const FullType(FontWebResidencyDtoMaxSfntBytesEnum),
-    );
-    yield r'originalSfntBytes';
-    yield serializers.serialize(
-      object.originalSfntBytes,
-      specifiedType: const FullType(FontWebResidencyDtoOriginalSfntBytesEnum),
     );
   }
 
@@ -159,13 +148,6 @@ class _$FontWebResidencyDtoSerializer implements PrimitiveSerializer<FontWebResi
             specifiedType: const FullType(FontWebResidencyDtoMaxSfntBytesEnum),
           ) as FontWebResidencyDtoMaxSfntBytesEnum;
           result.maxSfntBytes = valueDes;
-          break;
-        case r'originalSfntBytes':
-          final valueDes = serializers.deserialize(
-            value,
-            specifiedType: const FullType(FontWebResidencyDtoOriginalSfntBytesEnum),
-          ) as FontWebResidencyDtoOriginalSfntBytesEnum;
-          result.originalSfntBytes = valueDes;
           break;
         default:
           unhandled.add(key);
@@ -230,10 +212,10 @@ class FontWebResidencyDtoScopeEnum extends EnumClass {
 
 class FontWebResidencyDtoMaxFamiliesEnum extends EnumClass {
 
-  /// 当前目录全部家族均可参与活动集合，不是历史累计次数；原件也占一个名额
-  @BuiltValueEnumConst(wireName: r'29')
-  static const FontWebResidencyDtoMaxFamiliesEnum n29 = _$fontWebResidencyDtoMaxFamiliesEnum_n29;
-  /// 当前目录全部家族均可参与活动集合，不是历史累计次数；原件也占一个名额
+  /// 当前目录全部家族均可参与活动集合，不是历史累计次数
+  @BuiltValueEnumConst(wireName: r'28')
+  static const FontWebResidencyDtoMaxFamiliesEnum n28 = _$fontWebResidencyDtoMaxFamiliesEnum_n28;
+  /// 当前目录全部家族均可参与活动集合，不是历史累计次数
   @BuiltValueEnumConst(wireName: r'11184809', fallback: true)
   static const FontWebResidencyDtoMaxFamiliesEnum unknownDefaultOpenApi = _$fontWebResidencyDtoMaxFamiliesEnum_unknownDefaultOpenApi;
 
@@ -277,21 +259,4 @@ class FontWebResidencyDtoMaxSfntBytesEnum extends EnumClass {
 
   static BuiltSet<FontWebResidencyDtoMaxSfntBytesEnum> get values => _$fontWebResidencyDtoMaxSfntBytesEnumValues;
   static FontWebResidencyDtoMaxSfntBytesEnum valueOf(String name) => _$fontWebResidencyDtoMaxSfntBytesEnumValueOf(name);
-}
-
-class FontWebResidencyDtoOriginalSfntBytesEnum extends EnumClass {
-
-  /// 固定原件独占的驻留输入额度，不可借给其他资源
-  @BuiltValueEnumConst(wireName: r'18410600')
-  static const FontWebResidencyDtoOriginalSfntBytesEnum n18410600 = _$fontWebResidencyDtoOriginalSfntBytesEnum_n18410600;
-  /// 固定原件独占的驻留输入额度，不可借给其他资源
-  @BuiltValueEnumConst(wireName: r'11184809', fallback: true)
-  static const FontWebResidencyDtoOriginalSfntBytesEnum unknownDefaultOpenApi = _$fontWebResidencyDtoOriginalSfntBytesEnum_unknownDefaultOpenApi;
-
-  static Serializer<FontWebResidencyDtoOriginalSfntBytesEnum> get serializer => _$fontWebResidencyDtoOriginalSfntBytesEnumSerializer;
-
-  const FontWebResidencyDtoOriginalSfntBytesEnum._(String name): super(name);
-
-  static BuiltSet<FontWebResidencyDtoOriginalSfntBytesEnum> get values => _$fontWebResidencyDtoOriginalSfntBytesEnumValues;
-  static FontWebResidencyDtoOriginalSfntBytesEnum valueOf(String name) => _$fontWebResidencyDtoOriginalSfntBytesEnumValueOf(name);
 }
