@@ -246,15 +246,15 @@ void main() {
       expect(createPayload.replyToPostId, 'reply-target');
       expect(
         createPayload.textFontVersion,
-        CreatePostDtoTextFontVersionEnum.number1,
+        CreatePostDtoTextFontVersionEnum.number2,
       );
       expect(
         updatePayload.textFontVersion,
-        UpdatePostDtoTextFontVersionEnum.number1,
+        UpdatePostDtoTextFontVersionEnum.number2,
       );
       expect(
         bodyPayload.textFontVersion,
-        UpsertBodyDtoTextFontVersionEnum.number1,
+        UpsertBodyDtoTextFontVersionEnum.number2,
       );
       expect(updatePayload.content, '编辑后的内容');
       expect(updatePayload.version, 3);

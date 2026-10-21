@@ -6,7 +6,7 @@ import 'package:wenyousite_mobile/core/navigation/internal_reference.dart';
 abstract final class MarkdownTextColor {
   static const tag = 'wenyou-text-color';
   static final opening = RegExp(
-    r'<span (data-wenyou-(?:color|font)-v1="[^"<>\r\n]+"(?: data-wenyou-(?:color|font)-v1="[^"<>\r\n]+")?)>',
+    r'<span (data-wenyou-(?:color-v1|font-v[12])="[^"<>\r\n]+"(?: data-wenyou-(?:color-v1|font-v[12])="[^"<>\r\n]+")?)>',
   );
   static final rgb = RegExp(r'^#[0-9A-Fa-f]{6}$');
 
@@ -16,14 +16,17 @@ abstract final class MarkdownTextColor {
   }) {
     final result = <String, String>{};
     final fields = RegExp(
-      r'data-wenyou-(color|font)-v1="([^"]+)"',
+      r'data-wenyou-(color|font)-v([12])="([^"]+)"',
     ).allMatches(match[1]!);
     for (final field in fields) {
       final key = field[1]!;
-      final value = field[2]!;
+      final version = field[2]!;
+      final value = field[3]!;
       if (result.containsKey(key) ||
           (key == 'color'
-              ? !rgb.hasMatch(value)
+              ? version != '1' || !rgb.hasMatch(value)
+              : version == '2'
+              ? !MarkdownTextFont.isVersionId(value)
               : !MarkdownTextFont.ids.contains(value) &&
                     !(allowUnknownFonts &&
                         RegExp(r'^[a-z][a-z0-9-]*$').hasMatch(value)))) {
@@ -36,7 +39,8 @@ abstract final class MarkdownTextColor {
 
   static String openingFor(Map<String, dynamic> marks) {
     final fields = [
-      if (marks['font'] case final String font) 'data-wenyou-font-v1="$font"',
+      if (marks['font'] case final String font)
+        'data-wenyou-font-v${MarkdownTextFont.isVersionId(font) ? 2 : 1}="$font"',
       if (marks['color'] case final String color)
         'data-wenyou-color-v1="$color"',
     ];
@@ -96,7 +100,7 @@ abstract final class MarkdownTextColor {
       if (node is md.Text) {
         return styled &&
             RegExp(
-              r'<span data-wenyou-(?:color|font)-v1=|</span>',
+              r'<span data-wenyou-(?:color-v1|font-v[12])=|</span>',
             ).hasMatch(node.text);
       }
       if (node is! md.Element || node.tag == 'code') return false;

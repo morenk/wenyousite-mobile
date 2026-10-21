@@ -7,7 +7,12 @@ import 'package:wenyousite_mobile/core/text_fonts/text_font_manifest.dart';
 class TextFontCache {
   TextFontCache(this.directory, {this.maximumBytes = 64 * 1024 * 1024});
   final Directory directory;
-  final int maximumBytes;
+  int maximumBytes;
+  void tighten(int bytes) {
+    if (bytes < 1) throw ArgumentError('缓存上限必须为正数');
+    if (bytes < maximumBytes) maximumBytes = bytes;
+  }
+
   final pinned = <String>{};
 
   File _file(TextFontAsset asset) => File('${directory.path}/${asset.hash}');

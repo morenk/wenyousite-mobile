@@ -79,7 +79,7 @@ void main() {
     expect(createRequest.category, 'TRPG');
     expect(
       createRequest.textFontVersion,
-      CreateThreadDtoTextFontVersionEnum.number1,
+      CreateThreadDtoTextFontVersionEnum.number2,
     );
     expect(createRequest.visibility, CreateThreadDtoVisibilityEnum.PRIVATE);
     expect(createRequest.tagNames!.toList(), ['跑团', '奇幻']);
@@ -123,7 +123,7 @@ void main() {
     expect(aggregateRequest.version, 7);
     expect(
       aggregateRequest.textFontVersion,
-      SaveThreadAggregateDtoTextFontVersionEnum.number1,
+      SaveThreadAggregateDtoTextFontVersionEnum.number2,
     );
     expect(aggregateRequest.defaultSubthreadVersion, 8);
     expect(aggregateRequest.bodyVersion, 9);

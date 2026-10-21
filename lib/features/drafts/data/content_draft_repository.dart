@@ -19,11 +19,13 @@ class ApiContentDraftRepository implements ContentDraftRepository {
     this._api, {
     this.roleMentionsSupported = false,
     this.textFontSupported = false,
+    this.textFontV2Supported = false,
     this.textColorSupported = false,
   });
 
   final bool roleMentionsSupported;
   final bool textFontSupported;
+  final bool textFontV2Supported;
   final bool textColorSupported;
 
   final DraftsApi _api;
@@ -72,14 +74,18 @@ class ApiContentDraftRepository implements ContentDraftRepository {
   }) async {
     try {
       requireMentionWriteSupport(content, supported: roleMentionsSupported);
-      requireTextFontWriteSupport(content, supported: textFontSupported);
+      requireTextFontWriteSupport(
+        content,
+        supported: textFontSupported,
+        v2Supported: textFontV2Supported,
+      );
       requireTextColorWriteSupport(content, supported: textColorSupported);
       final payload = CreateDraftDto((builder) {
         builder
           ..markdownContractVersion = roleMentionsSupported
               ? CreateDraftDtoMarkdownContractVersionEnum.number6
               : null
-          ..textFontVersion = CreateDraftDtoTextFontVersionEnum.number1
+          ..textFontVersion = CreateDraftDtoTextFontVersionEnum.number2
           ..textColorVersion = textColorSupported
               ? CreateDraftDtoTextColorVersionEnum.number1
               : null
@@ -108,14 +114,18 @@ class ApiContentDraftRepository implements ContentDraftRepository {
   }) async {
     try {
       requireMentionWriteSupport(content, supported: roleMentionsSupported);
-      requireTextFontWriteSupport(content, supported: textFontSupported);
+      requireTextFontWriteSupport(
+        content,
+        supported: textFontSupported,
+        v2Supported: textFontV2Supported,
+      );
       requireTextColorWriteSupport(content, supported: textColorSupported);
       final payload = UpdateDraftDto(
         (builder) => builder
           ..markdownContractVersion = roleMentionsSupported
               ? UpdateDraftDtoMarkdownContractVersionEnum.number6
               : null
-          ..textFontVersion = UpdateDraftDtoTextFontVersionEnum.number1
+          ..textFontVersion = UpdateDraftDtoTextFontVersionEnum.number2
           ..textColorVersion = textColorSupported
               ? UpdateDraftDtoTextColorVersionEnum.number1
               : null
@@ -171,6 +181,7 @@ final apiContentDraftRepositoryProvider = Provider<ContentDraftRepository>((
   return ApiContentDraftRepository(
     ref.watch(wenyouApiProvider).getDraftsApi(),
     textFontSupported: ref.watch(appCapabilitiesProvider).textFontSupported,
+    textFontV2Supported: ref.watch(appCapabilitiesProvider).textFontV2Supported,
     textColorSupported: ref.watch(appCapabilitiesProvider).textColorSupported,
     roleMentionsSupported: ref
         .watch(appCapabilitiesProvider)

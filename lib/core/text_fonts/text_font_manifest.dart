@@ -40,6 +40,21 @@ abstract final class TextFontOriginal {
 }
 
 class TextFontAsset {
+  TextFontAsset.dynamic({
+    required this.path,
+    required this.hash,
+    required this.bytes,
+  }) : isOriginal = false {
+    if (!RegExp(
+          r'^/api/v1/meta/text-fonts/v2/versions/tfv_[a-f0-9]{32}/assets/[a-f0-9]{64}\.(json|png|ttf|otf|woff2)$',
+        ).hasMatch(path) ||
+        !path.split('/').last.startsWith('$hash.') ||
+        !RegExp(r'^[a-f0-9]{64}$').hasMatch(hash) ||
+        bytes <= 0 ||
+        bytes > 64 * 1024 * 1024) {
+      throw const FormatException('无效动态字体资源');
+    }
+  }
   TextFontAsset({required this.path, required this.hash, required this.bytes})
     : isOriginal = false {
     if (!RegExp(r'^[a-f0-9]{64}$').hasMatch(hash) ||
@@ -81,6 +96,12 @@ class TextFontAsset {
 }
 
 class TextFontShard {
+  TextFontShard.validated({
+    required this.id,
+    required this.family,
+    required this.asset,
+    required this.ranges,
+  });
   TextFontShard._(Map<String, dynamic> json, {required bool original})
     : id = json['id'] as String,
       family = json['family'] as String,
@@ -124,6 +145,14 @@ class TextFontShard {
 }
 
 class TextFontFamily {
+  TextFontFamily.dynamic({
+    required this.id,
+    required this.name,
+    required this.language,
+    required this.ready,
+    required this.notices,
+    required this.shards,
+  });
   factory TextFontFamily(Map<String, dynamic> json) {
     final language = TextFontLanguage.parse(json['designLanguage']);
     final original = json['deliveryMode'] == 'original';
@@ -175,6 +204,9 @@ class TextFontFamily {
 }
 
 class TextFontManifest {
+  TextFontManifest.combined(Map<String, TextFontFamily> values) {
+    fonts.addAll(values);
+  }
   TextFontManifest(Uint8List data) {
     final json = jsonDecode(utf8.decode(data)) as Map<String, dynamic>;
     if (json['schemaVersion'] != 1 || json['fontVersion'] != 1) {

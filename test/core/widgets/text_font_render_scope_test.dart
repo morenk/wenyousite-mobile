@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyou_api/wenyou_api.dart';
+import 'package:wenyousite_mobile/app/app_capabilities.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/text_fonts/text_font_cache.dart';
 import 'package:wenyousite_mobile/core/text_fonts/text_font_runtime.dart';
@@ -55,6 +56,46 @@ class _Service extends TextFontService {
 }
 
 void main() {
+  testWidgets('正文保持可见时能力更新会重新检查字体来源', (tester) async {
+    final service = _Service(_Runtime());
+    final container = ProviderContainer(
+      overrides: [
+        textFontServiceProvider.overrideWithValue(service),
+        appCapabilitiesProvider.overrideWithValue(const AppCapabilities()),
+      ],
+    );
+    addTearDown(container.dispose);
+    addTearDown(service.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const Scaffold(
+            body: WenyouMarkdown(
+              enableTextFonts: true,
+              data: '<span data-wenyou-font-v1="wenkai">正文</span>',
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final before = service.loads;
+    container.updateOverrides([
+      textFontServiceProvider.overrideWithValue(service),
+      appCapabilitiesProvider.overrideWithValue(
+        const AppCapabilities(
+          textFontSupported: true,
+          textFontV2Supported: true,
+        ),
+      ),
+    ]);
+    await tester.pumpAndSettle();
+    expect(service.loads, greaterThan(before));
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
   testWidgets('嵌套滚动由外层移出屏幕后释放需求，返回时恢复', (tester) async {
     final service = _Service(_Runtime());
     final outer = ScrollController();

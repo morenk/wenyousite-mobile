@@ -8,6 +8,8 @@ import 'package:wenyousite_mobile/core/text_fonts/text_font_cache.dart';
 import 'package:wenyousite_mobile/core/text_fonts/text_font_demand_queue.dart';
 import 'package:wenyousite_mobile/core/text_fonts/text_font_download_window.dart';
 import 'package:wenyousite_mobile/core/text_fonts/text_font_manifest.dart';
+import 'package:wenyousite_mobile/core/text_fonts/text_font_native_ledger.dart';
+import 'package:wenyousite_mobile/core/text_fonts/text_font_native_snapshot.dart';
 import 'package:wenyousite_mobile/core/text_fonts/text_font_runtime_policy.dart';
 
 typedef TextFontDownload = Future<Uint8List> Function(TextFontAsset asset);
@@ -19,7 +21,10 @@ class TextFontRuntime extends ChangeNotifier {
     required this.cache,
     required this.download,
     TextFontRegister? register,
-  }) : register = register ?? _register;
+    TextFontNativeLedger? ledger,
+  }) : register = register ?? _register,
+       ledger = ledger ?? TextFontNativeLedger();
+  final TextFontNativeLedger ledger;
   final TextFontCache cache;
   final TextFontDownload download;
   final TextFontRegister register;
@@ -58,11 +63,37 @@ class TextFontRuntime extends ChangeNotifier {
         }
       }
     }
+    snapshot.attachLedger(ledger);
     final queue = demandQueue = TextFontDemandQueue(
       cache: cache,
       download: download,
       register: register,
       snapshot: snapshot,
+      window: window,
+      elapsed: elapsed,
+      cancelDownload: cancel,
+    );
+    queue.addListener(notifyListeners);
+    queue.updateSource(manifest, downloadable: assetsAvailable);
+    for (final entry in _demands.entries) {
+      queue.setDemand(entry.key, entry.value);
+    }
+  }
+
+  void enableDynamic(
+    TextFontDownloadWindow window,
+    Duration Function() elapsed,
+    void Function(TextFontAsset) cancel,
+  ) {
+    if (demandQueue case final queue?) {
+      queue.snapshot.attachLedger(ledger, dynamicVersions: true);
+      return;
+    }
+    final queue = demandQueue = TextFontDemandQueue(
+      cache: cache,
+      download: download,
+      register: register,
+      snapshot: TextFontNativeSnapshot.dynamic(ledger),
       window: window,
       elapsed: elapsed,
       cancelDownload: cancel,
@@ -125,8 +156,7 @@ class TextFontRuntime extends ChangeNotifier {
     for (final shard in manifest?.fonts[id]?.shards ?? <TextFontShard>[])
       if (demandQueue != null
           ? demandQueue!.snapshot.loadedFamily(shard) != null
-          : _registered.contains(shard.family) &&
-                !_unavailableFaces.contains(shard.family))
+          : ledger.loaded(hash: shard.asset.hash, family: shard.family))
         shard.family,
   ];
 
@@ -214,6 +244,13 @@ class TextFontRuntime extends ChangeNotifier {
       }
     }
     for (final shard in needed) {
+      if (!ledger.canAttempt(
+        hash: shard.asset.hash,
+        family: shard.family,
+        inputBytes: shard.asset.bytes,
+      )) {
+        continue;
+      }
       final original = shard.asset.isOriginal;
       if (_registered.length >= 32 ||
           (original
@@ -226,6 +263,13 @@ class TextFontRuntime extends ChangeNotifier {
         _originalReservedBytes = TextFontOriginal.bytes;
       }
       final bytes = await _asset(shard.asset);
+      if (!ledger.beginNativeAttempt(
+        hash: shard.asset.hash,
+        family: shard.family,
+        inputBytes: bytes.length,
+      )) {
+        continue;
+      }
       // 原生注册失败也不能假定内存已释放，先保守消耗预算。
       if (original) {
         _originalRegisteredBytes += bytes.length;
@@ -235,6 +279,10 @@ class TextFontRuntime extends ChangeNotifier {
       _registered.add(shard.family);
       try {
         await register(shard.family, bytes);
+        ledger.completeNativeAttempt(
+          hash: shard.asset.hash,
+          family: shard.family,
+        );
       } on Object {
         _unavailableFaces.add(shard.family);
         rethrow;

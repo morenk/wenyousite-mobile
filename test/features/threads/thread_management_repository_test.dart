@@ -93,7 +93,7 @@ void main() {
     expect(captured.version, 7);
     expect(
       captured.textFontVersion,
-      SaveThreadAggregateDtoTextFontVersionEnum.number1,
+      SaveThreadAggregateDtoTextFontVersionEnum.number2,
     );
     expect(captured.defaultSubthreadVersion, 3);
     expect(captured.bodyVersion, 4);

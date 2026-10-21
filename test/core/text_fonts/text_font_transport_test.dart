@@ -11,6 +11,37 @@ import 'package:wenyousite_mobile/core/text_fonts/text_font_transport.dart';
 import 'font_test_fixture.dart';
 
 void main() {
+  test('状态响应未EOF也立即完成，不取消调用方令牌或丢失撤回', () async {
+    final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+    server.listen((request) async {
+      try {
+        request.response.statusCode = int.parse(request.uri.path.substring(1));
+        request.response.bufferOutput = false;
+        request.response.write('body still streaming');
+        await request.response.flush();
+      } on HttpException {
+        // 客户端已按状态结束读取。
+      }
+    });
+    try {
+      for (final status in [404, 409, 410]) {
+        final token = CancelToken();
+        final result = await TextFontTransport()
+            .request(
+              Uri.parse('http://127.0.0.1:${server.port}/$status'),
+              65536,
+              'application/json',
+              token,
+            )
+            .timeout(const Duration(seconds: 2));
+        expect(result.status, status);
+        expect(token.isCancelled, isFalse);
+        token.cancel();
+      }
+    } finally {
+      await server.close(force: true);
+    }
+  });
   test('超长响应体未EOF也立即拒绝，不等待底层流关闭', () async {
     final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
     Future<void>? handler;

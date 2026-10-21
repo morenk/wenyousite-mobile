@@ -42,7 +42,12 @@ class ApiMetaRepository implements MetaRepository {
             data.capabilities.roleMentionsV6Supported ?? false,
         roleMentionsWriteEnabled:
             data.capabilities.roleMentionsV6WriteEnabled ?? false,
-        textFontSupported: data.capabilities.textFontV1Supported ?? false,
+        textFontSupported:
+            (data.capabilities.textFontV1Supported ?? false) ||
+            (data.capabilities.textFontV2Supported ?? false),
+        textFontV2Supported: data.capabilities.textFontV2Supported ?? false,
+        textFontV2WriteEnabled:
+            data.capabilities.textFontV2WriteEnabled ?? false,
         textFontWriteEnabled: data.capabilities.textFontV1WriteEnabled ?? false,
         textColorSupported: data.capabilities.textColorV1Supported ?? false,
         textColorWriteEnabled:

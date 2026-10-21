@@ -12,6 +12,7 @@ import 'package:wenyousite_mobile/core/application/visibility_cache_invalidation
 import 'package:wenyousite_mobile/core/diagnostics/diagnostic_widgets.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/core/text_fonts/text_font_service.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/drafts/application/content_drafts_controller.dart';
@@ -125,6 +126,8 @@ class PostComposerSheetState extends ConsumerState<PostComposerSheet>
       _identitySelection!.addListener(_onIdentityChanged);
     }
     _editorSession = RichEditorSession(
+      preparePastedFonts: (delta) =>
+          prepareDynamicFontPaste(delta, ref.read(textFontServiceProvider)),
       initialMarkdown: widget.target.initialContent,
       initialMediaDisplays: widget.baseline.mediaDisplays,
       initialMediaAudios: widget.baseline.mediaAudios,

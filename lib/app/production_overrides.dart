@@ -395,6 +395,8 @@ AppCapabilities appCapabilitiesForContract(ContractInfo? contract) {
         contract?.contractVersion.startsWith('5.33.') ?? false,
     roleMentionsSupported: contract?.roleMentionsSupported ?? false,
     textFontSupported: contract?.textFontSupported ?? false,
+    textFontV2Supported: contract?.textFontV2Supported ?? false,
+    textFontV2WriteEnabled: contract?.textFontV2WriteEnabled ?? false,
     textFontWriteEnabled: contract?.textFontWriteEnabled ?? false,
     textColorSupported: contract?.textColorSupported ?? false,
     textColorWriteEnabled: contract?.textColorWriteEnabled ?? false,

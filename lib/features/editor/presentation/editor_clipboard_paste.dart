@@ -1,6 +1,7 @@
 import 'package:flutter_quill/quill_delta.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_line_metadata.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_text_font.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_reference.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_clipboard.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_site_clipboard.dart';
@@ -45,6 +46,7 @@ class WenyouEditorClipboardPastePlanner {
     required String documentPlainText,
     required int start,
     required int end,
+    bool preserveDynamicForValidation = false,
   }) {
     final resolution = clipboardText == null
         ? const WenyouEditorClipboardResolution.noMatch()
@@ -81,16 +83,24 @@ class WenyouEditorClipboardPastePlanner {
       }
     }
     return WenyouEditorClipboardPastePlan(
-      delta: _withoutRetiredFont(delta),
+      delta: filterFonts(
+        delta,
+        (font) =>
+            font != 'xiaocheng-lafeng' &&
+            (MarkdownTextFont.ids.contains(font) ||
+                preserveDynamicForValidation &&
+                    MarkdownTextFont.isVersionId(font)),
+      ),
       replacementEnd: replacementEnd,
       isPlainText: insert == null,
     );
   }
 
-  static Delta _withoutRetiredFont(Delta fragment) {
+  static Delta filterFonts(Delta fragment, bool Function(String) allowed) {
     final output = Delta();
     for (final operation in fragment.operations) {
-      if (operation.attributes?['font'] != 'xiaocheng-lafeng') {
+      final font = operation.attributes?['font'];
+      if (font == null || font is String && allowed(font)) {
         output.push(operation);
         continue;
       }

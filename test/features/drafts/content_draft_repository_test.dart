@@ -98,13 +98,13 @@ void main() {
       createPayloads.every(
         (payload) =>
             payload.textFontVersion ==
-            CreateDraftDtoTextFontVersionEnum.number1,
+            CreateDraftDtoTextFontVersionEnum.number2,
       ),
       isTrue,
     );
     expect(
       updatePayload.textFontVersion,
-      UpdateDraftDtoTextFontVersionEnum.number1,
+      UpdateDraftDtoTextFontVersionEnum.number2,
     );
     expect(createPayloads.first.content, '自动正文');
     expect(createPayloads.first.clientRequestId, _requestIdOne);

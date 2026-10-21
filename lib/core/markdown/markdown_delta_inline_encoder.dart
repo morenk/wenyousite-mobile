@@ -198,7 +198,7 @@ final class MarkdownDeltaInlineEncoder {
 
   void _validateLink() {
     final font = _marks['font'];
-    if (font != null && !MarkdownTextFont.ids.contains(font)) {
+    if (font != null && !MarkdownTextFont.accepts(font)) {
       throw const MarkdownCodecException('文字字体无法安全保存');
     }
     final color = _marks['color'];

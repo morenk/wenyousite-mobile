@@ -41,6 +41,7 @@ class TextFontDemandQueue extends ChangeNotifier {
   bool _online = true;
   bool _disposed = false;
   bool _dirty = false;
+  bool _metadataPaused = false;
   int _sourceEpoch = 0;
   Future<void>? _draining;
   Timer? _timer;
@@ -103,8 +104,11 @@ class TextFontDemandQueue extends ChangeNotifier {
         if (font == null || !font.ready) continue;
         final runes = entry.value.runes.toSet();
         for (final shard in font.shards) {
-          if (!snapshot.contains(shard) ||
-              snapshot.attempted(shard) ||
+          if (!snapshot.canAttempt(shard) ||
+              shard.asset.bytes > window.maximumBytes ||
+              font.notices.any(
+                (notice) => notice.bytes > window.maximumBytes,
+              ) ||
               !runes.any(shard.contains)) {
             continue;
           }
@@ -134,7 +138,9 @@ class TextFontDemandQueue extends ChangeNotifier {
 
   /// 网络/前台事件仅唤醒检查，不能重置退避或跳过Retry-After。
   void wake() {
-    if (_disposed || !_foreground || _pending.isEmpty) return;
+    if (_disposed || !_foreground || _metadataPaused || _pending.isEmpty) {
+      return;
+    }
     if (_draining != null) {
       _dirty = true;
       return;
@@ -160,6 +166,18 @@ class TextFontDemandQueue extends ChangeNotifier {
     }
   }
 
+  /// 元数据和样张排队等待当前传输结束，不取消仍持续接收正文的下载。
+  Future<void> pauseForMetadata() async {
+    _metadataPaused = true;
+    _timer?.cancel();
+    await settle();
+  }
+
+  void resumeAfterMetadata() {
+    _metadataPaused = false;
+    wake();
+  }
+
   Future<void> _drain() async {
     Duration? next;
     int? earlierBytes;
@@ -168,7 +186,7 @@ class TextFontDemandQueue extends ChangeNotifier {
     }
 
     for (final work in _pending.values.toList()) {
-      if (_disposed || !_foreground) break;
+      if (_disposed || !_foreground || _metadataPaused) break;
       final asset = work.asset;
       final sourceEpoch = _sourceEpoch;
       if (!_pending.containsKey(asset.hash) || retries.isTerminal(asset.hash)) {

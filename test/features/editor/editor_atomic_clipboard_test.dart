@@ -38,68 +38,77 @@ void main() {
     expect(called, isTrue);
   });
   for (final scope in ['account', 'other-account']) {
-    test('主题→动态/评论/私聊：去字体但保留受信传送门，scope=$scope', () async {
-      final store = WenyouEditorClipboardStore();
-      final delta = MarkdownDeltaCodec.decode(source).delta;
-      final fallback = WenyouEditorClipboardStore.visibleText(delta);
-      store.capture(
-        delta: delta,
-        plainTextFallback: fallback,
-        operation: WenyouEditorClipboardOperation.copy,
-        marker: 'marker',
-        scope: 'account',
-      );
-      binding.defaultBinaryMessenger.setMockMethodCallHandler(
-        SystemChannels.platform,
-        (call) async =>
-            call.method == 'Clipboard.getData' ? {'text': fallback} : null,
-      );
-      addTearDown(
-        () => binding.defaultBinaryMessenger.setMockMethodCallHandler(
-          SystemChannels.platform,
-          null,
-        ),
-      );
-      final controller = WenyouAtomicTextController(
-        initialMarkdown: '',
-        maximumMarkdownLength: 1000,
-        readStructuredClipboard: (text) => readAtomicEditorClipboard(
-          text,
-          scope: scope,
-          store: store,
-          gateway: _Gateway(
-            EditorClipboardSnapshot(text: fallback, marker: 'marker'),
-          ),
-        ),
-      );
-      addTearDown(controller.dispose);
-      expect(await controller.pasteClipboard(), isTrue);
-      await Future<void>.delayed(Duration.zero);
-      expect(
-        controller.markdown,
-        scope == 'account'
-            ? '文字 [传送门](/threads/aaaaaaaaaaaaaaaaaaaaaaaa)'
-            : fallback,
-      );
-      expect(
-        controller.quillController.document.toDelta().operations.every(
-          (o) => o.attributes == null || o.attributes!.isEmpty,
-        ),
-        isTrue,
-      );
-      if (scope == 'account') {
-        expect(
-          controller.quillController.document.toDelta().operations.any(
-            (o) =>
-                o.data is Map &&
-                (o.data as Map).containsKey(
-                  MarkdownDeltaCodec.internalReferenceEmbed,
+    for (final version in [1, 2]) {
+      test('主题→动态/评论/私聊：去字体v$version但保留受信传送门，scope=$scope', () async {
+        final store = WenyouEditorClipboardStore();
+        final delta = MarkdownDeltaCodec.decode(
+          version == 1
+              ? source
+              : source.replaceFirst(
+                  'data-wenyou-font-v1="wenkai"',
+                  'data-wenyou-font-v2="tfv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"',
                 ),
+        ).delta;
+        final fallback = WenyouEditorClipboardStore.visibleText(delta);
+        store.capture(
+          delta: delta,
+          plainTextFallback: fallback,
+          operation: WenyouEditorClipboardOperation.copy,
+          marker: 'marker',
+          scope: 'account',
+        );
+        binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          SystemChannels.platform,
+          (call) async =>
+              call.method == 'Clipboard.getData' ? {'text': fallback} : null,
+        );
+        addTearDown(
+          () => binding.defaultBinaryMessenger.setMockMethodCallHandler(
+            SystemChannels.platform,
+            null,
+          ),
+        );
+        final controller = WenyouAtomicTextController(
+          initialMarkdown: '',
+          maximumMarkdownLength: 1000,
+          readStructuredClipboard: (text) => readAtomicEditorClipboard(
+            text,
+            scope: scope,
+            store: store,
+            gateway: _Gateway(
+              EditorClipboardSnapshot(text: fallback, marker: 'marker'),
+            ),
+          ),
+        );
+        addTearDown(controller.dispose);
+        expect(await controller.pasteClipboard(), isTrue);
+        await Future<void>.delayed(Duration.zero);
+        expect(
+          controller.markdown,
+          scope == 'account'
+              ? '文字 [传送门](/threads/aaaaaaaaaaaaaaaaaaaaaaaa)'
+              : fallback,
+        );
+        expect(
+          controller.quillController.document.toDelta().operations.every(
+            (o) => o.attributes == null || o.attributes!.isEmpty,
           ),
           isTrue,
         );
-      }
-    });
+        if (scope == 'account') {
+          expect(
+            controller.quillController.document.toDelta().operations.any(
+              (o) =>
+                  o.data is Map &&
+                  (o.data as Map).containsKey(
+                    MarkdownDeltaCodec.internalReferenceEmbed,
+                  ),
+            ),
+            isTrue,
+          );
+        }
+      });
+    }
   }
   test('外部HTML、伪造marker或过期载体不能导入结构化内容', () async {
     for (final marker in <String?>[null, 'wrong']) {

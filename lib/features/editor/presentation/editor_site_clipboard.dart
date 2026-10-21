@@ -446,9 +446,12 @@ class _ClipboardInlineBuilder {
     final nested = switch (tag) {
       'span'
           when node.attributes.isNotEmpty &&
+              !(node.attributes.containsKey('data-wenyou-font-v1') &&
+                  node.attributes.containsKey('data-wenyou-font-v2')) &&
               node.attributes.entries.every(
                 (entry) =>
                     entry.key == 'data-wenyou-font-v1' ||
+                    entry.key == 'data-wenyou-font-v2' ||
                     entry.key == 'data-wenyou-color-v1' &&
                         MarkdownTextColor.rgb.hasMatch(entry.value),
               ) =>
@@ -458,6 +461,9 @@ class _ClipboardInlineBuilder {
             'color': color.toUpperCase(),
           if (node.attributes['data-wenyou-font-v1'] case final String font
               when MarkdownTextFont.ids.contains(font))
+            'font': font,
+          if (node.attributes['data-wenyou-font-v2'] case final String font
+              when MarkdownTextFont.isVersionId(font))
             'font': font,
         },
       'b' || 'strong' => {...attributes, 'bold': true},

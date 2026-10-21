@@ -1,6 +1,67 @@
 # 正文字体持续加载设计与验证
 
-状态：最终 28 款候选已执行完整 Windows 门禁并生成产品 Debug APK；除公网契约不匹配外全部检查通过，负责人验收尚未完成。沿用任务分支与 PR #114，作用域、粘贴及静默阅读要求不变。2026-10-21 新要求取代旧进程累计 8 家族／32 faces／64 请求／24 MiB 用尽后停止策略。
+状态：动态字体本地候选已构建，沿用任务分支与 PR #114，尚未安装；隔离环境与负责人真机验收待完成。此前固定28款候选的完整门禁、APK和离线实验是历史记录，不能代替动态系统验收。作用域、粘贴及静默阅读要求不变。
+
+## 动态字体生产接入（候选，待真机验收）
+
+### 本轮最终本地检查与候选证据
+
+- 应用源码摘要：`03e91de9e303b844b923ede2b679f674dea8d9e66b2e3d218e37b5f2d45b4cb8`（lib、Android、生成客户端、pubspec，2079个文件）；门禁后只修正测试断言与文档，构建前复核应用摘要未变。
+- `npm run check:apk -- -ContinueAfterFailure -TestConcurrency 2` 已完整执行。格式1499文件零改动；应用/生成客户端静态分析、架构、23模块文档、API覆盖175/175及再生成一致性通过；Windows工具49/49通过，Debug APK构建成功。
+- Flutter原始全量结果为7648通过、1跳过、2失败。两处失败均为仍期待字体协议1的旧测试断言；按正式字体协议2修正后，主题创建/聚合仓储3项、楼中楼生成客户端链路6项复验通过。原日志保留失败，不称原始全量全绿。
+- 公网兼容检查仍未满足：公网为5.40／`6e00c403`，本地为5.43.0-dev.20261022.2／`7c9719e4`。未部署、修改公网配置或跳过此检查，动态兼容证据等待登记隔离入口。
+- 默认构建APK仅作本地编译证据，SHA-256：`2039a499b911e00d7cd3df221bfe5015ddf58040b46de3e459e37fd37e04a1fb`。
+- 联验候选：`build/dynamic-font-v2-candidate/app-dynamic-font-v2-loopback-244e8b6c0f92-debug.apk`，156094180字节；SHA-256：`244e8b6c0f920b8fe9a59830697732d0009aae93f15590029a2b8bb7ad3051c2`。包名`site.wenyou.app.debug`，名称“温油站 Debug”，版本`0.10.0-debug`／versionCode 100，仅`arm64-v8a`，APK v2签名验证通过。
+- 固定配置为`API_BASE_URL=http://127.0.0.1:38876/api/v1`；以该UTF-8字符串（无换行）计算defines SHA-256：`e56725816143f5dca48f183bb1941c4e6d79f9d3a39ab8b267b55de9f4b693b6`。详细本地元数据位于`.dart_tool/dynamic-font-candidate-config.json`。
+- 尚未安装或启动候选。Backend最终审计枚举增量尚未提交，收到正式SHA后独立同步契约/生成客户端并按变化补验；核心新ID联验须在最终双方构建及会话打开后开始。设备数据归属、隔离入口、负责人验收仍待核验。
+
+### 行为与分项记录
+
+当前固定 Backend `7c9719e44dbdc62ede77056fe93a98551133d0e9`／API 5.43，Foundation v7.6.0。沿用当前 Worktree、任务分支和 PR #114。契约已通过独立 chore 同步；数值 fontVersion 被生成器误识别为字符串的问题已通过生成归一化工具修正，提交 `4d93bc59`，生成客户端全量分析零问题。历史 28 款 APK、截图与门禁仍绑定旧源码，不作为本次动态系统证据。
+
+生产服务已接入以下候选行为：
+
+- 所有正文读取与写入声明字体能力 2。合法 `tfv_` ID 经 Markdown、编辑器、草稿保源，不依赖固定名单；字体 v1 继续解析，颜色与其他行内格式保留。旧服务不支持 v2 时拒绝有损保存。
+- `DynamicFontCatalog` 使用轻目录分页、ETag、完整快照原子替换；游标409只立即重取一次，失败保留旧快照。点查合并、404负缓存30秒、五分钟前台/选择器重验证；明确撤回墓碑跨缓存恢复优先，未知状态/语言及不可变资源被替换均拒绝。
+- `DynamicFontRuntime` 分别处理策略、目录与单版本清单失败；损坏目录不阻断已知正文按版本读取，一个坏清单不阻断其他字体。元数据最大64KiB、清单最大4MiB；清单驻留最多32份/16MiB原始JSON，目录最多8192项/4MiB，描述符和负缓存各256项。撤回墓碑最多4096项，饱和时保守停止动态呈现，不能淘汰墓碑后复活。
+- 引擎级 `TextFontNativeLedger` 统一旧 v1、固定 manifest 和动态注册：64MiB输入/1024个SHA+family键，调用前预留，失败不退款，同键复用、不同family分别计费；Provider及账号变化不重新给额。历史超限保留原占用与已加载结果，拒绝新增。注册输入计数不能称为RSS。
+- 元数据、PNG样张和正文共用60秒/24MiB/64请求窗口，并发1。元数据等正在进行的正文完成后执行，避免反复取消造成正文无法完成。传输采用15秒无字节进度/600秒总限；非200状态可立即结束未EOF响应，调用方取消与状态完成分别处理。
+- 选择器保留中文/日文/英文/其他分类，仅显示按需PNG；同SHA样张失败会退避重试，离屏/后台取消无用需求。选择前复核状态。粘贴先点查：历史已发布允许原版本，停用/撤回/未知新增片段默认字体；已有正文不被清洗，颜色/粗体与保存重开保留。
+
+本轮已执行的回归记录：`.dart_tool/dynamic-font-metadata-regression.log` 18项（数值协议、分页/缓存/不可变状态、真实HTTP慢流及未EOF状态）；`.dart_tool/dynamic-font-selector-runtime-regression.log` 13项（选择器分组/样张恢复、并发1、账本迁移/撤回/故障独立）；`.dart_tool/dynamic-font-write-paste-regression.log` 27项（字体2头及写入DTO、四种状态粘贴、独立阅读语义、保存重开）。具体路径为 `test/core/network/dynamic_font_numeric_contract_test.dart`、`test/core/text_fonts/dynamic_font_catalog_test.dart`、`text_font_transport_test.dart`、`dynamic_font_service_test.dart`、`dynamic_font_runtime_test.dart`，以及 `test/features/editor/editor_dynamic_font_list_test.dart`、`editor_dynamic_font_paste_test.dart`、`test/core/network/network_providers_test.dart`、posts/drafts/threads对应repository测试。全量静态检查与完整门禁继续进行，不称本轮全绿。
+
+补充本地检查：`.dart_tool/dynamic-font-core-final-regression.log` 161通过/1失败，失败是总时限诊断原因在拆分取消令牌后未透传，已修正；随后正式传输夹具与真实HTTP全套22项通过（`.dart_tool/dynamic-font-transfer-final-regression.log`）。清单恶意/错误输入及真实Provider容器/账号切换账本12项通过（`.dart_tool/dynamic-font-manifest-lifetime-regression.log`）；新增v2跨动态/评论/私聊默认字体投影、选择器和服务10项通过（`.dart_tool/dynamic-font-projection-selector-regression.log`）。架构与23模块文档通过；API范围175/175，零缺项，91项明确排除。首次全量分析只有11条info，已按规则修正，最终复验进入统一 `npm run check -- -ContinueAfterFailure -TestConcurrency 2`，日志 `.dart_tool/dynamic-font-integration-gate.log`；未结束前不称完整门禁通过。
+v1 兼容已按 `7c9719e44dbdc62ede77056fe93a98551133d0e9`／`5.43.0-dev.20261022.2` 接入，契约同步提交 `76827706`。观察到 v2 支持后，同一引擎内保持 v2 路由；固定映射的 v1 使用历史版本描述符和受控网关，源标记不改写。停用仍可阅读但不允许新增粘贴；撤回同时移除 v1/v2 呈现、取消需求，原生账本不退额。缺失、404、网络错误和能力降级均不能回退旧清单/公共 URL；已有可信状态可离线恢复，持久化撤回墓碑在新会话能力缺失时也优先。无映射退役 ID 使用默认字体。旧二进制已取得的公共 URL 和本地缓存不能由本次客户端更新远程撤销，限制见 `contracts/deprecation-register.md`。
+
+`.dart_tool/dynamic-font-legacy-routing-regression.log` 35 项通过，覆盖正式 `legacyRoutingCases`、`legacyCapabilityCases`、固定映射一致性、源标记与粘贴范围、旧注册账本共享、运行时并发及四种状态保存重开。实际路径：`test/core/text_fonts/text_font_legacy_routing_test.dart`、`dynamic_font_runtime_test.dart`、`dynamic_font_service_test.dart`、`test/features/editor/editor_dynamic_font_paste_test.dart`。
+
+此前 `.dart_tool/dynamic-font-integration-gate.log` 已主动停止：当时公开契约不匹配，分析缺少 rendering 导入，测试 1,906 通过／1 跳过／1 失败；测试运行期间发生源码变化，不能作为最终候选证据。导入和旧目录请求回归已修正，分项复验通过。最终兼容源码需重新执行统一门禁，不沿用混合源码结果。
+
+设备 `4b9c39b5` 曾重新核验在线（model 2509FPN0BC，transport_id 13），后续读取ABI与进程时再次返回device not found；当前不能开展真机操作，联验前须重新核验。本任务单独控制该设备；本轮产品 APK 已构建但尚未安装，同会话验收未执行。真实写入 E2E 等待 Backend 提供独立 PG、Redis、存储、账号与清理所有者的已提交入口，不回退线上。顺序必须是最终客户端构建/启动之后真实Admin上传→处理→预览→发布新ID，再在同一Android会话验证选择、发帖、阅读、系统剪贴板、保存重开、离线恢复、预算与RSS。后续新版、停用、撤回、回滚也须保留原帖版本。旧FontLab结果不替代此验收。
+
+本轮 Android 联验记录要求（均待执行）：
+
+治理已指定最终联验候选使用普通显式配置 `API_BASE_URL=http://127.0.0.1:38876/api/v1`；Windows 端口已只读确认无监听。完整门禁默认 APK 仅作编译证据，门禁结束后基于相同应用源码另构建这一固定配置并记录 source/defines/APK 哈希。Backend 交付登记环境后，由治理建立 38876 到实际随机端口的 SSH 转发；设备再通过本任务 ADB reverse 连接。loopback 不是隔离证据，启动、登录及写入仍等待环境身份、转发目的地、API能力与 Debug 包数据归属全部核验。此配置不恢复已退役 preview 机制。
+
+候选配置核对：`android/app/build.gradle.kts` 的 Debug applicationId 为 `site.wenyou.app.debug`，Profile 为 `site.wenyou.app.profile`，正式包为 `site.wenyou.app`。`AppEnvironment` 只接受普通 `API_BASE_URL`，不会按地址分区 Token、偏好、数据库或字体缓存；旧 `WENYOU_PREVIEW_*` 明确拒绝启动，不能称为仍可用的隔离构建入口。当前门禁默认构建的 API 为公网，仅作为本地编译产物，不启动其写入联验。最终联验地址固定为上述 38876 loopback 配置，转发目的地待 Backend 登记入口核验；新字体 ID 必须在该候选启动后创建。安装前只在 Debug 包不存在，或已有数据已确证为本任务隔离环境所有时继续；已有真实账号/草稿或归属不明时保留现场，不卸载、清数据或自动跨环境启动。
+
+| 场景 | 必须记录的结果 |
+| --- | --- |
+| 安装与环境 | 实际包名、安装前后更新时间、设备内 APK SHA-256、应用源码摘要、设备 ABI、API 地址及隔离 runId；已有本地账号与草稿不得带入另一环境 |
+| 新字体发布 | 客户端构建和启动时间早于真实 Admin 创建 ID；同一会话打开选择器出现新 ID、正确语言分组与 PNG 样张，选择器本身不增加原生字体注册 |
+| 正文闭环 | 选择文字、应用字体、发布、阅读、打开编辑、系统剪贴板复制粘贴、保存、重开；记录原文 ID、可见文字、颜色、粗体、段落边界 |
+| 新版本与回滚 | 已有正文保持旧版本；新选择使用当前版本；回滚不重写原帖、不重新注册相同 SHA+family |
+| 停用与撤回 | 停用历史仍可读，新增选择/粘贴默认；撤回后对应 v1/v2 同时默认、无后续资源请求，原文 ID 保留；前台恢复、离线重开和能力降级不能复活 |
+| 内存与流量 | 分别记录原生注册键/输入字节、网络窗口占用、Dart heap/external、Android RSS/PSS；失败计费与重复访问不重计，禁止将输入额度当作 RSS |
+| 清理与验收 | 由隔离环境所有者记录上传、帖子、测试账号及数据库/缓存/存储清理；负责人明确复验结果单独登记，自动验证不能替代 |
+
+最新定向检查：页面保持可见时能力更新、嵌套滚动作用域、选择器和恢复默认共 9 项通过（`test/core/widgets/text_font_render_scope_test.dart`、`test/features/editor/editor_text_font_picker_test.dart`，日志 `.dart_tool/dynamic-font-scope-picker-compatible.log`）。兼容最终门禁为 `npm run check:apk -- -ContinueAfterFailure -TestConcurrency 2`，日志 `.dart_tool/dynamic-font-compatible-final-gate.log`；应用源码保持固定，最终结论见本节顶部。
+
+跨端补充审查只增加必要回归，未改动应用实现：`dynamic_font_catalog_test.dart` 和 `dynamic_font_runtime_test.dart` 共 20 项通过（`.dart_tool/dynamic-font-tombstone-eviction-regression.log`）。任意非内置新 ID 撤回后，超过256条详细描述符淘汰、目录轮换、迟到 published、旧目录再次包含以及离线恢复均不能恢复选择、粘贴、呈现或资源请求。独立撤回集最多4096条；饱和后持久化 denyAll，不通过淘汰墓碑释放内存。新增用例在最终门禁进入静态分析和全量测试前完成，将纳入该次门禁。
+
+最终门禁的 Flutter 阶段发现 `test/features/editor/thread_compose_repository_test.dart` 仍期待创建/聚合写入字体版本1；正式新契约要求2，应用实际已发送2。只修正两处旧断言，应用源码未变；该文件3项复验全部通过，日志 `.dart_tool/dynamic-font-compose-protocol-regression.log`。完整门禁日志中的该次失败保留，不改写成原始全绿；无需据测试断言更新重复整套已验证应用源码。
+
+另一处旧协议断言位于 `test/features/threads/thread_detail_stack_test.dart`：生成客户端楼中楼写入实际为 `textFontVersion: 2`，旧预期仍为1。只更新该断言，完整文件6项复验通过，日志 `.dart_tool/dynamic-font-reply-protocol-regression.log`。上述两项均未修改应用源码，保留原始失败及定向通过证据。
 
 2026-10-22 负责人决定不能分片则移除小城拉风体，当前目标为 28 款（中文 12、日文 10、英文 6）。已固定 Backend `f27898ec3b168b9e027b5d5abef43a0d3dafa242`，同步新不可变 manifest、快照及通用“15 秒无进度／600000 ms 总上限”策略；不修改旧 v1 解析或删除历史字体 ID。旧内容保留文字并安全回退，最近使用记录不能使已撤下字体重新出现。下文 29 款、65／869 资源、18.4 MB 原件与旧 Android 两次实验均为历史证据，不能改称新 28 款实测。新 28 款常用集合结果单独记录，不重复旧全目录压力实验。
 

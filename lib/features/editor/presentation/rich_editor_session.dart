@@ -57,6 +57,7 @@ class RichEditorSession extends ChangeNotifier {
     this.codecDebounce = const Duration(milliseconds: 120),
     this.maximumSerializedLength = 10000,
     this.clipboardScope,
+    this.preparePastedFonts,
     this.blockAlignment = true,
     this.imageAlignment = false,
     EditorClipboardGateway? clipboardGateway,
@@ -68,7 +69,7 @@ class RichEditorSession extends ChangeNotifier {
         RichEditorSelectionPlacement.start,
   }) : _clipboardGateway =
            clipboardGateway ??
-           _legacyClipboardGateway(readClipboardText, writeClipboardText),
+           createEditorClipboardGateway(readClipboardText, writeClipboardText),
        _clipboardStore = clipboardStore ?? wenyouEditorClipboardStore {
     _mediaDisplays = Map.unmodifiable(initialMediaDisplays);
     _mediaAudios = Map.unmodifiable(initialMediaAudios);
@@ -120,6 +121,7 @@ class RichEditorSession extends ChangeNotifier {
   Map<String, String> mentionLabels;
   final int maximumSerializedLength;
   final Object? clipboardScope;
+  final Future<Delta> Function(Delta)? preparePastedFonts;
   final bool blockAlignment;
   final bool imageAlignment;
   final ValueChanged<String> onMarkdownChanged;
@@ -658,6 +660,7 @@ class RichEditorSession extends ChangeNotifier {
       scope: clipboardScope,
       store: _clipboardStore,
       siteParser: _siteClipboardParser,
+      preserveDynamicForValidation: preparePastedFonts != null,
       selectedText: selectedText,
       document: candidateBefore,
       documentPlainText: plainText,
@@ -671,9 +674,19 @@ class RichEditorSession extends ChangeNotifier {
       );
       return false;
     }
+    final checkedDelta = preparePastedFonts == null
+        ? pastePlan.delta
+        : await preparePastedFonts!(pastePlan.delta);
+    if (_disposed ||
+        controller.readOnly ||
+        controller.selection != selection ||
+        _documentSignature() != documentSignature ||
+        generation != _documentGeneration) {
+      return false;
+    }
     final delta = pastePlan.isPlainText
         ? controller.colorPlainTextPaste(pastePlan.delta)
-        : pastePlan.delta;
+        : checkedDelta;
     final replacementEnd = pastePlan.replacementEnd;
 
     final candidate = Document.fromDelta(candidateBefore);
@@ -863,27 +876,6 @@ class RichEditorSession extends ChangeNotifier {
     scrollController.dispose();
     super.dispose();
   }
-
-  static EditorClipboardGateway _legacyClipboardGateway(
-    Future<String?> Function()? read,
-    Future<void> Function(String text)? write,
-  ) {
-    if (read == null && write == null) {
-      return const PlatformEditorClipboardGateway();
-    }
-    return CallbackEditorClipboardGateway(
-      readCallback: read ?? _readSystemClipboardText,
-      writeCallback: write ?? _writeSystemClipboardText,
-    );
-  }
-
-  static Future<String?> _readSystemClipboardText() async {
-    final clipboard = await Clipboard.getData(Clipboard.kTextPlain);
-    return clipboard?.text;
-  }
-
-  static Future<void> _writeSystemClipboardText(String text) =>
-      Clipboard.setData(ClipboardData(text: text));
 }
 
 class _EditorClipboardIntent extends Intent {

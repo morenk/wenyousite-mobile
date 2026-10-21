@@ -19,11 +19,13 @@ class ApiSubthreadManagementRepository
     this._subthreadsApi, {
     this.roleMentionsSupported = false,
     this.textFontSupported = false,
+    this.textFontV2Supported = false,
     this.textColorSupported = false,
   });
 
   final bool roleMentionsSupported;
   final bool textFontSupported;
+  final bool textFontV2Supported;
   final bool textColorSupported;
 
   final ThreadsApi _threadsApi;
@@ -137,7 +139,7 @@ class ApiSubthreadManagementRepository
             ..markdownContractVersion = roleMentionsSupported
                 ? CreateSubthreadDtoMarkdownContractVersionEnum.number6
                 : null
-            ..textFontVersion = CreateSubthreadDtoTextFontVersionEnum.number1
+            ..textFontVersion = CreateSubthreadDtoTextFontVersionEnum.number2
             ..textColorVersion = textColorSupported
                 ? CreateSubthreadDtoTextColorVersionEnum.number1
                 : null
@@ -327,6 +329,9 @@ final apiSubthreadManagementRepositoryProvider =
         api.getThreadsApi(),
         api.getSubthreadsApi(),
         textFontSupported: ref.watch(appCapabilitiesProvider).textFontSupported,
+        textFontV2Supported: ref
+            .watch(appCapabilitiesProvider)
+            .textFontV2Supported,
         textColorSupported: ref
             .watch(appCapabilitiesProvider)
             .textColorSupported,

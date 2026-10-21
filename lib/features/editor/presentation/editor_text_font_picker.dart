@@ -11,6 +11,7 @@ import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/text_fonts/text_font_manifest.dart';
 import 'package:wenyousite_mobile/core/text_fonts/text_font_service.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
+import 'package:wenyousite_mobile/features/editor/presentation/editor_dynamic_font_list.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_text_font_selection.dart';
 
 class EditorTextFontPicker extends ConsumerWidget {
@@ -42,8 +43,14 @@ class EditorTextFontPicker extends ConsumerWidget {
       child: TextButton(
         key: const Key('editor-font-picker'),
         onPressed: canSelect
-            ? () =>
-                  _open(context, ref, account, capability.textFontWriteEnabled)
+            ? () => _open(
+                context,
+                ref,
+                account,
+                capability.textFontV2Supported
+                    ? capability.textFontV2WriteEnabled
+                    : capability.textFontWriteEnabled,
+              )
             : null,
         child: Text(canSelect ? '字体' : '选中文字后更换字体'),
       ),
@@ -60,14 +67,22 @@ class EditorTextFontPicker extends ConsumerWidget {
     final original = jsonEncode(controller.document.toDelta().toJson());
     final service = ref.read(textFontServiceProvider);
     try {
-      final runtime = await service.load();
+      final runtime = await service.openPicker();
+      final dynamicFonts = service.dynamicEnabled;
+      if (dynamicFonts) {
+        writeEnabled = ref.read(appCapabilitiesProvider).textFontV2WriteEnabled;
+      }
       final preferences = await SharedPreferences.getInstance();
       final key = 'editor.textFont.v1.${Uri.encodeComponent(account)}';
       final recent = (preferences.getStringList(key) ?? <String>[])
           .where(
-            (id) =>
-                runtime.manifest?.fonts[id]?.ready == true &&
-                MarkdownTextFont.ids.contains(id),
+            (id) => dynamicFonts
+                ? service.dynamicRuntime?.catalog.entries.any(
+                        (entry) => entry.versionId == id,
+                      ) ==
+                      true
+                : runtime.manifest?.fonts[id]?.ready == true &&
+                      MarkdownTextFont.ids.contains(id),
           )
           .toList();
       if (!context.mounted ||
@@ -85,54 +100,67 @@ class EditorTextFontPicker extends ConsumerWidget {
         builder: (context) => SafeArea(
           child: SizedBox(
             height: MediaQuery.sizeOf(context).height * .65,
-            child: ListView(
-              padding: EdgeInsets.all(context.wenyouTokens.space16),
-              children: [
-                const ListTile(
-                  title: Text('字体'),
-                  subtitle: Text('缺少的字使用默认字体显示'),
-                ),
-                ListTile(
-                  key: const Key('editor-font-default'),
-                  title: const Text('默认字体'),
-                  onTap: () => Navigator.pop(context, ''),
-                ),
-                if (!writeEnabled)
-                  const ListTile(title: Text('暂时无法更换字体，可恢复默认字体')),
-                if (fonts.isEmpty) const ListTile(title: Text('字体暂不可用')),
-                if (fonts.isEmpty || !runtime.assetsAvailable)
-                  ListTile(
-                    title: const Text('重新加载字体'),
-                    onTap: () => Navigator.pop(context, '__retry'),
-                  ),
-                for (final language in [...TextFontLanguage.values, null]) ...[
-                  if (fonts.any((f) => f.language == language))
-                    ListTile(
-                      key: Key(
-                        'editor-font-group-${language?.name ?? 'other'}',
+            child: dynamicFonts
+                ? EditorDynamicFontList(
+                    service: service,
+                    runtime: runtime,
+                    writeEnabled: writeEnabled,
+                    recent: recent,
+                  )
+                : ListView(
+                    padding: EdgeInsets.all(context.wenyouTokens.space16),
+                    children: [
+                      const ListTile(
+                        title: Text('字体'),
+                        subtitle: Text('缺少的字使用默认字体显示'),
                       ),
-                      title: Text(language?.label ?? '未分类'),
-                    ),
-                  for (final font in fonts.where((f) => f.language == language))
-                    ListTile(
-                      key: Key('editor-font-${font.id}'),
-                      title: Text(font.name),
-                      subtitle:
-                          !font.ready || !MarkdownTextFont.ids.contains(font.id)
-                          ? const Text('暂不可用')
-                          : recent.contains(font.id)
-                          ? const Text('最近使用')
-                          : null,
-                      enabled:
-                          writeEnabled &&
-                          font.ready &&
-                          runtime.assetsAvailable &&
-                          MarkdownTextFont.ids.contains(font.id),
-                      onTap: () => Navigator.pop(context, font.id),
-                    ),
-                ],
-              ],
-            ),
+                      ListTile(
+                        key: const Key('editor-font-default'),
+                        title: const Text('默认字体'),
+                        onTap: () => Navigator.pop(context, ''),
+                      ),
+                      if (!writeEnabled)
+                        const ListTile(title: Text('暂时无法更换字体，可恢复默认字体')),
+                      if (fonts.isEmpty) const ListTile(title: Text('字体暂不可用')),
+                      if (fonts.isEmpty || !runtime.assetsAvailable)
+                        ListTile(
+                          title: const Text('重新加载字体'),
+                          onTap: () => Navigator.pop(context, '__retry'),
+                        ),
+                      for (final language in [
+                        ...TextFontLanguage.values,
+                        null,
+                      ]) ...[
+                        if (fonts.any((f) => f.language == language))
+                          ListTile(
+                            key: Key(
+                              'editor-font-group-${language?.name ?? 'other'}',
+                            ),
+                            title: Text(language?.label ?? '未分类'),
+                          ),
+                        for (final font in fonts.where(
+                          (f) => f.language == language,
+                        ))
+                          ListTile(
+                            key: Key('editor-font-${font.id}'),
+                            title: Text(font.name),
+                            subtitle:
+                                !font.ready ||
+                                    !MarkdownTextFont.ids.contains(font.id)
+                                ? const Text('暂不可用')
+                                : recent.contains(font.id)
+                                ? const Text('最近使用')
+                                : null,
+                            enabled:
+                                writeEnabled &&
+                                font.ready &&
+                                runtime.assetsAvailable &&
+                                MarkdownTextFont.ids.contains(font.id),
+                            onTap: () => Navigator.pop(context, font.id),
+                          ),
+                      ],
+                    ],
+                  ),
           ),
         ),
       );
@@ -150,6 +178,10 @@ class EditorTextFontPicker extends ConsumerWidget {
           controller.updateSelection(selection, ChangeSource.local);
           await _open(context, ref, account, writeEnabled);
         }
+        return;
+      }
+      if (MarkdownTextFont.isVersionId(picked) &&
+          service.dynamicRuntime?.catalog.canSelect(picked) != true) {
         return;
       }
       if (EditorTextFontPolicy.apply(
@@ -175,6 +207,7 @@ class EditorTextFontPicker extends ConsumerWidget {
         showWenyouSnackBar(context, '字体加载失败', tone: WenyouSnackBarTone.error);
       }
     } finally {
+      service.closePicker();
       if (context.mounted &&
           ref.read(sessionScopeProvider).accountId == account) {
         focusNode?.requestFocus();

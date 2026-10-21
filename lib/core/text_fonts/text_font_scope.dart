@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wenyousite_mobile/app/app_capabilities.dart';
 import 'package:wenyousite_mobile/core/text_fonts/text_font_runtime.dart';
 import 'package:wenyousite_mobile/core/text_fonts/text_font_service.dart';
 
@@ -133,5 +134,11 @@ class _TextFontScopeState extends ConsumerState<TextFontScope> {
   }
 
   @override
-  Widget build(BuildContext context) => widget.builder(context, _runtime);
+  Widget build(BuildContext context) {
+    ref.listen(appCapabilitiesProvider, (_, _) {
+      _service = ref.read(textFontServiceProvider);
+      if (_visible) unawaited(_load());
+    });
+    return widget.builder(context, _runtime);
+  }
 }

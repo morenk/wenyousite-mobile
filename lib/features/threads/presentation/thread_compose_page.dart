@@ -11,6 +11,7 @@ import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/application/editor_toolbar_preference.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/core/text_fonts/text_font_service.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_anchored_popover.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
@@ -59,6 +60,8 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _editorSession = RichEditorSession(
+      preparePastedFonts: (delta) =>
+          prepareDynamicFontPaste(delta, ref.read(textFontServiceProvider)),
       initialMarkdown: '',
       clipboardScope: ref.read(sessionScopeProvider),
       blockAlignment: ref.read(appCapabilitiesProvider).markdownAlignment,

@@ -6,9 +6,20 @@ import 'package:wenyousite_mobile/core/markdown/markdown_text_color.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_text_font.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 
-void requireTextFontWriteSupport(String content, {required bool supported}) {
-  if (supported || !content.contains('data-wenyou-font-v1')) return;
+void requireTextFontWriteSupport(
+  String content, {
+  required bool supported,
+  bool v2Supported = false,
+}) {
+  if (!content.contains('data-wenyou-font-v')) return;
   final delta = MarkdownDeltaCodec.decode(content).delta;
+  if (!v2Supported &&
+      delta.operations.any(
+        (op) => MarkdownTextFont.isVersionId(op.attributes?['font']),
+      )) {
+    throw const ApiFailure.textFontUnavailable();
+  }
+  if (supported || v2Supported) return;
   if (delta.operations.any(
     (op) =>
         op.attributes?['font'] != null ||

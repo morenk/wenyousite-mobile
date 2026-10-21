@@ -15,6 +15,22 @@ typedef TextFontFetch =
       CancelToken cancel,
     );
 
+class TextFontResponse {
+  const TextFontResponse(this.status, this.bytes, {this.etag});
+  final int status;
+  final Uint8List bytes;
+  final String? etag;
+}
+
+typedef TextFontRequest =
+    Future<TextFontResponse> Function(
+      Uri uri,
+      int limit,
+      String contentType,
+      CancelToken cancel, {
+      String? etag,
+    });
+
 /// 独立公开读取，不携带会话，不自动重放；所有重试由字体账本调度。
 class TextFontTransport {
   TextFontTransport({
@@ -44,7 +60,25 @@ class TextFontTransport {
     String contentType,
     CancelToken cancel,
   ) async {
+    final result = await request(uri, limit, contentType, cancel);
+    if (result.status != 200) {
+      throw const TextFontTransferFailure(
+        TextFontTransferFailureKind.quarantined,
+      );
+    }
+    return result.bytes;
+  }
+
+  Future<TextFontResponse> request(
+    Uri uri,
+    int limit,
+    String contentType,
+    CancelToken cancel, {
+    String? etag,
+  }) async {
     var timedOut = false;
+    final transferCancel = CancelToken();
+    unawaited(cancel.whenCancel.then((error) => transferCancel.cancel(error)));
     final deadline = TextFontTransferDeadline(
       firstResponseTimeout: firstResponseTimeout,
       progressTimeout: progressTimeout,
@@ -53,6 +87,7 @@ class TextFontTransport {
       onTimeout: (reason) {
         timedOut = true;
         cancel.cancel(reason);
+        transferCancel.cancel(reason);
       },
     );
     void check() {
@@ -71,20 +106,27 @@ class TextFontTransport {
     try {
       final response = await _dio.get<ResponseBody>(
         uri.toString(),
-        cancelToken: cancel,
+        cancelToken: transferCancel,
         options: Options(
           responseType: ResponseType.stream,
           receiveTimeout: progressTimeout,
           followRedirects: false,
           validateStatus: (_) => true,
-          headers: {'X-Request-ID': const Uuid().v4()},
+          headers: {'X-Request-ID': const Uuid().v4(), 'If-None-Match': ?etag},
         ),
       );
       check();
       deadline.responseReceived();
       final status = response.statusCode;
+      final responseEtag = response.headers.value('etag');
+      if (const {304, 404, 409, 410}.contains(status)) {
+        // 状态已足够完成判断；错误响应体可能持续不结束，先终止底层读取。
+        transferCancel.cancel('status-complete');
+        await response.data?.stream.listen((_) {}).cancel();
+        return TextFontResponse(status!, Uint8List(0), etag: responseEtag);
+      }
       if (status != 200) {
-        cancel.cancel('rejected-status');
+        transferCancel.cancel('rejected-status');
         await response.data?.stream.listen((_) {}).cancel();
         throw TextFontTransferFailure(
           const {408, 429, 500, 502, 503, 504}.contains(status)
@@ -103,7 +145,7 @@ class TextFontTransport {
           .trim()
           .toLowerCase();
       if (response.data == null || type != contentType) {
-        cancel.cancel('rejected-mime');
+        transferCancel.cancel('rejected-mime');
         await response.data?.stream.listen((_) {}).cancel();
         throw const FormatException('字体资源MIME不符');
       }
@@ -112,7 +154,7 @@ class TextFontTransport {
         check();
         if (bytes.length + chunk.length > limit) {
           // 先终止底层来源，否则await-for取消可等待尚未结束的响应体。
-          cancel.cancel('length-rejected');
+          transferCancel.cancel('length-rejected');
           throw const FormatException('字体资源超出大小');
         }
         if (!deadline.bytesReceived(chunk.length)) {
@@ -123,7 +165,7 @@ class TextFontTransport {
         bytes.add(chunk);
       }
       check();
-      return bytes.takeBytes();
+      return TextFontResponse(200, bytes.takeBytes(), etag: responseEtag);
     } on DioException catch (error) {
       throw TextFontTransferFailure(
         error.type == DioExceptionType.badCertificate
@@ -137,10 +179,11 @@ class TextFontTransport {
         TextFontTransferFailureKind.temporary,
       );
     } on Object {
-      cancel.cancel('failed');
+      transferCancel.cancel('failed');
       rethrow;
     } finally {
       deadline.dispose();
+      transferCancel.cancel('complete');
     }
   }
 

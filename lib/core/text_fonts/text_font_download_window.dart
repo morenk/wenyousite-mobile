@@ -11,8 +11,14 @@ class TextFontDownloadWindow {
     }
   }
   final Duration period;
-  final int maximumBytes;
-  final int maximumRequests;
+  int maximumBytes;
+  int maximumRequests;
+  void tighten({required int bytes, required int requests}) {
+    if (bytes < 1 || requests < 1) throw ArgumentError('窗口上限必须为正数');
+    if (bytes < maximumBytes) maximumBytes = bytes;
+    if (requests < maximumRequests) maximumRequests = requests;
+  }
+
   final _attempts = <({Duration at, int bytes})>[];
   Duration _lastObserved = Duration.zero;
 

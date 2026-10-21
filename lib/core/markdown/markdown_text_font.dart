@@ -2,6 +2,12 @@ import 'package:markdown/markdown.dart' as md;
 
 /// Backend 正文字体 v1 的固定 ID；显示名称与资源由字体目录提供。
 abstract final class MarkdownTextFont {
+  static final _versionId = RegExp(r'^tfv_[a-f0-9]{32}$');
+  static bool isVersionId(Object? value) =>
+      value is String && _versionId.hasMatch(value);
+  static bool accepts(Object? value) =>
+      ids.contains(value) || isVersionId(value);
+
   static const ids = {
     'source-han-sans',
     'zcoolkuaile',

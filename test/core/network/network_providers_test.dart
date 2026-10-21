@@ -22,7 +22,7 @@ void main() {
     for (final provider in [dioProvider, refreshDioProvider]) {
       expect(
         container.read(provider).options.headers['X-Text-Font-Version'],
-        '1',
+        '2',
       );
       expect(
         container.read(provider).options.headers['X-Text-Color-Version'],

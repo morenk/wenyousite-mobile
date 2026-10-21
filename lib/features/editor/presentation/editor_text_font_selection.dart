@@ -10,7 +10,7 @@ abstract final class EditorTextFontPolicy {
     TextSelection selection,
     String? font,
   ) {
-    if (font != null && !MarkdownTextFont.ids.contains(font)) {
+    if (font != null && !MarkdownTextFont.accepts(font)) {
       throw ArgumentError.value(font, 'font');
     }
     if (controller.readOnly ||
