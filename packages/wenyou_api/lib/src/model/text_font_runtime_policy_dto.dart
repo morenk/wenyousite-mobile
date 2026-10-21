@@ -178,7 +178,7 @@ class _$TextFontRuntimePolicyDtoSerializer implements PrimitiveSerializer<TextFo
 class TextFontRuntimePolicyDtoPolicyVersionEnum extends EnumClass {
 
   /// 独立运行策略；未识别版本时继续 legacy limits
-  @BuiltValueEnumConst(wireName: r'2')
+  @BuiltValueEnumConst(wireNumber: 2)
   static const TextFontRuntimePolicyDtoPolicyVersionEnum n2 = _$textFontRuntimePolicyDtoPolicyVersionEnum_n2;
   /// 独立运行策略；未识别版本时继续 legacy limits
   @BuiltValueEnumConst(wireName: r'11184809', fallback: true)

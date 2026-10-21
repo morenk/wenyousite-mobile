@@ -174,7 +174,7 @@ class _$FontCatalogPageDtoSerializer implements PrimitiveSerializer<FontCatalogP
 
 class FontCatalogPageDtoFontVersionEnum extends EnumClass {
 
-  @BuiltValueEnumConst(wireName: r'2')
+  @BuiltValueEnumConst(wireNumber: 2)
   static const FontCatalogPageDtoFontVersionEnum n2 = _$fontCatalogPageDtoFontVersionEnum_n2;
   @BuiltValueEnumConst(wireName: r'11184809', fallback: true)
   static const FontCatalogPageDtoFontVersionEnum unknownDefaultOpenApi = _$fontCatalogPageDtoFontVersionEnum_unknownDefaultOpenApi;

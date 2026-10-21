@@ -211,7 +211,7 @@ class _$DynamicFontRuntimePolicyDtoSerializer implements PrimitiveSerializer<Dyn
 class DynamicFontRuntimePolicyDtoPolicyVersionEnum extends EnumClass {
 
   /// 动态策略独立于旧固定 manifest 策略 v2。拒绝未知/缺字段策略，保留最后可信策略且不得放大本地硬上限。
-  @BuiltValueEnumConst(wireName: r'3')
+  @BuiltValueEnumConst(wireNumber: 3)
   static const DynamicFontRuntimePolicyDtoPolicyVersionEnum n3 = _$dynamicFontRuntimePolicyDtoPolicyVersionEnum_n3;
   /// 动态策略独立于旧固定 manifest 策略 v2。拒绝未知/缺字段策略，保留最后可信策略且不得放大本地硬上限。
   @BuiltValueEnumConst(wireName: r'11184809', fallback: true)
@@ -227,7 +227,7 @@ class DynamicFontRuntimePolicyDtoPolicyVersionEnum extends EnumClass {
 
 class DynamicFontRuntimePolicyDtoFontVersionEnum extends EnumClass {
 
-  @BuiltValueEnumConst(wireName: r'2')
+  @BuiltValueEnumConst(wireNumber: 2)
   static const DynamicFontRuntimePolicyDtoFontVersionEnum n2 = _$dynamicFontRuntimePolicyDtoFontVersionEnum_n2;
   @BuiltValueEnumConst(wireName: r'11184809', fallback: true)
   static const DynamicFontRuntimePolicyDtoFontVersionEnum unknownDefaultOpenApi = _$dynamicFontRuntimePolicyDtoFontVersionEnum_unknownDefaultOpenApi;
