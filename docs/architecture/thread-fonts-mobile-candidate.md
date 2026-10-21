@@ -2,6 +2,8 @@
 
 状态：开发候选／待门禁与负责人验收。完整门禁未通过；尚未安装 APK、未接管设备或 Debug 会话、未执行线上业务写入、未合并或发布。
 
+本记录对应 revision 4 的 17 款候选与既有 APK，保留为可追溯证据。当前任务已转入 revision 5 的 29 款语言分组，待正式契约交接后继续同一 PR；最新边界见[接入调查](thread-fonts-mobile-investigation.md#revision-5-当前交接边界)。不能把以下截图、名单或 APK 当作 revision 5 已完成。
+
 ## 来源与范围
 
 - Worktree：`D:\codex-worktrees\1528\wenyousite-mobile`；分支 `codex/20261021-thread-fonts-mobile`，PR #114。
@@ -61,6 +63,26 @@
 - SHA-256：`6f15730d186f4b3c13bfb63a6e4072aff266b87acaa8bb30605cc7f2327f6e12`。构建时间：2026-10-21 07:06（Asia/Shanghai）。
 - `applicationId=site.wenyou.app.debug`，名称“温油站 Debug”，`versionName=0.10.0-debug`，`versionCode=100`，最低 API 26，目标 API 36，仅 `arm64-v8a`；APK v2 签名校验通过，未捆绑正式字体分片。
 - 构建未传 API define，实际默认地址 `https://wenyou.site/api/v1`。当前公网未发布字体契约及资源，此包仅为开发验证产物，不构成已通过完整门禁的发布候选。未安装，设备内 APK 哈希、启动和字体真机关键路径均未验证。
+
+## APK 体积增长核验
+
+2026-10-21 对已有两个 APK 做只读 ZIP 核验，没有重构建、重新压缩或重新签名。约 42.4 MB 的增长来自旧 kernel 区间保留的空填充，不是新增完整字体或研究资源。
+
+| 项目 | Foundation 基础包 | 17 款开发验证包 | 差值 |
+| --- | ---: | ---: | ---: |
+| APK 大小 B | 112,831,150 | 155,236,322 | +42,405,172 |
+| 中央目录有效条目数 | 732 | 732 | 0 |
+| `kernel_blob.bin` 未压缩 B | 127,958,592 | 128,288,376 | +329,784 |
+| `kernel_blob.bin` 压缩 B | 42,311,196 | 42,405,105 | +93,909 |
+| APK 签名块 B | 4,096 | 4,096 | 0 |
+| 中央目录至文件末尾 B | 73,095 | 73,095 | 0 |
+
+- 基础包：`build/thread-fonts-baseline/app-foundation-7.6.0-debug.apk`，SHA-256 `8caf842c47ba75b01406e81a3805e0ba29cd031fa7ff3edb61e782f085ed4ce0`；开发包路径与 SHA-256 见上一节。
+- 全部有效 ZIP 条目逐项计算解压内容 SHA-256：没有新增或删除条目，只有 `assets/flutter_assets/kernel_blob.bin` 内容改变，其余 731 项完全一致。唯一字体文件仍为已有 `assets/flutter_assets/fonts/MaterialIcons-Regular.otf`；没有正式资产哈希命中的条目，也没有 `thread-font`、`audit3500`、`font-audit`、`.dart_tool` 等研究资源条目。
+- 旧 kernel 本地记录位于 `[69,564,081, 111,875,344)`，总计 42,311,263 B（67 B 本地头及名称 + 42,311,196 B 压缩内容）。新包此区间被 647 个零长度、空文件名的本地填充头及全零扩展区占用；中央目录没有任何引用落入该区间，不是可读取的旧代码或字体资源。
+- 新 kernel 记录位于 112,753,959，即旧签名块起点；其 67 B 头及名称加 42,405,105 B 压缩内容正好为 42,405,172 B。有效压缩内容增长 93,909 B，加保留空区 42,311,263 B，精确解释全部 APK 增长。布局与增量替换 kernel、旧空间未收缩一致；直接证据是 ZIP 中未被有效目录引用的空填充区。
+- 逐条目大小、内容哈希、偏移与填充审计分别保留于 `.dart_tool/thread-fonts-apk-size-comparison.json`、`thread-fonts-apk-content-hashes.json`、`thread-fonts-apk-zip-structure.json`、`thread-fonts-apk-padding-audit.json`。只读检查后原 APK 哈希保持不变。
+- 随 revision 5 最终候选集中验证：先保留这些原 APK 和证据，再核对并清理仅属于本任务的打包中间产物，检查新 APK 空填充是否回收；不为每次字体名单更新重构建，不通过修改或重新压缩当前已签名 APK 冒充新构建结果。
 
 ## 负责人真机清单
 
