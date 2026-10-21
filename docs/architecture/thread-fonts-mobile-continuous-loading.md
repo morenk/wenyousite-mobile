@@ -4,7 +4,19 @@
 
 ## 动态字体生产接入（候选，待真机验收）
 
-### 本轮最终本地检查与候选证据
+### 最终契约与 T 面板补验（2026-10-22，待真机验收）
+
+契约已固定 Backend `62a0313a75c85e42dfa39cd09b7cc90ae5c34186`／HTTP `5.43.0-dev.20261022.3`，独立同步提交 `2cbe2417`。本次增量仅扩展审计动作和目标枚举、补充运行说明；字体正文与资源协议不变。OpenAPI 校验、正式再生成、生成客户端分析及契约来源核对通过，API 覆盖检查通过。未部署公网。
+
+T 面板复用现有入口，精简常驻提示、显示当前／默认字体、混合选区与历史选择状态；取消工具后保留选区、焦点和输入样式。Foundation 远端正式最新 Tag 仍为 v7.6.0，已核对对应变更说明。`.dart_tool/dynamic-font-final-focused-r2.log` 18项通过，路径：`test/features/editor/editor_dynamic_font_toolbar_test.dart`、`editor_text_font_picker_test.dart`、`editor_dynamic_font_list_test.dart`、`test/tool/font_acceptance_probe_test.dart`、`test/core/network/audio_budget_contract_test.dart`、`dynamic_font_numeric_contract_test.dart`。此前新夹具的异步等待、滚动后未 pump 及生成途中编译失败记录保留，不充作产品通过证据。
+
+真实产品的[连续验收步骤与只读观察器](../../tool/font_acceptance/README.md)已准备：绑定 APK/进程/VM 身份、持续拒绝重载或断连，采集实际 PSS/RSS、VM 内存、原生注册账本及画面，业务操作仍经真实编辑器和 Android 系统剪贴板完成。桌面 Dart VM 夹具只验证观察器协议，不替代 Android 产品。观察器全量静态检查零问题，日志 `.dart_tool/font-acceptance-final-analyze.log`。
+
+最终 loopback 候选将在本批次检查完成后记录于本节。下节 `244e8b6c...` APK 已被 T 面板及最终生成客户端更新取代，不包含本轮 UI，不用于最终联验。当前 ADB 无设备，未安装或启动；按负责人安排保留等待连接，客户端固定并启动后才开始新字体 ID 的核心旅程。公网兼容差异仍未解决，不能声称整套门禁全绿或真机验收完成。
+
+本批次最终应用全量静态分析零问题（237.5秒，`.dart_tool/dynamic-font-final-app-analyze.log`），生成客户端零问题（`dynamic-font-final-generated-analyze.log`）；1505个 Dart 文件格式无变化、架构与23模块文档通过，API范围175/175无缺项。新增 UI、观察器和最终审计枚举没有改变已完成完整门禁的字体运行时；本轮补验上述直接受影响路径，不把旧完整门禁结果改写成新源码全量测试通过。
+
+### 前一版兼容源码检查与候选证据（已被本轮更新取代）
 
 - 应用源码摘要：`03e91de9e303b844b923ede2b679f674dea8d9e66b2e3d218e37b5f2d45b4cb8`（lib、Android、生成客户端、pubspec，2079个文件）；门禁后只修正测试断言与文档，构建前复核应用摘要未变。
 - `npm run check:apk -- -ContinueAfterFailure -TestConcurrency 2` 已完整执行。格式1499文件零改动；应用/生成客户端静态分析、架构、23模块文档、API覆盖175/175及再生成一致性通过；Windows工具49/49通过，Debug APK构建成功。

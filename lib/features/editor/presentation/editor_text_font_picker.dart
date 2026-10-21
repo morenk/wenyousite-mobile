@@ -13,6 +13,7 @@ import 'package:wenyousite_mobile/core/text_fonts/text_font_service.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_dynamic_font_list.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_text_font_selection.dart';
+import 'package:wenyousite_mobile/features/editor/presentation/literal_text_quill_controller.dart';
 
 class EditorTextFontPicker extends ConsumerWidget {
   const EditorTextFontPicker({
@@ -40,19 +41,22 @@ class EditorTextFontPicker extends ConsumerWidget {
         !selected.isCollapsed;
     return Align(
       alignment: Alignment.centerLeft,
-      child: TextButton(
-        key: const Key('editor-font-picker'),
-        onPressed: canSelect
-            ? () => _open(
-                context,
-                ref,
-                account,
-                capability.textFontV2Supported
-                    ? capability.textFontV2WriteEnabled
-                    : capability.textFontWriteEnabled,
-              )
-            : null,
-        child: Text(canSelect ? '字体' : '选中文字后更换字体'),
+      child: Tooltip(
+        message: canSelect ? '更换字体' : '选中文字后更换字体',
+        child: TextButton(
+          key: const Key('editor-font-picker'),
+          onPressed: canSelect
+              ? () => _open(
+                  context,
+                  ref,
+                  account,
+                  capability.textFontV2Supported
+                      ? capability.textFontV2WriteEnabled
+                      : capability.textFontWriteEnabled,
+                )
+              : null,
+          child: const Text('字体'),
+        ),
       ),
     );
   }
@@ -64,6 +68,10 @@ class EditorTextFontPicker extends ConsumerWidget {
     bool writeEnabled,
   ) async {
     final selection = controller.selection;
+    final selectedFont = EditorTextFontPolicy.selection(controller);
+    final typingStyle = controller is LiteralTextQuillController
+        ? (controller as LiteralTextQuillController).captureTypingStyle()
+        : null;
     final original = jsonEncode(controller.document.toDelta().toJson());
     final service = ref.read(textFontServiceProvider);
     try {
@@ -106,17 +114,22 @@ class EditorTextFontPicker extends ConsumerWidget {
                     runtime: runtime,
                     writeEnabled: writeEnabled,
                     recent: recent,
+                    selectedFont: selectedFont.font,
+                    mixedSelection: selectedFont.mixed,
                   )
                 : ListView(
                     padding: EdgeInsets.all(context.wenyouTokens.space16),
                     children: [
-                      const ListTile(
-                        title: Text('字体'),
-                        subtitle: Text('缺少的字使用默认字体显示'),
-                      ),
+                      const ListTile(title: Text('字体')),
                       ListTile(
                         key: const Key('editor-font-default'),
                         title: const Text('默认字体'),
+                        selected:
+                            !selectedFont.mixed && selectedFont.font == null,
+                        trailing:
+                            !selectedFont.mixed && selectedFont.font == null
+                            ? const Text('当前')
+                            : null,
                         onTap: () => Navigator.pop(context, ''),
                       ),
                       if (!writeEnabled)
@@ -144,6 +157,14 @@ class EditorTextFontPicker extends ConsumerWidget {
                           ListTile(
                             key: Key('editor-font-${font.id}'),
                             title: Text(font.name),
+                            selected:
+                                !selectedFont.mixed &&
+                                selectedFont.font == font.id,
+                            trailing:
+                                !selectedFont.mixed &&
+                                    selectedFont.font == font.id
+                                ? const Text('当前')
+                                : null,
                             subtitle:
                                 !font.ready ||
                                     !MarkdownTextFont.ids.contains(font.id)
@@ -210,6 +231,16 @@ class EditorTextFontPicker extends ConsumerWidget {
       service.closePicker();
       if (context.mounted &&
           ref.read(sessionScopeProvider).accountId == account) {
+        if (jsonEncode(controller.document.toDelta().toJson()) == original) {
+          if (controller is LiteralTextQuillController) {
+            (controller as LiteralTextQuillController).restoreToolSelection(
+              selection,
+              snapshot: typingStyle,
+            );
+          } else {
+            controller.updateSelection(selection, ChangeSource.local);
+          }
+        }
         focusNode?.requestFocus();
       }
     }

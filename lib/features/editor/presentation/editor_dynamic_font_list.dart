@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/text_fonts/text_font_legacy_mapping.dart';
 import 'package:wenyousite_mobile/core/text_fonts/text_font_runtime.dart';
 import 'package:wenyousite_mobile/core/text_fonts/text_font_service.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
@@ -15,12 +16,16 @@ class EditorDynamicFontList extends StatelessWidget {
     required this.runtime,
     required this.writeEnabled,
     required this.recent,
+    this.selectedFont,
+    this.mixedSelection = false,
     super.key,
   });
   final TextFontService service;
   final TextFontRuntime runtime;
   final bool writeEnabled;
   final List<String> recent;
+  final String? selectedFont;
+  final bool mixedSelection;
 
   @override
   Widget build(BuildContext context) => AnimatedBuilder(
@@ -29,6 +34,16 @@ class EditorDynamicFontList extends StatelessWidget {
       final entries =
           service.dynamicRuntime?.catalog.entries.toList() ??
           <FontCatalogEntryDto>[];
+      final selectedVersion = selectedFont == null
+          ? null
+          : dynamicTextFontVersion(selectedFont!);
+      final hiddenSelection =
+          !mixedSelection &&
+          selectedFont != null &&
+          !entries.any((entry) => entry.versionId == selectedVersion);
+      final currentName = selectedVersion == null
+          ? null
+          : service.dynamicRuntime?.catalog.descriptor(selectedVersion)?.name;
       entries.sort((a, b) {
         final ai = recent.indexOf(a.versionId),
             bi = recent.indexOf(b.versionId);
@@ -57,11 +72,24 @@ class EditorDynamicFontList extends StatelessWidget {
         addAutomaticKeepAlives: false,
         itemCount: rows.length + 3,
         itemBuilder: (context, index) {
-          if (index == 0) return const ListTile(title: Text('字体'));
+          if (index == 0) {
+            return ListTile(
+              title: const Text('字体'),
+              subtitle: mixedSelection
+                  ? const Text('多种字体')
+                  : hiddenSelection
+                  ? Text(currentName == null ? '当前字体暂不可用' : '当前：$currentName')
+                  : null,
+            );
+          }
           if (index == 1) {
             return ListTile(
               key: const Key('editor-font-default'),
               title: const Text('默认字体'),
+              selected: !mixedSelection && selectedFont == null,
+              trailing: !mixedSelection && selectedFont == null
+                  ? const Text('当前')
+                  : null,
               onTap: () => Navigator.pop(context, ''),
             );
           }
@@ -79,6 +107,8 @@ class EditorDynamicFontList extends StatelessWidget {
             entry: row.entry!,
             service: service,
             enabled: writeEnabled,
+            selected:
+                !mixedSelection && selectedVersion == row.entry!.versionId,
           );
         },
       );
@@ -91,11 +121,13 @@ class _DynamicFontTile extends StatefulWidget {
     required this.entry,
     required this.service,
     required this.enabled,
+    required this.selected,
     super.key,
   });
   final FontCatalogEntryDto entry;
   final TextFontService service;
   final bool enabled;
+  final bool selected;
   @override
   State<_DynamicFontTile> createState() => _DynamicFontTileState();
 }
@@ -175,7 +207,13 @@ class _DynamicFontTileState extends State<_DynamicFontTile>
   @override
   Widget build(BuildContext context) => ListTile(
     key: Key('editor-font-${widget.entry.versionId}'),
-    title: Text(widget.entry.name),
+    title: Text(
+      widget.entry.name,
+      maxLines: 2,
+      overflow: TextOverflow.ellipsis,
+    ),
+    selected: widget.selected,
+    trailing: widget.selected ? const Text('当前') : null,
     enabled: widget.enabled && !_selecting,
     subtitle: _image == null
         ? null

@@ -5,6 +5,35 @@ import 'package:wenyousite_mobile/core/markdown/markdown_text_font.dart';
 
 /// 一个选择操作对应一次撤销；行结束和原子节点始终不携带字体属性。
 abstract final class EditorTextFontPolicy {
+  static ({String? font, bool mixed}) selection(QuillController controller) {
+    final range = controller.selection;
+    if (!range.isValid || range.isCollapsed) {
+      return (
+        font:
+            controller.getSelectionStyle().attributes['font']?.value as String?,
+        mixed: false,
+      );
+    }
+    final fonts = <String?>{};
+    var offset = 0;
+    for (final op in controller.document.toDelta().operations) {
+      final data = op.data;
+      if (data is String) {
+        final start = (range.start - offset).clamp(0, data.length);
+        final end = (range.end - offset).clamp(start, data.length);
+        if (data.substring(start, end).replaceAll('\n', '').isNotEmpty) {
+          fonts.add(op.attributes?['font'] as String?);
+        }
+      }
+      offset += op.length!;
+      if (offset >= range.end) break;
+    }
+    return (
+      font: fonts.length == 1 ? fonts.single : null,
+      mixed: fonts.length > 1,
+    );
+  }
+
   static bool apply(
     QuillController controller,
     TextSelection selection,
