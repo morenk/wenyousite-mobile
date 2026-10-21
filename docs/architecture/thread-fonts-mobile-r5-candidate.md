@@ -1,11 +1,12 @@
 # 正文字体 revision 5 候选记录
 
-状态：实现与资源验证中，待最终 29-ready 资源、稳定源码门禁及负责人验收。未合并、部署、安装或接管其他任务设备；上一批 APK 不代表本批源码。
+状态：已同步最终 29-ready 资源锁，正在稳定源码门禁与补充验证，待负责人验收。未合并、部署、安装或接管其他任务设备；上一批 APK 不代表本批源码。
 
 ## 固定来源与范围
 
-- Backend `a192628fc1484990871a8d159a7324446cdf0b05`，API `5.41.0-dev.20261021.2`、目录 `1.1.0`。29 款，中文 13／日文 10／英文 6；当前 28 ready，`kaitou-yokoku-gothic` pendingSource。
-- 正式 manifest SHA-256 `e793a3f4674a85840c8da2cd2a5c53f8af62c3c6256a951d269875f4cba2f1e6`，4,802,519 B；VPS 只读来源 `/tmp/thread-font-release-r5-publish`。
+- Backend `102b825379eb5da462f0ff765b29dc8fd7fb93ad`，API `5.41.0-dev.20261021.2`、目录 `1.1.1`。29 款全部 ready，中文 13／日文 10／英文 6。
+- 最终 manifest SHA-256 `7aab91a436933049bc8f55c1aba6085078a251d174c5b253456d3af0c91a0582`，5,031,019 B；VPS 只读来源 `/tmp/thread-font-release-complete-publish`。
+- 首批 28-ready 来自 `a192628fc1484990871a8d159a7324446cdf0b05`，manifest `e793a3f4674a85840c8da2cd2a5c53f8af62c3c6256a951d269875f4cba2f1e6`。已逐项比较确认最终锁中这 28 款完整 manifest 条目未变，下方实际渲染证据继续适用；原包和记录保留。
 - Foundation 已重新 fetch 远端和 tags，最新正式 Tag 仍为 v7.6.0；已读该版本 CHANGELOG，无新增 Flutter 字体迁移。
 - 契约同步独立提交 `069564bf`，补齐目录／来源 Schema 并生成客户端。OpenAPI validate、生成客户端分析、`test/core/network/audio_budget_contract_test.dart`、`tool/windows/contract_revision.test.mjs` 均通过。
 - 公网只读 `/meta.contractVersion` 与 Backend `origin/dev` 仍为 `5.40.0-dev.20261018.1`，正式候选与公网不同；这是独立未满足项，不通过部署规避。
@@ -21,6 +22,8 @@
 
 ## 验证记录
 
+- 最终资源集逐个哈希与大小校验通过：1,799 个对象、303,835,700 B，审计 `.dart_tool/thread-fonts-r5-final-assets-verified.json`。复用 1,676 个已核验对象，仅从正式交接目录读取 123 个新对象。
+- 最终目录相关回归 `test/core/network/audio_budget_contract_test.dart`、`test/core/text_fonts/`、`test/features/editor/editor_text_font_picker_test.dart` 共 22 项通过，日志 `.dart_tool/thread-fonts-r5-final-lock-retest.log`。前一次 21 通过／1 失败是测试滚回中文组时文字仍在视口边缘；补齐滚动结束、居中和点击命中断言后复验，未关闭命中检查，未修改应用行为。
 - 针对性验证 41 项通过：`test/core/text_fonts/`、`test/core/markdown/markdown_text_font_test.dart`、`test/features/editor/editor_text_font_picker_test.dart`。日志 `.dart_tool/thread-fonts-r5-targeted-final.log`。随后补充未知语言选择器场景，该文件 3 项全部通过（新增 1 项、复验 2 项），日志 `.dart_tool/thread-fonts-r5-picker-final.log`。
 - 原件预算测试用模拟的已验证缓存边界隔离状态机；真实文件 SHA 和 FontLoader 注册必须由离线正式资产预览另行验证，不用模拟字节冒充真实字体。
 - 1,677 个正式对象逐个 SHA-256 与大小校验通过，共 269,672,516 B；审计 `.dart_tool/thread-fonts-r5-assets-verified.json`。只读传输曾中断，分段续传后以完整对象哈希确认一致，不以传输成功代替校验。
@@ -42,6 +45,7 @@
 
 ## 尚未执行与负责人手测
 
-- 等待 Backend 怪盗最终 29-ready 资源锁，收到后只同步正式资产并补受影响验证。
+- 最终 29-ready 锁已同步，仅增加怪盗的正式资源和完整 manifest，补充怪盗、最终选择器与目录相关回归；不机械重复未变化 28 款渲染。
 - 稳定源码后集中执行高风险完整门禁与 APK 构建，复核上一批已修正的线程栈载荷期望和 Windows 契约文档夹具。APK 构建前仅清理本任务确认可重建的打包产物，保留旧 APK 及 ZIP 填充审计证据，随后重新核验体积、条目与包身份。
+- 打包目录处理采用完整备份：工具安全策略拒绝递归删除后，已将本 Worktree 的 `build/app/intermediates/incremental/packageDebug`、`build/app/outputs/apk/debug`、`build/app/outputs/flutter-apk` 分别更名保留为 `*-thread-fonts-r4-preserved`，没有删除数据；旧候选与基线 APK 的 SHA 均已再次核对一致。
 - Android 真机和跨端读写仍待负责人执行：中文／日文／英文分组、长按真实选区选字、颜色与格式组合、保存重开、恢复默认、日文假名、小城缺失引号回退、离线／预算耗尽及账号最近列表。未经负责人明确通过不标记完成。

@@ -196,7 +196,12 @@ void main() {
           -200,
           scrollable: list,
         );
-        await tester.tap(find.text('文楷'));
+        await tester.pumpAndSettle();
+        final wenkai = find.byKey(const Key('editor-font-wenkai'));
+        await Scrollable.ensureVisible(tester.element(wenkai), alignment: .5);
+        await tester.pumpAndSettle();
+        expect(wenkai.hitTestable(), findsOneWidget);
+        await tester.tap(wenkai);
       } else {
         expect(find.text('暂时无法更换字体，可恢复默认字体'), findsOneWidget);
         await tester.tap(find.byKey(const Key('editor-font-default')));

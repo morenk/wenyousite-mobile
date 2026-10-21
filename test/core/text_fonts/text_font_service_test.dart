@@ -43,7 +43,7 @@ void main() {
               TextFontCatalogDto(
                 (b) => b
                   ..fontVersion = TextFontCatalogDtoFontVersionEnum.n1
-                  ..catalogVersion = '1.1.0'
+                  ..catalogVersion = '1.1.1'
                   ..assetBaseUrl = 'https://assets.example/'
                   ..fonts.replace([])
                   ..manifest.replace(

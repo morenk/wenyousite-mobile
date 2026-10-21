@@ -68,9 +68,9 @@ void main() {
       File('contracts/thread-font-manifest-v1.json').readAsBytesSync(),
     );
     expect(actual.fonts.length, 29);
-    expect(actual.fonts.values.where((f) => f.ready).length, 28);
+    expect(actual.fonts.values.where((f) => f.ready).length, 29);
     expect(actual.fonts['xiaocheng-lafeng']!.ready, isTrue);
-    expect(actual.fonts['kaitou-yokoku-gothic']!.ready, isFalse);
+    expect(actual.fonts['kaitou-yokoku-gothic']!.ready, isTrue);
     for (final (language, count) in [
       (TextFontLanguage.zh, 13),
       (TextFontLanguage.ja, 10),

@@ -247,7 +247,7 @@ S5 于 2026-09-10 启动，已按要求安装 Debug 候选并核验设备内 APK
 
 ## 12. 已知限制和后续功能
 
-正文字体候选依赖字体读取能力、写入开关及已发布资源基址。revision 5 当前 28 款资源 ready，怪盗予告黑体待最终资源；线上地址未发布。小城拉风体按固定 SHA 加载完整原始 TTF，使用独立 18,410,600 字节进程额度，其他字体仍为普通分片预算；首次下载或缓存注册前预留，失败不退额，进程内不重复注册。日文假名按实际字形范围加载额外分片，不能只加载 core。Android 及跨端写入待负责人验收。缺字、离线、坏文件、未知加载方式及预算耗尽均保留字体 ID 并可读回退；未知未来字体保留兼容原文，不声称可编辑。实际验证见[revision 5 记录](../architecture/thread-fonts-mobile-r5-candidate.md)。
+正文字体候选依赖字体读取能力、写入开关及已发布资源基址。revision 5 目录 1.1.1 的 29 款资源全部 ready；线上地址未发布。小城拉风体按固定 SHA 加载完整原始 TTF，使用独立 18,410,600 字节进程额度，其他字体仍为普通分片预算；首次下载或缓存注册前预留，失败不退额，进程内不重复注册。日文假名按实际字形范围加载额外分片，不能只加载 core。Android 及跨端写入待负责人验收。缺字、离线、坏文件、未知加载方式及预算耗尽均保留字体 ID 并可读回退；未知未来字体保留兼容原文，不声称可编辑。实际验证见[revision 5 记录](../architecture/thread-fonts-mobile-r5-candidate.md)。
 
 公共流程重构候选：内容校验、对齐保护与行内边界共用 `MarkdownInlineCodeScanner`，按完全相同长度的反引号串闭合，保留转义与 UTF-16 偏移。真实帖子页验证多长度定界符的打开、输入、保存、阅读和重开。转义反引号紧邻代码起始符的既有 Codec 限制仍未解决，具体输入与旧基线证据见[公共流程验收](../architecture/shared-flows-acceptance.md)。本批待负责人验收。
 
@@ -261,9 +261,9 @@ S5 于 2026-09-10 启动，已按要求安装 Debug 候选并核验设备内 APK
 
 ## 13. 最近审查的契约版本和后端提交
 
-2026-10-21 字体消费候选：Backend `a192628fc1484990871a8d159a7324446cdf0b05`／API `5.41.0-dev.20261021.2`，Foundation v7.6.0。字体和颜色共用受控 span，字体属性在前；正文、clipboard v2、摘要及往返共用解析，保留合法行内格式。写入均声明 `textFontVersion: 1`，包括清除最后字体；40019–40021 保留草稿。目录使用 `textFontsGetCatalog`，资源与验收见[字体候选记录](../architecture/thread-fonts-mobile-candidate.md)。
+2026-10-21 字体消费候选：Backend `102b825379eb5da462f0ff765b29dc8fd7fb93ad`／API `5.41.0-dev.20261021.2`，Foundation v7.6.0。字体和颜色共用受控 span，字体属性在前；正文、clipboard v2、摘要及往返共用解析，保留合法行内格式。写入均声明 `textFontVersion: 1`，包括清除最后字体；40019–40021 保留草稿。目录使用 `textFontsGetCatalog`，资源与验收见[字体候选记录](../architecture/thread-fonts-mobile-candidate.md)。
 
-2026-10-21 字体契约同步：固定 Backend PR #56 `a192628fc1484990871a8d159a7324446cdf0b05`／API `5.41.0-dev.20261021.2`。新增正文字体 v1、与颜色同 span 的规范属性顺序、读写能力及资源目录 API；保存 DTO 包含独立 `textFontVersion`。此步只生成模型，尚未启用客户端能力声明或编辑入口。正式资源以 `thread-font-manifest-v1.json` 的哈希与字形范围为准；缺字及资源不可用时保留 ID 并可读回退。
+2026-10-21 字体契约同步：固定 Backend PR #56 `102b825379eb5da462f0ff765b29dc8fd7fb93ad`／API `5.41.0-dev.20261021.2`。新增正文字体 v1、与颜色同 span 的规范属性顺序、读写能力及资源目录 API；保存 DTO 包含独立 `textFontVersion`。此步只生成模型，尚未启用客户端能力声明或编辑入口。正式资源以 `thread-font-manifest-v1.json` 的哈希与字形范围为准；缺字及资源不可用时保留 ID 并可读回退。
 
 2026-10-21 前置依赖同步：固定 Foundation 正式 `v7.6.0`（`1bbd5a5476b50c51d2bba1f2a218f9408a852c4a`）；相对 `v7.5.0` 的 Mobile 契约及行为保持不变。Backend 记录、镜像 `origin/dev` 与公网仍为 `6e00c4031a8f970609eef8cbf6fdefe3e6b12126`／API `5.40.0-dev.20261018.1`。帖内字体尚待已提交 Backend 协议，保持最新已发布 Foundation，仅实际变更其机器契约或运行产物时等待新正式 Tag；当前未开放入口。影响面及未验证项见[字体接入调查](../architecture/thread-fonts-mobile-investigation.md)。
 
