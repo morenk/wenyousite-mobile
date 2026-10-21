@@ -12,7 +12,14 @@ T 面板复用现有入口，精简常驻提示、显示当前／默认字体、
 
 真实产品的[连续验收步骤与只读观察器](../../tool/font_acceptance/README.md)已准备：绑定 APK/进程/VM 身份、持续拒绝重载或断连，采集实际 PSS/RSS、VM 内存、原生注册账本及画面，业务操作仍经真实编辑器和 Android 系统剪贴板完成。桌面 Dart VM 夹具只验证观察器协议，不替代 Android 产品。观察器全量静态检查零问题，日志 `.dart_tool/font-acceptance-final-analyze.log`。
 
-最终 loopback 候选将在本批次检查完成后记录于本节。下节 `244e8b6c...` APK 已被 T 面板及最终生成客户端更新取代，不包含本轮 UI，不用于最终联验。当前 ADB 无设备，未安装或启动；按负责人安排保留等待连接，客户端固定并启动后才开始新字体 ID 的核心旅程。公网兼容差异仍未解决，不能声称整套门禁全绿或真机验收完成。
+最终 loopback 候选已于 Windows 构建（39.7秒，`.dart_tool/dynamic-font-final-loopback-build.log`），应用提交 `d804dcd75ff3842b2b0f6d65cd026f30dae8cc37`：
+
+- APK：`build/dynamic-font-v2-candidate/app-dynamic-font-v2-final-dd42b0a44c89-debug.apk`，156057342字节，SHA-256 `dd42b0a44c89fcfc79c90a1599b90022d64ae2ee1664671c3de77f6ec92233e5`。
+- 包名 `site.wenyou.app.debug`，名称“温油站 Debug”，`0.10.0-debug`／versionCode 100，仅 `arm64-v8a`，APK v2签名验证通过；签名及包信息日志为 `.dart_tool/dynamic-font-final-signature.log`、`dynamic-font-final-badging.log`。
+- 2079文件应用源码摘要 `3193e41271a95ae880e4db63dda0ebe3fa65775e236c4b0ece96952fb607827f`，构建前后逐文件复核未变化；清单 `.dart_tool/dynamic-font-final-source.json`。再生成一致性通过（`.dart_tool/dynamic-font-final-generation-check.log`），没有手改生成文件。
+- 编译字符串 `API_BASE_URL=http://127.0.0.1:38876/api/v1`（UTF-8无换行），defines SHA-256 `e56725816143f5dca48f183bb1941c4e6d79f9d3a39ab8b267b55de9f4b693b6`。最终元数据 `.dart_tool/dynamic-font-candidate-config.json`，前一版配置单独保留。
+
+下节 `244e8b6c...` APK 已被 T 面板及最终生成客户端更新取代，不包含本轮 UI，不用于最终联验。当前 ADB 无设备，未安装或启动；38876尚无已核验的隔离转发。按负责人安排保留等待连接，客户端固定并启动后才开始新字体 ID 的核心旅程。公网兼容差异仍未解决，不能声称整套门禁全绿或真机验收完成。实际 Android 字形、键盘／选区、系统剪贴板、发帖／保存重开、离线恢复、新版／停用／撤回／回滚、PSS及同进程原生账本均未覆盖，须按上方真实产品步骤执行。
 
 本批次最终应用全量静态分析零问题（237.5秒，`.dart_tool/dynamic-font-final-app-analyze.log`），生成客户端零问题（`dynamic-font-final-generated-analyze.log`）；1505个 Dart 文件格式无变化、架构与23模块文档通过，API范围175/175无缺项。新增 UI、观察器和最终审计枚举没有改变已完成完整门禁的字体运行时；本轮补验上述直接受影响路径，不把旧完整门禁结果改写成新源码全量测试通过。
 
