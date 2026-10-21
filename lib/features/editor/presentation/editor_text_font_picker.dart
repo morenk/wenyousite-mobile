@@ -63,7 +63,13 @@ class EditorTextFontPicker extends ConsumerWidget {
       final runtime = await service.load();
       final preferences = await SharedPreferences.getInstance();
       final key = 'editor.textFont.v1.${Uri.encodeComponent(account)}';
-      final recent = preferences.getStringList(key) ?? <String>[];
+      final recent = (preferences.getStringList(key) ?? <String>[])
+          .where(
+            (id) =>
+                runtime.manifest?.fonts[id]?.ready == true &&
+                MarkdownTextFont.ids.contains(id),
+          )
+          .toList();
       if (!context.mounted ||
           ref.read(sessionScopeProvider).accountId != account) {
         return;

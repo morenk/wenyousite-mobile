@@ -38,6 +38,78 @@ class _FontsRuntime extends TextFontRuntime {
 }
 
 void main() {
+  testWidgets('已撤下字体不会由最近使用复活，历史正文保留且可恢复默认', (tester) async {
+    const preferenceKey = 'editor.textFont.v1.account';
+    SharedPreferences.setMockInitialValues({
+      preferenceKey: ['xiaocheng-lafeng', 'wenkai'],
+    });
+    final runtime = _FontsRuntime()
+      ..assetsAvailable = true
+      ..manifest = TextFontManifest(
+        File('contracts/thread-font-manifest-v1.json').readAsBytesSync(),
+      );
+    runtime.manifest!.fonts.remove('xiaocheng-lafeng');
+    const original = '<span data-wenyou-font-v1="xiaocheng-lafeng">旧正文</span>';
+    final session = RichEditorSession(
+      initialMarkdown: original,
+      onMarkdownChanged: (_) {},
+    );
+    addTearDown(session.dispose);
+    session.controller.updateSelection(
+      const TextSelection(baseOffset: 0, extentOffset: 3),
+      ChangeSource.local,
+    );
+    final before = session.controller.document.toDelta().toJson();
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          appCapabilitiesProvider.overrideWithValue(
+            const AppCapabilities(
+              textFontSupported: true,
+              textFontWriteEnabled: true,
+            ),
+          ),
+          sessionScopeProvider.overrideWithValue(
+            const SessionScope(accountId: 'account', generation: 0),
+          ),
+          textFontServiceProvider.overrideWithValue(_Fonts(runtime)),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: Scaffold(
+            body: EditorTextFontPicker(
+              controller: session.controller,
+              enabled: true,
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.byKey(const Key('editor-font-picker')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('editor-font-xiaocheng-lafeng')), findsNothing);
+    expect(session.controller.document.toDelta().toJson(), before);
+    expect(runtime.loadedFamilies('xiaocheng-lafeng'), isEmpty);
+    expect(runtime.requested, isEmpty);
+    await tester.tap(find.byKey(const Key('editor-font-wenkai')));
+    await tester.pumpAndSettle();
+    expect(session.controller.document.toPlainText(), '旧正文\n');
+    expect(
+      (await SharedPreferences.getInstance()).getStringList(preferenceKey),
+      ['wenkai'],
+    );
+    await tester.tap(find.byKey(const Key('editor-font-picker')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('editor-font-default')));
+    await tester.pumpAndSettle();
+    expect(session.controller.document.toPlainText(), '旧正文\n');
+    expect(
+      session.controller.document.toDelta().toJson().toString(),
+      isNot(contains('xiaocheng-lafeng')),
+    );
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
   testWidgets('未知分类显示未分类且不可选，中文名称不决定分组', (tester) async {
     SharedPreferences.setMockInitialValues({});
     final runtime = _FontsRuntime()

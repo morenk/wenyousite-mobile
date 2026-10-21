@@ -17,16 +17,26 @@ void main() {
             ).readAsStringSync(),
           )
           as Map<String, dynamic>;
-  test('固定 ID 与 Backend 目录一致', () {
+  test('可解码 ID 等于 Backend 现役目录与退役档案，历史身份不重新开放', () {
     final catalog =
         jsonDecode(
               File('contracts/thread-font-catalog-v1.json').readAsStringSync(),
             )
             as Map<String, dynamic>;
-    expect(
-      MarkdownTextFont.ids,
-      (catalog['fonts'] as List).map((e) => (e as Map)['id']).toSet(),
-    );
+    final retired =
+        jsonDecode(
+              File(
+                'contracts/archive/thread-font-xiaocheng-lafeng-v1.json',
+              ).readAsStringSync(),
+            )
+            as Map<String, dynamic>;
+    final currentIds = (catalog['fonts'] as List)
+        .map((e) => (e as Map)['id'])
+        .toSet();
+    final retiredId = (retired['font'] as Map)['id'];
+    expect(currentIds, hasLength(28));
+    expect(currentIds, isNot(contains(retiredId)));
+    expect(MarkdownTextFont.ids, {...currentIds, retiredId});
   });
   for (final entry in fixtures['validCases'] as List) {
     final row = entry as Map<String, dynamic>;

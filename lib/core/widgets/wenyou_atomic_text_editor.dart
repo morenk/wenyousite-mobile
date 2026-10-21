@@ -20,6 +20,7 @@ class WenyouAtomicTextController extends ChangeNotifier {
   WenyouAtomicTextController({
     required String initialMarkdown,
     required this.maximumMarkdownLength,
+    this.readStructuredClipboard,
   }) {
     final document = Document.fromDelta(_decode(initialMarkdown));
     quillController = _AtomicTextQuillController(
@@ -36,6 +37,7 @@ class WenyouAtomicTextController extends ChangeNotifier {
   }
 
   final int maximumMarkdownLength;
+  final Future<Delta?> Function(String visibleText)? readStructuredClipboard;
 
   late final QuillController quillController;
   final FocusNode focusNode = FocusNode();
@@ -236,15 +238,35 @@ class WenyouAtomicTextController extends ChangeNotifier {
   }
 
   Future<bool> _performPaste() async {
+    final selection = quillController.selection;
+    final original = quillController.document.toDelta();
     final clipboard = await Clipboard.getData(Clipboard.kTextPlain);
     if (_disposed || quillController.readOnly) return false;
     final text = _normalizeClipboardText(clipboard?.text);
     if (text == null || text.isEmpty) return false;
 
-    return pasteText(text);
+    Delta? structured;
+    try {
+      structured = await readStructuredClipboard?.call(text);
+    } on Object {
+      if (!_disposed) {
+        _failure = '粘贴失败，请重试。';
+        notifyListeners();
+      }
+      return false;
+    }
+    if (_disposed ||
+        quillController.readOnly ||
+        quillController.selection != selection ||
+        quillController.document.toDelta() != original) {
+      return false;
+    }
+    return _pasteText(text, structured: structured);
   }
 
-  bool pasteText(String text) {
+  bool pasteText(String text) => _pasteText(text);
+
+  bool _pasteText(String text, {Delta? structured}) {
     if (_disposed || quillController.readOnly || text.isEmpty) return false;
 
     final selection = quillController.selection;
@@ -254,9 +276,15 @@ class WenyouAtomicTextController extends ChangeNotifier {
         ? ''
         : quillController.document.getPlainText(start, end - start);
     final stored = _atomicClipboard.resolve(text);
-    final insert = stored ?? _internalReferenceDelta(text, selectedText);
+    final insert =
+        structured ?? stored ?? _internalReferenceDelta(text, selectedText);
     final data = insert ?? text;
-    final insertedLength = insert?.length ?? text.length;
+    final insertedLength = insert == null
+        ? text.length
+        : insert.operations.fold<int>(
+            0,
+            (length, operation) => length + operation.length!,
+          );
     quillController.replaceText(
       start,
       end - start,

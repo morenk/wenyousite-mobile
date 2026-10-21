@@ -5,7 +5,10 @@ import 'package:flutter/painting.dart';
 import 'package:flutter/services.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_text_font.dart';
 import 'package:wenyousite_mobile/core/text_fonts/text_font_cache.dart';
+import 'package:wenyousite_mobile/core/text_fonts/text_font_demand_queue.dart';
+import 'package:wenyousite_mobile/core/text_fonts/text_font_download_window.dart';
 import 'package:wenyousite_mobile/core/text_fonts/text_font_manifest.dart';
+import 'package:wenyousite_mobile/core/text_fonts/text_font_runtime_policy.dart';
 
 typedef TextFontDownload = Future<Uint8List> Function(TextFontAsset asset);
 typedef TextFontRegister = Future<void> Function(String family, Uint8List data);
@@ -21,6 +24,7 @@ class TextFontRuntime extends ChangeNotifier {
   final TextFontDownload download;
   final TextFontRegister register;
   TextFontManifest? manifest;
+  bool requiresRuntimePolicy = false;
   bool assetsAvailable = false;
   int requests = 0;
   int downloadedBytes = 0;
@@ -34,6 +38,58 @@ class TextFontRuntime extends ChangeNotifier {
   final _failed = <String>{};
   final _notices = <String>{};
   Future<void> _queue = Future<void>.value();
+  TextFontDemandQueue? demandQueue;
+  final _demands = <Object, Map<String, String>>{};
+
+  void enableContinuous(
+    TextFontRuntimePolicy policy,
+    TextFontDownloadWindow window,
+    Duration Function() elapsed,
+    void Function(TextFontAsset) cancel,
+  ) {
+    if (demandQueue != null || manifest == null) return;
+    final snapshot = policy.freeze(manifest!);
+    // 旧端点先加载的字体也属于同一引擎，协商v2不能重复注册。
+    for (final shard in manifest!.fonts.values.expand((f) => f.shards)) {
+      if (_registered.contains(shard.family)) {
+        snapshot.beginNativeAttempt(shard);
+        if (!_unavailableFaces.contains(shard.family)) {
+          snapshot.completeNativeAttempt(shard);
+        }
+      }
+    }
+    final queue = demandQueue = TextFontDemandQueue(
+      cache: cache,
+      download: download,
+      register: register,
+      snapshot: snapshot,
+      window: window,
+      elapsed: elapsed,
+      cancelDownload: cancel,
+    );
+    queue.addListener(notifyListeners);
+    queue.updateSource(manifest, downloadable: assetsAvailable);
+    for (final entry in _demands.entries) {
+      queue.setDemand(entry.key, entry.value);
+    }
+  }
+
+  void setDemand(Object owner, Map<String, String> texts) {
+    _demands[owner] = Map.of(texts);
+    if (demandQueue case final queue?) {
+      queue.setDemand(owner, texts);
+    } else {
+      if (requiresRuntimePolicy) return;
+      for (final entry in texts.entries) {
+        unawaited(ensure(entry.key, entry.value));
+      }
+    }
+  }
+
+  void release(Object owner) {
+    _demands.remove(owner);
+    demandQueue?.release(owner);
+  }
 
   int get registeredFaces => _registered.length;
   int get originalReservedBytes => _originalReservedBytes;
@@ -42,6 +98,7 @@ class TextFontRuntime extends ChangeNotifier {
 
   void updateManifest(TextFontManifest? value) {
     manifest = value;
+    demandQueue?.updateSource(value, downloadable: assetsAvailable);
     notifyListeners();
   }
 
@@ -66,8 +123,10 @@ class TextFontRuntime extends ChangeNotifier {
 
   List<String> loadedFamilies(String id) => [
     for (final shard in manifest?.fonts[id]?.shards ?? <TextFontShard>[])
-      if (_registered.contains(shard.family) &&
-          !_unavailableFaces.contains(shard.family))
+      if (demandQueue != null
+          ? demandQueue!.snapshot.loadedFamily(shard) != null
+          : _registered.contains(shard.family) &&
+                !_unavailableFaces.contains(shard.family))
         shard.family,
   ];
 
@@ -116,6 +175,12 @@ class TextFontRuntime extends ChangeNotifier {
   }
 
   Future<void> ensure(String id, String text) {
+    if (demandQueue case final queue?) {
+      final owner = Object();
+      queue.setDemand(owner, {id: text});
+      return queue.settle().whenComplete(() => queue.release(owner));
+    }
+    if (requiresRuntimePolicy) return Future<void>.value();
     final completer = Completer<void>();
     _queue = _queue.then((_) async {
       try {

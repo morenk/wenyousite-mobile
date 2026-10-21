@@ -272,9 +272,11 @@ class LiteralTextQuillController extends QuillController {
   }) {
     final before = document.toDelta();
     if (data is String) _restoreTypingColor();
-    // 外来 Delta 已携带完整颜色事实。Quill 的非 String 补样式只作用
-    // 第一个字符，不能让待输入色污染富文本／已校验的粘贴候选。
-    if (data is Delta) toggledStyle = toggledStyle.removeAll({Attribute.color});
+    // 外来 Delta 已携带完整颜色和字体事实。Quill 的非 String 补样式只作用
+    // 第一个字符，不能让光标处的待输入样式污染已校验的粘贴候选。
+    if (data is Delta) {
+      toggledStyle = toggledStyle.removeAll({Attribute.color, Attribute.font});
+    }
     final preservesLink =
         toggledStyle.attributes[Attribute.link.key]?.value != null ||
         document.collectStyle(index, 0).attributes[Attribute.link.key]?.value !=

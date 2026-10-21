@@ -66,6 +66,8 @@
 
 ## 10. 跨模块约束
 
+正文包装组件的字体作用域候选：StickerPostMarkdown 默认关闭自定义字体，不创建字体加载作用域；完整主题／子贴／楼层／展开回复的调用点显式传入 enableTextFonts。表情行为及源 Markdown 不变。 具体边界与待验收证据见[作用域候选](../architecture/thread-fonts-mobile-scope-candidate.md)。
+
 共享 StickerPostMarkdown 正文门面透传可信 mediaAudios 给普通 Markdown 播放器；收藏、插入、拖动和表情权限本身不变。
 
 本模块页面排版统一遵循[移动端视觉基线](../architecture/visual-baseline.md)中的 Foundation v6.9.0 语义文字角色，不自定义字号或直接依赖 Material 字体槽位。

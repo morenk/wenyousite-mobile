@@ -81,10 +81,25 @@ class WenyouEditorClipboardPastePlanner {
       }
     }
     return WenyouEditorClipboardPastePlan(
-      delta: delta,
+      delta: _withoutRetiredFont(delta),
       replacementEnd: replacementEnd,
       isPlainText: insert == null,
     );
+  }
+
+  static Delta _withoutRetiredFont(Delta fragment) {
+    final output = Delta();
+    for (final operation in fragment.operations) {
+      if (operation.attributes?['font'] != 'xiaocheng-lafeng') {
+        output.push(operation);
+        continue;
+      }
+      // 目录1.2.0退役身份仍须解码保源；这里只约束新增粘贴范围。
+      final attributes = Map<String, dynamic>.from(operation.attributes!)
+        ..remove('font');
+      output.insert(operation.data, attributes.isEmpty ? null : attributes);
+    }
+    return output;
   }
 
   static Delta? internalReferenceDelta(

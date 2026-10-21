@@ -58,6 +58,8 @@ domain 只包含不可变 RP 展示值、身份模式和更新输入。applicati
 
 ## 10. 跨模块约束
 
+字体作用域候选：帖子中的角色身份资料弹层使用默认字体，明确关闭 PostReadingBody 的字体加载作用域，保留资料原始 Markdown/fontId；完整主题帖正文的字体能力不扩展到身份资料预览。 具体边界与待验收证据见[作用域候选](../architecture/thread-fonts-mobile-scope-candidate.md)。
+
 通过 `identity_models.dart`、`identity_ports.dart`、`identity_mapping.dart`、`identity_widgets.dart` 分别开放领域、应用、映射和 UI 入口。模块只依赖 media，不反向依赖 threads/posts/social/search/notifications；身份卡沿用账号 ID 的共享主页路由。Foundation 样式依赖保持正式 `v7.2.1`。
 
 ## 11. 测试场景与验收条件

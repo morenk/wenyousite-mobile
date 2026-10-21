@@ -15,9 +15,9 @@ import 'package:wenyousite_mobile/features/thread_feed/thread_feed_models.dart';
 import '../../support/thread_cover_fixtures.dart';
 
 void main() {
-  testWidgets('楼层搜索完整彩色正文经真实仓储和列表只展示共享摘要', (tester) async {
+  testWidgets('楼层搜索完整字体和彩色正文经真实仓储和列表只展示默认摘要', (tester) async {
     const source =
-        '<span data-wenyou-color-v1="#D14343">**中文😀** [链接](https://example.com) `a < b`</span>';
+        '<span data-wenyou-font-v1="wenkai" data-wenyou-color-v1="#D14343">**中文😀** [链接](https://example.com) `a < b`</span>';
     final api = _MockSearchApi();
     when(
       () => api.searchSearch(q: '中文', extra: const {}),

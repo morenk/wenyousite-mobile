@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/app/app_capabilities.dart';
 import 'package:wenyousite_mobile/app/visibility_cache_invalidation.dart';
+import 'package:wenyousite_mobile/core/application/atomic_editor_clipboard.dart';
 import 'package:wenyousite_mobile/core/application/audio_download.dart';
 import 'package:wenyousite_mobile/core/application/audio_playback.dart';
 import 'package:wenyousite_mobile/core/application/background_execution.dart';
@@ -41,6 +42,7 @@ import 'package:wenyousite_mobile/features/editor/application/editor_text_color_
 import 'package:wenyousite_mobile/features/editor/data/editor_snapshot_store.dart';
 import 'package:wenyousite_mobile/features/editor/data/editor_text_color_preferences_store.dart';
 import 'package:wenyousite_mobile/features/editor/data/mention_candidate_repository.dart';
+import 'package:wenyousite_mobile/features/editor/presentation/editor_atomic_clipboard.dart';
 import 'package:wenyousite_mobile/features/home/data/home_repository.dart';
 import 'package:wenyousite_mobile/features/media/application/audio_file_picker_ports.dart';
 import 'package:wenyousite_mobile/features/media/application/audio_upload_ports.dart';
@@ -110,6 +112,9 @@ import 'package:wenyousite_mobile/features/users/data/public_user_repository.dar
 import 'package:wenyousite_mobile/features/wallet/data/wallet_repository.dart';
 
 List<Override> productionProviderOverrides() => [
+  atomicEditorClipboardReaderProvider.overrideWith(
+    (ref) => ref.watch(editorAtomicClipboardReaderProvider),
+  ),
   editorTextColorPreferenceStoreProvider.overrideWithValue(
     const SharedPreferencesEditorTextColorStore(),
   ),

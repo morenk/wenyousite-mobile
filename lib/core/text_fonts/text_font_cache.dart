@@ -13,6 +13,15 @@ class TextFontCache {
   File _file(TextFontAsset asset) => File('${directory.path}/${asset.hash}');
 
   Future<Uint8List?> read(TextFontAsset asset) async {
+    try {
+      return await _read(asset);
+    } on FileSystemException {
+      // 缓存不决定资源可用性；读失败按miss，由下载层验证正式字节。
+      return null;
+    }
+  }
+
+  Future<Uint8List?> _read(TextFontAsset asset) async {
     final file = _file(asset);
     if (!await file.exists()) return null;
     if (await file.length() != asset.bytes) {
@@ -24,12 +33,24 @@ class TextFontCache {
       await file.delete();
       return null;
     }
-    await file.setLastModified(DateTime.now());
+    try {
+      await file.setLastModified(DateTime.now());
+    } on FileSystemException {
+      // LRU时间维护失败不能丢弃已经完成完整性校验的缓存输入。
+    }
     return bytes;
   }
 
   Future<void> write(TextFontAsset asset, Uint8List data) async {
     if (!asset.verifies(data)) throw const FormatException('字体资源校验失败');
+    try {
+      await _write(asset, data);
+    } on FileSystemException {
+      // 磁盘满/权限故障不使已验证输入失效，也不触发网络重试。
+    }
+  }
+
+  Future<void> _write(TextFontAsset asset, Uint8List data) async {
     await directory.create(recursive: true);
     final files = <({File file, FileStat stat})>[];
     await for (final entity in directory.list(followLinks: false)) {

@@ -9,9 +9,11 @@ class MarkdownTextColorBuilder extends MarkdownElementBuilder {
   MarkdownTextColorBuilder({
     required this.onLink,
     required this.registerRecognizer,
+    this.enableTextFonts = false,
   });
   final ValueChanged<String> onLink;
   final ValueChanged<TapGestureRecognizer> registerRecognizer;
+  final bool enableTextFonts;
 
   @override
   Widget? visitElementAfterWithContext(
@@ -77,7 +79,8 @@ class MarkdownTextColorBuilder extends MarkdownElementBuilder {
                   text: child.textContent,
                   style: nested,
                   foregroundColor: color,
-                  preserveTextFont: element.attributes.containsKey('font'),
+                  preserveTextFont:
+                      enableTextFonts && element.attributes.containsKey('font'),
                 ),
               ),
             ),
@@ -87,7 +90,7 @@ class MarkdownTextColorBuilder extends MarkdownElementBuilder {
       return render(child.children!, nested, tap);
     }).toList();
     final font = element.attributes['font'];
-    if (font == null) {
+    if (font == null || !enableTextFonts) {
       return Text.rich(
         TextSpan(children: render(element.children!, base, null)),
       );

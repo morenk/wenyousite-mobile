@@ -335,6 +335,7 @@ void main() {
                           ),
                           Expanded(
                             child: WenyouMarkdown(
+                              enableTextFonts: true,
                               data:
                                   '<span data-wenyou-font-v1="${font.id}" data-wenyou-color-v1="#D14343">$sample **粗体 Bold** *Italic* `#>*`</span>',
                             ),

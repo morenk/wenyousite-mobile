@@ -447,16 +447,17 @@ class _ClipboardInlineBuilder {
       'span'
           when node.attributes.isNotEmpty &&
               node.attributes.entries.every(
-                (entry) => entry.key == 'data-wenyou-font-v1'
-                    ? MarkdownTextFont.ids.contains(entry.value)
-                    : entry.key == 'data-wenyou-color-v1' &&
-                          MarkdownTextColor.rgb.hasMatch(entry.value),
+                (entry) =>
+                    entry.key == 'data-wenyou-font-v1' ||
+                    entry.key == 'data-wenyou-color-v1' &&
+                        MarkdownTextColor.rgb.hasMatch(entry.value),
               ) =>
         {
           ...attributes,
           if (node.attributes['data-wenyou-color-v1'] case final String color)
             'color': color.toUpperCase(),
-          if (node.attributes['data-wenyou-font-v1'] case final String font)
+          if (node.attributes['data-wenyou-font-v1'] case final String font
+              when MarkdownTextFont.ids.contains(font))
             'font': font,
         },
       'b' || 'strong' => {...attributes, 'bold': true},
