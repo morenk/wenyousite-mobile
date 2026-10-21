@@ -1,4 +1,5 @@
 import 'package:flutter_quill/quill_delta.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_codec_structure.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_editor_document.dart';
 
 enum MarkdownCodecIssueKind {
@@ -37,9 +38,10 @@ class MarkdownDeltaDocument {
 }
 
 class MarkdownCodecException implements Exception {
-  const MarkdownCodecException(this.message);
+  const MarkdownCodecException(this.message, {this.structure});
 
   final String message;
+  final MarkdownCodecStructure? structure;
 
   @override
   String toString() => 'MarkdownCodecException: $message';

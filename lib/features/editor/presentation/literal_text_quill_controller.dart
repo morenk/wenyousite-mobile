@@ -7,6 +7,7 @@ import 'package:wenyousite_mobile/core/markdown/markdown_delta_line_metadata.dar
 import 'package:wenyousite_mobile/core/markdown/markdown_link_identity.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_paragraph_boundaries.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_clipboard_paste.dart';
+import 'package:wenyousite_mobile/features/editor/presentation/editor_divider_structure.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_document_alignment.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_selection_history.dart';
 
@@ -199,18 +200,22 @@ class LiteralTextQuillController extends QuillController {
     int len,
     Attribute? attribute, {
     bool shouldNotifyListeners = true,
-  }) => runEditCommand(
-    () => super.formatText(
+  }) => runEditCommand(() {
+    super.formatText(
       index,
       len,
       attribute,
       shouldNotifyListeners: shouldNotifyListeners,
-    ),
-  );
+    );
+    preserveEditorDividerBlocks(this);
+  });
 
   @override
   void compose(Delta delta, TextSelection textSelection, ChangeSource source) =>
-      runEditCommand(() => super.compose(delta, textSelection, source));
+      runEditCommand(() {
+        super.compose(delta, textSelection, source);
+        preserveEditorDividerBlocks(this);
+      });
 
   @override
   Style getSelectionStyle() {
@@ -251,16 +256,17 @@ class LiteralTextQuillController extends QuillController {
     TextSelection? textSelection, {
     bool ignoreFocus = false,
     bool shouldNotifyListeners = true,
-  }) => runEditCommand(
-    () => _replaceLiteralText(
+  }) => runEditCommand(() {
+    _replaceLiteralText(
       index,
       len,
       data,
       textSelection,
       ignoreFocus: ignoreFocus,
       shouldNotifyListeners: shouldNotifyListeners,
-    ),
-  );
+    );
+    preserveEditorDividerBlocks(this);
+  });
 
   void _replaceLiteralText(
     int index,
