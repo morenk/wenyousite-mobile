@@ -587,6 +587,7 @@ Serializers _$serializers =
           ..add(TextFontCatalogDtoFontVersionEnum.serializer)
           ..add(TextFontFamilyDto.serializer)
           ..add(TextFontFamilyDtoAvailabilityEnum.serializer)
+          ..add(TextFontFamilyDtoDesignLanguageEnum.serializer)
           ..add(TextFontManifestDto.serializer)
           ..add(TextFontsGetCatalog200Response.serializer)
           ..add(ThreadBodyPostResponseDto.serializer)

@@ -14,6 +14,7 @@ part 'text_font_family_dto.g.dart';
 /// Properties:
 /// * [id] - 正文 data-wenyou-font-v1 使用的固定身份
 /// * [name]
+/// * [designLanguage] - 主要设计语言，仅用于目录分组；不表示字符覆盖完整，也不依据名称或汉字数量推断。
 /// * [availability] - ready 表示构建产物已核验；实际加载还须 assetBaseUrl。pendingSource/pendingLicense 不可选择或新增写入。
 @BuiltValue()
 abstract class TextFontFamilyDto implements Built<TextFontFamilyDto, TextFontFamilyDtoBuilder> {
@@ -23,6 +24,11 @@ abstract class TextFontFamilyDto implements Built<TextFontFamilyDto, TextFontFam
 
   @BuiltValueField(wireName: r'name')
   String get name;
+
+  /// 主要设计语言，仅用于目录分组；不表示字符覆盖完整，也不依据名称或汉字数量推断。
+  @BuiltValueField(wireName: r'designLanguage')
+  TextFontFamilyDtoDesignLanguageEnum get designLanguage;
+  // enum designLanguageEnum {  zh,  ja,  en,  };
 
   /// ready 表示构建产物已核验；实际加载还须 assetBaseUrl。pendingSource/pendingLicense 不可选择或新增写入。
   @BuiltValueField(wireName: r'availability')
@@ -61,6 +67,11 @@ class _$TextFontFamilyDtoSerializer implements PrimitiveSerializer<TextFontFamil
     yield serializers.serialize(
       object.name,
       specifiedType: const FullType(String),
+    );
+    yield r'designLanguage';
+    yield serializers.serialize(
+      object.designLanguage,
+      specifiedType: const FullType(TextFontFamilyDtoDesignLanguageEnum),
     );
     yield r'availability';
     yield serializers.serialize(
@@ -104,6 +115,13 @@ class _$TextFontFamilyDtoSerializer implements PrimitiveSerializer<TextFontFamil
           ) as String;
           result.name = valueDes;
           break;
+        case r'designLanguage':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(TextFontFamilyDtoDesignLanguageEnum),
+          ) as TextFontFamilyDtoDesignLanguageEnum;
+          result.designLanguage = valueDes;
+          break;
         case r'availability':
           final valueDes = serializers.deserialize(
             value,
@@ -138,6 +156,29 @@ class _$TextFontFamilyDtoSerializer implements PrimitiveSerializer<TextFontFamil
     );
     return result.build();
   }
+}
+
+class TextFontFamilyDtoDesignLanguageEnum extends EnumClass {
+
+  /// 主要设计语言，仅用于目录分组；不表示字符覆盖完整，也不依据名称或汉字数量推断。
+  @BuiltValueEnumConst(wireName: r'zh')
+  static const TextFontFamilyDtoDesignLanguageEnum zh = _$textFontFamilyDtoDesignLanguageEnum_zh;
+  /// 主要设计语言，仅用于目录分组；不表示字符覆盖完整，也不依据名称或汉字数量推断。
+  @BuiltValueEnumConst(wireName: r'ja')
+  static const TextFontFamilyDtoDesignLanguageEnum ja = _$textFontFamilyDtoDesignLanguageEnum_ja;
+  /// 主要设计语言，仅用于目录分组；不表示字符覆盖完整，也不依据名称或汉字数量推断。
+  @BuiltValueEnumConst(wireName: r'en')
+  static const TextFontFamilyDtoDesignLanguageEnum en = _$textFontFamilyDtoDesignLanguageEnum_en;
+  /// 主要设计语言，仅用于目录分组；不表示字符覆盖完整，也不依据名称或汉字数量推断。
+  @BuiltValueEnumConst(wireName: r'unknown_default_open_api', fallback: true)
+  static const TextFontFamilyDtoDesignLanguageEnum unknownDefaultOpenApi = _$textFontFamilyDtoDesignLanguageEnum_unknownDefaultOpenApi;
+
+  static Serializer<TextFontFamilyDtoDesignLanguageEnum> get serializer => _$textFontFamilyDtoDesignLanguageEnumSerializer;
+
+  const TextFontFamilyDtoDesignLanguageEnum._(String name): super(name);
+
+  static BuiltSet<TextFontFamilyDtoDesignLanguageEnum> get values => _$textFontFamilyDtoDesignLanguageEnumValues;
+  static TextFontFamilyDtoDesignLanguageEnum valueOf(String name) => _$textFontFamilyDtoDesignLanguageEnumValueOf(name);
 }
 
 class TextFontFamilyDtoAvailabilityEnum extends EnumClass {

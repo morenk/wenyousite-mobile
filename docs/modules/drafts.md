@@ -120,7 +120,7 @@ Markdown 规范化和可见性由编辑器与核心 Markdown 能力保持，数�
 
 ## 13. 最近审查的契约版本和后端提交
 
-2026-10-21 字体候选固定 Backend `1cf51dd752a98e3733f3dc0c83b17add75be7e46`／API `5.41.0-dev.20261021.1`。候选验证与未完成真机/跨端保存验收见[字体候选记录](../architecture/thread-fonts-mobile-candidate.md)。
+2026-10-21 字体候选固定 Backend `a192628fc1484990871a8d159a7324446cdf0b05`／API `5.41.0-dev.20261021.2`。候选验证与未完成真机/跨端保存验收见[字体候选记录](../architecture/thread-fonts-mobile-candidate.md)。
 
 2026-10-18 合并来源同步：Backend PR #55 已合并，固定最终提交 `6e00c4031a8f970609eef8cbf6fdefe3e6b12126`／API `5.40.0-dev.20261018.1`。契约字节与先前候选 `da68203a` 一致，本次只更新来源元数据；消费者验证和部署核验分别记录，不改变本模块既有范围。
 
