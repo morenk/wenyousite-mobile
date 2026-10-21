@@ -5,6 +5,7 @@
 ## 范围与证据
 
 - 原始基线为 `d7168b61ea1b547e737585d2e9b250f1b3bd24e2`；2026-10-21 在原分支 `codex/20261015-sentry-editor-save` 将 `origin/dev` 的 `6f0064507a77e2034250ee4fd9f1d382e0a063a9` 合入原候选，沿用 Draft PR #100，不改写共享历史。
+- 本轮已验证应用合并提交为 `65d6fa3f1206711047937a3c684ba2b70d33be63`，双亲分别为原分支 `4a9f462e` 与上述 dev。它与门禁冻结 tree 的全树差异仅为 `docs/CHANGELOG.md`、本候选记录；随后文档提交只补充本 SHA，应用源码、测试与 APK 依据不变。最终文档 HEAD 在 PR 交付中单独列出。
 - 历史已验证应用源码为 `965d09f2e92484b78f0f31360e9354e88996831d`，文档 HEAD 为 `4a9f462ed271264cd1656744819f57d9f9aa4998`。下述 2026-10-16 门禁及 APK 只证明旧源码，本轮整合后的应用必须重新验证。
 - 关联 `WENYOUSITE-MOBILE-2J/1T`（`markdown.document_roundtrip`）、`1G/2A`（`markdown.divider_line`）与 `21`（`markdown.paragraph_alignment_conflict`）。这些事件没有原始正文、Delta 或完整操作序列，不能证明其精确触发条件。本候选不关闭它们。
 - 已证实的本机操作：打开 `前文\n\n---\n\n后文`，在分隔线节点后输入文字、删去线前两次换行或线后两次换行，旧代码均产生 `divider_line`；全选跨线并应用 H2 则产生 `divider_attributes`。原有严格保存门禁正确阻断写入。
