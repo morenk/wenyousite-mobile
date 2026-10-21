@@ -14,6 +14,66 @@ import 'package:wenyousite_mobile/core/network/session_remote.dart';
 import 'package:wenyousite_mobile/core/storage/token_store.dart';
 
 void main() {
+  test('旧读取成功不能解除较新的网络冷却，写入成功也不当作读取恢复', () async {
+    final reply = Completer<ResponseBody>();
+    final entered = Completer<void>();
+    final session = SessionController(_Store(), _Remote());
+    addTearDown(session.dispose);
+    await session.authenticate(_a);
+    final adapter = _Adapter((_) {
+      if (!entered.isCompleted) {
+        entered.complete();
+        return reply.future;
+      }
+      return Future.value(_response(0));
+    });
+    final dio = _dio(session, adapter);
+    addTearDown(dio.close);
+    final read = dio.get<Object?>('/test');
+    await entered.future;
+    session.recovery.failed(
+      session.recovery.ticket,
+      const ApiFailure(httpStatus: 502),
+    );
+    reply.complete(_response(0));
+    await read;
+    expect(session.recovery.isCoolingDown, isTrue);
+    await dio.post<Object?>('/test');
+    expect(session.recovery.isCoolingDown, isTrue);
+    await dio.get<Object?>('/test');
+    expect(session.recovery.isCoolingDown, isFalse);
+  });
+
+  test('切号后的旧读取成功不能解除新账号冷却', () async {
+    final reply = Completer<ResponseBody>();
+    final entered = Completer<void>();
+    final session = SessionController(_Store(), _Remote());
+    addTearDown(session.dispose);
+    await session.authenticate(_a);
+    final dio = _dio(
+      session,
+      _Adapter((_) {
+        entered.complete();
+        return reply.future;
+      }),
+    );
+    addTearDown(dio.close);
+    final read = expectLater(
+      dio.get<Object?>('/test'),
+      throwsA(isA<DioException>()),
+    );
+    await entered.future;
+    await session.authenticate(_b);
+    session.recovery.failed(
+      session.recovery.ticket,
+      const ApiFailure(httpStatus: 502),
+    );
+    reply.complete(_response(0));
+    await read;
+    expect(session.tokens, same(_b));
+    expect(session.recovery.isCoolingDown, isTrue);
+  });
+
   test('登录完成后 Provider scope 发布真实账号，存储期间的游客请求失效', () async {
     final container = ProviderContainer(
       overrides: [

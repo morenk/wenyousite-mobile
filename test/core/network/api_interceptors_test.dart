@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
 
@@ -6,13 +7,211 @@ import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:wenyousite_mobile/app/app_router.dart';
+import 'package:wenyousite_mobile/core/diagnostics/failure_diagnostics.dart';
+import 'package:wenyousite_mobile/core/diagnostics/network_diagnostics.dart';
+import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/api_interceptors.dart';
 import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
+import 'package:wenyousite_mobile/core/network/network_recovery.dart';
 import 'package:wenyousite_mobile/core/network/session_controller.dart';
 import 'package:wenyousite_mobile/core/network/session_remote.dart';
 import 'package:wenyousite_mobile/core/storage/token_store.dart';
 
 void main() {
+  test('自动读取无响应 HttpException 退避且不改写原未知故障诊断', () async {
+    final session = SessionController(
+      _MemoryTokenStore(),
+      _FakeSessionRemote(),
+    );
+    addTearDown(session.dispose);
+    await session.authenticate(_oldTokens);
+    final diagnostics = FailureDiagnostics();
+    final adapter = _TransientThenSuccessAdapter(
+      failures: 1,
+      error: const HttpException('unverified transport'),
+    );
+    final dio = Dio(BaseOptions(baseUrl: 'https://test.invalid'))
+      ..httpClientAdapter = adapter;
+    addTearDown(dio.close);
+    dio.interceptors.addAll([
+      RequestContextInterceptor(dio, session),
+      SafeRetryInterceptor(dio, wait: (_) async {}),
+      NetworkDiagnosticInterceptor(diagnostics: diagnostics),
+    ]);
+    for (var i = 0; i < 2; i++) {
+      await expectLater(
+        runAutomaticNetworkRequests(() => dio.get<Object?>('/test')),
+        throwsA(isA<DioException>()),
+      );
+    }
+    expect(adapter.attempts, 1);
+    expect(session.recovery.isCoolingDown, isTrue);
+    await diagnostics.settled;
+    expect(diagnostics.records, hasLength(1));
+    expect(diagnostics.records.single.source, FailureSource.unknown);
+    expect(diagnostics.records.single.reason, FailureReason.unknown);
+    expect(diagnostics.records.single.shouldSend, isTrue);
+  });
+
+  test('有效令牌自动读取失败建立冷却，保留首次真实诊断且前台读取可恢复', () async {
+    final remote = _FakeSessionRemote();
+    final session = SessionController(
+      _MemoryTokenStore(),
+      remote,
+      recovery: NetworkRecovery(elapsed: () => Duration.zero),
+    );
+    addTearDown(session.dispose);
+    await session.authenticate(_oldTokens);
+    final diagnostics = FailureDiagnostics();
+    final adapter = _TransientThenSuccessAdapter(failures: 1);
+    final dio = Dio(BaseOptions(baseUrl: 'https://test.invalid'))
+      ..httpClientAdapter = adapter;
+    addTearDown(dio.close);
+    // 与生产相同顺序：自动安全读取首次失败进入退避，后续冷却拒绝
+    // 不能覆盖原始 503，诊断只记录真正发出的那一次请求。
+    dio.interceptors.addAll([
+      RequestContextInterceptor(dio, session),
+      SafeRetryInterceptor(dio, wait: (_) async {}),
+      NetworkDiagnosticInterceptor(diagnostics: diagnostics),
+    ]);
+    await expectLater(
+      runAutomaticNetworkRequests(() => dio.get<Object?>('/test')),
+      throwsA(
+        isA<DioException>().having(
+          (error) => error.response?.statusCode,
+          'original status',
+          503,
+        ),
+      ),
+    );
+    expect(session.recovery.remaining.inSeconds, inInclusiveRange(30, 33));
+    for (var i = 0; i < 3; i++) {
+      await expectLater(
+        runAutomaticNetworkRequests(() => dio.get<Object?>('/test')),
+        throwsA(
+          isA<DioException>().having(
+            (error) => ApiFailure.fromDio(error).isCancellation,
+            'deferred without sending',
+            isTrue,
+          ),
+        ),
+      );
+    }
+    expect(adapter.attempts, 1);
+    expect(remote.refreshCalls, 0);
+    expect(session.tokens, _oldTokens);
+    await diagnostics.settled;
+    expect(diagnostics.records, hasLength(1));
+    expect(diagnostics.records.single.fields['httpStatus'], 503);
+    expect(diagnostics.records.single.shouldSend, isTrue);
+    await dio.get<Object?>('/test');
+    expect(session.recovery.isCoolingDown, isFalse);
+    await runAutomaticNetworkRequests(() => dio.get<Object?>('/test'));
+    expect(adapter.attempts, 3);
+  });
+
+  test('自动批次的单个读取成功不会清空其他读取的失败预算', () async {
+    var elapsed = Duration.zero;
+    final recovery = NetworkRecovery(elapsed: () => elapsed);
+    final session = SessionController(
+      _MemoryTokenStore(),
+      _FakeSessionRemote(),
+      recovery: recovery,
+    );
+    addTearDown(session.dispose);
+    await session.authenticate(_oldTokens);
+    recovery.failed(recovery.ticket, const ApiFailure(httpStatus: 502));
+    elapsed += recovery.remaining;
+    final adapter = _TransientThenSuccessAdapter(failures: 0);
+    final dio = Dio(BaseOptions(baseUrl: 'https://test.invalid'))
+      ..httpClientAdapter = adapter;
+    addTearDown(dio.close);
+    dio.interceptors.add(RequestContextInterceptor(dio, session));
+    await runAutomaticNetworkRequests(() => dio.get<Object?>('/test'));
+    recovery.failed(recovery.ticket, const ApiFailure(httpStatus: 502));
+    expect(recovery.remaining.inSeconds, inInclusiveRange(60, 66));
+  });
+
+  test('后台续期冷却拒绝不发请求或诊断，前台写入可立即续期且仅发送一次', () async {
+    var offline = true;
+    final remote = _FakeSessionRemote()
+      ..onRefresh = () async {
+        if (offline) throw const ApiFailure(reason: FailureReason.offline);
+        return const SessionTokens(
+          accessToken: 'new-access',
+          refreshToken: 'new-refresh',
+        );
+      };
+    final session = SessionController(_MemoryTokenStore(), remote);
+    addTearDown(session.dispose);
+    await session.authenticate(
+      SessionTokens(
+        accessToken: _jwtExpiringIn(Duration.zero),
+        refreshToken: 'old-refresh',
+      ),
+    );
+    final diagnostics = FailureDiagnostics();
+    final adapter = _TransientThenSuccessAdapter(failures: 0);
+    final dio = Dio(BaseOptions(baseUrl: 'https://test.invalid'))
+      ..httpClientAdapter = adapter;
+    addTearDown(dio.close);
+    dio.interceptors.addAll([
+      RequestContextInterceptor(dio, session),
+      SafeRetryInterceptor(dio, wait: (_) async {}),
+      NetworkDiagnosticInterceptor(diagnostics: diagnostics),
+    ]);
+    for (var attempt = 0; attempt < 4; attempt++) {
+      await expectLater(
+        runAutomaticNetworkRequests(
+          () => dio.get<Object?>('/api/v1/notifications'),
+        ),
+        throwsA(isA<DioException>()),
+      );
+    }
+    expect(remote.refreshCalls, 1);
+    expect(adapter.attempts, 0);
+    await diagnostics.settled;
+    expect(diagnostics.records, isEmpty);
+    offline = false;
+    await dio.post<Object?>(
+      '/api/v1/posts',
+      data: {'test': true},
+      options: Options(
+        extra: ApiRequestPolicy.authenticatedNonReplayable.extra,
+      ),
+    );
+    expect(remote.refreshCalls, 2);
+    expect(adapter.attempts, 1);
+    expect(session.recovery.isCoolingDown, isFalse);
+    expect(session.tokens?.refreshToken, 'new-refresh');
+  });
+
+  test('后台读取冷却不阻止前台普通请求，读取未发出时无远程事件', () async {
+    final session = SessionController(
+      _MemoryTokenStore(),
+      _FakeSessionRemote(),
+    );
+    addTearDown(session.dispose);
+    await session.authenticate(_oldTokens);
+    session.recovery.failed(
+      session.recovery.ticket,
+      const ApiFailure(httpStatus: 502),
+    );
+    final adapter = _TransientThenSuccessAdapter(failures: 0);
+    final dio = Dio(BaseOptions(baseUrl: 'https://test.invalid'))
+      ..httpClientAdapter = adapter;
+    addTearDown(dio.close);
+    dio.interceptors.add(RequestContextInterceptor(dio, session));
+    await expectLater(
+      runAutomaticNetworkRequests(() => dio.get<Object?>('/test')),
+      throwsA(isA<DioException>()),
+    );
+    expect(adapter.attempts, 0);
+    await dio.get<Object?>('/test');
+    expect(adapter.attempts, 1);
+    expect(session.recovery.isCoolingDown, isFalse);
+  });
+
   setUpAll(() {
     registerFallbackValue(RequestOptions(path: '/fallback'));
     registerFallbackValue(
@@ -312,10 +511,12 @@ class _MockErrorInterceptorHandler extends Mock
 
 class _FakeSessionRemote implements SessionRemote {
   int refreshCalls = 0;
+  Future<SessionTokens> Function()? onRefresh;
 
   @override
   Future<SessionTokens> refresh(String refreshToken) async {
     refreshCalls += 1;
+    if (onRefresh case final action?) return action();
     return const SessionTokens(
       accessToken: 'new-access',
       refreshToken: 'new-refresh',
@@ -340,9 +541,10 @@ class _MemoryTokenStore implements TokenStore {
 }
 
 class _TransientThenSuccessAdapter implements HttpClientAdapter {
-  _TransientThenSuccessAdapter({required this.failures});
+  _TransientThenSuccessAdapter({required this.failures, this.error});
 
   final int failures;
+  final Object? error;
   int attempts = 0;
   final List<String?> requestIds = [];
   final List<String?> authorizationHeaders = [];
@@ -357,6 +559,9 @@ class _TransientThenSuccessAdapter implements HttpClientAdapter {
     requestIds.add(options.headers['X-Request-ID'] as String?);
     authorizationHeaders.add(options.headers['Authorization'] as String?);
     if (attempts <= failures) {
+      if (error != null) {
+        throw DioException(requestOptions: options, error: error);
+      }
       return ResponseBody.fromString(
         '{"code":50300,"message":"temporary"}',
         503,

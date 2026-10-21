@@ -9,8 +9,10 @@ import 'package:wenyousite_mobile/core/diagnostics/debug_diagnostic_console.dart
 import 'package:wenyousite_mobile/core/diagnostics/failure_diagnostics.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
+import 'package:wenyousite_mobile/core/network/network_recovery.dart';
 import 'package:wenyousite_mobile/core/network/request_session_binding.dart';
 import 'package:wenyousite_mobile/core/network/session_controller.dart';
+import 'package:wenyousite_mobile/core/storage/token_store.dart';
 
 class RequestContextInterceptor extends Interceptor {
   RequestContextInterceptor(
@@ -27,6 +29,13 @@ class RequestContextInterceptor extends Interceptor {
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
     RequestSessionBinding.bind(options, _sessionController);
+    options.extra.putIfAbsent(
+      ApiRequestExtraKeys.recoveryTicket,
+      () => _sessionController.recovery.ticket,
+    );
+    if (isAutomaticNetworkRequest) {
+      options.extra[ApiRequestExtraKeys.automaticRecovery] = true;
+    }
     options.headers.putIfAbsent('X-Request-ID', _uuid.v4);
     if (_needsMobileHeader(options.path)) {
       options.headers['X-Client-Platform'] = 'mobile';
@@ -55,7 +64,10 @@ class RequestContextInterceptor extends Interceptor {
     if (!RequestSessionBinding.usesSession(options)) return;
     var tokens = _sessionController.tokens;
     if (tokens != null && _sessionController.accessTokenNeedsRefresh) {
-      tokens = await _sessionController.refresh();
+      tokens = await _refresh(options);
+    } else if (options.extra[ApiRequestExtraKeys.automaticRecovery] == true &&
+        _sessionController.recovery.isCoolingDown) {
+      throw _sessionController.recovery.deferredFailure;
     }
     RequestSessionBinding.ensureCurrent(options);
     if (tokens != null) {
@@ -73,6 +85,7 @@ class RequestContextInterceptor extends Interceptor {
       handler.reject(error);
       return;
     }
+    _recordReadRecovery(response);
     _logResponse(response);
     handler.next(response);
   }
@@ -90,6 +103,7 @@ class RequestContextInterceptor extends Interceptor {
       handler.next(err);
       return;
     }
+    _recordAutomaticReadFailure(err.requestOptions, failure);
     if (failure.invalidatesSession) {
       _invalidate(err, handler, _reasonFor(failure.businessCode));
       return;
@@ -104,7 +118,7 @@ class RequestContextInterceptor extends Interceptor {
       return;
     }
     if (!_canReplayAfterRefresh(err.requestOptions)) {
-      _sessionController.refresh().then(
+      _refresh(err.requestOptions).then(
         (_) => handler.next(
           RequestSessionBinding.cancellation(err.requestOptions) ?? err,
         ),
@@ -161,7 +175,7 @@ class RequestContextInterceptor extends Interceptor {
 
   Future<Response<Object?>> _retryAfterRefresh(DioException error) async {
     RequestSessionBinding.ensureCurrent(error.requestOptions);
-    final tokens = await _sessionController.refresh();
+    final tokens = await _refresh(error.requestOptions);
     RequestSessionBinding.ensureCurrent(error.requestOptions);
     final options = error.requestOptions;
     options.extra[_retriedKey] = true;
@@ -173,6 +187,41 @@ class RequestContextInterceptor extends Interceptor {
     final normalized = Uri.parse(path).path;
     return normalized.endsWith('/auth/login') ||
         normalized.endsWith('/auth/verify-and-complete');
+  }
+
+  Future<SessionTokens> _refresh(RequestOptions options) =>
+      _sessionController.refresh(
+        automatic: options.extra[ApiRequestExtraKeys.automaticRecovery] == true,
+      );
+
+  void _recordReadRecovery(Response<Object?> response) {
+    final options = response.requestOptions;
+    final status = response.statusCode ?? 0;
+    if (!RequestSessionBinding.usesSession(options) ||
+        options.extra[ApiRequestExtraKeys.automaticRecovery] == true ||
+        _sessionController.tokens == null ||
+        !const {'GET', 'HEAD'}.contains(options.method.toUpperCase()) ||
+        status < 200 ||
+        status >= 300) {
+      return;
+    }
+    final body = response.data;
+    if (body is Map && body['code'] != null && body['code'] != 0) return;
+    if (options.extra[ApiRequestExtraKeys.recoveryTicket]
+        case final int ticket) {
+      _sessionController.recovery.succeeded(ticket);
+    }
+  }
+
+  void _recordAutomaticReadFailure(RequestOptions options, ApiFailure failure) {
+    if (options.extra[ApiRequestExtraKeys.automaticRecovery] != true ||
+        !const {'GET', 'HEAD'}.contains(options.method.toUpperCase())) {
+      return;
+    }
+    if (options.extra[ApiRequestExtraKeys.recoveryTicket]
+        case final int ticket) {
+      _sessionController.recovery.failed(ticket, failure);
+    }
   }
 
   void _logResponse(Response<Object?> response) {

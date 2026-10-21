@@ -5,6 +5,8 @@
 
 移动端刷新会话显式携带 `X-Client-Platform: mobile` 并消费轮换后的双 Token；受保护请求会在 Access Token 到期前一分钟自动完成静默续期，网络或服务暂时不可用时保留本地会话，只有明确的 401 会话失效响应才要求重新登录。
 
+后台恢复退避候选／待负责人验收：后台／定时读取触发的续期在连续传输失败或 5xx 后共享会话冷却，前台明确操作与退出仍可立即尝试并加入唯一在途刷新。成功读取或续期恢复调度，退出／切号清除旧失败预算；不变更安全存储和业务请求重放规则。具体边界见[网络与会话](../architecture/networking.md)及[候选验收](../architecture/sentry-network-recovery-candidate.md)。
+
 状态：`in_progress`
 
 ## 1. 模块目标与非目标
