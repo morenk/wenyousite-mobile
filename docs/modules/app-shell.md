@@ -174,7 +174,7 @@ Android 的 Debug、Profile 和 Release 均仅支持 `arm64-v8a`，使用 ARM64 
 
 ## 13. 最近审查的契约版本和后端提交
 
-2026-10-21 字体候选固定 Backend `102b825379eb5da462f0ff765b29dc8fd7fb93ad`／API `5.41.0-dev.20261021.2`。读取 `textFontV1Supported` 与 `textFontV1WriteEnabled` 到 `AppCapabilities`，缺失均为 false。全局 UI 继续使用系统字体，正文资源按需加载，见[字体候选记录](../architecture/thread-fonts-mobile-candidate.md)。
+2026-10-21 字体候选固定 Backend `102b825379eb5da462f0ff765b29dc8fd7fb93ad`／API `5.41.0-dev.20261021.2`。读取 `textFontV1Supported` 与 `textFontV1WriteEnabled` 到 `AppCapabilities`，缺失均为 false。全局 UI 继续使用系统字体，正文资源按需加载，见[字体 revision 5 候选记录](../architecture/thread-fonts-mobile-r5-candidate.md)。
 
 2026-10-18 合并来源同步：Backend PR #55 已合并，固定最终提交 `6e00c4031a8f970609eef8cbf6fdefe3e6b12126`／API `5.40.0-dev.20261018.1`。契约字节与先前候选 `da68203a` 一致，本次只更新来源元数据；消费者验证和部署核验分别记录，不改变本模块既有范围。
 

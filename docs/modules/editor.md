@@ -261,7 +261,7 @@ S5 于 2026-09-10 启动，已按要求安装 Debug 候选并核验设备内 APK
 
 ## 13. 最近审查的契约版本和后端提交
 
-2026-10-21 字体消费候选：Backend `102b825379eb5da462f0ff765b29dc8fd7fb93ad`／API `5.41.0-dev.20261021.2`，Foundation v7.6.0。字体和颜色共用受控 span，字体属性在前；正文、clipboard v2、摘要及往返共用解析，保留合法行内格式。写入均声明 `textFontVersion: 1`，包括清除最后字体；40019–40021 保留草稿。目录使用 `textFontsGetCatalog`，资源与验收见[字体候选记录](../architecture/thread-fonts-mobile-candidate.md)。
+2026-10-21 字体消费候选：Backend `102b825379eb5da462f0ff765b29dc8fd7fb93ad`／API `5.41.0-dev.20261021.2`，Foundation v7.6.0。字体和颜色共用受控 span，字体属性在前；正文、clipboard v2、摘要及往返共用解析，保留合法行内格式。写入均声明 `textFontVersion: 1`，包括清除最后字体；40019–40021 保留草稿。目录使用 `textFontsGetCatalog`，资源与验收见[字体 revision 5 候选记录](../architecture/thread-fonts-mobile-r5-candidate.md)。
 
 2026-10-21 字体契约同步：固定 Backend PR #56 `102b825379eb5da462f0ff765b29dc8fd7fb93ad`／API `5.41.0-dev.20261021.2`。新增正文字体 v1、与颜色同 span 的规范属性顺序、读写能力及资源目录 API；保存 DTO 包含独立 `textFontVersion`。此步只生成模型，尚未启用客户端能力声明或编辑入口。正式资源以 `thread-font-manifest-v1.json` 的哈希与字形范围为准；缺字及资源不可用时保留 ID 并可读回退。
 

@@ -1,5 +1,12 @@
 # 移动端变更记录
 
+## 2026-10-21 — 字体 revision 5 本地验证与 APK 候选
+
+- 最终 29 款真实 Flutter 阅读／Quill 与语言分组预览完成；手动预览图例使用明确主题颜色，58 张正文图片和 6 张分组图片保留原始像素。
+- 冻结应用源码完整门禁：Flutter 7,358 项通过、1 项跳过，Windows 49 项全部通过，格式／分析／契约来源与再生成／架构／文档／API 覆盖和 Debug 构建通过。唯一未满足项仍为公网 5.40 与候选 5.41 来源不匹配，整体 exit code 1，不宣称全绿。
+- APK `631ee2a41a2e…` 为 112,928,878 B，较上批减少 42,307,444 B；已核对旧空填充消失、有效条目仅 Dart kernel 改变，没有捆入完整字体。包名 `site.wenyou.app.debug`、构建号 100、仅 ARM64，v2 签名通过。
+- 候选待负责人 Android／跨端验收及服务环境就绪，未安装、合并或部署。完整源码摘要、APK SHA、测试路径、体积审计和手测条件见[revision 5 记录](architecture/thread-fonts-mobile-r5-candidate.md)。
+
 ## 2026-10-21 — 正文字体最终 29-ready 资源同步
 
 - 固定 Backend `102b825379eb5da462f0ff765b29dc8fd7fb93ad`，API 保持 `5.41.0-dev.20261021.2`、目录升级 `1.1.1`，29 款全部 ready。新 manifest SHA `7aab91a436933049bc8f55c1aba6085078a251d174c5b253456d3af0c91a0582`，5,031,019 B。

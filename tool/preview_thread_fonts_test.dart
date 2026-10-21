@@ -324,17 +324,28 @@ void main() {
                             style: TextStyle(
                               fontFamily: fallback,
                               fontSize: 24,
+                              color: theme.colorScheme.onSurface,
                             ),
                           ),
-                          const Text('阅读'),
+                          Text(
+                            '阅读',
+                            style: TextStyle(
+                              color: theme.colorScheme.onSurface,
+                            ),
+                          ),
                           Expanded(
                             child: WenyouMarkdown(
                               data:
                                   '<span data-wenyou-font-v1="${font.id}" data-wenyou-color-v1="#D14343">$sample **粗体 Bold** *Italic* `#>*`</span>',
                             ),
                           ),
-                          const Divider(),
-                          const Text('编辑'),
+                          Divider(color: theme.colorScheme.outlineVariant),
+                          Text(
+                            '编辑',
+                            style: TextStyle(
+                              color: theme.colorScheme.onSurface,
+                            ),
+                          ),
                           Expanded(
                             child: Builder(
                               builder: (context) => TextFontQuillEditor(
