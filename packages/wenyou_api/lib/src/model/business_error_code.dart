@@ -315,6 +315,21 @@ class BusinessErrorCode extends EnumClass {
   @BuiltValueEnumConst(wireNumber: 40925)
   static const BusinessErrorCode CONTENT_WRITES_PAUSED = _$CONTENT_WRITES_PAUSED;
   /// 稳定业务错误码；名称和值来源于 ErrorCode
+  @BuiltValueEnumConst(wireNumber: 40927)
+  static const BusinessErrorCode TEXT_FONT_CATALOG_CHANGED = _$TEXT_FONT_CATALOG_CHANGED;
+  /// 稳定业务错误码；名称和值来源于 ErrorCode
+  @BuiltValueEnumConst(wireNumber: 40928)
+  static const BusinessErrorCode TEXT_FONT_STATE_CONFLICT = _$TEXT_FONT_STATE_CONFLICT;
+  /// 稳定业务错误码；名称和值来源于 ErrorCode
+  @BuiltValueEnumConst(wireNumber: 40929)
+  static const BusinessErrorCode TEXT_FONT_RIGHTS_REQUIRED = _$TEXT_FONT_RIGHTS_REQUIRED;
+  /// 稳定业务错误码；名称和值来源于 ErrorCode
+  @BuiltValueEnumConst(wireNumber: 41001)
+  static const BusinessErrorCode TEXT_FONT_WITHDRAWN = _$TEXT_FONT_WITHDRAWN;
+  /// 稳定业务错误码；名称和值来源于 ErrorCode
+  @BuiltValueEnumConst(wireNumber: 50301)
+  static const BusinessErrorCode TEXT_FONT_UNAVAILABLE = _$TEXT_FONT_UNAVAILABLE;
+  /// 稳定业务错误码；名称和值来源于 ErrorCode
   @BuiltValueEnumConst(wireNumber: 42900)
   static const BusinessErrorCode RATE_LIMITED = _$RATE_LIMITED;
   /// 稳定业务错误码；名称和值来源于 ErrorCode

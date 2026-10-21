@@ -12,17 +12,17 @@ part 'update_draft_dto.g.dart';
 /// UpdateDraftDto
 ///
 /// Properties:
-/// * [textFontVersion] - 支持字体 v1 无损读写；新端始终发送，包括删除全部字体。新/原正文含字体未声明返回 409/40019；新写受 textFontV1WriteEnabled 控制。颜色组合还须 textColorVersion:1。
+/// * [textFontVersion] - 1 支持字体 v1；2 支持 v1/v2 混合正文无损读写；新端始终发送，包括删除全部字体。新/原正文含字体未声明返回 409/40019；v1 新写受 textFontV1WriteEnabled 控制；v2 新写受 textFontV2WriteEnabled 与版本 pasteAllowed 控制。颜色组合还须 textColorVersion:1。
 /// * [textColorVersion] - 支持文本颜色 v1 无损读写；新端始终发送，包括删除全部颜色。新/原正文含颜色未声明返回 409/40016；新写受 textColorV1WriteEnabled 控制。
 /// * [markdownContractVersion] - 声明编辑器支持 Markdown 6 角色提及源的无损读取/编辑。服务端 capabilities.roleMentionsV6Supported 为 true 时新端始终发送，包括删光旧节点；未声明而新/原正文含 v6 返回 409/40014。新节点还须 roleMentionsV6WriteEnabled。
 /// * [content] - 更新后的草稿正文
 /// * [version] - 当前乐观锁版本
 @BuiltValue()
 abstract class UpdateDraftDto implements Built<UpdateDraftDto, UpdateDraftDtoBuilder> {
-  /// 支持字体 v1 无损读写；新端始终发送，包括删除全部字体。新/原正文含字体未声明返回 409/40019；新写受 textFontV1WriteEnabled 控制。颜色组合还须 textColorVersion:1。
+  /// 1 支持字体 v1；2 支持 v1/v2 混合正文无损读写；新端始终发送，包括删除全部字体。新/原正文含字体未声明返回 409/40019；v1 新写受 textFontV1WriteEnabled 控制；v2 新写受 textFontV2WriteEnabled 与版本 pasteAllowed 控制。颜色组合还须 textColorVersion:1。
   @BuiltValueField(wireName: r'textFontVersion')
   UpdateDraftDtoTextFontVersionEnum? get textFontVersion;
-  // enum textFontVersionEnum {  1,  };
+  // enum textFontVersionEnum {  1,  2,  };
 
   /// 支持文本颜色 v1 无损读写；新端始终发送，包括删除全部颜色。新/原正文含颜色未声明返回 409/40016；新写受 textColorV1WriteEnabled 控制。
   @BuiltValueField(wireName: r'textColorVersion')
@@ -185,10 +185,13 @@ class _$UpdateDraftDtoSerializer implements PrimitiveSerializer<UpdateDraftDto> 
 
 class UpdateDraftDtoTextFontVersionEnum extends EnumClass {
 
-  /// 支持字体 v1 无损读写；新端始终发送，包括删除全部字体。新/原正文含字体未声明返回 409/40019；新写受 textFontV1WriteEnabled 控制。颜色组合还须 textColorVersion:1。
+  /// 1 支持字体 v1；2 支持 v1/v2 混合正文无损读写；新端始终发送，包括删除全部字体。新/原正文含字体未声明返回 409/40019；v1 新写受 textFontV1WriteEnabled 控制；v2 新写受 textFontV2WriteEnabled 与版本 pasteAllowed 控制。颜色组合还须 textColorVersion:1。
   @BuiltValueEnumConst(wireNumber: 1)
   static const UpdateDraftDtoTextFontVersionEnum number1 = _$updateDraftDtoTextFontVersionEnum_number1;
-  /// 支持字体 v1 无损读写；新端始终发送，包括删除全部字体。新/原正文含字体未声明返回 409/40019；新写受 textFontV1WriteEnabled 控制。颜色组合还须 textColorVersion:1。
+  /// 1 支持字体 v1；2 支持 v1/v2 混合正文无损读写；新端始终发送，包括删除全部字体。新/原正文含字体未声明返回 409/40019；v1 新写受 textFontV1WriteEnabled 控制；v2 新写受 textFontV2WriteEnabled 与版本 pasteAllowed 控制。颜色组合还须 textColorVersion:1。
+  @BuiltValueEnumConst(wireNumber: 2)
+  static const UpdateDraftDtoTextFontVersionEnum number2 = _$updateDraftDtoTextFontVersionEnum_number2;
+  /// 1 支持字体 v1；2 支持 v1/v2 混合正文无损读写；新端始终发送，包括删除全部字体。新/原正文含字体未声明返回 409/40019；v1 新写受 textFontV1WriteEnabled 控制；v2 新写受 textFontV2WriteEnabled 与版本 pasteAllowed 控制。颜色组合还须 textColorVersion:1。
   @BuiltValueEnumConst(wireNumber: 11184809, fallback: true)
   static const UpdateDraftDtoTextFontVersionEnum unknownDefaultOpenApi = _$updateDraftDtoTextFontVersionEnum_unknownDefaultOpenApi;
 

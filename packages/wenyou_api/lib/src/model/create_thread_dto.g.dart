@@ -10,6 +10,9 @@ const CreateThreadDtoTextFontVersionEnum
 _$createThreadDtoTextFontVersionEnum_number1 =
     const CreateThreadDtoTextFontVersionEnum._('number1');
 const CreateThreadDtoTextFontVersionEnum
+_$createThreadDtoTextFontVersionEnum_number2 =
+    const CreateThreadDtoTextFontVersionEnum._('number2');
+const CreateThreadDtoTextFontVersionEnum
 _$createThreadDtoTextFontVersionEnum_unknownDefaultOpenApi =
     const CreateThreadDtoTextFontVersionEnum._('unknownDefaultOpenApi');
 
@@ -19,6 +22,8 @@ CreateThreadDtoTextFontVersionEnum _$createThreadDtoTextFontVersionEnumValueOf(
   switch (name) {
     case 'number1':
       return _$createThreadDtoTextFontVersionEnum_number1;
+    case 'number2':
+      return _$createThreadDtoTextFontVersionEnum_number2;
     case 'unknownDefaultOpenApi':
       return _$createThreadDtoTextFontVersionEnum_unknownDefaultOpenApi;
     default:
@@ -31,6 +36,7 @@ _$createThreadDtoTextFontVersionEnumValues =
     BuiltSet<CreateThreadDtoTextFontVersionEnum>(
       const <CreateThreadDtoTextFontVersionEnum>[
         _$createThreadDtoTextFontVersionEnum_number1,
+        _$createThreadDtoTextFontVersionEnum_number2,
         _$createThreadDtoTextFontVersionEnum_unknownDefaultOpenApi,
       ],
     );
@@ -140,10 +146,12 @@ class _$CreateThreadDtoTextFontVersionEnumSerializer
     implements PrimitiveSerializer<CreateThreadDtoTextFontVersionEnum> {
   static const Map<String, Object> _toWire = const <String, Object>{
     'number1': 1,
+    'number2': 2,
     'unknownDefaultOpenApi': 11184809,
   };
   static const Map<Object, String> _fromWire = const <Object, String>{
     1: 'number1',
+    2: 'number2',
     11184809: 'unknownDefaultOpenApi',
   };
 

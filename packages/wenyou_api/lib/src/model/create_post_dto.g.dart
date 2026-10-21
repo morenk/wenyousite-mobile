@@ -10,6 +10,9 @@ const CreatePostDtoTextFontVersionEnum
 _$createPostDtoTextFontVersionEnum_number1 =
     const CreatePostDtoTextFontVersionEnum._('number1');
 const CreatePostDtoTextFontVersionEnum
+_$createPostDtoTextFontVersionEnum_number2 =
+    const CreatePostDtoTextFontVersionEnum._('number2');
+const CreatePostDtoTextFontVersionEnum
 _$createPostDtoTextFontVersionEnum_unknownDefaultOpenApi =
     const CreatePostDtoTextFontVersionEnum._('unknownDefaultOpenApi');
 
@@ -19,6 +22,8 @@ CreatePostDtoTextFontVersionEnum _$createPostDtoTextFontVersionEnumValueOf(
   switch (name) {
     case 'number1':
       return _$createPostDtoTextFontVersionEnum_number1;
+    case 'number2':
+      return _$createPostDtoTextFontVersionEnum_number2;
     case 'unknownDefaultOpenApi':
       return _$createPostDtoTextFontVersionEnum_unknownDefaultOpenApi;
     default:
@@ -31,6 +36,7 @@ _$createPostDtoTextFontVersionEnumValues =
     BuiltSet<CreatePostDtoTextFontVersionEnum>(
       const <CreatePostDtoTextFontVersionEnum>[
         _$createPostDtoTextFontVersionEnum_number1,
+        _$createPostDtoTextFontVersionEnum_number2,
         _$createPostDtoTextFontVersionEnum_unknownDefaultOpenApi,
       ],
     );
@@ -141,10 +147,12 @@ class _$CreatePostDtoTextFontVersionEnumSerializer
     implements PrimitiveSerializer<CreatePostDtoTextFontVersionEnum> {
   static const Map<String, Object> _toWire = const <String, Object>{
     'number1': 1,
+    'number2': 2,
     'unknownDefaultOpenApi': 11184809,
   };
   static const Map<Object, String> _fromWire = const <Object, String>{
     1: 'number1',
+    2: 'number2',
     11184809: 'unknownDefaultOpenApi',
   };
 

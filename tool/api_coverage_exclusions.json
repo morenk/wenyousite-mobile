@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "contractVersion": "5.42.0-dev.20261022.1",
+  "contractVersion": "5.43.0-dev.20261022.1",
   "exclusions": [
     { "operationId": "textFontsGetCatalog", "category": "streamed_font_metadata", "reason": "TextFontService 通过独立公开流式传输读取此端点，按64KiB预占/限长后交生成 TextFontCatalogDto 校验，避免生成客户端提前整包缓冲。" },
     { "operationId": "textFontsGetRuntimePolicy", "category": "streamed_font_metadata", "reason": "TextFontService 通过独立公开流式传输读取此端点，按64KiB预占/限长并执行严格v2策略与manifest绑定验证。" },

@@ -10,6 +10,9 @@ const SaveThreadAggregateDtoTextFontVersionEnum
 _$saveThreadAggregateDtoTextFontVersionEnum_number1 =
     const SaveThreadAggregateDtoTextFontVersionEnum._('number1');
 const SaveThreadAggregateDtoTextFontVersionEnum
+_$saveThreadAggregateDtoTextFontVersionEnum_number2 =
+    const SaveThreadAggregateDtoTextFontVersionEnum._('number2');
+const SaveThreadAggregateDtoTextFontVersionEnum
 _$saveThreadAggregateDtoTextFontVersionEnum_unknownDefaultOpenApi =
     const SaveThreadAggregateDtoTextFontVersionEnum._('unknownDefaultOpenApi');
 
@@ -18,6 +21,8 @@ _$saveThreadAggregateDtoTextFontVersionEnumValueOf(String name) {
   switch (name) {
     case 'number1':
       return _$saveThreadAggregateDtoTextFontVersionEnum_number1;
+    case 'number2':
+      return _$saveThreadAggregateDtoTextFontVersionEnum_number2;
     case 'unknownDefaultOpenApi':
       return _$saveThreadAggregateDtoTextFontVersionEnum_unknownDefaultOpenApi;
     default:
@@ -30,6 +35,7 @@ _$saveThreadAggregateDtoTextFontVersionEnumValues =
     BuiltSet<SaveThreadAggregateDtoTextFontVersionEnum>(
       const <SaveThreadAggregateDtoTextFontVersionEnum>[
         _$saveThreadAggregateDtoTextFontVersionEnum_number1,
+        _$saveThreadAggregateDtoTextFontVersionEnum_number2,
         _$saveThreadAggregateDtoTextFontVersionEnum_unknownDefaultOpenApi,
       ],
     );
@@ -273,10 +279,12 @@ class _$SaveThreadAggregateDtoTextFontVersionEnumSerializer
     implements PrimitiveSerializer<SaveThreadAggregateDtoTextFontVersionEnum> {
   static const Map<String, Object> _toWire = const <String, Object>{
     'number1': 1,
+    'number2': 2,
     'unknownDefaultOpenApi': 11184809,
   };
   static const Map<Object, String> _fromWire = const <Object, String>{
     1: 'number1',
+    2: 'number2',
     11184809: 'unknownDefaultOpenApi',
   };
 

@@ -283,6 +283,21 @@ const BusinessErrorCode _$REGISTRATION_PAUSED = const BusinessErrorCode._(
 const BusinessErrorCode _$CONTENT_WRITES_PAUSED = const BusinessErrorCode._(
   'CONTENT_WRITES_PAUSED',
 );
+const BusinessErrorCode _$TEXT_FONT_CATALOG_CHANGED = const BusinessErrorCode._(
+  'TEXT_FONT_CATALOG_CHANGED',
+);
+const BusinessErrorCode _$TEXT_FONT_STATE_CONFLICT = const BusinessErrorCode._(
+  'TEXT_FONT_STATE_CONFLICT',
+);
+const BusinessErrorCode _$TEXT_FONT_RIGHTS_REQUIRED = const BusinessErrorCode._(
+  'TEXT_FONT_RIGHTS_REQUIRED',
+);
+const BusinessErrorCode _$TEXT_FONT_WITHDRAWN = const BusinessErrorCode._(
+  'TEXT_FONT_WITHDRAWN',
+);
+const BusinessErrorCode _$TEXT_FONT_UNAVAILABLE = const BusinessErrorCode._(
+  'TEXT_FONT_UNAVAILABLE',
+);
 const BusinessErrorCode _$RATE_LIMITED = const BusinessErrorCode._(
   'RATE_LIMITED',
 );
@@ -503,6 +518,16 @@ BusinessErrorCode _$valueOf(String name) {
       return _$REGISTRATION_PAUSED;
     case 'CONTENT_WRITES_PAUSED':
       return _$CONTENT_WRITES_PAUSED;
+    case 'TEXT_FONT_CATALOG_CHANGED':
+      return _$TEXT_FONT_CATALOG_CHANGED;
+    case 'TEXT_FONT_STATE_CONFLICT':
+      return _$TEXT_FONT_STATE_CONFLICT;
+    case 'TEXT_FONT_RIGHTS_REQUIRED':
+      return _$TEXT_FONT_RIGHTS_REQUIRED;
+    case 'TEXT_FONT_WITHDRAWN':
+      return _$TEXT_FONT_WITHDRAWN;
+    case 'TEXT_FONT_UNAVAILABLE':
+      return _$TEXT_FONT_UNAVAILABLE;
     case 'RATE_LIMITED':
       return _$RATE_LIMITED;
     case 'AUDIO_ACTIVE_LIMIT':
@@ -621,6 +646,11 @@ final BuiltSet<BusinessErrorCode> _$values =
       _$IMAGE_GALLERY_NOT_READY,
       _$REGISTRATION_PAUSED,
       _$CONTENT_WRITES_PAUSED,
+      _$TEXT_FONT_CATALOG_CHANGED,
+      _$TEXT_FONT_STATE_CONFLICT,
+      _$TEXT_FONT_RIGHTS_REQUIRED,
+      _$TEXT_FONT_WITHDRAWN,
+      _$TEXT_FONT_UNAVAILABLE,
       _$RATE_LIMITED,
       _$AUDIO_ACTIVE_LIMIT,
       _$AUDIO_DAILY_BYTES_LIMIT,
@@ -749,6 +779,13 @@ class _$BusinessErrorCodeMeta {
   BusinessErrorCode get IMAGE_GALLERY_NOT_READY => _$IMAGE_GALLERY_NOT_READY;
   BusinessErrorCode get REGISTRATION_PAUSED => _$REGISTRATION_PAUSED;
   BusinessErrorCode get CONTENT_WRITES_PAUSED => _$CONTENT_WRITES_PAUSED;
+  BusinessErrorCode get TEXT_FONT_CATALOG_CHANGED =>
+      _$TEXT_FONT_CATALOG_CHANGED;
+  BusinessErrorCode get TEXT_FONT_STATE_CONFLICT => _$TEXT_FONT_STATE_CONFLICT;
+  BusinessErrorCode get TEXT_FONT_RIGHTS_REQUIRED =>
+      _$TEXT_FONT_RIGHTS_REQUIRED;
+  BusinessErrorCode get TEXT_FONT_WITHDRAWN => _$TEXT_FONT_WITHDRAWN;
+  BusinessErrorCode get TEXT_FONT_UNAVAILABLE => _$TEXT_FONT_UNAVAILABLE;
   BusinessErrorCode get RATE_LIMITED => _$RATE_LIMITED;
   BusinessErrorCode get AUDIO_ACTIVE_LIMIT => _$AUDIO_ACTIVE_LIMIT;
   BusinessErrorCode get AUDIO_DAILY_BYTES_LIMIT => _$AUDIO_DAILY_BYTES_LIMIT;
@@ -871,6 +908,11 @@ class _$BusinessErrorCodeSerializer
     'IMAGE_GALLERY_NOT_READY': 40926,
     'REGISTRATION_PAUSED': 40924,
     'CONTENT_WRITES_PAUSED': 40925,
+    'TEXT_FONT_CATALOG_CHANGED': 40927,
+    'TEXT_FONT_STATE_CONFLICT': 40928,
+    'TEXT_FONT_RIGHTS_REQUIRED': 40929,
+    'TEXT_FONT_WITHDRAWN': 41001,
+    'TEXT_FONT_UNAVAILABLE': 50301,
     'RATE_LIMITED': 42900,
     'AUDIO_ACTIVE_LIMIT': 42901,
     'AUDIO_DAILY_BYTES_LIMIT': 42902,
@@ -979,6 +1021,11 @@ class _$BusinessErrorCodeSerializer
     40926: 'IMAGE_GALLERY_NOT_READY',
     40924: 'REGISTRATION_PAUSED',
     40925: 'CONTENT_WRITES_PAUSED',
+    40927: 'TEXT_FONT_CATALOG_CHANGED',
+    40928: 'TEXT_FONT_STATE_CONFLICT',
+    40929: 'TEXT_FONT_RIGHTS_REQUIRED',
+    41001: 'TEXT_FONT_WITHDRAWN',
+    50301: 'TEXT_FONT_UNAVAILABLE',
     42900: 'RATE_LIMITED',
     42901: 'AUDIO_ACTIVE_LIMIT',
     42902: 'AUDIO_DAILY_BYTES_LIMIT',

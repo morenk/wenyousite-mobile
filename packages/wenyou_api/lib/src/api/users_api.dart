@@ -55,7 +55,7 @@ class UsersApi {
   /// Parameters:
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
-  /// * [xTextFontVersion] - 声明 1 读取字体原始源码；缺失只返回安全去字体副本，不能覆盖字体原文。颜色能力单独协商。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -144,7 +144,7 @@ class UsersApi {
   /// * [id]
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
-  /// * [xTextFontVersion] - 声明 1 读取字体原始源码；缺失只返回安全去字体副本，不能覆盖字体原文。颜色能力单独协商。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -233,7 +233,7 @@ class UsersApi {
   /// Parameters:
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
-  /// * [xTextFontVersion] - 声明 1 读取字体原始源码；缺失只返回安全去字体副本，不能覆盖字体原文。颜色能力单独协商。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -322,7 +322,7 @@ class UsersApi {
   /// * [id]
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
-  /// * [xTextFontVersion] - 声明 1 读取字体原始源码；缺失只返回安全去字体副本，不能覆盖字体原文。颜色能力单独协商。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -411,7 +411,7 @@ class UsersApi {
   /// Parameters:
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
-  /// * [xTextFontVersion] - 声明 1 读取字体原始源码；缺失只返回安全去字体副本，不能覆盖字体原文。颜色能力单独协商。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -499,7 +499,7 @@ class UsersApi {
   /// Parameters:
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
-  /// * [xTextFontVersion] - 声明 1 读取字体原始源码；缺失只返回安全去字体副本，不能覆盖字体原文。颜色能力单独协商。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -588,7 +588,7 @@ class UsersApi {
   /// * [id]
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
-  /// * [xTextFontVersion] - 声明 1 读取字体原始源码；缺失只返回安全去字体副本，不能覆盖字体原文。颜色能力单独协商。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -678,7 +678,7 @@ class UsersApi {
   /// * [id]
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
-  /// * [xTextFontVersion] - 声明 1 读取字体原始源码；缺失只返回安全去字体副本，不能覆盖字体原文。颜色能力单独协商。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -768,7 +768,7 @@ class UsersApi {
   /// * [id]
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
-  /// * [xTextFontVersion] - 声明 1 读取字体原始源码；缺失只返回安全去字体副本，不能覆盖字体原文。颜色能力单独协商。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -858,7 +858,7 @@ class UsersApi {
   /// * [id]
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
-  /// * [xTextFontVersion] - 声明 1 读取字体原始源码；缺失只返回安全去字体副本，不能覆盖字体原文。颜色能力单独协商。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -948,7 +948,7 @@ class UsersApi {
   /// * [id]
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
-  /// * [xTextFontVersion] - 声明 1 读取字体原始源码；缺失只返回安全去字体副本，不能覆盖字体原文。颜色能力单独协商。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -1037,7 +1037,7 @@ class UsersApi {
   /// Parameters:
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
-  /// * [xTextFontVersion] - 声明 1 读取字体原始源码；缺失只返回安全去字体副本，不能覆盖字体原文。颜色能力单独协商。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -1127,7 +1127,7 @@ class UsersApi {
   /// * [limit] - 每页条数（默认 20，最大 50）
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
-  /// * [xTextFontVersion] - 声明 1 读取字体原始源码；缺失只返回安全去字体副本，不能覆盖字体原文。颜色能力单独协商。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -1224,7 +1224,7 @@ class UsersApi {
   /// * [id]
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
-  /// * [xTextFontVersion] - 声明 1 读取字体原始源码；缺失只返回安全去字体副本，不能覆盖字体原文。颜色能力单独协商。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -1314,7 +1314,7 @@ class UsersApi {
   /// * [id]
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
-  /// * [xTextFontVersion] - 声明 1 读取字体原始源码；缺失只返回安全去字体副本，不能覆盖字体原文。颜色能力单独协商。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -1406,7 +1406,7 @@ class UsersApi {
   /// * [limit] - 每页条数（默认 20，最大 50）
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
-  /// * [xTextFontVersion] - 声明 1 读取字体原始源码；缺失只返回安全去字体副本，不能覆盖字体原文。颜色能力单独协商。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -1506,7 +1506,7 @@ class UsersApi {
   /// * [limit] - 每页条数（默认 20，最大 50）
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
-  /// * [xTextFontVersion] - 声明 1 读取字体原始源码；缺失只返回安全去字体副本，不能覆盖字体原文。颜色能力单独协商。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -1606,7 +1606,7 @@ class UsersApi {
   /// * [limit] - 每页条数（默认 20，最大 50）
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
-  /// * [xTextFontVersion] - 声明 1 读取字体原始源码；缺失只返回安全去字体副本，不能覆盖字体原文。颜色能力单独协商。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -1707,7 +1707,7 @@ class UsersApi {
   /// * [visibility] - 按公开帖或私密帖筛选已获得玩家身份的帖子。他人请求 PRIVATE 返回空列表
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
-  /// * [xTextFontVersion] - 声明 1 读取字体原始源码；缺失只返回安全去字体副本，不能覆盖字体原文。颜色能力单独协商。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -1807,7 +1807,7 @@ class UsersApi {
   /// * [id]
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
-  /// * [xTextFontVersion] - 声明 1 读取字体原始源码；缺失只返回安全去字体副本，不能覆盖字体原文。颜色能力单独协商。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -1899,7 +1899,7 @@ class UsersApi {
   /// * [q] - 用户名搜索关键词
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
-  /// * [xTextFontVersion] - 声明 1 读取字体原始源码；缺失只返回安全去字体副本，不能覆盖字体原文。颜色能力单独协商。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -1997,7 +1997,7 @@ class UsersApi {
   /// Parameters:
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
-  /// * [xTextFontVersion] - 声明 1 读取字体原始源码；缺失只返回安全去字体副本，不能覆盖字体原文。颜色能力单独协商。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -2085,7 +2085,7 @@ class UsersApi {
   /// Parameters:
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
-  /// * [xTextFontVersion] - 声明 1 读取字体原始源码；缺失只返回安全去字体副本，不能覆盖字体原文。颜色能力单独协商。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -2174,7 +2174,7 @@ class UsersApi {
   /// * [q] - 用户名搜索关键词
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
-  /// * [xTextFontVersion] - 声明 1 读取字体原始源码；缺失只返回安全去字体副本，不能覆盖字体原文。颜色能力单独协商。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -2269,7 +2269,7 @@ class UsersApi {
   /// * [setAvatarDto]
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
-  /// * [xTextFontVersion] - 声明 1 读取字体原始源码；缺失只返回安全去字体副本，不能覆盖字体原文。颜色能力单独协商。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -2379,7 +2379,7 @@ class UsersApi {
   /// * [setProfileCoverDto]
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
-  /// * [xTextFontVersion] - 声明 1 读取字体原始源码；缺失只返回安全去字体副本，不能覆盖字体原文。颜色能力单独协商。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -2489,7 +2489,7 @@ class UsersApi {
   /// * [updateUserDto]
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
-  /// * [xTextFontVersion] - 声明 1 读取字体原始源码；缺失只返回安全去字体副本，不能覆盖字体原文。颜色能力单独协商。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request

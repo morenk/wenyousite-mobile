@@ -10,6 +10,9 @@ const UpdateDraftDtoTextFontVersionEnum
 _$updateDraftDtoTextFontVersionEnum_number1 =
     const UpdateDraftDtoTextFontVersionEnum._('number1');
 const UpdateDraftDtoTextFontVersionEnum
+_$updateDraftDtoTextFontVersionEnum_number2 =
+    const UpdateDraftDtoTextFontVersionEnum._('number2');
+const UpdateDraftDtoTextFontVersionEnum
 _$updateDraftDtoTextFontVersionEnum_unknownDefaultOpenApi =
     const UpdateDraftDtoTextFontVersionEnum._('unknownDefaultOpenApi');
 
@@ -19,6 +22,8 @@ UpdateDraftDtoTextFontVersionEnum _$updateDraftDtoTextFontVersionEnumValueOf(
   switch (name) {
     case 'number1':
       return _$updateDraftDtoTextFontVersionEnum_number1;
+    case 'number2':
+      return _$updateDraftDtoTextFontVersionEnum_number2;
     case 'unknownDefaultOpenApi':
       return _$updateDraftDtoTextFontVersionEnum_unknownDefaultOpenApi;
     default:
@@ -31,6 +36,7 @@ _$updateDraftDtoTextFontVersionEnumValues =
     BuiltSet<UpdateDraftDtoTextFontVersionEnum>(
       const <UpdateDraftDtoTextFontVersionEnum>[
         _$updateDraftDtoTextFontVersionEnum_number1,
+        _$updateDraftDtoTextFontVersionEnum_number2,
         _$updateDraftDtoTextFontVersionEnum_unknownDefaultOpenApi,
       ],
     );
@@ -106,10 +112,12 @@ class _$UpdateDraftDtoTextFontVersionEnumSerializer
     implements PrimitiveSerializer<UpdateDraftDtoTextFontVersionEnum> {
   static const Map<String, Object> _toWire = const <String, Object>{
     'number1': 1,
+    'number2': 2,
     'unknownDefaultOpenApi': 11184809,
   };
   static const Map<Object, String> _fromWire = const <Object, String>{
     1: 'number1',
+    2: 'number2',
     11184809: 'unknownDefaultOpenApi',
   };
 

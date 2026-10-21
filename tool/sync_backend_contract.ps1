@@ -170,6 +170,14 @@ $threadCategorySource = Resolve-UniqueBackendContract `
   'thread category'
 
 $contractFiles = @(
+  @{ Source = 'docs/dynamic-text-fonts.md'; Destination = 'dynamic-text-fonts.md' },
+  @{ Source = 'contracts/markdown-text-font-v2.schema.json'; Destination = 'markdown-text-font-v2.schema.json' },
+  @{ Source = 'contracts/markdown-text-font-v2-fixtures.json'; Destination = 'markdown-text-font-v2-fixtures.json' },
+  @{ Source = 'contracts/thread-font-dynamic-v2-fixtures.json'; Destination = 'thread-font-dynamic-v2-fixtures.json' },
+  @{ Source = 'contracts/thread-font-manifest-v2.schema.json'; Destination = 'thread-font-manifest-v2.schema.json' },
+  @{ Source = 'contracts/thread-font-runtime-policy-v3.json'; Destination = 'thread-font-runtime-policy-v3.json' },
+  @{ Source = 'contracts/thread-font-runtime-policy-v3.schema.json'; Destination = 'thread-font-runtime-policy-v3.schema.json' },
+  @{ Source = 'contracts/thread-font-v1-import-map.json'; Destination = 'thread-font-v1-import-map.json' },
   @{ Source = 'contracts/thread-font-runtime-policy-v2.json'; Destination = 'thread-font-runtime-policy-v2.json' },
   @{ Source = 'contracts/thread-font-runtime-policy-v2.schema.json'; Destination = 'thread-font-runtime-policy-v2.schema.json' },
   @{ Source = 'contracts/thread-font-runtime-policy-v2-fixtures.json'; Destination = 'thread-font-runtime-policy-v2-fixtures.json' },

@@ -10,6 +10,9 @@ const CreateSubthreadDtoTextFontVersionEnum
 _$createSubthreadDtoTextFontVersionEnum_number1 =
     const CreateSubthreadDtoTextFontVersionEnum._('number1');
 const CreateSubthreadDtoTextFontVersionEnum
+_$createSubthreadDtoTextFontVersionEnum_number2 =
+    const CreateSubthreadDtoTextFontVersionEnum._('number2');
+const CreateSubthreadDtoTextFontVersionEnum
 _$createSubthreadDtoTextFontVersionEnum_unknownDefaultOpenApi =
     const CreateSubthreadDtoTextFontVersionEnum._('unknownDefaultOpenApi');
 
@@ -18,6 +21,8 @@ _$createSubthreadDtoTextFontVersionEnumValueOf(String name) {
   switch (name) {
     case 'number1':
       return _$createSubthreadDtoTextFontVersionEnum_number1;
+    case 'number2':
+      return _$createSubthreadDtoTextFontVersionEnum_number2;
     case 'unknownDefaultOpenApi':
       return _$createSubthreadDtoTextFontVersionEnum_unknownDefaultOpenApi;
     default:
@@ -30,6 +35,7 @@ _$createSubthreadDtoTextFontVersionEnumValues =
     BuiltSet<CreateSubthreadDtoTextFontVersionEnum>(
       const <CreateSubthreadDtoTextFontVersionEnum>[
         _$createSubthreadDtoTextFontVersionEnum_number1,
+        _$createSubthreadDtoTextFontVersionEnum_number2,
         _$createSubthreadDtoTextFontVersionEnum_unknownDefaultOpenApi,
       ],
     );
@@ -187,10 +193,12 @@ class _$CreateSubthreadDtoTextFontVersionEnumSerializer
     implements PrimitiveSerializer<CreateSubthreadDtoTextFontVersionEnum> {
   static const Map<String, Object> _toWire = const <String, Object>{
     'number1': 1,
+    'number2': 2,
     'unknownDefaultOpenApi': 11184809,
   };
   static const Map<Object, String> _fromWire = const <Object, String>{
     1: 'number1',
+    2: 'number2',
     11184809: 'unknownDefaultOpenApi',
   };
 

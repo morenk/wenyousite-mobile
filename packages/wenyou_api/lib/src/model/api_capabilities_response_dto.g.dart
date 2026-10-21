@@ -8,6 +8,10 @@ part of 'api_capabilities_response_dto.dart';
 
 class _$ApiCapabilitiesResponseDto extends ApiCapabilitiesResponseDto {
   @override
+  final bool? textFontV2Supported;
+  @override
+  final bool? textFontV2WriteEnabled;
+  @override
   final bool? textFontV1Supported;
   @override
   final bool? textFontV1WriteEnabled;
@@ -33,6 +37,8 @@ class _$ApiCapabilitiesResponseDto extends ApiCapabilitiesResponseDto {
   ]) => (ApiCapabilitiesResponseDtoBuilder()..update(updates))._build();
 
   _$ApiCapabilitiesResponseDto._({
+    this.textFontV2Supported,
+    this.textFontV2WriteEnabled,
     this.textFontV1Supported,
     this.textFontV1WriteEnabled,
     this.textColorV1Supported,
@@ -57,6 +63,8 @@ class _$ApiCapabilitiesResponseDto extends ApiCapabilitiesResponseDto {
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
     return other is ApiCapabilitiesResponseDto &&
+        textFontV2Supported == other.textFontV2Supported &&
+        textFontV2WriteEnabled == other.textFontV2WriteEnabled &&
         textFontV1Supported == other.textFontV1Supported &&
         textFontV1WriteEnabled == other.textFontV1WriteEnabled &&
         textColorV1Supported == other.textColorV1Supported &&
@@ -72,6 +80,8 @@ class _$ApiCapabilitiesResponseDto extends ApiCapabilitiesResponseDto {
   @override
   int get hashCode {
     var _$hash = 0;
+    _$hash = $jc(_$hash, textFontV2Supported.hashCode);
+    _$hash = $jc(_$hash, textFontV2WriteEnabled.hashCode);
     _$hash = $jc(_$hash, textFontV1Supported.hashCode);
     _$hash = $jc(_$hash, textFontV1WriteEnabled.hashCode);
     _$hash = $jc(_$hash, textColorV1Supported.hashCode);
@@ -89,6 +99,8 @@ class _$ApiCapabilitiesResponseDto extends ApiCapabilitiesResponseDto {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'ApiCapabilitiesResponseDto')
+          ..add('textFontV2Supported', textFontV2Supported)
+          ..add('textFontV2WriteEnabled', textFontV2WriteEnabled)
           ..add('textFontV1Supported', textFontV1Supported)
           ..add('textFontV1WriteEnabled', textFontV1WriteEnabled)
           ..add('textColorV1Supported', textColorV1Supported)
@@ -107,6 +119,16 @@ class ApiCapabilitiesResponseDtoBuilder
     implements
         Builder<ApiCapabilitiesResponseDto, ApiCapabilitiesResponseDtoBuilder> {
   _$ApiCapabilitiesResponseDto? _$v;
+
+  bool? _textFontV2Supported;
+  bool? get textFontV2Supported => _$this._textFontV2Supported;
+  set textFontV2Supported(bool? textFontV2Supported) =>
+      _$this._textFontV2Supported = textFontV2Supported;
+
+  bool? _textFontV2WriteEnabled;
+  bool? get textFontV2WriteEnabled => _$this._textFontV2WriteEnabled;
+  set textFontV2WriteEnabled(bool? textFontV2WriteEnabled) =>
+      _$this._textFontV2WriteEnabled = textFontV2WriteEnabled;
 
   bool? _textFontV1Supported;
   bool? get textFontV1Supported => _$this._textFontV1Supported;
@@ -164,6 +186,8 @@ class ApiCapabilitiesResponseDtoBuilder
   ApiCapabilitiesResponseDtoBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
+      _textFontV2Supported = $v.textFontV2Supported;
+      _textFontV2WriteEnabled = $v.textFontV2WriteEnabled;
       _textFontV1Supported = $v.textFontV1Supported;
       _textFontV1WriteEnabled = $v.textFontV1WriteEnabled;
       _textColorV1Supported = $v.textColorV1Supported;
@@ -196,6 +220,8 @@ class ApiCapabilitiesResponseDtoBuilder
     final _$result =
         _$v ??
         _$ApiCapabilitiesResponseDto._(
+          textFontV2Supported: textFontV2Supported,
+          textFontV2WriteEnabled: textFontV2WriteEnabled,
           textFontV1Supported: textFontV1Supported,
           textFontV1WriteEnabled: textFontV1WriteEnabled,
           textColorV1Supported: textColorV1Supported,
