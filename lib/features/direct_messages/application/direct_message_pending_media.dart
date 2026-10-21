@@ -61,6 +61,7 @@ class DirectMessagePendingMediaJobs {
       void progressChanged(MediaUploadProgress progress) {
         if (!identical(_jobs[messageId], job)) return;
         job.progress = progress;
+        job.pending = progress.pendingUpload ?? job.pending;
         onProgress(job.snapshot);
       }
 
@@ -68,6 +69,12 @@ class DirectMessagePendingMediaJobs {
       final pending = job.pending;
       final operation = pending == null
           ? gateway.startImageUpload(input, onProgress: progressChanged)
+          : pending.needsTransfer && gateway is RetryableMediaUploadGateway
+          ? (gateway as RetryableMediaUploadGateway).retryImageUpload(
+              input,
+              pending,
+              onProgress: progressChanged,
+            )
           : gateway is ResumableMediaUploadGateway
           ? (gateway as ResumableMediaUploadGateway).resumeImageProcessing(
               pending,
@@ -92,8 +99,13 @@ class DirectMessagePendingMediaJobs {
             if (identical(_jobs[messageId], job)) {
               job.pending = switch (error) {
                 MediaProcessingPending() => error.upload,
+                MediaProcessingLookupFailure(
+                  cause: ApiFailure(diagnosticCode: 'media_processing_failed'),
+                ) =>
+                  null,
                 MediaProcessingLookupFailure() => error.upload,
-                _ => null,
+                ApiFailure(diagnosticCode: 'media_processing_failed') => null,
+                _ => job.pending,
               };
             }
             throw error;
