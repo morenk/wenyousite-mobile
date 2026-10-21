@@ -170,6 +170,10 @@ $threadCategorySource = Resolve-UniqueBackendContract `
   'thread category'
 
 $contractFiles = @(
+  @{ Source = 'contracts/thread-font-runtime-policy-v2.json'; Destination = 'thread-font-runtime-policy-v2.json' },
+  @{ Source = 'contracts/thread-font-runtime-policy-v2.schema.json'; Destination = 'thread-font-runtime-policy-v2.schema.json' },
+  @{ Source = 'contracts/thread-font-runtime-policy-v2-fixtures.json'; Destination = 'thread-font-runtime-policy-v2-fixtures.json' },
+  @{ Source = 'docs/thread-font-runtime-policy.md'; Destination = 'thread-font-runtime-policy.md' },
   @{ Source = 'contracts/markdown-text-font-v1.schema.json'; Destination = 'markdown-text-font-v1.schema.json' },
   @{ Source = 'contracts/markdown-text-font-v1-fixtures.json'; Destination = 'markdown-text-font-v1-fixtures.json' },
   @{ Source = 'contracts/thread-font-catalog-v1.json'; Destination = 'thread-font-catalog-v1.json' },

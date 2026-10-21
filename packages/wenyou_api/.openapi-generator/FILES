@@ -258,6 +258,15 @@ lib/src/model/economy_tip_user201_response.dart
 lib/src/model/economy_transactions200_response.dart
 lib/src/model/floor_response_dto.dart
 lib/src/model/floor_window_response_dto.dart
+lib/src/model/font_mobile_registration_dto.dart
+lib/src/model/font_mobile_runtime_dto.dart
+lib/src/model/font_network_window_dto.dart
+lib/src/model/font_original_asset_dto.dart
+lib/src/model/font_registration_snapshot_dto.dart
+lib/src/model/font_retry_policy_dto.dart
+lib/src/model/font_snapshot_safety_ceiling_dto.dart
+lib/src/model/font_web_residency_dto.dart
+lib/src/model/font_web_runtime_dto.dart
 lib/src/model/forgot_password_dto.dart
 lib/src/model/gallery_image_dto.dart
 lib/src/model/gallery_list200_response.dart
@@ -488,7 +497,9 @@ lib/src/model/tags_search200_response.dart
 lib/src/model/text_font_catalog_dto.dart
 lib/src/model/text_font_family_dto.dart
 lib/src/model/text_font_manifest_dto.dart
+lib/src/model/text_font_runtime_policy_dto.dart
 lib/src/model/text_fonts_get_catalog200_response.dart
+lib/src/model/text_fonts_get_runtime_policy200_response.dart
 lib/src/model/thread_body_post_response_dto.dart
 lib/src/model/thread_capabilities_response_dto.dart
 lib/src/model/thread_categories_list200_response.dart
