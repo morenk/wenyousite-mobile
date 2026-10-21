@@ -28,6 +28,7 @@ test('固定部署祖先导出同一 SHA，拒绝远端 dev 以外提交且不�
     fs.copyFileSync(path.join(repository, 'contracts/markdown-text-color-v1.md'), path.join(backend, 'docs/markdown-text-color-v1.md'));
     fs.copyFileSync(path.join(repository, 'contracts/markdown-text-font-v1.md'), path.join(backend, 'docs/markdown-text-font-v1.md'));
     fs.copyFileSync(path.join(repository, 'contracts/thread-font-assets.md'), path.join(backend, 'docs/thread-font-assets.md'));
+    fs.copyFileSync(path.join(repository, 'contracts/thread-font-runtime-policy.md'), path.join(backend, 'docs/thread-font-runtime-policy.md'));
     fs.copyFileSync(path.join(repository, 'contracts/thread-identity.md'), path.join(backend, 'docs/thread-identity.md'));
     fs.copyFileSync(path.join(repository, 'contracts/markdown-v6-role-mentions.md'), path.join(backend, 'docs/markdown-v6-role-mentions.md'));
     fs.copyFileSync(path.join(repository, 'contracts/markdown-text-color-v1.md'), path.join(backend, 'docs/markdown-text-color-v1.md'));
@@ -88,6 +89,10 @@ test('固定部署祖先导出同一 SHA，拒绝远端 dev 以外提交且不�
       'thread-font-manifest-v1.json',
       'thread-font-manifest-v1.schema.json',
       'thread-font-assets.md',
+      'thread-font-runtime-policy-v2.json',
+      'thread-font-runtime-policy-v2.schema.json',
+      'thread-font-runtime-policy-v2-fixtures.json',
+      'thread-font-runtime-policy.md',
       'discussion-navigation.v1.json',
       'discussion-navigation.md',
       'mobile-release-operations.md',
