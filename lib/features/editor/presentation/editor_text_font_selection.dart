@@ -2,6 +2,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_quill/quill_delta.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_text_font.dart';
+import 'package:wenyousite_mobile/features/editor/presentation/literal_text_quill_controller.dart';
 
 /// 一个选择操作对应一次撤销；行结束和原子节点始终不携带字体属性。
 abstract final class EditorTextFontPolicy {
@@ -44,9 +45,20 @@ abstract final class EditorTextFontPolicy {
     }
     if (controller.readOnly ||
         !selection.isValid ||
-        selection.isCollapsed ||
         selection.end >= controller.document.length) {
       return false;
+    }
+    if (selection.isCollapsed) {
+      if (controller is LiteralTextQuillController) {
+        controller.useFontForTyping(font);
+      } else {
+        controller.formatText(
+          selection.start,
+          0,
+          Attribute.clone(Attribute.font, font),
+        );
+      }
+      return true;
     }
     final patch = Delta();
     var offset = 0;

@@ -1,21 +1,18 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wenyousite_mobile/app/app_capabilities.dart';
-import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_text_font.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
-import 'package:wenyousite_mobile/core/text_fonts/text_font_manifest.dart';
 import 'package:wenyousite_mobile/core/text_fonts/text_font_service.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
-import 'package:wenyousite_mobile/features/editor/presentation/editor_dynamic_font_list.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_text_font_selection.dart';
+import 'package:wenyousite_mobile/features/editor/presentation/editor_text_font_sheet.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/literal_text_quill_controller.dart';
 
-class EditorTextFontPicker extends ConsumerWidget {
+class EditorTextFontPicker extends ConsumerStatefulWidget {
   const EditorTextFontPicker({
     required this.controller,
     required this.enabled,
@@ -25,197 +22,128 @@ class EditorTextFontPicker extends ConsumerWidget {
   final QuillController controller;
   final bool enabled;
   final FocusNode? focusNode;
-
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<EditorTextFontPicker> createState() =>
+      _EditorTextFontPickerState();
+}
+
+class _EditorTextFontPickerState extends ConsumerState<EditorTextFontPicker> {
+  bool _open = false;
+  @override
+  Widget build(BuildContext context) {
     final capability = ref.watch(appCapabilitiesProvider);
     final account = ref.watch(sessionScopeProvider).accountId;
     if (!capability.textFontSupported || account == null) {
       return const SizedBox.shrink();
     }
-    final selected = controller.selection;
-    final canSelect =
-        enabled &&
-        !controller.readOnly &&
-        selected.isValid &&
-        !selected.isCollapsed;
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Tooltip(
-        message: canSelect ? '更换字体' : '选中文字后更换字体',
-        child: TextButton(
-          key: const Key('editor-font-picker'),
-          onPressed: canSelect
-              ? () => _open(
-                  context,
-                  ref,
-                  account,
-                  capability.textFontV2Supported
-                      ? capability.textFontV2WriteEnabled
-                      : capability.textFontWriteEnabled,
-                )
-              : null,
-          child: const Text('字体'),
-        ),
-      ),
+    return AnimatedBuilder(
+      animation: widget.controller,
+      builder: (context, _) {
+        final canSelect =
+            widget.enabled &&
+            !widget.controller.readOnly &&
+            widget.controller.selection.isValid;
+        return Align(
+          alignment: Alignment.centerLeft,
+          child: Tooltip(
+            message: '更换字体',
+            child: TextButton(
+              key: const Key('editor-font-picker'),
+              onPressed: canSelect && !_open ? () => _show(account) : null,
+              child: const Text('字体'),
+            ),
+          ),
+        );
+      },
     );
   }
 
-  Future<void> _open(
-    BuildContext context,
-    WidgetRef ref,
-    String account,
-    bool writeEnabled,
-  ) async {
+  Future<void> _show(String account) async {
+    if (_open) return;
+    setState(() => _open = true);
+    final controller = widget.controller;
+    final document = controller.document;
     final selection = controller.selection;
     final selectedFont = EditorTextFontPolicy.selection(controller);
     final typingStyle = controller is LiteralTextQuillController
-        ? (controller as LiteralTextQuillController).captureTypingStyle()
+        ? controller.captureTypingStyle()
         : null;
-    final original = jsonEncode(controller.document.toDelta().toJson());
+    final original = jsonEncode(document.toDelta().toJson());
     final service = ref.read(textFontServiceProvider);
+    bool current() =>
+        mounted &&
+        identical(widget.controller, controller) &&
+        identical(controller.document, document) &&
+        ref.read(sessionScopeProvider).accountId == account;
+    bool unchanged() =>
+        current() && jsonEncode(document.toDelta().toJson()) == original;
+    void restore() {
+      if (controller is LiteralTextQuillController) {
+        controller.restoreToolSelection(selection, snapshot: typingStyle);
+      } else {
+        controller.updateSelection(selection, ChangeSource.local);
+      }
+    }
+
+    bool applied = false;
+    List<String> recent = [];
     try {
-      final runtime = await service.openPicker();
-      final dynamicFonts = service.dynamicEnabled;
-      if (dynamicFonts) {
-        writeEnabled = ref.read(appCapabilitiesProvider).textFontV2WriteEnabled;
-      }
-      final preferences = await SharedPreferences.getInstance();
-      final key = 'editor.textFont.v1.${Uri.encodeComponent(account)}';
-      final recent = (preferences.getStringList(key) ?? <String>[])
-          .where(
-            (id) => dynamicFonts
-                ? service.dynamicRuntime?.catalog.entries.any(
-                        (entry) => entry.versionId == id,
-                      ) ==
-                      true
-                : runtime.manifest?.fonts[id]?.ready == true &&
-                      MarkdownTextFont.ids.contains(id),
-          )
-          .toList();
-      if (!context.mounted ||
-          ref.read(sessionScopeProvider).accountId != account) {
-        return;
-      }
-      final fonts = runtime.manifest?.fonts.values.toList() ?? [];
-      fonts.sort((a, b) {
-        final ai = recent.indexOf(a.id), bi = recent.indexOf(b.id);
-        return (ai < 0 ? 100 : ai).compareTo(bi < 0 ? 100 : bi);
-      });
       final picked = await showModalBottomSheet<String>(
         context: context,
         isScrollControlled: true,
         builder: (context) => SafeArea(
           child: SizedBox(
             height: MediaQuery.sizeOf(context).height * .65,
-            child: dynamicFonts
-                ? EditorDynamicFontList(
-                    service: service,
-                    runtime: runtime,
-                    writeEnabled: writeEnabled,
-                    recent: recent,
-                    selectedFont: selectedFont.font,
-                    mixedSelection: selectedFont.mixed,
-                  )
-                : ListView(
-                    padding: EdgeInsets.all(context.wenyouTokens.space16),
-                    children: [
-                      const ListTile(title: Text('字体')),
-                      ListTile(
-                        key: const Key('editor-font-default'),
-                        title: const Text('默认字体'),
-                        selected:
-                            !selectedFont.mixed && selectedFont.font == null,
-                        trailing:
-                            !selectedFont.mixed && selectedFont.font == null
-                            ? const Text('当前')
-                            : null,
-                        onTap: () => Navigator.pop(context, ''),
-                      ),
-                      if (!writeEnabled)
-                        const ListTile(title: Text('暂时无法更换字体，可恢复默认字体')),
-                      if (fonts.isEmpty) const ListTile(title: Text('字体暂不可用')),
-                      if (fonts.isEmpty || !runtime.assetsAvailable)
-                        ListTile(
-                          title: const Text('重新加载字体'),
-                          onTap: () => Navigator.pop(context, '__retry'),
-                        ),
-                      for (final language in [
-                        ...TextFontLanguage.values,
-                        null,
-                      ]) ...[
-                        if (fonts.any((f) => f.language == language))
-                          ListTile(
-                            key: Key(
-                              'editor-font-group-${language?.name ?? 'other'}',
-                            ),
-                            title: Text(language?.label ?? '未分类'),
-                          ),
-                        for (final font in fonts.where(
-                          (f) => f.language == language,
-                        ))
-                          ListTile(
-                            key: Key('editor-font-${font.id}'),
-                            title: Text(font.name),
-                            selected:
-                                !selectedFont.mixed &&
-                                selectedFont.font == font.id,
-                            trailing:
-                                !selectedFont.mixed &&
-                                    selectedFont.font == font.id
-                                ? const Text('当前')
-                                : null,
-                            subtitle:
-                                !font.ready ||
-                                    !MarkdownTextFont.ids.contains(font.id)
-                                ? const Text('暂不可用')
-                                : recent.contains(font.id)
-                                ? const Text('最近使用')
-                                : null,
-                            enabled:
-                                writeEnabled &&
-                                font.ready &&
-                                runtime.assetsAvailable &&
-                                MarkdownTextFont.ids.contains(font.id),
-                            onTap: () => Navigator.pop(context, font.id),
-                          ),
-                      ],
-                    ],
-                  ),
+            child: Consumer(
+              builder: (context, ref, _) {
+                final capability = ref.watch(appCapabilitiesProvider);
+                return EditorTextFontSheet(
+                  service: service,
+                  account: account,
+                  writeEnabled: capability.textFontV2Supported
+                      ? capability.textFontV2WriteEnabled
+                      : capability.textFontWriteEnabled,
+                  selectedFont: selectedFont,
+                  onRecentLoaded: (value) => recent = value,
+                );
+              },
+            ),
           ),
         ),
       );
-      if (!context.mounted ||
+      if (!unchanged() ||
           picked == null ||
-          ref.read(sessionScopeProvider).accountId != account ||
-          jsonEncode(controller.document.toDelta().toJson()) != original) {
+          controller.readOnly ||
+          !widget.enabled) {
         return;
       }
-      if (picked == '__retry') {
-        await service.retry();
-        if (context.mounted &&
-            ref.read(sessionScopeProvider).accountId == account &&
-            jsonEncode(controller.document.toDelta().toJson()) == original) {
-          controller.updateSelection(selection, ChangeSource.local);
-          await _open(context, ref, account, writeEnabled);
-        }
+      final capability = ref.read(appCapabilitiesProvider);
+      if (picked.isNotEmpty &&
+          !(service.dynamicEnabled
+              ? capability.textFontV2WriteEnabled
+              : capability.textFontWriteEnabled)) {
         return;
       }
       if (MarkdownTextFont.isVersionId(picked) &&
           service.dynamicRuntime?.catalog.canSelect(picked) != true) {
         return;
       }
-      if (EditorTextFontPolicy.apply(
-            controller,
-            selection,
-            picked.isEmpty ? null : picked,
-          ) &&
-          picked.isNotEmpty) {
+      // 先恢复入口的光标，再设置新字体，不能用旧快照覆盖新输入样式。
+      restore();
+      applied = EditorTextFontPolicy.apply(
+        controller,
+        selection,
+        picked.isEmpty ? null : picked,
+      );
+      if (applied && picked.isNotEmpty) {
+        final preferences = await SharedPreferences.getInstance();
+        if (!current()) return;
+        final key = 'editor.textFont.v1.${Uri.encodeComponent(account)}';
         final saved = await preferences.setStringList(
           key,
           [picked, ...recent.where((id) => id != picked)].take(5).toList(),
         );
-        if (!saved && context.mounted) {
+        if (!saved && mounted) {
           showWenyouSnackBar(
             context,
             '最近字体保存失败',
@@ -224,25 +152,16 @@ class EditorTextFontPicker extends ConsumerWidget {
         }
       }
     } on Object {
-      if (context.mounted) {
+      if (mounted) {
         showWenyouSnackBar(context, '字体加载失败', tone: WenyouSnackBarTone.error);
       }
     } finally {
       service.closePicker();
-      if (context.mounted &&
-          ref.read(sessionScopeProvider).accountId == account) {
-        if (jsonEncode(controller.document.toDelta().toJson()) == original) {
-          if (controller is LiteralTextQuillController) {
-            (controller as LiteralTextQuillController).restoreToolSelection(
-              selection,
-              snapshot: typingStyle,
-            );
-          } else {
-            controller.updateSelection(selection, ChangeSource.local);
-          }
-        }
-        focusNode?.requestFocus();
+      if (current()) {
+        if (!applied && unchanged()) restore();
+        widget.focusNode?.requestFocus();
       }
+      if (mounted) setState(() => _open = false);
     }
   }
 }

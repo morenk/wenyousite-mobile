@@ -268,6 +268,35 @@ void main() {
         tester.element(find.byKey(const Key('editor-font-default'))),
       ).pop();
       await tester.pumpAndSettle();
+      session.controller.updateSelection(
+        const TextSelection.collapsed(offset: 9),
+        ChangeSource.local,
+      );
+      await tester.pump();
+      await tester.tap(find.byKey(const Key('editor-font-picker')));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(secondTile);
+      await tester.tap(secondTile);
+      await tester.pumpAndSettle();
+      expect(session.controller.document.toPlainText(), 'word more\n');
+      session.controller.replaceText(
+        9,
+        0,
+        '续',
+        const TextSelection.collapsed(offset: 10),
+      );
+      expect(
+        session.controller.document
+            .collectStyle(9, 1)
+            .attributes['font']
+            ?.value,
+        second.id,
+      );
+      expect(await session.flush(), isTrue, reason: session.codecFailure);
+      expect(
+        session.localMarkdown,
+        contains('<span data-wenyou-font-v2="${second.id}">续</span>'),
+      );
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox.shrink());
     });

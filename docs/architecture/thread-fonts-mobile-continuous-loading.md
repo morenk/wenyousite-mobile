@@ -1,10 +1,53 @@
 # 正文字体持续加载设计与验证
 
-状态：动态字体本地候选已构建，沿用任务分支与 PR #114，尚未安装；隔离环境与负责人真机验收待完成。此前固定28款候选的完整门禁、APK和离线实验是历史记录，不能代替动态系统验收。作用域、粘贴及静默阅读要求不变。
+状态：原公网候选字体入口验收失败，沿用原问题、任务分支与 PR #114 提供光标输入候选，待负责人复验。此前固定28款实验及隔离候选仅属于历史证据，不能代替当前动态系统验收。
 
 ## 动态字体生产接入（候选，待真机验收）
 
-### 公网直连候选与旧服务兼容（2026-10-22，待负责人验收）
+### 光标选字体与面板即时反馈（2026-10-22，候选／待负责人验收）
+
+原候选 APK `118d16a503e8bbcdbdeee2ace14d1aee5639801fe0951ea45f8ebb951db0f4f8` 收到“点击字体文案，没有反应”；负责人补充“不选中正文也能直接选择字体，然后输入正文”。记录为验收失败／继续排查。旧入口 `canSelect` 和 `EditorTextFontPolicy.apply` 均拒绝折叠光标，已证实交互缺口；另发现目录请求在弹层前等待，没有即时反馈，且连续点击没有互斥保护。没有把未提供的网络超时认定为负责人原场景的独立根因。
+
+候选支持空正文及有效光标先选字体，再对后续普通文字应用。输入、IME 组合替换、换段保持临时字体，主动移位、历史操作、只读与替换文档清除；恢复默认明确移除字体属性。选择本身不改正文、草稿或撤销栈。纯文本粘贴在验证前加入当前输入样式，结构化粘贴保留来源字体，后续手输仍沿用光标设置。有选区保持原范围更新、跳过换行和原子节点的既有语义。
+
+字体面板立即打开并显示加载；失败可原地重试，取消／退出忽略迟到请求；连续点击只产生一个面板。选择前恢复入口光标，再设置新输入字体，避免 finally 恢复旧快照覆盖新选择；取消恢复原选区、焦点及未落字字体，文档变化时不回放陈旧选区。
+
+`editor_text_font_caret_test.dart` 的三项初始回归在旧实现均失败（`.dart_tool/font-caret-before.log`）。新增真实 T 的空正文、连续点击、慢请求、失败重试、取消时临时移位、退出后请求完成及 IME 输入，保留原字体范围／双倍字号测试并补动态版本光标输入与保存；首次9项定向检查通过（`.dart_tool/font-picker-preview.log`）。320px 明暗图是离线 Widget 组件图，不能证明 Android 字形、键盘或负责人验收。
+
+本轮只读 `/meta` 已变为 `5.43.0-dev.20261022.3`／Backend `1902aa4f844f47e3b867806ec7d6fe845b02f267`，v2 read/write 均开启；后端只读镜像中，本地契约 pin `62a0313` 与部署提交的 `contracts/` 无差异。此前“公网缺少字体能力”的结论只适用于下方13:34历史观测；没有把 buildSha 不同描述为精确部署门禁通过。Foundation fetch 后最新正式 Tag 仍为 v7.6.0，依赖保持固定。
+
+最终 `npm run candidate:apk -- <下列20个测试文件> -TestConcurrency 2` 成功：1510个文件格式无变化，应用和生成客户端全量分析零问题，239项测试通过，ARM64 Debug 构建成功（`.dart_tool/font-picker-candidate.log`）；架构及23模块文档检查通过。没有重跑不受影响的全仓 Flutter 测试，原任务全量检查历史结果仍保留下文。
+
+新公网候选为 `build/dynamic-font-public-candidate/wenyou-font-caret-debug-dd14d5a9f9d8.apk`，156064698字节，SHA-256 `dd14d5a9f9d8b348bf319b2af9e2439574177a83136604c9029acd90b3158653`；包名 `site.wenyou.app.debug`，0.10.0-debug／100，仅arm64-v8a，APK v2签名通过。2080文件应用摘要 `1acccc5267506e31992ac27d38392ff8839092b23ecf7e70d7e553613121f232` 构建前后完全相同。本次正式候选入口没有传入 API override，使用已核对的 AppEnvironment 公网默认值；打包 kernel 包含 `https://wenyou.site/api/v1`，不含原38876地址。没有将此前显式 defines 的哈希复用到本次默认配置。
+
+原包及配置分别保留；本次证据为 `.dart_tool/font-picker-candidate-config.json`、`font-picker-candidate-source.json`、`font-picker-candidate-signature.log`、`font-picker-candidate-badging.log`。离线组件图为 `.dart_tool/font-picker-caret-preview/font-picker-light.png` 与 `font-picker-dark.png`，测试使用完整系统字体显示目录文案，不作为实际自定义字体字形证据。
+
+本轮候选门禁显式指定以下20个文件（均位于 `test/features/editor/`）：
+
+- `editor_atomic_clipboard_test.dart`
+- `editor_clipboard_input_method_test.dart`
+- `editor_dynamic_font_list_test.dart`
+- `editor_dynamic_font_paste_test.dart`
+- `editor_dynamic_font_toolbar_test.dart`
+- `editor_enter_newline_test.dart`
+- `editor_selection_history_test.dart`
+- `editor_text_color_caret_paste_test.dart`
+- `editor_text_color_caret_test.dart`
+- `editor_text_color_caret_widget_test.dart`
+- `editor_text_color_multiline_input_test.dart`
+- `editor_text_font_caret_test.dart`
+- `editor_text_font_interaction_test.dart`
+- `editor_text_font_paste_scope_test.dart`
+- `editor_text_font_picker_test.dart`
+- `editor_text_font_selection_test.dart`
+- `editor_text_font_session_test.dart`
+- `editor_text_font_web_interop_test.dart`
+- `editor_toolbar_history_test.dart`
+- `text_font_write_capability_test.dart`
+
+负责人复验：打开新公网 Debug，在主题空正文依次点 T → 字体 → 任一可用字体，输入中／日／英文字并换段；确认无需先选中正文。随后恢复默认继续输入、主动移位、撤销／重做，检查已有文字不被批量修改；选中已有部分文字更换字体后保存重开，检查范围和其他格式；取消选择后继续输入确认字体保持。真实 Android 键盘、字形与以上原操作仍待负责人验收，未自动安装、启动、登录或写入公网。
+
+### 公网直连候选与旧服务兼容（2026-10-22 13:34，历史候选）
 
 负责人要求直接连接 `https://wenyou.site/api/v1` 的 Debug，不使用电脑转发。北京时间13:34只读 GET `/meta` 返回200/code0，契约 `5.40.0-dev.20261018.1`、build `6e00c4031a8f970609eef8cbf6fdefe3e6b12126`、Markdown5，Android minimumSupportedBuild为null、recommendedBuild为100；缺失字体v1/v2 capability。本地仍锁定正式同步的5.43.0-dev.20261022.3，未伪造或降级契约。
 

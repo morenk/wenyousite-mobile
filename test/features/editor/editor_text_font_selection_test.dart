@@ -32,7 +32,7 @@ void main() {
     controller.undo();
     expect(controller.document.toDelta(), delta);
   });
-  test('默认字体仅移除 font，光标/只读/未知 ID 不写入', () {
+  test('默认字体仅移除 font，光标设置输入样式且未知 ID 拒绝', () {
     final controller = QuillController(
       document: Document.fromDelta(
         Delta()
@@ -53,7 +53,7 @@ void main() {
         const TextSelection.collapsed(offset: 0),
         'wenkai',
       ),
-      isFalse,
+      isTrue,
     );
     expect(
       () =>

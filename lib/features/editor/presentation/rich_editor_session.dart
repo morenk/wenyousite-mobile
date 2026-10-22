@@ -685,7 +685,7 @@ class RichEditorSession extends ChangeNotifier {
       return false;
     }
     final delta = pastePlan.isPlainText
-        ? controller.colorPlainTextPaste(pastePlan.delta)
+        ? controller.stylePlainTextPaste(pastePlan.delta)
         : checkedDelta;
     final replacementEnd = pastePlan.replacementEnd;
 
