@@ -158,7 +158,7 @@ galleryList：读取 GalleryList200Response / GalleryPageDto / GalleryImageDto�
 
 ## 13. 最近审查的契约版本和后端提交
 
-2026-10-22 动态字体契约审查：Backend `62a0313a75c85e42dfa39cd09b7cc90ae5c34186`／API `5.43.0-dev.20261022.3`。新增动态字体公开/管理接口、字体2保源与WYF1可信导入别名；本模块业务操作不变，共享网络读取头声明字体能力2。产品候选已完成本地检查与构建，公网契约差异及真机验收未完成，见[持续加载记录](../architecture/thread-fonts-mobile-continuous-loading.md)。
+2026-10-23 动态字体契约审查：Backend `1902aa4f844f47e3b867806ec7d6fe845b02f267`／API `5.43.0-dev.20261022.3`。新增动态字体公开/管理接口、字体2保源与WYF1可信导入别名；本模块业务操作不变，共享网络读取头声明字体能力2。产品候选已完成本地检查与构建，公网契约兼容检查已通过，真机验收未完成，见[持续加载记录](../architecture/thread-fonts-mobile-continuous-loading.md)。
 
 2026-10-22 28 款字体与进度超时契约同步：Backend `f27898ec3b168b9e027b5d5abef43a0d3dafa242`／API `5.42.0-dev.20261022.1`。目录更新为 1.2.0，28 款（中文 12／日文 10／英文 6）；历史小城 ID 与旧 v1 解析保留。v2 明确 15 秒无进度和 600 秒总上限，并移除原件专属字段。此提交仅同步契约与生成客户端，持续加载行为仍待候选验证。
 
