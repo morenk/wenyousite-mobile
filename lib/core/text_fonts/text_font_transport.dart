@@ -39,6 +39,7 @@ class TextFontTransport {
     this.progressTimeout = const Duration(seconds: 15),
     this.maximumDuration = const Duration(minutes: 10),
     this.elapsed,
+    this.onProgress,
   }) : _dio =
            dio ??
            Dio(
@@ -53,6 +54,7 @@ class TextFontTransport {
   final Duration progressTimeout;
   final Duration maximumDuration;
   final Duration Function()? elapsed;
+  final void Function(Uri uri, int receivedBytes)? onProgress;
 
   Future<Uint8List> fetch(
     Uri uri,
@@ -163,6 +165,7 @@ class TextFontTransport {
           );
         }
         bytes.add(chunk);
+        if (chunk.isNotEmpty) onProgress?.call(uri, bytes.length);
       }
       check();
       return TextFontResponse(200, bytes.takeBytes(), etag: responseEtag);

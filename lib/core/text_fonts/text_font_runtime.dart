@@ -31,6 +31,7 @@ class TextFontRuntime extends ChangeNotifier {
   TextFontManifest? manifest;
   bool requiresRuntimePolicy = false;
   bool assetsAvailable = false;
+  bool Function(String font)? fontUnavailable;
   int requests = 0;
   int downloadedBytes = 0;
   int registeredBytes = 0;

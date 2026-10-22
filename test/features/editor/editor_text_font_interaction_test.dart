@@ -113,10 +113,10 @@ void main() {
       );
       final c = session.controller;
       session.focusNode.requestFocus();
-      await tester.pumpAndSettle();
+      await pumpEditorFrames(tester);
       await tester.tap(find.byKey(const Key('editor-heading')));
-      await tester.pumpAndSettle();
-      final button = tester.widget<TextButton>(
+      await pumpEditorFrames(tester);
+      final button = tester.widget<OutlinedButton>(
         find.byKey(const Key('editor-font-picker')),
       );
       expect(button.onPressed, isNotNull, reason: '空编辑器必须能选择后续输入字体');
@@ -127,13 +127,13 @@ void main() {
       expect(find.text('正在加载字体'), findsOneWidget);
       expect(service.requests, hasLength(1), reason: '连续点击只开一个面板/请求');
       service.requests.single.completeError(StateError('offline'));
-      await tester.pumpAndSettle();
+      await pumpEditorFrames(tester);
       expect(find.text('字体加载失败'), findsOneWidget);
       await tester.tap(find.text('重新加载字体'));
       await tester.pump();
       expect(service.requests, hasLength(2));
       service.requests.last.complete(runtime);
-      await tester.pumpAndSettle();
+      await pumpEditorFrames(tester);
       if (capture != null) {
         final boundary =
             imageKey.currentContext!.findRenderObject()!
@@ -160,9 +160,9 @@ void main() {
             )
             .last,
       );
-      await tester.pumpAndSettle();
+      await pumpEditorFrames(tester);
       await tester.tap(find.byKey(const Key('editor-font-wenkai')));
-      await tester.pumpAndSettle();
+      await pumpEditorFrames(tester);
       expect(c.selection, const TextSelection.collapsed(offset: 0));
       expect(session.focusNode.hasFocus, isTrue);
       expect(
@@ -197,13 +197,13 @@ void main() {
         const TextSelection.collapsed(offset: 0),
         ChangeSource.local,
       );
-      await tester.tap(find.text('取消'));
-      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('editor-font-close')));
+      await pumpEditorFrames(tester);
       expect(c.selection, const TextSelection.collapsed(offset: 1));
       expect(EditorTextFontPolicy.selection(c).font, 'zhuque');
       expect(service.closes, 2);
       service.requests.last.complete(runtime);
-      await tester.pumpAndSettle();
+      await pumpEditorFrames(tester);
       expect(
         find.byKey(const Key('editor-font-wenkai')),
         findsNothing,
@@ -213,8 +213,15 @@ void main() {
       await tester.pump();
       await tester.pumpWidget(const SizedBox.shrink());
       service.requests.last.complete(runtime);
-      await tester.pumpAndSettle();
+      await pumpEditorFrames(tester);
       expect(tester.takeException(), isNull, reason: '退出后的迟到请求不能访问已销毁状态');
     });
   }
+}
+
+// 下载条持续动画时，只等待路由/焦点动画，不能等待所有帧永久静止。
+Future<void> pumpEditorFrames(WidgetTester tester) async {
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 400));
+  await tester.pump();
 }

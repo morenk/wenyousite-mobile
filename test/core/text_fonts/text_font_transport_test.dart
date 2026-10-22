@@ -11,6 +11,83 @@ import 'package:wenyousite_mobile/core/text_fonts/text_font_transport.dart';
 import 'font_test_fixture.dart';
 
 void main() {
+  test('真实流进度是累计有效字节，MIME拒绝不报告，取消后不继续', () async {
+    final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+    final continueStream = Completer<void>();
+    final handlers = <Future<void>>[];
+    Future<void> respond(HttpRequest request) async {
+      try {
+        request.response.bufferOutput = false;
+        request.response.headers.contentType = ContentType.parse(
+          request.uri.path == '/bad' ? 'text/plain' : 'font/ttf',
+        );
+        request.response.add([1, 2]);
+        await request.response.flush();
+        if (request.uri.path != '/bad') await continueStream.future;
+        request.response.add([3, 4]);
+        await request.response.close();
+      } on HttpException {
+        // 取消后服务端可能仍在完成当前写入。
+      } on SocketException {
+        // 同上。
+      }
+    }
+
+    server.listen((request) => handlers.add(respond(request)));
+    final values = <int>[];
+    final first = Completer<void>();
+    final transport = TextFontTransport(
+      onProgress: (_, bytes) {
+        values.add(bytes);
+        if (!first.isCompleted) first.complete();
+      },
+    );
+    try {
+      await expectLater(
+        transport.fetch(
+          Uri.parse('http://127.0.0.1:${server.port}/bad'),
+          4,
+          'font/ttf',
+          CancelToken(),
+        ),
+        throwsFormatException,
+      );
+      expect(values, isEmpty);
+      final cancel = CancelToken();
+      final result = transport.fetch(
+        Uri.parse('http://127.0.0.1:${server.port}/good'),
+        4,
+        'font/ttf',
+        cancel,
+      );
+      await first.future;
+      expect(values, [2]);
+      final failure = expectLater(
+        result,
+        throwsA(isA<TextFontTransferFailure>()),
+      );
+      cancel.cancel();
+      await failure;
+      continueStream.complete();
+      await Future.wait(handlers);
+      expect(values, [2]);
+      values.clear();
+      expect(
+        await transport.fetch(
+          Uri.parse('http://127.0.0.1:${server.port}/done'),
+          4,
+          'font/ttf',
+          CancelToken(),
+        ),
+        [1, 2, 3, 4],
+      );
+      expect(values.last, 4);
+      expect(values, orderedEquals(values.toList()..sort()));
+    } finally {
+      if (!continueStream.isCompleted) continueStream.complete();
+      await server.close(force: true);
+    }
+  });
   test('状态响应未EOF也立即完成，不取消调用方令牌或丢失撤回', () async {
     final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
     server.listen((request) async {

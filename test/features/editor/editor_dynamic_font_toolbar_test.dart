@@ -82,7 +82,9 @@ void main() {
 
   for (final scale in [1.0, 2.0]) {
     testWidgets('真实T面板字体选中/取消/恢复默认，选区焦点不丢失 scale=$scale', (tester) async {
-      await tester.binding.setSurfaceSize(const Size(360, 800));
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await tester.binding.setSurfaceSize(const Size(320, 800));
       addTearDown(() => tester.binding.setSurfaceSize(null));
       SharedPreferences.setMockInitialValues({});
       final directory = Directory.systemTemp.createTempSync('font-toolbar-');
@@ -177,7 +179,7 @@ void main() {
           ),
         ),
       );
-      await tester.pumpAndSettle();
+      await pumpEditorFrames(tester);
       expect(find.byKey(const Key('editor-font-picker')), findsNothing);
       final raw = tester.state<QuillRawEditorState>(
         find.byType(QuillRawEditor),
@@ -189,20 +191,42 @@ void main() {
               .center,
         ),
       );
-      await tester.pumpAndSettle();
+      await pumpEditorFrames(tester);
       const selected = TextSelection(baseOffset: 0, extentOffset: 4);
       expect(session.controller.selection, selected);
       await tester.tap(find.byKey(const Key('editor-heading')));
-      await tester.pumpAndSettle();
+      await pumpEditorFrames(tester);
       expect(find.byKey(const Key('editor-font-picker')), findsOneWidget);
+      final fontBounds = tester.getRect(
+        find.byKey(const Key('editor-font-picker')),
+      );
+      final paragraphBounds = tester.getRect(find.text('正文'));
+      expect(fontBounds.height, greaterThanOrEqualTo(48));
+      expect(fontBounds.center.dy, closeTo(paragraphBounds.center.dy, 1));
+      expect(fontBounds.right, lessThan(paragraphBounds.left));
+      tester.view.viewInsets = const FakeViewPadding(bottom: 300);
+      addTearDown(tester.view.resetViewInsets);
+      await pumpEditorFrames(tester);
       expect(find.text('选中文字后更换字体'), findsNothing);
       await tester.tap(find.byKey(const Key('editor-font-picker')));
-      await tester.pumpAndSettle();
+      await pumpEditorFrames(tester);
       final firstTile = find.byKey(Key('editor-font-${first.id}'));
-      expect(tester.widget<ListTile>(firstTile).selected, isTrue);
+      expect(session.focusNode.hasFocus, isFalse);
       expect(
         tester
-            .widget<ListTile>(find.byKey(const Key('editor-font-default')))
+            .getRect(find.byKey(const Key('editor-font-sheet-bounds')))
+            .bottom,
+        lessThanOrEqualTo(500),
+      );
+      expect(tester.getSize(firstTile).height, greaterThanOrEqualTo(48));
+      if (scale == 1) {
+        expect(tester.getSize(firstTile).height, lessThanOrEqualTo(64));
+      }
+      expect(tester.widget<Semantics>(firstTile).properties.selected, isTrue);
+      expect(
+        tester
+            .widget<Semantics>(find.byKey(const Key('editor-font-default')))
+            .properties
             .selected,
         isFalse,
       );
@@ -214,16 +238,16 @@ void main() {
         ChangeSource.local,
       );
       Navigator.of(tester.element(firstTile)).pop();
-      await tester.pumpAndSettle();
+      await pumpEditorFrames(tester);
       expect(session.controller.selection, selected);
       expect(session.focusNode.hasFocus, isTrue);
       await tester.tap(find.byKey(const Key('editor-font-picker')));
-      await tester.pumpAndSettle();
+      await pumpEditorFrames(tester);
       final secondTile = find.byKey(Key('editor-font-${second.id}'));
       await tester.ensureVisible(secondTile);
-      await tester.pumpAndSettle();
+      await pumpEditorFrames(tester);
       await tester.tap(secondTile);
-      await tester.pumpAndSettle();
+      await pumpEditorFrames(tester);
       expect(service.selections, 1);
       expect(session.controller.selection, selected);
       expect(session.focusNode.hasFocus, isTrue);
@@ -242,42 +266,44 @@ void main() {
         isTrue,
       );
       await tester.tap(find.byKey(const Key('editor-font-picker')));
-      await tester.pumpAndSettle();
+      await pumpEditorFrames(tester);
       expect(
         tester
-            .widget<ListTile>(find.byKey(Key('editor-font-${second.id}')))
+            .widget<Semantics>(find.byKey(Key('editor-font-${second.id}')))
+            .properties
             .selected,
         isTrue,
       );
       await tester.tap(find.byKey(const Key('editor-font-default')));
-      await tester.pumpAndSettle();
+      await pumpEditorFrames(tester);
       expect(
         session.controller.document.collectStyle(0, 4).attributes['font'],
         isNull,
       );
       expect(session.controller.document.toPlainText(), 'word more\n');
       await tester.tap(find.byKey(const Key('editor-font-picker')));
-      await tester.pumpAndSettle();
+      await pumpEditorFrames(tester);
       expect(
         tester
-            .widget<ListTile>(find.byKey(const Key('editor-font-default')))
+            .widget<Semantics>(find.byKey(const Key('editor-font-default')))
+            .properties
             .selected,
         isTrue,
       );
       Navigator.of(
         tester.element(find.byKey(const Key('editor-font-default'))),
       ).pop();
-      await tester.pumpAndSettle();
+      await pumpEditorFrames(tester);
       session.controller.updateSelection(
         const TextSelection.collapsed(offset: 9),
         ChangeSource.local,
       );
       await tester.pump();
       await tester.tap(find.byKey(const Key('editor-font-picker')));
-      await tester.pumpAndSettle();
+      await pumpEditorFrames(tester);
       await tester.ensureVisible(secondTile);
       await tester.tap(secondTile);
-      await tester.pumpAndSettle();
+      await pumpEditorFrames(tester);
       expect(session.controller.document.toPlainText(), 'word more\n');
       session.controller.replaceText(
         9,
@@ -301,4 +327,11 @@ void main() {
       await tester.pumpWidget(const SizedBox.shrink());
     });
   }
+}
+
+// 下载条持续动画时，只等待路由/焦点动画，不能等待所有帧永久静止。
+Future<void> pumpEditorFrames(WidgetTester tester) async {
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 400));
+  await tester.pump();
 }

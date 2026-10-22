@@ -38,6 +38,17 @@ class LiteralTextQuillController extends QuillController {
   bool _hasTypingFont = false;
   String? _typingFont;
   int _fontGeneration = 0;
+  String? _fontApplication;
+  int _fontApplicationGeneration = 0;
+  String? get fontApplication => _fontApplication;
+  int get fontApplicationGeneration => _fontApplicationGeneration;
+
+  /// 仅作者明确选用触发进度，草稿恢复/阅读/粘贴不产生选择意图。
+  void beginFontApplication(String? font) {
+    _fontApplication = font;
+    _fontApplicationGeneration++;
+    notifyListeners();
+  }
 
   /// 字体仅属于当前光标，输入和 IME 保持，主动移位或历史操作退出。
   void useFontForTyping(String? font) {
@@ -123,6 +134,7 @@ class LiteralTextQuillController extends QuillController {
   @override
   set readOnly(bool value) {
     if (value) {
+      _fontApplication = null;
       _clearTypingFont(invalidateSnapshot: true);
       _typingInputGeneration++;
       _hasTypingColor = false;
@@ -190,6 +202,7 @@ class LiteralTextQuillController extends QuillController {
 
   @override
   set document(Document value) {
+    _fontApplication = null;
     _clearTypingFont(invalidateSnapshot: true);
     _hasTypingColor = false;
     _typingColor = null;
@@ -231,6 +244,7 @@ class LiteralTextQuillController extends QuillController {
 
   @override
   void undo() {
+    _fontApplication = null;
     _clearTypingFont(invalidateSnapshot: true);
     _withTypingStyleState(
       () => _selectionHistory.restore(this, super.undo, undo: true),
@@ -239,6 +253,7 @@ class LiteralTextQuillController extends QuillController {
 
   @override
   void redo() {
+    _fontApplication = null;
     _clearTypingFont(invalidateSnapshot: true);
     _withTypingStyleState(
       () => _selectionHistory.restore(this, super.redo, undo: false),

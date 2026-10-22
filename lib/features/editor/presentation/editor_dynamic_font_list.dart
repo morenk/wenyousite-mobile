@@ -4,11 +4,15 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:wenyou_api/wenyou_api.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/text_fonts/text_font_legacy_mapping.dart';
 import 'package:wenyousite_mobile/core/text_fonts/text_font_runtime.dart';
 import 'package:wenyousite_mobile/core/text_fonts/text_font_service.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
+import 'package:wenyousite_mobile/features/editor/presentation/editor_font_panel.dart';
+import 'package:wenyousite_mobile/features/editor/presentation/editor_font_specimen.dart';
 
 class EditorDynamicFontList extends StatelessWidget {
   const EditorDynamicFontList({
@@ -26,7 +30,6 @@ class EditorDynamicFontList extends StatelessWidget {
   final List<String> recent;
   final String? selectedFont;
   final bool mixedSelection;
-
   @override
   Widget build(BuildContext context) => AnimatedBuilder(
     animation: runtime,
@@ -37,78 +40,60 @@ class EditorDynamicFontList extends StatelessWidget {
       final selectedVersion = selectedFont == null
           ? null
           : dynamicTextFontVersion(selectedFont!);
-      final hiddenSelection =
-          !mixedSelection &&
-          selectedFont != null &&
-          !entries.any((entry) => entry.versionId == selectedVersion);
+      FontCatalogEntryDto? current;
+      for (final entry in entries) {
+        if (entry.versionId == selectedVersion) current = entry;
+      }
       final currentName = selectedVersion == null
           ? null
           : service.dynamicRuntime?.catalog.descriptor(selectedVersion)?.name;
       entries.sort((a, b) {
         final ai = recent.indexOf(a.versionId),
             bi = recent.indexOf(b.versionId);
-        final byRecent = (ai < 0 ? 100 : ai).compareTo(bi < 0 ? 100 : bi);
-        if (byRecent != 0) return byRecent;
-        final byOrder = a.sortOrder.compareTo(b.sortOrder);
-        return byOrder != 0 ? byOrder : a.familyId.compareTo(b.familyId);
+        final order = (ai < 0 ? 100 : ai).compareTo(bi < 0 ? 100 : bi);
+        if (order != 0) return order;
+        final sort = a.sortOrder.compareTo(b.sortOrder);
+        return sort != 0 ? sort : a.familyId.compareTo(b.familyId);
       });
-      final rows = <({String? group, FontCatalogEntryDto? entry})>[];
-      for (final language in const {
-        'zh': '中文',
-        'ja': '日文',
-        'en': '英文',
-        'other': '其他',
-      }.entries) {
-        final matching = entries
-            .where((e) => e.designLanguage.name == language.key)
-            .toList();
-        if (matching.isEmpty) continue;
-        rows.add((group: language.value, entry: null));
-        rows.addAll(matching.map((e) => (group: null, entry: e)));
-      }
-      return ListView.builder(
-        padding: EdgeInsets.all(context.wenyouTokens.space16),
-        scrollCacheExtent: const ScrollCacheExtent.pixels(0),
-        addAutomaticKeepAlives: false,
-        itemCount: rows.length + 3,
-        itemBuilder: (context, index) {
-          if (index == 0) {
-            return ListTile(
-              title: const Text('字体'),
-              subtitle: mixedSelection
-                  ? const Text('多种字体')
-                  : hiddenSelection
-                  ? Text(currentName == null ? '当前字体暂不可用' : '当前：$currentName')
-                  : null,
-            );
+      return EditorFontPanel(
+        initialLanguage: current == null
+            ? 'zh'
+            : editorFontLanguage(current.designLanguage.name),
+        hasOther: entries.any(
+          (e) => editorFontLanguage(e.designLanguage.name) == 'other',
+        ),
+        defaultSelected: !mixedSelection && selectedFont == null,
+        writeEnabled: writeEnabled,
+        selectionLabel: mixedSelection
+            ? '多种字体'
+            : selectedFont != null && current == null
+            ? (currentName == null ? '当前字体暂不可用' : '当前：$currentName')
+            : null,
+        body: (context, language) {
+          final matching = entries
+              .where(
+                (e) => editorFontLanguage(e.designLanguage.name) == language,
+              )
+              .toList();
+          if (matching.isEmpty) {
+            return Center(child: Text(entries.isEmpty ? '字体暂不可用' : '暂无这类字体'));
           }
-          if (index == 1) {
-            return ListTile(
-              key: const Key('editor-font-default'),
-              title: const Text('默认字体'),
-              selected: !mixedSelection && selectedFont == null,
-              trailing: !mixedSelection && selectedFont == null
-                  ? const Text('当前')
-                  : null,
-              onTap: () => Navigator.pop(context, ''),
-            );
-          }
-          if (index == 2) {
-            if (!writeEnabled) {
-              return const ListTile(title: Text('暂时无法更换字体，可恢复默认字体'));
-            }
-            if (entries.isEmpty) return const ListTile(title: Text('字体暂不可用'));
-            return const SizedBox.shrink();
-          }
-          final row = rows[index - 3];
-          if (row.group case final label?) return ListTile(title: Text(label));
-          return _DynamicFontTile(
-            key: ValueKey(row.entry!.versionId),
-            entry: row.entry!,
-            service: service,
-            enabled: writeEnabled,
-            selected:
-                !mixedSelection && selectedVersion == row.entry!.versionId,
+          return ListView.builder(
+            key: Key('editor-font-list-$language'),
+            padding: EdgeInsets.only(bottom: context.wenyouTokens.space16),
+            scrollCacheExtent: const ScrollCacheExtent.pixels(0),
+            addAutomaticKeepAlives: false,
+            itemCount: matching.length,
+            itemBuilder: (context, index) {
+              final entry = matching[index];
+              return _DynamicFontTile(
+                key: ValueKey(entry.versionId),
+                entry: entry,
+                service: service,
+                enabled: writeEnabled,
+                selected: !mixedSelection && entry.versionId == selectedVersion,
+              );
+            },
           );
         },
       );
@@ -205,41 +190,71 @@ class _DynamicFontTileState extends State<_DynamicFontTile>
   }
 
   @override
-  Widget build(BuildContext context) => ListTile(
-    key: Key('editor-font-${widget.entry.versionId}'),
-    title: Text(
-      widget.entry.name,
-      maxLines: 2,
-      overflow: TextOverflow.ellipsis,
-    ),
-    selected: widget.selected,
-    trailing: widget.selected ? const Text('当前') : null,
-    enabled: widget.enabled && !_selecting,
-    subtitle: _image == null
-        ? null
-        : Image.memory(
-            _image!,
-            height: 48,
-            fit: BoxFit.contain,
-            alignment: Alignment.centerLeft,
-            excludeFromSemantics: true,
-            cacheWidth: 600,
-            cacheHeight: 120,
-            errorBuilder: (_, _, _) => const SizedBox.shrink(),
+  Widget build(BuildContext context) {
+    final tokens = context.wenyouTokens;
+    final enabled = widget.enabled && !_selecting;
+    return Semantics(
+      key: Key('editor-font-${widget.entry.versionId}'),
+      button: true,
+      selected: widget.selected,
+      enabled: enabled,
+      child: Material(
+        color: widget.selected ? tokens.accentedBackground : Colors.transparent,
+        child: InkWell(
+          onTap: enabled ? _select : null,
+          child: Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: tokens.space16,
+              vertical: tokens.space4,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        widget.entry.name,
+                        style: Theme.of(context).textTheme.wenyouCaption,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (widget.selected)
+                      WenyouIcon(
+                        WenyouIconIds.actionConfirm,
+                        color: tokens.onAccentedBackground,
+                        size: 16,
+                      ),
+                  ],
+                ),
+                SizedBox(height: tokens.space4),
+                SizedBox(
+                  height: 30,
+                  child: _image == null
+                      ? const SizedBox.shrink()
+                      : EditorFontSpecimen(bytes: _image!, color: tokens.text),
+                ),
+              ],
+            ),
           ),
-    onTap: () async {
-      setState(() => _selecting = true);
-      await widget.service.checkPasteVersions({widget.entry.versionId});
-      if (!mounted || !context.mounted) return;
-      if (widget.service.dynamicRuntime?.catalog.canSelect(
-            widget.entry.versionId,
-          ) ==
-          true) {
-        Navigator.pop(context, widget.entry.versionId);
-      } else {
-        setState(() => _selecting = false);
-        showWenyouSnackBar(context, '字体暂不可用', tone: WenyouSnackBarTone.error);
-      }
-    },
-  );
+        ),
+      ),
+    );
+  }
+
+  Future<void> _select() async {
+    setState(() => _selecting = true);
+    await widget.service.checkPasteVersions({widget.entry.versionId});
+    if (!mounted || !context.mounted) return;
+    if (widget.service.dynamicRuntime?.catalog.canSelect(
+          widget.entry.versionId,
+        ) ==
+        true) {
+      Navigator.pop(context, widget.entry.versionId);
+    } else {
+      setState(() => _selecting = false);
+      showWenyouSnackBar(context, '字体暂不可用', tone: WenyouSnackBarTone.error);
+    }
+  }
 }

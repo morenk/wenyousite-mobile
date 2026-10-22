@@ -13,6 +13,8 @@ import 'package:wenyousite_mobile/core/text_fonts/text_font_service.dart';
 import 'package:wenyousite_mobile/core/text_fonts/text_font_transport.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_dynamic_font_list.dart';
 
+import 'package:wenyousite_mobile/features/editor/presentation/editor_font_specimen.dart';
+
 import '../../core/text_fonts/dynamic_font_fixture.dart';
 
 class _Service extends TextFontService {
@@ -80,7 +82,7 @@ void main() {
     runtime.dispose();
     await directory.delete(recursive: true);
   });
-  Widget screen() => MaterialApp(
+  Widget screen({String? selectedFont}) => MaterialApp(
     theme: AppTheme.light,
     home: Scaffold(
       body: EditorDynamicFontList(
@@ -88,6 +90,7 @@ void main() {
         runtime: runtime,
         writeEnabled: true,
         recent: const [],
+        selectedFont: selectedFont,
       ),
     ),
   );
@@ -99,22 +102,55 @@ void main() {
     for (final label in ['中文', '日文', '英文', '其他']) {
       expect(find.text(label), findsOneWidget);
     }
-    expect(find.byType(Image), findsNWidgets(4));
+    expect(find.byType(EditorFontSpecimen), findsOneWidget);
+    expect(service.attempts.keys, [fonts.first.id]);
+    for (final language in ['ja', 'en', 'other']) {
+      await tester.tap(find.byKey(Key('editor-font-language-$language')));
+      await tester.pumpAndSettle();
+      expect(find.byType(EditorFontSpecimen), findsOneWidget);
+    }
     expect(runtime.ledger.attemptedCount, 0);
     await tester.pumpWidget(const SizedBox.shrink());
     expect(service.cancelled.length, 4);
+  });
+  testWidgets('初始优先当前日文字体，筛选固定且选中态明确', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(320, 640));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(screen(selectedFont: fonts[1].id));
+    await tester.pumpAndSettle();
+    expect(
+      tester
+          .widget<SegmentedButton<String>>(find.byType(SegmentedButton<String>))
+          .selected,
+      {'ja'},
+    );
+    expect(
+      tester
+          .widget<Semantics>(find.byKey(Key('editor-font-${fonts[1].id}')))
+          .properties
+          .selected,
+      isTrue,
+    );
+    expect(find.byKey(Key('editor-font-${fonts.first.id}')), findsNothing);
+    expect(find.byKey(const Key('editor-font-close')), findsOneWidget);
+    expect(find.byKey(const Key('editor-font-default')), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
   });
   testWidgets('首次样张失败后同SHA自动重试，离屏销毁取消后不再重试', (tester) async {
     service.failFirst = true;
     await tester.pumpWidget(screen());
     await tester.pump();
-    expect(find.byType(Image), findsNothing);
+    expect(find.byType(EditorFontSpecimen), findsNothing);
     final id = fonts.first.id;
+    final tile = find.byKey(Key('editor-font-$id'));
+    final heightBefore = tester.getSize(tile).height;
     expect(service.attempts[id], 1);
     await tester.pump(const Duration(seconds: 2));
     await tester.pumpAndSettle();
     expect(service.attempts[id], 2);
-    expect(find.byType(Image), findsWidgets);
+    expect(find.byType(EditorFontSpecimen), findsWidgets);
+    expect(tester.getSize(tile).height, heightBefore, reason: '样张加载前后行高不跳动');
     await tester.pumpWidget(const SizedBox.shrink());
     final attempts = Map.of(service.attempts);
     await tester.pump(const Duration(minutes: 2));

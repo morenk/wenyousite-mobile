@@ -155,13 +155,13 @@ void main() {
     );
     await tester.tap(find.byKey(const Key('editor-font-picker')));
     await tester.pumpAndSettle();
-    expect(find.byKey(const Key('editor-font-group-other')), findsOneWidget);
-    expect(find.byKey(const Key('editor-font-group-zh')), findsNothing);
+    expect(find.byKey(const Key('editor-font-language-other')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('editor-font-language-other')));
+    await tester.pumpAndSettle();
     final tile = tester.widget<ListTile>(
       find.byKey(const Key('editor-font-source-han-sans')),
     );
     expect(tile.enabled, isFalse);
-    expect(find.text('暂不可用'), findsOneWidget);
     await tester.tap(find.byKey(const Key('editor-font-default')));
     await tester.pumpAndSettle();
     expect(
@@ -255,14 +255,14 @@ void main() {
           ('ja', '日文'),
           ('en', '英文'),
         ]) {
-          final group = find.byKey(Key('editor-font-group-$code'));
-          await tester.scrollUntilVisible(group, 200, scrollable: list);
-          expect(
-            find.descendant(of: group, matching: find.text(label)),
-            findsOneWidget,
-          );
+          final group = find.byKey(Key('editor-font-language-$code'));
+          await tester.tap(group);
+          await tester.pumpAndSettle();
+          expect(find.text(label), findsOneWidget);
         }
         // 分类后仍能回到中文选项，不丢失打开工具前的真实选区。
+        await tester.tap(find.byKey(const Key('editor-font-language-zh')));
+        await tester.pumpAndSettle();
         await tester.scrollUntilVisible(
           find.text('文楷'),
           -200,

@@ -4,12 +4,14 @@ import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wenyousite_mobile/app/app_capabilities.dart';
+import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_text_font.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/text_fonts/text_font_service.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_text_font_selection.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_text_font_sheet.dart';
+import 'package:wenyousite_mobile/features/editor/presentation/editor_toolbar_buttons.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/literal_text_quill_controller.dart';
 
 class EditorTextFontPicker extends ConsumerStatefulWidget {
@@ -43,15 +45,24 @@ class _EditorTextFontPickerState extends ConsumerState<EditorTextFontPicker> {
             widget.enabled &&
             !widget.controller.readOnly &&
             widget.controller.selection.isValid;
-        return Align(
-          alignment: Alignment.centerLeft,
-          child: Tooltip(
-            message: '更换字体',
-            child: TextButton(
-              key: const Key('editor-font-picker'),
-              onPressed: canSelect && !_open ? () => _show(account) : null,
-              child: const Text('字体'),
+        return Tooltip(
+          message: '更换字体',
+          child: OutlinedButton(
+            key: const Key('editor-font-picker'),
+            style: wenyouEditorSegmentedButtonStyle(context).copyWith(
+              shape: WidgetStatePropertyAll(
+                RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(
+                    context.wenyouTokens.radiusControl,
+                  ),
+                ),
+              ),
+              padding: WidgetStatePropertyAll(
+                EdgeInsets.symmetric(horizontal: context.wenyouTokens.space8),
+              ),
             ),
+            onPressed: canSelect && !_open ? () => _show(account) : null,
+            child: const Text('字体'),
           ),
         );
       },
@@ -88,25 +99,42 @@ class _EditorTextFontPickerState extends ConsumerState<EditorTextFontPicker> {
     bool applied = false;
     List<String> recent = [];
     try {
+      // 只移交焦点，不清空输入连接或组合文字；关闭后恢复原选区继续输入。
+      widget.focusNode?.unfocus();
       final picked = await showModalBottomSheet<String>(
         context: context,
         isScrollControlled: true,
-        builder: (context) => SafeArea(
-          child: SizedBox(
-            height: MediaQuery.sizeOf(context).height * .65,
-            child: Consumer(
-              builder: (context, ref, _) {
-                final capability = ref.watch(appCapabilitiesProvider);
-                return EditorTextFontSheet(
-                  service: service,
-                  account: account,
-                  writeEnabled: capability.textFontV2Supported
-                      ? capability.textFontV2WriteEnabled
-                      : capability.textFontWriteEnabled,
-                  selectedFont: selectedFont,
-                  onRecentLoaded: (value) => recent = value,
-                );
-              },
+        useSafeArea: true,
+        requestFocus: true,
+        builder: (context) => AnimatedPadding(
+          duration: context.wenyouTokens.feedbackDuration,
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.viewInsetsOf(context).bottom,
+          ),
+          child: LayoutBuilder(
+            builder: (context, constraints) => SizedBox(
+              key: const Key('editor-font-sheet-bounds'),
+              height: (MediaQuery.sizeOf(context).height * .72).clamp(
+                0,
+                constraints.maxHeight,
+              ),
+              child: SafeArea(
+                top: false,
+                child: Consumer(
+                  builder: (context, ref, _) {
+                    final capability = ref.watch(appCapabilitiesProvider);
+                    return EditorTextFontSheet(
+                      service: service,
+                      account: account,
+                      writeEnabled: capability.textFontV2Supported
+                          ? capability.textFontV2WriteEnabled
+                          : capability.textFontWriteEnabled,
+                      selectedFont: selectedFont,
+                      onRecentLoaded: (value) => recent = value,
+                    );
+                  },
+                ),
+              ),
             ),
           ),
         ),
@@ -135,6 +163,9 @@ class _EditorTextFontPickerState extends ConsumerState<EditorTextFontPicker> {
         selection,
         picked.isEmpty ? null : picked,
       );
+      if (applied && controller is LiteralTextQuillController) {
+        controller.beginFontApplication(picked.isEmpty ? null : picked);
+      }
       if (applied && picked.isNotEmpty) {
         final preferences = await SharedPreferences.getInstance();
         if (!current()) return;

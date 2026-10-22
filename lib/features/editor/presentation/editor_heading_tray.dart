@@ -199,31 +199,50 @@ class _WenyouEditorHeadingTrayState extends State<WenyouEditorHeadingTray> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          SegmentedButton<int>(
-            showSelectedIcon: false,
-            style: wenyouEditorSegmentedButtonStyle(context),
-            segments: const [
-              ButtonSegment(value: 0, label: Text('正文')),
-              ButtonSegment(value: 2, label: Text('H2')),
-              ButtonSegment(value: 3, label: Text('H3')),
-            ],
-            selected: {
-              header == 2
-                  ? 2
-                  : header == 3
-                  ? 3
-                  : 0,
-            },
-            onSelectionChanged: widget.enabled
-                ? (value) => widget.onHeading(value.single)
-                : null,
-          ),
-          if (widget.textFont)
-            EditorTextFontPicker(
-              controller: widget.controller,
-              enabled: widget.enabled,
-              focusNode: widget.focusNode,
+          LayoutBuilder(
+            builder: (context, constraints) => SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minWidth: constraints.maxWidth),
+                child: IntrinsicWidth(
+                  child: Row(
+                    key: const Key('editor-font-heading-row'),
+                    children: [
+                      if (widget.textFont) ...[
+                        EditorTextFontPicker(
+                          controller: widget.controller,
+                          enabled: widget.enabled,
+                          focusNode: widget.focusNode,
+                        ),
+                        SizedBox(width: tokens.space8),
+                      ],
+                      Expanded(
+                        child: SegmentedButton<int>(
+                          showSelectedIcon: false,
+                          style: wenyouEditorSegmentedButtonStyle(context),
+                          segments: const [
+                            ButtonSegment(value: 0, label: Text('正文')),
+                            ButtonSegment(value: 2, label: Text('H2')),
+                            ButtonSegment(value: 3, label: Text('H3')),
+                          ],
+                          selected: {
+                            header == 2
+                                ? 2
+                                : header == 3
+                                ? 3
+                                : 0,
+                          },
+                          onSelectionChanged: widget.enabled
+                              ? (value) => widget.onHeading(value.single)
+                              : null,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
+          ),
           if (widget.textColor case final config?)
             EditorTextColorPalette(
               presets: config.presets,

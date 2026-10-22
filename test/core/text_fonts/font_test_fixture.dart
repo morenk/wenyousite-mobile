@@ -7,13 +7,17 @@ import 'package:wenyousite_mobile/core/text_fonts/text_font_cache.dart';
 import 'package:wenyousite_mobile/core/text_fonts/text_font_manifest.dart';
 
 class FontTestFixture {
-  FontTestFixture({bool alias = false, bool jsonNotice = false}) {
+  FontTestFixture({
+    bool alias = false,
+    bool jsonNotice = false,
+    int shardBytes = 3,
+  }) {
     notice = asset(
       jsonNotice ? utf8.encode('{"attribution":"fixture"}') : [9],
       jsonNotice ? 'json' : 'txt',
     );
-    a = asset([1, 2, 3], 'ttf');
-    b = alias ? a : asset([4, 5, 6], 'ttf');
+    a = asset(List.generate(shardBytes, (i) => i % 3 + 1), 'ttf');
+    b = alias ? a : asset(List.generate(shardBytes, (i) => i % 3 + 4), 'ttf');
     manifestBytes = Uint8List.fromList(
       utf8.encode(
         jsonEncode({

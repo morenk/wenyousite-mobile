@@ -53,6 +53,10 @@ class DynamicFontCatalog {
   int get revision => _revision;
   bool get hasWithdrawals => _denyAll || _withdrawn.isNotEmpty;
   bool withdrawn(String id) => _denyAll || _withdrawn.contains(id);
+  bool unavailable(String id) =>
+      withdrawn(id) ||
+      !_versions.containsKey(id) &&
+          elapsed() < (_negative[id] ?? Duration.zero);
   FontVersionDescriptorDto? descriptor(String id) =>
       withdrawn(id) ? null : _versions[id];
   bool canPaste(String id) => descriptor(id)?.pasteAllowed == true;

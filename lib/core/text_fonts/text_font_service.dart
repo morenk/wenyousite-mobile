@@ -49,20 +49,26 @@ class TextFontService with WidgetsBindingObserver {
     this.observePlatform = true,
     TextFontNativeLedger? ledger,
     TextFontRequest? dynamicRequest,
-  }) : _fetch = fetch ?? TextFontTransport().fetch,
-       ledger = ledger ?? TextFontNativeLedger(),
-       _dynamicRequest = dynamicRequest ?? TextFontTransport().request,
+  }) : ledger = ledger ?? TextFontNativeLedger(),
        _elapsed = elapsed ?? (Stopwatch()..start()).readElapsed,
-       retries = retries ?? TextFontRetryLedger();
+       retries = retries ?? TextFontRetryLedger() {
+    final transport = TextFontTransport(
+      onProgress: (uri, bytes) {
+        _runtime?.demandQueue?.reportReceived(uri.path, bytes);
+      },
+    );
+    _fetch = fetch ?? transport.fetch;
+    _dynamicRequest = dynamicRequest ?? transport.request;
+  }
   final WenyouApi api;
   final TextFontCache? cache;
-  final TextFontFetch _fetch;
+  late final TextFontFetch _fetch;
   final Duration Function() _elapsed;
   final TextFontRetryLedger retries;
   final TextFontRegister? register;
   final bool observePlatform;
   final TextFontNativeLedger ledger;
-  final TextFontRequest _dynamicRequest;
+  late final TextFontRequest _dynamicRequest;
   bool _dynamicActivated = false;
   bool get dynamicEnabled => _dynamicActivated;
   set dynamicEnabled(bool value) {
@@ -116,8 +122,13 @@ class TextFontService with WidgetsBindingObserver {
   int _epoch = 0;
 
   Future<TextFontRuntime> retain(Object owner, Map<String, String> texts) {
+    final previous = _owners[owner];
     _owners[owner] = Map.of(texts);
-    if (dynamicEnabled && texts.isNotEmpty) _dynamicDirty = true;
+    // 字符增长交给分片队列；只有新增字体身份才需要重新收集元数据。
+    if (dynamicEnabled &&
+        texts.keys.any((id) => previous?.containsKey(id) != true)) {
+      _dynamicDirty = true;
+    }
     _runtime?.setDemand(owner, texts);
     if (!_observing && observePlatform) {
       _observing = true;
@@ -186,28 +197,45 @@ class TextFontService with WidgetsBindingObserver {
   Future<TextFontRuntime> load() {
     if (_loading case final loading?) return loading;
     final runtime = _runtime;
+    final metadataDue = dynamicEnabled ? _next : _catalogDue;
+    final metadataReady = dynamicEnabled
+        ? runtime?.demandQueue != null
+        : _policyJson != null;
     if (runtime != null &&
         !(dynamicEnabled && _dynamicDirty) &&
         runtime.manifest != null &&
-        _policyJson != null &&
-        _elapsed() < _catalogDue) {
+        metadataReady &&
+        metadataDue != null &&
+        _elapsed() < metadataDue) {
       // 新增可见片段不暂停仍有效的字体下载，也不重新占网络额度。
-      _next = _catalogDue;
+      _next = metadataDue;
       _schedule();
       return Future.value(runtime);
     }
-    return _loading = _serialize(_load).whenComplete(() {
-      _loading = null;
-      if (_cancelledMetadata) {
-        _cancelledMetadata = false;
-        _defer(_elapsed());
-      }
-      _schedule();
-    });
+    var completed = false;
+    return _loading =
+        _serialize(() async {
+          final runtime = await _load();
+          completed = true;
+          return runtime;
+        }).whenComplete(() {
+          _loading = null;
+          // 本轮快照之后加入的身份必须尾随处理，不能等五分钟重验。
+          // 不在串行事务内递归 load；前台/在线/订阅检查与失败退避照旧。
+          if (completed && dynamicEnabled && _dynamicDirty) {
+            _defer(_elapsed());
+          }
+          if (_cancelledMetadata) {
+            _cancelledMetadata = false;
+            _defer(_elapsed());
+          }
+          _schedule();
+        });
   }
 
   Future<TextFontRuntime> retry() {
     _catalogDue = Duration.zero;
+    if (dynamicEnabled) _dynamicDirty = true;
     return load();
   }
 
@@ -392,6 +420,19 @@ class TextFontService with WidgetsBindingObserver {
       ledger: ledger,
     );
     runtime.requiresRuntimePolicy = true;
+    runtime.fontUnavailable = (font) {
+      final version = dynamicTextFontVersion(font);
+      final catalog = dynamicRuntime?.catalog;
+      if (version == null || catalog == null) return false;
+      if (catalog.unavailable(version)) return true;
+      final descriptor = catalog.descriptor(version);
+      if (descriptor != null && !descriptor.renderAllowed) return true;
+      final manifest = descriptor?.manifest;
+      return manifest != null &&
+          retries.isTerminal(
+            'v2:${descriptor!.assetBasePath}${manifest.sha256}.json',
+          );
+    };
     _next = null;
     // 元数据事务与字体下载串行，等待已开始的下载结束/取消再预占。
     await runtime.demandQueue?.pauseForMetadata();

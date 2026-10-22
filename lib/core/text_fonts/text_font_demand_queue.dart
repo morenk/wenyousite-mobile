@@ -6,6 +6,7 @@ import 'package:wenyousite_mobile/core/text_fonts/text_font_cache.dart';
 import 'package:wenyousite_mobile/core/text_fonts/text_font_download_window.dart';
 import 'package:wenyousite_mobile/core/text_fonts/text_font_manifest.dart';
 import 'package:wenyousite_mobile/core/text_fonts/text_font_native_snapshot.dart';
+import 'package:wenyousite_mobile/core/text_fonts/text_font_progress.dart';
 import 'package:wenyousite_mobile/core/text_fonts/text_font_retry_ledger.dart';
 import 'package:wenyousite_mobile/core/text_fonts/text_font_transfer_failure.dart';
 
@@ -31,10 +32,12 @@ class TextFontDemandQueue extends ChangeNotifier {
   final TextFontNativeSnapshot snapshot;
   final TextFontDownloadWindow window;
   final TextFontRetryLedger retries;
+  final progress = TextFontProgressLedger();
   final Duration Function() _elapsed;
   final _demands = <Object, Map<String, String>>{};
   final _pending = <String, _FontWork>{};
   final _notices = <String>{};
+  final _registering = <String>{};
   TextFontManifest? _manifest;
   bool _onlineSource = false;
   bool _foreground = true;
@@ -52,6 +55,50 @@ class TextFontDemandQueue extends ChangeNotifier {
 
   int get pendingCount => _pending.length;
   bool get hasTimer => _timer?.isActive ?? false;
+
+  void reportReceived(String path, int bytes) {
+    final asset = _activeDownload;
+    if (asset != null &&
+        (path == asset.path || path.endsWith('/${asset.path}'))) {
+      progress.received(asset, bytes);
+    }
+  }
+
+  TextFontLoadProgress progressFor(
+    String id,
+    String text,
+    Set<String> tracked,
+  ) {
+    final font = _manifest?.fonts[id];
+    if (font == null) {
+      return const TextFontLoadProgress(phase: TextFontProgressPhase.preparing);
+    }
+    final runes = text.runes.toSet();
+    final needed = font.shards
+        .where((shard) => runes.any(shard.contains))
+        .toList();
+    if (!font.ready ||
+        font.notices.any(
+          (n) => retries.isTerminal(n.hash) || n.bytes > window.maximumBytes,
+        ) ||
+        needed.any(
+          (s) =>
+              snapshot.loadedFamily(s) == null &&
+              ((!snapshot.canAttempt(s) && !_registering.contains(s.family)) ||
+                  s.asset.bytes > window.maximumBytes ||
+                  retries.isTerminal(s.asset.hash)),
+        )) {
+      return const TextFontLoadProgress(phase: TextFontProgressPhase.failed);
+    }
+    tracked.retainAll(needed.map((s) => s.asset.hash));
+    for (final shard in needed) {
+      if (snapshot.loadedFamily(shard) == null) tracked.add(shard.asset.hash);
+    }
+    return progress.summarize(
+      needed.where((s) => tracked.contains(s.asset.hash)).map((s) => s.asset),
+      applicable: needed.every((s) => snapshot.loadedFamily(s) != null),
+    );
+  }
 
   void updateSource(TextFontManifest? manifest, {required bool downloadable}) {
     _sourceEpoch++;
@@ -126,7 +173,13 @@ class TextFontDemandQueue extends ChangeNotifier {
         }
       }
     }
-    _pending.removeWhere((key, _) => !wanted.containsKey(key));
+    _pending.removeWhere((key, work) {
+      if (wanted.containsKey(key)) return false;
+      if (!work.shards.values.any((s) => snapshot.loadedFamily(s) != null)) {
+        progress.forget(key);
+      }
+      return true;
+    });
     for (final entry in wanted.entries) {
       _pending[entry.key] = entry.value;
     }
@@ -179,6 +232,24 @@ class TextFontDemandQueue extends ChangeNotifier {
   }
 
   Future<void> _drain() async {
+    // 只探测本轮正文需要的分片，不预取字库。先核验缓存，下载第一片时
+    // 即可报告完整且扣除缓存的总量；不会因后续分片尚未开始而缺失分母。
+    for (final work in _pending.values.toList()) {
+      if (_disposed || !_foreground || _metadataPaused) return;
+      if (work.shards.isEmpty || progress.knows(work.asset.hash)) continue;
+      Uint8List? cached;
+      try {
+        cached = await cache.read(work.asset);
+      } on FileSystemException {
+        cached = null;
+      }
+      if (_disposed || !_pending.containsKey(work.asset.hash)) continue;
+      if (cached == null) {
+        progress.waiting(work.asset);
+      } else {
+        progress.cached(work.asset);
+      }
+    }
     Duration? next;
     int? earlierBytes;
     void defer(Duration due) {
@@ -208,6 +279,13 @@ class TextFontDemandQueue extends ChangeNotifier {
         if (!_pending.containsKey(asset.hash) || !_foreground || _disposed) {
           continue;
         }
+        if (work.shards.isNotEmpty) {
+          if (bytes == null) {
+            progress.waiting(asset);
+          } else {
+            progress.cached(asset);
+          }
+        }
         if (bytes == null) {
           if (!_onlineSource || !_online) {
             // 目录恢复由服务层负责；离线时仍先尝试合法缓存。
@@ -230,6 +308,7 @@ class TextFontDemandQueue extends ChangeNotifier {
           requests++;
           attemptedDownloadBytes += asset.bytes;
           _activeDownload = asset;
+          if (work.shards.isNotEmpty) progress.start(asset);
           try {
             // 传输层按非空字节续idle并保留不可续期的总上限。
             bytes = await download(asset);
@@ -237,6 +316,7 @@ class TextFontDemandQueue extends ChangeNotifier {
             _activeDownload = null;
           }
           if (!asset.verifies(bytes)) throw const FormatException('字体资源校验失败');
+          if (work.shards.isNotEmpty) progress.applying(asset, bytes.length);
           verifiedDownloadBytes += bytes.length;
           try {
             await cache.write(asset, bytes);
@@ -251,6 +331,7 @@ class TextFontDemandQueue extends ChangeNotifier {
             error is TextFontTransferFailure &&
                 error.kind == TextFontTransferFailureKind.quarantined) {
           retries.quarantine(asset.hash);
+          progress.failed(asset);
         } else if (error is! TextFontTransferFailure ||
             error.kind != TextFontTransferFailureKind.cancelled) {
           retries.transientFailure(
@@ -261,6 +342,9 @@ class TextFontDemandQueue extends ChangeNotifier {
                 : null,
           );
           defer(retries.availableAt(asset.hash));
+          if (work.shards.isNotEmpty) progress.waiting(asset);
+        } else if (work.shards.isNotEmpty) {
+          progress.waiting(asset);
         }
         continue;
       }
@@ -277,12 +361,19 @@ class TextFontDemandQueue extends ChangeNotifier {
         // 同一SHA只取一次输入，每个family独立登记。原生失败只隔离该键。
         for (final shard in work.shards.values) {
           if (!snapshot.beginNativeAttempt(shard)) continue;
+          _registering.add(shard.family);
           try {
             await register(shard.family, bytes);
             snapshot.completeNativeAttempt(shard);
           } on Object {
             // attempted已保留占用，不能退款或再次调用该键。
+            progress.failed(asset);
+          } finally {
+            _registering.remove(shard.family);
           }
+        }
+        if (work.shards.values.every((s) => snapshot.loadedFamily(s) != null)) {
+          progress.complete(asset);
         }
       }
       _pending.remove(asset.hash);
@@ -306,6 +397,7 @@ class TextFontDemandQueue extends ChangeNotifier {
     if (_activeDownload case final asset?) cancelDownload?.call(asset);
     _demands.clear();
     _pending.clear();
+    progress.dispose();
     super.dispose();
   }
 }

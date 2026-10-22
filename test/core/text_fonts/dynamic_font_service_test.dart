@@ -17,8 +17,11 @@ void main() {
   late DynamicFontFixture first, second;
   late Duration now;
   late int active, peak, catalogAttempts, registrations, legacyRequests;
-  late bool damageCatalog, holdFont;
+  late bool damageCatalog, holdFont, holdDescriptor;
+  late int secondDescriptorStatus, secondDescriptorAttempts;
+  late bool withdrawSecond;
   late Completer<void> fontStarted, releaseFont;
+  late Completer<void> descriptorStarted, releaseDescriptor, secondRegistered;
   late CancelToken? fontCancel;
   setUp(() async {
     directory = await Directory.systemTemp.createTemp(
@@ -35,8 +38,15 @@ void main() {
     legacyRequests = 0;
     damageCatalog = false;
     holdFont = false;
+    holdDescriptor = false;
+    secondDescriptorStatus = 200;
+    secondDescriptorAttempts = 0;
+    withdrawSecond = false;
     fontStarted = Completer();
     releaseFont = Completer();
+    descriptorStarted = Completer();
+    releaseDescriptor = Completer();
+    secondRegistered = Completer();
     fontCancel = null;
     Future<T> track<T>(Future<T> Function() action) async {
       active++;
@@ -54,8 +64,11 @@ void main() {
       cache: MemoryFontCache(directory),
       elapsed: () => now,
       retries: TextFontRetryLedger(random: () => 1),
-      register: (_, _) async {
+      register: (family, _) async {
         registrations++;
+        if (family == second.family && !secondRegistered.isCompleted) {
+          secondRegistered.complete();
+        }
       },
       fetch: (uri, limit, mime, cancel) => track(() async {
         legacyRequests++;
@@ -84,6 +97,22 @@ void main() {
         }
         for (final font in [first, second]) {
           if (uri.path.endsWith('/versions/${font.id}')) {
+            if (font == second) {
+              secondDescriptorAttempts++;
+              if (secondDescriptorStatus != 200) {
+                return TextFontResponse(secondDescriptorStatus, Uint8List(0));
+              }
+              if (withdrawSecond) {
+                return TextFontResponse(
+                  200,
+                  font.envelope(font.descriptor(withdrawn: true)),
+                );
+              }
+            }
+            if (font == first && holdDescriptor) {
+              if (!descriptorStarted.isCompleted) descriptorStarted.complete();
+              await releaseDescriptor.future;
+            }
             return TextFontResponse(200, font.envelope(font.descriptor()));
           }
           if (font.data[uri.path] case final bytes?) {
@@ -102,9 +131,119 @@ void main() {
   });
   tearDown(() async {
     if (!releaseFont.isCompleted) releaseFont.complete();
+    if (!releaseDescriptor.isCompleted) releaseDescriptor.complete();
     service.dispose();
     await directory.delete(recursive: true);
   });
+
+  for (final sameOwner in [true, false]) {
+    test('元数据在途新增字体需求自动尾随加载，不等五分钟 sameOwner=$sameOwner', () async {
+      holdDescriptor = true;
+      final owner = Object();
+      final nextOwner = sameOwner ? owner : Object();
+      final firstLoad = service.retain(owner, {first.id: 'A'});
+      await descriptorStarted.future.timeout(const Duration(seconds: 2));
+      final secondLoad = service.retain(nextOwner, {second.id: 'A'});
+      releaseDescriptor.complete();
+      final runtime = await firstLoad;
+      await secondLoad;
+      // 不调用 load/wake、不推进五分钟时钟，必须自动消费迟到的正文需求。
+      await secondRegistered.future.timeout(const Duration(seconds: 2));
+      await runtime.demandQueue!.settle();
+      expect(runtime.loadedFamilies(second.id), [second.family]);
+      expect(now, Duration.zero);
+      expect(peak, 1);
+      expect(catalogAttempts, 1, reason: '尾随刷新复用仍新鲜的目录');
+      expect(runtime.ledger.attemptedCount, sameOwner ? 1 : 2);
+      expect(
+        service.window.availableAt(service.window.maximumBytes, now),
+        const Duration(seconds: 60),
+        reason: '尾随加载不重置已占用的下载窗口',
+      );
+      service.release(owner);
+      service.release(nextOwner);
+    });
+  }
+
+  test('迟到字体需求随页面销毁释放，不进行尾随下载', () async {
+    holdDescriptor = true;
+    final owner = Object();
+    final firstLoad = service.retain(owner, {first.id: 'A'});
+    await descriptorStarted.future.timeout(const Duration(seconds: 2));
+    final secondLoad = service.retain(owner, {second.id: 'A'});
+    service.release(owner);
+    releaseDescriptor.complete();
+    final runtime = await firstLoad;
+    await secondLoad;
+    await Future<void>.delayed(const Duration(milliseconds: 30));
+    await runtime.demandQueue!.settle();
+    expect(registrations, 0);
+    expect(secondRegistered.isCompleted, isFalse);
+    expect(runtime.demandQueue!.pendingCount, 0);
+  });
+
+  test('同一字体只增长正文时复用元数据，不等待或打断正在下载的字库', () async {
+    holdFont = true;
+    final owner = Object();
+    final runtime = await service.retain(owner, {first.id: 'A'});
+    await fontStarted.future.timeout(const Duration(seconds: 2));
+    await service
+        .retain(owner, {first.id: 'AA'})
+        .timeout(const Duration(milliseconds: 200));
+    expect(fontCancel!.isCancelled, isFalse);
+    expect(active, 1);
+    expect(catalogAttempts, 1);
+    releaseFont.complete();
+    await runtime.demandQueue!.settle();
+    expect(registrations, 1);
+    service.release(owner);
+  });
+
+  test('迟到需求期间离线不循环请求，恢复在线后继续加载', () async {
+    holdDescriptor = true;
+    final owner = Object();
+    final firstLoad = service.retain(owner, {first.id: 'A'});
+    await descriptorStarted.future.timeout(const Duration(seconds: 2));
+    final secondLoad = service.retain(owner, {second.id: 'A'});
+    service.setOnline(false);
+    releaseDescriptor.complete();
+    final runtime = await firstLoad;
+    await secondLoad;
+    await Future<void>.delayed(const Duration(milliseconds: 30));
+    expect(secondDescriptorAttempts, 0);
+    expect(registrations, 0);
+    service.setOnline(true);
+    await secondRegistered.future.timeout(const Duration(seconds: 2));
+    await runtime.demandQueue!.settle();
+    expect(runtime.loadedFamilies(second.id), [second.family]);
+    expect(peak, 1);
+    service.release(owner);
+  });
+
+  for (final withdrawn in [false, true]) {
+    test('迟到版本不存在或已撤回不循环请求/不注册 withdrawn=$withdrawn', () async {
+      holdDescriptor = true;
+      withdrawSecond = withdrawn;
+      secondDescriptorStatus = withdrawn ? 200 : 404;
+      final owner = Object();
+      final firstLoad = service.retain(owner, {first.id: 'A'});
+      await descriptorStarted.future.timeout(const Duration(seconds: 2));
+      final secondLoad = service.retain(owner, {second.id: 'A'});
+      releaseDescriptor.complete();
+      final runtime = await firstLoad;
+      await secondLoad;
+      await Future<void>.delayed(const Duration(milliseconds: 60));
+      expect(secondDescriptorAttempts, 1);
+      expect(runtime.loadedFamilies(second.id), isEmpty);
+      expect(
+        runtime.fontUnavailable?.call(second.id),
+        isTrue,
+        reason: '不存在或撤回必须结束作者进度，不应永久准备',
+      );
+      expect(registrations, 0);
+      service.release(owner);
+    });
+  }
 
   test('元数据损坏后退避，同一会话恢复；仍可按版本加载正文', () async {
     damageCatalog = true;

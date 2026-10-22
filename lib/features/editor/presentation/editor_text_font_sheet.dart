@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_text_font.dart';
-import 'package:wenyousite_mobile/core/text_fonts/text_font_manifest.dart';
 import 'package:wenyousite_mobile/core/text_fonts/text_font_runtime.dart';
 import 'package:wenyousite_mobile/core/text_fonts/text_font_service.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_dynamic_font_list.dart';
+import 'package:wenyousite_mobile/features/editor/presentation/editor_font_panel.dart';
 
 class EditorTextFontSheet extends StatefulWidget {
   const EditorTextFontSheet({
@@ -82,19 +83,26 @@ class _EditorTextFontSheetState extends State<EditorTextFontSheet> {
     final runtime = _runtime;
     if (_loading || _failed || runtime == null) {
       return Column(
-        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Text('字体'),
-          if (_loading) ...[
-            const CircularProgressIndicator(),
-            const Text('正在加载字体'),
-          ] else ...[
-            const Text('字体加载失败'),
-            TextButton(onPressed: _load, child: const Text('重新加载字体')),
-          ],
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('取消'),
+          const EditorFontPanelHeader(),
+          Expanded(
+            child: Center(
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (_loading) ...[
+                      const CircularProgressIndicator(),
+                      SizedBox(height: context.wenyouTokens.space16),
+                      const Text('正在加载字体'),
+                    ] else ...[
+                      const Text('字体加载失败'),
+                      TextButton(onPressed: _load, child: const Text('重新加载字体')),
+                    ],
+                  ],
+                ),
+              ),
+            ),
           ),
         ],
       );
@@ -123,52 +131,52 @@ class _EditorTextFontSheetState extends State<EditorTextFontSheet> {
       return (ai < 0 ? 100 : ai).compareTo(bi < 0 ? 100 : bi);
     });
     final selected = widget.selectedFont;
-    return ListView(
-      padding: EdgeInsets.all(context.wenyouTokens.space16),
-      children: [
-        const ListTile(title: Text('字体')),
-        ListTile(
-          key: const Key('editor-font-default'),
-          title: const Text('默认字体'),
-          selected: !selected.mixed && selected.font == null,
-          trailing: !selected.mixed && selected.font == null
-              ? const Text('当前')
-              : null,
-          onTap: () => Navigator.pop(context, ''),
-        ),
-        if (!widget.writeEnabled)
-          const ListTile(title: Text('暂时无法更换字体，可恢复默认字体')),
-        if (fonts.isEmpty) const ListTile(title: Text('字体暂不可用')),
-        if (fonts.isEmpty || !runtime.assetsAvailable)
-          ListTile(title: const Text('重新加载字体'), onTap: _load),
-        for (final language in [...TextFontLanguage.values, null]) ...[
-          if (fonts.any((f) => f.language == language))
-            ListTile(
-              key: Key('editor-font-group-${language?.name ?? 'other'}'),
-              title: Text(language?.label ?? '未分类'),
-            ),
-          for (final font in fonts.where((f) => f.language == language))
-            ListTile(
-              key: Key('editor-font-${font.id}'),
-              title: Text(font.name),
-              selected: !selected.mixed && selected.font == font.id,
-              trailing: !selected.mixed && selected.font == font.id
-                  ? const Text('当前')
-                  : null,
-              subtitle: !font.ready || !MarkdownTextFont.ids.contains(font.id)
-                  ? const Text('暂不可用')
-                  : _recent.contains(font.id)
-                  ? const Text('最近使用')
-                  : null,
-              enabled:
-                  widget.writeEnabled &&
-                  font.ready &&
-                  runtime.assetsAvailable &&
-                  MarkdownTextFont.ids.contains(font.id),
-              onTap: () => Navigator.pop(context, font.id),
-            ),
-        ],
-      ],
+    final current = runtime.manifest?.fonts[selected.font];
+    return EditorFontPanel(
+      initialLanguage: current == null
+          ? 'zh'
+          : editorFontLanguage(current.language?.name ?? 'other'),
+      hasOther: fonts.any((font) => font.language == null),
+      defaultSelected: !selected.mixed && selected.font == null,
+      writeEnabled: widget.writeEnabled,
+      selectionLabel: selected.mixed ? '多种字体' : null,
+      body: (context, language) {
+        final matching = fonts
+            .where(
+              (font) =>
+                  editorFontLanguage(font.language?.name ?? 'other') ==
+                  language,
+            )
+            .toList();
+        return ListView(
+          padding: EdgeInsets.only(bottom: context.wenyouTokens.space16),
+          children: [
+            if (matching.isEmpty) const ListTile(title: Text('暂无这类字体')),
+            if (fonts.isEmpty || !runtime.assetsAvailable)
+              ListTile(title: const Text('重新加载字体'), onTap: _load),
+            for (final font in matching)
+              ListTile(
+                key: Key('editor-font-${font.id}'),
+                title: Text(font.name),
+                selected: !selected.mixed && selected.font == font.id,
+                selectedColor: context.wenyouTokens.onAccentedBackground,
+                selectedTileColor: context.wenyouTokens.accentedBackground,
+                trailing: !selected.mixed && selected.font == font.id
+                    ? WenyouIcon(
+                        WenyouIconIds.actionConfirm,
+                        color: context.wenyouTokens.onAccentedBackground,
+                      )
+                    : null,
+                enabled:
+                    widget.writeEnabled &&
+                    font.ready &&
+                    runtime.assetsAvailable &&
+                    MarkdownTextFont.ids.contains(font.id),
+                onTap: () => Navigator.pop(context, font.id),
+              ),
+          ],
+        );
+      },
     );
   }
 }

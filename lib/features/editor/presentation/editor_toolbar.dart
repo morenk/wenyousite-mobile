@@ -20,6 +20,7 @@ import 'package:wenyousite_mobile/features/editor/presentation/editor_dice_input
 import 'package:wenyousite_mobile/features/editor/presentation/editor_format_policy.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_heading_tray.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_more_tray.dart';
+import 'package:wenyousite_mobile/features/editor/presentation/editor_tool_area.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_toolbar_buttons.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_toolbar_input_tray.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/literal_text_quill_controller.dart';
@@ -431,7 +432,7 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
   }
 
   Widget _buildHeadingTray(BuildContext context) {
-    return WenyouEditorHeadingTray(
+    final tray = WenyouEditorHeadingTray(
       controller: widget.controller,
       enabled: widget.enabled,
       onHeading: _applyHeading,
@@ -459,6 +460,28 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
       focusNode: widget.editorFocusNode,
       textColor: widget.textColor,
       textFont: widget.textFont,
+    );
+    final available = EditorToolArea.heightOf(context);
+    // 取色盘已有自身约束且隐藏主栏；普通 T 托盘必须给主栏保留空间。
+    if (available == null) return tray;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final layout = _resolveLayout(
+          constraints.maxWidth -
+              WenyouEditorContract.toolbarHorizontalPadding * 2,
+        );
+        final tokens = context.wenyouTokens;
+        final primaryHeight = tokens.minimumTouchTarget + tokens.space8;
+        final reserved = _colorPickerOpen
+            ? 0
+            : primaryHeight * (layout.dedicatedDraft ? 2 : 1);
+        return ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: (available - reserved).clamp(0, double.infinity),
+          ),
+          child: SingleChildScrollView(primary: false, child: tray),
+        );
+      },
     );
   }
 

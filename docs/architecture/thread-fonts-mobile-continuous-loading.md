@@ -4,6 +4,86 @@
 
 ## 动态字体生产接入（候选，待真机验收）
 
+### PR #114 提交前完整检查（2026-10-23）
+
+负责人要求先提交 PR，本轮沿用原任务分支及 Draft PR #114；仍待龙藏体、流江毛草两种原操作的负责人真机验收。Foundation fetch 后最新正式版本仍为 v7.6.0。通过 `tool/sync_backend_contract.ps1` 正式同步已部署 Backend `1902aa4f844f47e3b867806ec7d6fe845b02f267`，API 保持 `5.43.0-dev.20261022.3`；契约内容及生成客户端无语义变化。来源、23份模块记录与精确来源断言归入独立 chore，不放宽检查。
+
+完整入口实际执行 `npm run check:apk -- -ContinueAfterFailure -TestConcurrency 2`，原始日志 `.dart_tool/font-pr114-final-gate.log` 保留 **exit code 1**：
+
+| 检查 | 本轮实际结果 |
+| --- | --- |
+| OpenAPI、固定来源、再生成一致性、公网精确兼容 | 通过；公网版本及 build SHA 与固定来源一致 |
+| Dart 格式 | 1519 文件，0 修改 |
+| 应用与生成客户端全量分析、架构、API 覆盖 | 通过；175/175，0 missing，91 明确排除 |
+| 全量 Flutter `test/` | 34:55，7696 通过、1 跳过、1 失败；跳过线上诊断回执，未发送 |
+| 模块文档 | 首轮失败：22份记录缺少新来源提交号 |
+| Windows 发布工具 | 49/49 通过，0 跳过 |
+| Android ARM64 Debug | 构建通过，Gradle 68.8秒 |
+
+唯一失败测试 `test/core/network/audio_budget_contract_test.dart` 仍断言旧 Backend `62a0313…`，已将期望精确更新到1902；同时同步23份模块当前来源记录。补充复验通过：该断言文件格式无修改、静态零问题、精确测试1/1通过、23模块文档完整，日志 `.dart_tool/font-pr114-contract-followup-{analyze,test,docs}.log`。保留整轮失败，不将后续修正写成一次全绿；应用源码未变，不机械重复其余已通过的数千项测试。
+
+最终应用源码摘要 **`7116c576dfd215f55262d80e65fd4a453c142aaaebf1dd0557bc32c1c3ebb435`**，2084个输入文件，构建前后相同。产品候选 `build/dynamic-font-public-candidate/wenyou-font-progress-debug-4af91771b8c1.apk`，156088060字节，SHA-256 **`4af91771b8c14b30e16e81d7c178b568e2b3e29df3ab120ebd74c39c2ec0a2d7`**；包名 `site.wenyou.app.debug`，`0.10.0-debug`／100，仅arm64-v8a，v2签名通过且与上一Debug证书相同。包内字体仅既有Material Icons，实际kernel包含公网API且无原电脑转发端点；未安装或启动产品包。
+
+应用来源、APK身份与签名记录为 `.dart_tool/font-pr114-final-source.json`、`font-pr114-final-apk.json`、`font-pr114-apk-{badging,signature}.log`。此前离线截图、压力实验和APK保留原来源，不改标为本轮Android验收。负责人仍需用当前候选复验原文的先选后输入、选区更换、完成加载后再次选择、默认恢复、真实IME及横屏大字号键盘；未取得原文、等待时长和手机日志，不能宣称原问题完成。
+
+### 进度、键盘与密度反馈批次（2026-10-22，视觉候选）
+
+开发反馈阶段沿用上一候选源码，执行定向测试、修改文件静态及离线组件截图；当时未重跑完整门禁或生成 APK。随后按负责人“先提交 PR”的要求进入完整交付检查，结果另行记录。上一 APK `3e40d2de0edb…` 不含本批进度与首字订阅修正，不能用于代表当前画面。
+
+`TextFontProgressLedger` 独立于 runtime/queue 的字体就绪通知，按资产去重，先核验当前需求缓存再计算缺失总量，网络分块节流 100ms。未收到完整字节不提前给出完成，收到全部字节仍等待校验及原生注册；重试重新计数，取消后忽略迟到字节，终态／撤回停止转动。作者意图由 `LiteralTextQuillController` 的当前会话状态承载；仅显式选择激活，正文尚无字符时静默，不参与保存或协议。
+
+首字回归使用 `A` 和真实 Quill IME 输入：先选字体后输入时，控制器先发光标通知，再用 `document.compose` 补字体属性；只监听控制器的旧组件没有调用 retain（`.dart_tool/font-progress-widget-debug.log` 保留失败），直到后续操作才可能收集需求。新增文档流订阅后，首字无需下一次输入即可收集；测试同时检查下载分块不替换 Quill Widget/State、不改变 selection 与组合输入状态，已有选区换字体路径单独覆盖。原文与真机日志仍缺失，不能将此受控现象视为原问题的唯一根因或验收通过。
+
+截图由真实 Flutter 组件产生，使用已验证 28 款 PNG 样张；进度通过受控字节流与原生注册完成点呈现，另用测试默认字体替身制作可读正文截图，不宣称该替身为动态字库渲染效果。键盘高度为模拟 `viewInsets`，ADB 当前为空。应用源码摘要、精确测试路径与计数、图片哈希及未覆盖项汇总到 `.dart_tool/font-progress-ui-candidate-evidence.json`。
+
+初轮定向测试为 38 文件、345 项通过；可读进度捕获另有 3 项通过。后续仅处理已知横屏失败：640×400、双倍字号、180 键盘 inset 下，报错创建点为 `.dart_tool/font-visual-capture_test.dart:71` 的 Scaffold 正文 Column，创建链为 `Column ← KeyedSubtree ← _BodyBuilder ← MediaQuery ← LayoutId(body)`，实际最大高度 164px（400−56−180），T 托盘与主栏自然高度 169px，溢出5px。完整诊断保存在 `.dart_tool/font-progress-landscape-diagnosis.log`。
+
+截图宿主原来没有传递生产主题页和帖子编辑器已有的 `EditorToolArea.availableHeight`；补齐这项真实父约束后，新增精确回归仍证实共享 T 组件缺少主栏空间预留，因此不是只修饰截图。`WenyouEditorToolbar._buildHeadingTray` 现在按真实剩余高度扣除主栏（含独立草稿行），短屏时 T 托盘纵向可滚动，主栏保持可操作；取色盘继续沿用自身已有约束。未更改正常密度或字号。旧回归失败见 `.dart_tool/font-progress-landscape-old-regression.log`；修正后精确布局、动态字体工具栏、颜色流程三个文件8项通过；仅新增两文件静态检查，不重跑345项。
+
+同一640×400/2x/180截图用例现已通过，弹层、整体宿主无溢出（`.dart_tool/font-progress-landscape-fixed-capture.log`），旧失败日志保留。至此七组离线布局检查均通过；Android 原生键盘仍待真机验证。最新源码摘要与增量检查单独记入同一 evidence，初轮345项绑定其原源码摘要，不冒称全部在补丁后重跑。
+
+提交前自查补充两项精确回归：必需声明资源校验失败时，即使该资源不计入字体字节总量，也通知进度订阅进入失败终态，避免停留在等待中；T 托盘进入自定义取色盘时保留同一约束组件层级，避免重建状态导致 RGB 面板没有打开。旧实现分别在 `.dart_tool/font-progress-notice-old-regression.log` 和 `.dart_tool/font-progress-color-old-regression.log` 失败；修正后进度文件7项、640×400键盘布局及打开／取消 RGB 场景1项通过。后续完整门禁包含这些正式测试。
+
+### 首次应用延迟与迟到需求调度（2026-10-22，候选／待负责人真机验收）
+
+原场景：负责人使用公网 Debug `wenyou-font-list-debug-9186d10d5e31.apk`，龙藏体、流江毛草选择后正文暂未变化，站酷快乐体立即生效；重开 T → 字体仍显示正确选中。负责人确认“先选后输入”和“选区更换”均出现，随后补充等待较久后最终显示。未取得原始文字、精确等待时长或手机日志，不能把本次受控竞态等同于原场景的唯一根因，也不将最终显示记为负责人验收通过。
+
+公开资源的独立只读检查确认三款 manifest 与 core SFNT 的 SHA／长度正确。站酷快乐体 core 为 759396 B，龙藏体 2663364 B，流江毛草 2583732 B，后两者约大 3.4–3.5 倍；各 core 覆盖约 3869 字。Windows 顺序 GET 为 4.13／4.74／6.49 秒，仅说明该网络上的冷下载，不代表手机速度。证据在 `D:/code/wenyousite/.artifacts/thread-fonts-dynamic-20261022/font-bug-{1,2,3}-{descriptor.json,manifest.json,core.ttf}`。
+
+受控复现独立于公网：使用已有 fixture 的字符 `A`，暂停第一款描述符响应；随后在同一 owner 切换到第二款或新增另一 owner。旧 `load()` 共用在途 Future，但 `dynamic.refresh()` 已收集身份快照，后续只设置 `_dynamicDirty`，完成后未安排跟进；第一款可注册，第二款未请求，需等下一事件或五分钟定时。第二个缺口是动态模式的快路径仍依赖旧版 `_policyJson`／`_catalogDue`，同字体文字增长也进入元数据事务，等待当前字库结束。
+
+候选仅修改 `TextFontService`：新增身份才使动态元数据失效，已有身份的文字增长直接更新分片队列；动态快路径使用已验证队列与下一重验时刻；成功完成本轮后若仍有新身份，则通过既有调度器安排即时跟进。没有在串行事务里递归等待，不增加并发、不重置额度、不清账本、不跳过 Retry-After 或撤回状态。关闭、离线和无订阅继续由既有调度条件阻止请求；未到期的负缓存和终态版本不会形成循环。已认可字体列表 UI、入口与光标/选区语义保持，不新增加载状态 UI。
+
+`test/core/text_fonts/dynamic_font_service_test.dart` 的旧实现回归为5失败／5通过，候选为10通过，日志分别为 `.dart_tool/font-late-demand-old-regression.log` 与 `.dart_tool/font-late-demand-fixed-regression.log`。覆盖同 owner／多 owner 迟到需求、纯文字增长不暂停下载、离线恢复、释放订阅、404 与撤回、并发1及窗口仍保留占用。初步诊断 `.dart_tool/font-delay-diagnostic.log` 使用构造样例，不代表已复现用户原文。
+
+本轮按指定快速候选入口执行整个 `test/core/text_fonts/` 及阅读作用域／编辑器字体与颜色回归，明确参数保存在 `.dart_tool/font-late-demand-test-paths.json`。最终源码、构建及真机待验收记录在 `.dart_tool/font-late-demand-public-apk-evidence.json` 统一交付；旧 `9186d10d5e31…` 与 `dd14d5a9…` 包均保留，不自动安装或启动公网应用，不合并或部署。
+
+
+本轮最终候选入口成功：1514 文件格式检查、应用与生成客户端全量静态检查零问题，36 个明确测试文件共 335 项通过，ARM64 Debug 构建成功；架构和 23 模块文档检查通过。实际测试参数、展开文件路径与日志均写入 `.dart_tool/font-late-demand-public-apk-evidence.json`。
+
+新包为 `build/dynamic-font-public-candidate/wenyou-font-demand-debug-3e40d2de0edb.apk`，156063850 字节，SHA-256 `3e40d2de0edb2c7e1fb260132edb9c8a957eabefcff5129515a74e5d69b0e514`；包名 `site.wenyou.app.debug`，`0.10.0-debug`／100，仅 arm64-v8a。APK v2 签名验证通过，与 `9186d10d5e31…` 包证书一致，可覆盖安装；两个旧公网包均保留。构建无 API override，环境与 Gradle 属性无相关覆盖，实际 kernel 包含 `https://wenyou.site/api/v1`，不含 `:38876` 端点，无需电脑转发。
+
+最终应用源码摘要 `bd06f8d9a93e6afa5980716696f69bbafd9c920a359056d37d3dcbfcefc302cd`（2082 文件），构建前后相同；HEAD `4f25eee8d29594d8877d5139dd58e57c04c4fc55` 加本轮未提交改动。没有自动安装或启动公网应用、清数据、提交、推送、合并或部署。负责人应在新包复验龙藏体／流江毛草的两种操作、加载完成后再次选择、连续输入和恢复默认；仍为候选／待真机验收，不断言已排除用户手机全部下载等待。
+
+### 字体列表视觉候选（2026-10-22，视觉方向已确认／待真机验收）
+
+最终入口仍是 **T → 字体**，颜色同样留在 T 内；主工具栏、排序偏好与迁移没有变化。面板高度为屏幕的 72%，固定标题、关闭和默认恢复按钮。中／日／英分段仅显示对应字体；当前字体优先决定初始分类，迟到元数据只在用户未手选时对齐，有其他分类才增加第四段。
+
+样张使用正式目录 28 款已校验 PNG。只对可见行解码，先检查编码字节不超过 2 MiB、单边不超过 2048、像素不超过 1048576；扫描所有非零 alpha 像素并留 4 像素安全边距。按宽高比绘制并使用主题文字色，无白色底卡、无固定文字框裁剪或原字体加载。释放 codec、descriptor、buffer 和临时像素引用，行销毁时释放 ui.Image，迟到解码不写入已销毁行。全透明、损坏或超限样张留出稳定占位，名称及选择可用。
+
+320 宽普通字号的行高约 80 像素，首屏约 6 款；名称使用较小主题文字，样张区域保持 42 像素，加载前后不跳动。离线真实 Widget 截图覆盖 320 宽明暗、中日英和 360 宽双倍字号，保存于 `.dart_tool/font-visual-after/`，由 `.dart_tool/font-visual-capture_test.dart` 生成。它们不是 Android 真机截图。负责人已明确反馈“这版可以”，并要求提供更新后的公网 Debug 安装包。旧 APK `dd14d5a9…` 保留且不包含本次视觉改动；新包仅供自行安装复验，不自动安装或启动，不将视觉方向确认等同于真机验收通过。
+
+定向检查、最终应用源码摘要及截图 SHA-256 统一记录在 `.dart_tool/font-visual-candidate-evidence.json`，源码清单为 `.dart_tool/font-visual-source.json`。视觉方向已于 2026-10-22 获负责人确认，手机真机画面未补拍，实际输入和字形效果待新包验收。架构复核将两处 Material 字号入口改为对应的既有语义文字样式，字号与布局保持一致。
+
+
+本次公网 Debug 已由 `npm run candidate:apk -- <12 个字体／颜色相关测试文件> -TestConcurrency 2` 构建：1514 文件格式检查、应用与生成客户端全量静态检查、52 项定向测试全部通过；架构及 23 模块文档检查通过。最终源码另补拍 3 组真实 Widget 画面（明暗／双倍字号），共 15 张，保存在 `.dart_tool/font-visual-apk/`。
+
+交付 `build/dynamic-font-public-candidate/wenyou-font-list-debug-9186d10d5e31.apk`，156063621 字节，SHA-256 `9186d10d5e31b2e7d4bd85324395227328b1ce4be95fba1aa1997e3224a0cf7d`；包名 `site.wenyou.app.debug`，版本 `0.10.0-debug`／100，仅 arm64-v8a，APK v2 签名校验通过，与上一包签名证书一致，可覆盖安装。前一包 `wenyou-font-caret-debug-dd14d5a9f9d8.apk` 已保留并复核原 SHA-256。
+
+最终应用源码摘要 `fa05663307290e505243cf32adac300cac06bbd7db04289dfae7ce5f27223d28`（2082 文件），基于 HEAD `4f25eee8d29594d8877d5139dd58e57c04c4fc55` 加本轮未提交改动；构建前后摘要一致。构建未传 API override，环境与 Gradle 属性无相关覆盖，使用 AppEnvironment 公网默认 `https://wenyou.site/api/v1`；实际 APK kernel 包含该完整地址且不含 `:38876` 端点，不依赖电脑转发。只读公网 `/meta` 仍为 `5.43.0-dev.20261022.3`／`1902aa4f844f47e3b867806ec7d6fe845b02f267`。没有自动安装、启动、清数据或修改公网服务。
+
+最终稳定证据为 `.dart_tool/font-visual-public-apk-evidence.json`，包含包体、签名、源码、明确测试文件与日志、API 目标和截图哈希。负责人自行打开“温油站 Debug”，复验 T 内字体的中／日／英筛选、光标先选后输入、选区更换／恢复默认及取消后的选区保持；本轮只确认视觉方向，原问题及真机输入效果继续待验收，未提交、推送、合并或部署。
+
 ### 光标选字体与面板即时反馈（2026-10-22，候选／待负责人验收）
 
 原候选 APK `118d16a503e8bbcdbdeee2ace14d1aee5639801fe0951ea45f8ebb951db0f4f8` 收到“点击字体文案，没有反应”；负责人补充“不选中正文也能直接选择字体，然后输入正文”。记录为验收失败／继续排查。旧入口 `canSelect` 和 `EditorTextFontPolicy.apply` 均拒绝折叠光标，已证实交互缺口；另发现目录请求在弹层前等待，没有即时反馈，且连续点击没有互斥保护。没有把未提供的网络超时认定为负责人原场景的独立根因。
