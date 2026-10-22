@@ -4,6 +4,24 @@
 
 ## 动态字体生产接入（候选，待真机验收）
 
+### 公网直连候选与旧服务兼容（2026-10-22，待负责人验收）
+
+负责人要求直接连接 `https://wenyou.site/api/v1` 的 Debug，不使用电脑转发。北京时间13:34只读 GET `/meta` 返回200/code0，契约 `5.40.0-dev.20261018.1`、build `6e00c4031a8f970609eef8cbf6fdefe3e6b12126`、Markdown5，Android minimumSupportedBuild为null、recommendedBuild为100；缺失字体v1/v2 capability。本地仍锁定正式同步的5.43.0-dev.20261022.3，未伪造或降级契约。
+
+精确部署一致性工具要求契约版本与buildSha完全相同，因此公网差异仍不通过；App的运行时判断不同：`AppEnvironment.supportsContract` 接受主版本5，支持Markdown3/4/5/6，`StartupController` 仅在契约不支持、Markdown不支持或达到强制升级条件时阻止进入。build100没有强制或推荐升级。缺失字体能力按false处理，隐藏字体选择入口；这不等于公网已经上线动态字体。
+
+实际兼容缺陷由源码及本地序列化复现确认：公网build的 `src/main.ts` 启用 `whitelist:true/forbidNonWhitelisted:true`，5.40的正文DTO没有 `textFontVersion`；原任务源码无条件发送2，包括普通文字。新回归在旧实现对无能力和仅v1能力均失败（`.dart_tool/dynamic-font-public-old-regression.log`），没有通过公网写入触发。候选在五个仓储九条写入路径按capability选择2/1/null，普通文本保留原样；含v1/v2真实字体源时仍在网络前拒绝不支持的写入，保持草稿及原文。动态、评论和私聊继续使用原有不支持字体的剪贴板投影，未新增字体字段。
+
+第一轮直接相关检查75项通过（`.dart_tool/dynamic-font-public-regression.log`）：`test/features/editor/text_font_write_capability_test.dart`、`thread_compose_repository_test.dart`，`test/features/drafts/content_draft_repository_test.dart`，`test/features/posts/post_repository_test.dart`，`test/features/threads/thread_management_repository_test.dart`、`subthread_management_repository_test.dart`、`thread_detail_stack_test.dart`，`test/core/markdown/text_font_write_guard_test.dart`、`markdown_text_font_v2_test.dart`，`test/core/config/app_environment_test.dart`，`test/features/auth/login_controller_test.dart`，`test/mobile_update_test.dart`，`test/features/media/audio_meta_test.dart`。所有请求均在本地夹具截获，未在公网登录、发帖或上传。
+
+公网原始meta另固定为只读夹具，经真实生成解码器和StartupController复验为 `ready`/guest、无升级提示且四项字体能力均false；`test/features/app_shell/public_meta_compatibility_test.dart` 与 `test/features/editor/editor_atomic_clipboard_test.dart` 共7项通过（`.dart_tool/dynamic-font-public-meta-projection-test.log`）。补齐主题创建/聚合/管理的原文保护后，`test/features/editor/text_font_write_capability_test.dart` 和 `editor_dynamic_font_paste_test.dart` 共9项通过（`.dart_tool/dynamic-font-public-guards.log`），覆盖published/disabled/withdrawn/unknown状态及保存重开。格式1507文件无变化、架构及23模块文档通过。
+
+最终应用全量静态检查零问题（378.6秒，`.dart_tool/dynamic-font-public-analyze.log`）；公网APK构建成功（214.3秒，`.dart_tool/dynamic-font-public-build.log`）。本轮只改变字段能力协商，按负责人明确要求收敛定向验证，没有重复整套全量测试；公网精确部署契约差异仍保持失败边界。
+
+公网独立产物为 `build/dynamic-font-public-candidate/wenyou-public-debug-118d16a503e8.apk`，156098772字节，SHA-256 `118d16a503e8bbcdbdeee2ace14d1aee5639801fe0951ea45f8ebb951db0f4f8`。包名 `site.wenyou.app.debug`，名称“温油站 Debug”，0.10.0-debug／versionCode100，仅arm64-v8a，APK v2签名有效。2079文件应用摘要 `d8e1ef174458f07894cb3500017f0728aaf4eebb56268afe0954a72ac58933e1`，构建前后逐文件复核一致。唯一显式编译配置 `API_BASE_URL=https://wenyou.site/api/v1`（UTF-8无换行），defines SHA-256 `e2edbb34f8ed93a972e33149e08e4e7f8f4f66e21981310e3cea625c6a38839a`；没有测试凭据或电脑转发依赖。元数据位于 `.dart_tool/dynamic-font-public-candidate-config.json`，源码清单 `dynamic-font-public-source.json`，签名/包信息证据 `dynamic-font-public-signature.log`、`dynamic-font-public-badging.log`。
+
+原隔离APK `dd42b0a...` 及其配置保持原样，新公网包单独记录，不安装、不启动、不清手机数据。普通登录和实际使用仍待负责人自行安装复验，不能用本地mock登录替代真机验收。公网缺少字体能力时不能验收自定义字体；该能力需兼容后端正式上线后再复验，当前任务未执行部署。
+
 ### 最终契约与 T 面板补验（2026-10-22，待真机验收）
 
 契约已固定 Backend `62a0313a75c85e42dfa39cd09b7cc90ae5c34186`／HTTP `5.43.0-dev.20261022.3`，独立同步提交 `2cbe2417`。本次增量仅扩展审计动作和目标枚举、补充运行说明；字体正文与资源协议不变。OpenAPI 校验、正式再生成、生成客户端分析及契约来源核对通过，API 覆盖检查通过。未部署公网。

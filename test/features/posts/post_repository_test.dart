@@ -204,6 +204,7 @@ void main() {
       final repository = ApiPostRepository(
         api,
         roleMentionsSupported: supports,
+        textFontV2Supported: true,
         textColorSupported: supports,
       );
 

@@ -165,7 +165,11 @@ class ApiPostRepository implements PostRepository {
           ..markdownContractVersion = roleMentionsSupported
               ? CreatePostDtoMarkdownContractVersionEnum.number6
               : null
-          ..textFontVersion = CreatePostDtoTextFontVersionEnum.number2
+          ..textFontVersion = textFontV2Supported
+              ? CreatePostDtoTextFontVersionEnum.number2
+              : textFontSupported
+              ? CreatePostDtoTextFontVersionEnum.number1
+              : null
           ..textColorVersion = (input.textColorSupported ?? textColorSupported)
               ? CreatePostDtoTextColorVersionEnum.number1
               : null
@@ -225,7 +229,11 @@ class ApiPostRepository implements PostRepository {
           ..markdownContractVersion = roleMentionsSupported
               ? UpdatePostDtoMarkdownContractVersionEnum.number6
               : null
-          ..textFontVersion = UpdatePostDtoTextFontVersionEnum.number2
+          ..textFontVersion = textFontV2Supported
+              ? UpdatePostDtoTextFontVersionEnum.number2
+              : textFontSupported
+              ? UpdatePostDtoTextFontVersionEnum.number1
+              : null
           ..textColorVersion = textColorSupported
               ? UpdatePostDtoTextColorVersionEnum.number1
               : null
@@ -275,7 +283,11 @@ class ApiPostRepository implements PostRepository {
         builder.markdownContractVersion = roleMentionsSupported
             ? UpsertBodyDtoMarkdownContractVersionEnum.number6
             : null;
-        builder.textFontVersion = UpsertBodyDtoTextFontVersionEnum.number2;
+        builder.textFontVersion = textFontV2Supported
+            ? UpsertBodyDtoTextFontVersionEnum.number2
+            : textFontSupported
+            ? UpsertBodyDtoTextFontVersionEnum.number1
+            : null;
         builder.textColorVersion =
             (textColorSupported ?? this.textColorSupported)
             ? UpsertBodyDtoTextColorVersionEnum.number1

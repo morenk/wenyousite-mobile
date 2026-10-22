@@ -190,7 +190,11 @@ class ApiThreadComposeRepository implements ThreadComposeRepository {
             ..markdownContractVersion = roleMentionsSupported
                 ? CreateThreadDtoMarkdownContractVersionEnum.number6
                 : null
-            ..textFontVersion = CreateThreadDtoTextFontVersionEnum.number2
+            ..textFontVersion = textFontV2Supported
+                ? CreateThreadDtoTextFontVersionEnum.number2
+                : textFontSupported
+                ? CreateThreadDtoTextFontVersionEnum.number1
+                : null
             ..textColorVersion =
                 (payload.textColorSupported ?? textColorSupported)
                 ? CreateThreadDtoTextColorVersionEnum.number1
@@ -244,8 +248,11 @@ class ApiThreadComposeRepository implements ThreadComposeRepository {
             ..markdownContractVersion = roleMentionsSupported
                 ? SaveThreadAggregateDtoMarkdownContractVersionEnum.number6
                 : null
-            ..textFontVersion =
-                SaveThreadAggregateDtoTextFontVersionEnum.number2
+            ..textFontVersion = textFontV2Supported
+                ? SaveThreadAggregateDtoTextFontVersionEnum.number2
+                : textFontSupported
+                ? SaveThreadAggregateDtoTextFontVersionEnum.number1
+                : null
             ..textColorVersion = textColorSupported
                 ? SaveThreadAggregateDtoTextColorVersionEnum.number1
                 : null

@@ -208,7 +208,6 @@ void main() {
     expect(request.path, '/api/v1/subthreads/subthread-1/posts');
     expect(request.extra[ApiRequestExtraKeys.idempotentCreate], isTrue);
     expect(request.data, {
-      'textFontVersion': 2,
       'content': '经真实生成客户端写入的回复',
       'parentPostId': 'floor-1',
       'replyToPostId': 'reply-target',

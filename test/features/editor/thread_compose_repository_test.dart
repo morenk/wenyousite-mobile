@@ -50,6 +50,7 @@ void main() {
       threadsApi,
       ApiThreadCategoryCatalogRepository(_MockCategoriesApi()),
       _MockUsersApi(),
+      textFontV2Supported: true,
     );
 
     final created = await repository.createDraft(

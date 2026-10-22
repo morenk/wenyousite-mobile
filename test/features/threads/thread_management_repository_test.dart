@@ -67,6 +67,7 @@ void main() {
     final repository = ApiThreadManagementRepository(
       threadsApi,
       ApiThreadCategoryCatalogRepository(categoriesApi),
+      textFontV2Supported: true,
     );
 
     final updated = await repository.update(

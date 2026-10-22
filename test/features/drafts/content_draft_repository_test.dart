@@ -60,7 +60,10 @@ void main() {
     when(
       () => api.draftsRemove(id: 'draft-2', version: 4),
     ).thenAnswer((_) async => _removeResponse());
-    final repository = ApiContentDraftRepository(api);
+    final repository = ApiContentDraftRepository(
+      api,
+      textFontV2Supported: true,
+    );
 
     await repository.create('自动正文', clientRequestId: _requestIdOne);
     final created = await repository.create(

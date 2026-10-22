@@ -85,7 +85,11 @@ class ApiContentDraftRepository implements ContentDraftRepository {
           ..markdownContractVersion = roleMentionsSupported
               ? CreateDraftDtoMarkdownContractVersionEnum.number6
               : null
-          ..textFontVersion = CreateDraftDtoTextFontVersionEnum.number2
+          ..textFontVersion = textFontV2Supported
+              ? CreateDraftDtoTextFontVersionEnum.number2
+              : textFontSupported
+              ? CreateDraftDtoTextFontVersionEnum.number1
+              : null
           ..textColorVersion = textColorSupported
               ? CreateDraftDtoTextColorVersionEnum.number1
               : null
@@ -125,7 +129,11 @@ class ApiContentDraftRepository implements ContentDraftRepository {
           ..markdownContractVersion = roleMentionsSupported
               ? UpdateDraftDtoMarkdownContractVersionEnum.number6
               : null
-          ..textFontVersion = UpdateDraftDtoTextFontVersionEnum.number2
+          ..textFontVersion = textFontV2Supported
+              ? UpdateDraftDtoTextFontVersionEnum.number2
+              : textFontSupported
+              ? UpdateDraftDtoTextFontVersionEnum.number1
+              : null
           ..textColorVersion = textColorSupported
               ? UpdateDraftDtoTextColorVersionEnum.number1
               : null

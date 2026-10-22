@@ -139,7 +139,11 @@ class ApiSubthreadManagementRepository
             ..markdownContractVersion = roleMentionsSupported
                 ? CreateSubthreadDtoMarkdownContractVersionEnum.number6
                 : null
-            ..textFontVersion = CreateSubthreadDtoTextFontVersionEnum.number2
+            ..textFontVersion = textFontV2Supported
+                ? CreateSubthreadDtoTextFontVersionEnum.number2
+                : textFontSupported
+                ? CreateSubthreadDtoTextFontVersionEnum.number1
+                : null
             ..textColorVersion = textColorSupported
                 ? CreateSubthreadDtoTextColorVersionEnum.number1
                 : null
