@@ -471,7 +471,10 @@ class ApiFailure implements Exception {
   ) {
     if (businessCode == 40016 ||
         businessCode == 40017 ||
-        businessCode == 40018) {
+        businessCode == 40018 ||
+        businessCode == 40019 ||
+        businessCode == 40020 ||
+        businessCode == 40021) {
       return FailureRecoveryAction.keepDraft;
     }
     if (businessCode == 40108 || businessCode == 40109) {

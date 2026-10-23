@@ -67,6 +67,7 @@ void main() {
         throwsA(isA<ApiFailure>()),
       );
       expect(postDto, isNotNull);
+      expect(postDto!.textFontVersion, isNull);
       expect(
         postDto!.textColorVersion,
         expected ? CreatePostDtoTextColorVersionEnum.number1 : null,
@@ -106,6 +107,7 @@ void main() {
         throwsA(isA<ApiFailure>()),
       );
       expect(threadDto, isNotNull);
+      expect(threadDto!.textFontVersion, isNull);
       expect(
         threadDto!.textColorVersion,
         expected ? CreateThreadDtoTextColorVersionEnum.number1 : null,

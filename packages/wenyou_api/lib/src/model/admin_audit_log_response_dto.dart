@@ -30,11 +30,11 @@ abstract class AdminAuditLogResponseDto implements Built<AdminAuditLogResponseDt
 
   @BuiltValueField(wireName: r'action')
   AdminAuditLogResponseDtoActionEnum get action;
-  // enum actionEnum {  SUPER_ADMIN_BOOTSTRAPPED,  ADMIN_ROLE_GRANTED,  ADMIN_ROLE_REVOKED,  USER_SUSPENDED,  USER_BANNED,  USER_SANCTION_REVOKED,  CONTENT_HIDDEN,  CONTENT_RESTORED,  THREAD_TAXONOMY_UPDATED,  REPORT_RESOLVED,  REPORT_DISMISSED,  SYSTEM_NOTIFICATION_SENT,  THREAD_CATEGORY_CREATED,  THREAD_CATEGORY_UPDATED,  TAG_CREATED,  TAG_UPDATED,  ADMIN_INVITED,  ADMIN_INVITE_ACCEPTED,  ADMIN_INVITE_CANCELED,  SUPER_ADMIN_TRANSFERRED,  ADMIN_SESSION_REVOKED,  CASE_RESOLVED,  CASE_DISMISSED,  APPEAL_SUBMITTED,  APPEAL_UPHELD,  APPEAL_OVERTURNED,  USER_SESSIONS_REVOKED,  PASSWORD_RESET_REQUESTED_BY_ADMIN,  NOTIFICATION_CAMPAIGN_SCHEDULED,  NOTIFICATION_CAMPAIGN_CANCELED,  THREAD_CATEGORY_MERGED,  TAG_MERGED,  SITE_SETTINGS_UPDATED,  MOBILE_RELEASE_UPDATED,  };
+  // enum actionEnum {  SUPER_ADMIN_BOOTSTRAPPED,  ADMIN_ROLE_GRANTED,  ADMIN_ROLE_REVOKED,  USER_SUSPENDED,  USER_BANNED,  USER_SANCTION_REVOKED,  CONTENT_HIDDEN,  CONTENT_RESTORED,  THREAD_TAXONOMY_UPDATED,  REPORT_RESOLVED,  REPORT_DISMISSED,  SYSTEM_NOTIFICATION_SENT,  THREAD_CATEGORY_CREATED,  THREAD_CATEGORY_UPDATED,  TAG_CREATED,  TAG_UPDATED,  ADMIN_INVITED,  ADMIN_INVITE_ACCEPTED,  ADMIN_INVITE_CANCELED,  SUPER_ADMIN_TRANSFERRED,  ADMIN_SESSION_REVOKED,  CASE_RESOLVED,  CASE_DISMISSED,  APPEAL_SUBMITTED,  APPEAL_UPHELD,  APPEAL_OVERTURNED,  USER_SESSIONS_REVOKED,  PASSWORD_RESET_REQUESTED_BY_ADMIN,  NOTIFICATION_CAMPAIGN_SCHEDULED,  NOTIFICATION_CAMPAIGN_CANCELED,  THREAD_CATEGORY_MERGED,  TAG_MERGED,  SITE_SETTINGS_UPDATED,  MOBILE_RELEASE_UPDATED,  TEXT_FONT_DRAFT_UPDATED,  TEXT_FONT_SOURCE_UPLOADED,  TEXT_FONT_PROCESS_REQUESTED,  TEXT_FONT_VERSION_READY,  TEXT_FONT_PUBLISHED,  TEXT_FONT_ENABLED_UPDATED,  TEXT_FONT_WITHDRAWN,  TEXT_FONT_IMPORTED,  };
 
   @BuiltValueField(wireName: r'targetType')
   AdminAuditLogResponseDtoTargetTypeEnum get targetType;
-  // enum targetTypeEnum {  USER,  THREAD,  POST,  MOMENT,  MOMENT_COMMENT,  REPORT,  SYSTEM_NOTIFICATION,  THREAD_CATEGORY,  TAG,  MODERATION_CASE,  MODERATION_DECISION,  MODERATION_APPEAL,  ADMIN_INVITE,  ADMIN_SESSION,  NOTIFICATION_CAMPAIGN,  SITE_SETTINGS,  MOBILE_RELEASE,  };
+  // enum targetTypeEnum {  USER,  THREAD,  POST,  MOMENT,  MOMENT_COMMENT,  REPORT,  SYSTEM_NOTIFICATION,  THREAD_CATEGORY,  TAG,  MODERATION_CASE,  MODERATION_DECISION,  MODERATION_APPEAL,  ADMIN_INVITE,  ADMIN_SESSION,  NOTIFICATION_CAMPAIGN,  SITE_SETTINGS,  MOBILE_RELEASE,  TEXT_FONT,  };
 
   @BuiltValueField(wireName: r'targetId')
   String? get targetId;
@@ -312,6 +312,22 @@ class AdminAuditLogResponseDtoActionEnum extends EnumClass {
   static const AdminAuditLogResponseDtoActionEnum SITE_SETTINGS_UPDATED = _$adminAuditLogResponseDtoActionEnum_SITE_SETTINGS_UPDATED;
   @BuiltValueEnumConst(wireName: r'MOBILE_RELEASE_UPDATED')
   static const AdminAuditLogResponseDtoActionEnum MOBILE_RELEASE_UPDATED = _$adminAuditLogResponseDtoActionEnum_MOBILE_RELEASE_UPDATED;
+  @BuiltValueEnumConst(wireName: r'TEXT_FONT_DRAFT_UPDATED')
+  static const AdminAuditLogResponseDtoActionEnum TEXT_FONT_DRAFT_UPDATED = _$adminAuditLogResponseDtoActionEnum_TEXT_FONT_DRAFT_UPDATED;
+  @BuiltValueEnumConst(wireName: r'TEXT_FONT_SOURCE_UPLOADED')
+  static const AdminAuditLogResponseDtoActionEnum TEXT_FONT_SOURCE_UPLOADED = _$adminAuditLogResponseDtoActionEnum_TEXT_FONT_SOURCE_UPLOADED;
+  @BuiltValueEnumConst(wireName: r'TEXT_FONT_PROCESS_REQUESTED')
+  static const AdminAuditLogResponseDtoActionEnum TEXT_FONT_PROCESS_REQUESTED = _$adminAuditLogResponseDtoActionEnum_TEXT_FONT_PROCESS_REQUESTED;
+  @BuiltValueEnumConst(wireName: r'TEXT_FONT_VERSION_READY')
+  static const AdminAuditLogResponseDtoActionEnum TEXT_FONT_VERSION_READY = _$adminAuditLogResponseDtoActionEnum_TEXT_FONT_VERSION_READY;
+  @BuiltValueEnumConst(wireName: r'TEXT_FONT_PUBLISHED')
+  static const AdminAuditLogResponseDtoActionEnum TEXT_FONT_PUBLISHED = _$adminAuditLogResponseDtoActionEnum_TEXT_FONT_PUBLISHED;
+  @BuiltValueEnumConst(wireName: r'TEXT_FONT_ENABLED_UPDATED')
+  static const AdminAuditLogResponseDtoActionEnum TEXT_FONT_ENABLED_UPDATED = _$adminAuditLogResponseDtoActionEnum_TEXT_FONT_ENABLED_UPDATED;
+  @BuiltValueEnumConst(wireName: r'TEXT_FONT_WITHDRAWN')
+  static const AdminAuditLogResponseDtoActionEnum TEXT_FONT_WITHDRAWN = _$adminAuditLogResponseDtoActionEnum_TEXT_FONT_WITHDRAWN;
+  @BuiltValueEnumConst(wireName: r'TEXT_FONT_IMPORTED')
+  static const AdminAuditLogResponseDtoActionEnum TEXT_FONT_IMPORTED = _$adminAuditLogResponseDtoActionEnum_TEXT_FONT_IMPORTED;
   @BuiltValueEnumConst(wireName: r'unknown_default_open_api', fallback: true)
   static const AdminAuditLogResponseDtoActionEnum unknownDefaultOpenApi = _$adminAuditLogResponseDtoActionEnum_unknownDefaultOpenApi;
 
@@ -359,6 +375,8 @@ class AdminAuditLogResponseDtoTargetTypeEnum extends EnumClass {
   static const AdminAuditLogResponseDtoTargetTypeEnum SITE_SETTINGS = _$adminAuditLogResponseDtoTargetTypeEnum_SITE_SETTINGS;
   @BuiltValueEnumConst(wireName: r'MOBILE_RELEASE')
   static const AdminAuditLogResponseDtoTargetTypeEnum MOBILE_RELEASE = _$adminAuditLogResponseDtoTargetTypeEnum_MOBILE_RELEASE;
+  @BuiltValueEnumConst(wireName: r'TEXT_FONT')
+  static const AdminAuditLogResponseDtoTargetTypeEnum TEXT_FONT = _$adminAuditLogResponseDtoTargetTypeEnum_TEXT_FONT;
   @BuiltValueEnumConst(wireName: r'unknown_default_open_api', fallback: true)
   static const AdminAuditLogResponseDtoTargetTypeEnum unknownDefaultOpenApi = _$adminAuditLogResponseDtoTargetTypeEnum_unknownDefaultOpenApi;
 

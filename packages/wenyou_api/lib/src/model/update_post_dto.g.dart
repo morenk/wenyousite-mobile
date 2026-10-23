@@ -6,6 +6,41 @@ part of 'update_post_dto.dart';
 // BuiltValueGenerator
 // **************************************************************************
 
+const UpdatePostDtoTextFontVersionEnum
+_$updatePostDtoTextFontVersionEnum_number1 =
+    const UpdatePostDtoTextFontVersionEnum._('number1');
+const UpdatePostDtoTextFontVersionEnum
+_$updatePostDtoTextFontVersionEnum_number2 =
+    const UpdatePostDtoTextFontVersionEnum._('number2');
+const UpdatePostDtoTextFontVersionEnum
+_$updatePostDtoTextFontVersionEnum_unknownDefaultOpenApi =
+    const UpdatePostDtoTextFontVersionEnum._('unknownDefaultOpenApi');
+
+UpdatePostDtoTextFontVersionEnum _$updatePostDtoTextFontVersionEnumValueOf(
+  String name,
+) {
+  switch (name) {
+    case 'number1':
+      return _$updatePostDtoTextFontVersionEnum_number1;
+    case 'number2':
+      return _$updatePostDtoTextFontVersionEnum_number2;
+    case 'unknownDefaultOpenApi':
+      return _$updatePostDtoTextFontVersionEnum_unknownDefaultOpenApi;
+    default:
+      return _$updatePostDtoTextFontVersionEnum_unknownDefaultOpenApi;
+  }
+}
+
+final BuiltSet<UpdatePostDtoTextFontVersionEnum>
+_$updatePostDtoTextFontVersionEnumValues =
+    BuiltSet<UpdatePostDtoTextFontVersionEnum>(
+      const <UpdatePostDtoTextFontVersionEnum>[
+        _$updatePostDtoTextFontVersionEnum_number1,
+        _$updatePostDtoTextFontVersionEnum_number2,
+        _$updatePostDtoTextFontVersionEnum_unknownDefaultOpenApi,
+      ],
+    );
+
 const UpdatePostDtoTextColorVersionEnum
 _$updatePostDtoTextColorVersionEnum_number1 =
     const UpdatePostDtoTextColorVersionEnum._('number1');
@@ -63,12 +98,50 @@ _$updatePostDtoMarkdownContractVersionEnumValues =
       ],
     );
 
+Serializer<UpdatePostDtoTextFontVersionEnum>
+_$updatePostDtoTextFontVersionEnumSerializer =
+    _$UpdatePostDtoTextFontVersionEnumSerializer();
 Serializer<UpdatePostDtoTextColorVersionEnum>
 _$updatePostDtoTextColorVersionEnumSerializer =
     _$UpdatePostDtoTextColorVersionEnumSerializer();
 Serializer<UpdatePostDtoMarkdownContractVersionEnum>
 _$updatePostDtoMarkdownContractVersionEnumSerializer =
     _$UpdatePostDtoMarkdownContractVersionEnumSerializer();
+
+class _$UpdatePostDtoTextFontVersionEnumSerializer
+    implements PrimitiveSerializer<UpdatePostDtoTextFontVersionEnum> {
+  static const Map<String, Object> _toWire = const <String, Object>{
+    'number1': 1,
+    'number2': 2,
+    'unknownDefaultOpenApi': 11184809,
+  };
+  static const Map<Object, String> _fromWire = const <Object, String>{
+    1: 'number1',
+    2: 'number2',
+    11184809: 'unknownDefaultOpenApi',
+  };
+
+  @override
+  final Iterable<Type> types = const <Type>[UpdatePostDtoTextFontVersionEnum];
+  @override
+  final String wireName = 'UpdatePostDtoTextFontVersionEnum';
+
+  @override
+  Object serialize(
+    Serializers serializers,
+    UpdatePostDtoTextFontVersionEnum object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => _toWire[object.name] ?? object.name;
+
+  @override
+  UpdatePostDtoTextFontVersionEnum deserialize(
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => UpdatePostDtoTextFontVersionEnum.valueOf(
+    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
+  );
+}
 
 class _$UpdatePostDtoTextColorVersionEnumSerializer
     implements PrimitiveSerializer<UpdatePostDtoTextColorVersionEnum> {
@@ -140,6 +213,8 @@ class _$UpdatePostDtoMarkdownContractVersionEnumSerializer
 
 class _$UpdatePostDto extends UpdatePostDto {
   @override
+  final UpdatePostDtoTextFontVersionEnum? textFontVersion;
+  @override
   final UpdatePostDtoTextColorVersionEnum? textColorVersion;
   @override
   final UpdatePostDtoMarkdownContractVersionEnum? markdownContractVersion;
@@ -152,6 +227,7 @@ class _$UpdatePostDto extends UpdatePostDto {
       (UpdatePostDtoBuilder()..update(updates))._build();
 
   _$UpdatePostDto._({
+    this.textFontVersion,
     this.textColorVersion,
     this.markdownContractVersion,
     required this.content,
@@ -168,6 +244,7 @@ class _$UpdatePostDto extends UpdatePostDto {
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
     return other is UpdatePostDto &&
+        textFontVersion == other.textFontVersion &&
         textColorVersion == other.textColorVersion &&
         markdownContractVersion == other.markdownContractVersion &&
         content == other.content &&
@@ -177,6 +254,7 @@ class _$UpdatePostDto extends UpdatePostDto {
   @override
   int get hashCode {
     var _$hash = 0;
+    _$hash = $jc(_$hash, textFontVersion.hashCode);
     _$hash = $jc(_$hash, textColorVersion.hashCode);
     _$hash = $jc(_$hash, markdownContractVersion.hashCode);
     _$hash = $jc(_$hash, content.hashCode);
@@ -188,6 +266,7 @@ class _$UpdatePostDto extends UpdatePostDto {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'UpdatePostDto')
+          ..add('textFontVersion', textFontVersion)
           ..add('textColorVersion', textColorVersion)
           ..add('markdownContractVersion', markdownContractVersion)
           ..add('content', content)
@@ -199,6 +278,12 @@ class _$UpdatePostDto extends UpdatePostDto {
 class UpdatePostDtoBuilder
     implements Builder<UpdatePostDto, UpdatePostDtoBuilder> {
   _$UpdatePostDto? _$v;
+
+  UpdatePostDtoTextFontVersionEnum? _textFontVersion;
+  UpdatePostDtoTextFontVersionEnum? get textFontVersion =>
+      _$this._textFontVersion;
+  set textFontVersion(UpdatePostDtoTextFontVersionEnum? textFontVersion) =>
+      _$this._textFontVersion = textFontVersion;
 
   UpdatePostDtoTextColorVersionEnum? _textColorVersion;
   UpdatePostDtoTextColorVersionEnum? get textColorVersion =>
@@ -228,6 +313,7 @@ class UpdatePostDtoBuilder
   UpdatePostDtoBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
+      _textFontVersion = $v.textFontVersion;
       _textColorVersion = $v.textColorVersion;
       _markdownContractVersion = $v.markdownContractVersion;
       _content = $v.content;
@@ -254,6 +340,7 @@ class UpdatePostDtoBuilder
     final _$result =
         _$v ??
         _$UpdatePostDto._(
+          textFontVersion: textFontVersion,
           textColorVersion: textColorVersion,
           markdownContractVersion: markdownContractVersion,
           content: BuiltValueNullFieldError.checkNotNull(

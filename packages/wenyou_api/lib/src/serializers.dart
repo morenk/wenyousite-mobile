@@ -99,6 +99,17 @@ import 'package:wenyou_api/src/model/admin_taxonomy_list_categories200_response.
 import 'package:wenyou_api/src/model/admin_taxonomy_list_tags200_response.dart';
 import 'package:wenyou_api/src/model/admin_taxonomy_update_category200_response.dart';
 import 'package:wenyou_api/src/model/admin_taxonomy_update_tag200_response.dart';
+import 'package:wenyou_api/src/model/admin_text_fonts_create201_response.dart';
+import 'package:wenyou_api/src/model/admin_text_fonts_detail200_response.dart';
+import 'package:wenyou_api/src/model/admin_text_fonts_enabled200_response.dart';
+import 'package:wenyou_api/src/model/admin_text_fonts_get_job200_response.dart';
+import 'package:wenyou_api/src/model/admin_text_fonts_list200_response.dart';
+import 'package:wenyou_api/src/model/admin_text_fonts_preview200_response.dart';
+import 'package:wenyou_api/src/model/admin_text_fonts_process201_response.dart';
+import 'package:wenyou_api/src/model/admin_text_fonts_publish201_response.dart';
+import 'package:wenyou_api/src/model/admin_text_fonts_update200_response.dart';
+import 'package:wenyou_api/src/model/admin_text_fonts_upload201_response.dart';
+import 'package:wenyou_api/src/model/admin_text_fonts_withdraw201_response.dart';
 import 'package:wenyou_api/src/model/admin_user_content_counts_dto.dart';
 import 'package:wenyou_api/src/model/admin_user_detail_response_dto.dart';
 import 'package:wenyou_api/src/model/admin_user_moderation_response_dto.dart';
@@ -215,6 +226,12 @@ import 'package:wenyou_api/src/model/drafts_remove200_response.dart';
 import 'package:wenyou_api/src/model/drafts_slot_usage200_response.dart';
 import 'package:wenyou_api/src/model/drafts_state200_response.dart';
 import 'package:wenyou_api/src/model/drafts_update200_response.dart';
+import 'package:wenyou_api/src/model/dynamic_font_mobile_runtime_dto.dart';
+import 'package:wenyou_api/src/model/dynamic_font_network_dto.dart';
+import 'package:wenyou_api/src/model/dynamic_font_registration_dto.dart';
+import 'package:wenyou_api/src/model/dynamic_font_runtime_policy_dto.dart';
+import 'package:wenyou_api/src/model/dynamic_font_web_residency_dto.dart';
+import 'package:wenyou_api/src/model/dynamic_font_web_runtime_dto.dart';
 import 'package:wenyou_api/src/model/economy_check_in200_response.dart';
 import 'package:wenyou_api/src/model/economy_get_wallet200_response.dart';
 import 'package:wenyou_api/src/model/economy_tip_moment201_response.dart';
@@ -223,6 +240,28 @@ import 'package:wenyou_api/src/model/economy_tip_user201_response.dart';
 import 'package:wenyou_api/src/model/economy_transactions200_response.dart';
 import 'package:wenyou_api/src/model/floor_response_dto.dart';
 import 'package:wenyou_api/src/model/floor_window_response_dto.dart';
+import 'package:wenyou_api/src/model/font_admin_family_detail_dto.dart';
+import 'package:wenyou_api/src/model/font_admin_page_dto.dart';
+import 'package:wenyou_api/src/model/font_asset_dto.dart';
+import 'package:wenyou_api/src/model/font_catalog_entry_dto.dart';
+import 'package:wenyou_api/src/model/font_catalog_page_dto.dart';
+import 'package:wenyou_api/src/model/font_configuration_dto.dart';
+import 'package:wenyou_api/src/model/font_enabled_dto.dart';
+import 'package:wenyou_api/src/model/font_family_dto.dart';
+import 'package:wenyou_api/src/model/font_job_dto.dart';
+import 'package:wenyou_api/src/model/font_metadata_policy_dto.dart';
+import 'package:wenyou_api/src/model/font_mobile_registration_dto.dart';
+import 'package:wenyou_api/src/model/font_mobile_runtime_dto.dart';
+import 'package:wenyou_api/src/model/font_network_window_dto.dart';
+import 'package:wenyou_api/src/model/font_publish_dto.dart';
+import 'package:wenyou_api/src/model/font_registration_snapshot_dto.dart';
+import 'package:wenyou_api/src/model/font_retry_policy_dto.dart';
+import 'package:wenyou_api/src/model/font_rights_dto.dart';
+import 'package:wenyou_api/src/model/font_snapshot_safety_ceiling_dto.dart';
+import 'package:wenyou_api/src/model/font_version_descriptor_dto.dart';
+import 'package:wenyou_api/src/model/font_web_residency_dto.dart';
+import 'package:wenyou_api/src/model/font_web_runtime_dto.dart';
+import 'package:wenyou_api/src/model/font_withdraw_dto.dart';
 import 'package:wenyou_api/src/model/forgot_password_dto.dart';
 import 'package:wenyou_api/src/model/gallery_image_dto.dart';
 import 'package:wenyou_api/src/model/gallery_list200_response.dart';
@@ -450,6 +489,15 @@ import 'package:wenyou_api/src/model/tag_response_dto.dart';
 import 'package:wenyou_api/src/model/tags_create200_response.dart';
 import 'package:wenyou_api/src/model/tags_get_by_id200_response.dart';
 import 'package:wenyou_api/src/model/tags_search200_response.dart';
+import 'package:wenyou_api/src/model/text_font_catalog_dto.dart';
+import 'package:wenyou_api/src/model/text_font_family_dto.dart';
+import 'package:wenyou_api/src/model/text_font_manifest_dto.dart';
+import 'package:wenyou_api/src/model/text_font_runtime_policy_dto.dart';
+import 'package:wenyou_api/src/model/text_fonts_get_catalog200_response.dart';
+import 'package:wenyou_api/src/model/text_fonts_get_runtime_policy200_response.dart';
+import 'package:wenyou_api/src/model/text_fonts_v2_get_catalog200_response.dart';
+import 'package:wenyou_api/src/model/text_fonts_v2_get_runtime_policy200_response.dart';
+import 'package:wenyou_api/src/model/text_fonts_v2_get_version200_response.dart';
 import 'package:wenyou_api/src/model/thread_body_post_response_dto.dart';
 import 'package:wenyou_api/src/model/thread_capabilities_response_dto.dart';
 import 'package:wenyou_api/src/model/thread_categories_list200_response.dart';
@@ -507,6 +555,7 @@ import 'package:wenyou_api/src/model/unread_notification_count_response_dto.dart
 import 'package:wenyou_api/src/model/update_admin_role_dto.dart';
 import 'package:wenyou_api/src/model/update_content_taxonomy_dto.dart';
 import 'package:wenyou_api/src/model/update_draft_dto.dart';
+import 'package:wenyou_api/src/model/update_font_configuration_dto.dart';
 import 'package:wenyou_api/src/model/update_managed_tag_dto.dart';
 import 'package:wenyou_api/src/model/update_mobile_release_dto.dart';
 import 'package:wenyou_api/src/model/update_moment_dto.dart';
@@ -650,6 +699,17 @@ part 'serializers.g.dart';
   AdminTaxonomyListTags200Response,
   AdminTaxonomyUpdateCategory200Response,
   AdminTaxonomyUpdateTag200Response,
+  AdminTextFontsCreate201Response,
+  AdminTextFontsDetail200Response,
+  AdminTextFontsEnabled200Response,
+  AdminTextFontsGetJob200Response,
+  AdminTextFontsList200Response,
+  AdminTextFontsPreview200Response,
+  AdminTextFontsProcess201Response,
+  AdminTextFontsPublish201Response,
+  AdminTextFontsUpdate200Response,
+  AdminTextFontsUpload201Response,
+  AdminTextFontsWithdraw201Response,
   AdminUserContentCountsDto,
   AdminUserDetailResponseDto,
   AdminUserModerationResponseDto,
@@ -766,6 +826,12 @@ part 'serializers.g.dart';
   DraftsSlotUsage200Response,
   DraftsState200Response,
   DraftsUpdate200Response,
+  DynamicFontMobileRuntimeDto,
+  DynamicFontNetworkDto,
+  DynamicFontRegistrationDto,
+  DynamicFontRuntimePolicyDto,
+  DynamicFontWebResidencyDto,
+  DynamicFontWebRuntimeDto,
   EconomyCheckIn200Response,
   EconomyGetWallet200Response,
   EconomyTipMoment201Response,
@@ -774,6 +840,28 @@ part 'serializers.g.dart';
   EconomyTransactions200Response,
   FloorResponseDto,
   FloorWindowResponseDto,
+  FontAdminFamilyDetailDto,
+  FontAdminPageDto,
+  FontAssetDto,
+  FontCatalogEntryDto,
+  FontCatalogPageDto,
+  FontConfigurationDto,
+  FontEnabledDto,
+  FontFamilyDto,
+  FontJobDto,
+  FontMetadataPolicyDto,
+  FontMobileRegistrationDto,
+  FontMobileRuntimeDto,
+  FontNetworkWindowDto,
+  FontPublishDto,
+  FontRegistrationSnapshotDto,
+  FontRetryPolicyDto,
+  FontRightsDto,
+  FontSnapshotSafetyCeilingDto,
+  FontVersionDescriptorDto,
+  FontWebResidencyDto,
+  FontWebRuntimeDto,
+  FontWithdrawDto,
   ForgotPasswordDto,
   GalleryImageDto,
   GalleryList200Response,
@@ -1001,6 +1089,15 @@ part 'serializers.g.dart';
   TagsCreate200Response,
   TagsGetById200Response,
   TagsSearch200Response,
+  TextFontCatalogDto,
+  TextFontFamilyDto,
+  TextFontManifestDto,
+  TextFontRuntimePolicyDto,
+  TextFontsGetCatalog200Response,
+  TextFontsGetRuntimePolicy200Response,
+  TextFontsV2GetCatalog200Response,
+  TextFontsV2GetRuntimePolicy200Response,
+  TextFontsV2GetVersion200Response,
   ThreadBodyPostResponseDto,
   ThreadCapabilitiesResponseDto,
   ThreadCategoriesList200Response,
@@ -1058,6 +1155,7 @@ part 'serializers.g.dart';
   UpdateAdminRoleDto,
   UpdateContentTaxonomyDto,
   UpdateDraftDto,
+  UpdateFontConfigurationDto,
   UpdateManagedTagDto,
   UpdateMobileReleaseDto,
   UpdateMomentDto,

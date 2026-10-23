@@ -235,6 +235,9 @@ void main() {
       await repository.setPinned(created.id, pinned: false);
 
       expect(createPayload.content, '新回复');
+      expect(createPayload.textFontVersion, isNull);
+      expect(updatePayload.textFontVersion, isNull);
+      expect(bodyPayload.textFontVersion, isNull);
       expect(createPayload.identityMode, CreatePostDtoIdentityModeEnum.RP);
       expect(createPayload.identityToken, 'identity-old');
       expect(createPayload.identityId, 'role-selected');

@@ -38,10 +38,13 @@ class UserFacingFailure {
         : recoveryAction ??
               failure?.recoveryAction ??
               FailureRecoveryAction.retry;
-    final textColorMessage = switch (failure?.businessCode) {
+    final textStyleMessage = switch (failure?.businessCode) {
       40016 => '暂时无法保存文字颜色，草稿已保留。',
       40017 => '暂时无法修改有色文字，草稿已保留，请稍后重试。',
       40018 => '文字颜色格式无效，请重新选择；草稿已保留。',
+      40019 => '此内容包含当前版本不支持的字体，请更新应用；草稿已保留。',
+      40020 => '暂时无法修改文字字体，草稿已保留。',
+      40021 => '文字字体格式无效，草稿已保留。',
       _ => null,
     };
     return UserFacingFailure(
@@ -50,13 +53,13 @@ class UserFacingFailure {
           message ??
           (isIndeterminateWrite
               ? '现在无法继续$operationName。请先刷新$objectName查看是否已生效；应用不会自动重复提交。'
-              : textColorMessage ??
+              : textStyleMessage ??
                     failure?.legacyUserMessage ??
                     defaultFailureMessage(reason)),
       recoveryAction: effectiveRecovery,
       placement: placement,
       retainContent:
-          retainContent || isIndeterminateWrite || textColorMessage != null,
+          retainContent || isIndeterminateWrite || textStyleMessage != null,
       actionLabel: _actionLabelFor(effectiveRecovery),
       sourceLabel: _sourceLabelFor(failure),
       problemNumber:
