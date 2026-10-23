@@ -5,7 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 
 void main() {
-  test('5.43动态字体契约保留字体、音频、颜色与旧42900错误', () {
+  test('5.44管理字体契约保留公开字体、音频、颜色与旧42900错误', () {
     final expected = {
       40016: BusinessErrorCode.TEXT_COLOR_CAPABILITY_REQUIRED,
       40017: BusinessErrorCode.TEXT_COLOR_DISABLED,
@@ -27,13 +27,13 @@ void main() {
     }
     final contract =
         jsonDecode(File('contracts/openapi.json').readAsStringSync()) as Map;
-    expect((contract['info'] as Map)['version'], '5.43.0-dev.20261022.3');
+    expect((contract['info'] as Map)['version'], '5.44.0-dev.20261024.2');
     final manifest = File(
       'contracts/backend-contract.properties',
     ).readAsStringSync();
     expect(
       manifest,
-      contains('backendRevision=1902aa4f844f47e3b867806ec7d6fe845b02f267'),
+      contains('backendRevision=2b8abf3b6ae23c94dd843dfd6ce72865554a657e'),
     );
   });
 }

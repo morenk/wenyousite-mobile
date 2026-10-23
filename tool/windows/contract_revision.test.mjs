@@ -30,6 +30,7 @@ test('固定部署祖先导出同一 SHA，拒绝远端 dev 以外提交且不�
     fs.copyFileSync(path.join(repository, 'contracts/thread-font-assets.md'), path.join(backend, 'docs/thread-font-assets.md'));
     fs.copyFileSync(path.join(repository, 'contracts/thread-font-runtime-policy.md'), path.join(backend, 'docs/thread-font-runtime-policy.md'));
     fs.copyFileSync(path.join(repository, 'contracts/dynamic-text-fonts.md'), path.join(backend, 'docs/dynamic-text-fonts.md'));
+    fs.copyFileSync(path.join(repository, 'contracts/admin-font-management.md'), path.join(backend, 'docs/admin-font-management.md'));
     fs.copyFileSync(path.join(repository, 'contracts/deprecation-register.md'), path.join(backend, 'docs/deprecation-register.md'));
     fs.copyFileSync(path.join(repository, 'contracts/thread-identity.md'), path.join(backend, 'docs/thread-identity.md'));
     fs.copyFileSync(path.join(repository, 'contracts/markdown-v6-role-mentions.md'), path.join(backend, 'docs/markdown-v6-role-mentions.md'));
@@ -97,6 +98,8 @@ test('固定部署祖先导出同一 SHA，拒绝远端 dev 以外提交且不�
       'thread-font-runtime-policy-v2-fixtures.json',
       'thread-font-runtime-policy.md',
       'dynamic-text-fonts.md',
+      'admin-font-management.md',
+      'admin-font-management-v1-fixtures.json',
       'deprecation-register.md',
       'markdown-text-font-v2.schema.json',
       'markdown-text-font-v2-fixtures.json',

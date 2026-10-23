@@ -24,6 +24,7 @@ const diagnosticApiRoutes = <String, String>{
   'GET /api/v1/admin/reports': 'adminReportsFindAll',
   'GET /api/v1/admin/tags': 'adminTaxonomyListTags',
   'GET /api/v1/admin/text-fonts': 'adminTextFontsList',
+  'GET /api/v1/admin/text-fonts/management': 'adminTextFontsManagement',
   'GET /api/v1/admin/thread-categories': 'adminTaxonomyListCategories',
   'GET /api/v1/admin/users': 'adminModerationListUsers',
   'GET /api/v1/admin/users/search': 'adminSearchUsers',
@@ -90,6 +91,7 @@ const diagnosticApiRoutes = <String, String>{
   'POST /api/v1/admin/notifications/system/preview': 'adminPreviewRecipients',
   'POST /api/v1/admin/tags': 'adminTaxonomyCreateTag',
   'POST /api/v1/admin/text-fonts': 'adminTextFontsCreate',
+  'POST /api/v1/admin/text-fonts/submissions': 'adminTextFontsCreateSubmission',
   'POST /api/v1/admin/thread-categories': 'adminTaxonomyCreateCategory',
   'POST /api/v1/auth/change-email/request-code': 'authRequestChangeEmailCode',
   'POST /api/v1/auth/change-email/verify': 'authVerifyChangeEmail',
@@ -123,6 +125,7 @@ const diagnosticApiRoutes = <String, String>{
   'POST /api/v1/tags': 'tagsCreate',
   'POST /api/v1/threads': 'threadsCreate',
   'POST /api/v1/wallet/check-in': 'economyCheckIn',
+  'PUT /api/v1/admin/text-fonts/order': 'adminTextFontsReorder',
   'PUT /api/v1/mobile/devices/current': 'mobileDeviceRegister',
   'PUT /api/v1/stickers/reorder': 'stickersReorder',
   'DELETE /api/v1/admin/accounts/invites/{id}': 'adminAccountsCancel',
@@ -155,6 +158,8 @@ const diagnosticApiRoutes = <String, String>{
   'GET /api/v1/admin/mobile-releases/{id}': 'adminMobileReleasesDetail',
   'GET /api/v1/admin/reports/{id}': 'adminReportsFindOne',
   'GET /api/v1/admin/text-fonts/jobs/{jobId}': 'adminTextFontsGetJob',
+  'GET /api/v1/admin/text-fonts/submissions/{submissionId}':
+      'adminTextFontsSubmission',
   'GET /api/v1/admin/text-fonts/versions/{versionId}/preview':
       'adminTextFontsPreview',
   'GET /api/v1/admin/text-fonts/{familyId}': 'adminTextFontsDetail',
@@ -235,6 +240,8 @@ const diagnosticApiRoutes = <String, String>{
       'adminMobileReleasesConfirm',
   'POST /api/v1/admin/reports/{id}/resolve': 'adminReportsResolve',
   'POST /api/v1/admin/text-fonts/jobs/{jobId}/process': 'adminTextFontsProcess',
+  'POST /api/v1/admin/text-fonts/submissions/{submissionId}/process':
+      'adminTextFontsProcessSubmission',
   'POST /api/v1/admin/text-fonts/versions/{versionId}/withdraw':
       'adminTextFontsWithdraw',
   'POST /api/v1/admin/text-fonts/{familyId}/publish': 'adminTextFontsPublish',

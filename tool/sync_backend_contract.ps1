@@ -170,6 +170,8 @@ $threadCategorySource = Resolve-UniqueBackendContract `
   'thread category'
 
 $contractFiles = @(
+  @{ Source = 'contracts/admin-font-management-v1-fixtures.json'; Destination = 'admin-font-management-v1-fixtures.json' },
+  @{ Source = 'docs/admin-font-management.md'; Destination = 'admin-font-management.md' },
   @{ Source = 'docs/dynamic-text-fonts.md'; Destination = 'dynamic-text-fonts.md' },
   @{ Source = 'contracts/markdown-text-font-v2.schema.json'; Destination = 'markdown-text-font-v2.schema.json' },
   @{ Source = 'contracts/markdown-text-font-v2-fixtures.json'; Destination = 'markdown-text-font-v2-fixtures.json' },

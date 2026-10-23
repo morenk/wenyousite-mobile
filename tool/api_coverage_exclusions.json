@@ -1,7 +1,12 @@
 {
   "schemaVersion": 1,
-  "contractVersion": "5.43.0-dev.20261022.3",
+  "contractVersion": "5.44.0-dev.20261024.2",
   "exclusions": [
+    { "operationId": "adminTextFontsManagement", "category": "admin_product", "reason": "字体管理筛选分页属于Web管理产品，Mobile只消费公开目录。" },
+    { "operationId": "adminTextFontsCreateSubmission", "category": "admin_product", "reason": "字体简化提交属于Web管理产品。" },
+    { "operationId": "adminTextFontsSubmission", "category": "admin_product", "reason": "字体提交恢复属于Web管理产品。" },
+    { "operationId": "adminTextFontsProcessSubmission", "category": "admin_product", "reason": "字体处理意图属于Web管理产品。" },
+    { "operationId": "adminTextFontsReorder", "category": "admin_product", "reason": "字体顺序管理属于Web管理产品，Mobile保留公开目录返回顺序。" },
     { "operationId": "textFontsV2GetCatalog", "category": "streamed_font_metadata", "reason": "DynamicFontCatalog 使用共享限流传输读取64KiB分页信封，经生成DTO校验后原子替换完整目录。" },
     { "operationId": "textFontsV2GetVersion", "category": "streamed_font_metadata", "reason": "动态版本按需点查走共享限流传输、ETag及64KiB流式上限，经生成DTO与状态规则校验。" },
     { "operationId": "textFontsV2GetRuntimePolicy", "category": "streamed_font_metadata", "reason": "动态运行策略走独立公开流式读取与严格v3校验，只能收紧本地网络、磁盘和引擎注册预算。" },
