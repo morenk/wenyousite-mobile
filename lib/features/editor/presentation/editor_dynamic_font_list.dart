@@ -19,7 +19,6 @@ class EditorDynamicFontList extends StatelessWidget {
     required this.service,
     required this.runtime,
     required this.writeEnabled,
-    required this.recent,
     this.selectedFont,
     this.mixedSelection = false,
     super.key,
@@ -27,7 +26,6 @@ class EditorDynamicFontList extends StatelessWidget {
   final TextFontService service;
   final TextFontRuntime runtime;
   final bool writeEnabled;
-  final List<String> recent;
   final String? selectedFont;
   final bool mixedSelection;
   @override
@@ -47,14 +45,7 @@ class EditorDynamicFontList extends StatelessWidget {
       final currentName = selectedVersion == null
           ? null
           : service.dynamicRuntime?.catalog.descriptor(selectedVersion)?.name;
-      entries.sort((a, b) {
-        final ai = recent.indexOf(a.versionId),
-            bi = recent.indexOf(b.versionId);
-        final order = (ai < 0 ? 100 : ai).compareTo(bi < 0 ? 100 : bi);
-        if (order != 0) return order;
-        final sort = a.sortOrder.compareTo(b.sortOrder);
-        return sort != 0 ? sort : a.familyId.compareTo(b.familyId);
-      });
+      // 目录已按服务端发布顺序合并；语言筛选只取子序列，不能由本机历史重排。
       return EditorFontPanel(
         initialLanguage: current == null
             ? 'zh'

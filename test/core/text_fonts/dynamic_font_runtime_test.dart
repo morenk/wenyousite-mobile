@@ -34,6 +34,9 @@ void main() {
   late bool badCatalog, badPolicy, nativeFailure;
   late String? corruptManifest;
   late int retries, cancellations;
+  late int catalogRevision;
+  late List<Object?>? catalogItems;
+  late List<String> downloads;
   late Future<Uint8List> Function(TextFontAsset)? slowDownload;
   setUp(() async {
     directory = await Directory.systemTemp.createTemp('wenyou-dynamic-font-');
@@ -48,9 +51,13 @@ void main() {
     retries = 0;
     cancellations = 0;
     slowDownload = null;
+    catalogRevision = 1;
+    catalogItems = null;
+    downloads = [];
     runtime = TextFontRuntime(
       cache: cache,
       download: (asset) async {
+        downloads.add(asset.path);
         if (slowDownload case final read?) return read(asset);
         for (final fixture in versions.values) {
           if (fixture.data[asset.path] case final bytes?) return bytes;
@@ -88,7 +95,12 @@ void main() {
           return TextFontResponse(
             200,
             fixture.envelope(
-              fixture.page(items: versions.values.map((f) => f.entry).toList()),
+              fixture.page(
+                revision: catalogRevision,
+                items:
+                    catalogItems ??
+                    versions.values.map((f) => f.entry).toList(),
+              ),
             ),
           );
         }
@@ -116,6 +128,56 @@ void main() {
     runtime.demandQueue?.dispose();
     runtime.dispose();
     await directory.delete(recursive: true);
+  });
+
+  test('同版本目录重排保留缓存、已下载字节与原生注册预算', () async {
+    final first = DynamicFontFixture(),
+        second = DynamicFontFixture(identity: 2, fontBytes: [6, 7]);
+    versions.addAll({first.id: first, second.id: second});
+    await controller.refresh(versions.keys);
+    await runtime.ensure(first.id, 'A');
+    final queue = runtime.demandQueue!;
+    final window = queue.window;
+    final ledger = runtime.ledger;
+    final cached = Map.of(cache.values);
+    final priorDownloads = List.of(downloads);
+    final priorRegistrations = List.of(registrations);
+    final inputBytes = ledger.chargedInputBytes;
+    final attempts = ledger.attemptedCount;
+    final nextFullWindow = window.availableAt(
+      window.maximumBytes,
+      Duration.zero,
+    );
+    expect(nextFullWindow, const Duration(seconds: 60));
+    expect(inputBytes, 3);
+    expect(attempts, 1);
+
+    catalogRevision = 2;
+    catalogItems = [
+      {...second.entry, 'sortOrder': 0},
+      {...first.entry, 'sortOrder': 1},
+    ];
+    await controller.refresh(versions.keys, force: true);
+    await runtime.ensure(first.id, 'A');
+    expect(controller.catalog.revision, 2);
+    expect(controller.catalog.entries.map((entry) => entry.versionId), [
+      second.id,
+      first.id,
+    ]);
+    expect(runtime.demandQueue, same(queue));
+    expect(queue.window, same(window));
+    expect(runtime.ledger, same(ledger));
+    expect(runtime.cache, same(cache));
+    expect(cache.values, cached);
+    expect(downloads, priorDownloads);
+    expect(registrations, priorRegistrations);
+    expect(ledger.chargedInputBytes, inputBytes);
+    expect(ledger.attemptedCount, attempts);
+    expect(
+      window.availableAt(window.maximumBytes, Duration.zero),
+      nextFullWindow,
+    );
+    expect(runtime.loadedFamilies(first.id), [first.family]);
   });
 
   for (final failed in [false, true]) {

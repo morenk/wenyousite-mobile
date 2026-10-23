@@ -115,7 +115,6 @@ class _EditorTextFontSheetState extends State<EditorTextFontSheet> {
               service: widget.service,
               runtime: runtime,
               writeEnabled: widget.writeEnabled,
-              recent: _recent,
               selectedFont: widget.selectedFont.font,
               mixedSelection: widget.selectedFont.mixed,
             ),

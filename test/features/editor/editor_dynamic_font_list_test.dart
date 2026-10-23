@@ -89,7 +89,6 @@ void main() {
         service: service,
         runtime: runtime,
         writeEnabled: true,
-        recent: const [],
         selectedFont: selectedFont,
       ),
     ),

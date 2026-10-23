@@ -1,8 +1,48 @@
 # 正文字体持续加载设计与验证
 
-状态：原公网候选字体入口验收失败，沿用原问题、任务分支与 PR #114 提供光标输入候选，待负责人复验。此前固定28款实验及隔离候选仅属于历史证据，不能代替当前动态系统验收。
+状态：负责人于2026-10-24明确反馈先前字体现象“只是单纯网络延迟”，不再以缺少原文阻塞本轮。目录排序、键盘和进度候选继续沿用任务分支及 Draft PR #114，待对应真机验收。此前固定28款实验及隔离候选仅属于历史证据。
 
 ## 动态字体生产接入（候选，待真机验收）
+
+### 服务端目录顺序与 HTTP 5.44（2026-10-24，候选）
+
+动态字体列表现在仅按语言过滤服务端完整目录，不再让本机最近使用记录或本地比较器改变顺序；选中字体保留标记。目录在同一版本 ID 下更新 revision 和位置时，原面板刷新顺序并保留手选语言、选中标记、缓存、下载窗口及原生注册账本。旧 v1 最近使用历史继续保留。
+
+首轮同步 Backend `832a3989be7aac22c803a6375e756bea745b443f`／HTTP `5.44.0-dev.20261024.1` 并运行完整门禁；最终同步 `2b8abf3b6ae23c94dd843dfd6ce72865554a657e`／HTTP `5.44.0-dev.20261024.2`。Foundation 仍固定最新正式 Tag v7.6.0。新增5个后台管理操作纳入既有 `admin_product` 排除；公开字体 v2 协议没有变化。最终来源已实现后台管理，本任务未独立执行后台端到端验收。
+
+直接消费 `contracts/admin-font-management-v1-fixtures.json` 的 `two-language-atomic`：期望顺序来自夹具中的两组数组，同版本目录从 revision 7 更新为8，检查中文、日文顺序以及已打开面板的手选语言保持。首轮 .1 夹具与其 Backend Git blob 逐字节一致，SHA-256 为 `50b961e762e9ff85bfc278aeae43ba42cc443eb3b8536e9e8497067881e14b93`。受控公开响应按契约的 sortOrder/familyId 顺序返回，不以待测 UI 比较器生成期望。
+
+开发反馈证据：`editor_dynamic_font_order_test.dart` 的最初两条跨页／同 ID 重排用例在原实现均失败（`.dart_tool/font-order-old-regression.log`），候选通过。正式夹具到达前，以下8个直接相关文件共45项通过（`.dart_tool/font-order-targeted-tests.log`）：
+
+- `test/features/editor/editor_dynamic_font_order_test.dart`
+- `test/features/editor/editor_dynamic_font_list_test.dart`
+- `test/features/editor/editor_dynamic_font_toolbar_test.dart`
+- `test/features/editor/editor_text_font_picker_test.dart`
+- `test/features/editor/editor_font_panel_test.dart`
+- `test/core/text_fonts/dynamic_font_catalog_test.dart`
+- `test/core/text_fonts/dynamic_font_runtime_test.dart`
+- `test/core/text_fonts/dynamic_font_service_test.dart`
+
+接入正式夹具和5.44生成客户端后，排序文件、运行时文件及 `test/core/network/audio_budget_contract_test.dart` 三文件共15项通过（`.dart_tool/font-order-544-preflight.log`）。完整门禁结果如下；此前 APK 和测试计数不改标为最终 .2 结果。
+
+首轮唯一入口 `npm run check:apk -- -ContinueAfterFailure -TestConcurrency 2`（`.dart_tool/font-order-544-final-gate.log`）返回 exit 1，仅公网兼容失败：固定5.44 .1／832a3989，实际5.43 .3／`bc1135b72557eb6025a541dbd10119cf528ff989`。其余全部通过：OpenAPI、固定来源、生成一致性、1520文件格式零改动、应用与生成客户端全量静态分析、架构、23模块文档、移动端API覆盖175/175（96排除）、全量Flutter **7701通过／1既有跳过／0失败（56:10）**、Windows工具 **49/49**、ARM64 Debug构建（315.6秒）。
+
+首轮应用源码摘要 `05064e79bc6eef86d7bb4f6249702bd65defe380f752a3c54d2d9524b6b3cae0`（2112文件），构建前后相同；APK `build/dynamic-font-public-candidate/wenyou-font-order-debug-1bae4ab89f93.apk`，156238595字节，SHA-256 `1bae4ab89f93e71ef382017d7ded40a2ac954935489b6bffabfaa025735d6fc3`。身份、v2签名、arm64-v8a和公网API核验通过，仅包含既有Material Icons字体，未安装。该包只代表 .1 完整门禁，不作为最终交付包。
+
+最终 .2 来源固定为 `2b8abf3b6ae23c94dd843dfd6ce72865554a657e`，其 OpenAPI 与管理夹具同兼容契约提交 `1ce559b42be9ac04c4fd09137ee30f482facbfe2` 逐字一致；正式同步的管理夹具 SHA-256 为 `16bc40f293a82230f2d8dfe38d4d30de17ea7417162136ba6b6c6601a63e8d62`。相对首轮 .1 只有版本和可空 `FontJobDto.submissionId` 的生成模型／序列化代码变化，移动端运行逻辑、公开协议及 Android 配置不变。按最终交接约定复验实际增量，没有机械重复全量 Flutter；7701 项结果仍只绑定首轮源码。
+
+最终增量日志 `.dart_tool/font-order-5442-increment.log`：OpenAPI 校验、正式来源、再生成一致性、1521文件格式零修改、应用与生成客户端全量静态分析、架构、23模块文档、API覆盖175/175（96排除）、同步工具回归1/1及最终ARM64 Debug构建（52.0秒）通过。以下4个文件共 **19/19** 通过：
+
+- `test/features/editor/editor_dynamic_font_order_test.dart`
+- `test/core/text_fonts/dynamic_font_runtime_test.dart`
+- `test/core/network/audio_budget_contract_test.dart`
+- `test/core/network/admin_font_management_contract_test.dart`
+
+新增 DTO 文件消费正式 `jobRecoveryCases`，验证缺省、空值及具体任务关联值的编解码；不宣称实现移动端后台处理入口。公网复验仍为实际5.43 .3／bc1135b，与最终5.44 .2／2b8abf3不同，增量总结果保留 exit 1，仅该项失败，没有部署或放宽断言。
+
+**最终候选包**：`build/dynamic-font-public-candidate/wenyou-font-order-debug-4bf62837e69c.apk`，156227566字节，SHA-256 **`4bf62837e69c6789634215a2cfdfe974f3ce6920817d98be8fecae858479e6f0`**。应用源码摘要 **`5c0452367ef9655867e65c308ec477b301c727a0a79f8053926a7c56ef99483d`**，2112文件，构建前后相同。包名 `site.wenyou.app.debug`，版本 `0.10.0-debug / 100`，仅arm64-v8a，v2签名通过且证书与前版Debug相同；kernel含公网API、无原电脑转发端点，内置字体仅Material Icons。源码和制品清单分别为 `.dart_tool/font-order-5442-source.json`、`font-order-5442-apk.json`；未安装或启动。
+
+负责人待验收路径：在授权的可用后台环境中，同语言内置顶、上移、下移并保存；移动端重新打开字体面板或触发目录刷新，核对各语言顺序及选中标记；原面板刷新时检查语言保持，已加载字体继续可用。负责人已确认龙藏体、流江毛草此前两种操作的显示等待只是网络延迟；不再要求提供原文。新候选的排序、进度和键盘效果仍待真机验收。当前 ADB 无设备，本批未安装、启动或进行线上业务写入。
 
 ### PR #114 提交前完整检查（2026-10-23）
 
