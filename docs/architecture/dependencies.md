@@ -4,7 +4,9 @@
 
 feature 内保持 `presentation → application → domain`，data 在应用边界实现仓储接口并负责 OpenAPI DTO、`DioException` 与 feature 错误语义转换。domain 只保存业务实体、值对象和领域校验异常，不新增 Flutter、Riverpod、Dio、生成客户端、`ApiFailure` 或加载/提交状态依赖。`tool/architecture_allowlist.json` 中 `domainBoundaryDebt`、`featureCycleDebt` 与 `layerDependencyDebt` 当前均为空；不得为省事重新增加，确有例外时必须由独立架构决策说明范围和退出条件。
 
-非生成 Dart 文件以 900 行为硬上限，范围包括 Git 已跟踪文件和新增未被忽略的工作区文件，不限于 `lib/`：测试、工具、集成测试、驱动和其他目录同样受检。生成客户端 `packages/wenyou_api/` 与 `.g.dart` 不计入。`largeFileDebt` 已清空且门禁禁止重新引入；不能新增超限文件、提高基线或用手写 `part` 搬运复杂度。当前所有受检文件均在上限内。
+本仓手写 Dart 文件以 1200 行为硬上限，超过 700 行提示在下次修改中评审职责拆分；行数不替代职责、耦合和可测试性判断。范围包括 Git 已跟踪文件和新增未被忽略的工作区文件，不限于 `lib/`：测试、工具、集成测试、驱动和其他目录同样受检。生成客户端 `packages/wenyou_api/` 与 `.g.dart` 不计入。`largeFileDebt` 已清空且门禁禁止重新引入；不能新增超限文件或用手写 `part` 搬运复杂度。
+
+固定第三方源码单独管理。目前仅 `packages/flutter_quill` 在核验上游仓库、精确提交、许可证、完整文件 SHA-256 清单和本地补丁摘要后，豁免业务行数与手写 `part` 规则；清单位于 `tool/vendor/flutter-quill.json`，核验入口为 `tool/architecture/vendored_dependencies.dart`。新增、缺失或摘要不匹配的文件导致检查失败并撤回整份快照的豁免；不得向该目录放入业务实现。来源升级和补丁变化需独立审查并执行直接回归及完整门禁，第三方包保留上游静态分析配置。
 
 跨 feature 的主题读模型、DTO 映射、卡片与公开分类目录归属无外部 feature 依赖的 `thread_feed`。home、tags、search、users、social 与 threads 只通过该模块根 facade 消费，不再把业务卡片放入 core，也不借由 threads 与 social 建立循环。分类端口、单一 API 映射与进程缓存统一装配，业务 data 仅导入端口 facade，分类是否可选仍由创作/管理流程决定。capability、会话退出、资料缓存失效等横切契约位于 `app` 或 `core/application`；feature 不反向导入 app-shell，也不直接失效另一个 feature 的 provider。
 
@@ -14,7 +16,7 @@ feature 内保持 `presentation → application → domain`，data 在应用边�
 
 新异步代码优先使用小状态和 `Notifier` / `AsyncNotifier`；暂不一次性迁移既有 `StateNotifier`。`RequestEpoch` 统一丢弃筛选、刷新后的过期响应，`mergeUniqueBy` 统一游标页按稳定 ID 合并。迁移按热点模块逐步发生，并保持既有 provider、仓储和路由接口不变。
 
-存量迁移采用非增长基线：`StateNotifier` 声明 59 处、feature presentation 直接创建 `CircularProgressIndicator` 77 处；后续按业务边界改为 `Notifier` / `AsyncNotifier` 和共享加载组件，每次减少后收紧数值。跨 feature 直接引用 data/presentation 内部文件改用 `crossFeatureInternalImportDebt` 冻结 35 条精确的 `源文件->目标文件` 边，不再使用 41 次文本匹配的总量门槛；新边即使与删除的旧边数量相等也不能通过，移除旧边必须同步删账。超过 700 行的受检文件列入复审提示，900 行仍是硬门禁。
+存量迁移采用非增长基线：`StateNotifier` 声明 59 处、feature presentation 直接创建 `CircularProgressIndicator` 77 处；后续按业务边界改为 `Notifier` / `AsyncNotifier` 和共享加载组件，每次减少后收紧数值。跨 feature 直接引用 data/presentation 内部文件改用 `crossFeatureInternalImportDebt` 冻结 35 条精确的 `源文件->目标文件` 边，不再使用 41 次文本匹配的总量门槛；新边即使与删除的旧边数量相等也不能通过，移除旧边必须同步删账。超过 700 行的受检文件列入复审提示，1200 行为硬门禁。
 
 ## 自动门禁
 
@@ -25,7 +27,7 @@ feature 内保持 `presentation → application → domain`，data 在应用边�
 - 通过 Dart AST 读取 import/export（包含条件分支），递归解析本地 export 链并处理循环；facade 不能掩盖分层、domain 框架或跨 feature 循环依赖，但不会把适配器的实现 import 当成 facade 的导出面；
 - 不新增未审核的跨 feature 边或循环依赖，并对参与循环的每条有向边单独建账；core 不得直接或经导出链依赖 feature；
 - presentation 不新增 data 依赖，application 不新增 data/presentation 依赖，domain 不新增外层依赖；data 只能导入 application 的 `*_ports.dart` 实现端口，不能反向读取 controller/state 或 presentation；
-- 全仓受检非生成 Dart 文件不得超过 900 行；已清零的超限债务不得重开，测试与工具也不得使用手写 part；
+- 全仓受检手写 Dart 文件不得超过 1200 行；完整核验的固定第三方源码按前述规则单独管理；已清零的超限债务不得重开，测试与工具也不得使用手写 part；
 - 不得增加存量 `StateNotifier` 或 presentation 原始加载圆环，跨 feature 内部层引用逐条冻结并检查失效记录；超过 700 行的文件纳入复审提示；
 - 页面不新增字面量路径导航；
 - 页面不独立构造路由转场；普通页、瞬时兜底和全屏媒体统一走 `core/navigation` 共享策略，仅帖子编辑器的嵌套 Navigator 初始路由是精确例外；
