@@ -9,3 +9,5 @@
 Docs-Impact：updated，仅更新来源及导出说明，不改变 Mobile 应用行为。
 
 验证：官方同步仅上述两个 contracts 文件变化；此前完整入口的 API 再生成 diff 为零。更新后 tool/check_contract_sources.dart、tool/verify_production_api.dart 和 tool/check_docs.dart 均通过（23 个模块）。
+
+全量测试补充：audio_budget_contract_test.dart 保留了原来源的硬编码 SHA 断言，来源对齐后该断言失败。仅将精确值改为已核验33574ae7，继续保留完整40位SHA匹配，不放宽测试；定向执行 test/core/network/audio_budget_contract_test.dart 通过。rg 搜索 test、tool、integration_test、test_driver、package.json／package-lock.json 中完整31f39ff3来源与短SHA，无其他可执行检查残留；历史文档中的旧SHA保留。本轮全量继续收集，其失败不计作完整门禁通过，最终仍使用原 check:apk 入口复跑。
