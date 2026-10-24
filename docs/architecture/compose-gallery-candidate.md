@@ -1,6 +1,80 @@
 # 编辑器安全区、楼中楼回复栏与应用内相册候选
 
-状态：自动候选验证通过，待负责人原场景真机验收。自动检查和离线截图不代表验收通过。
+状态：第二轮候选／待负责人验收。首轮 fd3a19181808 已明确验收失败；新 a87f51a93c5e 包完成自动候选验证，尚未获得负责人原场景通过，不关闭原问题。
+
+2026-10-25 负责人原始反馈：“上传图片的入口点了都没有反应呢，不管是主题帖上传图片还是上传头像，没有反应，点了也没有跳出权限申请”。确认应用为本次“温油站 Debug”候选，非旧包；保留该 APK、此前完整门禁和截图证据，沿用本任务、分支和 PR #117 排查真实应用装配链。该反馈不被记作权限拒绝或用户取消。
+
+## 第二轮装配入口排查
+
+已证实的装配原因：Android MainActivity 在初始化／窗口同步时发送 keyboardInsetTargetChanged（含0）。原 WenyouInstantKeyboardInsets 首次收到目标值会新增 MediaQuery 层，原 PhotoSelectionHost 位于其内，旧宿主晚 dispose 会无条件把共享 coordinator.presenter 清空，导致后续端口返回 null，权限页根本没有 init。首轮宿主测试使用简化 MaterialApp 并直接调用 coordinator，遗漏这条真实应用生命周期。
+
+旧实现真实入口证据：D:/dev-cache/tmp/mobile-gallery-entry-old-exact.log，配套测试原件 mobile-gallery-entry-old-exact-test.dart。使用 WenyouApp、真实 appRouter 与完整 productionProviderOverrides，仅替换 IO；主题图片与头像按钮先各打开一次后取消，再模拟原生首次 inset=0，二次真实点击均失败：期望（图库数1，累计权限请求2，presenter已绑定true），实际（0，1，false）。两项均失败，符合负责人无反应／无权限请求的现象。无真实 App 启动、图库读取或上传。
+
+最小方案仅修改 lib/app/wenyou_app.dart、lib/app/photo_selection_host.dart、lib/features/media/application/photo_library_ports.dart：宿主移到键盘包装层外；App State 内稳定 GlobalKey 搬移包装内路由子树，保留打开中的图库／编辑会话；解绑只释放自身 presenter；未绑定／Navigator未就绪走既有失败处理，不伪装取消。只外移宿主的中间版本在“图库打开中收到首次inset”回归中仍会丢页，已保留失败日志并据此增加稳定Key。没有修改全局键盘组件、原生、权限、依赖、上传／裁剪协议或楼中楼恢复逻辑。
+
+治理侧已审查实际生产改动范围，批准按中风险装配生命周期修复使用 candidate:apk 定向回归＋全量静态分析，另补架构／文档检查；不复用首轮APK，不将既有30分钟完整测试当作新源码检查通过。所有图片入口的矩阵、最终运行结果与新APK见以下第二轮记录。
+
+最终夹具反证：仅临时替换上述三个文件为 cf03a48a 原字节来源，4项真实 App 测试全部失败（首次inset在图库关闭后／打开中，分别覆盖主题图片和头像）；旧宿主晚解绑测试也失败，实际 presenter=null。随后逐文件按保存字节恢复，并核对SHA-256一致。日志为 D:/dev-cache/tmp/mobile-gallery-final-fixture-old-entry.log（SHA-256 aeea5c8cd1fb3e0c572b2b945221d5a4be5a29ed2b6feaba78ac2510a4091457）与 mobile-gallery-final-fixture-old-binding.log（2f5af18c4edb69b8fa4ffb470854ac78a5b77e2423f6fdf74bc20179dba916e2）。首次反证启动曾被 Windows bat 的正则管道参数解析中断，未计作测试失败证据；以上为随后真实运行的5项失败。
+
+候选对应38项定向测试通过，日志 D:/dev-cache/tmp/mobile-gallery-all-entries-pass.log；包含下表18入口、4项真实App生命周期、4项宿主与12项控制器测试。首次inset在图库已打开时到达、后续280/0开关均保持页面；取消后两次重开验证不遗留busy。权限调用只在图库打开时发生，参数仅图片且mediaLocation=false；所有取消均断言没有上传调用或HTTP写请求。绑定交错、Navigator未就绪、换号迟到文件结果、权限撤销等原测试保留。开发中夹具的账号来源、必填字段、磁盘IO与私聊轮询清理问题已收敛，未关异常断言、未关业务轮询。
+
+## 全部业务选图入口的离线覆盖矩阵
+
+矩阵搜索了 lib 下所有 pickFromGallery／pickManyFromGallery／pickAvatarFromGallery／pickProfileCoverFromGallery、pickEditorImages、pickAndCropEditorImages 与 pickAndUpload 调用点。三种生产选择端口、coordinator、PhotoSelectionHost、DevicePhotoLibrary、WenyouApp 与真实 appRouter 均未替换；仅模拟原生权限IO、网络、通知和本地存储，避免读取真实图库或磁盘草稿。表中“路由”13项从真实业务路由和实际控件打开；“共享表单”5项在同一真实App宿主下直接挂载产品表单，再点击真实图片控件，未覆盖其上游菜单导航／授权，不能将其外推为全链路真机验收。
+
+| 入口 | 实际路由／操作 | 层级 | 自动结果 |
+| --- | --- | --- | --- |
+| 主题新建正文 | /compose/thread → 图片 | 路由 | 通过 |
+| 主题已有正文编辑 | /threads/thread-1 → 更多 → 编辑正文 → 图片 | 路由 | 通过 |
+| 新发楼层 | 主题详情 → thread-floor-compose → 图片 | 路由 | 通过 |
+| 新发楼中楼回复 | 楼中楼详情 → post-reply-compose → 图片 | 路由 | 通过 |
+| 动态新建 | /compose/moment → 添加图片 | 路由 | 通过 |
+| 动态编辑 | /moments/moment-1/edit → 添加图片 | 路由 | 通过 |
+| 动态评论 | 动态详情 → 评论底栏 → 图片 | 路由 | 通过 |
+| 私聊 | /messages/conversation-1 → 图片 | 路由 | 通过 |
+| 收藏表情相册上传 | /me/stickers → stickers-add-gallery | 路由 | 通过 |
+| 添加本人头像 | /me/edit → 添加头像 | 路由 | 通过 |
+| 已有头像二级更换 | /me/edit → 头像 → 更换 | 路由 | 通过 |
+| 添加主页背景 | /me/edit → 添加主页背景 | 路由 | 通过 |
+| 已有背景二级更换 | /me/edit → 背景 → 更换 | 路由 | 通过 |
+| 帖内身份新建头像 | showThreadIdentityEditor(identityId=null) → 选择帖内头像 | 共享表单 | 通过 |
+| 帖内身份编辑头像 | showThreadIdentityEditor(identityId=role) → 选择帖内头像 | 共享表单 | 通过 |
+| 正文新建／子贴正文新建模式 | PostComposerKind.upsertBody(postId=null) → 图片 | 共享表单 | 通过 |
+| 楼层正文编辑 | PostComposerKind.editPost(root) → 图片 | 共享表单 | 通过 |
+| 回复正文编辑 | PostComposerKind.editPost(reply-own) → 图片 | 共享表单 | 通过 |
+
+矩阵执行文件为 test/features/media/photo_selection_all_entries_test.dart；App首次inset与打开中生命周期为 photo_selection_app_entry_test.dart，夹具为 photo_selection_app_fixture.dart。四种 PostComposerKind 均有图片控件覆盖；上游身份菜单授权、编辑／引用目标、裁剪、用途、数量上限继续关联既有 thread_identity_picker／editor_lifecycle／profile_editor、post_composer_opening／insertion、media 与 avatar／profile_cover 回归。本轮实际执行文件以新候选命令清单为准，不将未重复的文件算作本轮通过。
+
+未发现绕过三端口的其他业务 image_picker 调用；SystemEditorImagePicker 仅供明确选择系统备用与 lost-data 恢复。通用 MediaUploadTask.pickAndUpload 当前没有业务页面调用点。阅读态保存／收藏已有网络图片、表情URL导入和剪贴板恢复不打开本地图库，不在本轮改动中冒充新选图入口。图库全部实际授权／原手机场景仍由负责人真机复验。
+
+## 第二轮候选验证与 APK
+
+2026-10-25，按治理侧批准的中风险装配修复路径执行 `npm run candidate:apk -- <以下14个路径> -TestConcurrency 2`，日志 D:/dev-cache/tmp/mobile-gallery-retry-candidate-apk-final.log，退出码0。全仓1545个Dart文件格式零修改，应用与生成客户端全量静态分析零问题，417项相关Flutter测试全部通过（已包含上述38项），随后同次入口ARM64 Debug构建成功（Gradle69.2秒）。另补18入口用途／上限断言并在相同应用源码上复跑矩阵通过，日志 mobile-gallery-entry-purpose-caps.log；这是同一18行矩阵，不重复计为独立入口或唯一用例数。
+
+- test/features/media
+- test/core/widgets/wenyou_instant_keyboard_insets_test.dart
+- test/app_shell_test.dart
+- test/app/app_session_bootstrap_test.dart
+- test/features/posts/post_composer_opening_test.dart
+- test/features/posts/post_composer_insertion_test.dart
+- test/features/editor/thread_compose_page_test.dart
+- test/features/moments/moment_comment_attachment_lifecycle_test.dart
+- test/features/direct_messages/direct_conversation_page_test.dart
+- test/features/stickers/sticker_collection_page_test.dart
+- test/features/users/avatar_controller_test.dart
+- test/features/users/profile_cover_controller_test.dart
+- test/features/threads/thread_identity_editor_lifecycle_test.dart
+- test/features/threads/thread_identity_profile_editor_test.dart
+
+架构检查通过，日志 D:/dev-cache/tmp/mobile-gallery-entry-architecture.log；最终模块文档复查23项通过（mobile-gallery-retry-docs-final.log）。新增用途／上限断言后，该文件格式零修改、单文件静态分析零问题（mobile-gallery-retry-final-format.log、mobile-gallery-entry-purpose-analyze.log）。候选入口第一次在新增测试的5处导入／排序lint失败，未进入构建（mobile-gallery-retry-candidate-apk.log）；已修正，未放宽门禁。先行窄范围分析的相同5项也只作为失败记录保留。本轮未重跑完整7798项或Windows工具49项，不能把首轮历史结果称为新源码的完整门禁。
+
+新应用源码清单SHA-256：`d46f1fa10fe898aab85f8f8de096308bbaf170388fa6bb12f777bab00da0a4f2`，lib tree：`3716e1db41c85238e44274f0bca256e956d701f1`。清单定义与首轮相同，原件 mobile-gallery-retry-source-manifest.txt；构建后再次计算完全一致，运行源码无未暂存差异。治理侧还独立比较了APK kernel：新包含 `_keyboardContentKey` 和未绑定宿主错误，旧fd3包均无，确认新修复实际编入。
+
+新稳定副本：`D:/codex-worktrees/d5c9/wenyousite-mobile/build/candidates/compose-gallery/app-debug-a87f51a93c5e.apk`，114283017字节；SHA-256 `a87f51a93c5e5664417563dbfa7110731226bffe4a42701f5da7ac42d32b28ea`。aapt确认“温油站 Debug”、`site.wenyou.app.debug`、`0.10.0-debug`／100、minSdk26、targetSdk36；aapt与ZIP原生目录均只有arm64-v8a。apksigner验证通过，v2=true，证书SHA-256仍为 `a3d950270933203c9f0abae0db0f0c112a5f162fba9199d8dec534cf55803fd7`。最终权限无视频或定位。
+
+新元数据独立保存于 D:/dev-cache/tmp/mobile-gallery-retry-apk-identity.json，badging／permissions／signature证据同前缀另存。fd3稳定副本再次核对仍为原SHA-256，未覆盖旧失败证据。新包未由代理安装或启动，未读取真实图库、未做业务写入E2E；默认API仍为 https://wenyou.site/api/v1。负责人应安装a87新包再验全部入口，不能仅凭相同构建号判断更新。
+
+首轮14张组件截图的图片选择页与编辑器呈现代码未在本轮改变；它们仍只说明离线布局，不替代新入口的实际运行或负责人真机验收。本轮新增证据为真实装配点击、生命周期和参数断言，不冒称原机画面已验证。
 
 ## 范围与原始场景
 
@@ -59,6 +133,7 @@ Golden 位于 `test/features/media/goldens/photo-{picker,albums}-{light,dark,nar
 3. Android 8–12、13、14+ 分别核验完整、部分、拒绝、永久拒绝；部分授权添加照片、设置恢复与撤销后回前台刷新。系统备用取消／确认和 Activity 回收恢复不自动上传。
 4. 各图片入口逐一确认单选／剩余上限、跨相册顺序、点击预览、选择标记、预览已选和零选择；取消无上传。用本人明确操作验证原头像／背景／正文／表情裁剪与动态／评论／私聊无裁剪，GIF 动画、格式及 10MB 限制保持。
 5. 验证空图库、分页失败／恢复、选择后删除文件、权限中途撤销；明暗、窄屏、大字号和横竖图预览保持可用。
+6. 冷启动后未先开键盘时直接点图片；再从正在输入的编辑器点图片、处理系统授权并返回，确认图库不丢失，取消后还能再次打开。五项共享表单还需从真实菜单进入复验：新建／编辑帖内身份头像、正文／子贴正文新建、楼层编辑和回复编辑。已有权限时可不再弹授权框，但仍应打开图库；拒绝时应显示系统备用和设置入口。
 
 治理边界：AppSessionBootstrap 有自动签到，无法把真实环境启动认定只读。本轮不自动启动／接管设备 Debug，不读取真实图库、不执行线上上传写入 E2E；交付独立候选由负责人启动。本任务未授权合并、发布、部署或清理其他 Worktree。
 
@@ -69,17 +144,17 @@ Golden 位于 `test/features/media/goldens/photo-{picker,albums}-{light,dark,nar
 补图时确认基线既有的全局 WenyouAnchoredActionBubble 在1.5倍字号显示两行标签时，72dp固定动作高度导致8px溢出；对应组件本轮没有改动。按本轮范围保留该独立限制，正常字号完成真实“编辑正文”入口后再对编辑器施加2倍字号；编辑器与字体列表的异常断言仍完整保留，未吞布局错误。此入口菜单的大字号限制不宣称已修复。
 
 完整门禁历史：第一次在生成客户端归一化因 Windows errno1224 失败，原脚本安全重试成功；第二次生成客户端零diff，但因已部署Backend SHA不一致失败。二者均不计作通过，未改门禁脚本、未批量停止进程、未重置生成目录。来源对齐后使用同一 npm run check:apk -- -TestConcurrency 2 再跑完整入口。
-## 源码自审与身份
+## 首轮源码自审与身份（保留历史）
 
-本任务已完成 Codex 源码自审：生产三类选图端口统一接入、data 无 BuildContext、应用宿主与账号结果边界、拒绝权限系统备用及 lost-data、取消不上传、GIF／文件名与延迟读取、错误恢复、Foundation图标与语义样式、生成客户端零漂移、无敏感材料与无关修改。较长的 PostRepliesPage 本次只替换底部入口并保持原导航／目标／草稿状态机，未扩大职责，不机械搬移其余逻辑。全局操作菜单保持原样。
+首轮 Codex 源码自审涵盖生产三类选图端口接入、data 无 BuildContext、账号结果边界、系统备用及 lost-data、取消不上传、GIF／文件名与延迟读取、错误恢复、Foundation图标与语义样式、生成客户端零漂移、敏感材料和无关修改；但遗漏真实 Android inset 对宿主／路由树生命周期的影响，不能覆盖后续负责人失败结果。较长的 PostRepliesPage 只替换底部入口并保持原导航／目标／草稿状态机，未扩大职责，不机械搬移其余逻辑。全局操作菜单保持原样。
 
-候选应用源码清单 SHA-256：77a373b93c2b74a110eb7d5f2f7c251a8b2264d97445659ff750a3b038520273；lib Git tree：7c102301239c2f393bb6a4cbb8b5ed4736acf1ed。清单定义为 git ls-files -s -- lib android ios assets packages contracts tool pubspec.yaml pubspec.lock package.json package-lock.json 的 UTF-8 输出，以 LF 逐行连接并保留末尾换行；不含文档、截图和构建产物。清单原件保存于 D:/dev-cache/tmp/mobile-gallery-application-source-manifest.txt。生成／来源已核对，最终 APK 后再次复核清单不变。
+首轮失败候选应用源码清单 SHA-256：77a373b93c2b74a110eb7d5f2f7c251a8b2264d97445659ff750a3b038520273；lib Git tree：7c102301239c2f393bb6a4cbb8b5ed4736acf1ed。清单定义为 git ls-files -s -- lib android ios assets packages contracts tool pubspec.yaml pubspec.lock package.json package-lock.json 的 UTF-8 输出，以 LF 逐行连接并保留末尾换行；不含文档、截图和构建产物。清单原件保存于 D:/dev-cache/tmp/mobile-gallery-application-source-manifest.txt；新候选另行计算，不复用此身份。
 
 来源对齐后的第一次重跑因新增测试的一处单级联写法 lint 失败（应用代码无问题），已修正测试写法；这次失败同样不计作完整门禁通过。随后 D:/dev-cache/tmp/mobile-gallery-check-apk-final-2.log 的全量测试结果为7786通过、1跳过、12失败，未进入 Windows 工具测试和 APK 构建，不能算完整通过。12项分别为旧来源精确断言、动态评论横屏高度、9张受影响Golden和旧 ApiFailure 构造预算。
 
 全量回归收敛：共享弹层改为可选 useSafeArea（默认false），仅 PostComposerLauncher 显式true，恢复动态评论原横屏键盘高度。MomentComment附件生命周期与真实编辑安全区共17项通过。编辑器保留原extent比例与单次键盘高度上限，不按键盘缩小后的面积再次缩放；正文颜色／编辑时间／阅读滑块相关19项及360dp独立讨论1项、受影响Golden已重新验证，原布局、滚动、选区与内容断言保留。照片读取的本地失败改用 PhotoLibraryFailure 类型；旧 ApiFailure 构造预算418与原门禁均未放宽，用户文案4项及架构／格式复查通过。
 
-## 最终完整门禁与候选 APK
+## 首轮完整门禁与失败候选 APK（保留历史证据）
 
 2026-10-25，在上述应用源码清单上执行原入口 `npm run check:apk -- -TestConcurrency 2`，退出码0，完整日志 `D:/dev-cache/tmp/mobile-gallery-check-apk-delivery.log` 最后为 `Wenyou mobile quality gate passed.`。
 
@@ -88,14 +163,14 @@ Golden 位于 `test/features/media/goldens/photo-{picker,albums}-{light,dark,nar
 - Windows 工具：49通过、0失败、0跳过；同一次入口随后完成 ARM64 Debug 构建（Gradle 471.6秒）。构建保留插件 KGP 和 SDK XML 版本警告，未更换 SDK、插件版本或放宽门禁。
 - 生成后再次核对应用源码清单 SHA-256 仍为 `77a373b93c2b74a110eb7d5f2f7c251a8b2264d97445659ff750a3b038520273`，运行代码无未暂存差异。
 
-候选稳定副本：`D:/codex-worktrees/d5c9/wenyousite-mobile/build/candidates/compose-gallery/app-debug-fd3a19181808.apk`（原输出 `build/app/outputs/flutter-apk/app-debug.apk`）；114283017字节，SHA-256 `fd3a191818080b7e3ec1a1a1666cf6c932a64e38bdd683c92319a8d2177af80d`。该目录被 Git 忽略，APK 不提交源码仓库。
+首轮失败候选稳定副本：`D:/codex-worktrees/d5c9/wenyousite-mobile/build/candidates/compose-gallery/app-debug-fd3a19181808.apk`（原输出 `build/app/outputs/flutter-apk/app-debug.apk`）；114283017字节，SHA-256 `fd3a191818080b7e3ec1a1a1666cf6c932a64e38bdd683c92319a8d2177af80d`。该目录被 Git 忽略，APK 不提交源码仓库，不将其作为新候选。
 
 `aapt dump badging`：名称“温油站 Debug”，applicationId `site.wenyou.app.debug`，versionName `0.10.0-debug`，versionCode `100`，minSdk26、targetSdk36；`aapt` 与 ZIP 原生库目录均确认只含 `arm64-v8a`。`apksigner verify --verbose --print-certs` 通过（v2=true，1个 Android Debug 签名者，证书SHA-256 `a3d950270933203c9f0abae0db0f0c112a5f162fba9199d8dec534cf55803fd7`）。最终清单包含图片和部分照片权限，没有视频或定位权限；保存图片原 WRITE_EXTERNAL_STORAGE maxSdk28 保持。
 
-产物、签名和权限证据分别保存于 `D:/dev-cache/tmp/mobile-gallery-apk-identity.json`、`mobile-gallery-apk-signature.txt`、`mobile-gallery-apk-permissions.txt` 与 `mobile-gallery-apk-badging.txt`。未安装 APK、未启动应用、未核验设备内 APK 哈希，负责人应打开本候选的“温油站 Debug”复验；安装记录不能用本机文件哈希代替。
+首轮产物、签名和权限证据分别保存于 `D:/dev-cache/tmp/mobile-gallery-apk-identity.json`、`mobile-gallery-apk-signature.txt`、`mobile-gallery-apk-permissions.txt` 与 `mobile-gallery-apk-badging.txt`。代理交付时未安装或启动、未核验设备内APK哈希；随后由负责人安装并明确验收失败，见顶部记录。设备安装记录不能用本机文件哈希代替。
 
 本次构建未传入 `API_BASE_URL`，按 `AppEnvironment.fromDefines` 的默认值使用 `https://wenyou.site/api/v1`；未静默切换其他地址。该 App 的自动签到启动行为是本轮不自动启动、交由负责人手动运行的原因。
 
 ## 新反馈的独立待处理问题
 
-治理侧在冻结候选后转述负责人新反馈：楼中楼切到后台再回前台会重载并丢失滚动位置，已另开只读排查。本候选不包含该修复，不扩大当前修改或声称该场景已通过；本轮的底栏／安全区／相册验收与此问题分别记录。
+治理侧在冻结候选后转述负责人新反馈：楼中楼切到后台再回前台会重载并丢失滚动位置。该问题已独立交付[草稿PR #118](https://github.com/morenk/wenyousite-mobile/pull/118)（应用bc3c6efe，HEAD746e6bdd，175项候选检查通过，仍待负责人验收）。本分支不包含该修复；两份Debug APK来自各自分支，应分别用于相册与后台恢复验收，不能用其中一包代表另一改动已验证。两包applicationId相同，安装会替换当前Debug包；本轮不进行合并或自动安装。

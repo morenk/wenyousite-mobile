@@ -19,12 +19,13 @@ class PhotoSelectionHost extends ConsumerStatefulWidget {
 
 class _PhotoSelectionHostState extends ConsumerState<PhotoSelectionHost> {
   late final _coordinator = ref.read(photoSelectionCoordinatorProvider);
+  late final PresentPhotoSelection _presenter = _present;
   Route<List<MediaUploadInput>>? _route;
 
   @override
   void initState() {
     super.initState();
-    _coordinator.presenter = _present;
+    _coordinator.presenter = _presenter;
   }
 
   Future<List<MediaUploadInput>?> _present(
@@ -35,7 +36,9 @@ class _PhotoSelectionHostState extends ConsumerState<PhotoSelectionHost> {
         .routerDelegate
         .navigatorKey
         .currentState;
-    if (navigator == null || !mounted) return null;
+    if (navigator == null || !mounted) {
+      throw StateError('Photo selection navigator is not ready.');
+    }
     final scope = ref.read(sessionScopeProvider);
     final library = ref.read(photoLibraryProvider);
     final fallback = SystemEditorImagePicker(ImagePicker());
@@ -75,7 +78,10 @@ class _PhotoSelectionHostState extends ConsumerState<PhotoSelectionHost> {
 
   @override
   void dispose() {
-    _coordinator.presenter = null;
+    // 旧宿主可能晚于新宿主解绑，只能释放自己持有的展示绑定。
+    if (identical(_coordinator.presenter, _presenter)) {
+      _coordinator.presenter = null;
+    }
     super.dispose();
   }
 

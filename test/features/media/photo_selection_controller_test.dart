@@ -172,4 +172,15 @@ void main() {
       expect(input!.bytes, [71, 73, 70]);
     }
   });
+
+  test('宿主未绑定是明确失败，不伪装成取消', () async {
+    final coordinator = PhotoSelectionCoordinator();
+    const request = PhotoSelectionRequest(
+      limit: 1,
+      purpose: MediaUploadPurpose.avatar,
+    );
+    await expectLater(coordinator.pick(request), throwsStateError);
+    coordinator.presenter = (_) async => [];
+    expect(await coordinator.pick(request), isEmpty, reason: '失败后不遗留busy');
+  });
 }

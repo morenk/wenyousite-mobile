@@ -70,7 +70,10 @@ class PhotoSelectionCoordinator {
 
   Future<List<MediaUploadInput>?> pick(PhotoSelectionRequest request) async {
     final present = presenter;
-    if (_busy || present == null) return null;
+    if (_busy) return null;
+    if (present == null) {
+      throw StateError('Photo selection host is not bound.');
+    }
     _busy = true;
     try {
       return await present(request);

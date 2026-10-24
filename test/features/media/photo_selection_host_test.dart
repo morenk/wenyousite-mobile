@@ -28,6 +28,109 @@ final _scope = StateProvider(
 
 void main() {
   setUpAll(loadDeterministicTestFonts);
+  testWidgets('旧宿主晚解绑不能清空后绑定的宿主', (tester) async {
+    final router = GoRouter(
+      routes: [GoRoute(path: '/', builder: (_, _) => const Scaffold())],
+    );
+    final hosts = ValueNotifier([1]);
+    addTearDown(router.dispose);
+    addTearDown(hosts.dispose);
+    final container = ProviderContainer(
+      overrides: [
+        appRouterProvider.overrideWithValue(router),
+        photoLibraryProvider.overrideWithValue(FakePhotoLibrary()),
+        sessionScopeProvider.overrideWithValue(
+          const SessionScope(accountId: 'one', generation: 1),
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp.router(
+          theme: AppTheme.light,
+          routerConfig: router,
+          builder: (_, child) => Stack(
+            children: [
+              child!,
+              ValueListenableBuilder<List<int>>(
+                valueListenable: hosts,
+                builder: (_, values, _) => Column(
+                  children: [
+                    for (final id in values)
+                      PhotoSelectionHost(
+                        key: ValueKey(id),
+                        child: const SizedBox.shrink(),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final coordinator = container.read(photoSelectionCoordinatorProvider);
+    final first = coordinator.presenter;
+    hosts.value = [1, 2];
+    await tester.pumpAndSettle();
+    final second = coordinator.presenter;
+    expect(second, isNot(same(first)));
+    hosts.value = [2];
+    await tester.pumpAndSettle();
+    expect(coordinator.presenter, same(second));
+    final result = coordinator.pick(
+      const PhotoSelectionRequest(limit: 1, purpose: MediaUploadPurpose.avatar),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byType(PhotoSelectionPage), findsOneWidget);
+    await tester.tap(find.byTooltip('取消选择'));
+    await tester.pumpAndSettle();
+    expect(await result, isNull);
+    hosts.value = [];
+    await tester.pumpAndSettle();
+    expect(coordinator.presenter, isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('Navigator未就绪走失败，不返回取消', (tester) async {
+    final router = GoRouter(
+      routes: [GoRoute(path: '/', builder: (_, _) => const Scaffold())],
+    );
+    addTearDown(router.dispose);
+    final container = ProviderContainer(
+      overrides: [
+        appRouterProvider.overrideWithValue(router),
+        sessionScopeProvider.overrideWithValue(
+          const SessionScope(accountId: 'one', generation: 1),
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const MaterialApp(
+          home: PhotoSelectionHost(child: SizedBox.shrink()),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await expectLater(
+      container
+          .read(photoSelectionCoordinatorProvider)
+          .pick(
+            const PhotoSelectionRequest(
+              limit: 1,
+              purpose: MediaUploadPurpose.avatar,
+            ),
+          ),
+      throwsStateError,
+    );
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
   test('生产三类端口均绑定统一选择器', () {
     final container = ProviderContainer(
       overrides: productionProviderOverrides(),
