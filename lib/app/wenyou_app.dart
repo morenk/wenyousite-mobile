@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/app/app_router.dart';
 import 'package:wenyousite_mobile/app/app_session_bootstrap.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
+import 'package:wenyousite_mobile/app/photo_selection_host.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/application/appearance_preference.dart';
 import 'package:wenyousite_mobile/core/diagnostics/debug_diagnostic_console.dart';
@@ -96,8 +97,10 @@ class _WenyouMaterialApp extends ConsumerWidget {
               fit: StackFit.expand,
               children: [
                 enableDebugDiagnosticConsole
-                    ? WenyouDebugDiagnosticOverlay(child: app)
-                    : app,
+                    ? WenyouDebugDiagnosticOverlay(
+                        child: PhotoSelectionHost(child: app),
+                      )
+                    : PhotoSelectionHost(child: app),
               ],
             ),
           ),
