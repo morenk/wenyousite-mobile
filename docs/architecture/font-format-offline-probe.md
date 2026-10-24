@@ -2,6 +2,8 @@
 
 本工具用于验证后端导出的真实 Mobile SFNT 字节能否在 Windows Flutter 测试引擎加载和绘制。它不进入应用运行时，不联网，不生成或安装 APK，也不代表 Android 真机验收。正式样本未到齐前，仓库测试字体只用于验证工具自身，不能计入后端格式兼容结果。
 
+当前最终证据为 [final-v1](../verification/font-format-regression-20261024-final-v1/) 和 [final-v2](../verification/font-format-regression-20261024-final-v2/)。不带 `final` 的两批目录均为早期候选，已加说明并保留原始记录；不得以其静态字体 SHA 或截图代替最终包验证。
+
 ## 输入与执行
 
 使用已提交后端 SHA 产生的产物；将其来源、许可证、原字体 SHA、处理参数及默认轴证据保留在后端交付记录中。下面的 JSON 是本工具的本地输入清单，不是新增 HTTP 或跨端契约。若后端交付清单形状不同，可从已校验交付记录建立该输入清单，不改变字体字节。
@@ -49,7 +51,7 @@ flutter test --no-pub tool/font_format_probe_test.dart --reporter expanded `
 
 锁定 Backend `2db4ef1254c7738966dc28b1cd1fc10dcb19da47` / API `5.44.0-dev.20261024.3`。OpenAPI 仅版本号变化；四类自动样张文案统一，历史快照保持。Mobile v2 读取后端 PNG，不实现样张文案生成或新增字体管理入口。同步共享夹具、生成客户端与契约来源记录；再生成后仅 SDK README 版本变化，应用及 SDK 可执行代码、依赖锁文件均无变化。
 
-## 2026-10-24 首批产物结果
+## 2026-10-24 早期候选 v1 结果（保留记录）
 
 后端交接归档 `mobile-handoff-v1.tar.gz` SHA-256 为 `88fec204b99b2b9b3b3dcf0f8e708063d01635fbd50e1114fb0d1177ae8b3b31`，传输后核验摘要和成员，无绝对路径、父目录穿越、链接或源码。各样本字体、原 manifest、Web 字体、样张与许可摘要全部匹配，选中分片确实位于对应原 manifest 中。Python 仅用于文件/摘要/清单处理，不承担 Flutter 验收。
 
@@ -76,7 +78,7 @@ Windows Flutter `3.44.8` / Dart `3.12.2` / engine `0cd610717bde95fd88343c64f81c1
 
 正式样本另执行一次 `tool/font_format_probe_test.dart`，约 44 秒，四样本全部通过。输入清单 SHA-256 为 `740888d05a3d2fcb249484a1b497937af332e94c1495d24e2943dd76a456fcbb`。本轮按授权执行离线定向验证，未运行全量 Flutter 测试、未构建/安装 APK、未执行生产登录或业务写入，不宣称完整集成门禁或真机验收通过。
 
-## parametersVersion=2 独立复验与版本比较
+## 早期候选 v2 复验与版本比较（保留记录）
 
 第二批归档 `mobile-handoff-v2.tar.gz` 的 SHA-256 为 `91f4a48e683f08b965f7fcb24f6a87533cf8295dbf3ce79ce9e5894526461751`。34 个成员共 496687 字节，全部通过相对路径、无父目录穿越、无链接、无源码及资产/许可摘要核验。compiler SHA-256 `824849c888cfaa571e35ae7b605c9afcedc75a68ed3c9bb2de4f2b32c7a70560` 独立核对与 Backend `2db4ef1254c7738966dc28b1cd1fc10dcb19da47` 的 `scripts/fonts/dynamic/compile-v2.py` 完全一致。
 
@@ -87,3 +89,29 @@ v1/v2 四组源字体 SHA 相同，输出字体 SHA 均不同。TTF 差异位于
 四组输出 PNG 字节、像素 SHA、可见像素数、行宽均与首批完全一致。证明范围是本次 `Wenyou Aa 0123` 样张和已交付 core 分片，不推断其他分片、所有字符或非默认轴的画面。完整比对结果、独立输入和输出见[v2 证据目录](../verification/font-format-regression-20261024-v2/)。
 
 至此，两种参数版本各四类产物的 Windows 离线 Flutter 验证完成。此增量只添加验证证据与文档，应用运行时、生成客户端与验证器源码均未变化，沿用首批静态分析、23 项定向测试及格式等检查，不重复全量门禁。PR 可进入评审；未执行 Android 真机验收、APK 构建/安装、合并或部署。
+
+## 最终包复验：静态 GPOS 夹具更新后
+
+最终归档使用带 `-final` 后缀的文件，明确区别于保留的早期包：
+
+| 参数版本 | 归档 | SHA-256 |
+| --- | --- | --- |
+| 1 | `mobile-handoff-v1-final.tar.gz` | `dbe58499f6ce4adee0d718b99901becfb54d5e6f0cd442ffaf23061eefe7acde` |
+| 2 | `mobile-handoff-v2-final.tar.gz` | `c79eaa27c1466016036580cf30a04d87f4452e699a8c60b0fa1a875e6ae3ad03` |
+
+两包均重新核验归档摘要、成员安全、各字体/manifest/样张/许可摘要及选中分片关系。最终交接字段为 `contractCommit`，仍锁定 `2db4ef1254c7738966dc28b1cd1fc10dcb19da47`。生产编译器摘要不变；两个自制静态字体加入 `V+附标` GPOS，源文件及产物 SHA 更新，Orbitron 与 SourceSerif4 的源文件和产物 SHA 未变。
+
+使用同一未修改的 Flutter 验证器，对最终两包各自重新执行完整四样本 probe，v1/v2 均约 39 秒通过。输入清单 SHA 分别为 `ea130e7ae817ee79af59e27ad72698983c5161585ddffc26dd8cf7922c933ab2`、`9690b6b5fa0415267f050ace861c9ba4f9ea68b34c23887434dd54a5a7e92f70`。实际输入目录分别为 `build/font-format-final-v1/verified-extracted/font-format-samples`、`build/font-format-final-v2/verified-extracted/font-format-samples`，各自的 `flutter-output` 保存独立原始结果。
+
+| 类型 | 最终 v1 | 最终 v2 | v1/v2 样张 PNG 与像素 |
+| --- | --- | --- | --- |
+| 静态 TTF | 通过 | 通过 | 完全一致 |
+| 静态 CFF OTF | 通过 | 通过 | 完全一致 |
+| Orbitron 可变 glyf 默认实例 | 通过 | 通过 | 完全一致 |
+| SourceSerif4 可变 CFF2 默认实例 | 通过 | 通过 | 完全一致 |
+
+最终 v1/v2 的四组可见像素数和行宽也完全一致；字体文件字节不同，SFNT 表差异仍限于家族标识及相关校验字段，归一后表字节相同。与早期候选比较，两个静态字体的字节改变但本次样张像素不变，两款真实可变字体的默认实例字节和像素均不变。每项比较保存于最终证据目录的 `early-final-comparison.json` 与 final-v2 的 `v1-v2-comparison.json`。
+
+这次 Flutter probe 的文本仍为后端指定的 `Wenyou Aa 0123`。它验证最终字节的加载、逐字防回退和实际绘制，**不独立断言 `V+附标` 的定位语义**；该项布局预期与验证来自 Backend 格式回归。两个静态样本使用自制轮廓，重复几何字形是其设计，并非系统缺字方框。
+
+本增量只修改证据和文档，补跑模块文档检查与 diff 检查；原验证器、应用代码及依赖均未变化，不重复无关全量门禁。最终四类 v1/v2 离线验证已完成，仍不包含其他分片、全部字符、非默认轴、Android 真机、APK 构建/安装、合并或部署。

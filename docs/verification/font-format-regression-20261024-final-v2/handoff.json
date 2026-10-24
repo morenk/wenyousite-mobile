@@ -1,0 +1,612 @@
+{
+  "status": "final-verified-partial-assets",
+  "contractCommit": "2db4ef1254c7738966dc28b1cd1fc10dcb19da47",
+  "compilerSourceCommit": "33574ae73d88123aa216a93f9cc81eab60fb9ee9",
+  "compilerSourceUnchanged": true,
+  "changes": "Only self-authored static TTF/CFF source fixtures add explicit V+acute positioning; real Orbitron/SourceSerif bytes are unchanged. All final self-authored cases rerun; real cases reverified by locked source/product identity.",
+  "scope": "one core shard per format; other full-manifest shards are intentionally not shipped",
+  "cases": [
+    {
+      "kind": "static-ttf",
+      "parametersVersion": 2,
+      "sourceSha256": "70e2a585c36e3f27b4208f3ece58ffa16abf9b85b179dc48ec0360b7138f2e44",
+      "pipelineSha256": "824849c888cfaa571e35ae7b605c9afcedc75a68ed3c9bb2de4f2b32c7a70560",
+      "manifest": {
+        "bytes": 2534,
+        "format": "json",
+        "sha256": "92fce01352086e93374a310374b951929b86583aeb035017893d63a8768949e5"
+      },
+      "selectedShard": {
+        "codepointCount": 18,
+        "family": "WYF2-9684b295882958fdf8989eb1eecc50f1-core",
+        "id": "core",
+        "mobile": {
+          "bytes": 1868,
+          "format": "ttf",
+          "sha256": "495a2271e14c012d3168e509e17c4b203eb809d1b85e9cf7983c92348360e09b"
+        },
+        "unicodeRanges": [
+          "U+0020",
+          "U+0030-0033",
+          "U+0041",
+          "U+0056-0057",
+          "U+0061",
+          "U+0065-0066",
+          "U+0069",
+          "U+006E-006F",
+          "U+0075",
+          "U+0079",
+          "U+00C1",
+          "U+0301"
+        ],
+        "web": {
+          "bytes": 608,
+          "format": "woff2",
+          "sha256": "2ebd24c4c7d4c16b0b5c359a2c65a1ed5576d35973e6e85cc7f7e2b9e98489de"
+        }
+      },
+      "specimen": {
+        "bytes": 2004,
+        "format": "png",
+        "sha256": "31bddfef34a1533726c9d0176ac3a5608173f4d4e0c95f7c9878840a6331fd13"
+      },
+      "expectedText": "Wenyou Aa 0123",
+      "reference": {
+        "pixels": [
+          640,
+          160
+        ],
+        "initialSize": 64,
+        "sizeStep": 2,
+        "maxTextWidth": 608,
+        "anchor": "mm",
+        "center": [
+          320,
+          80
+        ],
+        "fill": [
+          128,
+          128,
+          128,
+          255
+        ],
+        "comparison": "exact serialized default-instance PNG"
+      },
+      "licenseSha256": "a3e8166656cac363e78a5661d9cb0dbf7bbebc63eaf71e5927872ad08281a1ab",
+      "licenseUrl": null,
+      "evidence": {
+        "sample": "static-ttf",
+        "parametersVersion": 2,
+        "sourceSha256": "70e2a585c36e3f27b4208f3ece58ffa16abf9b85b179dc48ec0360b7138f2e44",
+        "pipelineSha256": "824849c888cfaa571e35ae7b605c9afcedc75a68ed3c9bb2de4f2b32c7a70560",
+        "passed": true,
+        "shards": 5,
+        "codepoints": 22,
+        "mobileFormats": [
+          "ttf"
+        ],
+        "webFormat": "woff2",
+        "matchingOutlines": true,
+        "mobileRendered": true,
+        "specimenRendered": true,
+        "defaultInstanceOutlines": true,
+        "rasterReference": "serialized-default-instance",
+        "sourceRasterDifference": null,
+        "specimenTextVerified": true,
+        "shapingComparisons": 4,
+        "variableTablesRemoved": true,
+        "sourceTables": [],
+        "axes": {},
+        "renderer": {
+          "freetype": "2.14.3",
+          "raqm": "0.11.0",
+          "harfbuzz": "14.5.0"
+        },
+        "manifest": {
+          "bytes": 2534,
+          "format": "json",
+          "sha256": "92fce01352086e93374a310374b951929b86583aeb035017893d63a8768949e5"
+        },
+        "specimen": {
+          "sha256": "31bddfef34a1533726c9d0176ac3a5608173f4d4e0c95f7c9878840a6331fd13",
+          "bytes": 2004,
+          "format": "png"
+        }
+      },
+      "finalVerifierSha256": "c0e42667f0e58d62e4a5147e6a5d79c405a02a4d69ea9faf95d242604d9afddc",
+      "fixtureGeneratorSha256": "83067d00030be32d249c15aa89619a9663e1190f56baca0d7903180e4705118a",
+      "fixtureChanged": true
+    },
+    {
+      "kind": "static-cff",
+      "parametersVersion": 2,
+      "sourceSha256": "d2f611141423a7bebfeab12ab0cd5d83e257d0c1bc3b01d47bfa5a972ffc0d11",
+      "pipelineSha256": "824849c888cfaa571e35ae7b605c9afcedc75a68ed3c9bb2de4f2b32c7a70560",
+      "manifest": {
+        "bytes": 2534,
+        "format": "json",
+        "sha256": "956658b99321f3e1a8c09f5b895fa7f0a876a2e4df1a05d321bf3b74c9043deb"
+      },
+      "selectedShard": {
+        "codepointCount": 18,
+        "family": "WYF2-8ef1a0472d2ffbc250698c5e89c29e9b-core",
+        "id": "core",
+        "mobile": {
+          "bytes": 1792,
+          "format": "otf",
+          "sha256": "46a8d0360c6357b06fb19257c62723ff530c59ab8f1dd60e4e98e59c7c815aab"
+        },
+        "unicodeRanges": [
+          "U+0020",
+          "U+0030-0033",
+          "U+0041",
+          "U+0056-0057",
+          "U+0061",
+          "U+0065-0066",
+          "U+0069",
+          "U+006E-006F",
+          "U+0075",
+          "U+0079",
+          "U+00C1",
+          "U+0301"
+        ],
+        "web": {
+          "bytes": 696,
+          "format": "woff2",
+          "sha256": "af40f469bdd56adaad7e3f34196fa215377017162546657caeb75048cbc463d6"
+        }
+      },
+      "specimen": {
+        "bytes": 2005,
+        "format": "png",
+        "sha256": "6f1921620d58cede74072a075ba3fe661bf14d111a4d97aeb61323473d6c1d5e"
+      },
+      "expectedText": "Wenyou Aa 0123",
+      "reference": {
+        "pixels": [
+          640,
+          160
+        ],
+        "initialSize": 64,
+        "sizeStep": 2,
+        "maxTextWidth": 608,
+        "anchor": "mm",
+        "center": [
+          320,
+          80
+        ],
+        "fill": [
+          128,
+          128,
+          128,
+          255
+        ],
+        "comparison": "exact serialized default-instance PNG"
+      },
+      "licenseSha256": "a3e8166656cac363e78a5661d9cb0dbf7bbebc63eaf71e5927872ad08281a1ab",
+      "licenseUrl": null,
+      "evidence": {
+        "sample": "static-otf",
+        "parametersVersion": 2,
+        "sourceSha256": "d2f611141423a7bebfeab12ab0cd5d83e257d0c1bc3b01d47bfa5a972ffc0d11",
+        "pipelineSha256": "824849c888cfaa571e35ae7b605c9afcedc75a68ed3c9bb2de4f2b32c7a70560",
+        "passed": true,
+        "shards": 5,
+        "codepoints": 22,
+        "mobileFormats": [
+          "otf"
+        ],
+        "webFormat": "woff2",
+        "matchingOutlines": true,
+        "mobileRendered": true,
+        "specimenRendered": true,
+        "defaultInstanceOutlines": true,
+        "rasterReference": "serialized-default-instance",
+        "sourceRasterDifference": null,
+        "specimenTextVerified": true,
+        "shapingComparisons": 4,
+        "variableTablesRemoved": true,
+        "sourceTables": [],
+        "axes": {},
+        "renderer": {
+          "freetype": "2.14.3",
+          "raqm": "0.11.0",
+          "harfbuzz": "14.5.0"
+        },
+        "manifest": {
+          "bytes": 2534,
+          "format": "json",
+          "sha256": "956658b99321f3e1a8c09f5b895fa7f0a876a2e4df1a05d321bf3b74c9043deb"
+        },
+        "specimen": {
+          "sha256": "6f1921620d58cede74072a075ba3fe661bf14d111a4d97aeb61323473d6c1d5e",
+          "bytes": 2005,
+          "format": "png"
+        }
+      },
+      "finalVerifierSha256": "c0e42667f0e58d62e4a5147e6a5d79c405a02a4d69ea9faf95d242604d9afddc",
+      "fixtureGeneratorSha256": "83067d00030be32d249c15aa89619a9663e1190f56baca0d7903180e4705118a",
+      "fixtureChanged": true
+    },
+    {
+      "kind": "variable-glyf",
+      "parametersVersion": 2,
+      "sourceSha256": "f42db2dd16e642258e35782916eceb1dcdbea06fb958d77ad71dc5963587e8fd",
+      "pipelineSha256": "824849c888cfaa571e35ae7b605c9afcedc75a68ed3c9bb2de4f2b32c7a70560",
+      "manifest": {
+        "bytes": 2744,
+        "format": "json",
+        "sha256": "0f28c0dc62974c0de55744ee33cc5825272e6644a302d157bf7b56b603286af4"
+      },
+      "selectedShard": {
+        "codepointCount": 195,
+        "family": "WYF2-f2593e2eeefc43de041b57620369ed39-core",
+        "id": "core",
+        "mobile": {
+          "bytes": 22428,
+          "format": "ttf",
+          "sha256": "89f5df4cb21897c2156a91743e82b0e22ae27c3f6d9fdb9adccd707715f0f842"
+        },
+        "unicodeRanges": [
+          "U+0020-005D",
+          "U+005F-007E",
+          "U+00A0-00A3",
+          "U+00A8",
+          "U+00AF-00B0",
+          "U+00B4",
+          "U+00B6",
+          "U+00B8",
+          "U+00BF-00CF",
+          "U+00D1-00D7",
+          "U+00D9-00DD",
+          "U+00DF-00EF",
+          "U+00F1-00F7",
+          "U+00F9-00FD",
+          "U+00FF",
+          "U+0131",
+          "U+0152-0153",
+          "U+0160-0161",
+          "U+0178",
+          "U+017D-017E",
+          "U+02C6-02C7",
+          "U+02D8-02DC",
+          "U+0300-0303",
+          "U+0307-0308",
+          "U+030A",
+          "U+030C",
+          "U+0327",
+          "U+2013-2014",
+          "U+2018-2019",
+          "U+201C-201D",
+          "U+2022",
+          "U+2026"
+        ],
+        "web": {
+          "bytes": 8148,
+          "format": "woff2",
+          "sha256": "dd423162b96bae62dddf5cef472555c344fd9c7f672a6d203fc866553747265a"
+        }
+      },
+      "specimen": {
+        "bytes": 5505,
+        "format": "png",
+        "sha256": "b3f6fb568d861b2a471b26f99388b18c944c222c638207533db895fea5c035a5"
+      },
+      "expectedText": "Wenyou Aa 0123",
+      "reference": {
+        "pixels": [
+          640,
+          160
+        ],
+        "initialSize": 64,
+        "sizeStep": 2,
+        "maxTextWidth": 608,
+        "anchor": "mm",
+        "center": [
+          320,
+          80
+        ],
+        "fill": [
+          128,
+          128,
+          128,
+          255
+        ],
+        "comparison": "exact serialized default-instance PNG"
+      },
+      "licenseSha256": "ab609b0e110d622435ff337cdf233288556e011bbf9bd0550be98846c0630819",
+      "licenseUrl": "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/orbitron/OFL.txt",
+      "evidence": {
+        "passed": true,
+        "shards": 4,
+        "codepoints": 207,
+        "mobileFormats": [
+          "ttf"
+        ],
+        "webFormat": "woff2",
+        "matchingOutlines": true,
+        "mobileRendered": true,
+        "specimenRendered": true,
+        "defaultInstanceOutlines": true,
+        "rasterReference": "serialized-default-instance",
+        "sourceRasterDifference": {
+          "sourceBox": [
+            27,
+            59,
+            613,
+            118
+          ],
+          "staticBox": [
+            27,
+            59,
+            613,
+            118
+          ],
+          "channelDifferenceExtrema": [
+            [
+              0,
+              128
+            ],
+            [
+              0,
+              128
+            ],
+            [
+              0,
+              128
+            ],
+            [
+              0,
+              15
+            ]
+          ]
+        },
+        "specimenTextVerified": true,
+        "shapingComparisons": 4,
+        "variableTablesRemoved": true,
+        "sourceTables": [
+          "HVAR",
+          "avar",
+          "fvar",
+          "gvar"
+        ],
+        "axes": {
+          "wght": 400
+        },
+        "renderer": {
+          "freetype": "2.14.3",
+          "raqm": "0.11.0",
+          "harfbuzz": "14.5.0"
+        },
+        "sample": "orbitron",
+        "parametersVersion": 2,
+        "sourceSha256": "f42db2dd16e642258e35782916eceb1dcdbea06fb958d77ad71dc5963587e8fd",
+        "pipelineSha256": "824849c888cfaa571e35ae7b605c9afcedc75a68ed3c9bb2de4f2b32c7a70560",
+        "manifest": {
+          "bytes": 2744,
+          "format": "json",
+          "sha256": "0f28c0dc62974c0de55744ee33cc5825272e6644a302d157bf7b56b603286af4"
+        },
+        "processingReused": true,
+        "originalEvidenceSha256": "fb50d1b076d0534842255d9ecb76aaecee9fa694c84214110892499d3ca037d3",
+        "originalLogSha256": "5dc99fea533498e59fdb367726691980aec807cc0a3671d66602dc24589ae612",
+        "verificationScriptSha256": "c0e42667f0e58d62e4a5147e6a5d79c405a02a4d69ea9faf95d242604d9afddc"
+      },
+      "finalVerifierSha256": "c0e42667f0e58d62e4a5147e6a5d79c405a02a4d69ea9faf95d242604d9afddc",
+      "fixtureGeneratorSha256": null,
+      "fixtureChanged": false
+    },
+    {
+      "kind": "variable-cff2",
+      "parametersVersion": 2,
+      "sourceSha256": "867b73c6a954a4a64616906d179f94572a748790a1d022ebeeff07f56ea0221a",
+      "pipelineSha256": "824849c888cfaa571e35ae7b605c9afcedc75a68ed3c9bb2de4f2b32c7a70560",
+      "manifest": {
+        "bytes": 7592,
+        "format": "json",
+        "sha256": "09540a311767c7fee35ce7510f4161279ace5d454874b5362d3556ec73463a86"
+      },
+      "selectedShard": {
+        "codepointCount": 659,
+        "family": "WYF2-d51d04c9d22baba3e99957702e820972-core",
+        "id": "core",
+        "mobile": {
+          "bytes": 317072,
+          "format": "otf",
+          "sha256": "bdfe54c2293831911561fee7e668cdfb43e44697230c810f46c1b42328408886"
+        },
+        "unicodeRanges": [
+          "U+0020-007E",
+          "U+00A0-012B",
+          "U+012E-0131",
+          "U+0134-0165",
+          "U+0168-017F",
+          "U+018F",
+          "U+0192",
+          "U+01A0-01A1",
+          "U+01AF-01B0",
+          "U+01CD-01DC",
+          "U+01E6-01E7",
+          "U+01F8-01F9",
+          "U+0218-021B",
+          "U+0237",
+          "U+0251",
+          "U+0259",
+          "U+0261",
+          "U+02B0",
+          "U+02B2-02B3",
+          "U+02B7-02B8",
+          "U+02BB-02BC",
+          "U+02BE-02BF",
+          "U+02C6-02CC",
+          "U+02D8-02DD",
+          "U+02E1-02E3",
+          "U+0300-0304",
+          "U+0306-030C",
+          "U+031B",
+          "U+0323-0324",
+          "U+0326-0329",
+          "U+032E",
+          "U+0331",
+          "U+0374-0375",
+          "U+037E",
+          "U+0384-038A",
+          "U+038C",
+          "U+038E-03A1",
+          "U+03A3-03CE",
+          "U+03D7",
+          "U+03D9",
+          "U+03DB",
+          "U+03DD",
+          "U+03E1",
+          "U+0400-045F",
+          "U+0462-0463",
+          "U+0472-0475",
+          "U+0490-0493",
+          "U+0496-049B",
+          "U+04A0-04A3",
+          "U+04AA-04AB",
+          "U+04AE-04B3",
+          "U+04B6-04B7",
+          "U+04BA-04BB",
+          "U+04C0-04C2",
+          "U+04CF-04D1",
+          "U+04D4-04D9",
+          "U+04E2-04E3",
+          "U+04E6-04E9",
+          "U+04EE-04EF",
+          "U+04F2-04F3",
+          "U+2002-2007",
+          "U+2009-200B",
+          "U+2010",
+          "U+2012-2015",
+          "U+2018-201A",
+          "U+201C-201E",
+          "U+2020-2022",
+          "U+2025-2026",
+          "U+202F-2030",
+          "U+2032-2033",
+          "U+2039-203A",
+          "U+203C",
+          "U+2044",
+          "U+2047-2049"
+        ],
+        "web": {
+          "bytes": 67428,
+          "format": "woff2",
+          "sha256": "7785e5e2c5225463f01da8452ade1287c53c9440b4ba1d2d71a98d4478e9fb9e"
+        }
+      },
+      "specimen": {
+        "bytes": 9769,
+        "format": "png",
+        "sha256": "0c32218b95c22e14ef6c19f24933360ec12d133946329028d94f10db67cef83c"
+      },
+      "expectedText": "Wenyou Aa 0123",
+      "reference": {
+        "pixels": [
+          640,
+          160
+        ],
+        "initialSize": 64,
+        "sizeStep": 2,
+        "maxTextWidth": 608,
+        "anchor": "mm",
+        "center": [
+          320,
+          80
+        ],
+        "fill": [
+          128,
+          128,
+          128,
+          255
+        ],
+        "comparison": "exact serialized default-instance PNG"
+      },
+      "licenseSha256": "c21d7293d87b6d7ab1d0229a2f55b77f33a7613a6a4e66f6693d68d7d8d09464",
+      "licenseUrl": "https://raw.githubusercontent.com/adobe-fonts/source-serif/80d3f8894c09c937bebfa9011247d2e1c79fd6f4/LICENSE.md",
+      "evidence": {
+        "passed": true,
+        "shards": 10,
+        "codepoints": 919,
+        "mobileFormats": [
+          "otf"
+        ],
+        "webFormat": "woff2",
+        "matchingOutlines": true,
+        "mobileRendered": true,
+        "specimenRendered": true,
+        "defaultInstanceOutlines": true,
+        "rasterReference": "serialized-default-instance",
+        "sourceRasterDifference": {
+          "sourceBox": [
+            89,
+            60,
+            549,
+            119
+          ],
+          "staticBox": [
+            89,
+            60,
+            549,
+            119
+          ],
+          "channelDifferenceExtrema": [
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ]
+          ]
+        },
+        "specimenTextVerified": true,
+        "shapingComparisons": 4,
+        "variableTablesRemoved": true,
+        "sourceTables": [
+          "CFF2",
+          "HVAR",
+          "MVAR",
+          "avar",
+          "fvar"
+        ],
+        "axes": {
+          "wght": 400,
+          "opsz": 20
+        },
+        "renderer": {
+          "freetype": "2.14.3",
+          "raqm": "0.11.0",
+          "harfbuzz": "14.5.0"
+        },
+        "sample": "source-serif-4",
+        "parametersVersion": 2,
+        "sourceSha256": "867b73c6a954a4a64616906d179f94572a748790a1d022ebeeff07f56ea0221a",
+        "pipelineSha256": "824849c888cfaa571e35ae7b605c9afcedc75a68ed3c9bb2de4f2b32c7a70560",
+        "manifest": {
+          "bytes": 7592,
+          "format": "json",
+          "sha256": "09540a311767c7fee35ce7510f4161279ace5d454874b5362d3556ec73463a86"
+        },
+        "processingReused": true,
+        "originalEvidenceSha256": "307e3f437d41f33a3eafb8850ee537544d4b54f463a0f8b3fc1ade5f8791710f",
+        "originalLogSha256": "5dc99fea533498e59fdb367726691980aec807cc0a3671d66602dc24589ae612",
+        "verificationScriptSha256": "c0e42667f0e58d62e4a5147e6a5d79c405a02a4d69ea9faf95d242604d9afddc"
+      },
+      "finalVerifierSha256": "c0e42667f0e58d62e4a5147e6a5d79c405a02a4d69ea9faf95d242604d9afddc",
+      "fixtureGeneratorSha256": null,
+      "fixtureChanged": false
+    }
+  ]
+}

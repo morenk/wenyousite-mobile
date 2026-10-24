@@ -4,6 +4,7 @@
 
 - 固定 Backend `2db4ef1254c7738966dc28b1cd1fc10dcb19da47`／API `5.44.0-dev.20261024.3`；统一四类样张文案的共享 fixture，HTTP 形状与移动端运行逻辑不变。
 - 增加真实 Flutter 引擎离线字体验证工具和回退反证；parametersVersion=1/2 各四种静态 TTF、CFF OTF、Orbitron 与 SourceSerif4 默认实例的 core 分片全部通过。同源 v1/v2 字体文件的差异限于家族标识及校验字段，本次样张输出 PNG 和像素完全一致；保留两批独立证据。未执行 Android 真机、APK 构建/安装。范围见[验证说明](architecture/font-format-offline-probe.md)。
+- 静态夹具补强 GPOS 后，使用带 `-final` 后缀的最终两包重新通过四类 v1/v2 Flutter 实绘，旧证据明确标为早期候选。验证器和运行时未变化；最终样张不包含 `V+附标`，不将格式加载结果扩展为该定位语义的独立验收。
 
 ## 2026-10-24 标题间距验收与字体基线集成
 
