@@ -64,7 +64,7 @@ Windows Flutter `3.44.8` / Dart `3.12.2` / engine `0cd610717bde95fd88343c64f81c1
 
 原始身份、compiler/source SHA、默认轴证据、输出 PNG 与像素摘要见[证据目录](../verification/font-format-regression-20261024-v1/)。默认轴轮廓正确性的对比来自后端交接证据；本端独立确认静态轮廓类型和真实 Flutter 绘制。
 
-此批明确为 **parametersVersion=1**，虽然内部 manifest 为 v2，不能宣称当前 parametersVersion=2 处理链路已验证。不覆盖未交付分片、全部字符、Android 真机或源可变字体的非默认轴。parametersVersion=2 产物仍待交付，本轮 PR 保持待验证状态。
+此批明确为 **parametersVersion=1**，虽然内部 manifest 为 v2，不能单凭此批宣称 parametersVersion=2 处理链路已验证。不覆盖未交付分片、全部字符、Android 真机或源可变字体的非默认轴。后续 parametersVersion=2 独立复验见下一节，首批记录保留。
 
 定向消费者与工具自测共 23 项通过，实际路径：
 
@@ -75,3 +75,15 @@ Windows Flutter `3.44.8` / Dart `3.12.2` / engine `0cd610717bde95fd88343c64f81c1
 - `test/features/editor/editor_font_specimen_test.dart`
 
 正式样本另执行一次 `tool/font_format_probe_test.dart`，约 44 秒，四样本全部通过。输入清单 SHA-256 为 `740888d05a3d2fcb249484a1b497937af332e94c1495d24e2943dd76a456fcbb`。本轮按授权执行离线定向验证，未运行全量 Flutter 测试、未构建/安装 APK、未执行生产登录或业务写入，不宣称完整集成门禁或真机验收通过。
+
+## parametersVersion=2 独立复验与版本比较
+
+第二批归档 `mobile-handoff-v2.tar.gz` 的 SHA-256 为 `91f4a48e683f08b965f7fcb24f6a87533cf8295dbf3ce79ce9e5894526461751`。34 个成员共 496687 字节，全部通过相对路径、无父目录穿越、无链接、无源码及资产/许可摘要核验。compiler SHA-256 `824849c888cfaa571e35ae7b605c9afcedc75a68ed3c9bb2de4f2b32c7a70560` 独立核对与 Backend `2db4ef1254c7738966dc28b1cd1fc10dcb19da47` 的 `scripts/fonts/dynamic/compile-v2.py` 完全一致。
+
+使用同一 Flutter/Dart/engine 和未变化的验证器，按 `parametersVersion=2` 再执行四种真实 core 分片，约 34 秒全部通过 FontLoader、逐字防回退和实际绘制。输入清单 SHA-256 为 `fad40f8904673e1a2ab7d4b5c3a3aa1b23c38201f616b04e8fae619c7668977c`；输入目录为 `build/font-format-v2/extracted/font-format-samples`，输出为 `build/font-format-v2/flutter-output`，其余调用参数沿用上文命令模板。
+
+v1/v2 四组源字体 SHA 相同，输出字体 SHA 均不同。TTF 差异位于 `head`、`name`；CFF OTF 另含 `CFF ` 表中的家族名称变化。将旧家族标识替换为新标识，并将 `head.checkSumAdjustment` 的四字节归零后，所有对应表字节完全一致。此操作只用于内存中的比较，没有改写或重新生成输入字体；引擎加载的始终是归档原始字节。
+
+四组输出 PNG 字节、像素 SHA、可见像素数、行宽均与首批完全一致。证明范围是本次 `Wenyou Aa 0123` 样张和已交付 core 分片，不推断其他分片、所有字符或非默认轴的画面。完整比对结果、独立输入和输出见[v2 证据目录](../verification/font-format-regression-20261024-v2/)。
+
+至此，两种参数版本各四类产物的 Windows 离线 Flutter 验证完成。此增量只添加验证证据与文档，应用运行时、生成客户端与验证器源码均未变化，沿用首批静态分析、23 项定向测试及格式等检查，不重复全量门禁。PR 可进入评审；未执行 Android 真机验收、APK 构建/安装、合并或部署。

@@ -1,0 +1,581 @@
+{
+  "status": "verified-candidate-partial-assets",
+  "backendContractCommit": "2db4ef1254c7738966dc28b1cd1fc10dcb19da47",
+  "compilerSourceCommit": "33574ae73d88123aa216a93f9cc81eab60fb9ee9",
+  "compilerSourceUnchanged": true,
+  "scope": "one core shard per format; full original manifest is provenance, other shards intentionally not shipped",
+  "cases": [
+    {
+      "kind": "static-ttf",
+      "parametersVersion": 2,
+      "sourceSha256": "e32bfe3bfbd41f0dd60fe600cbbcfa9994881ce58d186201ab476e8b3f48ee69",
+      "pipelineSha256": "824849c888cfaa571e35ae7b605c9afcedc75a68ed3c9bb2de4f2b32c7a70560",
+      "manifest": {
+        "bytes": 2534,
+        "format": "json",
+        "sha256": "9afbe51175c09ffb179d041891bcd68a6999e75d8fd3ab06649e0a42cd1571ec"
+      },
+      "selectedShard": {
+        "codepointCount": 18,
+        "family": "WYF2-031100c882d97454b69e7117463cdd55-core",
+        "id": "core",
+        "mobile": {
+          "bytes": 1856,
+          "format": "ttf",
+          "sha256": "ca5038158282bae18c5f714c63623bbb8f3b0fa7decfe7c86dcc29ef6cedda84"
+        },
+        "unicodeRanges": [
+          "U+0020",
+          "U+0030-0033",
+          "U+0041",
+          "U+0056-0057",
+          "U+0061",
+          "U+0065-0066",
+          "U+0069",
+          "U+006E-006F",
+          "U+0075",
+          "U+0079",
+          "U+00C1",
+          "U+0301"
+        ],
+        "web": {
+          "bytes": 608,
+          "format": "woff2",
+          "sha256": "85e208dc972b5c0abacf325cd156ea8b143af6ef89979b15f7b98bc695a28903"
+        }
+      },
+      "specimen": {
+        "bytes": 2004,
+        "format": "png",
+        "sha256": "31bddfef34a1533726c9d0176ac3a5608173f4d4e0c95f7c9878840a6331fd13"
+      },
+      "expectedText": "Wenyou Aa 0123",
+      "reference": {
+        "pixels": [
+          640,
+          160
+        ],
+        "initialSize": 64,
+        "sizeStep": 2,
+        "maxTextWidth": 608,
+        "anchor": "mm",
+        "center": [
+          320,
+          80
+        ],
+        "fill": [
+          128,
+          128,
+          128,
+          255
+        ],
+        "comparison": "exact serialized default-instance PNG"
+      },
+      "licenseSha256": "a3e8166656cac363e78a5661d9cb0dbf7bbebc63eaf71e5927872ad08281a1ab",
+      "licenseUrl": null,
+      "evidence": {
+        "sample": "static-ttf",
+        "parametersVersion": 2,
+        "sourceSha256": "e32bfe3bfbd41f0dd60fe600cbbcfa9994881ce58d186201ab476e8b3f48ee69",
+        "pipelineSha256": "824849c888cfaa571e35ae7b605c9afcedc75a68ed3c9bb2de4f2b32c7a70560",
+        "passed": true,
+        "shards": 5,
+        "codepoints": 22,
+        "mobileFormats": [
+          "ttf"
+        ],
+        "webFormat": "woff2",
+        "matchingOutlines": true,
+        "mobileRendered": true,
+        "specimenRendered": true,
+        "defaultInstanceOutlines": true,
+        "rasterReference": "serialized-default-instance",
+        "sourceRasterDifference": null,
+        "specimenTextVerified": true,
+        "shapingComparisons": 4,
+        "variableTablesRemoved": true,
+        "sourceTables": [],
+        "axes": {},
+        "manifest": {
+          "bytes": 2534,
+          "format": "json",
+          "sha256": "9afbe51175c09ffb179d041891bcd68a6999e75d8fd3ab06649e0a42cd1571ec"
+        },
+        "specimen": {
+          "sha256": "31bddfef34a1533726c9d0176ac3a5608173f4d4e0c95f7c9878840a6331fd13",
+          "bytes": 2004,
+          "format": "png"
+        }
+      }
+    },
+    {
+      "kind": "static-cff",
+      "parametersVersion": 2,
+      "sourceSha256": "13c8f64df96e0aa8fbc1cbabcbc93dad798b69370b4cfa3c54814d860ec13ac8",
+      "pipelineSha256": "824849c888cfaa571e35ae7b605c9afcedc75a68ed3c9bb2de4f2b32c7a70560",
+      "manifest": {
+        "bytes": 2534,
+        "format": "json",
+        "sha256": "7952d7fbfd57d21eb05a9e5f6e7f7175a5fcf59ca291c2f1678022ee6054fca5"
+      },
+      "selectedShard": {
+        "codepointCount": 18,
+        "family": "WYF2-77d2609c973daefe3789c5b7090f1a3a-core",
+        "id": "core",
+        "mobile": {
+          "bytes": 1780,
+          "format": "otf",
+          "sha256": "544dd31611295374b04d793a4efc65b85e1bca73fce1caef7d2014ae1cbf6a2c"
+        },
+        "unicodeRanges": [
+          "U+0020",
+          "U+0030-0033",
+          "U+0041",
+          "U+0056-0057",
+          "U+0061",
+          "U+0065-0066",
+          "U+0069",
+          "U+006E-006F",
+          "U+0075",
+          "U+0079",
+          "U+00C1",
+          "U+0301"
+        ],
+        "web": {
+          "bytes": 684,
+          "format": "woff2",
+          "sha256": "a33851607bcacdf215044de63874e0543b5b88059007ac20544126d9260452df"
+        }
+      },
+      "specimen": {
+        "bytes": 2005,
+        "format": "png",
+        "sha256": "6f1921620d58cede74072a075ba3fe661bf14d111a4d97aeb61323473d6c1d5e"
+      },
+      "expectedText": "Wenyou Aa 0123",
+      "reference": {
+        "pixels": [
+          640,
+          160
+        ],
+        "initialSize": 64,
+        "sizeStep": 2,
+        "maxTextWidth": 608,
+        "anchor": "mm",
+        "center": [
+          320,
+          80
+        ],
+        "fill": [
+          128,
+          128,
+          128,
+          255
+        ],
+        "comparison": "exact serialized default-instance PNG"
+      },
+      "licenseSha256": "a3e8166656cac363e78a5661d9cb0dbf7bbebc63eaf71e5927872ad08281a1ab",
+      "licenseUrl": null,
+      "evidence": {
+        "sample": "static-otf",
+        "parametersVersion": 2,
+        "sourceSha256": "13c8f64df96e0aa8fbc1cbabcbc93dad798b69370b4cfa3c54814d860ec13ac8",
+        "pipelineSha256": "824849c888cfaa571e35ae7b605c9afcedc75a68ed3c9bb2de4f2b32c7a70560",
+        "passed": true,
+        "shards": 5,
+        "codepoints": 22,
+        "mobileFormats": [
+          "otf"
+        ],
+        "webFormat": "woff2",
+        "matchingOutlines": true,
+        "mobileRendered": true,
+        "specimenRendered": true,
+        "defaultInstanceOutlines": true,
+        "rasterReference": "serialized-default-instance",
+        "sourceRasterDifference": null,
+        "specimenTextVerified": true,
+        "shapingComparisons": 4,
+        "variableTablesRemoved": true,
+        "sourceTables": [],
+        "axes": {},
+        "manifest": {
+          "bytes": 2534,
+          "format": "json",
+          "sha256": "7952d7fbfd57d21eb05a9e5f6e7f7175a5fcf59ca291c2f1678022ee6054fca5"
+        },
+        "specimen": {
+          "sha256": "6f1921620d58cede74072a075ba3fe661bf14d111a4d97aeb61323473d6c1d5e",
+          "bytes": 2005,
+          "format": "png"
+        }
+      }
+    },
+    {
+      "kind": "variable-glyf",
+      "parametersVersion": 2,
+      "sourceSha256": "f42db2dd16e642258e35782916eceb1dcdbea06fb958d77ad71dc5963587e8fd",
+      "pipelineSha256": "824849c888cfaa571e35ae7b605c9afcedc75a68ed3c9bb2de4f2b32c7a70560",
+      "manifest": {
+        "bytes": 2744,
+        "format": "json",
+        "sha256": "0f28c0dc62974c0de55744ee33cc5825272e6644a302d157bf7b56b603286af4"
+      },
+      "selectedShard": {
+        "codepointCount": 195,
+        "family": "WYF2-f2593e2eeefc43de041b57620369ed39-core",
+        "id": "core",
+        "mobile": {
+          "bytes": 22428,
+          "format": "ttf",
+          "sha256": "89f5df4cb21897c2156a91743e82b0e22ae27c3f6d9fdb9adccd707715f0f842"
+        },
+        "unicodeRanges": [
+          "U+0020-005D",
+          "U+005F-007E",
+          "U+00A0-00A3",
+          "U+00A8",
+          "U+00AF-00B0",
+          "U+00B4",
+          "U+00B6",
+          "U+00B8",
+          "U+00BF-00CF",
+          "U+00D1-00D7",
+          "U+00D9-00DD",
+          "U+00DF-00EF",
+          "U+00F1-00F7",
+          "U+00F9-00FD",
+          "U+00FF",
+          "U+0131",
+          "U+0152-0153",
+          "U+0160-0161",
+          "U+0178",
+          "U+017D-017E",
+          "U+02C6-02C7",
+          "U+02D8-02DC",
+          "U+0300-0303",
+          "U+0307-0308",
+          "U+030A",
+          "U+030C",
+          "U+0327",
+          "U+2013-2014",
+          "U+2018-2019",
+          "U+201C-201D",
+          "U+2022",
+          "U+2026"
+        ],
+        "web": {
+          "bytes": 8148,
+          "format": "woff2",
+          "sha256": "dd423162b96bae62dddf5cef472555c344fd9c7f672a6d203fc866553747265a"
+        }
+      },
+      "specimen": {
+        "bytes": 5505,
+        "format": "png",
+        "sha256": "b3f6fb568d861b2a471b26f99388b18c944c222c638207533db895fea5c035a5"
+      },
+      "expectedText": "Wenyou Aa 0123",
+      "reference": {
+        "pixels": [
+          640,
+          160
+        ],
+        "initialSize": 64,
+        "sizeStep": 2,
+        "maxTextWidth": 608,
+        "anchor": "mm",
+        "center": [
+          320,
+          80
+        ],
+        "fill": [
+          128,
+          128,
+          128,
+          255
+        ],
+        "comparison": "exact serialized default-instance PNG"
+      },
+      "licenseSha256": "ab609b0e110d622435ff337cdf233288556e011bbf9bd0550be98846c0630819",
+      "licenseUrl": "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/orbitron/OFL.txt",
+      "evidence": {
+        "sample": "orbitron",
+        "parametersVersion": 2,
+        "sourceSha256": "f42db2dd16e642258e35782916eceb1dcdbea06fb958d77ad71dc5963587e8fd",
+        "pipelineSha256": "824849c888cfaa571e35ae7b605c9afcedc75a68ed3c9bb2de4f2b32c7a70560",
+        "passed": true,
+        "shards": 4,
+        "codepoints": 207,
+        "mobileFormats": [
+          "ttf"
+        ],
+        "webFormat": "woff2",
+        "matchingOutlines": true,
+        "mobileRendered": true,
+        "specimenRendered": true,
+        "defaultInstanceOutlines": true,
+        "rasterReference": "serialized-default-instance",
+        "sourceRasterDifference": {
+          "sourceBox": [
+            27,
+            59,
+            613,
+            118
+          ],
+          "staticBox": [
+            27,
+            59,
+            613,
+            118
+          ],
+          "channelDifferenceExtrema": [
+            [
+              0,
+              128
+            ],
+            [
+              0,
+              128
+            ],
+            [
+              0,
+              128
+            ],
+            [
+              0,
+              15
+            ]
+          ]
+        },
+        "specimenTextVerified": true,
+        "shapingComparisons": 4,
+        "variableTablesRemoved": true,
+        "sourceTables": [
+          "HVAR",
+          "avar",
+          "fvar",
+          "gvar"
+        ],
+        "axes": {
+          "wght": 400
+        },
+        "manifest": {
+          "bytes": 2744,
+          "format": "json",
+          "sha256": "0f28c0dc62974c0de55744ee33cc5825272e6644a302d157bf7b56b603286af4"
+        },
+        "specimen": {
+          "sha256": "b3f6fb568d861b2a471b26f99388b18c944c222c638207533db895fea5c035a5",
+          "bytes": 5505,
+          "format": "png"
+        }
+      }
+    },
+    {
+      "kind": "variable-cff2",
+      "parametersVersion": 2,
+      "sourceSha256": "867b73c6a954a4a64616906d179f94572a748790a1d022ebeeff07f56ea0221a",
+      "pipelineSha256": "824849c888cfaa571e35ae7b605c9afcedc75a68ed3c9bb2de4f2b32c7a70560",
+      "manifest": {
+        "bytes": 7592,
+        "format": "json",
+        "sha256": "09540a311767c7fee35ce7510f4161279ace5d454874b5362d3556ec73463a86"
+      },
+      "selectedShard": {
+        "codepointCount": 659,
+        "family": "WYF2-d51d04c9d22baba3e99957702e820972-core",
+        "id": "core",
+        "mobile": {
+          "bytes": 317072,
+          "format": "otf",
+          "sha256": "bdfe54c2293831911561fee7e668cdfb43e44697230c810f46c1b42328408886"
+        },
+        "unicodeRanges": [
+          "U+0020-007E",
+          "U+00A0-012B",
+          "U+012E-0131",
+          "U+0134-0165",
+          "U+0168-017F",
+          "U+018F",
+          "U+0192",
+          "U+01A0-01A1",
+          "U+01AF-01B0",
+          "U+01CD-01DC",
+          "U+01E6-01E7",
+          "U+01F8-01F9",
+          "U+0218-021B",
+          "U+0237",
+          "U+0251",
+          "U+0259",
+          "U+0261",
+          "U+02B0",
+          "U+02B2-02B3",
+          "U+02B7-02B8",
+          "U+02BB-02BC",
+          "U+02BE-02BF",
+          "U+02C6-02CC",
+          "U+02D8-02DD",
+          "U+02E1-02E3",
+          "U+0300-0304",
+          "U+0306-030C",
+          "U+031B",
+          "U+0323-0324",
+          "U+0326-0329",
+          "U+032E",
+          "U+0331",
+          "U+0374-0375",
+          "U+037E",
+          "U+0384-038A",
+          "U+038C",
+          "U+038E-03A1",
+          "U+03A3-03CE",
+          "U+03D7",
+          "U+03D9",
+          "U+03DB",
+          "U+03DD",
+          "U+03E1",
+          "U+0400-045F",
+          "U+0462-0463",
+          "U+0472-0475",
+          "U+0490-0493",
+          "U+0496-049B",
+          "U+04A0-04A3",
+          "U+04AA-04AB",
+          "U+04AE-04B3",
+          "U+04B6-04B7",
+          "U+04BA-04BB",
+          "U+04C0-04C2",
+          "U+04CF-04D1",
+          "U+04D4-04D9",
+          "U+04E2-04E3",
+          "U+04E6-04E9",
+          "U+04EE-04EF",
+          "U+04F2-04F3",
+          "U+2002-2007",
+          "U+2009-200B",
+          "U+2010",
+          "U+2012-2015",
+          "U+2018-201A",
+          "U+201C-201E",
+          "U+2020-2022",
+          "U+2025-2026",
+          "U+202F-2030",
+          "U+2032-2033",
+          "U+2039-203A",
+          "U+203C",
+          "U+2044",
+          "U+2047-2049"
+        ],
+        "web": {
+          "bytes": 67428,
+          "format": "woff2",
+          "sha256": "7785e5e2c5225463f01da8452ade1287c53c9440b4ba1d2d71a98d4478e9fb9e"
+        }
+      },
+      "specimen": {
+        "bytes": 9769,
+        "format": "png",
+        "sha256": "0c32218b95c22e14ef6c19f24933360ec12d133946329028d94f10db67cef83c"
+      },
+      "expectedText": "Wenyou Aa 0123",
+      "reference": {
+        "pixels": [
+          640,
+          160
+        ],
+        "initialSize": 64,
+        "sizeStep": 2,
+        "maxTextWidth": 608,
+        "anchor": "mm",
+        "center": [
+          320,
+          80
+        ],
+        "fill": [
+          128,
+          128,
+          128,
+          255
+        ],
+        "comparison": "exact serialized default-instance PNG"
+      },
+      "licenseSha256": "c21d7293d87b6d7ab1d0229a2f55b77f33a7613a6a4e66f6693d68d7d8d09464",
+      "licenseUrl": "https://raw.githubusercontent.com/adobe-fonts/source-serif/80d3f8894c09c937bebfa9011247d2e1c79fd6f4/LICENSE.md",
+      "evidence": {
+        "sample": "source-serif-4",
+        "parametersVersion": 2,
+        "sourceSha256": "867b73c6a954a4a64616906d179f94572a748790a1d022ebeeff07f56ea0221a",
+        "pipelineSha256": "824849c888cfaa571e35ae7b605c9afcedc75a68ed3c9bb2de4f2b32c7a70560",
+        "passed": true,
+        "shards": 10,
+        "codepoints": 919,
+        "mobileFormats": [
+          "otf"
+        ],
+        "webFormat": "woff2",
+        "matchingOutlines": true,
+        "mobileRendered": true,
+        "specimenRendered": true,
+        "defaultInstanceOutlines": true,
+        "rasterReference": "serialized-default-instance",
+        "sourceRasterDifference": {
+          "sourceBox": [
+            89,
+            60,
+            549,
+            119
+          ],
+          "staticBox": [
+            89,
+            60,
+            549,
+            119
+          ],
+          "channelDifferenceExtrema": [
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ]
+          ]
+        },
+        "specimenTextVerified": true,
+        "shapingComparisons": 4,
+        "variableTablesRemoved": true,
+        "sourceTables": [
+          "CFF2",
+          "HVAR",
+          "MVAR",
+          "avar",
+          "fvar"
+        ],
+        "axes": {
+          "wght": 400,
+          "opsz": 20
+        },
+        "manifest": {
+          "bytes": 7592,
+          "format": "json",
+          "sha256": "09540a311767c7fee35ce7510f4161279ace5d454874b5362d3556ec73463a86"
+        },
+        "specimen": {
+          "sha256": "0c32218b95c22e14ef6c19f24933360ec12d133946329028d94f10db67cef83c",
+          "bytes": 9769,
+          "format": "png"
+        }
+      }
+    }
+  ]
+}
