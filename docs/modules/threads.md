@@ -337,6 +337,9 @@ GIF 上传插入修复（2026-09-13，负责人验收通过）：新主题正文
 
 ## 13. 最近审查的契约版本和后端提交
 
+本轮字体样张契约来源：Backend `2db4ef1254c7738966dc28b1cd1fc10dcb19da47`／API `5.44.0-dev.20261024.3`。HTTP 形状不变，仅统一后台自动样张文案；本模块运行逻辑不变。离线格式验证范围见[验证说明](../architecture/font-format-offline-probe.md)。
+
+
 2026-10-24 交付前来源复核：线上更新至 Backend `31f39ff317e56d6eb49b4c5e60ecdb93dfc9ec06`／API `5.44.0-dev.20261024.2`。机器契约零差异，仅字体 Worker 运维说明新增 8 行；同步来源与说明，应用及构建源码不变。完整门禁和窄复核分别见[集成验收记录](../architecture/alignment-font-integration-acceptance.md)。
 
 2026-10-24 行距合并集成：保留已合并 PR #114 的完整字体能力与本次标题间距修复。固定 Backend `c80f015402e22647bbc85aecc9513d3d1a026096`／API `5.44.0-dev.20261024.2`；相对字体基线 `f1025db4`，同步脚本全部导出契约及说明字节无变化，仅来源 SHA 更新。历史候选的旧端无字体能力说明不再代表集成后客户端。详见[集成验收记录](../architecture/alignment-font-integration-acceptance.md)。

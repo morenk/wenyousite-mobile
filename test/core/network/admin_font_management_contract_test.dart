@@ -14,6 +14,14 @@ void main() {
           as Map<String, dynamic>;
   final cases = (fixture['jobRecoveryCases'] as List)
       .cast<Map<String, dynamic>>();
+  test('四类自动样张沿用已确认的 Wenyou 文案', () {
+    expect(fixture['specimens'], {
+      'zh': '温油文字 Aa 0123',
+      'ja': '温油文字 Aa 0123',
+      'en': 'Wenyou Aa 0123',
+      'other': 'Wenyou Aa 0123',
+    });
+  });
   Map<String, Object?> job() => {
     'jobId': 'tfj_00000000000000000000000000000001',
     'familyId': 'tff_00000000000000000000000000000001',
