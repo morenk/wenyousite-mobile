@@ -75,11 +75,11 @@ class _$DynamicFontRuntimePolicyDtoPolicyVersionEnumSerializer
     implements
         PrimitiveSerializer<DynamicFontRuntimePolicyDtoPolicyVersionEnum> {
   static const Map<String, Object> _toWire = const <String, Object>{
-    'n3': '3',
+    'n3': 3,
     'unknownDefaultOpenApi': '11184809',
   };
   static const Map<Object, String> _fromWire = const <Object, String>{
-    '3': 'n3',
+    3: 'n3',
     '11184809': 'unknownDefaultOpenApi',
   };
 
@@ -110,11 +110,11 @@ class _$DynamicFontRuntimePolicyDtoPolicyVersionEnumSerializer
 class _$DynamicFontRuntimePolicyDtoFontVersionEnumSerializer
     implements PrimitiveSerializer<DynamicFontRuntimePolicyDtoFontVersionEnum> {
   static const Map<String, Object> _toWire = const <String, Object>{
-    'n2': '2',
+    'n2': 2,
     'unknownDefaultOpenApi': '11184809',
   };
   static const Map<Object, String> _fromWire = const <Object, String>{
-    '2': 'n2',
+    2: 'n2',
     '11184809': 'unknownDefaultOpenApi',
   };
 

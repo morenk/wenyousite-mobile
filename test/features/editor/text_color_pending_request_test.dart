@@ -63,11 +63,16 @@ void main() {
         ApiPostRepository(
           posts,
           textColorSupported: current,
+          textFontSupported: true,
+          textFontV2Supported: true,
         ).create(restoredPost),
         throwsA(isA<ApiFailure>()),
       );
       expect(postDto, isNotNull);
-      expect(postDto!.textFontVersion, isNull);
+      expect(
+        postDto!.textFontVersion,
+        CreatePostDtoTextFontVersionEnum.number2,
+      );
       expect(
         postDto!.textColorVersion,
         expected ? CreatePostDtoTextColorVersionEnum.number1 : null,
@@ -103,11 +108,16 @@ void main() {
           _Categories(),
           _Users(),
           textColorSupported: current,
+          textFontSupported: true,
+          textFontV2Supported: true,
         ).createDraft(restoredThread),
         throwsA(isA<ApiFailure>()),
       );
       expect(threadDto, isNotNull);
-      expect(threadDto!.textFontVersion, isNull);
+      expect(
+        threadDto!.textFontVersion,
+        CreateThreadDtoTextFontVersionEnum.number2,
+      );
       expect(
         threadDto!.textColorVersion,
         expected ? CreateThreadDtoTextColorVersionEnum.number1 : null,

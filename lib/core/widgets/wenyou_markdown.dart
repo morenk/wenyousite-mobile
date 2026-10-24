@@ -62,6 +62,7 @@ class WenyouMarkdown extends StatefulWidget {
     this.bodyFontSize = 17,
     this.bodyHeight = 1.8,
     this.enablePlainTextFastPath = true,
+    this.enableTextFonts = false,
     this.diagnosticRenderKey,
     super.key,
   });
@@ -81,6 +82,8 @@ class WenyouMarkdown extends StatefulWidget {
   final double bodyFontSize;
   final double bodyHeight;
   final bool enablePlainTextFastPath;
+
+  final bool enableTextFonts;
   final GlobalKey? diagnosticRenderKey;
 
   @override
@@ -129,6 +132,10 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
   @override
   void didUpdateWidget(covariant WenyouMarkdown oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.enableTextFonts != widget.enableTextFonts) {
+      _markdownParseKey = UniqueKey();
+      _renderedBody = null;
+    }
     if (!mapEquals(oldWidget.diceLabels, widget.diceLabels)) {
       _diceLabels.value = Map.unmodifiable(widget.diceLabels);
     }
@@ -398,6 +405,7 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
     ],
     builders: {
       MarkdownTextColor.tag: MarkdownTextColorBuilder(
+        enableTextFonts: widget.enableTextFonts,
         onLink: (href) => _openLink(context, href),
         registerRecognizer: _colorRecognizers.add,
       ),

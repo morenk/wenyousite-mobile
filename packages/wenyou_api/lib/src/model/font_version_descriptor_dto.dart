@@ -328,7 +328,7 @@ class _$FontVersionDescriptorDtoSerializer implements PrimitiveSerializer<FontVe
 
 class FontVersionDescriptorDtoFontVersionEnum extends EnumClass {
 
-  @BuiltValueEnumConst(wireName: r'2')
+  @BuiltValueEnumConst(wireNumber: 2)
   static const FontVersionDescriptorDtoFontVersionEnum n2 = _$fontVersionDescriptorDtoFontVersionEnum_n2;
   @BuiltValueEnumConst(wireName: r'11184809', fallback: true)
   static const FontVersionDescriptorDtoFontVersionEnum unknownDefaultOpenApi = _$fontVersionDescriptorDtoFontVersionEnum_unknownDefaultOpenApi;

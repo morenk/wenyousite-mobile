@@ -31,6 +31,7 @@ class _SlowDisk extends CoverAnimationDiskStore {
   _SlowDisk(Directory folder) : super(directory: () async => folder);
   Completer<void>? holdWrites;
   Completer<void>? holdTouches;
+  final putStarted = Completer<void>();
   int writes = 0;
   int touches = 0;
   bool failWrites = false;
@@ -45,6 +46,7 @@ class _SlowDisk extends CoverAnimationDiskStore {
     bool Function() stillCurrent,
   ) {
     writes++;
+    if (!putStarted.isCompleted) putStarted.complete();
     final result = () async {
       await holdWrites?.future;
       if (failWrites) throw const FileSystemException('disk unavailable');
@@ -90,9 +92,10 @@ void main() {
 
   test('完整网络字节立即返回，慢写盘不占用起播关键路径', () async {
     disk.holdWrites = Completer();
-    final result = await source
-        .load(url, CancelToken())
-        .timeout(const Duration(seconds: 2));
+    final loading = source.load(url, CancelToken());
+    // 从网络字节齐备且写盘已进入后计时，排除临时目录冷启动的真实 IO。
+    await disk.putStarted.future;
+    final result = await loading.timeout(const Duration(seconds: 2));
     expect(result.bytes, payload);
     expect(disk.writes, 1);
     expect(disk.holdWrites!.isCompleted, isFalse);

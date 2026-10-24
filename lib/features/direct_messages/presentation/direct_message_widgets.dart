@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/application/atomic_editor_clipboard.dart';
 import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_clipboard_text.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
@@ -90,6 +91,7 @@ class _DirectMessageComposerState extends ConsumerState<DirectMessageComposer> {
   void initState() {
     super.initState();
     _controller = WenyouAtomicTextController(
+      readStructuredClipboard: ref.read(atomicEditorClipboardReaderProvider),
       initialMarkdown: widget.failedDraft?.content ?? '',
       maximumMarkdownLength: directMessageMaxLength,
     );

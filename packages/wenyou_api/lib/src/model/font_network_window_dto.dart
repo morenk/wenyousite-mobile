@@ -249,9 +249,9 @@ class FontNetworkWindowDtoMaxRequestsEnum extends EnumClass {
 
 class FontNetworkWindowDtoMaxConcurrentEnum extends EnumClass {
 
-  @BuiltValueEnumConst(wireName: r'1')
+  @BuiltValueEnumConst(wireNumber: 1)
   static const FontNetworkWindowDtoMaxConcurrentEnum n1 = _$fontNetworkWindowDtoMaxConcurrentEnum_n1;
-  @BuiltValueEnumConst(wireName: r'2')
+  @BuiltValueEnumConst(wireNumber: 2)
   static const FontNetworkWindowDtoMaxConcurrentEnum n2 = _$fontNetworkWindowDtoMaxConcurrentEnum_n2;
   @BuiltValueEnumConst(wireName: r'11184809', fallback: true)
   static const FontNetworkWindowDtoMaxConcurrentEnum unknownDefaultOpenApi = _$fontNetworkWindowDtoMaxConcurrentEnum_unknownDefaultOpenApi;

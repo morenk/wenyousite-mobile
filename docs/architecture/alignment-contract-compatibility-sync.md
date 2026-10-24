@@ -1,5 +1,7 @@
 # 行距候选的 API 契约兼容同步
 
+历史记录：本文描述已验收的 5.43 独立候选。2026-10-24 合并准备已集成完整字体功能并同步 5.44；当前范围见[集成验收记录](alignment-font-integration-acceptance.md)，下文无字体声明只适用于原候选。
+
 本切片按负责人要求解除行距候选的生产契约门禁阻塞，不接入独立 PR 114 的字体选择、下载或缓存功能。
 
 ## 固定来源
@@ -25,4 +27,4 @@
 - 首轮完整入口的应用静态检查和 7367 项 Flutter 测试通过，Windows 契约同步工具测试因临时 Backend 缺失新增字体来源目录失败。已补齐测试夹具的 docs/archive 原始结构，并新增 23 份字体契约逐字一致断言；保留失败日志 `build/alignment-contract-final-full-gate.log`，完整入口重新执行，不以分段补跑冒充同次成功。
 - 最终官方完整门禁与新 APK 身份补记于[行距候选](editor-alignment-spacing-candidate.md)；旧诊断 APK 不代表本轮最终源码。
 - 补齐夹具后，同一次 `npm run check:apk -- -TestConcurrency 2` 完整成功：7367 项 Flutter 测试、49 项 Windows 工具测试通过，1 项原条件跳过，随后 ARM64 Debug 构建成功。日志为 `build/alignment-contract-final-full-gate-2.log`。交付前再次严格只读复核线上 SHA/API 仍一致，见 `build/alignment-contract-delivery-production.log`。
-- 本轮没有自动安装、启动客户端或执行线上业务写入。字体拒绝的错误分类、保留内容标志与提示由本地模拟响应验证；未执行含字体原文的真实保存，负责人真机验收仍待完成。
+- 本轮没有自动安装、启动客户端或执行线上业务写入。字体拒绝的错误分类、保留内容标志与提示由本地模拟响应验证；未执行含字体原文的真实保存，此历史交付时点负责人真机验收仍待完成；随后原候选已于 2026-10-24 验收通过。

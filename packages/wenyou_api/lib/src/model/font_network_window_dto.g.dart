@@ -272,13 +272,13 @@ class _$FontNetworkWindowDtoMaxRequestsEnumSerializer
 class _$FontNetworkWindowDtoMaxConcurrentEnumSerializer
     implements PrimitiveSerializer<FontNetworkWindowDtoMaxConcurrentEnum> {
   static const Map<String, Object> _toWire = const <String, Object>{
-    'n1': '1',
-    'n2': '2',
+    'n1': 1,
+    'n2': 2,
     'unknownDefaultOpenApi': '11184809',
   };
   static const Map<Object, String> _fromWire = const <Object, String>{
-    '1': 'n1',
-    '2': 'n2',
+    1: 'n1',
+    2: 'n2',
     '11184809': 'unknownDefaultOpenApi',
   };
 

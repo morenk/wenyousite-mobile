@@ -12,6 +12,7 @@ part 'font_job_dto.g.dart';
 /// FontJobDto
 ///
 /// Properties:
+/// * [submissionId] - 本任务准确绑定的简化提交；旧手工任务为 null。详情/刷新恢复必须使用该值，不以最新提交替代。
 /// * [jobId]
 /// * [familyId]
 /// * [status]
@@ -19,8 +20,13 @@ part 'font_job_dto.g.dart';
 /// * [sourceBytes]
 /// * [versionId]
 /// * [failureCode]
+/// * [failureReason] - 固定、无原始解析错误的拒绝说明；fsType 限制即使管理员确认也不能绕过。
 @BuiltValue()
 abstract class FontJobDto implements Built<FontJobDto, FontJobDtoBuilder> {
+  /// 本任务准确绑定的简化提交；旧手工任务为 null。详情/刷新恢复必须使用该值，不以最新提交替代。
+  @BuiltValueField(wireName: r'submissionId')
+  String? get submissionId;
+
   @BuiltValueField(wireName: r'jobId')
   String get jobId;
 
@@ -43,6 +49,11 @@ abstract class FontJobDto implements Built<FontJobDto, FontJobDtoBuilder> {
   @BuiltValueField(wireName: r'failureCode')
   FontJobDtoFailureCodeEnum? get failureCode;
   // enum failureCodeEnum {  invalid-font,  unsupported-font,  rights-required,  resource-limit,  sandbox-unavailable,  processing-failed,  };
+
+  /// 固定、无原始解析错误的拒绝说明；fsType 限制即使管理员确认也不能绕过。
+  @BuiltValueField(wireName: r'failureReason')
+  FontJobDtoFailureReasonEnum? get failureReason;
+  // enum failureReasonEnum {  embedding-restricted,  subsetting-restricted,  bitmap-only,  };
 
   FontJobDto._();
 
@@ -67,6 +78,13 @@ class _$FontJobDtoSerializer implements PrimitiveSerializer<FontJobDto> {
     FontJobDto object, {
     FullType specifiedType = FullType.unspecified,
   }) sync* {
+    if (object.submissionId != null) {
+      yield r'submissionId';
+      yield serializers.serialize(
+        object.submissionId,
+        specifiedType: const FullType.nullable(String),
+      );
+    }
     yield r'jobId';
     yield serializers.serialize(
       object.jobId,
@@ -102,6 +120,13 @@ class _$FontJobDtoSerializer implements PrimitiveSerializer<FontJobDto> {
       object.failureCode,
       specifiedType: const FullType.nullable(FontJobDtoFailureCodeEnum),
     );
+    if (object.failureReason != null) {
+      yield r'failureReason';
+      yield serializers.serialize(
+        object.failureReason,
+        specifiedType: const FullType.nullable(FontJobDtoFailureReasonEnum),
+      );
+    }
   }
 
   @override
@@ -125,6 +150,14 @@ class _$FontJobDtoSerializer implements PrimitiveSerializer<FontJobDto> {
       final key = serializedList[i] as String;
       final value = serializedList[i + 1];
       switch (key) {
+        case r'submissionId':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(String),
+          ) as String?;
+          if (valueDes == null) continue;
+          result.submissionId = valueDes;
+          break;
         case r'jobId':
           final valueDes = serializers.deserialize(
             value,
@@ -175,6 +208,14 @@ class _$FontJobDtoSerializer implements PrimitiveSerializer<FontJobDto> {
           ) as FontJobDtoFailureCodeEnum?;
           if (valueDes == null) continue;
           result.failureCode = valueDes;
+          break;
+        case r'failureReason':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(FontJobDtoFailureReasonEnum),
+          ) as FontJobDtoFailureReasonEnum?;
+          if (valueDes == null) continue;
+          result.failureReason = valueDes;
           break;
         default:
           unhandled.add(key);
@@ -251,4 +292,27 @@ class FontJobDtoFailureCodeEnum extends EnumClass {
 
   static BuiltSet<FontJobDtoFailureCodeEnum> get values => _$fontJobDtoFailureCodeEnumValues;
   static FontJobDtoFailureCodeEnum valueOf(String name) => _$fontJobDtoFailureCodeEnumValueOf(name);
+}
+
+class FontJobDtoFailureReasonEnum extends EnumClass {
+
+  /// 固定、无原始解析错误的拒绝说明；fsType 限制即使管理员确认也不能绕过。
+  @BuiltValueEnumConst(wireName: r'embedding-restricted')
+  static const FontJobDtoFailureReasonEnum embeddingRestricted = _$fontJobDtoFailureReasonEnum_embeddingRestricted;
+  /// 固定、无原始解析错误的拒绝说明；fsType 限制即使管理员确认也不能绕过。
+  @BuiltValueEnumConst(wireName: r'subsetting-restricted')
+  static const FontJobDtoFailureReasonEnum subsettingRestricted = _$fontJobDtoFailureReasonEnum_subsettingRestricted;
+  /// 固定、无原始解析错误的拒绝说明；fsType 限制即使管理员确认也不能绕过。
+  @BuiltValueEnumConst(wireName: r'bitmap-only')
+  static const FontJobDtoFailureReasonEnum bitmapOnly = _$fontJobDtoFailureReasonEnum_bitmapOnly;
+  /// 固定、无原始解析错误的拒绝说明；fsType 限制即使管理员确认也不能绕过。
+  @BuiltValueEnumConst(wireName: r'unknown_default_open_api', fallback: true)
+  static const FontJobDtoFailureReasonEnum unknownDefaultOpenApi = _$fontJobDtoFailureReasonEnum_unknownDefaultOpenApi;
+
+  static Serializer<FontJobDtoFailureReasonEnum> get serializer => _$fontJobDtoFailureReasonEnumSerializer;
+
+  const FontJobDtoFailureReasonEnum._(String name): super(name);
+
+  static BuiltSet<FontJobDtoFailureReasonEnum> get values => _$fontJobDtoFailureReasonEnumValues;
+  static FontJobDtoFailureReasonEnum valueOf(String name) => _$fontJobDtoFailureReasonEnumValueOf(name);
 }

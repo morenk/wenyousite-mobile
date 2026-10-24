@@ -170,6 +170,8 @@ $threadCategorySource = Resolve-UniqueBackendContract `
   'thread category'
 
 $contractFiles = @(
+  @{ Source = 'contracts/admin-font-management-v1-fixtures.json'; Destination = 'admin-font-management-v1-fixtures.json' },
+  @{ Source = 'docs/admin-font-management.md'; Destination = 'admin-font-management.md' },
   @{ Source = 'docs/dynamic-text-fonts.md'; Destination = 'dynamic-text-fonts.md' },
   @{ Source = 'contracts/markdown-text-font-v2.schema.json'; Destination = 'markdown-text-font-v2.schema.json' },
   @{ Source = 'contracts/markdown-text-font-v2-fixtures.json'; Destination = 'markdown-text-font-v2-fixtures.json' },
@@ -190,7 +192,7 @@ $contractFiles = @(
   @{ Source = 'contracts/thread-font-sources-v1.schema.json'; Destination = 'thread-font-sources-v1.schema.json' },
   @{ Source = 'contracts/thread-font-manifest-v1.json'; Destination = 'thread-font-manifest-v1.json' },
   @{ Source = 'contracts/thread-font-manifest-v1.schema.json'; Destination = 'thread-font-manifest-v1.schema.json' },
-  @{ Source = 'contracts/archive/thread-font-xiaocheng-lafeng-v1.json'; Destination = 'thread-font-xiaocheng-lafeng-v1.json' },
+  @{ Source = 'contracts/archive/thread-font-xiaocheng-lafeng-v1.json'; Destination = 'archive/thread-font-xiaocheng-lafeng-v1.json' },
   @{ Source = 'docs/markdown-text-font-v1.md'; Destination = 'markdown-text-font-v1.md' },
   @{ Source = 'docs/thread-font-assets.md'; Destination = 'thread-font-assets.md' },
   @{ Source = 'contracts/gallery-image-occurrences.json'; Destination = 'gallery-image-occurrences.json' },
@@ -235,6 +237,7 @@ $contractFiles = @(
   @{ Source = 'docs/rp-identity-profile-post.md'; Destination = 'rp-identity-profile-post.md' },
   @{ Source = 'contracts/CHANGELOG.md'; Destination = 'CHANGELOG.md' },
   @{ Source = 'docs/mobile-client-guide.md'; Destination = 'mobile-client-guide.md' },
+  @{ Source = 'docs/deprecation-register.md'; Destination = 'deprecation-register.md' },
   @{ Source = 'docs/mobile-release-operations.md'; Destination = 'mobile-release-operations.md' },
   @{ Source = 'docs/app-download-gateway.md'; Destination = 'app-download-gateway.md' },
   @{ Source = 'docs/media-display.md'; Destination = 'media-display.md' }

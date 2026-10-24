@@ -11,21 +11,29 @@ import 'package:dio/dio.dart';
 import 'dart:typed_data';
 import 'package:wenyou_api/src/api_util.dart';
 import 'package:wenyou_api/src/model/admin_text_fonts_create201_response.dart';
+import 'package:wenyou_api/src/model/admin_text_fonts_create_submission201_response.dart';
 import 'package:wenyou_api/src/model/admin_text_fonts_detail200_response.dart';
 import 'package:wenyou_api/src/model/admin_text_fonts_enabled200_response.dart';
 import 'package:wenyou_api/src/model/admin_text_fonts_get_job200_response.dart';
 import 'package:wenyou_api/src/model/admin_text_fonts_list200_response.dart';
+import 'package:wenyou_api/src/model/admin_text_fonts_management200_response.dart';
 import 'package:wenyou_api/src/model/admin_text_fonts_preview200_response.dart';
 import 'package:wenyou_api/src/model/admin_text_fonts_process201_response.dart';
+import 'package:wenyou_api/src/model/admin_text_fonts_process_submission201_response.dart';
 import 'package:wenyou_api/src/model/admin_text_fonts_publish201_response.dart';
+import 'package:wenyou_api/src/model/admin_text_fonts_reorder200_response.dart';
+import 'package:wenyou_api/src/model/admin_text_fonts_submission200_response.dart';
 import 'package:wenyou_api/src/model/admin_text_fonts_update200_response.dart';
 import 'package:wenyou_api/src/model/admin_text_fonts_upload201_response.dart';
 import 'package:wenyou_api/src/model/admin_text_fonts_withdraw201_response.dart';
 import 'package:wenyou_api/src/model/api_error_envelope.dart';
+import 'package:wenyou_api/src/model/create_font_submission_dto.dart';
 import 'package:wenyou_api/src/model/font_configuration_dto.dart';
 import 'package:wenyou_api/src/model/font_enabled_dto.dart';
 import 'package:wenyou_api/src/model/font_publish_dto.dart';
 import 'package:wenyou_api/src/model/font_withdraw_dto.dart';
+import 'package:wenyou_api/src/model/process_font_submission_dto.dart';
+import 'package:wenyou_api/src/model/reorder_fonts_dto.dart';
 import 'package:wenyou_api/src/model/update_font_configuration_dto.dart';
 
 class AdminTextFontsApi {
@@ -243,6 +251,125 @@ class AdminTextFontsApi {
     }
 
     return Response<AdminTextFontsCreate201Response>(
+      data: _responseData,
+      headers: _response.headers,
+      isRedirect: _response.isRedirect,
+      requestOptions: _response.requestOptions,
+      redirects: _response.redirects,
+      statusCode: _response.statusCode,
+      statusMessage: _response.statusMessage,
+      extra: _response.extra,
+    );
+  }
+
+  /// adminTextFontsCreateSubmission
+  ///
+  ///
+  /// Parameters:
+  /// * [createFontSubmissionDto]
+  /// * [xCSRFToken] - 管理后台写操作必填
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
+  /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
+  /// * [headers] - Can be used to add additional headers to the request
+  /// * [extras] - Can be used to add flags to the request
+  /// * [validateStatus] - A [ValidateStatus] callback that can be used to determine request success based on the HTTP status of the response
+  /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
+  /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
+  ///
+  /// Returns a [Future] containing a [Response] with a [AdminTextFontsCreateSubmission201Response] as data
+  /// Throws [DioException] if API call or serialization fails
+  Future<Response<AdminTextFontsCreateSubmission201Response>> adminTextFontsCreateSubmission({
+    required CreateFontSubmissionDto createFontSubmissionDto,
+    String? xCSRFToken,
+    int? xMarkdownContractVersion,
+    int? xTextColorVersion,
+    int? xTextFontVersion,
+    CancelToken? cancelToken,
+    Map<String, dynamic>? headers,
+    Map<String, dynamic>? extra,
+    ValidateStatus? validateStatus,
+    ProgressCallback? onSendProgress,
+    ProgressCallback? onReceiveProgress,
+  }) async {
+    final _path = r'/api/v1/admin/text-fonts/submissions';
+    final _options = Options(
+      method: r'POST',
+      headers: <String, dynamic>{
+        if (xCSRFToken != null) r'X-CSRF-Token': xCSRFToken,
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
+        ...?headers,
+      },
+      extra: <String, dynamic>{
+        'secure': <Map<String, String>>[
+          {
+            'type': 'apiKey',
+            'name': 'adminSession',
+            'keyName': '__Secure-wenyou-admin-session',
+            'where': '',
+          },{
+            'type': 'apiKey',
+            'name': 'adminCsrf',
+            'keyName': 'X-CSRF-Token',
+            'where': 'header',
+          },
+        ],
+        ...?extra,
+      },
+      contentType: 'application/json',
+      validateStatus: validateStatus,
+    );
+
+    dynamic _bodyData;
+
+    try {
+      const _type = FullType(CreateFontSubmissionDto);
+      _bodyData = _serializers.serialize(createFontSubmissionDto, specifiedType: _type);
+
+    } catch(error, stackTrace) {
+      throw DioException(
+         requestOptions: _options.compose(
+          _dio.options,
+          _path,
+        ),
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    final _response = await _dio.request<Object>(
+      _path,
+      data: _bodyData,
+      options: _options,
+      cancelToken: cancelToken,
+      onSendProgress: onSendProgress,
+      onReceiveProgress: onReceiveProgress,
+    );
+
+    AdminTextFontsCreateSubmission201Response? _responseData;
+
+    try {
+      final rawResponse = _response.data;
+      _responseData = rawResponse == null ? null : _serializers.deserialize(
+        rawResponse,
+        specifiedType: const FullType(AdminTextFontsCreateSubmission201Response),
+      ) as AdminTextFontsCreateSubmission201Response;
+
+    } catch (error, stackTrace) {
+      throw DioException(
+        requestOptions: _response.requestOptions,
+        response: _response,
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    return Response<AdminTextFontsCreateSubmission201Response>(
       data: _responseData,
       headers: _response.headers,
       isRedirect: _response.isRedirect,
@@ -680,6 +807,125 @@ class AdminTextFontsApi {
     );
   }
 
+  /// adminTextFontsManagement
+  ///
+  ///
+  /// Parameters:
+  /// * [xCSRFToken] - 管理后台写操作必填
+  /// * [q] - 管理展示名称包含匹配；已发布按最后当前版本、未发布按草稿。NFC、去首尾空白、不区分大小写，%/_ 按文字处理。
+  /// * [language]
+  /// * [status]
+  /// * [sort]
+  /// * [direction]
+  /// * [cursor] - 不透明游标，绑定规范筛选、排序及管理列表修订；变化返回 409/40931，从第一页重取。
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
+  /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
+  /// * [headers] - Can be used to add additional headers to the request
+  /// * [extras] - Can be used to add flags to the request
+  /// * [validateStatus] - A [ValidateStatus] callback that can be used to determine request success based on the HTTP status of the response
+  /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
+  /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
+  ///
+  /// Returns a [Future] containing a [Response] with a [AdminTextFontsManagement200Response] as data
+  /// Throws [DioException] if API call or serialization fails
+  Future<Response<AdminTextFontsManagement200Response>> adminTextFontsManagement({
+    String? xCSRFToken,
+    String? q,
+    String? language,
+    String? status,
+    String? sort = 'createdAt',
+    String? direction = 'desc',
+    String? cursor,
+    int? xMarkdownContractVersion,
+    int? xTextColorVersion,
+    int? xTextFontVersion,
+    CancelToken? cancelToken,
+    Map<String, dynamic>? headers,
+    Map<String, dynamic>? extra,
+    ValidateStatus? validateStatus,
+    ProgressCallback? onSendProgress,
+    ProgressCallback? onReceiveProgress,
+  }) async {
+    final _path = r'/api/v1/admin/text-fonts/management';
+    final _options = Options(
+      method: r'GET',
+      headers: <String, dynamic>{
+        if (xCSRFToken != null) r'X-CSRF-Token': xCSRFToken,
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
+        ...?headers,
+      },
+      extra: <String, dynamic>{
+        'secure': <Map<String, String>>[
+          {
+            'type': 'apiKey',
+            'name': 'adminSession',
+            'keyName': '__Secure-wenyou-admin-session',
+            'where': '',
+          },{
+            'type': 'apiKey',
+            'name': 'adminCsrf',
+            'keyName': 'X-CSRF-Token',
+            'where': 'header',
+          },
+        ],
+        ...?extra,
+      },
+      validateStatus: validateStatus,
+    );
+
+    final _queryParameters = <String, dynamic>{
+      if (q != null) r'q': encodeQueryParameter(_serializers, q, const FullType(String)),
+      if (language != null) r'language': encodeQueryParameter(_serializers, language, const FullType(String)),
+      if (status != null) r'status': encodeQueryParameter(_serializers, status, const FullType(String)),
+      if (sort != null) r'sort': encodeQueryParameter(_serializers, sort, const FullType(String)),
+      if (direction != null) r'direction': encodeQueryParameter(_serializers, direction, const FullType(String)),
+      if (cursor != null) r'cursor': encodeQueryParameter(_serializers, cursor, const FullType(String)),
+    };
+
+    final _response = await _dio.request<Object>(
+      _path,
+      options: _options,
+      queryParameters: _queryParameters,
+      cancelToken: cancelToken,
+      onSendProgress: onSendProgress,
+      onReceiveProgress: onReceiveProgress,
+    );
+
+    AdminTextFontsManagement200Response? _responseData;
+
+    try {
+      final rawResponse = _response.data;
+      _responseData = rawResponse == null ? null : _serializers.deserialize(
+        rawResponse,
+        specifiedType: const FullType(AdminTextFontsManagement200Response),
+      ) as AdminTextFontsManagement200Response;
+
+    } catch (error, stackTrace) {
+      throw DioException(
+        requestOptions: _response.requestOptions,
+        response: _response,
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    return Response<AdminTextFontsManagement200Response>(
+      data: _responseData,
+      headers: _response.headers,
+      isRedirect: _response.isRedirect,
+      requestOptions: _response.requestOptions,
+      redirects: _response.redirects,
+      statusCode: _response.statusCode,
+      statusMessage: _response.statusMessage,
+      extra: _response.extra,
+    );
+  }
+
   /// adminTextFontsPreview
   ///
   ///
@@ -878,6 +1124,127 @@ class AdminTextFontsApi {
     );
   }
 
+  /// adminTextFontsProcessSubmission
+  ///
+  ///
+  /// Parameters:
+  /// * [submissionId]
+  /// * [processFontSubmissionDto]
+  /// * [xCSRFToken] - 管理后台写操作必填
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
+  /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
+  /// * [headers] - Can be used to add additional headers to the request
+  /// * [extras] - Can be used to add flags to the request
+  /// * [validateStatus] - A [ValidateStatus] callback that can be used to determine request success based on the HTTP status of the response
+  /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
+  /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
+  ///
+  /// Returns a [Future] containing a [Response] with a [AdminTextFontsProcessSubmission201Response] as data
+  /// Throws [DioException] if API call or serialization fails
+  Future<Response<AdminTextFontsProcessSubmission201Response>> adminTextFontsProcessSubmission({
+    required String submissionId,
+    required ProcessFontSubmissionDto processFontSubmissionDto,
+    String? xCSRFToken,
+    int? xMarkdownContractVersion,
+    int? xTextColorVersion,
+    int? xTextFontVersion,
+    CancelToken? cancelToken,
+    Map<String, dynamic>? headers,
+    Map<String, dynamic>? extra,
+    ValidateStatus? validateStatus,
+    ProgressCallback? onSendProgress,
+    ProgressCallback? onReceiveProgress,
+  }) async {
+    final _path = r'/api/v1/admin/text-fonts/submissions/{submissionId}/process'.replaceAll('{' r'submissionId' '}', encodeQueryParameter(_serializers, submissionId, const FullType(String)).toString());
+    final _options = Options(
+      method: r'POST',
+      headers: <String, dynamic>{
+        if (xCSRFToken != null) r'X-CSRF-Token': xCSRFToken,
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
+        ...?headers,
+      },
+      extra: <String, dynamic>{
+        'secure': <Map<String, String>>[
+          {
+            'type': 'apiKey',
+            'name': 'adminSession',
+            'keyName': '__Secure-wenyou-admin-session',
+            'where': '',
+          },{
+            'type': 'apiKey',
+            'name': 'adminCsrf',
+            'keyName': 'X-CSRF-Token',
+            'where': 'header',
+          },
+        ],
+        ...?extra,
+      },
+      contentType: 'application/json',
+      validateStatus: validateStatus,
+    );
+
+    dynamic _bodyData;
+
+    try {
+      const _type = FullType(ProcessFontSubmissionDto);
+      _bodyData = _serializers.serialize(processFontSubmissionDto, specifiedType: _type);
+
+    } catch(error, stackTrace) {
+      throw DioException(
+         requestOptions: _options.compose(
+          _dio.options,
+          _path,
+        ),
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    final _response = await _dio.request<Object>(
+      _path,
+      data: _bodyData,
+      options: _options,
+      cancelToken: cancelToken,
+      onSendProgress: onSendProgress,
+      onReceiveProgress: onReceiveProgress,
+    );
+
+    AdminTextFontsProcessSubmission201Response? _responseData;
+
+    try {
+      final rawResponse = _response.data;
+      _responseData = rawResponse == null ? null : _serializers.deserialize(
+        rawResponse,
+        specifiedType: const FullType(AdminTextFontsProcessSubmission201Response),
+      ) as AdminTextFontsProcessSubmission201Response;
+
+    } catch (error, stackTrace) {
+      throw DioException(
+        requestOptions: _response.requestOptions,
+        response: _response,
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    return Response<AdminTextFontsProcessSubmission201Response>(
+      data: _responseData,
+      headers: _response.headers,
+      isRedirect: _response.isRedirect,
+      requestOptions: _response.requestOptions,
+      redirects: _response.redirects,
+      statusCode: _response.statusCode,
+      statusMessage: _response.statusMessage,
+      extra: _response.extra,
+    );
+  }
+
   /// adminTextFontsPublish
   ///
   ///
@@ -988,6 +1355,224 @@ class AdminTextFontsApi {
     }
 
     return Response<AdminTextFontsPublish201Response>(
+      data: _responseData,
+      headers: _response.headers,
+      isRedirect: _response.isRedirect,
+      requestOptions: _response.requestOptions,
+      redirects: _response.redirects,
+      statusCode: _response.statusCode,
+      statusMessage: _response.statusMessage,
+      extra: _response.extra,
+    );
+  }
+
+  /// adminTextFontsReorder
+  ///
+  ///
+  /// Parameters:
+  /// * [reorderFontsDto]
+  /// * [xCSRFToken] - 管理后台写操作必填
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
+  /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
+  /// * [headers] - Can be used to add additional headers to the request
+  /// * [extras] - Can be used to add flags to the request
+  /// * [validateStatus] - A [ValidateStatus] callback that can be used to determine request success based on the HTTP status of the response
+  /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
+  /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
+  ///
+  /// Returns a [Future] containing a [Response] with a [AdminTextFontsReorder200Response] as data
+  /// Throws [DioException] if API call or serialization fails
+  Future<Response<AdminTextFontsReorder200Response>> adminTextFontsReorder({
+    required ReorderFontsDto reorderFontsDto,
+    String? xCSRFToken,
+    int? xMarkdownContractVersion,
+    int? xTextColorVersion,
+    int? xTextFontVersion,
+    CancelToken? cancelToken,
+    Map<String, dynamic>? headers,
+    Map<String, dynamic>? extra,
+    ValidateStatus? validateStatus,
+    ProgressCallback? onSendProgress,
+    ProgressCallback? onReceiveProgress,
+  }) async {
+    final _path = r'/api/v1/admin/text-fonts/order';
+    final _options = Options(
+      method: r'PUT',
+      headers: <String, dynamic>{
+        if (xCSRFToken != null) r'X-CSRF-Token': xCSRFToken,
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
+        ...?headers,
+      },
+      extra: <String, dynamic>{
+        'secure': <Map<String, String>>[
+          {
+            'type': 'apiKey',
+            'name': 'adminSession',
+            'keyName': '__Secure-wenyou-admin-session',
+            'where': '',
+          },{
+            'type': 'apiKey',
+            'name': 'adminCsrf',
+            'keyName': 'X-CSRF-Token',
+            'where': 'header',
+          },
+        ],
+        ...?extra,
+      },
+      contentType: 'application/json',
+      validateStatus: validateStatus,
+    );
+
+    dynamic _bodyData;
+
+    try {
+      const _type = FullType(ReorderFontsDto);
+      _bodyData = _serializers.serialize(reorderFontsDto, specifiedType: _type);
+
+    } catch(error, stackTrace) {
+      throw DioException(
+         requestOptions: _options.compose(
+          _dio.options,
+          _path,
+        ),
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    final _response = await _dio.request<Object>(
+      _path,
+      data: _bodyData,
+      options: _options,
+      cancelToken: cancelToken,
+      onSendProgress: onSendProgress,
+      onReceiveProgress: onReceiveProgress,
+    );
+
+    AdminTextFontsReorder200Response? _responseData;
+
+    try {
+      final rawResponse = _response.data;
+      _responseData = rawResponse == null ? null : _serializers.deserialize(
+        rawResponse,
+        specifiedType: const FullType(AdminTextFontsReorder200Response),
+      ) as AdminTextFontsReorder200Response;
+
+    } catch (error, stackTrace) {
+      throw DioException(
+        requestOptions: _response.requestOptions,
+        response: _response,
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    return Response<AdminTextFontsReorder200Response>(
+      data: _responseData,
+      headers: _response.headers,
+      isRedirect: _response.isRedirect,
+      requestOptions: _response.requestOptions,
+      redirects: _response.redirects,
+      statusCode: _response.statusCode,
+      statusMessage: _response.statusMessage,
+      extra: _response.extra,
+    );
+  }
+
+  /// adminTextFontsSubmission
+  ///
+  ///
+  /// Parameters:
+  /// * [submissionId]
+  /// * [xCSRFToken] - 管理后台写操作必填
+  /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
+  /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
+  /// * [headers] - Can be used to add additional headers to the request
+  /// * [extras] - Can be used to add flags to the request
+  /// * [validateStatus] - A [ValidateStatus] callback that can be used to determine request success based on the HTTP status of the response
+  /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
+  /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
+  ///
+  /// Returns a [Future] containing a [Response] with a [AdminTextFontsSubmission200Response] as data
+  /// Throws [DioException] if API call or serialization fails
+  Future<Response<AdminTextFontsSubmission200Response>> adminTextFontsSubmission({
+    required String submissionId,
+    String? xCSRFToken,
+    int? xMarkdownContractVersion,
+    int? xTextColorVersion,
+    int? xTextFontVersion,
+    CancelToken? cancelToken,
+    Map<String, dynamic>? headers,
+    Map<String, dynamic>? extra,
+    ValidateStatus? validateStatus,
+    ProgressCallback? onSendProgress,
+    ProgressCallback? onReceiveProgress,
+  }) async {
+    final _path = r'/api/v1/admin/text-fonts/submissions/{submissionId}'.replaceAll('{' r'submissionId' '}', encodeQueryParameter(_serializers, submissionId, const FullType(String)).toString());
+    final _options = Options(
+      method: r'GET',
+      headers: <String, dynamic>{
+        if (xCSRFToken != null) r'X-CSRF-Token': xCSRFToken,
+        if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
+        ...?headers,
+      },
+      extra: <String, dynamic>{
+        'secure': <Map<String, String>>[
+          {
+            'type': 'apiKey',
+            'name': 'adminSession',
+            'keyName': '__Secure-wenyou-admin-session',
+            'where': '',
+          },{
+            'type': 'apiKey',
+            'name': 'adminCsrf',
+            'keyName': 'X-CSRF-Token',
+            'where': 'header',
+          },
+        ],
+        ...?extra,
+      },
+      validateStatus: validateStatus,
+    );
+
+    final _response = await _dio.request<Object>(
+      _path,
+      options: _options,
+      cancelToken: cancelToken,
+      onSendProgress: onSendProgress,
+      onReceiveProgress: onReceiveProgress,
+    );
+
+    AdminTextFontsSubmission200Response? _responseData;
+
+    try {
+      final rawResponse = _response.data;
+      _responseData = rawResponse == null ? null : _serializers.deserialize(
+        rawResponse,
+        specifiedType: const FullType(AdminTextFontsSubmission200Response),
+      ) as AdminTextFontsSubmission200Response;
+
+    } catch (error, stackTrace) {
+      throw DioException(
+        requestOptions: _response.requestOptions,
+        response: _response,
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    return Response<AdminTextFontsSubmission200Response>(
       data: _responseData,
       headers: _response.headers,
       isRedirect: _response.isRedirect,
@@ -1129,6 +1714,7 @@ class AdminTextFontsApi {
   /// * [format] - 只接受单个 TTF/OTF 文件；扩展名不替代 Worker 对实际容器的验证。
   /// * [body]
   /// * [xCSRFToken] - 管理后台写操作必填
+  /// * [submissionId] - 简化提交标识；绑定已有提交、授权确认及唯一任务。省略时完全沿用旧授权流程。
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
   /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
   /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
@@ -1147,6 +1733,7 @@ class AdminTextFontsApi {
     required String format,
     required MultipartFile body,
     String? xCSRFToken,
+    String? submissionId,
     int? xMarkdownContractVersion,
     int? xTextColorVersion,
     int? xTextFontVersion,
@@ -1188,6 +1775,7 @@ class AdminTextFontsApi {
     );
 
     final _queryParameters = <String, dynamic>{
+      if (submissionId != null) r'submissionId': encodeQueryParameter(_serializers, submissionId, const FullType(String)),
       r'expectedFamilyRevision': encodeQueryParameter(_serializers, expectedFamilyRevision, const FullType(int)),
       r'format': encodeQueryParameter(_serializers, format, const FullType(String)),
     };

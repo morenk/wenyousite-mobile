@@ -354,6 +354,20 @@ void _checkSystemFontBoundary(
       if (line.contains("'monospace'") || line.contains('strut.fontFamily')) {
         continue;
       }
+      // 正文动态字体只有已验证分片运行时与 Quill 的系统回退适配可赋值；
+      // 不开放页面/UI 字体，也不允许这两个文件写死其他家族。
+      if (path == 'lib/core/text_fonts/text_font_runtime.dart' &&
+          line.trim() == 'fontFamily: loaded.first,') {
+        continue;
+      }
+      if (path ==
+              'lib/features/editor/presentation/text_font_quill_editor.dart' &&
+          const {
+            "const TextStyle(fontFamily: ''),",
+            "const TextStyle(fontFamily: '');",
+          }.contains(line.trim())) {
+        continue;
+      }
       failures.add(
         '$path sets a production fontFamily; inherit the platform system '
         'font unless this is the approved monospace presentation',

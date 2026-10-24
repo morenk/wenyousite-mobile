@@ -84,3 +84,24 @@ class PlatformEditorClipboardGateway implements EditorClipboardGateway {
     }
   }
 }
+
+EditorClipboardGateway createEditorClipboardGateway(
+  Future<String?> Function()? read,
+  Future<void> Function(String text)? write,
+) {
+  if (read == null && write == null) {
+    return const PlatformEditorClipboardGateway();
+  }
+  return CallbackEditorClipboardGateway(
+    readCallback: read ?? _readSystemClipboardText,
+    writeCallback: write ?? _writeSystemClipboardText,
+  );
+}
+
+Future<String?> _readSystemClipboardText() async {
+  final clipboard = await Clipboard.getData(Clipboard.kTextPlain);
+  return clipboard?.text;
+}
+
+Future<void> _writeSystemClipboardText(String text) =>
+    Clipboard.setData(ClipboardData(text: text));

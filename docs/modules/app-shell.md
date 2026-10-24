@@ -2,6 +2,8 @@
 
 状态：`in_progress`
 
+2026-10-24 动态字体候选／待真机验收：固定 Backend `f1025db4ef0d4986f53a4beffac6514d7ee16357`／API `5.44.0-dev.20261024.2`。解析textFontV2Supported与textFontV2WriteEnabled，缺失按false；读取能力与新字体选择开关独立。字体服务与引擎追加账本跨Provider/账号变化保持，前后台触发状态复核。v1 固定映射、防降级与撤回兼容已接入；本地检查与构建已执行，公网精确兼容随部署复核，产品 Android 同会话验收待完成，见[持续加载记录](../architecture/thread-fonts-mobile-continuous-loading.md)。
+
 2026-09-28 重复空说明弹窗修复已获负责人真机验收通过，绑定正式候选 `0.8.0+97` / APK SHA-256 `401dae520edeadaa51fda47e7556bedb2604b007ecb1e023f5d64eae22643e87`，返回桌面再进及划掉后台重开均不再弹空壳；当前源码相关门禁通过，按负责人最新指令准备合并，详见[一次说明验收](../architecture/mobile-update-once-dialogs-acceptance.md)。
 
 ## 1. 模块目标与非目标
@@ -174,7 +176,17 @@ Android 的 Debug、Profile 和 Release 均仅支持 `arm64-v8a`，使用 ARM64 
 
 ## 13. 最近审查的契约版本和后端提交
 
+2026-10-24 交付前来源复核：线上更新至 Backend `31f39ff317e56d6eb49b4c5e60ecdb93dfc9ec06`／API `5.44.0-dev.20261024.2`。机器契约零差异，仅字体 Worker 运维说明新增 8 行；同步来源与说明，应用及构建源码不变。完整门禁和窄复核分别见[集成验收记录](../architecture/alignment-font-integration-acceptance.md)。
+
+2026-10-24 行距合并集成：保留已合并 PR #114 的完整字体能力与本次标题间距修复。固定 Backend `c80f015402e22647bbc85aecc9513d3d1a026096`／API `5.44.0-dev.20261024.2`；相对字体基线 `f1025db4`，同步脚本全部导出契约及说明字节无变化，仅来源 SHA 更新。历史候选的旧端无字体能力说明不再代表集成后客户端。详见[集成验收记录](../architecture/alignment-font-integration-acceptance.md)。
+
 2026-10-24 契约兼容同步：固定 Backend `bc1135b72557eb6025a541dbd10119cf528ff989`／API `5.43.0-dev.20261022.3`，完整同步机器契约、字体资源契约与生成客户端。新增字体能力均为可选；本候选不声明字体读写能力，服务端安全投影旧端正文并拒绝降级覆盖，拒绝时保留编辑内容。字体选择与缓存继续由独立 PR 114 验收，详见[兼容同步记录](../architecture/alignment-contract-compatibility-sync.md)。
+
+2026-10-22 28 款字体与进度超时契约同步：Backend `f27898ec3b168b9e027b5d5abef43a0d3dafa242`／API `5.42.0-dev.20261022.1`。目录更新为 1.2.0，28 款（中文 12／日文 10／英文 6）；历史小城 ID 与旧 v1 解析保留。v2 明确 15 秒无进度和 600 秒总上限，并移除原件专属字段。此提交仅同步契约与生成客户端，持续加载行为仍待候选验证。
+
+2026-10-22 字体运行策略契约同步：Backend `d86734e5aa229c5401a092096b8845b3d17546b0`／API `5.42.0-dev.20261021.1`。新增公开 `textFontsGetRuntimePolicy` 与 v2 固定策略、schema 和夹具；旧正文、目录、manifest 字节与资源不变。此提交仅同步契约与生成客户端，持续加载行为仍待候选验证。
+
+2026-10-21 字体候选固定 Backend `102b825379eb5da462f0ff765b29dc8fd7fb93ad`／API `5.41.0-dev.20261021.2`。读取 `textFontV1Supported` 与 `textFontV1WriteEnabled` 到 `AppCapabilities`，缺失均为 false。全局 UI 继续使用系统字体，正文资源按需加载，见[字体 revision 5 候选记录](../architecture/thread-fonts-mobile-r5-candidate.md)。
 
 2026-10-18 合并来源同步：Backend PR #55 已合并，固定最终提交 `6e00c4031a8f970609eef8cbf6fdefe3e6b12126`／API `5.40.0-dev.20261018.1`。契约字节与先前候选 `da68203a` 一致，本次只更新来源元数据；消费者验证和部署核验分别记录，不改变本模块既有范围。
 

@@ -204,6 +204,7 @@ void main() {
       final repository = ApiPostRepository(
         api,
         roleMentionsSupported: supports,
+        textFontV2Supported: true,
         textColorSupported: supports,
       );
 
@@ -235,9 +236,6 @@ void main() {
       await repository.setPinned(created.id, pinned: false);
 
       expect(createPayload.content, '新回复');
-      expect(createPayload.textFontVersion, isNull);
-      expect(updatePayload.textFontVersion, isNull);
-      expect(bodyPayload.textFontVersion, isNull);
       expect(createPayload.identityMode, CreatePostDtoIdentityModeEnum.RP);
       expect(createPayload.identityToken, 'identity-old');
       expect(createPayload.identityId, 'role-selected');
@@ -247,6 +245,18 @@ void main() {
       );
       expect(createPayload.parentPostId, 'floor');
       expect(createPayload.replyToPostId, 'reply-target');
+      expect(
+        createPayload.textFontVersion,
+        CreatePostDtoTextFontVersionEnum.number2,
+      );
+      expect(
+        updatePayload.textFontVersion,
+        UpdatePostDtoTextFontVersionEnum.number2,
+      );
+      expect(
+        bodyPayload.textFontVersion,
+        UpsertBodyDtoTextFontVersionEnum.number2,
+      );
       expect(updatePayload.content, '编辑后的内容');
       expect(updatePayload.version, 3);
       expect(updated.version, 4);

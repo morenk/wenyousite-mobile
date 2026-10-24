@@ -324,6 +324,12 @@ class BusinessErrorCode extends EnumClass {
   @BuiltValueEnumConst(wireNumber: 40929)
   static const BusinessErrorCode TEXT_FONT_RIGHTS_REQUIRED = _$TEXT_FONT_RIGHTS_REQUIRED;
   /// 稳定业务错误码；名称和值来源于 ErrorCode
+  @BuiltValueEnumConst(wireNumber: 40930)
+  static const BusinessErrorCode TEXT_FONT_SUBMISSION_CONFLICT = _$TEXT_FONT_SUBMISSION_CONFLICT;
+  /// 稳定业务错误码；名称和值来源于 ErrorCode
+  @BuiltValueEnumConst(wireNumber: 40931)
+  static const BusinessErrorCode TEXT_FONT_LIST_CHANGED = _$TEXT_FONT_LIST_CHANGED;
+  /// 稳定业务错误码；名称和值来源于 ErrorCode
   @BuiltValueEnumConst(wireNumber: 41001)
   static const BusinessErrorCode TEXT_FONT_WITHDRAWN = _$TEXT_FONT_WITHDRAWN;
   /// 稳定业务错误码；名称和值来源于 ErrorCode

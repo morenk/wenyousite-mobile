@@ -96,10 +96,49 @@ final BuiltSet<FontJobDtoFailureCodeEnum> _$fontJobDtoFailureCodeEnumValues =
       _$fontJobDtoFailureCodeEnum_unknownDefaultOpenApi,
     ]);
 
+const FontJobDtoFailureReasonEnum
+_$fontJobDtoFailureReasonEnum_embeddingRestricted =
+    const FontJobDtoFailureReasonEnum._('embeddingRestricted');
+const FontJobDtoFailureReasonEnum
+_$fontJobDtoFailureReasonEnum_subsettingRestricted =
+    const FontJobDtoFailureReasonEnum._('subsettingRestricted');
+const FontJobDtoFailureReasonEnum _$fontJobDtoFailureReasonEnum_bitmapOnly =
+    const FontJobDtoFailureReasonEnum._('bitmapOnly');
+const FontJobDtoFailureReasonEnum
+_$fontJobDtoFailureReasonEnum_unknownDefaultOpenApi =
+    const FontJobDtoFailureReasonEnum._('unknownDefaultOpenApi');
+
+FontJobDtoFailureReasonEnum _$fontJobDtoFailureReasonEnumValueOf(String name) {
+  switch (name) {
+    case 'embeddingRestricted':
+      return _$fontJobDtoFailureReasonEnum_embeddingRestricted;
+    case 'subsettingRestricted':
+      return _$fontJobDtoFailureReasonEnum_subsettingRestricted;
+    case 'bitmapOnly':
+      return _$fontJobDtoFailureReasonEnum_bitmapOnly;
+    case 'unknownDefaultOpenApi':
+      return _$fontJobDtoFailureReasonEnum_unknownDefaultOpenApi;
+    default:
+      return _$fontJobDtoFailureReasonEnum_unknownDefaultOpenApi;
+  }
+}
+
+final BuiltSet<FontJobDtoFailureReasonEnum>
+_$fontJobDtoFailureReasonEnumValues =
+    BuiltSet<FontJobDtoFailureReasonEnum>(const <FontJobDtoFailureReasonEnum>[
+      _$fontJobDtoFailureReasonEnum_embeddingRestricted,
+      _$fontJobDtoFailureReasonEnum_subsettingRestricted,
+      _$fontJobDtoFailureReasonEnum_bitmapOnly,
+      _$fontJobDtoFailureReasonEnum_unknownDefaultOpenApi,
+    ]);
+
 Serializer<FontJobDtoStatusEnum> _$fontJobDtoStatusEnumSerializer =
     _$FontJobDtoStatusEnumSerializer();
 Serializer<FontJobDtoFailureCodeEnum> _$fontJobDtoFailureCodeEnumSerializer =
     _$FontJobDtoFailureCodeEnumSerializer();
+Serializer<FontJobDtoFailureReasonEnum>
+_$fontJobDtoFailureReasonEnumSerializer =
+    _$FontJobDtoFailureReasonEnumSerializer();
 
 class _$FontJobDtoStatusEnumSerializer
     implements PrimitiveSerializer<FontJobDtoStatusEnum> {
@@ -185,7 +224,46 @@ class _$FontJobDtoFailureCodeEnumSerializer
   );
 }
 
+class _$FontJobDtoFailureReasonEnumSerializer
+    implements PrimitiveSerializer<FontJobDtoFailureReasonEnum> {
+  static const Map<String, Object> _toWire = const <String, Object>{
+    'embeddingRestricted': 'embedding-restricted',
+    'subsettingRestricted': 'subsetting-restricted',
+    'bitmapOnly': 'bitmap-only',
+    'unknownDefaultOpenApi': 'unknown_default_open_api',
+  };
+  static const Map<Object, String> _fromWire = const <Object, String>{
+    'embedding-restricted': 'embeddingRestricted',
+    'subsetting-restricted': 'subsettingRestricted',
+    'bitmap-only': 'bitmapOnly',
+    'unknown_default_open_api': 'unknownDefaultOpenApi',
+  };
+
+  @override
+  final Iterable<Type> types = const <Type>[FontJobDtoFailureReasonEnum];
+  @override
+  final String wireName = 'FontJobDtoFailureReasonEnum';
+
+  @override
+  Object serialize(
+    Serializers serializers,
+    FontJobDtoFailureReasonEnum object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => _toWire[object.name] ?? object.name;
+
+  @override
+  FontJobDtoFailureReasonEnum deserialize(
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => FontJobDtoFailureReasonEnum.valueOf(
+    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
+  );
+}
+
 class _$FontJobDto extends FontJobDto {
+  @override
+  final String? submissionId;
   @override
   final String jobId;
   @override
@@ -200,11 +278,14 @@ class _$FontJobDto extends FontJobDto {
   final String? versionId;
   @override
   final FontJobDtoFailureCodeEnum? failureCode;
+  @override
+  final FontJobDtoFailureReasonEnum? failureReason;
 
   factory _$FontJobDto([void Function(FontJobDtoBuilder)? updates]) =>
       (FontJobDtoBuilder()..update(updates))._build();
 
   _$FontJobDto._({
+    this.submissionId,
     required this.jobId,
     required this.familyId,
     required this.status,
@@ -212,6 +293,7 @@ class _$FontJobDto extends FontJobDto {
     required this.sourceBytes,
     this.versionId,
     this.failureCode,
+    this.failureReason,
   }) : super._();
   @override
   FontJobDto rebuild(void Function(FontJobDtoBuilder) updates) =>
@@ -224,18 +306,21 @@ class _$FontJobDto extends FontJobDto {
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
     return other is FontJobDto &&
+        submissionId == other.submissionId &&
         jobId == other.jobId &&
         familyId == other.familyId &&
         status == other.status &&
         sourceSha256 == other.sourceSha256 &&
         sourceBytes == other.sourceBytes &&
         versionId == other.versionId &&
-        failureCode == other.failureCode;
+        failureCode == other.failureCode &&
+        failureReason == other.failureReason;
   }
 
   @override
   int get hashCode {
     var _$hash = 0;
+    _$hash = $jc(_$hash, submissionId.hashCode);
     _$hash = $jc(_$hash, jobId.hashCode);
     _$hash = $jc(_$hash, familyId.hashCode);
     _$hash = $jc(_$hash, status.hashCode);
@@ -243,6 +328,7 @@ class _$FontJobDto extends FontJobDto {
     _$hash = $jc(_$hash, sourceBytes.hashCode);
     _$hash = $jc(_$hash, versionId.hashCode);
     _$hash = $jc(_$hash, failureCode.hashCode);
+    _$hash = $jc(_$hash, failureReason.hashCode);
     _$hash = $jf(_$hash);
     return _$hash;
   }
@@ -250,19 +336,25 @@ class _$FontJobDto extends FontJobDto {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'FontJobDto')
+          ..add('submissionId', submissionId)
           ..add('jobId', jobId)
           ..add('familyId', familyId)
           ..add('status', status)
           ..add('sourceSha256', sourceSha256)
           ..add('sourceBytes', sourceBytes)
           ..add('versionId', versionId)
-          ..add('failureCode', failureCode))
+          ..add('failureCode', failureCode)
+          ..add('failureReason', failureReason))
         .toString();
   }
 }
 
 class FontJobDtoBuilder implements Builder<FontJobDto, FontJobDtoBuilder> {
   _$FontJobDto? _$v;
+
+  String? _submissionId;
+  String? get submissionId => _$this._submissionId;
+  set submissionId(String? submissionId) => _$this._submissionId = submissionId;
 
   String? _jobId;
   String? get jobId => _$this._jobId;
@@ -293,6 +385,11 @@ class FontJobDtoBuilder implements Builder<FontJobDto, FontJobDtoBuilder> {
   set failureCode(FontJobDtoFailureCodeEnum? failureCode) =>
       _$this._failureCode = failureCode;
 
+  FontJobDtoFailureReasonEnum? _failureReason;
+  FontJobDtoFailureReasonEnum? get failureReason => _$this._failureReason;
+  set failureReason(FontJobDtoFailureReasonEnum? failureReason) =>
+      _$this._failureReason = failureReason;
+
   FontJobDtoBuilder() {
     FontJobDto._defaults(this);
   }
@@ -300,6 +397,7 @@ class FontJobDtoBuilder implements Builder<FontJobDto, FontJobDtoBuilder> {
   FontJobDtoBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
+      _submissionId = $v.submissionId;
       _jobId = $v.jobId;
       _familyId = $v.familyId;
       _status = $v.status;
@@ -307,6 +405,7 @@ class FontJobDtoBuilder implements Builder<FontJobDto, FontJobDtoBuilder> {
       _sourceBytes = $v.sourceBytes;
       _versionId = $v.versionId;
       _failureCode = $v.failureCode;
+      _failureReason = $v.failureReason;
       _$v = null;
     }
     return this;
@@ -329,6 +428,7 @@ class FontJobDtoBuilder implements Builder<FontJobDto, FontJobDtoBuilder> {
     final _$result =
         _$v ??
         _$FontJobDto._(
+          submissionId: submissionId,
           jobId: BuiltValueNullFieldError.checkNotNull(
             jobId,
             r'FontJobDto',
@@ -356,6 +456,7 @@ class FontJobDtoBuilder implements Builder<FontJobDto, FontJobDtoBuilder> {
           ),
           versionId: versionId,
           failureCode: failureCode,
+          failureReason: failureReason,
         );
     replace(_$result);
     return _$result;

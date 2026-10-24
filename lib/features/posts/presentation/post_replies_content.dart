@@ -374,6 +374,7 @@ class _PostCard extends ConsumerWidget {
               )
             else
               PostReadingBody(
+                enableTextFonts: true,
                 post: post,
                 galleryTarget: galleryTarget,
                 onTapText: canTapReply ? onReply : null,

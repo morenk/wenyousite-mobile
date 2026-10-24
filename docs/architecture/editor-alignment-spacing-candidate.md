@@ -1,6 +1,6 @@
 # 标题对齐间距候选
 
-状态：候选／待负责人验收。治理任务 `01a164b8-84ac-7682-9e56-376901766b25`，Windows Worktree `D:/codex-worktrees/mobile-alignment-spacing/wenyousite-mobile`，分支 `codex/20261023-mobile-alignment-spacing`，基线 `6f006450`。
+状态：原候选已于 2026-10-24 通过负责人验收，已授权合并。验收对应 `a0865abe875c3d18151ffe3a0141adaf3ec58192` 与 APK SHA-256 `d1a5cb0002f0b45d20a7c2b2789a4854fdb2d4e8868a0f07bdb9e03cce264217`；后续集成检查见[集成验收记录](alignment-font-integration-acceptance.md)。下文保留原候选证据。治理任务 `01a164b8-84ac-7682-9e56-376901766b25`，Windows Worktree `D:/codex-worktrees/mobile-alignment-spacing/wenyousite-mobile`，分支 `codex/20261023-mobile-alignment-spacing`，基线 `6f006450`。
 
 ## 需求与复现边界
 
@@ -45,7 +45,7 @@
 
 诊断 APK：`build/app/outputs/flutter-apk/app-debug.apk`，包名 `site.wenyou.app.debug`，版本 `0.10.0-debug`（versionCode `100`），112827002 字节，SHA-256 `b1c0bd973ea3dd7fb3fff6d7486752275e552b470303940b066a20e8e9fe6c64`。没有安装或启动；没有生成发布签名包。构建保留原依赖 `flutter_image_compress_common` 的后续 Kotlin Gradle Plugin 迁移提示，本次没有改原生配置。
 
-## 2026-10-24 完整门禁与验收安装包
+## 原候选历史：2026-10-24 完整门禁与验收安装包
 
 已按负责人要求完整同步 Backend `bc1135b72557eb6025a541dbd10119cf528ff989`／API `5.43.0-dev.20261022.3`，并保留旧端未声明字体能力的兼容边界。新入口为 `npm run check:apk -- -TestConcurrency 2`，日志 `build/alignment-contract-final-full-gate-2.log`；同次完整门禁与构建成功，退出码 **0**。此前因临时 Backend 测试夹具遗漏字体来源而失败的一轮记录保留，不与成功记录混同。
 
@@ -61,8 +61,8 @@
 
 安装包固定保存为 `build/wenyou-mobile-alignment-20261024-9fb5ab4.apk`：应用名“温油站 Debug”，包名 `site.wenyou.app.debug`，版本 `0.10.0-debug`／`100`，仅 `arm64-v8a`，155627312 字节。SHA-256 为 `d1a5cb0002f0b45d20a7c2b2789a4854fdb2d4e8868a0f07bdb9e03cce264217`。编译输入完整源码树为 `9fb5ab4f0e7c2c6b2504ea9bb5a736dcb26f50e1`，记录见 `build/alignment-contract-build-input.json`；交付记录补充后仅文档变化，不重建同源码 APK。
 
-默认 API 为 `https://wenyou.site/api/v1`，并非隔离环境。没有自动安装或启动，没有线上业务写入。构建保留既有 Kotlin 插件迁移及 SDK XML 版本提示，不影响本轮成功结果。仍为原场景真机待验收候选，未合并、部署或正式发布。
+默认 API 为 `https://wenyou.site/api/v1`，并非隔离环境。没有自动安装或启动，没有线上业务写入。构建保留既有 Kotlin 插件迁移及 SDK XML 版本提示，不影响本轮成功结果。该交付时点仍待真机验收；随后负责人已于 2026-10-24 明确验收通过并授权合并。没有部署或正式发布。
 
-## 负责人复验
+## 原候选历史：负责人复验清单
 
-在当前候选的手机编辑器打开原问题正文，分别选中 H2/H3，切换居中、居右、恢复居左，确认字号、行高、上下段距保持。再检查连续标题、空段、粗斜体/颜色/代码组合，并撤销重做；保存和重开由负责人在所选业务环境自行操作。候选尚未完成原场景真机验收，不能据自动测试关闭问题。
+在当前候选的手机编辑器打开原问题正文，分别选中 H2/H3，切换居中、居右、恢复居左，确认字号、行高、上下段距保持。再检查连续标题、空段、粗斜体/颜色/代码组合，并撤销重做；保存和重开由负责人在所选业务环境自行操作。以上是原交付时提供的复验清单；负责人随后明确验收通过。本次基线集成的自动检查另记，不增加真机操作声称。

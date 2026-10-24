@@ -140,11 +140,11 @@ _$fontVersionDescriptorDtoStatusEnumSerializer =
 class _$FontVersionDescriptorDtoFontVersionEnumSerializer
     implements PrimitiveSerializer<FontVersionDescriptorDtoFontVersionEnum> {
   static const Map<String, Object> _toWire = const <String, Object>{
-    'n2': '2',
+    'n2': 2,
     'unknownDefaultOpenApi': '11184809',
   };
   static const Map<Object, String> _fromWire = const <Object, String>{
-    '2': 'n2',
+    2: 'n2',
     '11184809': 'unknownDefaultOpenApi',
   };
 
