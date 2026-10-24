@@ -105,6 +105,8 @@ app-shell 只负责会话、前后台与北京时间边界的签到调度及非�
 
 ## 13. 最近审查的契约版本和后端提交
 
+2026-10-24 相册候选来源复核：已部署 Backend `33574ae73d88123aa216a93f9cc81eab60fb9ee9`／API `5.44.0-dev.20261024.2`，其第一父提交为原固定 `31f39ff317e56d6eb49b4c5e60ecdb93dfc9ec06`。机器契约及消费者指南零差异，仅同步来源与导出运维说明；本模块行为和已有验收边界保持，详见[来源同步](../architecture/compose-gallery-contract-source-sync.md)。
+
 2026-10-24 交付前来源复核：线上更新至 Backend `31f39ff317e56d6eb49b4c5e60ecdb93dfc9ec06`／API `5.44.0-dev.20261024.2`。机器契约零差异，仅字体 Worker 运维说明新增 8 行；同步来源与说明，应用及构建源码不变。完整门禁和窄复核分别见[集成验收记录](../architecture/alignment-font-integration-acceptance.md)。
 
 2026-10-24 行距合并集成：保留已合并 PR #114 的完整字体能力与本次标题间距修复。固定 Backend `c80f015402e22647bbc85aecc9513d3d1a026096`／API `5.44.0-dev.20261024.2`；相对字体基线 `f1025db4`，同步脚本全部导出契约及说明字节无变化，仅来源 SHA 更新。历史候选的旧端无字体能力说明不再代表集成后客户端。详见[集成验收记录](../architecture/alignment-font-integration-acceptance.md)。
