@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "evidenceKind": "backend-artifacts",
+  "backendRevision": "2db4ef1254c7738966dc28b1cd1fc10dcb19da47",
+  "samples": [
+    {
+      "id": "static-ttf",
+      "file": "static-ttf/8db33d8345608b195e720571d2df3b47c7261e05dae26fd78573e1cfb9f95709.ttf",
+      "sha256": "8db33d8345608b195e720571d2df3b47c7261e05dae26fd78573e1cfb9f95709",
+      "outline": "glyf",
+      "defaultInstance": false,
+      "text": "Wenyou Aa 0123",
+      "parametersVersion": 1,
+      "sourceSha256": "e32bfe3bfbd41f0dd60fe600cbbcfa9994881ce58d186201ab476e8b3f48ee69",
+      "compilerSha256": "8ca56ca2223b1ab4da29f58092a207e68e7cfd1965ce32bf2bb67377c62a505b",
+      "sourceManifestSha256": "ea436238a26710fbb7e11996cde7a7c390cbc169df17512a3f179946a0807352",
+      "licenseSha256": "a3e8166656cac363e78a5661d9cb0dbf7bbebc63eaf71e5927872ad08281a1ab",
+      "family": "WYF2-369d0698f6147b48ca800bb04ad25256-core",
+      "sourceAxes": {}
+    },
+    {
+      "id": "static-cff",
+      "file": "static-cff/40811c17b6768b0e110002f21ac1268dd6e82d3214d2a98b406238961fbf24dc.otf",
+      "sha256": "40811c17b6768b0e110002f21ac1268dd6e82d3214d2a98b406238961fbf24dc",
+      "outline": "CFF ",
+      "defaultInstance": false,
+      "text": "Wenyou Aa 0123",
+      "parametersVersion": 1,
+      "sourceSha256": "13c8f64df96e0aa8fbc1cbabcbc93dad798b69370b4cfa3c54814d860ec13ac8",
+      "compilerSha256": "8ca56ca2223b1ab4da29f58092a207e68e7cfd1965ce32bf2bb67377c62a505b",
+      "sourceManifestSha256": "188b8926fa2a2030b45361f84ed12ffb0f7f21880201f1c14d49693352c2f479",
+      "licenseSha256": "a3e8166656cac363e78a5661d9cb0dbf7bbebc63eaf71e5927872ad08281a1ab",
+      "family": "WYF2-283202d139a856411717459a9e9f66c4-core",
+      "sourceAxes": {}
+    },
+    {
+      "id": "variable-glyf",
+      "file": "variable-glyf/ba8210939feb1ed9a0e03eb241cde6dcdb167c796abf6ee4e9fc60e46578101b.ttf",
+      "sha256": "ba8210939feb1ed9a0e03eb241cde6dcdb167c796abf6ee4e9fc60e46578101b",
+      "outline": "glyf",
+      "defaultInstance": true,
+      "text": "Wenyou Aa 0123",
+      "parametersVersion": 1,
+      "sourceSha256": "f42db2dd16e642258e35782916eceb1dcdbea06fb958d77ad71dc5963587e8fd",
+      "compilerSha256": "8ca56ca2223b1ab4da29f58092a207e68e7cfd1965ce32bf2bb67377c62a505b",
+      "sourceManifestSha256": "4629daea55e82cc5cb3b8e10792ca65a40243f1941d43bedff478a318d33b158",
+      "licenseSha256": "ab609b0e110d622435ff337cdf233288556e011bbf9bd0550be98846c0630819",
+      "family": "WYF2-bef576e8a8a2291cd3610122260ba885-core",
+      "sourceAxes": {
+        "wght": 400
+      }
+    },
+    {
+      "id": "variable-cff2",
+      "file": "variable-cff2/2e11cca51372265ca044a76b0ed0946c0abc1e667c419e1b3fb85a4095af599c.otf",
+      "sha256": "2e11cca51372265ca044a76b0ed0946c0abc1e667c419e1b3fb85a4095af599c",
+      "outline": "CFF ",
+      "defaultInstance": true,
+      "text": "Wenyou Aa 0123",
+      "parametersVersion": 1,
+      "sourceSha256": "867b73c6a954a4a64616906d179f94572a748790a1d022ebeeff07f56ea0221a",
+      "compilerSha256": "8ca56ca2223b1ab4da29f58092a207e68e7cfd1965ce32bf2bb67377c62a505b",
+      "sourceManifestSha256": "d9780f1a5e82ea3201ffd335ae8a1b56e879f9cdc582834c9945c22957df58a3",
+      "licenseSha256": "c21d7293d87b6d7ab1d0229a2f55b77f33a7613a6a4e66f6693d68d7d8d09464",
+      "family": "WYF2-b275f79862ba3b4026d974bc6d67f616-core",
+      "sourceAxes": {
+        "wght": 400,
+        "opsz": 20
+      }
+    }
+  ]
+}

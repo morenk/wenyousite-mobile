@@ -1,5 +1,10 @@
 # 移动端变更记录
 
+## 2026-10-24 字体样张契约与离线格式回归（v2 产物待验证）
+
+- 固定 Backend `2db4ef1254c7738966dc28b1cd1fc10dcb19da47`／API `5.44.0-dev.20261024.3`；统一四类样张文案的共享 fixture，HTTP 形状与移动端运行逻辑不变。
+- 增加真实 Flutter 引擎离线字体验证工具和回退反证；首批静态 TTF、CFF OTF、Orbitron 与 SourceSerif4 默认实例的 core 分片全部通过。该批为 parametersVersion=1，v2 产物和 Android 真机仍未验证。范围见[验证说明](architecture/font-format-offline-probe.md)。
+
 ## 2026-10-24 标题间距验收与字体基线集成
 
 - 负责人明确验收通过并授权合并 PR #115，原验收对应提交 `a0865abe` 与 APK SHA-256 `d1a5cb00…264217`。
