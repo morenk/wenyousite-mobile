@@ -30,6 +30,7 @@
 - 最小候选：新增 `test/features/posts/post_replies_resume_test.dart` 的 14 项全部通过；使用生产 provider 装配、真实 `StartupGate`、元信息控制器、能力映射和生成客户端，只替换内存传输、会话及设备 I/O，不覆盖 `postRepositoryProvider`。360×800 阅读页断言当前 ID、条目内偏移（1px 内）、同 controller/已加载窗口、无 loading 阶段或额外首屏请求。数字跳转等待揭罩和前向补页后继续手势阅读，停下惯性再模拟恢复，保留“回到刚才”。能力测试显式允许的创建仅到内存 adapter，无真实写入。
 - 同时覆盖倒序/作者筛选、深链之后继续阅读、meta 慢/失败/无关能力变化、同账号 Token 轮换、切号/退出/会话失效、旧账号迟到首屏、可见性失效，以及四种真实能力开关进入生成创建载荷。
 - 生产变更仅 `lib/features/posts/data/post_repository.dart`，最终文件 SHA-256：`37a73d04c75e20ea0be355f04215da8c54182b6a8b6374854c397860dab23823`。其余应用源码、配置及依赖与基线一致。SDK Flutter 3.44.8 / Dart 3.12.2。
+- 对应应用源码提交：`bc3c6efe6499acf725a0a04e28e51051461f0479`。APK 构建后提交同一已冻结应用树，随后只补来源文档记录；本节的文件摘要与基线可复核源码归属，文档登记不改变 APK 或应用源码。
 - `dart run tool/check_architecture.dart`、`dart run tool/check_docs.dart` 及 `git diff --check` 通过；日志分别为 `architecture-check.log`、`docs-check.log`，同在上述证据目录。架构检查仅提示存量超过 700 行文件的下次评审提醒，未产生新债务。
 - `candidate:apk` 全流程退出码 0：全仓格式、应用与生成客户端全量静态分析均零问题；以下 14 个测试文件共 **175 项全部通过**（含新增 14 项）；ARM64 Debug 构建成功，Gradle 阶段 182.1 秒。主日志 `candidate-apk.log`，SHA-256 `1bb0579ddf2678b8715f7f872eae87ee408820eec6a6279ba21a7f0bfce3a7fc`；旧失败日志 SHA-256 `65076de5b502f39ccda60e9e1f2baf82fcae5c4e03ef247b303b191b9adda8f1`。
 
