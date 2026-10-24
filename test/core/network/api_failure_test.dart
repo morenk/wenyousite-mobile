@@ -7,7 +7,7 @@ import 'package:wenyousite_mobile/features/moments/data/moment_failure_messages.
 import 'package:wenyousite_mobile/features/wallet/data/wallet_failure_messages.dart';
 
 void main() {
-  test('颜色与字体能力、损坏错误保留草稿并提供恢复动作', () {
+  test('颜色和字体能力与损坏错误保留草稿并提供恢复动作', () {
     for (final code in [40016, 40017, 40018, 40019, 40020, 40021]) {
       final options = RequestOptions(path: '/api/v1/posts/p');
       final failure = ApiFailure.fromDio(
@@ -15,7 +15,7 @@ void main() {
           requestOptions: options,
           response: Response<Object?>(
             requestOptions: options,
-            statusCode: 409,
+            statusCode: code == 40018 || code == 40021 ? 400 : 409,
             data: {'code': code, 'message': 'hidden backend details'},
           ),
         ),
@@ -27,6 +27,9 @@ void main() {
       expect(presentation.message, contains('草稿已保留'));
       expect(presentation.message, isNot(contains('hidden')));
       expect(failure.invalidatesSession, isFalse);
+      expect(failure.effectiveSource, FailureSource.expected);
+      expect(failure.businessCodeName, isNotNull);
+      expect(failure.hasUnknownWriteOutcome, isFalse);
     }
   });
   test('响应契约异常只向用户暴露安全结果文案', () {

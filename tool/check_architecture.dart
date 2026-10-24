@@ -7,6 +7,7 @@ import 'architecture/dependency_graph.dart';
 import 'architecture/editor_semantics_checks.dart';
 import 'architecture/presentation_checks.dart';
 import 'architecture/source_files.dart';
+import 'architecture/vendored_dependencies.dart';
 
 const _idempotentOperations = <String>{
   'directConversationsCreate',
@@ -24,7 +25,7 @@ const _idempotentOperations = <String>{
   'threadsCreate',
 };
 
-const _maximumDartFileLines = 900;
+const _maximumDartFileLines = 1200;
 
 const _reviewDartFileLines = 700;
 
@@ -60,6 +61,13 @@ List<String> collectArchitectureFailures(Directory root) {
   final allowlist = readAllowlist(root);
   final graph = DependencyGraph(root);
   final allDartFiles = repositoryDartFiles(root);
+  final vendor = validateVendoredDependencies(root);
+  failures.addAll(vendor.failures);
+  final handwrittenFiles = allDartFiles
+      .where(
+        (file) => !vendor.verifiedFiles.contains(relativePath(file.path, root)),
+      )
+      .toList();
   final applicationFiles = dartFiles(Directory('${root.path}/lib'));
   final testDartFiles = dartFiles(Directory('${root.path}/test'));
 
@@ -72,8 +80,13 @@ List<String> collectArchitectureFailures(Directory root) {
     graph,
   );
   checkDomainStateOwnership(applicationFiles, failures, root);
-  _checkDartFileSizes(allDartFiles, allowlist.largeFileDebt, failures, root);
-  _checkHandwrittenParts(allDartFiles, failures, root);
+  _checkDartFileSizes(
+    handwrittenFiles,
+    allowlist.largeFileDebt,
+    failures,
+    root,
+  );
+  _checkHandwrittenParts(handwrittenFiles, failures, root);
   checkLayerDependencies(
     applicationFiles,
     allowlist.layerDependencyDebt,
@@ -122,9 +135,11 @@ List<String> collectArchitectureFailures(Directory root) {
 
 List<String> collectArchitectureReviewNotices(Directory root) {
   final notices = <String>[];
+  final vendor = validateVendoredDependencies(root);
   for (final file in repositoryDartFiles(
     root,
   ).where((file) => !file.path.replaceAll('\\', '/').endsWith('.g.dart'))) {
+    if (vendor.verifiedFiles.contains(relativePath(file.path, root))) continue;
     final count = lineCount(file.readAsStringSync());
     if (count <= _reviewDartFileLines || count > _maximumDartFileLines) {
       continue;

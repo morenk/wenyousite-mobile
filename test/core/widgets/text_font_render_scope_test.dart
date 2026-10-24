@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyou_api/wenyou_api.dart';
@@ -10,6 +12,8 @@ import 'package:wenyousite_mobile/core/text_fonts/text_font_cache.dart';
 import 'package:wenyousite_mobile/core/text_fonts/text_font_runtime.dart';
 import 'package:wenyousite_mobile/core/text_fonts/text_font_service.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_markdown.dart';
+
+import '../../support/deterministic_test_fonts.dart';
 
 class _Runtime extends TextFontRuntime {
   _Runtime()
@@ -56,6 +60,97 @@ class _Service extends TextFontService {
 }
 
 void main() {
+  setUpAll(() async {
+    await loadDeterministicTestFonts();
+    final bytes = await File(
+      'test/support/fonts/WenyouGoldenText-Variable.ttf',
+    ).readAsBytes();
+    await (FontLoader(
+      'fixture-font-wenkai',
+    )..addFont(Future.value(ByteData.sublistView(bytes)))).load();
+  });
+  for (final heading in ['##', '###']) {
+    testWidgets('$heading 字体与颜色生效时切换对齐仍保留标题垂直度量', (tester) async {
+      final service = _Service(_Runtime());
+      addTearDown(service.dispose);
+      Future<List<(String, double, double)>> measure(String direction) async {
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [textFontServiceProvider.overrideWithValue(service)],
+            child: MaterialApp(
+              theme: AppTheme.light,
+              home: Scaffold(
+                body: SizedBox(
+                  width: 320,
+                  child: WenyouMarkdown(
+                    enableTextFonts: true,
+                    enablePlainTextFastPath: false,
+                    data:
+                        '前文\n\n'
+                        '${direction.isEmpty ? '' : '[wenyousite-align-v1-$direction]: #\n'}'
+                        '$heading <span data-wenyou-font-v1="wenkai" '
+                        'data-wenyou-color-v1="#D14343">**标题文字**</span>后半标题'
+                        '\n\n后文',
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        final texts = tester.widgetList<RichText>(
+          find.descendant(
+            of: find.byType(WenyouMarkdown),
+            matching: find.byType(RichText),
+          ),
+        );
+        final fontText = texts.singleWhere(
+          (text) => text.text.toPlainText() == '标题文字',
+        );
+        TextSpan? fontSpan;
+        fontText.text.visitChildren((span) {
+          if (span is TextSpan && span.text == '标题文字') fontSpan = span;
+          return true;
+        });
+        expect(fontSpan, isNotNull);
+        final fontStyle = fontSpan!.style!;
+        expect(fontStyle.fontFamily, 'fixture-font-wenkai');
+        expect(fontStyle.color, const Color(0xFFD14343));
+        expect(fontStyle.fontWeight, FontWeight.bold);
+        return [
+          for (final token in ['前文', '标题文字', '后半标题', '后文'])
+            (() {
+              final text = texts.singleWhere(
+                (text) => text.text.toPlainText().contains(token),
+              );
+              final paragraph = tester.renderObject<RenderParagraph>(
+                find.byWidget(text),
+              );
+              final start = text.text.toPlainText().indexOf(token);
+              final box = paragraph
+                  .getBoxesForSelection(
+                    TextSelection(
+                      baseOffset: start,
+                      extentOffset: start + token.length,
+                    ),
+                  )
+                  .single
+                  .toRect()
+                  .shift(paragraph.localToGlobal(Offset.zero));
+              return (token, box.top, box.height);
+            })(),
+        ];
+      }
+
+      final left = await measure('');
+      expect(service.runtime.requested, contains('wenkai'));
+      for (final direction in ['center', 'right', '']) {
+        expect(await measure(direction), left);
+      }
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox.shrink());
+    });
+  }
   testWidgets('正文保持可见时能力更新会重新检查字体来源', (tester) async {
     final service = _Service(_Runtime());
     final container = ProviderContainer(

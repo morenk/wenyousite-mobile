@@ -343,6 +343,14 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
     final next = _renderSegments[index].markdown.trimLeft();
     final previousBlocks = md.Document().parse(previous);
     final nextBlocks = md.Document().parse(next);
+    // 显式空段在连续阅读时并入正文行，标题边界仍有块间距。
+    // 对齐拆段不能因相邻 <br /> 把这部分标题留白一起移除。
+    bool isHeading(md.Node node) =>
+        node is md.Element && RegExp(r'^h[1-6]$').hasMatch(node.tag);
+    if ((previousBlocks.isNotEmpty && isHeading(previousBlocks.last)) ||
+        (nextBlocks.isNotEmpty && isHeading(nextBlocks.first))) {
+      return true;
+    }
     if (previousBlocks.isNotEmpty &&
         nextBlocks.isNotEmpty &&
         WenyouMarkdownBody.isBodyParagraph(previousBlocks.last) &&
