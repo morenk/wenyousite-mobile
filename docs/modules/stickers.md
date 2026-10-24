@@ -66,6 +66,8 @@
 
 ## 10. 跨模块约束
 
+正文包装组件的字体作用域候选：StickerPostMarkdown 默认关闭自定义字体，不创建字体加载作用域；完整主题／子贴／楼层／展开回复的调用点显式传入 enableTextFonts。表情行为及源 Markdown 不变。 具体边界与待验收证据见[作用域候选](../architecture/thread-fonts-mobile-scope-candidate.md)。
+
 共享 StickerPostMarkdown 正文门面透传可信 mediaAudios 给普通 Markdown 播放器；收藏、插入、拖动和表情权限本身不变。
 
 本模块页面排版统一遵循[移动端视觉基线](../architecture/visual-baseline.md)中的 Foundation v6.9.0 语义文字角色，不自定义字号或直接依赖 Material 字体槽位。
@@ -94,6 +96,14 @@ media application 负责相册选择、格式校验、`STICKER_SOURCE` 用途和
 移动端相册入口当前一次选择一张，未实现 Web 的最多十张并发批量导入；动画只在发送或正文实际图片 URL 中播放，收藏网格使用缩略图。处理任务依靠前台轮询，不做后台通知；进程终止后重新进入即从服务端 pending 列表恢复观察。
 
 ## 13. 最近审查的契约版本和后端提交
+
+2026-10-24 字体管理契约审查：Backend `f1025db4ef0d4986f53a4beffac6514d7ee16357`／API `5.44.0-dev.20261024.2`。新增管理字体提交、分页和顺序接口；公开字体v2协议与本模块业务操作不变，Mobile不新增管理入口。产品候选已完成本地检查与构建，公网精确兼容随部署复核，真机验收未完成，见[持续加载记录](../architecture/thread-fonts-mobile-continuous-loading.md)。
+
+2026-10-22 28 款字体与进度超时契约同步：Backend `f27898ec3b168b9e027b5d5abef43a0d3dafa242`／API `5.42.0-dev.20261022.1`。目录更新为 1.2.0，28 款（中文 12／日文 10／英文 6）；历史小城 ID 与旧 v1 解析保留。v2 明确 15 秒无进度和 600 秒总上限，并移除原件专属字段。此提交仅同步契约与生成客户端，持续加载行为仍待候选验证。
+
+2026-10-22 字体运行策略契约同步：Backend `d86734e5aa229c5401a092096b8845b3d17546b0`／API `5.42.0-dev.20261021.1`。新增公开 `textFontsGetRuntimePolicy` 与 v2 固定策略、schema 和夹具；旧正文、目录、manifest 字节与资源不变。此提交仅同步契约与生成客户端，持续加载行为仍待候选验证。
+
+2026-10-21 来源同步：固定 Backend `102b825379eb5da462f0ff765b29dc8fd7fb93ad`／API `5.41.0-dev.20261021.2`，本次新增正文字体能力、目录与正文写入版本；本模块既有业务操作不变，共享网络声明字体读取版本。未将候选契约当作已部署状态，字体消费者与验收见[字体 revision 5 候选记录](../architecture/thread-fonts-mobile-r5-candidate.md)。
 
 2026-10-18 合并来源同步：Backend PR #55 已合并，固定最终提交 `6e00c4031a8f970609eef8cbf6fdefe3e6b12126`／API `5.40.0-dev.20261018.1`。契约字节与先前候选 `da68203a` 一致，本次只更新来源元数据；消费者验证和部署核验分别记录，不改变本模块既有范围。
 

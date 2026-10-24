@@ -58,6 +58,8 @@ domain 只包含不可变 RP 展示值、身份模式和更新输入。applicati
 
 ## 10. 跨模块约束
 
+字体作用域候选：帖子中的角色身份资料弹层使用默认字体，明确关闭 PostReadingBody 的字体加载作用域，保留资料原始 Markdown/fontId；完整主题帖正文的字体能力不扩展到身份资料预览。 具体边界与待验收证据见[作用域候选](../architecture/thread-fonts-mobile-scope-candidate.md)。
+
 通过 `identity_models.dart`、`identity_ports.dart`、`identity_mapping.dart`、`identity_widgets.dart` 分别开放领域、应用、映射和 UI 入口。模块只依赖 media，不反向依赖 threads/posts/social/search/notifications；身份卡沿用账号 ID 的共享主页路由。Foundation 样式依赖保持正式 `v7.2.1`。
 
 ## 11. 测试场景与验收条件
@@ -69,6 +71,14 @@ domain 只包含不可变 RP 展示值、身份模式和更新输入。applicati
 每账号每帖最多十个未归档身份；不提供跨主题角色共享、匿名账号隐藏和旧发言换身份。@ 候选平级列出站内账号与全部角色，同名项按 candidateKey 区分；原单身份兼容锚点只服务旧接口。头像治理移除优先于历史快照保留。未连接设备时自动测试不能代替真机验收。
 
 ## 13. 最近审查的契约版本和后端提交
+
+2026-10-24 字体管理契约审查：Backend `f1025db4ef0d4986f53a4beffac6514d7ee16357`／API `5.44.0-dev.20261024.2`。新增管理字体提交、分页和顺序接口；公开字体v2协议与本模块业务操作不变，Mobile不新增管理入口。产品候选已完成本地检查与构建，公网精确兼容随部署复核，真机验收未完成，见[持续加载记录](../architecture/thread-fonts-mobile-continuous-loading.md)。
+
+2026-10-22 28 款字体与进度超时契约同步：Backend `f27898ec3b168b9e027b5d5abef43a0d3dafa242`／API `5.42.0-dev.20261022.1`。目录更新为 1.2.0，28 款（中文 12／日文 10／英文 6）；历史小城 ID 与旧 v1 解析保留。v2 明确 15 秒无进度和 600 秒总上限，并移除原件专属字段。此提交仅同步契约与生成客户端，持续加载行为仍待候选验证。
+
+2026-10-22 字体运行策略契约同步：Backend `d86734e5aa229c5401a092096b8845b3d17546b0`／API `5.42.0-dev.20261021.1`。新增公开 `textFontsGetRuntimePolicy` 与 v2 固定策略、schema 和夹具；旧正文、目录、manifest 字节与资源不变。此提交仅同步契约与生成客户端，持续加载行为仍待候选验证。
+
+2026-10-21 来源同步：固定 Backend `102b825379eb5da462f0ff765b29dc8fd7fb93ad`／API `5.41.0-dev.20261021.2`，本次新增正文字体能力、目录与正文写入版本；本模块既有业务操作不变，共享网络声明字体读取版本。未将候选契约当作已部署状态，字体消费者与验收见[字体 revision 5 候选记录](../architecture/thread-fonts-mobile-r5-candidate.md)。
 
 2026-10-18 合并来源同步：Backend PR #55 已合并，固定最终提交 `6e00c4031a8f970609eef8cbf6fdefe3e6b12126`／API `5.40.0-dev.20261018.1`。契约字节与先前候选 `da68203a` 一致，本次只更新来源元数据；消费者验证和部署核验分别记录，不改变本模块既有范围。
 

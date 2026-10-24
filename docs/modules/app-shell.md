@@ -2,6 +2,8 @@
 
 状态：`in_progress`
 
+2026-10-24 动态字体候选／待真机验收：固定 Backend `f1025db4ef0d4986f53a4beffac6514d7ee16357`／API `5.44.0-dev.20261024.2`。解析textFontV2Supported与textFontV2WriteEnabled，缺失按false；读取能力与新字体选择开关独立。字体服务与引擎追加账本跨Provider/账号变化保持，前后台触发状态复核。v1 固定映射、防降级与撤回兼容已接入；本地检查与构建已执行，公网精确兼容随部署复核，产品 Android 同会话验收待完成，见[持续加载记录](../architecture/thread-fonts-mobile-continuous-loading.md)。
+
 2026-09-28 重复空说明弹窗修复已获负责人真机验收通过，绑定正式候选 `0.8.0+97` / APK SHA-256 `401dae520edeadaa51fda47e7556bedb2604b007ecb1e023f5d64eae22643e87`，返回桌面再进及划掉后台重开均不再弹空壳；当前源码相关门禁通过，按负责人最新指令准备合并，详见[一次说明验收](../architecture/mobile-update-once-dialogs-acceptance.md)。
 
 ## 1. 模块目标与非目标
@@ -173,6 +175,12 @@ Android 的 Debug、Profile 和 Release 均仅支持 `arm64-v8a`，使用 ARM64 
 当前已完成构建策略门禁、全局亮色/黑夜外观、推荐更新忽略、Android HTTPS 在线下载、双层完整性/身份校验与系统安装器、iOS TestFlight 外跳、本地一键发布入口；后台常驻与横幅提醒为候选／待负责人验收。Debug 构建使用独立 `site.wenyou.app.debug` 包名，Profile 性能构建使用 `site.wenyou.app.profile`，两者都避免占用正式更新链；完整门禁与发布入口均会核对线上契约、后端 revision 和 Markdown 版本。自动测试以伪 APK 固定下载与缓存状态机，Android 原生包解析、系统覆盖和后台尽力轮询仍需用 Android 8+ 真机完成最终验收；iOS 构建与上传必须在配置签名的 macOS 上执行。后台 30 秒节拍依赖当前 Flutter 进程与系统调度，留在最近任务不代表 Dart isolate 会持续运行；Doze、厂商省电、网络中断或进程终止都可能延迟/停止检查，不承诺实时送达。V1 不申请豁免、不做 App Links、FCM、WebSocket 或开机恢复。Profile 基线只覆盖固定离线关键交互，不能替代全部真实业务路径的人工手感验收。原生启动层在 Flutter 首帧前仍是静态白色。
 
 ## 13. 最近审查的契约版本和后端提交
+
+2026-10-22 28 款字体与进度超时契约同步：Backend `f27898ec3b168b9e027b5d5abef43a0d3dafa242`／API `5.42.0-dev.20261022.1`。目录更新为 1.2.0，28 款（中文 12／日文 10／英文 6）；历史小城 ID 与旧 v1 解析保留。v2 明确 15 秒无进度和 600 秒总上限，并移除原件专属字段。此提交仅同步契约与生成客户端，持续加载行为仍待候选验证。
+
+2026-10-22 字体运行策略契约同步：Backend `d86734e5aa229c5401a092096b8845b3d17546b0`／API `5.42.0-dev.20261021.1`。新增公开 `textFontsGetRuntimePolicy` 与 v2 固定策略、schema 和夹具；旧正文、目录、manifest 字节与资源不变。此提交仅同步契约与生成客户端，持续加载行为仍待候选验证。
+
+2026-10-21 字体候选固定 Backend `102b825379eb5da462f0ff765b29dc8fd7fb93ad`／API `5.41.0-dev.20261021.2`。读取 `textFontV1Supported` 与 `textFontV1WriteEnabled` 到 `AppCapabilities`，缺失均为 false。全局 UI 继续使用系统字体，正文资源按需加载，见[字体 revision 5 候选记录](../architecture/thread-fonts-mobile-r5-candidate.md)。
 
 2026-10-18 合并来源同步：Backend PR #55 已合并，固定最终提交 `6e00c4031a8f970609eef8cbf6fdefe3e6b12126`／API `5.40.0-dev.20261018.1`。契约字节与先前候选 `da68203a` 一致，本次只更新来源元数据；消费者验证和部署核验分别记录，不改变本模块既有范围。
 

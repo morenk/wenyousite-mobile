@@ -7,8 +7,8 @@ import 'package:wenyousite_mobile/features/moments/data/moment_failure_messages.
 import 'package:wenyousite_mobile/features/wallet/data/wallet_failure_messages.dart';
 
 void main() {
-  test('颜色能力与损坏错误保留草稿并提供恢复动作', () {
-    for (final code in [40016, 40017, 40018]) {
+  test('颜色与字体能力、损坏错误保留草稿并提供恢复动作', () {
+    for (final code in [40016, 40017, 40018, 40019, 40020, 40021]) {
       final options = RequestOptions(path: '/api/v1/posts/p');
       final failure = ApiFailure.fromDio(
         DioException(

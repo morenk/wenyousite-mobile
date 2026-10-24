@@ -525,6 +525,37 @@ void main() {
     );
   });
 
+  test('正文字体边界只放行验证后家族与空家族系统回退', () {
+    const runtime = 'lib/core/text_fonts/text_font_runtime.dart';
+    const editor =
+        'lib/features/editor/presentation/text_font_quill_editor.dart';
+    writeArchitectureFixture(root, runtime, 'fontFamily: loaded.first,\n');
+    writeArchitectureFixture(
+      root,
+      editor,
+      "const TextStyle(fontFamily: '');\n",
+    );
+    expect(collectArchitectureFailures(root), isEmpty);
+    writeArchitectureFixture(root, runtime, "fontFamily: 'Custom UI',\n");
+    expect(
+      collectArchitectureFailures(
+        root,
+      ).any((f) => f.startsWith(runtime) && f.contains('fontFamily')),
+      isTrue,
+    );
+    writeArchitectureFixture(
+      root,
+      editor,
+      "const TextStyle(fontFamily: 'Custom UI');\n",
+    );
+    expect(
+      collectArchitectureFailures(
+        root,
+      ).any((f) => f.startsWith(editor) && f.contains('fontFamily')),
+      isTrue,
+    );
+  });
+
   test('README Foundation version must match pubspec ref', () {
     writeArchitectureFixture(
       root,

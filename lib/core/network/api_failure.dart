@@ -75,6 +75,16 @@ class ApiFailure implements Exception {
         diagnosticCode: 'TEXT_COLOR_V1_UNAVAILABLE',
       );
 
+  /// 旧服务不接收字体正文，保留原始草稿等待能力恢复。
+  const ApiFailure.textFontUnavailable()
+    : this(
+        source: FailureSource.expected,
+        reason: FailureReason.validation,
+        recoveryAction: FailureRecoveryAction.keepDraft,
+        businessCode: 40019,
+        diagnosticCode: 'TEXT_FONT_V1_UNAVAILABLE',
+      );
+
   factory ApiFailure.contractViolation({
     required String userMessage,
     required String diagnosticCode,
@@ -283,6 +293,12 @@ class ApiFailure implements Exception {
         return '暂时无法保存这段提及，草稿已保留。';
       case 40015:
         return '暂时无法添加这段提及，草稿已保留。';
+      case 40019:
+        return '暂时无法保存这段字体，草稿已保留。';
+      case 40020:
+        return '暂时无法更换字体，草稿已保留。';
+      case 40021:
+        return '这段字体无法保存，请重新选择；草稿已保留。';
       case 40101:
         return '登录状态已续期，请手动重试这次操作。';
       case 40007:
@@ -469,7 +485,10 @@ class ApiFailure implements Exception {
     FailureReason reason,
     int? businessCode,
   ) {
-    if (businessCode == 40016 ||
+    if (businessCode == 40019 ||
+        businessCode == 40020 ||
+        businessCode == 40021 ||
+        businessCode == 40016 ||
         businessCode == 40017 ||
         businessCode == 40018) {
       return FailureRecoveryAction.keepDraft;

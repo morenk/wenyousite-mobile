@@ -126,8 +126,8 @@ class PostComposerEditorRegion extends StatelessWidget {
                       Semantics(
                         textField: true,
                         label: label,
-                        child: QuillEditor(
-                          key: const Key('post-composer-body'),
+                        child: TextFontQuillEditor(
+                          editorKey: const Key('post-composer-body'),
                           controller: editorSession.controller,
                           focusNode: editorSession.focusNode,
                           scrollController: editorSession.scrollController,

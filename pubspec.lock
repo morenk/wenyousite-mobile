@@ -1693,11 +1693,11 @@ packages:
     dependency: "direct main"
     description:
       path: "packages/flutter"
-      ref: "v7.5.0"
-      resolved-ref: fef249d8856f5ed08f55eab69a2a2ed01b2742ce
+      ref: "v7.6.0"
+      resolved-ref: "1bbd5a5476b50c51d2bba1f2a218f9408a852c4a"
       url: "https://github.com/morenk/wenyousite-foundation.git"
     source: git
-    version: "7.5.0"
+    version: "7.6.0"
   win32:
     dependency: transitive
     description:
