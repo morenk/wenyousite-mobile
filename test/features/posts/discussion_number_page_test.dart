@@ -77,6 +77,7 @@ void main() {
         await tester.tap(find.byKey(const Key('discussion-number-submit')));
         await tester.pumpAndSettle();
         expect(find.byKey(Key('${prefix}5000')), findsOneWidget);
+        expect(find.byKey(const Key('discussion-target-cover')), findsNothing);
         expect(find.byKey(const Key('discussion-number-input')), findsNothing);
         final requests = replies ? posts.targets : floors.targets;
         expect(requests.where((id) => id == '5000').length, 1);

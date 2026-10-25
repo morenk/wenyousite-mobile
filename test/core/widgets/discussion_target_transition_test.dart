@@ -38,6 +38,24 @@ void main() {
     semantics.dispose();
   });
 
+  testWidgets('淡出途中目标尺寸变化重新等待稳定，不能直接揭开', (tester) async {
+    final key = GlobalKey<_HarnessState>();
+    await tester.pumpWidget(_app(key));
+    await _untilFading(tester);
+    key.currentState!.update(height: 500);
+    await tester.pump();
+    for (var frame = 0; frame < 4; frame++) {
+      await tester.pump(const Duration(milliseconds: 16));
+    }
+    expect(_opacity(tester), 1);
+    expect(key.currentState!.reveals, 0);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('discussion-target-cover')), findsNothing);
+    expect(key.currentState!.reveals, 1);
+    expect(tester.getSize(find.byKey(key.currentState!.targetKey)).height, 500);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('淡出途中切换坐标立即盖回，旧动画不能揭开新目标', (tester) async {
     final key = GlobalKey<_HarnessState>();
     await tester.pumpWidget(_app(key));
@@ -205,12 +223,15 @@ class _HarnessState extends State<_Harness> {
   bool issue = false;
   String target = 'first';
   int reveals = 0, taps = 0, backs = 0;
+  double height = 300;
 
-  void update({String? target, bool? ready, bool? issue}) => setState(() {
-    this.target = target ?? this.target;
-    this.ready = ready ?? this.ready;
-    this.issue = issue ?? this.issue;
-  });
+  void update({String? target, bool? ready, bool? issue, double? height}) =>
+      setState(() {
+        this.target = target ?? this.target;
+        this.ready = ready ?? this.ready;
+        this.issue = issue ?? this.issue;
+        this.height = height ?? this.height;
+      });
 
   @override
   void dispose() {
@@ -248,7 +269,7 @@ class _HarnessState extends State<_Harness> {
               const SizedBox(height: 900),
               SizedBox(
                 key: targetKey,
-                height: 300,
+                height: height,
                 child: Column(
                   children: [
                     Text(target),

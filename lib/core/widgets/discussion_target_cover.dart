@@ -163,11 +163,21 @@ class _DiscussionTargetCoverState extends State<DiscussionTargetCover>
     return render.localToGlobal(Offset.zero) & render.size;
   }
 
+  static bool _sameRect(Rect? previous, Rect? current) =>
+      previous != null &&
+      current != null &&
+      (previous.top - current.top).abs() <= 1 &&
+      (previous.left - current.left).abs() <= 1 &&
+      (previous.width - current.width).abs() <= 1 &&
+      (previous.height - current.height).abs() <= 1;
+
   void _onAligned() {
     if (!mounted || !widget.canLocate || widget.issue != null) return;
-    // 揭开途中几何再次变化时，立即恢复不透明遮罩并重新等待稳定。
+    final current = _targetRect();
+    // 其他楼层加载字体会改变列表范围；目标未移动时保留稳定计时和淡出。
+    if (_sameRect(_alignedRect, current)) return;
     if (_revealing) setState(_cancelTransition);
-    _alignedRect = _targetRect();
+    _alignedRect = current;
     _settleTimer?.cancel();
     _settleTimer = Timer(_settleDuration, _finishIfStable);
   }
@@ -176,12 +186,7 @@ class _DiscussionTargetCoverState extends State<DiscussionTargetCover>
     if (!mounted || !widget.canLocate || widget.issue != null) return;
     final previous = _alignedRect;
     final current = _targetRect();
-    if (previous == null ||
-        current == null ||
-        (previous.top - current.top).abs() > 1 ||
-        (previous.left - current.left).abs() > 1 ||
-        (previous.width - current.width).abs() > 1 ||
-        (previous.height - current.height).abs() > 1) {
+    if (!_sameRect(previous, current)) {
       final targetContext = widget.targetKey.currentContext;
       if (targetContext != null) {
         alignDiscussionTarget(
