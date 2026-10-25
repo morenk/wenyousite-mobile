@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/network/network_recovery.dart';
 import 'package:wenyousite_mobile/core/network/session_remote.dart';
 import 'package:wenyousite_mobile/core/storage/token_store.dart';
 
@@ -68,11 +69,13 @@ class SessionState {
 }
 
 class SessionController extends StateNotifier<SessionState> {
-  SessionController(this._tokenStore, this._remote)
-    : super(const SessionState.guest());
+  SessionController(this._tokenStore, this._remote, {NetworkRecovery? recovery})
+    : recovery = recovery ?? NetworkRecovery(),
+      super(const SessionState.guest());
 
   final TokenStore _tokenStore;
   final SessionRemote _remote;
+  final NetworkRecovery recovery;
   SessionTokens? _tokens;
   Future<SessionTokens>? _refreshInFlight;
   int? _refreshGeneration;
@@ -145,6 +148,7 @@ class SessionController extends StateNotifier<SessionState> {
         if (hadTokens != (restored != null) ||
             previousAccountId != currentUserId) {
           _sessionGeneration += 1;
+          recovery.resetSession();
         }
         state = _tokens == null
             ? SessionState.guest(generation: _sessionGeneration)
@@ -153,6 +157,7 @@ class SessionController extends StateNotifier<SessionState> {
         _ensureMutationCurrent(epoch);
         _tokens = null;
         if (hadTokens) _sessionGeneration += 1;
+        recovery.resetSession();
         state = SessionState.guest(generation: _sessionGeneration);
         await _tokenStore.clear();
       }
@@ -179,10 +184,13 @@ class SessionController extends StateNotifier<SessionState> {
     });
   }
 
-  Future<SessionTokens> refresh() {
+  Future<SessionTokens> refresh({bool automatic = true}) {
     final existing = _refreshInFlight;
     if (existing != null && _refreshGeneration == _sessionGeneration) {
       return existing;
+    }
+    if (_tokens != null && recovery.isCoolingDown && automatic) {
+      return Future.error(recovery.deferredFailure);
     }
     _refreshGeneration = _sessionGeneration;
     late final Future<SessionTokens> operation;
@@ -203,6 +211,7 @@ class SessionController extends StateNotifier<SessionState> {
     }
     final generation = _sessionGeneration;
     final epoch = _mutationEpoch;
+    final recoveryTicket = recovery.ticket;
     try {
       final next = await _remote.refresh(current.refreshToken);
       _ensureRefreshStillCurrent(current, generation);
@@ -215,6 +224,7 @@ class SessionController extends StateNotifier<SessionState> {
         _tokens = next;
         state = SessionState.authenticated(generation: _sessionGeneration);
       });
+      recovery.succeeded(recoveryTicket);
       return next;
     } on ApiFailure catch (failure) {
       // A refresh can fail because the device is temporarily offline or the
@@ -223,6 +233,8 @@ class SessionController extends StateNotifier<SessionState> {
       if (_refreshFailureInvalidatesSession(failure) &&
           _isRefreshStillCurrent(current, generation)) {
         await invalidate(_reasonFor(failure.businessCode));
+      } else if (_isRefreshStillCurrent(current, generation)) {
+        recovery.failed(recoveryTicket, failure);
       }
       rethrow;
     } on Object catch (error) {
@@ -256,7 +268,7 @@ class SessionController extends StateNotifier<SessionState> {
     } on ApiFailure catch (failure) {
       ensureScopeCurrent(expectedScope);
       if (failure.isExpiredAccessToken) {
-        current = await refresh();
+        current = await refresh(automatic: false);
         ensureScopeCurrent(expectedScope);
         try {
           await _remote.logout(current);
@@ -297,6 +309,7 @@ class SessionController extends StateNotifier<SessionState> {
     _mutationEpoch += 1;
     _tokens = null;
     _sessionGeneration += 1;
+    recovery.resetSession();
     state = SessionState.guest(generation: _sessionGeneration);
     return _mutationEpoch;
   }
