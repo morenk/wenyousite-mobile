@@ -10,7 +10,9 @@
 
 本轮开始时HEAD为1dd08c97；fetch发现origin/dev已到 `e32870272a611a94a0a22e90bf5dce280c671150`（PR #116），其增量无lib／原生／依赖／生成SDK运行代码变化。先提交本样式，再普通merge该dev提交到任务分支，保持最新 Backend `8a5d21858e04c69832c90e5a3a10f1e70fdcb545`／API `5.44.0-dev.20261024.3` 来源；下文33574ae7／.2是原合包历史。执行子任务只提交推送，最终PR与合入dev由治理任务执行，不改写分支历史。
 
-本轮日志在 `build/photo-mark-visual-evidence/`：相关格式1文件零修改（format.log），变更文件analyze零问题（analyze.log）；首次 `--update-goldens` 的8项全部通过（7秒，golden-update.log）。实际更新 `test/features/media/goldens/photo-picker-{light,dark,narrow-large}.png` 三张，已逐张查看：底图颜色／明暗分界可穿过未选圆圈，选中序号清楚，320dp两倍字无溢出；相册下拉的三张Golden字节未变。预览确认、返回取消及权限恢复复用既有行为断言，不添加镜像实现测试。整合后8项正常验证结果另补。
+本轮日志在 `build/photo-mark-visual-evidence/`：相关格式1文件零修改（format.log），变更文件analyze零问题（analyze.log）；首次 `--update-goldens` 的8项全部通过（7秒，golden-update.log）。实际更新 `test/features/media/goldens/photo-picker-{light,dark,narrow-large}.png` 三张，已逐张查看：底图颜色／明暗分界可穿过未选圆圈，选中序号清楚，320dp两倍字无溢出；相册下拉的三张Golden字节未变。预览确认、返回取消及权限恢复复用既有行为断言，不添加镜像实现测试。
+
+样式原子提交为 `6af0f0ec97be99003622e7c6b59daab6e3a1d116`。普通merge e3287027后，同8项正常验证全部通过（6秒，merged-page-tests.log）；lib／原生／依赖及生成SDK运行代码相对该样式提交零差异，复用已通过的定向analyze，不机械再跑。契约、SDK README、API coverage来源及固定来源测试与dev最新逐字相同；模块保留双方历史段且最新来源优先，CHANGELOG保留双方条目。精确冲突标记扫描为空，staged／unstaged diff检查通过。原两项历史验收结论未改写，最终合并权限由本轮用户明确授予。
 
 无新真机画面；原 `app-debug-64e0a53c3ad3.apk` 不包含本轮24dp／半透明样式，不能作为新样式产物。
 

@@ -27,13 +27,13 @@ void main() {
     }
     final contract =
         jsonDecode(File('contracts/openapi.json').readAsStringSync()) as Map;
-    expect((contract['info'] as Map)['version'], '5.44.0-dev.20261024.2');
+    expect((contract['info'] as Map)['version'], '5.44.0-dev.20261024.3');
     final manifest = File(
       'contracts/backend-contract.properties',
     ).readAsStringSync();
     expect(
       manifest,
-      contains('backendRevision=33574ae73d88123aa216a93f9cc81eab60fb9ee9'),
+      contains('backendRevision=8a5d21858e04c69832c90e5a3a10f1e70fdcb545'),
     );
   });
 }

@@ -1,0 +1,86 @@
+[
+  {
+    "id": "static-ttf",
+    "sourceSha256": "e32bfe3bfbd41f0dd60fe600cbbcfa9994881ce58d186201ab476e8b3f48ee69",
+    "sameSource": true,
+    "v1Sha256": "8db33d8345608b195e720571d2df3b47c7261e05dae26fd78573e1cfb9f95709",
+    "v2Sha256": "ca5038158282bae18c5f714c63623bbb8f3b0fa7decfe7c86dcc29ef6cedda84",
+    "identicalFile": false,
+    "changedTables": [
+      "head",
+      "name"
+    ],
+    "equalAfterFamilyAndChecksumNormalization": {
+      "head": true,
+      "name": true
+    },
+    "identicalPixelSha256": true,
+    "identicalPngBytes": true,
+    "identicalInkPixels": true,
+    "identicalLineWidth": true
+  },
+  {
+    "id": "static-cff",
+    "sourceSha256": "13c8f64df96e0aa8fbc1cbabcbc93dad798b69370b4cfa3c54814d860ec13ac8",
+    "sameSource": true,
+    "v1Sha256": "40811c17b6768b0e110002f21ac1268dd6e82d3214d2a98b406238961fbf24dc",
+    "v2Sha256": "544dd31611295374b04d793a4efc65b85e1bca73fce1caef7d2014ae1cbf6a2c",
+    "identicalFile": false,
+    "changedTables": [
+      "CFF ",
+      "head",
+      "name"
+    ],
+    "equalAfterFamilyAndChecksumNormalization": {
+      "CFF ": true,
+      "head": true,
+      "name": true
+    },
+    "identicalPixelSha256": true,
+    "identicalPngBytes": true,
+    "identicalInkPixels": true,
+    "identicalLineWidth": true
+  },
+  {
+    "id": "variable-glyf",
+    "sourceSha256": "f42db2dd16e642258e35782916eceb1dcdbea06fb958d77ad71dc5963587e8fd",
+    "sameSource": true,
+    "v1Sha256": "ba8210939feb1ed9a0e03eb241cde6dcdb167c796abf6ee4e9fc60e46578101b",
+    "v2Sha256": "89f5df4cb21897c2156a91743e82b0e22ae27c3f6d9fdb9adccd707715f0f842",
+    "identicalFile": false,
+    "changedTables": [
+      "head",
+      "name"
+    ],
+    "equalAfterFamilyAndChecksumNormalization": {
+      "head": true,
+      "name": true
+    },
+    "identicalPixelSha256": true,
+    "identicalPngBytes": true,
+    "identicalInkPixels": true,
+    "identicalLineWidth": true
+  },
+  {
+    "id": "variable-cff2",
+    "sourceSha256": "867b73c6a954a4a64616906d179f94572a748790a1d022ebeeff07f56ea0221a",
+    "sameSource": true,
+    "v1Sha256": "2e11cca51372265ca044a76b0ed0946c0abc1e667c419e1b3fb85a4095af599c",
+    "v2Sha256": "bdfe54c2293831911561fee7e668cdfb43e44697230c810f46c1b42328408886",
+    "identicalFile": false,
+    "changedTables": [
+      "CFF ",
+      "head",
+      "name"
+    ],
+    "equalAfterFamilyAndChecksumNormalization": {
+      "CFF ": true,
+      "head": true,
+      "name": true
+    },
+    "identicalPixelSha256": true,
+    "identicalPngBytes": true,
+    "identicalInkPixels": true,
+    "identicalLineWidth": true
+  }
+]

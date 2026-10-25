@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "contractVersion": "5.44.0-dev.20261024.2",
+  "contractVersion": "5.44.0-dev.20261024.3",
   "exclusions": [
     { "operationId": "adminTextFontsManagement", "category": "admin_product", "reason": "字体管理筛选分页属于Web管理产品，Mobile只消费公开目录。" },
     { "operationId": "adminTextFontsCreateSubmission", "category": "admin_product", "reason": "字体简化提交属于Web管理产品。" },
