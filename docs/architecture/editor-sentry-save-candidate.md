@@ -1,6 +1,22 @@
 # Sentry 编辑保存候选
 
-状态：候选修复／本轮旧红、定向回归与完整门禁通过，待负责人验收。
+状态：候选修复／2026-10-25 整合最新 dev 后定向回归、差异范围分析及架构文档检查通过，待组合完整门禁与负责人验收。下列旧完整门禁和 APK 仅证明对应历史源码，不能用于本次组合验收。
+
+## 2026-10-25 最新 dev 整合
+
+- 原分支 `codex/20261015-sentry-editor-save` 从 `56946a2ca8c767b07b7e7e0e9c8d7da8cfc4d1c6` 普通合并 `origin/dev@b7e1a4acf9433b38b29505834b5f1eea77598330`，合并提交 `9801f91a2fcdcc17b1b78fc4f334c4d715127e47`。没有文本冲突，不吸收其他未合并候选。
+- 完整保留 Backend `8a5d21858e04c69832c90e5a3a10f1e70fdcb545`／API `5.44.0-dev.20261024.3`／Foundation `v7.6.0` 及新 dev 的字体 v1/v2、结构化粘贴、标题间距、输入色、音频投影与原生撤销行为。
+- 分隔线边界维护抽取纯 Delta 规范化：真实粘贴预检与控制器事务共用同一规则，先验证补齐边界后的长度和严格 Codec 结果，再提交输入；保存 Codec 本身仍拒绝非法 Delta。字体与颜色不会落到分隔线节点或行末，新文字保留输入样式，结构化粘贴保留来源样式。
+- 结构诊断将纯字体样式计入既有 `codecStyledRuns`，不收集字体标识、颜色值、正文、节点或账号信息。
+- 新组合回归覆盖字体 v1/v2、颜色、标题、分隔线旁输入／纯文本和本站结构化粘贴、单步撤销／重做、精确光标、独立阅读语义、保存重开；超限粘贴保持原内容和历史。音频投影回归增加字体与颜色组合。
+- 新粘贴回归在合并提交 `9801f91a` 的原 `RichEditorSession` 下成功编译并真实执行，在 `operationFailure` 应为 null 的断言失败；`finally` 逐字恢复候选前后 SHA-256 均为 `A7AA2447A11BD798618356F0D65EDB05B9A23BC8E1E179CFE763BCA575747033`。日志 `D:/codex-worktrees/mobile-sentry-codec/20261025-old-paste-red.log`，SHA-256 `B23E28D9F75BE1F81D8A5F385AAFC0F5E660431B0FEC209891A1F0AB0B90E03F`；恢复证据为同目录 `20261025-old-paste-red-result.json`。
+- 首轮 15 文件回归为 113 通过／4 失败：字体 v1/v2 的两类粘贴文字正确，但终点应为 8、实际 11。原因是 Quill 对整个 Delta 按一个 embed 计算额外选区补偿；控制器现将所有显式 Delta 统一恢复调用方已计算的终点，再由实际块补丁转换一次。保留原失败日志 `20261025-targeted.log`，SHA-256 `A4E711C2CF0EC1F5AC1749DA3836042E11F637093BE6EB6125B7E5204AB16CA9`。修正后新组合文件 8 项全部通过，再复验全部相关文件，不以首轮部分通过交付。
+- 最终 18 文件定向回归单并发通过 168 项、0 失败，于北京时间 `2026-10-25T18:31:15+08:00` 结束。日志 `D:/codex-worktrees/mobile-sentry-codec/20261025-targeted-final.log`，SHA-256 `25E3E3A777B83F8F18239DD2217F3D0B8156300C902A4E326A28610D2F3A56CD`；原首轮失败及独立 8 项通过日志全部保留。
+- 实际测试文件（完整路径清单同时保存在仓库外 `20261025-targeted-final-files.txt`）：`test/features/editor/editor_divider_editing_test.dart`、`test/features/editor/editor_divider_integration_test.dart`、`test/features/editor/editor_divider_font_integration_test.dart`、`test/features/posts/post_divider_edit_test.dart`、`test/core/diagnostics/codec_structure_diagnostics_test.dart`、`test/features/editor/editor_audio_history_projection_test.dart`、`test/features/editor/editor_link_continuation_test.dart`、`test/features/editor/editor_text_color_caret_test.dart`、`test/features/editor/editor_text_color_caret_paste_test.dart`、`test/features/editor/editor_text_color_audio_integration_test.dart`、`test/features/editor/editor_text_color_selection_test.dart`、`test/features/editor/editor_text_font_caret_test.dart`、`test/features/editor/editor_text_font_paste_scope_test.dart`、`test/features/editor/editor_dynamic_font_paste_test.dart`、`test/features/editor/editor_alignment_spacing_test.dart`、`test/features/editor/editor_block_boundary_persistence_clipboard_test.dart`、`test/features/editor/editor_clipboard_test.dart`、`test/features/editor/editor_enter_newline_test.dart`。
+- 本次按治理调度只执行候选差异范围的格式／分析、架构／文档和上述直接回归；应用／生成客户端全量分析、契约再生成、全量测试及唯一验收 APK 由最终六项组合源码统一 `check:apk`。本分支没有生成本轮独立 APK，也不宣称已完成本轮完整门禁。
+- `flutter pub get` 退出 0，依赖锁无漂移。全部 15 个相对 `origin/dev` 的候选差异 Dart 文件（含新文件）格式检查通过；`flutter analyze --no-pub --fatal-infos --fatal-warnings <15 files>` 零问题。`npm run architecture:check` 与 `npm run docs:check` 均退出 0，23 个模块文档完整，架构仅保留既有接近行数阈值的提醒；没有提高基线或添加豁免。对应日志均在上述仓库外目录：`20261025-analyze.log`（SHA-256 `9DD9F2CB79B34B70FBEFDC97AD5662A306FD9D900CF4DD0689176171E99EE317`）、`20261025-architecture.log`（`90A134CB32B232BCDFC956FB810E5D7C4DA73700A17FE4173D37F95C55426D0F`）、`20261025-docs.log`（`4306FD5BE4BF67BF7FE42C1C60B6C957DD05DDF0B848D3433803E8C16196CF1B`）。检查后只补充本文结果，应用与测试源码保持。
+- 仍未取得关联 Sentry 事件的完整原始输入及负责人真机复验。所有新增回归是明确操作的本机构造场景，不能代替原问题验收；不安装启动 App、不写线上数据、不合并或发布。
+- Auto-review 默认偏好已传递，但当前工具没有运行审批配置或核验入口；本子任务宿主为 `never`／`danger-full-access`，实际 Auto-review 尚未设置／核验。
 
 ## 范围与证据
 
@@ -48,7 +64,7 @@
 - 当时生成客户端、契约与两个依赖锁文件没有变更；`git diff --check` 通过。完整日志保存在本机 `D:/codex-worktrees/mobile-sentry-codec/check-apk-2.log`，SHA-256 `A74AEA13F72812B9A23C19F75AD47DB945E42BE2722C50F21B744F6E6ACB19C4`；首轮失败日志为同目录 `check-apk.log`，SHA-256 `90ABDD0FDE7C0A82509D2D87EC1A86E9D78777300ADDD7F3912227AFC72BE15D`。
 - 真机、原 Sentry 事件精确输入与新 release 观察尚未完成；自动测试与构建不代替负责人验收。
 
-## 本轮候选包
+## 2026-10-21 历史候选包（不用于 2026-10-25 组合验收）
 
 - 路径：`D:/codex-worktrees/mobile-sentry-codec/wenyousite-mobile/build/app/outputs/flutter-apk/app-debug.apk`。
 - 实际包名 `site.wenyou.app.debug`，版本 `0.10.0-debug`，构建号 `100`，ABI `arm64-v8a`，最低 Android API `26`（`aapt dump badging` 已核验）。

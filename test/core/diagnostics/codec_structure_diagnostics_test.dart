@@ -8,6 +8,25 @@ import 'package:wenyousite_mobile/core/markdown/markdown_codec_structure.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 
 void main() {
+  test('字体 v1/v2 与颜色只计样式段数，不采集字体标识或用户内容', () {
+    final structure = MarkdownCodecStructure.inspect(
+      Delta()
+        ..insert('private-account', {'font': 'wenkai'})
+        ..insert('private-body', {
+          'font': 'tfv_00000000000000000000000000000001',
+          'color': '#D14343',
+        })
+        ..insert('\n'),
+    );
+    final safe = sanitizeDiagnosticFields(structure.diagnosticFields);
+    expect(safe['codecStyledRuns'], 2);
+    expect(safe['codecLines'], 1);
+    final serialized = jsonEncode(safe);
+    for (final value in ['private-', 'wenkai', 'tfv_', '#D14343']) {
+      expect(serialized, isNot(contains(value)));
+    }
+  });
+
   test('纯颜色文字计入样式数量但不采集颜色值或正文', () {
     final structure = MarkdownCodecStructure.inspect(
       Delta()

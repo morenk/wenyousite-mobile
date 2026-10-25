@@ -21,6 +21,7 @@ import 'package:wenyousite_mobile/features/editor/presentation/audio_projected_q
 import 'package:wenyousite_mobile/features/editor/presentation/editor_clipboard.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_clipboard_gateway.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_clipboard_paste.dart';
+import 'package:wenyousite_mobile/features/editor/presentation/editor_divider_structure.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_document_alignment.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_site_clipboard.dart';
 
@@ -704,7 +705,7 @@ class RichEditorSession extends ChangeNotifier {
       candidate.compose(candidateMetadataPatch, ChangeSource.local);
     }
     final encoded = MarkdownDeltaCodec.encode(
-      candidate.toDelta(),
+      normalizeEditorDividerBlocks(candidate.toDelta()),
       imageAlignment: imageAlignment,
     );
     if (encoded.length > maximumSerializedLength) {

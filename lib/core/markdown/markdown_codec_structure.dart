@@ -50,6 +50,7 @@ final class MarkdownCodecStructure {
               'code',
               'link',
               'color',
+              'font',
             }.contains,
           ) ==
           true) {

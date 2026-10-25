@@ -59,7 +59,7 @@ void main() {
     expect(controller.typingColor, '#D14343');
   });
 
-  test('分隔线编辑保存重开保留音频标签、同URL链接边界和颜色及投影历史', () async {
+  test('分隔线编辑保存重开保留音频标签、同URL链接、字体颜色及投影历史', () async {
     const source =
         '前\n\n---\n\n[**音频**]($_audioUrl)\n\n[甲]($_linkUrl)[乙]($_linkUrl)';
     final session = RichEditorSession(
@@ -77,6 +77,7 @@ void main() {
       ChangeSource.local,
     );
     controller.useColorForTyping('#25855A');
+    controller.useFontForTyping('wenkai');
     controller.replaceText(
       divider + 1,
       0,
@@ -90,7 +91,7 @@ void main() {
       colorReaderUnits(nodes),
       colorExpectedUnits([
         ('前', {}),
-        ('新', {'color': '#25855A'}),
+        ('新', {'font': 'wenkai', 'color': '#25855A'}),
         ('音频', {'bold': true, 'link': _audioUrl}),
         ('甲乙', {'link': _linkUrl}),
       ]),

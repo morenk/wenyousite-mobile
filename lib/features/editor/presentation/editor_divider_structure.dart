@@ -5,7 +5,24 @@ import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 /// 在输入事务内维持分隔线的块边界；不在保存时修剪或丢弃内容。
 void preserveEditorDividerBlocks(QuillController controller) {
   final before = controller.document.toDelta();
-  if (!before.operations.any(_isDivider)) return;
+  final after = normalizeEditorDividerBlocks(before);
+  if (identical(before, after)) return;
+  final patch = before.diff(after);
+  if (patch.isEmpty) return;
+  final selection = controller.selection;
+  controller.document.compose(patch, ChangeSource.local);
+  controller.updateSelection(
+    selection.copyWith(
+      baseOffset: patch.transformPosition(selection.baseOffset),
+      extentOffset: patch.transformPosition(selection.extentOffset),
+    ),
+    ChangeSource.local,
+  );
+}
+
+/// 粘贴预检与实际输入共用块边界规则，验证最终可编辑结构。
+Delta normalizeEditorDividerBlocks(Delta before) {
+  if (!before.operations.any(_isDivider)) return before;
   final after = Delta();
   var line = Delta();
   void finishLine(Map<String, dynamic>? attributes) {
@@ -54,17 +71,7 @@ void preserveEditorDividerBlocks(QuillController controller) {
   for (final op in line.operations) {
     after.insert(op.data, op.attributes);
   }
-  final patch = before.diff(after);
-  if (patch.isEmpty) return;
-  final selection = controller.selection;
-  controller.document.compose(patch, ChangeSource.local);
-  controller.updateSelection(
-    selection.copyWith(
-      baseOffset: patch.transformPosition(selection.baseOffset),
-      extentOffset: patch.transformPosition(selection.extentOffset),
-    ),
-    ChangeSource.local,
-  );
+  return after;
 }
 
 bool _isDivider(Operation operation) =>
@@ -102,6 +109,8 @@ Map<String, dynamic>? _dividerAttributes(Map<String, dynamic>? attributes) {
         'strike',
         'code',
         'link',
+        'color',
+        'font',
       }.contains(key),
     );
   return safe.isEmpty ? null : safe;

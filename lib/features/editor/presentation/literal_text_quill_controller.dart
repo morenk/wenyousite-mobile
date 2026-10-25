@@ -446,8 +446,9 @@ class LiteralTextQuillController extends QuillController {
     if (sourceSeparatorPatch.isNotEmpty) {
       document.compose(sourceSeparatorPatch, ChangeSource.local);
     }
-    if (newline != null && effectiveSelection != null) {
-      // 显式换行 Delta 不经过插入规则，不应再次使用 Quill 的位置补偿。
+    if (effectiveData is Delta && effectiveSelection != null) {
+      // 调用方已按 Delta 的实际长度给出终点，不应再使用 Quill 将整个
+      // 片段当成单个 embed 的位置补偿；后续块边界补丁只转换一次。
       updateSelection(effectiveSelection, ChangeSource.local);
     }
     if (effectiveData is Delta &&
