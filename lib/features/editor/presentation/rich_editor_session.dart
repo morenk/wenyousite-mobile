@@ -8,6 +8,7 @@ import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_quill/quill_delta.dart';
 import 'package:uuid/uuid.dart';
 import 'package:wenyousite_mobile/core/diagnostics/failure_diagnostics.dart';
+import 'package:wenyousite_mobile/core/editor/quill_document_range.dart';
 import 'package:wenyousite_mobile/core/markdown/local_audio_marker.dart';
 import 'package:wenyousite_mobile/core/markdown/local_image_marker.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_audio_embed.dart';
@@ -21,27 +22,15 @@ import 'package:wenyousite_mobile/features/editor/presentation/audio_projected_q
 import 'package:wenyousite_mobile/features/editor/presentation/editor_clipboard.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_clipboard_gateway.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_clipboard_paste.dart';
+import 'package:wenyousite_mobile/features/editor/presentation/editor_divider_structure.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_document_alignment.dart';
+import 'package:wenyousite_mobile/features/editor/presentation/editor_opening_diagnostics.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_site_clipboard.dart';
+import 'package:wenyousite_mobile/features/editor/presentation/rich_editor_operation_failure.dart';
+
+export 'package:wenyousite_mobile/features/editor/presentation/rich_editor_operation_failure.dart';
 
 enum RichEditorSelectionPlacement { preserve, start, end }
-
-enum RichEditorOperationFailureKind {
-  clipboardBusy,
-  clipboardEmpty,
-  clipboardRead,
-  clipboardWrite,
-  pasteFailed,
-  documentChanged,
-  contentTooLong,
-}
-
-class RichEditorOperationFailure {
-  const RichEditorOperationFailure(this.kind, this.message);
-
-  final RichEditorOperationFailureKind kind;
-  final String message;
-}
 
 /// Owns the ephemeral Quill side of a Markdown-backed editing session.
 ///
@@ -140,6 +129,7 @@ class RichEditorSession extends ChangeNotifier {
   bool _dirty = false;
   bool _externallyReadOnly = false;
   String? _protectedSourceSignature;
+  final _openingDiagnostics = EditorOpeningDiagnostics();
   int _documentGeneration = 0;
   int _scheduledExternalRevision = -1;
   String _lastMarkdown = '';
@@ -182,6 +172,9 @@ class RichEditorSession extends ChangeNotifier {
         : _documentSignature();
     _codecFailure = compatibility.edit ? null : '这段内容暂不支持编辑，原文已保留。';
     controller.readOnly = _externallyReadOnly || isSourceProtected;
+    if (!compatibility.edit) {
+      diagnosticId = _openingDiagnostics.capture(source, compatibility.reason);
+    }
   }
 
   Map<ShortcutActivator, Intent> get clipboardShortcuts => {
@@ -608,13 +601,21 @@ class RichEditorSession extends ChangeNotifier {
     final generation = _documentGeneration;
     final documentSignature = _documentSignature();
     final selection = controller.selection;
-    final documentEnd = controller.document.length - 1;
-    final start = selection.start.clamp(0, documentEnd).toInt();
-    final end = selection.end.clamp(start, documentEnd).toInt();
+    final start = selection.start;
+    final end = selection.end;
+    final selectedText = readQuillDocumentRange(
+      controller.document,
+      start,
+      end - start,
+    );
+    if (selectedText == null) {
+      _setOperationFailure(
+        RichEditorOperationFailureKind.documentChanged,
+        '正文已发生变化，请重新粘贴。',
+      );
+      return false;
+    }
     final plainText = controller.document.toPlainText();
-    final selectedText = end == start
-        ? ''
-        : controller.document.getPlainText(start, end - start);
 
     EditorClipboardSnapshot snapshot;
     try {
@@ -704,7 +705,7 @@ class RichEditorSession extends ChangeNotifier {
       candidate.compose(candidateMetadataPatch, ChangeSource.local);
     }
     final encoded = MarkdownDeltaCodec.encode(
-      candidate.toDelta(),
+      normalizeEditorDividerBlocks(candidate.toDelta()),
       imageAlignment: imageAlignment,
     );
     if (encoded.length > maximumSerializedLength) {

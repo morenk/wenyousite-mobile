@@ -10,6 +10,7 @@ enum DiagnosticOperation {
   postEdit,
   bodySave,
   mediaUpload,
+  editorOpen,
   editorEncode,
   authRefresh,
   authLogout,
@@ -177,6 +178,17 @@ Map<String, Object?> sanitizeDiagnosticFields(Map<String, Object?> input) {
     'receiveTimeoutMs',
     'androidApi',
     'osErrorCode',
+    'codecStructureVersion',
+    'codecLines',
+    'codecTextUnits',
+    'codecEmbeds',
+    'codecDividers',
+    'codecImages',
+    'codecEmptyLines',
+    'codecListLines',
+    'codecAlignedLines',
+    'codecStyledRuns',
+    'codecDifferenceLine',
   ]) {
     final value = input[key];
     if (value is int && value >= 0 && value <= 100000000) result[key] = value;
@@ -204,6 +216,7 @@ Map<String, Object?> sanitizeDiagnosticFields(Map<String, Object?> input) {
     result['deviceModel'] = model;
   }
   for (final entry in const {
+    'codecDifferenceKind': ['block', 'inline', 'line_count'],
     'appPackage': [
       'site.wenyou.app',
       'site.wenyou.app.debug',

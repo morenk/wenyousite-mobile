@@ -8,6 +8,7 @@ import 'package:uuid/uuid.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/application/editor_toolbar_layout.dart';
+import 'package:wenyousite_mobile/core/editor/quill_document_range.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_alignment.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
@@ -144,6 +145,7 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
   late final TextEditingController _diceModifierController;
   late _EditorDiceInputValue _lastSuccessfulDiceInput;
   TextSelection? _preservedSelection;
+  String? _linkDocumentSignature;
   String? _linkLabelError;
   String? _linkUrlError;
   EditorDiceInputErrors _diceErrors = noEditorDiceInputErrors;
@@ -683,13 +685,17 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
 
   void _openLinkTray() {
     final selection = widget.controller.selection;
+    final selectedText = readQuillDocumentRange(
+      widget.controller.document,
+      selection.start,
+      selection.end - selection.start,
+    );
+    if (selectedText == null) return;
     _preservedSelection = selection;
-    _linkLabelController.text = selection.isCollapsed
-        ? ''
-        : widget.controller.document.getPlainText(
-            selection.start,
-            selection.end - selection.start,
-          );
+    _linkDocumentSignature = jsonEncode(
+      widget.controller.document.toDelta().toJson(),
+    );
+    _linkLabelController.text = selectedText;
     _linkUrlController.clear();
     _setTray(_EditorTray.link);
   }
@@ -711,12 +717,18 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
       return;
     }
     final selection = _preservedSelection ?? widget.controller.selection;
-    final selectedLabel = selection.isCollapsed
-        ? label
-        : widget.controller.document.getPlainText(
-            selection.start,
-            selection.end - selection.start,
-          );
+    final selectedText = readQuillDocumentRange(
+      widget.controller.document,
+      selection.start,
+      selection.end - selection.start,
+    );
+    if (selectedText == null ||
+        _linkDocumentSignature !=
+            jsonEncode(widget.controller.document.toDelta().toJson())) {
+      setState(() => _linkLabelError = '正文已发生变化，请重新选择文字');
+      return;
+    }
+    final selectedLabel = selection.isCollapsed ? label : selectedText;
     if (parseInternalReference(url) != null &&
         RegExp('[\n\r\uFFFC]').hasMatch(selectedLabel)) {
       setState(() => _linkLabelError = '站内链接请选择同一行的普通文字');

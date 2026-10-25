@@ -8,6 +8,7 @@
 - 公共 Dio 在认证恢复与安全重试之后记录最终失败。刷新请求与对象存储直传也接入安全诊断，不记录地址或认证头。
 - 帖子编辑器的会话 UUID 关联上传和提交尝试；阶段包括编码、认证准备、请求、返回和返回数据解析，媒体另记录准备、取得上传地址、直传、确认与处理。
 - 已捕获的帖子提交失败、编码失败和媒体流水线异常主动记录，不能依赖全局未捕获异常入口。其他模块专属的已捕获本地异常尚未全面接入。
+- 打开或恢复已有正文触发兼容性只读拦截时，候选实现主动记录 `editorOpen.decode`，使用 `MarkdownEditingBlockedException` 和白名单 `markdown.open_*` 码；诊断页显示“正文无法编辑”。没有实际抛出栈，保留缺失状态，不生成伪栈。同一编辑会话重复恢复最近一次被拦截的相同原文与原因时复用异常身份和问题编号；正常加载清除界面的旧提示，新的被拦截原文或新编辑会话分别记录。原文仅在编辑会话内参与去重，不进入诊断对象、导出或 Sentry。去重由 `EditorOpeningDiagnostics` 维护，自动发送开关与构建启用条件继续生效，详见[当前整合验收](editor-angle-integration-20261021.md)。
 - 自动发送全局异常、5xx、未知业务码、契约/解析异常，以及帖子创建/编辑/正文保存的 `40000/40001/40006/40009`。这些 400 可能表示移动端生成了不合法的正文或图片引用。
 - 普通权限、登录失效、冲突和限流只保留本地记录；普通读取的网络失败不上报。用户主动取消不生成错误记录。编辑器空内容、字数等本地校验不应生成远程问题。
 - 本切片使用 Dart SentryClient，不安装 Flutter/原生自动采集集成，不覆盖 Java/NDK 崩溃、ANR 或 OOM，也不启用录屏、截图、界面树、日志、性能追踪和自动网络面包屑。
@@ -58,6 +59,7 @@ Sentry 向导只用于取得独立移动端 DSN；不得另装全局采集、100
 - Codec 原因通过固定白名单映射为 `markdown.*` 码；动态消息中的属性名、节点载荷、链接与正文不进入诊断。ApiFailure 的受控 diagnosticCode、Dio 超时阶段/错误类型和 OS 数字错误码单独保留。
 - 网络记录 HTTP 方法、固定 OpenAPI operationId、从首次请求开始的耗时和三类超时阈值。端点只匹配静态契约模板，实际路径、查询、请求/响应正文和对象存储地址不保存。同步契约后运行 `dart run tool/generate_diagnostic_routes.dart` 和 `dart format lib/core/diagnostics/diagnostic_routes.g.dart`；自动测试核对索引与固定契约一致，未知端点不猜测名称。
 - 页面只取 GoRouter 的固定 name，不保存 URL 或参数；生命周期在错误发生时取值。Android 版本来自已有原生只读通道，不再提取系统描述中的任意数字。Flutter 全局错误额外保留白名单 frameworkLibrary。
-- Sentry 使用 diagnostic_schema=2；分组增加原因、诊断码、端点、Dio 类型和首个应用源码位置（没有应用帧时使用首个合法帧）。同类型不同位置可分开，代码行移动可能形成新组。screen、buildMode、lifecycle、stackStatus 等可按标签筛选；用户数为零不能视为无人受影响，因为不传用户身份。
+- Sentry 使用 diagnostic_schema=2；分组增加原因、诊断码、端点、Dio 类型和首个应用源码位置（没有应用帧时使用首个合法帧）。已确认的 Codec 类别 `document_roundtrip`、`block_roundtrip`、`divider_line`、`divider_attributes`、`divider_terminator`、`paragraph_alignment_conflict` 以固定码关联，分组不包含源码行号，但事件仍保留完整安全坐标；其他异常与未知 Codec 原因保持按位置分组。screen、buildMode、lifecycle、stackStatus 等可按标签筛选；用户数为零不能视为无人受影响，因为不传用户身份。
+- 公共 Codec 编码失败附带 `codecStructureVersion=1`：物理行、文本 UTF-16 单元、节点、分隔线、图片、空行、列表行、对齐行和有样式文本片段的数量；语义往返失败另带首个不等价语义行的零基序号及 `block`／`inline`／`line_count` 类别。结构分隔与真实空段可能同时计入物理空行，计数不能推断用户实际可见空段。异常及队列不保存原始 Delta、文本、节点载荷、URL 或内容 ID；导出和发送时再限制为有界非负整数与固定枚举。原始故障栈保持，不用诊断包装位置替代。
 - 本轮不新增主动提交样本入口。原始正文与复现步骤由负责人在独立沟通中取得，不进入自动诊断。Java/NDK 崩溃、ANR、OOM、无捕获入口的异常及完整用户操作历史仍不在本轮采集范围。
 - 状态、实际回归和真机清单见[自动诊断补全验收](diagnostics-enrichment-acceptance.md)。

@@ -49,12 +49,16 @@ galleryList：读取 GalleryList200Response / GalleryPageDto / GalleryImageDto�
 
 跨模块入口使用 `reading_gallery.dart` 公开门面；收藏动作由来源模块注入并接收当前 `ReadingGalleryImage`，媒体模块不依赖表情收藏内部状态。
 
-- 媒体管线：`mediaGetUploadUrl`、`mediaConfirmUpload`、`mediaGetMedia`；契约已提供 `mediaReissueUploadUrl`，图片当前等待同一媒体重签与重传切片接入；音频候选已经按原 mediaId 接入重签。
+- 媒体管线：`mediaGetUploadUrl`、`mediaConfirmUpload`、`mediaGetMedia`、`mediaReissueUploadUrl`；图片同一媒体重签与重传为候选／待负责人验收；音频候选沿用原 mediaId 重签。
 - 头像：`usersSetAvatar`、`usersRemoveAvatar`。
 - 主页背景：`usersSetProfileCover`、`usersRemoveProfileCover`。
 - 主要生成类型：`CreateUploadUrlDto`（含 purpose）、`ConfirmUploadDto`、`MediaResponseDto`（含 purpose/animated 与派生 URL）、`SetAvatarDto`、`SetProfileCoverDto`、`PrivateUserResponseDto`。
 
 ## 6. 状态模型和数据流
+
+上传恢复候选：PUT 前即保留媒体身份与归一化文件摘要；网络失败、重签失败及对象缺失不会另建媒体。明确重试先查询同 ID，仍待上传时重签原对象；恢复草稿不申请、重签或 PUT，无身份附件等待手动重试，待重传附件只查询。旧 pending 沿用同 ID 幂等确认/处理查询；只有服务端明确 FAILED 才释放旧身份并允许手动重新上传。预签名地址不持久化。详见 [Sentry 上传恢复候选](../architecture/sentry-upload-recovery-candidate.md)。
+
+同 ID 重签或确认遇到 `40101` 时仍不自动重放 POST；仅会话已成功续期且仍有效的请求允许用户再次明确重试，保留媒体身份。续期失败、普通 401／403／404 与无效会话不开放该恢复入口。
 
 音频上传／保存下载统一为请求起点起 5 分钟总时限、30 秒无字节增长时限，独立连接时限 15 秒；仅真实字节增长刷新无进展计时，相同进度／空 chunk 不能续命。内部超时只取消本次传输，保留队列失败、文件和 mediaId；用户取消不显示失败。流读取静默时也会取消订阅，完成／失败／取消清理计时与监听。只调整音频客户端，不修改图片超时。
 
@@ -164,7 +168,7 @@ galleryList：读取 GalleryList200Response / GalleryPageDto / GalleryImageDto�
 
 本次原图问题已取得负责人真机验收通过。输入格式仍为 JPG、PNG、GIF、静态 WebP；HEIC/HEIF、AVIF、BMP、HDR 保真和 ICC/P3 广色域矩阵不在本轮保证范围，新增支持需单独验证。无损 PNG 中间态会增加部分图片的编码时间与瞬时内存，设备大图性能仍需手测。
 
-服务端用户 DTO 未提供头像或主页背景的 thumbnail/medium 字段，因此资料页只使用明确原地址。原图、预览、取景框与失败上传输入只在当前页面/autoDispose 生命周期内短暂保留，也不提供后台队列；页面释放、主动取消后需重新选择，进程在 Android 系统选图期间被终止时仅保底恢复富正文、动态/评论和私聊的待选文件，头像与主页背景仍需重新选择。`flutter_image_compress` 没有取消在途 native 编码的接口：用户取消后不会开始对象存储上传且迟到结果会被丢弃，但已经进入平台编码的任务仍可能运行到返回；当前以全局单路准备、像素上限和 Debug 分阶段计时控制与观测风险，是否进一步降低像素阈值需以 Profile/Release 大图数据决定。当前 `flutter_image_compress_common` 仍由插件应用 Kotlin Gradle Plugin，Flutter 已提示未来需迁移到 Built-in Kotlin；现有可解析版本尚未提供该迁移，后续按上游兼容版本单独处理。契约 5.4 的 `mediaReissueUploadUrl` 尚未接入；同一 `mediaId` 的对象缺失恢复、重签地址、重传、再次确认和取消边界作为独立高风险上传切片实现。契约 5.26 新增内容图片图集查询，但当前查看器仍只浏览调用页面已经加载的图片；跨页双向游标、锚点失效与索引未就绪恢复需在独立媒体切片接入。相册浏览和确认取文件由 photo_manager 管理；image_picker 与 Android 系统 Photo Picker 仅承担明确备用选择及既有 lost-data 恢复。
+服务端用户 DTO 未提供头像或主页背景的 thumbnail/medium 字段，因此资料页只使用明确原地址。原图、预览、取景框与失败上传输入只在当前页面/autoDispose 生命周期内短暂保留，也不提供后台队列；页面释放、主动取消后需重新选择，进程在 Android 系统选图期间被终止时仅保底恢复富正文、动态/评论和私聊的待选文件，头像与主页背景仍需重新选择。`flutter_image_compress` 没有取消在途 native 编码的接口：用户取消后不会开始对象存储上传且迟到结果会被丢弃，但已经进入平台编码的任务仍可能运行到返回；当前以全局单路准备、像素上限和 Debug 分阶段计时控制与观测风险，是否进一步降低像素阈值需以 Profile/Release 大图数据决定。当前 `flutter_image_compress_common` 仍由插件应用 Kotlin Gradle Plugin，Flutter 已提示未来需迁移到 Built-in Kotlin；现有可解析版本尚未提供该迁移，后续按上游兼容版本单独处理。同一 `mediaId` 的对象缺失恢复、重签、重传与取消边界已进入独立高风险候选，待负责人真机验收；详见 Sentry 上传恢复候选。契约 5.26 新增内容图片图集查询，但当前查看器仍只浏览调用页面已经加载的图片；跨页双向游标、锚点失效与索引未就绪恢复需在独立媒体切片接入。相册浏览和确认取文件由 photo_manager 管理；image_picker 与 Android 系统 Photo Picker 仅承担明确备用选择及既有 lost-data 恢复。
 
 ## 13. 最近审查的契约版本和后端提交
 

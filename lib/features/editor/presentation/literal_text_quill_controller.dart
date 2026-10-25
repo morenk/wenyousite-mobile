@@ -2,11 +2,13 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_quill/quill_delta.dart';
+import 'package:wenyousite_mobile/core/editor/quill_document_range.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_line_metadata.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_link_identity.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_paragraph_boundaries.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_clipboard_paste.dart';
+import 'package:wenyousite_mobile/features/editor/presentation/editor_divider_structure.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_document_alignment.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_selection_history.dart';
 
@@ -266,18 +268,22 @@ class LiteralTextQuillController extends QuillController {
     int len,
     Attribute? attribute, {
     bool shouldNotifyListeners = true,
-  }) => runEditCommand(
-    () => super.formatText(
+  }) => runEditCommand(() {
+    super.formatText(
       index,
       len,
       attribute,
       shouldNotifyListeners: shouldNotifyListeners,
-    ),
-  );
+    );
+    preserveEditorDividerBlocks(this);
+  });
 
   @override
   void compose(Delta delta, TextSelection textSelection, ChangeSource source) =>
-      runEditCommand(() => super.compose(delta, textSelection, source));
+      runEditCommand(() {
+        super.compose(delta, textSelection, source);
+        preserveEditorDividerBlocks(this);
+      });
 
   @override
   Style getSelectionStyle() {
@@ -321,22 +327,34 @@ class LiteralTextQuillController extends QuillController {
     TextSelection? textSelection, {
     bool ignoreFocus = false,
     bool shouldNotifyListeners = true,
-  }) => runEditCommand(
-    () => _replaceLiteralText(
+  }) {
+    final selectedText = readQuillDocumentRange(
+      document,
       index,
       len,
-      data,
-      textSelection,
-      ignoreFocus: ignoreFocus,
-      shouldNotifyListeners: shouldNotifyListeners,
-    ),
-  );
+      includeTerminalNewline: true,
+    );
+    if (selectedText == null) return;
+    runEditCommand(() {
+      _replaceLiteralText(
+        index,
+        len,
+        data,
+        textSelection,
+        selectedText: selectedText,
+        ignoreFocus: ignoreFocus,
+        shouldNotifyListeners: shouldNotifyListeners,
+      );
+      preserveEditorDividerBlocks(this);
+    });
+  }
 
   void _replaceLiteralText(
     int index,
     int len,
     Object? data,
     TextSelection? textSelection, {
+    required String selectedText,
     required bool ignoreFocus,
     required bool shouldNotifyListeners,
   }) {
@@ -368,7 +386,7 @@ class LiteralTextQuillController extends QuillController {
     final internalReference = data is String
         ? WenyouEditorClipboardPastePlanner.internalReferenceDelta(
             data,
-            len == 0 ? '' : document.getPlainText(index, len),
+            selectedText,
           )
         : null;
     final newline = _plainNewline(data, index);
@@ -440,8 +458,9 @@ class LiteralTextQuillController extends QuillController {
     if (sourceSeparatorPatch.isNotEmpty) {
       document.compose(sourceSeparatorPatch, ChangeSource.local);
     }
-    if (newline != null && effectiveSelection != null) {
-      // 显式换行 Delta 不经过插入规则，不应再次使用 Quill 的位置补偿。
+    if (effectiveData is Delta && effectiveSelection != null) {
+      // 调用方已按 Delta 的实际长度给出终点，不应再使用 Quill 将整个
+      // 片段当成单个 embed 的位置补偿；后续块边界补丁只转换一次。
       updateSelection(effectiveSelection, ChangeSource.local);
     }
     if (effectiveData is Delta &&

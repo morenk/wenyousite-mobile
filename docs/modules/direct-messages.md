@@ -5,6 +5,8 @@
 
 状态：`in_progress`
 
+网络恢复候选／待验收：自动未读初始化与定时查询遵守会话共享冷却；刷新显式返回本次是否成功，阅读在途、失败和迟到结果不能解除整组失败预算。用户主动刷新保留立即尝试能力，详见[网络候选记录](../architecture/sentry-network-recovery-candidate.md)。
+
 ## 1. 模块目标与非目标
 
 实现服务端 capability 控制的站内一对一私聊：会话、消息请求、历史与增量消息、首条消息、后续发送、接受/拒绝、归档、已读、撤回、收到消息举报、未读角标和 Android 默认开启且设备级可关闭的后台系统顶栏提醒形成完整移动闭环。当前不实现 FCM 后台送达、离线消息队列或本机私聊正文持久化；后台提醒只拉取会话元数据且不显示消息正文。输入器已通过 stickers 模块选择收藏表情，消息图片或表情也可加入本人收藏。
@@ -61,6 +63,8 @@ Foundation v7.1.0 时间呈现候选／待验收：普通内容不足 72 小时�
 - 主要生成类型：`DirectConversationResponseDto`、`DirectMessageResponseDto`、`DirectConversationLookupResponseDto`、`DirectUnreadCountResponseDto`、`CreateDirectConversationDto`、`CreateDirectMessageDto`、`HandleDirectRequestDto`、`SetDirectConversationArchiveDto`、`MarkDirectConversationReadDto`、`DirectMessageRecallResponseDto`。
 
 ## 6. 状态模型和数据流
+
+上传恢复候选：私聊气泡保留直传失败的媒体身份，用户明确重试时查询并复用同一对象，保留原 `clientRequestId`，不新增后台发送行为。详见[上传候选](../architecture/sentry-upload-recovery-candidate.md)，待负责人验收。
 
 归档/取消归档立即更新当前会话的归档状态，明确失败只恢复归档字段，避免覆盖消息、已读和发送状态；结果不明读取会话确认。开始提交已读时立即清本会话已读部分，并通过独立角标控制器扣减已接受会话的相应消息数量，待处理请求数保持不变；旧角标查询失效，在途期间暂缓计数轮询，结算后读取最新总数以纳入新消息。失败恢复本次扣减，回调只能结算一次。已于 2026-09-13 获负责人确认通过并授权合并，见 [乐观更新验收](../architecture/optimistic-interactions-acceptance.md)。
 
