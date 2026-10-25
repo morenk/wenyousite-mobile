@@ -1,3 +1,4 @@
+import 'package:wenyousite_mobile/core/media/media_audio.dart';
 import 'package:wenyousite_mobile/core/media/media_display.dart';
 import 'package:wenyousite_mobile/features/thread_feed/thread_feed_models.dart';
 import 'package:wenyousite_mobile/features/users/domain/profile_cover_models.dart';
@@ -92,6 +93,7 @@ class PublicUserReplyModel {
     required this.subthreadTitle,
     required this.preview,
     this.mediaDisplays = const {},
+    this.mediaAudios = const {},
     required this.createdAt,
     this.floorNumber,
     this.parentPostId,
@@ -104,6 +106,7 @@ class PublicUserReplyModel {
   final String subthreadTitle;
   final String preview;
   final Map<String, MediaDisplay> mediaDisplays;
+  final Map<String, MediaAudio> mediaAudios;
   final DateTime createdAt;
   final int? floorNumber;
   final String? parentPostId;

@@ -18,9 +18,15 @@ class ApiSubthreadManagementRepository
     this._threadsApi,
     this._subthreadsApi, {
     this.roleMentionsSupported = false,
+    this.textFontSupported = false,
+    this.textFontV2Supported = false,
+    this.textColorSupported = false,
   });
 
   final bool roleMentionsSupported;
+  final bool textFontSupported;
+  final bool textFontV2Supported;
+  final bool textColorSupported;
 
   final ThreadsApi _threadsApi;
   final SubthreadsApi _subthreadsApi;
@@ -132,6 +138,14 @@ class ApiSubthreadManagementRepository
           builder
             ..markdownContractVersion = roleMentionsSupported
                 ? CreateSubthreadDtoMarkdownContractVersionEnum.number6
+                : null
+            ..textFontVersion = textFontV2Supported
+                ? CreateSubthreadDtoTextFontVersionEnum.number2
+                : textFontSupported
+                ? CreateSubthreadDtoTextFontVersionEnum.number1
+                : null
+            ..textColorVersion = textColorSupported
+                ? CreateSubthreadDtoTextColorVersionEnum.number1
                 : null
             ..clientRequestId = clientRequestId
             ..title = draft.normalizedTitle
@@ -318,6 +332,13 @@ final apiSubthreadManagementRepositoryProvider =
       return ApiSubthreadManagementRepository(
         api.getThreadsApi(),
         api.getSubthreadsApi(),
+        textFontSupported: ref.watch(appCapabilitiesProvider).textFontSupported,
+        textFontV2Supported: ref
+            .watch(appCapabilitiesProvider)
+            .textFontV2Supported,
+        textColorSupported: ref
+            .watch(appCapabilitiesProvider)
+            .textColorSupported,
         roleMentionsSupported: ref
             .watch(appCapabilitiesProvider)
             .roleMentionsSupported,

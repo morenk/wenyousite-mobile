@@ -14,7 +14,7 @@ part 'create_upload_url_dto.g.dart';
 /// Properties:
 /// * [filename] - 原始文件名
 /// * [contentType] - 文件 MIME 类型
-/// * [size] - 文件大小（字节），上限 10MB
+/// * [size] - 文件大小（字节），图片上限 10MiB；RICH_CONTENT_AUDIO 音频上限 30MiB
 /// * [purpose] - 图片业务用途；旧客户端省略时按 LEGACY 生成全部兼容派生图
 @BuiltValue()
 abstract class CreateUploadUrlDto implements Built<CreateUploadUrlDto, CreateUploadUrlDtoBuilder> {
@@ -25,16 +25,16 @@ abstract class CreateUploadUrlDto implements Built<CreateUploadUrlDto, CreateUpl
   /// 文件 MIME 类型
   @BuiltValueField(wireName: r'contentType')
   CreateUploadUrlDtoContentTypeEnum get contentType;
-  // enum contentTypeEnum {  image/jpeg,  image/png,  image/gif,  image/webp,  image/avif,  };
+  // enum contentTypeEnum {  image/jpeg,  image/png,  image/gif,  image/webp,  image/avif,  audio/mpeg,  audio/mp4,  audio/wav,  audio/ogg,  audio/flac,  };
 
-  /// 文件大小（字节），上限 10MB
+  /// 文件大小（字节），图片上限 10MiB；RICH_CONTENT_AUDIO 音频上限 30MiB
   @BuiltValueField(wireName: r'size')
   num get size;
 
   /// 图片业务用途；旧客户端省略时按 LEGACY 生成全部兼容派生图
   @BuiltValueField(wireName: r'purpose')
   CreateUploadUrlDtoPurposeEnum? get purpose;
-  // enum purposeEnum {  AVATAR,  PROFILE_COVER,  DIRECT_MESSAGE,  MOMENT,  MOMENT_COMMENT,  RICH_CONTENT,  STICKER_SOURCE,  LEGACY,  };
+  // enum purposeEnum {  AVATAR,  PROFILE_COVER,  DIRECT_MESSAGE,  MOMENT,  MOMENT_COMMENT,  RICH_CONTENT,  RICH_CONTENT_AUDIO,  STICKER_SOURCE,  LEGACY,  };
 
   CreateUploadUrlDto._();
 
@@ -180,6 +180,21 @@ class CreateUploadUrlDtoContentTypeEnum extends EnumClass {
   @BuiltValueEnumConst(wireName: r'image/avif')
   static const CreateUploadUrlDtoContentTypeEnum imageSlashAvif = _$createUploadUrlDtoContentTypeEnum_imageSlashAvif;
   /// 文件 MIME 类型
+  @BuiltValueEnumConst(wireName: r'audio/mpeg')
+  static const CreateUploadUrlDtoContentTypeEnum audioSlashMpeg = _$createUploadUrlDtoContentTypeEnum_audioSlashMpeg;
+  /// 文件 MIME 类型
+  @BuiltValueEnumConst(wireName: r'audio/mp4')
+  static const CreateUploadUrlDtoContentTypeEnum audioSlashMp4 = _$createUploadUrlDtoContentTypeEnum_audioSlashMp4;
+  /// 文件 MIME 类型
+  @BuiltValueEnumConst(wireName: r'audio/wav')
+  static const CreateUploadUrlDtoContentTypeEnum audioSlashWav = _$createUploadUrlDtoContentTypeEnum_audioSlashWav;
+  /// 文件 MIME 类型
+  @BuiltValueEnumConst(wireName: r'audio/ogg')
+  static const CreateUploadUrlDtoContentTypeEnum audioSlashOgg = _$createUploadUrlDtoContentTypeEnum_audioSlashOgg;
+  /// 文件 MIME 类型
+  @BuiltValueEnumConst(wireName: r'audio/flac')
+  static const CreateUploadUrlDtoContentTypeEnum audioSlashFlac = _$createUploadUrlDtoContentTypeEnum_audioSlashFlac;
+  /// 文件 MIME 类型
   @BuiltValueEnumConst(wireName: r'unknown_default_open_api', fallback: true)
   static const CreateUploadUrlDtoContentTypeEnum unknownDefaultOpenApi = _$createUploadUrlDtoContentTypeEnum_unknownDefaultOpenApi;
 
@@ -211,6 +226,9 @@ class CreateUploadUrlDtoPurposeEnum extends EnumClass {
   /// 图片业务用途；旧客户端省略时按 LEGACY 生成全部兼容派生图
   @BuiltValueEnumConst(wireName: r'RICH_CONTENT')
   static const CreateUploadUrlDtoPurposeEnum RICH_CONTENT = _$createUploadUrlDtoPurposeEnum_RICH_CONTENT;
+  /// 图片业务用途；旧客户端省略时按 LEGACY 生成全部兼容派生图
+  @BuiltValueEnumConst(wireName: r'RICH_CONTENT_AUDIO')
+  static const CreateUploadUrlDtoPurposeEnum RICH_CONTENT_AUDIO = _$createUploadUrlDtoPurposeEnum_RICH_CONTENT_AUDIO;
   /// 图片业务用途；旧客户端省略时按 LEGACY 生成全部兼容派生图
   @BuiltValueEnumConst(wireName: r'STICKER_SOURCE')
   static const CreateUploadUrlDtoPurposeEnum STICKER_SOURCE = _$createUploadUrlDtoPurposeEnum_STICKER_SOURCE;

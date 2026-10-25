@@ -68,6 +68,8 @@ class ThreadsApi {
   /// * [threadId]
   /// * [createRpIdentityDto]
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -81,6 +83,8 @@ class ThreadsApi {
     required String threadId,
     required CreateRpIdentityDto createRpIdentityDto,
     int? xMarkdownContractVersion,
+    int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -93,6 +97,8 @@ class ThreadsApi {
       method: r'POST',
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -174,6 +180,8 @@ class ThreadsApi {
   /// * [threadId]
   /// * [identityId]
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -187,6 +195,8 @@ class ThreadsApi {
     required String threadId,
     required String identityId,
     int? xMarkdownContractVersion,
+    int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -199,6 +209,8 @@ class ThreadsApi {
       method: r'GET',
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -259,6 +271,8 @@ class ThreadsApi {
   /// Parameters:
   /// * [threadId]
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -271,6 +285,8 @@ class ThreadsApi {
   Future<Response<RpIdentitiesList200Response>> rpIdentitiesList({
     required String threadId,
     int? xMarkdownContractVersion,
+    int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -283,6 +299,8 @@ class ThreadsApi {
       method: r'GET',
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -345,6 +363,8 @@ class ThreadsApi {
   /// * [identityId]
   /// * [deleteRpIdentityDto]
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -359,6 +379,8 @@ class ThreadsApi {
     required String identityId,
     required DeleteRpIdentityDto deleteRpIdentityDto,
     int? xMarkdownContractVersion,
+    int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -371,6 +393,8 @@ class ThreadsApi {
       method: r'DELETE',
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -453,6 +477,8 @@ class ThreadsApi {
   /// * [identityId]
   /// * [updateRpIdentityDto]
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -467,6 +493,8 @@ class ThreadsApi {
     required String identityId,
     required UpdateRpIdentityDto updateRpIdentityDto,
     int? xMarkdownContractVersion,
+    int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -479,6 +507,8 @@ class ThreadsApi {
       method: r'PUT',
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -559,6 +589,8 @@ class ThreadsApi {
   /// Parameters:
   /// * [threadId]
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -571,6 +603,8 @@ class ThreadsApi {
   Future<Response<ThreadIdentitiesClear200Response>> threadIdentitiesClear({
     required String threadId,
     int? xMarkdownContractVersion,
+    int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -583,6 +617,8 @@ class ThreadsApi {
       method: r'DELETE',
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -644,6 +680,8 @@ class ThreadsApi {
   /// * [threadId]
   /// * [userId]
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -657,6 +695,8 @@ class ThreadsApi {
     required String threadId,
     required String userId,
     int? xMarkdownContractVersion,
+    int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -669,6 +709,8 @@ class ThreadsApi {
       method: r'GET',
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -729,6 +771,8 @@ class ThreadsApi {
   /// Parameters:
   /// * [threadId]
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -741,6 +785,8 @@ class ThreadsApi {
   Future<Response<ThreadIdentitiesMine200Response>> threadIdentitiesMine({
     required String threadId,
     int? xMarkdownContractVersion,
+    int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -753,6 +799,8 @@ class ThreadsApi {
       method: r'GET',
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -814,6 +862,8 @@ class ThreadsApi {
   /// * [threadId]
   /// * [setThreadIdentityEnabledDto]
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -827,6 +877,8 @@ class ThreadsApi {
     required String threadId,
     required SetThreadIdentityEnabledDto setThreadIdentityEnabledDto,
     int? xMarkdownContractVersion,
+    int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -839,6 +891,8 @@ class ThreadsApi {
       method: r'PATCH',
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -920,6 +974,8 @@ class ThreadsApi {
   /// * [threadId]
   /// * [updateThreadIdentityDto]
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -933,6 +989,8 @@ class ThreadsApi {
     required String threadId,
     required UpdateThreadIdentityDto updateThreadIdentityDto,
     int? xMarkdownContractVersion,
+    int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -945,6 +1003,8 @@ class ThreadsApi {
       method: r'PUT',
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -1025,6 +1085,8 @@ class ThreadsApi {
   /// Parameters:
   /// * [threadId]
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -1037,6 +1099,8 @@ class ThreadsApi {
   Future<Response<ThreadMembersExitMember200Response>> threadMembersExitMember({
     required String threadId,
     int? xMarkdownContractVersion,
+    int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -1049,6 +1113,8 @@ class ThreadsApi {
       method: r'DELETE',
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -1109,6 +1175,8 @@ class ThreadsApi {
   /// Parameters:
   /// * [threadId]
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -1121,6 +1189,8 @@ class ThreadsApi {
   Future<Response<ThreadMembersFindAll200Response>> threadMembersFindAll({
     required String threadId,
     int? xMarkdownContractVersion,
+    int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -1133,6 +1203,8 @@ class ThreadsApi {
       method: r'GET',
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -1193,6 +1265,8 @@ class ThreadsApi {
   /// Parameters:
   /// * [threadId]
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -1206,6 +1280,8 @@ class ThreadsApi {
   Future<Response<ThreadMembersJoin201Response>> threadMembersJoin({
     required String threadId,
     int? xMarkdownContractVersion,
+    int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -1218,6 +1294,8 @@ class ThreadsApi {
       method: r'POST',
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -1280,6 +1358,8 @@ class ThreadsApi {
   /// * [userId]
   /// * [threadMembersUpdateMemberRequest]
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -1294,6 +1374,8 @@ class ThreadsApi {
     required String userId,
     required ThreadMembersUpdateMemberRequest threadMembersUpdateMemberRequest,
     int? xMarkdownContractVersion,
+    int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -1306,6 +1388,8 @@ class ThreadsApi {
       method: r'PATCH',
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -1387,6 +1471,8 @@ class ThreadsApi {
   /// * [threadId]
   /// * [addThreadTagDto]
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -1400,6 +1486,8 @@ class ThreadsApi {
     required String threadId,
     required AddThreadTagDto addThreadTagDto,
     int? xMarkdownContractVersion,
+    int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -1412,6 +1500,8 @@ class ThreadsApi {
       method: r'POST',
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -1492,6 +1582,8 @@ class ThreadsApi {
   /// Parameters:
   /// * [threadId]
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -1504,6 +1596,8 @@ class ThreadsApi {
   Future<Response<ThreadTagsFindAll200Response>> threadTagsFindAll({
     required String threadId,
     int? xMarkdownContractVersion,
+    int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -1516,6 +1610,8 @@ class ThreadsApi {
       method: r'GET',
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -1577,6 +1673,8 @@ class ThreadsApi {
   /// * [threadId]
   /// * [tagId]
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -1590,6 +1688,8 @@ class ThreadsApi {
     required String threadId,
     required String tagId,
     int? xMarkdownContractVersion,
+    int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -1602,6 +1702,8 @@ class ThreadsApi {
       method: r'DELETE',
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -1662,6 +1764,8 @@ class ThreadsApi {
   /// Parameters:
   /// * [createThreadDto]
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -1674,6 +1778,8 @@ class ThreadsApi {
   Future<Response<ThreadsCreate201Response>> threadsCreate({
     required CreateThreadDto createThreadDto,
     int? xMarkdownContractVersion,
+    int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -1686,6 +1792,8 @@ class ThreadsApi {
       method: r'POST',
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -1766,6 +1874,8 @@ class ThreadsApi {
   /// Parameters:
   /// * [id]
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -1778,6 +1888,8 @@ class ThreadsApi {
   Future<Response<ThreadsCreateInviteLink200Response>> threadsCreateInviteLink({
     required String id,
     int? xMarkdownContractVersion,
+    int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -1790,6 +1902,8 @@ class ThreadsApi {
       method: r'POST',
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -1850,6 +1964,8 @@ class ThreadsApi {
   /// Parameters:
   /// * [id]
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -1862,6 +1978,8 @@ class ThreadsApi {
   Future<Response<ThreadsEnsureInviteLink200Response>> threadsEnsureInviteLink({
     required String id,
     int? xMarkdownContractVersion,
+    int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -1874,6 +1992,8 @@ class ThreadsApi {
       method: r'PUT',
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -1935,6 +2055,8 @@ class ThreadsApi {
   /// * [id]
   /// * [threadExportDto]
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -1948,6 +2070,8 @@ class ThreadsApi {
     required String id,
     required ThreadExportDto threadExportDto,
     int? xMarkdownContractVersion,
+    int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -1961,6 +2085,8 @@ class ThreadsApi {
       responseType: ResponseType.bytes,
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -2045,6 +2171,8 @@ class ThreadsApi {
   /// * [tag] - 按标签名模糊筛选主题帖
   /// * [tagId] - 按主题帖标签 ID 精确筛选；与 tag 同时传入时优先使用 tagId
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -2064,6 +2192,8 @@ class ThreadsApi {
     String? tag,
     String? tagId,
     int? xMarkdownContractVersion,
+    int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -2076,6 +2206,8 @@ class ThreadsApi {
       method: r'GET',
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -2148,6 +2280,8 @@ class ThreadsApi {
   /// Parameters:
   /// * [id]
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -2160,6 +2294,8 @@ class ThreadsApi {
   Future<Response<ThreadsFindById200Response>> threadsFindById({
     required String id,
     int? xMarkdownContractVersion,
+    int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -2172,6 +2308,8 @@ class ThreadsApi {
       method: r'GET',
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -2231,6 +2369,8 @@ class ThreadsApi {
   ///
   /// Parameters:
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -2242,6 +2382,8 @@ class ThreadsApi {
   /// Throws [DioException] if API call or serialization fails
   Future<Response<ThreadsFindDrafts200Response>> threadsFindDrafts({
     int? xMarkdownContractVersion,
+    int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -2254,6 +2396,8 @@ class ThreadsApi {
       method: r'GET',
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -2314,6 +2458,8 @@ class ThreadsApi {
   /// Parameters:
   /// * [token]
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -2326,6 +2472,8 @@ class ThreadsApi {
   Future<Response<ThreadsJoinByInviteLink200Response>> threadsJoinByInviteLink({
     required String token,
     int? xMarkdownContractVersion,
+    int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -2338,6 +2486,8 @@ class ThreadsApi {
       method: r'POST',
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -2398,6 +2548,8 @@ class ThreadsApi {
   /// Parameters:
   /// * [id]
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -2410,6 +2562,8 @@ class ThreadsApi {
   Future<Response<ThreadsLike201Response>> threadsLike({
     required String id,
     int? xMarkdownContractVersion,
+    int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -2422,6 +2576,8 @@ class ThreadsApi {
       method: r'POST',
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -2482,6 +2638,8 @@ class ThreadsApi {
   /// Parameters:
   /// * [token]
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -2494,6 +2652,8 @@ class ThreadsApi {
   Future<Response<ThreadsPreviewInviteLink200Response>> threadsPreviewInviteLink({
     required String token,
     int? xMarkdownContractVersion,
+    int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -2506,6 +2666,8 @@ class ThreadsApi {
       method: r'GET',
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -2566,6 +2728,8 @@ class ThreadsApi {
   /// Parameters:
   /// * [id]
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -2578,6 +2742,8 @@ class ThreadsApi {
   Future<Response<ThreadsRemove200Response>> threadsRemove({
     required String id,
     int? xMarkdownContractVersion,
+    int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -2590,6 +2756,8 @@ class ThreadsApi {
       method: r'DELETE',
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -2651,6 +2819,8 @@ class ThreadsApi {
   /// * [id]
   /// * [saveThreadAggregateDto]
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -2664,6 +2834,8 @@ class ThreadsApi {
     required String id,
     required SaveThreadAggregateDto saveThreadAggregateDto,
     int? xMarkdownContractVersion,
+    int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -2676,6 +2848,8 @@ class ThreadsApi {
       method: r'PATCH',
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -2756,6 +2930,8 @@ class ThreadsApi {
   /// Parameters:
   /// * [id]
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -2768,6 +2944,8 @@ class ThreadsApi {
   Future<Response<ThreadsUnlike200Response>> threadsUnlike({
     required String id,
     int? xMarkdownContractVersion,
+    int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -2780,6 +2958,8 @@ class ThreadsApi {
       method: r'DELETE',
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -2841,6 +3021,8 @@ class ThreadsApi {
   /// * [id]
   /// * [updateThreadDto]
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -2854,6 +3036,8 @@ class ThreadsApi {
     required String id,
     required UpdateThreadDto updateThreadDto,
     int? xMarkdownContractVersion,
+    int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -2866,6 +3050,8 @@ class ThreadsApi {
       method: r'PATCH',
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{

@@ -35,6 +35,8 @@ final refreshDioProvider = Provider<Dio>((ref) {
       headers: {
         'Accept': 'application/json',
         'X-Markdown-Contract-Version': '6',
+        'X-Text-Font-Version': '2',
+        'X-Text-Color-Version': '1',
       },
     ),
   );
@@ -80,6 +82,8 @@ final dioProvider = Provider<Dio>((ref) {
       headers: {
         'Accept': 'application/json',
         'X-Markdown-Contract-Version': '6',
+        'X-Text-Font-Version': '2',
+        'X-Text-Color-Version': '1',
       },
     ),
   );

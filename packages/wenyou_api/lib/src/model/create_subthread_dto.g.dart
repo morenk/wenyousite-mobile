@@ -6,6 +6,68 @@ part of 'create_subthread_dto.dart';
 // BuiltValueGenerator
 // **************************************************************************
 
+const CreateSubthreadDtoTextFontVersionEnum
+_$createSubthreadDtoTextFontVersionEnum_number1 =
+    const CreateSubthreadDtoTextFontVersionEnum._('number1');
+const CreateSubthreadDtoTextFontVersionEnum
+_$createSubthreadDtoTextFontVersionEnum_number2 =
+    const CreateSubthreadDtoTextFontVersionEnum._('number2');
+const CreateSubthreadDtoTextFontVersionEnum
+_$createSubthreadDtoTextFontVersionEnum_unknownDefaultOpenApi =
+    const CreateSubthreadDtoTextFontVersionEnum._('unknownDefaultOpenApi');
+
+CreateSubthreadDtoTextFontVersionEnum
+_$createSubthreadDtoTextFontVersionEnumValueOf(String name) {
+  switch (name) {
+    case 'number1':
+      return _$createSubthreadDtoTextFontVersionEnum_number1;
+    case 'number2':
+      return _$createSubthreadDtoTextFontVersionEnum_number2;
+    case 'unknownDefaultOpenApi':
+      return _$createSubthreadDtoTextFontVersionEnum_unknownDefaultOpenApi;
+    default:
+      return _$createSubthreadDtoTextFontVersionEnum_unknownDefaultOpenApi;
+  }
+}
+
+final BuiltSet<CreateSubthreadDtoTextFontVersionEnum>
+_$createSubthreadDtoTextFontVersionEnumValues =
+    BuiltSet<CreateSubthreadDtoTextFontVersionEnum>(
+      const <CreateSubthreadDtoTextFontVersionEnum>[
+        _$createSubthreadDtoTextFontVersionEnum_number1,
+        _$createSubthreadDtoTextFontVersionEnum_number2,
+        _$createSubthreadDtoTextFontVersionEnum_unknownDefaultOpenApi,
+      ],
+    );
+
+const CreateSubthreadDtoTextColorVersionEnum
+_$createSubthreadDtoTextColorVersionEnum_number1 =
+    const CreateSubthreadDtoTextColorVersionEnum._('number1');
+const CreateSubthreadDtoTextColorVersionEnum
+_$createSubthreadDtoTextColorVersionEnum_unknownDefaultOpenApi =
+    const CreateSubthreadDtoTextColorVersionEnum._('unknownDefaultOpenApi');
+
+CreateSubthreadDtoTextColorVersionEnum
+_$createSubthreadDtoTextColorVersionEnumValueOf(String name) {
+  switch (name) {
+    case 'number1':
+      return _$createSubthreadDtoTextColorVersionEnum_number1;
+    case 'unknownDefaultOpenApi':
+      return _$createSubthreadDtoTextColorVersionEnum_unknownDefaultOpenApi;
+    default:
+      return _$createSubthreadDtoTextColorVersionEnum_unknownDefaultOpenApi;
+  }
+}
+
+final BuiltSet<CreateSubthreadDtoTextColorVersionEnum>
+_$createSubthreadDtoTextColorVersionEnumValues =
+    BuiltSet<CreateSubthreadDtoTextColorVersionEnum>(
+      const <CreateSubthreadDtoTextColorVersionEnum>[
+        _$createSubthreadDtoTextColorVersionEnum_number1,
+        _$createSubthreadDtoTextColorVersionEnum_unknownDefaultOpenApi,
+      ],
+    );
+
 const CreateSubthreadDtoMarkdownContractVersionEnum
 _$createSubthreadDtoMarkdownContractVersionEnum_number6 =
     const CreateSubthreadDtoMarkdownContractVersionEnum._('number6');
@@ -111,6 +173,12 @@ _$createSubthreadDtoPostingPolicyEnumValues =
       ],
     );
 
+Serializer<CreateSubthreadDtoTextFontVersionEnum>
+_$createSubthreadDtoTextFontVersionEnumSerializer =
+    _$CreateSubthreadDtoTextFontVersionEnumSerializer();
+Serializer<CreateSubthreadDtoTextColorVersionEnum>
+_$createSubthreadDtoTextColorVersionEnumSerializer =
+    _$CreateSubthreadDtoTextColorVersionEnumSerializer();
 Serializer<CreateSubthreadDtoMarkdownContractVersionEnum>
 _$createSubthreadDtoMarkdownContractVersionEnumSerializer =
     _$CreateSubthreadDtoMarkdownContractVersionEnumSerializer();
@@ -120,6 +188,78 @@ _$createSubthreadDtoIdentityModeEnumSerializer =
 Serializer<CreateSubthreadDtoPostingPolicyEnum>
 _$createSubthreadDtoPostingPolicyEnumSerializer =
     _$CreateSubthreadDtoPostingPolicyEnumSerializer();
+
+class _$CreateSubthreadDtoTextFontVersionEnumSerializer
+    implements PrimitiveSerializer<CreateSubthreadDtoTextFontVersionEnum> {
+  static const Map<String, Object> _toWire = const <String, Object>{
+    'number1': 1,
+    'number2': 2,
+    'unknownDefaultOpenApi': 11184809,
+  };
+  static const Map<Object, String> _fromWire = const <Object, String>{
+    1: 'number1',
+    2: 'number2',
+    11184809: 'unknownDefaultOpenApi',
+  };
+
+  @override
+  final Iterable<Type> types = const <Type>[
+    CreateSubthreadDtoTextFontVersionEnum,
+  ];
+  @override
+  final String wireName = 'CreateSubthreadDtoTextFontVersionEnum';
+
+  @override
+  Object serialize(
+    Serializers serializers,
+    CreateSubthreadDtoTextFontVersionEnum object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => _toWire[object.name] ?? object.name;
+
+  @override
+  CreateSubthreadDtoTextFontVersionEnum deserialize(
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => CreateSubthreadDtoTextFontVersionEnum.valueOf(
+    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
+  );
+}
+
+class _$CreateSubthreadDtoTextColorVersionEnumSerializer
+    implements PrimitiveSerializer<CreateSubthreadDtoTextColorVersionEnum> {
+  static const Map<String, Object> _toWire = const <String, Object>{
+    'number1': 1,
+    'unknownDefaultOpenApi': 11184809,
+  };
+  static const Map<Object, String> _fromWire = const <Object, String>{
+    1: 'number1',
+    11184809: 'unknownDefaultOpenApi',
+  };
+
+  @override
+  final Iterable<Type> types = const <Type>[
+    CreateSubthreadDtoTextColorVersionEnum,
+  ];
+  @override
+  final String wireName = 'CreateSubthreadDtoTextColorVersionEnum';
+
+  @override
+  Object serialize(
+    Serializers serializers,
+    CreateSubthreadDtoTextColorVersionEnum object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => _toWire[object.name] ?? object.name;
+
+  @override
+  CreateSubthreadDtoTextColorVersionEnum deserialize(
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => CreateSubthreadDtoTextColorVersionEnum.valueOf(
+    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
+  );
+}
 
 class _$CreateSubthreadDtoMarkdownContractVersionEnumSerializer
     implements
@@ -233,6 +373,10 @@ class _$CreateSubthreadDtoPostingPolicyEnumSerializer
 
 class _$CreateSubthreadDto extends CreateSubthreadDto {
   @override
+  final CreateSubthreadDtoTextFontVersionEnum? textFontVersion;
+  @override
+  final CreateSubthreadDtoTextColorVersionEnum? textColorVersion;
+  @override
   final CreateSubthreadDtoMarkdownContractVersionEnum? markdownContractVersion;
   @override
   final String? identityId;
@@ -256,6 +400,8 @@ class _$CreateSubthreadDto extends CreateSubthreadDto {
   ]) => (CreateSubthreadDtoBuilder()..update(updates))._build();
 
   _$CreateSubthreadDto._({
+    this.textFontVersion,
+    this.textColorVersion,
     this.markdownContractVersion,
     this.identityId,
     this.identityToken,
@@ -279,6 +425,8 @@ class _$CreateSubthreadDto extends CreateSubthreadDto {
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
     return other is CreateSubthreadDto &&
+        textFontVersion == other.textFontVersion &&
+        textColorVersion == other.textColorVersion &&
         markdownContractVersion == other.markdownContractVersion &&
         identityId == other.identityId &&
         identityToken == other.identityToken &&
@@ -293,6 +441,8 @@ class _$CreateSubthreadDto extends CreateSubthreadDto {
   @override
   int get hashCode {
     var _$hash = 0;
+    _$hash = $jc(_$hash, textFontVersion.hashCode);
+    _$hash = $jc(_$hash, textColorVersion.hashCode);
     _$hash = $jc(_$hash, markdownContractVersion.hashCode);
     _$hash = $jc(_$hash, identityId.hashCode);
     _$hash = $jc(_$hash, identityToken.hashCode);
@@ -309,6 +459,8 @@ class _$CreateSubthreadDto extends CreateSubthreadDto {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'CreateSubthreadDto')
+          ..add('textFontVersion', textFontVersion)
+          ..add('textColorVersion', textColorVersion)
           ..add('markdownContractVersion', markdownContractVersion)
           ..add('identityId', identityId)
           ..add('identityToken', identityToken)
@@ -325,6 +477,19 @@ class _$CreateSubthreadDto extends CreateSubthreadDto {
 class CreateSubthreadDtoBuilder
     implements Builder<CreateSubthreadDto, CreateSubthreadDtoBuilder> {
   _$CreateSubthreadDto? _$v;
+
+  CreateSubthreadDtoTextFontVersionEnum? _textFontVersion;
+  CreateSubthreadDtoTextFontVersionEnum? get textFontVersion =>
+      _$this._textFontVersion;
+  set textFontVersion(CreateSubthreadDtoTextFontVersionEnum? textFontVersion) =>
+      _$this._textFontVersion = textFontVersion;
+
+  CreateSubthreadDtoTextColorVersionEnum? _textColorVersion;
+  CreateSubthreadDtoTextColorVersionEnum? get textColorVersion =>
+      _$this._textColorVersion;
+  set textColorVersion(
+    CreateSubthreadDtoTextColorVersionEnum? textColorVersion,
+  ) => _$this._textColorVersion = textColorVersion;
 
   CreateSubthreadDtoMarkdownContractVersionEnum? _markdownContractVersion;
   CreateSubthreadDtoMarkdownContractVersionEnum? get markdownContractVersion =>
@@ -377,6 +542,8 @@ class CreateSubthreadDtoBuilder
   CreateSubthreadDtoBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
+      _textFontVersion = $v.textFontVersion;
+      _textColorVersion = $v.textColorVersion;
       _markdownContractVersion = $v.markdownContractVersion;
       _identityId = $v.identityId;
       _identityToken = $v.identityToken;
@@ -408,6 +575,8 @@ class CreateSubthreadDtoBuilder
     final _$result =
         _$v ??
         _$CreateSubthreadDto._(
+          textFontVersion: textFontVersion,
+          textColorVersion: textColorVersion,
           markdownContractVersion: markdownContractVersion,
           identityId: identityId,
           identityToken: identityToken,

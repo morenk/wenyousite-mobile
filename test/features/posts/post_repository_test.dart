@@ -204,6 +204,8 @@ void main() {
       final repository = ApiPostRepository(
         api,
         roleMentionsSupported: supports,
+        textFontV2Supported: true,
+        textColorSupported: supports,
       );
 
       final created = await repository.create(
@@ -243,6 +245,18 @@ void main() {
       );
       expect(createPayload.parentPostId, 'floor');
       expect(createPayload.replyToPostId, 'reply-target');
+      expect(
+        createPayload.textFontVersion,
+        CreatePostDtoTextFontVersionEnum.number2,
+      );
+      expect(
+        updatePayload.textFontVersion,
+        UpdatePostDtoTextFontVersionEnum.number2,
+      );
+      expect(
+        bodyPayload.textFontVersion,
+        UpsertBodyDtoTextFontVersionEnum.number2,
+      );
       expect(updatePayload.content, '编辑后的内容');
       expect(updatePayload.version, 3);
       expect(updated.version, 4);
@@ -267,6 +281,18 @@ void main() {
       expect(
         bodyPayload.markdownContractVersion,
         supports ? UpsertBodyDtoMarkdownContractVersionEnum.number6 : null,
+      );
+      expect(
+        createPayload.textColorVersion,
+        supports ? CreatePostDtoTextColorVersionEnum.number1 : null,
+      );
+      expect(
+        updatePayload.textColorVersion,
+        supports ? UpdatePostDtoTextColorVersionEnum.number1 : null,
+      );
+      expect(
+        bodyPayload.textColorVersion,
+        supports ? UpsertBodyDtoTextColorVersionEnum.number1 : null,
       );
       verify(() => api.postsRemove(id: 'created')).called(1);
       verify(

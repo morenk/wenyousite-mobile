@@ -1,6 +1,10 @@
 # 应用壳
 
+2026-10-25 组合候选／待负责人真机验收：独立测试分支同时包含 PR #117 的相册宿主／路由保留与 PR #118 的同值元信息保位，实际更新检查与切号边界保留；见[组合记录](../architecture/pr117-118-combined-candidate.md)。
+
 状态：`in_progress`
+
+2026-10-24 动态字体候选／待真机验收：固定 Backend `f1025db4ef0d4986f53a4beffac6514d7ee16357`／API `5.44.0-dev.20261024.2`。解析textFontV2Supported与textFontV2WriteEnabled，缺失按false；读取能力与新字体选择开关独立。字体服务与引擎追加账本跨Provider/账号变化保持，前后台触发状态复核。v1 固定映射、防降级与撤回兼容已接入；本地检查与构建已执行，公网精确兼容随部署复核，产品 Android 同会话验收待完成，见[持续加载记录](../architecture/thread-fonts-mobile-continuous-loading.md)。
 
 2026-09-28 重复空说明弹窗修复已获负责人真机验收通过，绑定正式候选 `0.8.0+97` / APK SHA-256 `401dae520edeadaa51fda47e7556bedb2604b007ecb1e023f5d64eae22643e87`，返回桌面再进及划掉后台重开均不再弹空壳；当前源码相关门禁通过，按负责人最新指令准备合并，详见[一次说明验收](../architecture/mobile-update-once-dialogs-acceptance.md)。
 
@@ -54,6 +58,10 @@ Android 后台消息提醒默认开启，可在账号设置按设备关闭，选
 
 ## 6. 状态模型和数据流
 
+独立文本颜色能力由 `/meta.capabilities.textColorV1Supported` 与 `textColorV1WriteEnabled` 映射，缺失视为 false。正文读取发送 `X-Text-Color-Version: 1`，与已有 `X-Markdown-Contract-Version: 6` 并存；后端缓存和旧端投影负责隔离有色原文。UI 只在支持时显示颜色区，关闭新写时保留读取并禁用改色。最近色存储按当前账号键隔离，由生产组合根注入编辑器端口。
+
+可选 meta.audioUpload 经真实 JSON 数字 version=1 解析为新上传能力；缺失或未知版本安全关闭入口。此开关不控制已授权正文 mediaAudios 的历史播放。生成客户端对该单一数字枚举使用 wireNumber，避免把数字 1 错当字符串。
+
 可选 `rpIdentityProfileSupported` 从 `/meta` 映射到应用能力，缺失默认 false；资料编辑与读取 UI 按此能力启用，不从版本字符串或现有多角色支持推断。角色提及的支持／新写开关继续独立控制。
 
 
@@ -98,6 +106,10 @@ Android Manifest 明确关闭全量备份，Android 11 及以下和 Android 12+ 
 设备开关由 BackgroundReminderPreferenceController 管理，SharedPreferences 键为 background.reminder.enabled.v1，缺省开启；读取失败先关闭并提供重试，写入中停止提醒且禁止重复操作，写入失败恢复原选择。后台消息指纹只存当前进程；退出/切号清除基线但不清除设备选择。
 
 ## 9. 加载、空数据、错误、重试和冲突状态
+
+楼中楼恢复前台保位候选保留每次 `resumed` 的元信息及更新检查，继续处理真实强制升级与未知兼容版本；静默检查失败仍保留可用页面。帖子消费者按实际使用的四项支持能力比较，元信息对象更新不再无条件重建讨论状态。会话与可见性失效规则保持，进程回收后的阅读恢复不在本轮范围。证据与未验收项见[候选记录](../architecture/post-replies-resume-candidate.md)。
+
+收藏夹目录首次读取失败使用共享错误面板，保留收藏类型与原重试回调。 通用失败内容保留问题编号，取消请求不展示错误。2026-10-18 负责人真机验收通过，见[错误重试与瀑布流验收](../architecture/error-retry-waterfall-acceptance.md)。
 
 私有下载适配候选／待验收：429 的 `X-Download-Limit-Reason=device_daily_limit` 显示“此设备今日下载次数已用完，请在北京时间次日零点后重试。”，`ip_daily_limit` 显示“当前网络今日下载次数已用完，请在北京时间次日零点后重试。”；字节预算、频率、并发、带宽以及未知／缺失原因仍显示“下载请求较多，请稍后重试。”。503 继续显示“安装包暂时无法下载，请稍后重试。”，不因附带原因头改判。原因只读响应头，HEAD 无正文和 GET 空 429 均可处理。
 
@@ -167,6 +179,28 @@ Android 的 Debug、Profile 和 Release 均仅支持 `arm64-v8a`，使用 ARM64 
 当前已完成构建策略门禁、全局亮色/黑夜外观、推荐更新忽略、Android HTTPS 在线下载、双层完整性/身份校验与系统安装器、iOS TestFlight 外跳、本地一键发布入口；后台常驻与横幅提醒为候选／待负责人验收。Debug 构建使用独立 `site.wenyou.app.debug` 包名，Profile 性能构建使用 `site.wenyou.app.profile`，两者都避免占用正式更新链；完整门禁与发布入口均会核对线上契约、后端 revision 和 Markdown 版本。自动测试以伪 APK 固定下载与缓存状态机，Android 原生包解析、系统覆盖和后台尽力轮询仍需用 Android 8+ 真机完成最终验收；iOS 构建与上传必须在配置签名的 macOS 上执行。后台 30 秒节拍依赖当前 Flutter 进程与系统调度，留在最近任务不代表 Dart isolate 会持续运行；Doze、厂商省电、网络中断或进程终止都可能延迟/停止检查，不承诺实时送达。V1 不申请豁免、不做 App Links、FCM、WebSocket 或开机恢复。Profile 基线只覆盖固定离线关键交互，不能替代全部真实业务路径的人工手感验收。原生启动层在 Flutter 首帧前仍是静态白色。
 
 ## 13. 最近审查的契约版本和后端提交
+
+本轮字体样张契约来源：Backend `8a5d21858e04c69832c90e5a3a10f1e70fdcb545`／API `5.44.0-dev.20261024.3`。HTTP 形状不变，仅统一后台自动样张文案；本模块运行逻辑不变。离线格式验证范围见[验证说明](../architecture/font-format-offline-probe.md)。
+
+2026-10-24 相册候选来源复核：已部署 Backend `33574ae73d88123aa216a93f9cc81eab60fb9ee9`／API `5.44.0-dev.20261024.2`，其第一父提交为原固定 `31f39ff317e56d6eb49b4c5e60ecdb93dfc9ec06`。机器契约及消费者指南零差异，仅同步来源与导出运维说明；本模块行为和已有验收边界保持，详见[来源同步](../architecture/compose-gallery-contract-source-sync.md)。
+
+2026-10-24 交付前来源复核：线上更新至 Backend `31f39ff317e56d6eb49b4c5e60ecdb93dfc9ec06`／API `5.44.0-dev.20261024.2`。机器契约零差异，仅字体 Worker 运维说明新增 8 行；同步来源与说明，应用及构建源码不变。完整门禁和窄复核分别见[集成验收记录](../architecture/alignment-font-integration-acceptance.md)。
+
+2026-10-24 行距合并集成：保留已合并 PR #114 的完整字体能力与本次标题间距修复。固定 Backend `c80f015402e22647bbc85aecc9513d3d1a026096`／API `5.44.0-dev.20261024.2`；相对字体基线 `f1025db4`，同步脚本全部导出契约及说明字节无变化，仅来源 SHA 更新。历史候选的旧端无字体能力说明不再代表集成后客户端。详见[集成验收记录](../architecture/alignment-font-integration-acceptance.md)。
+
+2026-10-24 契约兼容同步：固定 Backend `bc1135b72557eb6025a541dbd10119cf528ff989`／API `5.43.0-dev.20261022.3`，完整同步机器契约、字体资源契约与生成客户端。新增字体能力均为可选；本候选不声明字体读写能力，服务端安全投影旧端正文并拒绝降级覆盖，拒绝时保留编辑内容。字体选择与缓存继续由独立 PR 114 验收，详见[兼容同步记录](../architecture/alignment-contract-compatibility-sync.md)。
+
+2026-10-22 28 款字体与进度超时契约同步：Backend `f27898ec3b168b9e027b5d5abef43a0d3dafa242`／API `5.42.0-dev.20261022.1`。目录更新为 1.2.0，28 款（中文 12／日文 10／英文 6）；历史小城 ID 与旧 v1 解析保留。v2 明确 15 秒无进度和 600 秒总上限，并移除原件专属字段。此提交仅同步契约与生成客户端，持续加载行为仍待候选验证。
+
+2026-10-22 字体运行策略契约同步：Backend `d86734e5aa229c5401a092096b8845b3d17546b0`／API `5.42.0-dev.20261021.1`。新增公开 `textFontsGetRuntimePolicy` 与 v2 固定策略、schema 和夹具；旧正文、目录、manifest 字节与资源不变。此提交仅同步契约与生成客户端，持续加载行为仍待候选验证。
+
+2026-10-21 字体候选固定 Backend `102b825379eb5da462f0ff765b29dc8fd7fb93ad`／API `5.41.0-dev.20261021.2`。读取 `textFontV1Supported` 与 `textFontV1WriteEnabled` 到 `AppCapabilities`，缺失均为 false。全局 UI 继续使用系统字体，正文资源按需加载，见[字体 revision 5 候选记录](../architecture/thread-fonts-mobile-r5-candidate.md)。
+
+2026-10-18 合并来源同步：Backend PR #55 已合并，固定最终提交 `6e00c4031a8f970609eef8cbf6fdefe3e6b12126`／API `5.40.0-dev.20261018.1`。契约字节与先前候选 `da68203a` 一致，本次只更新来源元数据；消费者验证和部署核验分别记录，不改变本模块既有范围。
+
+2026-10-18 契约来源复核：固定 Backend `da68203a494c6d0f6d377c23399390c2cee397f3`／API `5.40.0-dev.20261018.1`。本次只增加主题详情可选真实收藏与官方订阅总数，不改变本模块既有操作契约；消费者接入与验证见[统计契约同步](../architecture/thread-action-counts-contract-sync.md)。
+
+契约复核：固定已部署 Backend `08bbf5dbcd791270764fc2152fe9b61f683d7fa1`／API `5.39.0-dev.20261017.1`，合并音频预算错误与独立文本颜色能力。主题链正文保留颜色读取头、写入声明、保存校验和取色入口；音频上传、媒体展示与可定制工具栏继续保留。Foundation 固定正式 `v7.5.0`；独占空段、相邻彩色标题与对齐边界新增共享用例，OpenAPI 与合并基线一致。
 
 2026-10-10 合并来源复核：通过官方同步入口固定到实际部署 Backend `b5f0e3bb0b99a3f9763b31e3080cb4d4f2e64045`，OpenAPI 仍为 `5.36.0-dev.20261005.1`。相对退役实施提交，机器契约、共享语料、生成客户端及本模块行为不变；仅来源登记更新，详见[退役验收记录](../architecture/retire-development-preview-acceptance.md)。
 

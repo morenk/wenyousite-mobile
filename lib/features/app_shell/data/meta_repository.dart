@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
+import 'package:wenyousite_mobile/core/network/media_audio_mapper.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/app_shell/application/app_shell_ports.dart';
 import 'package:wenyousite_mobile/features/app_shell/domain/contract_info.dart';
@@ -31,6 +32,7 @@ class ApiMetaRepository implements MetaRepository {
         contractVersion: data.contractVersion,
         markdownContractVersion: data.markdownContractVersion.toInt(),
         buildSha: data.buildSha,
+        audioUpload: mapAudioUploadPolicy(data.audioUpload),
         android: _policyFromDto(data.mobileCompatibility.android),
         ios: _policyFromDto(data.mobileCompatibility.ios),
         stickersEnabled: data.capabilities.stickers,
@@ -40,6 +42,16 @@ class ApiMetaRepository implements MetaRepository {
             data.capabilities.roleMentionsV6Supported ?? false,
         roleMentionsWriteEnabled:
             data.capabilities.roleMentionsV6WriteEnabled ?? false,
+        textFontSupported:
+            (data.capabilities.textFontV1Supported ?? false) ||
+            (data.capabilities.textFontV2Supported ?? false),
+        textFontV2Supported: data.capabilities.textFontV2Supported ?? false,
+        textFontV2WriteEnabled:
+            data.capabilities.textFontV2WriteEnabled ?? false,
+        textFontWriteEnabled: data.capabilities.textFontV1WriteEnabled ?? false,
+        textColorSupported: data.capabilities.textColorV1Supported ?? false,
+        textColorWriteEnabled:
+            data.capabilities.textColorV1WriteEnabled ?? false,
         rpIdentityProfileSupported:
             data.capabilities.rpIdentityProfileSupported ?? false,
       );

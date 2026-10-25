@@ -109,7 +109,7 @@ void main() {
         '$node `$node`',
         mentionLabels: labels,
       ),
-      '@站内用户 @旧角色',
+      '@站内用户 $node',
     );
     expect(
       MarkdownContent.toPlainTextPreview('\\$node', mentionLabels: labels),

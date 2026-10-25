@@ -30,9 +30,11 @@ class MainActivity : FlutterActivity() {
     }
 
     private var keyboardInsetsChannel: MethodChannel? = null
+    private var networkAvailabilityChannel: NetworkAvailabilityChannel? = null
     private var clipboardNavigationChannel: ClipboardNavigationChannel? = null
     private var imageGalleryChannel: ImageGalleryChannel? = null
     private var documentSaverChannel: DocumentSaverChannel? = null
+    private var audioFilePickerChannel: AudioFilePickerChannel? = null
     private var backgroundExecutionChannel: BackgroundExecutionChannel? = null
     private var keyboardInsetsActive = false
     private var appliedKeyboardInsetBottom = 0
@@ -46,11 +48,13 @@ class MainActivity : FlutterActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        networkAvailabilityChannel = NetworkAvailabilityChannel(applicationContext).also { it.register(flutterEngine) }
         EditorClipboardChannel(this).register(flutterEngine)
         clipboardNavigationChannel =
             ClipboardNavigationChannel(this).also { it.register(flutterEngine) }
         imageGalleryChannel = ImageGalleryChannel(this).also { it.register(flutterEngine) }
         documentSaverChannel = DocumentSaverChannel(this).also { it.register(flutterEngine) }
+        audioFilePickerChannel = AudioFilePickerChannel(this).also { it.register(flutterEngine) }
         backgroundExecutionChannel = BackgroundExecutionChannel(this).also { it.register(flutterEngine) }
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, UPDATE_CHANNEL)
             .setMethodCallHandler { call, result ->
@@ -126,11 +130,16 @@ class MainActivity : FlutterActivity() {
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        if (audioFilePickerChannel?.onActivityResult(requestCode, resultCode, data) == true) return
         if (documentSaverChannel?.onActivityResult(requestCode, resultCode, data) == true) return
         super.onActivityResult(requestCode, resultCode, data)
     }
 
     override fun cleanUpFlutterEngine(flutterEngine: FlutterEngine) {
+        networkAvailabilityChannel?.dispose()
+        networkAvailabilityChannel = null
+        audioFilePickerChannel?.dispose()
+        audioFilePickerChannel = null
         backgroundExecutionChannel?.dispose()
         backgroundExecutionChannel = null
         clipboardNavigationChannel?.dispose()

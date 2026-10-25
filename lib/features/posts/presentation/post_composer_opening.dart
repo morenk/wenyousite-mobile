@@ -175,6 +175,7 @@ class _PostComposerOpeningState extends ConsumerState<PostComposerOpening> {
         : PostComposerBaseline(
             content: latest.content,
             mediaDisplays: latest.mediaDisplays,
+            mediaAudios: latest.mediaAudios,
             mentionLabels: latest.mentionLabels,
             postId: latest.id,
             version: latest.version,
@@ -249,6 +250,10 @@ class _PostComposerOpeningState extends ConsumerState<PostComposerOpening> {
           mediaDisplays: {
             ...?_initialDraft?.mediaDisplays,
             ...baseline.mediaDisplays,
+          },
+          mediaAudios: {
+            ...?_initialDraft?.mediaAudios,
+            ...baseline.mediaAudios,
           },
         ),
       );

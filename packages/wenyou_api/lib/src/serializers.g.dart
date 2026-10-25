@@ -108,6 +108,22 @@ Serializers _$serializers =
           ..add(AdminTaxonomyListTags200Response.serializer)
           ..add(AdminTaxonomyUpdateCategory200Response.serializer)
           ..add(AdminTaxonomyUpdateTag200Response.serializer)
+          ..add(AdminTextFontsCreate201Response.serializer)
+          ..add(AdminTextFontsCreateSubmission201Response.serializer)
+          ..add(AdminTextFontsDetail200Response.serializer)
+          ..add(AdminTextFontsEnabled200Response.serializer)
+          ..add(AdminTextFontsGetJob200Response.serializer)
+          ..add(AdminTextFontsList200Response.serializer)
+          ..add(AdminTextFontsManagement200Response.serializer)
+          ..add(AdminTextFontsPreview200Response.serializer)
+          ..add(AdminTextFontsProcess201Response.serializer)
+          ..add(AdminTextFontsProcessSubmission201Response.serializer)
+          ..add(AdminTextFontsPublish201Response.serializer)
+          ..add(AdminTextFontsReorder200Response.serializer)
+          ..add(AdminTextFontsSubmission200Response.serializer)
+          ..add(AdminTextFontsUpdate200Response.serializer)
+          ..add(AdminTextFontsUpload201Response.serializer)
+          ..add(AdminTextFontsWithdraw201Response.serializer)
           ..add(AdminUserContentCountsDto.serializer)
           ..add(AdminUserDetailResponseDto.serializer)
           ..add(AdminUserDetailResponseDtoModerationStatusEnum.serializer)
@@ -131,6 +147,12 @@ Serializers _$serializers =
           ..add(ApiSuccessEnvelopeCodeEnum.serializer)
           ..add(AppDownloadsInfo200Response.serializer)
           ..add(AppealAccessTokenResponseDto.serializer)
+          ..add(AudioMediaDto.serializer)
+          ..add(AudioMediaDtoContentTypeEnum.serializer)
+          ..add(AudioUploadCapabilityDto.serializer)
+          ..add(AudioUploadCapabilityDtoContentTypesEnum.serializer)
+          ..add(AudioUploadCapabilityDtoOutputContentTypeEnum.serializer)
+          ..add(AudioUploadCapabilityDtoVersionEnum.serializer)
           ..add(AuthChangePassword200Response.serializer)
           ..add(AuthForgotPassword200Response.serializer)
           ..add(AuthListSessions200Response.serializer)
@@ -172,6 +194,10 @@ Serializers _$serializers =
           ..add(CreateDirectMessageDto.serializer)
           ..add(CreateDraftDto.serializer)
           ..add(CreateDraftDtoMarkdownContractVersionEnum.serializer)
+          ..add(CreateDraftDtoTextColorVersionEnum.serializer)
+          ..add(CreateDraftDtoTextFontVersionEnum.serializer)
+          ..add(CreateFontSubmissionDto.serializer)
+          ..add(CreateFontSubmissionDtoLanguageEnum.serializer)
           ..add(CreateManagedTagDto.serializer)
           ..add(CreateMobileReleaseDto.serializer)
           ..add(CreateMobileReleaseDtoPlatformEnum.serializer)
@@ -185,6 +211,8 @@ Serializers _$serializers =
           ..add(CreatePostDto.serializer)
           ..add(CreatePostDtoIdentityModeEnum.serializer)
           ..add(CreatePostDtoMarkdownContractVersionEnum.serializer)
+          ..add(CreatePostDtoTextColorVersionEnum.serializer)
+          ..add(CreatePostDtoTextFontVersionEnum.serializer)
           ..add(CreateReportDto.serializer)
           ..add(CreateReportDtoReasonCodeEnum.serializer)
           ..add(CreateReportDtoTargetTypeEnum.serializer)
@@ -195,10 +223,14 @@ Serializers _$serializers =
           ..add(CreateSubthreadDtoIdentityModeEnum.serializer)
           ..add(CreateSubthreadDtoMarkdownContractVersionEnum.serializer)
           ..add(CreateSubthreadDtoPostingPolicyEnum.serializer)
+          ..add(CreateSubthreadDtoTextColorVersionEnum.serializer)
+          ..add(CreateSubthreadDtoTextFontVersionEnum.serializer)
           ..add(CreateTagDto.serializer)
           ..add(CreateThreadCategoryDto.serializer)
           ..add(CreateThreadDto.serializer)
           ..add(CreateThreadDtoMarkdownContractVersionEnum.serializer)
+          ..add(CreateThreadDtoTextColorVersionEnum.serializer)
+          ..add(CreateThreadDtoTextFontVersionEnum.serializer)
           ..add(CreateThreadDtoVisibilityEnum.serializer)
           ..add(CreateUploadUrlDto.serializer)
           ..add(CreateUploadUrlDtoContentTypeEnum.serializer)
@@ -255,6 +287,25 @@ Serializers _$serializers =
           ..add(DraftsSlotUsage200Response.serializer)
           ..add(DraftsState200Response.serializer)
           ..add(DraftsUpdate200Response.serializer)
+          ..add(DynamicFontMobileRuntimeDto.serializer)
+          ..add(DynamicFontNetworkDto.serializer)
+          ..add(DynamicFontNetworkDtoMaxTransferMsEnum.serializer)
+          ..add(DynamicFontNetworkDtoTimeoutModeEnum.serializer)
+          ..add(DynamicFontNetworkDtoTimeoutMsEnum.serializer)
+          ..add(DynamicFontNetworkDtoWindowMsEnum.serializer)
+          ..add(DynamicFontRegistrationDto.serializer)
+          ..add(DynamicFontRegistrationDtoFailedAttemptEnum.serializer)
+          ..add(DynamicFontRegistrationDtoKeyEnum.serializer)
+          ..add(DynamicFontRegistrationDtoMaxAttemptsPerKeyEnum.serializer)
+          ..add(DynamicFontRegistrationDtoModeEnum.serializer)
+          ..add(DynamicFontRegistrationDtoScopeEnum.serializer)
+          ..add(DynamicFontRuntimePolicyDto.serializer)
+          ..add(DynamicFontRuntimePolicyDtoFontVersionEnum.serializer)
+          ..add(DynamicFontRuntimePolicyDtoPolicyVersionEnum.serializer)
+          ..add(DynamicFontWebResidencyDto.serializer)
+          ..add(DynamicFontWebResidencyDtoModeEnum.serializer)
+          ..add(DynamicFontWebResidencyDtoScopeEnum.serializer)
+          ..add(DynamicFontWebRuntimeDto.serializer)
           ..add(EconomyCheckIn200Response.serializer)
           ..add(EconomyGetWallet200Response.serializer)
           ..add(EconomyTipMoment201Response.serializer)
@@ -264,6 +315,75 @@ Serializers _$serializers =
           ..add(FloorResponseDto.serializer)
           ..add(FloorResponseDtoKindEnum.serializer)
           ..add(FloorWindowResponseDto.serializer)
+          ..add(FontAdminFamilyDetailDto.serializer)
+          ..add(FontAdminFamilyDetailDtoDesignLanguageEnum.serializer)
+          ..add(FontAdminPageDto.serializer)
+          ..add(FontAssetDto.serializer)
+          ..add(FontAssetDtoFormatEnum.serializer)
+          ..add(FontCatalogEntryDto.serializer)
+          ..add(FontCatalogEntryDtoDesignLanguageEnum.serializer)
+          ..add(FontCatalogPageDto.serializer)
+          ..add(FontCatalogPageDtoFontVersionEnum.serializer)
+          ..add(FontConfigurationDto.serializer)
+          ..add(FontConfigurationDtoDesignLanguageEnum.serializer)
+          ..add(FontEnabledDto.serializer)
+          ..add(FontFamilyDto.serializer)
+          ..add(FontFamilyDtoDesignLanguageEnum.serializer)
+          ..add(FontJobDto.serializer)
+          ..add(FontJobDtoFailureCodeEnum.serializer)
+          ..add(FontJobDtoFailureReasonEnum.serializer)
+          ..add(FontJobDtoStatusEnum.serializer)
+          ..add(FontManagementItemDto.serializer)
+          ..add(FontManagementItemDtoLanguageEnum.serializer)
+          ..add(FontManagementItemDtoStatusEnum.serializer)
+          ..add(FontManagementPageDto.serializer)
+          ..add(FontMetadataPolicyDto.serializer)
+          ..add(FontMetadataPolicyDtoNegativeCacheMsEnum.serializer)
+          ..add(FontMetadataPolicyDtoReservationBytesEnum.serializer)
+          ..add(FontMetadataPolicyDtoRevalidateAfterMsEnum.serializer)
+          ..add(FontMobileRegistrationDto.serializer)
+          ..add(FontMobileRegistrationDtoFailedAttemptEnum.serializer)
+          ..add(FontMobileRegistrationDtoKeyEnum.serializer)
+          ..add(FontMobileRegistrationDtoMaxAttemptsPerKeyEnum.serializer)
+          ..add(FontMobileRegistrationDtoModeEnum.serializer)
+          ..add(FontMobileRegistrationDtoScopeEnum.serializer)
+          ..add(FontMobileRuntimeDto.serializer)
+          ..add(FontNetworkWindowDto.serializer)
+          ..add(FontNetworkWindowDtoMaxConcurrentEnum.serializer)
+          ..add(FontNetworkWindowDtoMaxRequestsEnum.serializer)
+          ..add(FontNetworkWindowDtoMaxTransferMsEnum.serializer)
+          ..add(FontNetworkWindowDtoTimeoutModeEnum.serializer)
+          ..add(FontNetworkWindowDtoTimeoutMsEnum.serializer)
+          ..add(FontNetworkWindowDtoWindowMsEnum.serializer)
+          ..add(FontOrderGroupDto.serializer)
+          ..add(FontOrderGroupDtoLanguageEnum.serializer)
+          ..add(FontOrderItemDto.serializer)
+          ..add(FontPublishDto.serializer)
+          ..add(FontRegistrationSnapshotDto.serializer)
+          ..add(FontReorderResultDto.serializer)
+          ..add(FontRetryPolicyDto.serializer)
+          ..add(FontRetryPolicyDtoJitterEnum.serializer)
+          ..add(FontRightsDto.serializer)
+          ..add(FontSnapshotSafetyCeilingDto.serializer)
+          ..add(
+            FontSnapshotSafetyCeilingDtoMaxSnapshotAssetBytesEnum.serializer,
+          )
+          ..add(FontSnapshotSafetyCeilingDtoMaxSnapshotAssetsEnum.serializer)
+          ..add(FontSubmissionDto.serializer)
+          ..add(FontSubmissionDtoAuthorizationRuleVersionEnum.serializer)
+          ..add(FontSubmissionDtoLanguageEnum.serializer)
+          ..add(FontVersionDescriptorDto.serializer)
+          ..add(FontVersionDescriptorDtoDesignLanguageEnum.serializer)
+          ..add(FontVersionDescriptorDtoFontVersionEnum.serializer)
+          ..add(FontVersionDescriptorDtoStatusEnum.serializer)
+          ..add(FontWebResidencyDto.serializer)
+          ..add(FontWebResidencyDtoMaxFacesEnum.serializer)
+          ..add(FontWebResidencyDtoMaxFamiliesEnum.serializer)
+          ..add(FontWebResidencyDtoMaxSfntBytesEnum.serializer)
+          ..add(FontWebResidencyDtoModeEnum.serializer)
+          ..add(FontWebResidencyDtoScopeEnum.serializer)
+          ..add(FontWebRuntimeDto.serializer)
+          ..add(FontWithdrawDto.serializer)
           ..add(ForgotPasswordDto.serializer)
           ..add(GalleryImageDto.serializer)
           ..add(GalleryList200Response.serializer)
@@ -301,6 +421,7 @@ Serializers _$serializers =
           ..add(MediaGetUploadUrl201Response.serializer)
           ..add(MediaReissueUploadUrl200Response.serializer)
           ..add(MediaResponseDto.serializer)
+          ..add(MediaResponseDtoFailureCodeEnum.serializer)
           ..add(MediaResponseDtoPurposeEnum.serializer)
           ..add(MediaResponseDtoStatusEnum.serializer)
           ..add(MentionCandidateDto.serializer)
@@ -441,6 +562,7 @@ Serializers _$serializers =
           ..add(PostsUpsertBody200Response.serializer)
           ..add(PrivateUserResponseDto.serializer)
           ..add(PrivateUserResponseDtoRoleEnum.serializer)
+          ..add(ProcessFontSubmissionDto.serializer)
           ..add(ProfileCoverResponseDto.serializer)
           ..add(ProfileCoverVariantResponseDto.serializer)
           ..add(ProgressionResponseDto.serializer)
@@ -459,6 +581,7 @@ Serializers _$serializers =
           ..add(RegisterMobileDeviceDtoPlatformEnum.serializer)
           ..add(RenameBookmarkFolderDto.serializer)
           ..add(RenameMomentBookmarkFolderDto.serializer)
+          ..add(ReorderFontsDto.serializer)
           ..add(ReorderStickersDto.serializer)
           ..add(ReorderSubthreadsDto.serializer)
           ..add(ReorderedSubthreadResponseDto.serializer)
@@ -505,6 +628,8 @@ Serializers _$serializers =
           ..add(SaveThreadAggregateDtoIdentityModeEnum.serializer)
           ..add(SaveThreadAggregateDtoMarkdownContractVersionEnum.serializer)
           ..add(SaveThreadAggregateDtoStatusEnum.serializer)
+          ..add(SaveThreadAggregateDtoTextColorVersionEnum.serializer)
+          ..add(SaveThreadAggregateDtoTextFontVersionEnum.serializer)
           ..add(SaveThreadAggregateDtoVisibilityEnum.serializer)
           ..add(SearchAuthorResponseDto.serializer)
           ..add(SearchPostResponseDto.serializer)
@@ -566,6 +691,19 @@ Serializers _$serializers =
           ..add(TagsCreate200Response.serializer)
           ..add(TagsGetById200Response.serializer)
           ..add(TagsSearch200Response.serializer)
+          ..add(TextFontCatalogDto.serializer)
+          ..add(TextFontCatalogDtoFontVersionEnum.serializer)
+          ..add(TextFontFamilyDto.serializer)
+          ..add(TextFontFamilyDtoAvailabilityEnum.serializer)
+          ..add(TextFontFamilyDtoDesignLanguageEnum.serializer)
+          ..add(TextFontManifestDto.serializer)
+          ..add(TextFontRuntimePolicyDto.serializer)
+          ..add(TextFontRuntimePolicyDtoPolicyVersionEnum.serializer)
+          ..add(TextFontsGetCatalog200Response.serializer)
+          ..add(TextFontsGetRuntimePolicy200Response.serializer)
+          ..add(TextFontsV2GetCatalog200Response.serializer)
+          ..add(TextFontsV2GetRuntimePolicy200Response.serializer)
+          ..add(TextFontsV2GetVersion200Response.serializer)
           ..add(ThreadBodyPostResponseDto.serializer)
           ..add(ThreadCapabilitiesResponseDto.serializer)
           ..add(ThreadCategoriesList200Response.serializer)
@@ -634,11 +772,17 @@ Serializers _$serializers =
           ..add(UpdateContentTaxonomyDto.serializer)
           ..add(UpdateDraftDto.serializer)
           ..add(UpdateDraftDtoMarkdownContractVersionEnum.serializer)
+          ..add(UpdateDraftDtoTextColorVersionEnum.serializer)
+          ..add(UpdateDraftDtoTextFontVersionEnum.serializer)
+          ..add(UpdateFontConfigurationDto.serializer)
+          ..add(UpdateFontConfigurationDtoDesignLanguageEnum.serializer)
           ..add(UpdateManagedTagDto.serializer)
           ..add(UpdateMobileReleaseDto.serializer)
           ..add(UpdateMomentDto.serializer)
           ..add(UpdatePostDto.serializer)
           ..add(UpdatePostDtoMarkdownContractVersionEnum.serializer)
+          ..add(UpdatePostDtoTextColorVersionEnum.serializer)
+          ..add(UpdatePostDtoTextFontVersionEnum.serializer)
           ..add(UpdateRpIdentityDto.serializer)
           ..add(UpdateSiteSettingsDto.serializer)
           ..add(UpdateSubthreadDto.serializer)
@@ -653,6 +797,8 @@ Serializers _$serializers =
           ..add(UpsertBodyDto.serializer)
           ..add(UpsertBodyDtoIdentityModeEnum.serializer)
           ..add(UpsertBodyDtoMarkdownContractVersionEnum.serializer)
+          ..add(UpsertBodyDtoTextColorVersionEnum.serializer)
+          ..add(UpsertBodyDtoTextFontVersionEnum.serializer)
           ..add(UserActivitySummaryResponseDto.serializer)
           ..add(UserConditionDto.serializer)
           ..add(UserConditionDtoRoleEnum.serializer)
@@ -812,6 +958,12 @@ Serializers _$serializers =
           )
           ..addBuilderFactory(
             const FullType(BuiltList, const [
+              const FullType(AudioUploadCapabilityDtoContentTypesEnum),
+            ]),
+            () => ListBuilder<AudioUploadCapabilityDtoContentTypesEnum>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [
               const FullType(BlockedUserRecordResponseDto),
             ]),
             () => ListBuilder<BlockedUserRecordResponseDto>(),
@@ -911,6 +1063,40 @@ Serializers _$serializers =
             () => ListBuilder<FloorResponseDto>(),
           )
           ..addBuilderFactory(
+            const FullType(BuiltList, const [
+              const FullType(FontCatalogEntryDto),
+            ]),
+            () => ListBuilder<FontCatalogEntryDto>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(FontFamilyDto)]),
+            () => ListBuilder<FontFamilyDto>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(FontJobDto)]),
+            () => ListBuilder<FontJobDto>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(String)]),
+            () => ListBuilder<String>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [
+              const FullType(FontManagementItemDto),
+            ]),
+            () => ListBuilder<FontManagementItemDto>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [
+              const FullType(FontOrderGroupDto),
+            ]),
+            () => ListBuilder<FontOrderGroupDto>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(FontOrderItemDto)]),
+            () => ListBuilder<FontOrderItemDto>(),
+          )
+          ..addBuilderFactory(
             const FullType(BuiltList, const [const FullType(GalleryImageDto)]),
             () => ListBuilder<GalleryImageDto>(),
           )
@@ -927,10 +1113,18 @@ Serializers _$serializers =
             () => ListBuilder<MarkdownMediaDisplayResponseDto>(),
           )
           ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(AudioMediaDto)]),
+            () => ListBuilder<AudioMediaDto>(),
+          )
+          ..addBuilderFactory(
             const FullType(BuiltList, const [
               const FullType(MarkdownMediaDisplayResponseDto),
             ]),
             () => ListBuilder<MarkdownMediaDisplayResponseDto>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(AudioMediaDto)]),
+            () => ListBuilder<AudioMediaDto>(),
           )
           ..addBuilderFactory(
             const FullType(BuiltList, const [
@@ -957,6 +1151,10 @@ Serializers _$serializers =
             () => ListBuilder<MarkdownMediaDisplayResponseDto>(),
           )
           ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(AudioMediaDto)]),
+            () => ListBuilder<AudioMediaDto>(),
+          )
+          ..addBuilderFactory(
             const FullType(BuiltList, const [
               const FullType(MentionIdentityDisplayDto),
             ]),
@@ -967,6 +1165,10 @@ Serializers _$serializers =
               const FullType(MarkdownMediaDisplayResponseDto),
             ]),
             () => ListBuilder<MarkdownMediaDisplayResponseDto>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(AudioMediaDto)]),
+            () => ListBuilder<AudioMediaDto>(),
           )
           ..addBuilderFactory(
             const FullType(BuiltList, const [
@@ -987,22 +1189,8 @@ Serializers _$serializers =
             () => ListBuilder<MarkdownMediaDisplayResponseDto>(),
           )
           ..addBuilderFactory(
-            const FullType(BuiltList, const [
-              const FullType(DiceRollResponseDto),
-            ]),
-            () => ListBuilder<DiceRollResponseDto>(),
-          )
-          ..addBuilderFactory(
-            const FullType(BuiltList, const [
-              const FullType(MentionIdentityDisplayDto),
-            ]),
-            () => ListBuilder<MentionIdentityDisplayDto>(),
-          )
-          ..addBuilderFactory(
-            const FullType(BuiltList, const [
-              const FullType(MarkdownMediaDisplayResponseDto),
-            ]),
-            () => ListBuilder<MarkdownMediaDisplayResponseDto>(),
+            const FullType(BuiltList, const [const FullType(AudioMediaDto)]),
+            () => ListBuilder<AudioMediaDto>(),
           )
           ..addBuilderFactory(
             const FullType(BuiltList, const [
@@ -1023,6 +1211,10 @@ Serializers _$serializers =
             () => ListBuilder<MarkdownMediaDisplayResponseDto>(),
           )
           ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(AudioMediaDto)]),
+            () => ListBuilder<AudioMediaDto>(),
+          )
+          ..addBuilderFactory(
             const FullType(BuiltList, const [
               const FullType(DiceRollResponseDto),
             ]),
@@ -1039,6 +1231,32 @@ Serializers _$serializers =
               const FullType(MarkdownMediaDisplayResponseDto),
             ]),
             () => ListBuilder<MarkdownMediaDisplayResponseDto>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(AudioMediaDto)]),
+            () => ListBuilder<AudioMediaDto>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [
+              const FullType(DiceRollResponseDto),
+            ]),
+            () => ListBuilder<DiceRollResponseDto>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [
+              const FullType(MentionIdentityDisplayDto),
+            ]),
+            () => ListBuilder<MentionIdentityDisplayDto>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [
+              const FullType(MarkdownMediaDisplayResponseDto),
+            ]),
+            () => ListBuilder<MarkdownMediaDisplayResponseDto>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(AudioMediaDto)]),
+            () => ListBuilder<AudioMediaDto>(),
           )
           ..addBuilderFactory(
             const FullType(BuiltList, const [
@@ -1332,6 +1550,12 @@ Serializers _$serializers =
           )
           ..addBuilderFactory(
             const FullType(BuiltList, const [
+              const FullType(TextFontFamilyDto),
+            ]),
+            () => ListBuilder<TextFontFamilyDto>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [
               const FullType(ThreadCategoryResponseDto),
             ]),
             () => ListBuilder<ThreadCategoryResponseDto>(),
@@ -1515,6 +1739,14 @@ Serializers _$serializers =
           ..addBuilderFactory(
             const FullType(BuiltList, const [const FullType(DraftResponseDto)]),
             () => ListBuilder<DraftResponseDto>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(num)]),
+            () => ListBuilder<num>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(num)]),
+            () => ListBuilder<num>(),
           )
           ..addBuilderFactory(
             const FullType(BuiltMap, const [

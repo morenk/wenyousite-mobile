@@ -54,6 +54,8 @@ class MomentsApi {
   /// Parameters:
   /// * [id]
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
   /// * [createMomentBookmarkDto]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
@@ -67,6 +69,8 @@ class MomentsApi {
   Future<Response<MomentsBookmark201Response>> momentsBookmark({
     required String id,
     int? xMarkdownContractVersion,
+    int? xTextColorVersion,
+    int? xTextFontVersion,
     CreateMomentBookmarkDto? createMomentBookmarkDto,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -80,6 +84,8 @@ class MomentsApi {
       method: r'POST',
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -159,6 +165,8 @@ class MomentsApi {
   ///
   /// Parameters:
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -170,6 +178,8 @@ class MomentsApi {
   /// Throws [DioException] if API call or serialization fails
   Future<Response<MomentsBookmarkFolders200Response>> momentsBookmarkFolders({
     int? xMarkdownContractVersion,
+    int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -182,6 +192,8 @@ class MomentsApi {
       method: r'GET',
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -244,6 +256,8 @@ class MomentsApi {
   /// * [limit] - 每页条数（默认 20，最大 50）
   /// * [folderId] - 只返回指定收藏夹中的动态；不传时返回全部
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -258,6 +272,8 @@ class MomentsApi {
     num? limit = 20,
     String? folderId,
     int? xMarkdownContractVersion,
+    int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -270,6 +286,8 @@ class MomentsApi {
       method: r'GET',
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -337,6 +355,8 @@ class MomentsApi {
   /// Parameters:
   /// * [id]
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -349,6 +369,8 @@ class MomentsApi {
   Future<Response<MomentsCommentAuthors200Response>> momentsCommentAuthors({
     required String id,
     int? xMarkdownContractVersion,
+    int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -361,6 +383,8 @@ class MomentsApi {
       method: r'GET',
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -422,6 +446,8 @@ class MomentsApi {
   /// * [id]
   /// * [commentId]
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -435,6 +461,8 @@ class MomentsApi {
     required String id,
     required String commentId,
     int? xMarkdownContractVersion,
+    int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -447,6 +475,8 @@ class MomentsApi {
       method: r'GET',
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -511,6 +541,8 @@ class MomentsApi {
   /// * [order] - 列表顺序；帖子回复与动态独立楼中楼默认 OLDEST，动态主评论默认 NEWEST；动态主评论内嵌回复固定 OLDEST
   /// * [authorId] - 只返回指定作者的回复
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -527,6 +559,8 @@ class MomentsApi {
     String? order,
     String? authorId,
     int? xMarkdownContractVersion,
+    int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -539,6 +573,8 @@ class MomentsApi {
       method: r'GET',
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -607,6 +643,8 @@ class MomentsApi {
   /// Parameters:
   /// * [createMomentDto]
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -619,6 +657,8 @@ class MomentsApi {
   Future<Response<MomentsCreate201Response>> momentsCreate({
     required CreateMomentDto createMomentDto,
     int? xMarkdownContractVersion,
+    int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -631,6 +671,8 @@ class MomentsApi {
       method: r'POST',
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -711,6 +753,8 @@ class MomentsApi {
   /// Parameters:
   /// * [createMomentBookmarkFolderDto]
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -723,6 +767,8 @@ class MomentsApi {
   Future<Response<MomentsCreateBookmarkFolder201Response>> momentsCreateBookmarkFolder({
     required CreateMomentBookmarkFolderDto createMomentBookmarkFolderDto,
     int? xMarkdownContractVersion,
+    int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -735,6 +781,8 @@ class MomentsApi {
       method: r'POST',
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -816,6 +864,8 @@ class MomentsApi {
   /// * [id]
   /// * [createMomentCommentDto]
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -829,6 +879,8 @@ class MomentsApi {
     required String id,
     required CreateMomentCommentDto createMomentCommentDto,
     int? xMarkdownContractVersion,
+    int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -841,6 +893,8 @@ class MomentsApi {
       method: r'POST',
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -921,6 +975,8 @@ class MomentsApi {
   /// Parameters:
   /// * [id]
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -933,6 +989,8 @@ class MomentsApi {
   Future<Response<MomentsDeleteBookmarkFolder200Response>> momentsDeleteBookmarkFolder({
     required String id,
     int? xMarkdownContractVersion,
+    int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -945,6 +1003,8 @@ class MomentsApi {
       method: r'DELETE',
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -1005,6 +1065,8 @@ class MomentsApi {
   /// Parameters:
   /// * [id]
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -1017,6 +1079,8 @@ class MomentsApi {
   Future<Response<MomentsDetail200Response>> momentsDetail({
     required String id,
     int? xMarkdownContractVersion,
+    int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -1029,6 +1093,8 @@ class MomentsApi {
       method: r'GET',
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -1089,6 +1155,8 @@ class MomentsApi {
   /// Parameters:
   /// * [id]
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -1101,6 +1169,8 @@ class MomentsApi {
   Future<Response<MomentsLike201Response>> momentsLike({
     required String id,
     int? xMarkdownContractVersion,
+    int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -1113,6 +1183,8 @@ class MomentsApi {
       method: r'POST',
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -1175,6 +1247,8 @@ class MomentsApi {
   /// * [limit] - 每页条数（默认 20，最大 50）
   /// * [feed]
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -1189,6 +1263,8 @@ class MomentsApi {
     num? limit = 20,
     String? feed = 'DISCOVER',
     int? xMarkdownContractVersion,
+    int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -1201,6 +1277,8 @@ class MomentsApi {
       method: r'GET',
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -1269,6 +1347,8 @@ class MomentsApi {
   /// * [id]
   /// * [moveMomentBookmarkDto]
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -1282,6 +1362,8 @@ class MomentsApi {
     required String id,
     required MoveMomentBookmarkDto moveMomentBookmarkDto,
     int? xMarkdownContractVersion,
+    int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -1294,6 +1376,8 @@ class MomentsApi {
       method: r'PATCH',
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -1374,6 +1458,8 @@ class MomentsApi {
   /// Parameters:
   /// * [id]
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -1386,6 +1472,8 @@ class MomentsApi {
   Future<Response<MomentsRemove200Response>> momentsRemove({
     required String id,
     int? xMarkdownContractVersion,
+    int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -1398,6 +1486,8 @@ class MomentsApi {
       method: r'DELETE',
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -1459,6 +1549,8 @@ class MomentsApi {
   /// * [id]
   /// * [commentId]
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -1472,6 +1564,8 @@ class MomentsApi {
     required String id,
     required String commentId,
     int? xMarkdownContractVersion,
+    int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -1484,6 +1578,8 @@ class MomentsApi {
       method: r'DELETE',
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -1545,6 +1641,8 @@ class MomentsApi {
   /// * [id]
   /// * [renameMomentBookmarkFolderDto]
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -1558,6 +1656,8 @@ class MomentsApi {
     required String id,
     required RenameMomentBookmarkFolderDto renameMomentBookmarkFolderDto,
     int? xMarkdownContractVersion,
+    int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -1570,6 +1670,8 @@ class MomentsApi {
       method: r'PATCH',
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -1655,6 +1757,8 @@ class MomentsApi {
   /// * [order] - 列表顺序；帖子回复与动态独立楼中楼默认 OLDEST，动态主评论默认 NEWEST；动态主评论内嵌回复固定 OLDEST
   /// * [authorId] - 只返回指定作者的回复
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -1672,6 +1776,8 @@ class MomentsApi {
     String? order,
     String? authorId,
     int? xMarkdownContractVersion,
+    int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -1684,6 +1790,8 @@ class MomentsApi {
       method: r'GET',
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -1752,6 +1860,8 @@ class MomentsApi {
   /// Parameters:
   /// * [id]
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -1764,6 +1874,8 @@ class MomentsApi {
   Future<Response<MomentsUnbookmark200Response>> momentsUnbookmark({
     required String id,
     int? xMarkdownContractVersion,
+    int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -1776,6 +1888,8 @@ class MomentsApi {
       method: r'DELETE',
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -1836,6 +1950,8 @@ class MomentsApi {
   /// Parameters:
   /// * [id]
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -1848,6 +1964,8 @@ class MomentsApi {
   Future<Response<MomentsUnlike200Response>> momentsUnlike({
     required String id,
     int? xMarkdownContractVersion,
+    int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -1860,6 +1978,8 @@ class MomentsApi {
       method: r'DELETE',
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -1921,6 +2041,8 @@ class MomentsApi {
   /// * [id]
   /// * [updateMomentDto]
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -1934,6 +2056,8 @@ class MomentsApi {
     required String id,
     required UpdateMomentDto updateMomentDto,
     int? xMarkdownContractVersion,
+    int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -1946,6 +2070,8 @@ class MomentsApi {
       method: r'PATCH',
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -2028,6 +2154,8 @@ class MomentsApi {
   /// * [cursor] - 服务端返回的不透明分页游标；首次请求不传，后续必须原样回传
   /// * [limit] - 每页条数（默认 20，最大 50）
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -2042,6 +2170,8 @@ class MomentsApi {
     String? cursor,
     num? limit = 20,
     int? xMarkdownContractVersion,
+    int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -2054,6 +2184,8 @@ class MomentsApi {
       method: r'GET',
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{

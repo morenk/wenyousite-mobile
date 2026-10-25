@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
@@ -6,6 +8,82 @@ import 'package:wenyousite_mobile/features/users/data/public_user_repository.dar
 import 'package:wenyousite_mobile/features/users/domain/public_user_models.dart';
 
 void main() {
+  test('旧刷新悬挂不能阻止重新加载成功后的新分页', () async {
+    final oldRefresh = Completer<CursorPage<PublicUserThreadModel>>();
+    var calls = 0;
+    final repository = _FakePublicUserRepository(
+      onCreated: (cursor) {
+        calls++;
+        if (calls == 2) return oldRefresh.future;
+        return Future.value(
+          CursorPage(
+            items: [_thread(cursor == null ? 'fresh' : 'next', '当前')],
+            cursor: 'next',
+            hasMore: cursor == null,
+          ),
+        );
+      },
+    );
+    final controller = PublicUserController(
+      repository,
+      'user-1',
+      autoStart: false,
+    );
+    addTearDown(controller.dispose);
+    await controller.load();
+    final pending = controller.refreshActive();
+    await controller.load();
+    await controller.loadMoreActive();
+    expect(calls, 4);
+    expect(controller.state.created.items.map((e) => e.id), ['fresh', 'next']);
+    oldRefresh.completeError(const ApiFailure(userMessage: '旧刷新失败'));
+    await pending;
+    expect(controller.state.created.items.map((e) => e.id), ['fresh', 'next']);
+  });
+
+  test('公共分页并发：个人页刷新保持内容，失效分页不恢复busy', () async {
+    for (final failRefresh in [false, true]) {
+      final more = Completer<CursorPage<PublicUserThreadModel>>();
+      final fresh = Completer<CursorPage<PublicUserThreadModel>>();
+      var calls = 0;
+      final page = CursorPage(
+        items: [_thread('current', '当前')],
+        cursor: 'next',
+        hasMore: true,
+      );
+      final repository = _FakePublicUserRepository(
+        onCreated: (cursor) {
+          calls++;
+          if (calls == 1) return Future.value(page);
+          return cursor == null ? fresh.future : more.future;
+        },
+      );
+      final controller = PublicUserController(
+        repository,
+        'user-1',
+        autoStart: false,
+      );
+      await controller.load();
+      final paging = controller.loadMoreActive();
+      final refresh = controller.refreshActive();
+      await controller.loadMoreActive();
+      expect(calls, 3);
+      if (failRefresh) {
+        fresh.completeError(const ApiFailure(userMessage: '刷新失败'));
+      } else {
+        fresh.complete(page);
+      }
+      await refresh;
+      more.completeError(const ApiFailure(userMessage: '过期分页'));
+      await paging;
+      expect(controller.state.created.items.single.id, 'current');
+      expect(controller.state.created.isLoadingMore, isFalse);
+      expect(controller.state.created.failure, isNull);
+      expect(controller.state.isRefreshing, isFalse);
+      controller.dispose();
+    }
+  });
+
   test('资料加载后只请求创建主题，其他允许内容首次切换时才加载', () async {
     final repository = _FakePublicUserRepository();
     final controller = PublicUserController(

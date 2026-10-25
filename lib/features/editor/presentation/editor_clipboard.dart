@@ -1,5 +1,6 @@
 import 'package:flutter_quill/quill_delta.dart';
 import 'package:uuid/uuid.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_audio_embed.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_clipboard_text.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_dice_contract.dart';
@@ -51,7 +52,7 @@ class WenyouEditorClipboardStore {
     String? marker,
     Object? scope,
   }) {
-    final cloned = Delta.fromJson(delta.toJson());
+    final cloned = Delta.fromJson(MarkdownAudioEmbed.expand(delta).toJson());
     final fallback = plainTextFallback
         .replaceAll('\r\n', '\n')
         .replaceAll('\r', '\n');

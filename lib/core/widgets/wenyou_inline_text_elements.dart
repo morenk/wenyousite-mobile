@@ -83,10 +83,18 @@ class WenyouMentionLink extends StatelessWidget {
 }
 
 class WenyouInlineCodeSurface extends StatelessWidget {
-  const WenyouInlineCodeSurface({required this.text, this.style, super.key});
+  const WenyouInlineCodeSurface({
+    required this.text,
+    this.style,
+    this.foregroundColor,
+    this.preserveTextFont = false,
+    super.key,
+  });
 
   final String text;
   final TextStyle? style;
+  final Color? foregroundColor;
+  final bool preserveTextFont;
 
   @override
   Widget build(BuildContext context) {
@@ -105,9 +113,9 @@ class WenyouInlineCodeSurface extends StatelessWidget {
       child: Text(
         text,
         style: resolvedStyle.copyWith(
-          color: tokens.text,
+          color: foregroundColor ?? tokens.text,
           backgroundColor: Colors.transparent,
-          fontFamily: 'monospace',
+          fontFamily: preserveTextFont ? resolvedStyle.fontFamily : 'monospace',
         ),
       ),
     );

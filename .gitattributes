@@ -2,6 +2,11 @@
 # renormalizing every extensionless or platform-owned file in the repository.
 *.dart text eol=lf
 *.json text eol=lf
+# 词库许可证参与已提交源摘要，检出时必须保留原始 LF。
+contracts/toolbox/*.txt text eol=lf
+contracts/toolbox/*.ts text eol=lf
+# 官方原文含行尾空格，保留 SHA-256 锁定的原始字节。
+contracts/toolbox/unicode-16.0-emoji-data.txt whitespace=-blank-at-eol
 *.yaml text eol=lf
 *.yml text eol=lf
 *.md text eol=lf
@@ -33,3 +38,11 @@ packages/wenyou_api/.openapi-generator/FILES text eol=crlf
 *.otf binary
 *.jks binary
 *.keystore binary
+
+# 固定第三方源码按 LF 校验来源与补丁，避免不同 checkout 改写摘要。
+packages/flutter_quill/** text eol=lf
+# 统一 diff 的空白上下文行含必需前导空格，保留补丁原始字节。
+tool/patches/*.patch text eol=lf whitespace=-blank-at-eol
+# 这两个固定第三方文件的注释保留上游行尾空格，字节仍由清单哈希校验。
+packages/flutter_quill/lib/src/delta/delta_x.dart whitespace=-blank-at-eol
+packages/flutter_quill/pubspec.yaml whitespace=-blank-at-eol

@@ -1,5 +1,20 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wenyousite_mobile/features/media/domain/audio_upload_models.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
+
+abstract interface class PendingAudioFileStore {
+  Future<void> removeAudio({
+    required String accountId,
+    required String target,
+    required String attachmentId,
+  });
+  Future<AudioUploadInput> persistAudio(
+    AudioUploadInput input, {
+    required String accountId,
+    required String target,
+    required String attachmentId,
+  });
+}
 
 abstract interface class PendingMediaFileStore {
   Future<MediaUploadInput> persist(

@@ -1,4 +1,5 @@
 import 'package:markdown/markdown.dart' as md;
+import 'package:wenyousite_mobile/core/markdown/markdown_text_color.dart';
 
 /// markdown 7.3.1 的段尾 trimRight 会删除可见的 NBSP。
 /// 复用原段落解析，仅在原源码确有 NBSP 的尾部恢复被裁掉的内容。
@@ -7,6 +8,13 @@ class MarkdownReaderParagraphSyntax extends md.ParagraphSyntax {
 
   @override
   bool canParse(md.BlockParser parser) {
+    final line = parser.current.content;
+    if (RegExp(
+          r'^<span data-wenyou-(?:color|font)-v1=',
+        ).hasMatch(line.trimLeft()) &&
+        MarkdownTextColor.maskValidTags(line) != line) {
+      return true;
+    }
     // 自定义语法先于内置语法运行；不得抢占标题、列表或其他结构。
     for (final syntax in parser.blockSyntaxes) {
       if (identical(syntax, this)) continue;

@@ -105,7 +105,8 @@ void main() {
       find.byType(StickerPostMarkdown),
     );
     expect(body.data, contains('> 引用'));
-    expect(body.bodyFontSize, 17);
+    expect(body.enableTextFonts, isFalse);
+    expect(body.bodyFontSize, 16);
     expect(body.bodyHeight, 1.8);
     expect(body.mentionLabels, {'/users/account': '白夜'});
     expect(body.diceLabels['die'], '1d6 = 4');

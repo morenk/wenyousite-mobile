@@ -5,12 +5,16 @@ import 'package:wenyousite_mobile/app/wenyou_app.dart';
 import 'package:wenyousite_mobile/core/application/appearance_preference.dart';
 import 'package:wenyousite_mobile/core/application/background_reminder_preference.dart';
 import 'package:wenyousite_mobile/core/application/data_saver_preference.dart';
+import 'package:wenyousite_mobile/core/application/editor_toolbar_preference.dart';
+import 'package:wenyousite_mobile/core/application/thread_font_preference.dart';
 import 'package:wenyousite_mobile/core/config/app_environment.dart';
 import 'package:wenyousite_mobile/core/diagnostics/debug_diagnostic_console.dart';
 import 'package:wenyousite_mobile/core/diagnostics/diagnostic_bootstrap.dart';
 import 'package:wenyousite_mobile/core/storage/shared_preferences_appearance_store.dart';
 import 'package:wenyousite_mobile/core/storage/shared_preferences_background_reminder_store.dart';
 import 'package:wenyousite_mobile/core/storage/shared_preferences_data_saver_store.dart';
+import 'package:wenyousite_mobile/core/storage/shared_preferences_editor_toolbar_store.dart';
+import 'package:wenyousite_mobile/core/storage/shared_preferences_thread_font_store.dart';
 import 'package:wenyousite_mobile/features/media/application/recovered_media_selection.dart';
 import 'package:wenyousite_mobile/features/media/data/media_picker_recovery.dart';
 import 'package:wenyousite_mobile/features/media/data/system_image_picker_configuration.dart';
@@ -30,6 +34,14 @@ Future<void> main() async {
   );
   const dataSaverStore = SharedPreferencesDataSaverStore();
   final initialDataSaver = await loadInitialDataSaverPreference(dataSaverStore);
+  const threadFontStore = SharedPreferencesThreadFontStore();
+  const editorToolbarStore = SharedPreferencesEditorToolbarStore();
+  final initialEditorToolbar = await loadInitialEditorToolbarPreference(
+    editorToolbarStore,
+  );
+  final initialThreadFont = await loadInitialThreadFontPreference(
+    threadFontStore,
+  );
   const backgroundReminderStore = SharedPreferencesBackgroundReminderStore();
   final initialBackgroundReminder =
       await loadInitialBackgroundReminderPreference(backgroundReminderStore);
@@ -44,6 +56,16 @@ Future<void> main() async {
           initialBackgroundReminder,
         ),
         appearancePreferenceStoreProvider.overrideWithValue(appearanceStore),
+        threadFontPreferenceStoreProvider.overrideWithValue(threadFontStore),
+        editorToolbarPreferenceStoreProvider.overrideWithValue(
+          editorToolbarStore,
+        ),
+        initialEditorToolbarPreferenceProvider.overrideWithValue(
+          initialEditorToolbar,
+        ),
+        initialThreadFontPreferenceProvider.overrideWithValue(
+          initialThreadFont,
+        ),
         dataSaverPreferenceStoreProvider.overrideWithValue(dataSaverStore),
         initialDataSaverPreferenceStateProvider.overrideWithValue(
           initialDataSaver,

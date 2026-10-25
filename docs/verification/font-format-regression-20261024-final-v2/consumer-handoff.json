@@ -1,0 +1,14 @@
+[
+  {
+    "path": "/srv/wenyousite/artifacts/font-format-regression-20261024/mobile-handoff-v1-final.tar.gz",
+    "bytes": 213661,
+    "sha256": "dbe58499f6ce4adee0d718b99901becfb54d5e6f0cd442ffaf23061eefe7acde",
+    "parametersVersion": 1
+  },
+  {
+    "path": "/srv/wenyousite/artifacts/font-format-regression-20261024/mobile-handoff-v2-final.tar.gz",
+    "bytes": 212921,
+    "sha256": "c79eaa27c1466016036580cf30a04d87f4452e699a8c60b0fa1a875e6ae3ad03",
+    "parametersVersion": 2
+  }
+]

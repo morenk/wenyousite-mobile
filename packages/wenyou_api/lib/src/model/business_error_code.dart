@@ -63,6 +63,24 @@ class BusinessErrorCode extends EnumClass {
   @BuiltValueEnumConst(wireNumber: 40015)
   static const BusinessErrorCode ROLE_MENTIONS_DISABLED = _$ROLE_MENTIONS_DISABLED;
   /// 稳定业务错误码；名称和值来源于 ErrorCode
+  @BuiltValueEnumConst(wireNumber: 40016)
+  static const BusinessErrorCode TEXT_COLOR_CAPABILITY_REQUIRED = _$TEXT_COLOR_CAPABILITY_REQUIRED;
+  /// 稳定业务错误码；名称和值来源于 ErrorCode
+  @BuiltValueEnumConst(wireNumber: 40017)
+  static const BusinessErrorCode TEXT_COLOR_DISABLED = _$TEXT_COLOR_DISABLED;
+  /// 稳定业务错误码；名称和值来源于 ErrorCode
+  @BuiltValueEnumConst(wireNumber: 40018)
+  static const BusinessErrorCode INVALID_TEXT_COLOR = _$INVALID_TEXT_COLOR;
+  /// 稳定业务错误码；名称和值来源于 ErrorCode
+  @BuiltValueEnumConst(wireNumber: 40019)
+  static const BusinessErrorCode TEXT_FONT_CAPABILITY_REQUIRED = _$TEXT_FONT_CAPABILITY_REQUIRED;
+  /// 稳定业务错误码；名称和值来源于 ErrorCode
+  @BuiltValueEnumConst(wireNumber: 40020)
+  static const BusinessErrorCode TEXT_FONT_DISABLED = _$TEXT_FONT_DISABLED;
+  /// 稳定业务错误码；名称和值来源于 ErrorCode
+  @BuiltValueEnumConst(wireNumber: 40021)
+  static const BusinessErrorCode INVALID_TEXT_FONT = _$INVALID_TEXT_FONT;
+  /// 稳定业务错误码；名称和值来源于 ErrorCode
   @BuiltValueEnumConst(wireNumber: 40100)
   static const BusinessErrorCode UNAUTHORIZED = _$UNAUTHORIZED;
   /// 稳定业务错误码；名称和值来源于 ErrorCode
@@ -297,8 +315,35 @@ class BusinessErrorCode extends EnumClass {
   @BuiltValueEnumConst(wireNumber: 40925)
   static const BusinessErrorCode CONTENT_WRITES_PAUSED = _$CONTENT_WRITES_PAUSED;
   /// 稳定业务错误码；名称和值来源于 ErrorCode
+  @BuiltValueEnumConst(wireNumber: 40927)
+  static const BusinessErrorCode TEXT_FONT_CATALOG_CHANGED = _$TEXT_FONT_CATALOG_CHANGED;
+  /// 稳定业务错误码；名称和值来源于 ErrorCode
+  @BuiltValueEnumConst(wireNumber: 40928)
+  static const BusinessErrorCode TEXT_FONT_STATE_CONFLICT = _$TEXT_FONT_STATE_CONFLICT;
+  /// 稳定业务错误码；名称和值来源于 ErrorCode
+  @BuiltValueEnumConst(wireNumber: 40929)
+  static const BusinessErrorCode TEXT_FONT_RIGHTS_REQUIRED = _$TEXT_FONT_RIGHTS_REQUIRED;
+  /// 稳定业务错误码；名称和值来源于 ErrorCode
+  @BuiltValueEnumConst(wireNumber: 40930)
+  static const BusinessErrorCode TEXT_FONT_SUBMISSION_CONFLICT = _$TEXT_FONT_SUBMISSION_CONFLICT;
+  /// 稳定业务错误码；名称和值来源于 ErrorCode
+  @BuiltValueEnumConst(wireNumber: 40931)
+  static const BusinessErrorCode TEXT_FONT_LIST_CHANGED = _$TEXT_FONT_LIST_CHANGED;
+  /// 稳定业务错误码；名称和值来源于 ErrorCode
+  @BuiltValueEnumConst(wireNumber: 41001)
+  static const BusinessErrorCode TEXT_FONT_WITHDRAWN = _$TEXT_FONT_WITHDRAWN;
+  /// 稳定业务错误码；名称和值来源于 ErrorCode
+  @BuiltValueEnumConst(wireNumber: 50301)
+  static const BusinessErrorCode TEXT_FONT_UNAVAILABLE = _$TEXT_FONT_UNAVAILABLE;
+  /// 稳定业务错误码；名称和值来源于 ErrorCode
   @BuiltValueEnumConst(wireNumber: 42900)
   static const BusinessErrorCode RATE_LIMITED = _$RATE_LIMITED;
+  /// 稳定业务错误码；名称和值来源于 ErrorCode
+  @BuiltValueEnumConst(wireNumber: 42901)
+  static const BusinessErrorCode AUDIO_ACTIVE_LIMIT = _$AUDIO_ACTIVE_LIMIT;
+  /// 稳定业务错误码；名称和值来源于 ErrorCode
+  @BuiltValueEnumConst(wireNumber: 42902)
+  static const BusinessErrorCode AUDIO_DAILY_BYTES_LIMIT = _$AUDIO_DAILY_BYTES_LIMIT;
   /// 稳定业务错误码；名称和值来源于 ErrorCode
   @BuiltValueEnumConst(wireNumber: 50000)
   static const BusinessErrorCode INTERNAL_ERROR = _$INTERNAL_ERROR;

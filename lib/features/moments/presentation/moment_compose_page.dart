@@ -7,9 +7,11 @@ import 'package:go_router/go_router.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/application/atomic_editor_clipboard.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_atomic_text_editor.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_edit_conflict_dialog.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
 import 'package:wenyousite_mobile/features/media/application/pending_media_file_store_ports.dart';
@@ -72,6 +74,7 @@ class _MomentComposePageState extends ConsumerState<_MomentComposeEditor>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _contentController = WenyouAtomicTextController(
+      readStructuredClipboard: ref.read(atomicEditorClipboardReaderProvider),
       initialMarkdown: '',
       maximumMarkdownLength: 1000,
     );
@@ -626,31 +629,20 @@ class _MomentComposePageState extends ConsumerState<_MomentComposeEditor>
   }
 
   Future<void> _resolveConflict() async {
-    final decision = await showDialog<_ConflictDecision>(
+    final decision = await showWenyouEditConflictDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('这条动态刚刚更新了'),
-        content: const Text('你可以保留当前内容后重新保存，或改用最新内容。'),
-        actions: [
-          TextButton(
-            key: const Key('moment-conflict-use-latest'),
-            onPressed: () =>
-                Navigator.pop(context, _ConflictDecision.useLatest),
-            child: const Text('使用最新内容'),
-          ),
-          FilledButton(
-            key: const Key('moment-conflict-keep-mine'),
-            onPressed: () => Navigator.pop(context, _ConflictDecision.keepMine),
-            child: const Text('保留我的内容'),
-          ),
-        ],
-      ),
+      title: '这条动态刚刚更新了',
+      message: '你可以保留当前内容后重新保存，或改用最新内容。',
+      useLatestLabel: '使用最新内容',
+      keepCurrentLabel: '保留我的内容',
+      useLatestKey: const Key('moment-conflict-use-latest'),
+      keepCurrentKey: const Key('moment-conflict-keep-mine'),
     );
     if (!mounted || decision == null) return;
     final controller = ref.read(
       momentComposerControllerProvider(widget.momentId).notifier,
     );
-    if (decision == _ConflictDecision.keepMine) {
+    if (decision == WenyouEditConflictChoice.keepCurrent) {
       final saved = await controller.resubmitAfterConflict(_draftInput());
       if (saved != null && mounted) await _finishSubmit(saved);
       return;
@@ -886,5 +878,3 @@ class _MomentComposePageState extends ConsumerState<_MomentComposeEditor>
     );
   }
 }
-
-enum _ConflictDecision { keepMine, useLatest }

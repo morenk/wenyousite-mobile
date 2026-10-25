@@ -10,6 +10,70 @@ import 'post_replies_page_test_support.dart';
 void main() {
   setUpAll(loadDeterministicTestFonts);
 
+  for (final fixture in [
+    (source: '前 ``<b>`字符`` 后', code: '<b>`字符'),
+    (source: '前 `<b>``字符` 后', code: '<b>``字符'),
+  ]) {
+    final source = fixture.source;
+    final code = fixture.code;
+    final editedCode = code.replaceFirst('<', '<X');
+    testWidgets('不同长度反引号代码打开、输入、保存与重开保留文字样式：$source', (tester) async {
+      final repository = _InlineCodePostRepository()
+        ..root = postRepliesPageTestRootWithContent(source);
+      final container = await postRepliesPageTestPostContainer(
+        repository,
+        userId: 'root-author',
+        markdownAlignment: true,
+        markdownImageAlignment: true,
+      );
+      addTearDown(container.dispose);
+      await tester.pumpWidget(postRepliesPageTestPostRepliesApp(container));
+      await postRepliesPageTestPumpUi(tester);
+      Future<QuillController> open() async {
+        await postRepliesPageTestLongPressPostMetadata(tester, 'root');
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('post-card-action-root-edit')));
+        await postRepliesPageTestPumpUi(tester);
+        return tester
+            .widget<QuillEditor>(find.byKey(const Key('post-composer-body')))
+            .controller;
+      }
+
+      final editor = await open();
+      expect(editor.document.toPlainText(), '前 $code 后\n');
+      expect(editor.document.collectStyle(0, 2).attributes['code'], isNull);
+      expect(
+        editor.document.collectStyle(2, code.length).attributes['code']?.value,
+        true,
+      );
+      editor.replaceText(3, 0, 'X', const TextSelection.collapsed(offset: 4));
+      await tester.pump();
+      expect(editor.document.toPlainText(), '前 $editedCode 后\n');
+      await tester.tap(find.byKey(const Key('editor-submit')));
+      await postRepliesPageTestPumpUi(tester);
+      expect(repository.updateRequests, hasLength(1));
+      expect(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is WenyouInlineCodeSurface && widget.text == editedCode,
+        ),
+        findsOneWidget,
+      );
+      final reopened = await open();
+      expect(reopened.document.toPlainText(), '前 $editedCode 后\n');
+      expect(reopened.document.collectStyle(0, 2).attributes['code'], isNull);
+      expect(
+        reopened.document
+            .collectStyle(2, editedCode.length)
+            .attributes['code']
+            ?.value,
+        true,
+      );
+      await postRepliesPageTestDismissPostComposerFromOutside(tester);
+      expect(tester.takeException(), isNull);
+    });
+  }
+
   testWidgets('反馈楼层打开、编辑行内代码、保存及重开保留可见行和样式', (tester) async {
     final repository = _InlineCodePostRepository();
     final container = await postRepliesPageTestPostContainer(

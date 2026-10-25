@@ -1,12 +1,62 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:wenyou_api/wenyou_api.dart';
+import 'package:wenyousite_mobile/app/app_theme.dart';
+import 'package:wenyousite_mobile/features/users/application/public_user_controller.dart';
 import 'package:wenyousite_mobile/features/users/data/public_user_repository.dart';
+import 'package:wenyousite_mobile/features/users/domain/public_user_models.dart';
+import 'package:wenyousite_mobile/features/users/presentation/public_user_content.dart';
 
 import '../../support/thread_cover_fixtures.dart';
 
 void main() {
+  for (final self in [false, true]) {
+    testWidgets('${self ? '我的' : '公开'}最近回复列表从完整彩色正文生成可见摘要', (tester) async {
+      const source =
+          '<span data-wenyou-color-v1="#D14343">**中文😀** [链接](https://example.com) `a < b`</span>';
+      final api = _MockUsersApi();
+      when(() => api.usersGetUserRecentReplies(id: 'user-1')).thenAnswer(
+        (_) async => _recentRepliesResponse(
+          content: source,
+          preview: source.substring(0, 30),
+        ),
+      );
+      final replies = await ApiPublicUserRepository(
+        api,
+      ).fetchRecentReplies('user-1');
+      expect(replies.single.preview, '中文😀 链接 a < b');
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.light,
+          home: Scaffold(
+            body: CustomScrollView(
+              slivers: [
+                PublicUserContentSectionSliver(
+                  tab: PublicUserContentTab.replies,
+                  state: PublicUserState(
+                    replies: PublicUserContentSection(
+                      phase: PublicUserContentPhase.ready,
+                      items: replies,
+                    ),
+                  ),
+                  isSelf: self,
+                  onRetry: () {},
+                  onLoadMore: () {},
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('中文😀 链接 a < b'), findsOneWidget);
+      expect(find.textContaining('data-wenyou-color-v1'), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+  }
+
   test('公开用户资料传递用户 ID 并完整映射统计与关系状态', () async {
     final api = _MockUsersApi();
     when(() => api.usersGetUser(id: 'user-1')).thenAnswer(
@@ -131,6 +181,36 @@ void main() {
     expect(replies.single.parentPostId, 'floor-7');
     expect(replies.single.threadTitle, '星海旅团');
   });
+
+  test('最近回复优先解析完整正文，避免实体源码截断的摘要泄漏转义', () async {
+    final api = _MockUsersApi();
+    final content = '【构筑表】${'&#32;' * 40}\n────种族────\n**精灵**';
+    when(() => api.usersGetUserRecentReplies(id: 'user-1')).thenAnswer(
+      (_) async => _recentRepliesResponse(
+        content: content,
+        preview: content.substring(0, 180),
+      ),
+    );
+
+    final replies = await ApiPublicUserRepository(
+      api,
+    ).fetchRecentReplies('user-1');
+
+    expect(replies.single.preview, '【构筑表】 ────种族──── 精灵');
+  });
+
+  test('最近回复只有空白正文时仍解析备用摘要', () async {
+    final api = _MockUsersApi();
+    when(() => api.usersGetUserRecentReplies(id: 'user-1')).thenAnswer(
+      (_) async => _recentRepliesResponse(content: ' \n ', preview: '甲&#32;乙'),
+    );
+
+    final replies = await ApiPublicUserRepository(
+      api,
+    ).fetchRecentReplies('user-1');
+
+    expect(replies.single.preview, '甲 乙');
+  });
 }
 
 class _MockUsersApi extends Mock implements UsersApi {}
@@ -236,7 +316,10 @@ Response<UsersGetUserBookmarks200Response> _bookmarksResponse() {
   );
 }
 
-Response<UsersGetUserRecentReplies200Response> _recentRepliesResponse() {
+Response<UsersGetUserRecentReplies200Response> _recentRepliesResponse({
+  String content = '',
+  String preview = '**最近回复** ![航图](https://cdn.example.com/map.jpg)',
+}) {
   return Response(
     requestOptions: RequestOptions(path: '/api/v1/users/user-1/recent-replies'),
     data: UsersGetUserRecentReplies200Response(
@@ -249,8 +332,8 @@ Response<UsersGetUserRecentReplies200Response> _recentRepliesResponse() {
               ..id = 'reply-1'
               ..createdAt = DateTime.utc(2026, 8, 10, 8)
               ..parentPostId = 'floor-7'
-              ..content = '正文回退'
-              ..preview = '**最近回复** ![航图](https://cdn.example.com/map.jpg)'
+              ..content = content
+              ..preview = preview
               ..threadId = 'thread-created'
               ..thread.update((thread) => thread.title = '星海旅团')
               ..subthreadId = 'subthread-1'

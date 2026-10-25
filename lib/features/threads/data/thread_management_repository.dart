@@ -21,9 +21,15 @@ class ApiThreadManagementRepository implements ThreadManagementRepository {
     this._threadsApi,
     this._categories, {
     this.roleMentionsSupported = false,
+    this.textFontSupported = false,
+    this.textFontV2Supported = false,
+    this.textColorSupported = false,
   });
 
   final bool roleMentionsSupported;
+  final bool textFontSupported;
+  final bool textFontV2Supported;
+  final bool textColorSupported;
 
   final ThreadsApi _threadsApi;
   final ThreadCategoryCatalogRepository _categories;
@@ -93,6 +99,12 @@ class ApiThreadManagementRepository implements ThreadManagementRepository {
         current.body,
         supported: roleMentionsSupported,
       );
+      requireTextFontWriteSupport(
+        current.body,
+        supported: textFontSupported,
+        v2Supported: textFontV2Supported,
+      );
+      requireTextColorWriteSupport(current.body, supported: textColorSupported);
       final normalizedTitle = draft.title.trim();
       if (current.defaultSubthreadId == null ||
           current.defaultSubthreadVersion <= 0) {
@@ -104,6 +116,14 @@ class ApiThreadManagementRepository implements ThreadManagementRepository {
           builder
             ..markdownContractVersion = roleMentionsSupported
                 ? SaveThreadAggregateDtoMarkdownContractVersionEnum.number6
+                : null
+            ..textFontVersion = textFontV2Supported
+                ? SaveThreadAggregateDtoTextFontVersionEnum.number2
+                : textFontSupported
+                ? SaveThreadAggregateDtoTextFontVersionEnum.number1
+                : null
+            ..textColorVersion = textColorSupported
+                ? SaveThreadAggregateDtoTextColorVersionEnum.number1
                 : null
             ..version = current.version
             ..defaultSubthreadVersion = current.defaultSubthreadVersion
@@ -318,6 +338,13 @@ final apiThreadManagementRepositoryProvider =
       return ApiThreadManagementRepository(
         api.getThreadsApi(),
         ref.watch(threadCategoryCatalogRepositoryProvider),
+        textFontSupported: ref.watch(appCapabilitiesProvider).textFontSupported,
+        textFontV2Supported: ref
+            .watch(appCapabilitiesProvider)
+            .textFontV2Supported,
+        textColorSupported: ref
+            .watch(appCapabilitiesProvider)
+            .textColorSupported,
         roleMentionsSupported: ref
             .watch(appCapabilitiesProvider)
             .roleMentionsSupported,

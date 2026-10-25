@@ -33,6 +33,7 @@ abstract interface class PostRepository {
   });
 
   Future<PostItem> upsertBody({
+    bool? textColorSupported,
     required String subthreadId,
     required String content,
     int? version,
@@ -92,6 +93,7 @@ class _UnboundPostRepository implements PostRepository {
 
   @override
   Future<PostItem> upsertBody({
+    bool? textColorSupported,
     required String subthreadId,
     required String content,
     int? version,

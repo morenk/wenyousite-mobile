@@ -3,6 +3,7 @@
 //
 
 // ignore_for_file: unused_element
+import 'package:wenyou_api/src/model/audio_upload_capability_dto.dart';
 import 'package:wenyou_api/src/model/mobile_compatibility_dto.dart';
 import 'package:wenyou_api/src/model/api_capabilities_response_dto.dart';
 import 'package:built_value/built_value.dart';
@@ -13,6 +14,7 @@ part 'api_meta_response_dto.g.dart';
 /// ApiMetaResponseDto
 ///
 /// Properties:
+/// * [audioUpload] - 仅明确启用且转码运行依赖就绪时返回；缺失时隐藏上传入口
 /// * [contractVersion]
 /// * [buildSha]
 /// * [markdownContractVersion]
@@ -20,6 +22,10 @@ part 'api_meta_response_dto.g.dart';
 /// * [mobileCompatibility]
 @BuiltValue()
 abstract class ApiMetaResponseDto implements Built<ApiMetaResponseDto, ApiMetaResponseDtoBuilder> {
+  /// 仅明确启用且转码运行依赖就绪时返回；缺失时隐藏上传入口
+  @BuiltValueField(wireName: r'audioUpload')
+  AudioUploadCapabilityDto? get audioUpload;
+
   @BuiltValueField(wireName: r'contractVersion')
   String get contractVersion;
 
@@ -58,6 +64,13 @@ class _$ApiMetaResponseDtoSerializer implements PrimitiveSerializer<ApiMetaRespo
     ApiMetaResponseDto object, {
     FullType specifiedType = FullType.unspecified,
   }) sync* {
+    if (object.audioUpload != null) {
+      yield r'audioUpload';
+      yield serializers.serialize(
+        object.audioUpload,
+        specifiedType: const FullType(AudioUploadCapabilityDto),
+      );
+    }
     yield r'contractVersion';
     yield serializers.serialize(
       object.contractVersion,
@@ -106,6 +119,13 @@ class _$ApiMetaResponseDtoSerializer implements PrimitiveSerializer<ApiMetaRespo
       final key = serializedList[i] as String;
       final value = serializedList[i + 1];
       switch (key) {
+        case r'audioUpload':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(AudioUploadCapabilityDto),
+          ) as AudioUploadCapabilityDto;
+          result.audioUpload.replace(valueDes);
+          break;
         case r'contractVersion':
           final valueDes = serializers.deserialize(
             value,

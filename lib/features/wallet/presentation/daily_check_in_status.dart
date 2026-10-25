@@ -7,7 +7,9 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/wallet/application/wallet_controllers.dart';
 
 class DailyCheckInStatus extends ConsumerWidget {
-  const DailyCheckInStatus({super.key});
+  const DailyCheckInStatus({this.embedded = false, super.key});
+
+  final bool embedded;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -40,30 +42,30 @@ class DailyCheckInStatus extends ConsumerWidget {
         : state.phase == DailyCheckInPhase.idle
         ? '今日签到待完成'
         : '正在签到…';
-    return WenyouPanel(
-      key: const Key('wallet-check-in-status'),
-      child: Semantics(
-        liveRegion: true,
-        child: Row(
-          children: [
-            ExcludeSemantics(
-              child: WenyouIcon(
-                confirmed
-                    ? WenyouIconIds.statusSuccess
-                    : WenyouIconIds.statusInfo,
-                color: confirmed ? tokens.success : tokens.mutedText,
-              ),
+    final content = Semantics(
+      liveRegion: true,
+      child: Row(
+        children: [
+          ExcludeSemantics(
+            child: WenyouIcon(
+              confirmed
+                  ? WenyouIconIds.statusSuccess
+                  : WenyouIconIds.statusInfo,
+              color: confirmed ? tokens.success : tokens.mutedText,
             ),
-            SizedBox(width: tokens.space12),
-            Expanded(
-              child: Text(
-                message,
-                style: Theme.of(context).textTheme.wenyouCompactBody,
-              ),
+          ),
+          SizedBox(width: tokens.space12),
+          Expanded(
+            child: Text(
+              message,
+              style: Theme.of(context).textTheme.wenyouCompactBody,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
+    return embedded
+        ? KeyedSubtree(key: const Key('wallet-check-in-status'), child: content)
+        : WenyouPanel(key: const Key('wallet-check-in-status'), child: content);
   }
 }

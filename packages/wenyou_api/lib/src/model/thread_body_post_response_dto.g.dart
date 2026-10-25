@@ -14,6 +14,8 @@ class _$ThreadBodyPostResponseDto extends ThreadBodyPostResponseDto {
   @override
   final BuiltList<MarkdownMediaDisplayResponseDto>? mediaDisplays;
   @override
+  final BuiltList<AudioMediaDto>? mediaAudios;
+  @override
   final String id;
   @override
   final String content;
@@ -30,6 +32,7 @@ class _$ThreadBodyPostResponseDto extends ThreadBodyPostResponseDto {
     this.author,
     this.mentionIdentities,
     this.mediaDisplays,
+    this.mediaAudios,
     required this.id,
     required this.content,
     required this.version,
@@ -51,6 +54,7 @@ class _$ThreadBodyPostResponseDto extends ThreadBodyPostResponseDto {
         author == other.author &&
         mentionIdentities == other.mentionIdentities &&
         mediaDisplays == other.mediaDisplays &&
+        mediaAudios == other.mediaAudios &&
         id == other.id &&
         content == other.content &&
         version == other.version &&
@@ -63,6 +67,7 @@ class _$ThreadBodyPostResponseDto extends ThreadBodyPostResponseDto {
     _$hash = $jc(_$hash, author.hashCode);
     _$hash = $jc(_$hash, mentionIdentities.hashCode);
     _$hash = $jc(_$hash, mediaDisplays.hashCode);
+    _$hash = $jc(_$hash, mediaAudios.hashCode);
     _$hash = $jc(_$hash, id.hashCode);
     _$hash = $jc(_$hash, content.hashCode);
     _$hash = $jc(_$hash, version.hashCode);
@@ -77,6 +82,7 @@ class _$ThreadBodyPostResponseDto extends ThreadBodyPostResponseDto {
           ..add('author', author)
           ..add('mentionIdentities', mentionIdentities)
           ..add('mediaDisplays', mediaDisplays)
+          ..add('mediaAudios', mediaAudios)
           ..add('id', id)
           ..add('content', content)
           ..add('version', version)
@@ -109,6 +115,12 @@ class ThreadBodyPostResponseDtoBuilder
     ListBuilder<MarkdownMediaDisplayResponseDto>? mediaDisplays,
   ) => _$this._mediaDisplays = mediaDisplays;
 
+  ListBuilder<AudioMediaDto>? _mediaAudios;
+  ListBuilder<AudioMediaDto> get mediaAudios =>
+      _$this._mediaAudios ??= ListBuilder<AudioMediaDto>();
+  set mediaAudios(ListBuilder<AudioMediaDto>? mediaAudios) =>
+      _$this._mediaAudios = mediaAudios;
+
   String? _id;
   String? get id => _$this._id;
   set id(String? id) => _$this._id = id;
@@ -137,6 +149,7 @@ class ThreadBodyPostResponseDtoBuilder
       _author = $v.author?.toBuilder();
       _mentionIdentities = $v.mentionIdentities?.toBuilder();
       _mediaDisplays = $v.mediaDisplays?.toBuilder();
+      _mediaAudios = $v.mediaAudios?.toBuilder();
       _id = $v.id;
       _content = $v.content;
       _version = $v.version;
@@ -168,6 +181,7 @@ class ThreadBodyPostResponseDtoBuilder
             author: _author?.build(),
             mentionIdentities: _mentionIdentities?.build(),
             mediaDisplays: _mediaDisplays?.build(),
+            mediaAudios: _mediaAudios?.build(),
             id: BuiltValueNullFieldError.checkNotNull(
               id,
               r'ThreadBodyPostResponseDto',
@@ -194,6 +208,8 @@ class ThreadBodyPostResponseDtoBuilder
         _mentionIdentities?.build();
         _$failedField = 'mediaDisplays';
         _mediaDisplays?.build();
+        _$failedField = 'mediaAudios';
+        _mediaAudios?.build();
 
         _$failedField = 'diceRolls';
         diceRolls.build();

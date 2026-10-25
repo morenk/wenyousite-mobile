@@ -24,6 +24,8 @@ class ThreadCategoriesApi {
   ///
   /// Parameters:
   /// * [xMarkdownContractVersion] - 声明 6 以读取原始角色提及源和稳定目标投影；省略/低版本安全降级响应副本，不能回写 v6 正文。服务端全局 Markdown 仍为 5
+  /// * [xTextColorVersion] - 声明 1 读取文本颜色原始源码；缺失只返回安全去色副本，不能覆盖彩色原文。
+  /// * [xTextFontVersion] - 声明 2 读取 v1/v2 混合字体源；1 仅保留 v1，缺失去除两版字体。降级副本不能覆盖未支持字体的原文。颜色能力单独协商。
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -35,6 +37,8 @@ class ThreadCategoriesApi {
   /// Throws [DioException] if API call or serialization fails
   Future<Response<ThreadCategoriesList200Response>> threadCategoriesList({
     int? xMarkdownContractVersion,
+    int? xTextColorVersion,
+    int? xTextFontVersion,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -47,6 +51,8 @@ class ThreadCategoriesApi {
       method: r'GET',
       headers: <String, dynamic>{
         if (xMarkdownContractVersion != null) r'X-Markdown-Contract-Version': xMarkdownContractVersion,
+        if (xTextColorVersion != null) r'X-Text-Color-Version': xTextColorVersion,
+        if (xTextFontVersion != null) r'X-Text-Font-Version': xTextFontVersion,
         ...?headers,
       },
       extra: <String, dynamic>{

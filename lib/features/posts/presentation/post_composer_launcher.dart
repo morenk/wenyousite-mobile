@@ -18,6 +18,8 @@ Future<PostItem?> showPostComposerSheet({
   return showWenyouComposerSheet<PostItem>(
     context: context,
     isDismissible: false,
+    // 正文及其嵌套字体列表保留顶部安全区，其他简短回复弹层维持原高度。
+    useSafeArea: true,
     builder: (context) => Consumer(
       builder: (context, ref, _) {
         final scope = ref.read(sessionScopeProvider);

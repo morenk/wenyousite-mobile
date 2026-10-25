@@ -4,21 +4,35 @@ import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_inline_boundary.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_inline_code_source.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_inline_runs.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_link_identity.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_text_color.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_text_font.dart';
 
 /// Input provenance controls escaping inside a run, never its style boundary.
 final class MarkdownDeltaInlineEncoder {
   MarkdownDeltaInlineEncoder(this.output);
 
   static const literalTextKey = 'wenyou_literal_text';
-  static const markKeys = {'bold', 'italic', 'strike', 'code', 'link'};
+  static const keepLinkShapeKey = 'wenyou_audio_link_shape';
+  static const markKeys = {
+    'bold',
+    'italic',
+    'strike',
+    'code',
+    'link',
+    'color',
+    'font',
+  };
 
   final StringBuffer output;
   final _pieces = <({String text, bool literal})>[];
   final _runs = <MarkdownInlineRun>[];
   final _legacy = StringBuffer();
   bool _hasLiteralInput = false;
+  bool _keepLinkShape = false;
   Map<String, dynamic> _marks = const {};
   String? _codeSource;
+  Object? _linkIdentity;
 
   static Map<String, dynamic> visibleMarks(Map<String, dynamic>? attributes) =>
       {
@@ -28,10 +42,14 @@ final class MarkdownDeltaInlineEncoder {
       };
 
   void add(String text, Map<String, dynamic>? attributes) {
-    _hasLiteralInput |= attributes?[literalTextKey] == true;
+    final identity = attributes?[markdownLinkIdentityKey];
     final marks = visibleMarks(attributes);
     final source = attributes?[MarkdownInlineCodeSource.key] as String?;
-    if (!mapEquals(marks, _marks)) _finishRun();
+    // 来源边界只结束链接 run，不能截断整段的规范化上下文。
+    if (!mapEquals(marks, _marks) || identity != _linkIdentity) _finishRun();
+    _linkIdentity = identity;
+    _hasLiteralInput |= attributes?[literalTextKey] == true;
+    _keepLinkShape |= attributes?[keepLinkShapeKey] == true;
     _marks = marks;
     // Quill 插字会拆分来源属性；同样式代码仍必须只输出一对分隔符。
     _codeSource = _pieces.isEmpty || source == _codeSource ? source : null;
@@ -54,11 +72,16 @@ final class MarkdownDeltaInlineEncoder {
       _legacy.clear();
       _runs.clear();
       _hasLiteralInput = false;
+      _keepLinkShape = false;
+      _linkIdentity = null;
       return;
     }
+    final singleLink = _singleLink(normalized, includeSingle: _keepLinkShape);
     var encoded =
-        !RegExp(r'\*{4,}|_{4,}|~{4,}').hasMatch(legacy) &&
-            MarkdownInlineRuns.matches(legacy, normalized)
+        singleLink != null && MarkdownInlineRuns.matches(singleLink, normalized)
+        ? singleLink
+        : !RegExp(r'\*{4,}|_{4,}|~{4,}').hasMatch(legacy) &&
+              MarkdownInlineRuns.matches(legacy, normalized)
         ? legacy
         : MarkdownInlineRuns.write(normalized);
     for (final markers in [('**', '*'), ('__', '*'), ('__', '_')]) {
@@ -78,6 +101,36 @@ final class MarkdownDeltaInlineEncoder {
     _legacy.clear();
     _runs.clear();
     _hasLiteralInput = false;
+    _keepLinkShape = false;
+    _linkIdentity = null;
+  }
+
+  /// 一个链接的标签包含不同 marks 时保持一个外层链接，避免把音频独立
+  /// 段落拆成相邻链接；所有候选仍必须通过原有 Delta 语义校验。
+  static String? _singleLink(
+    List<MarkdownInlineRun> runs, {
+    required bool includeSingle,
+  }) {
+    if (runs.length < 2 && (!includeSingle || runs.first.marks.length < 2)) {
+      return null;
+    }
+    final link = runs.first.marks['link'];
+    final identity = runs.first.linkIdentity;
+    if (link is! String ||
+        runs.any(
+          (run) => run.marks['link'] != link || run.linkIdentity != identity,
+        )) {
+      return null;
+    }
+    final labels = [
+      for (final run in runs)
+        MarkdownInlineRun(
+          run.text,
+          Map<String, dynamic>.from(run.marks)..remove('link'),
+          codeSource: run.codeSource,
+        ),
+    ];
+    return '[${MarkdownInlineRuns.write(labels)}]($link)';
   }
 
   // 新输入与格式区间的危险块级空白使用等价实体，不加入可见字符。
@@ -104,7 +157,14 @@ final class MarkdownDeltaInlineEncoder {
       final source =
           MarkdownInlineCodeSource.preserved(value, _codeSource) ??
           _inlineCode(value);
-      _runs.add(MarkdownInlineRun(value, _marks, codeSource: source));
+      _runs.add(
+        MarkdownInlineRun(
+          value,
+          _marks,
+          codeSource: source,
+          linkIdentity: _linkIdentity,
+        ),
+      );
       _legacy.write(_wrap(source));
     } else {
       final core = value.trim();
@@ -125,7 +185,7 @@ final class MarkdownDeltaInlineEncoder {
       if (core.isNotEmpty) {
         encoded = _wrap(encoded);
       }
-      _runs.add(MarkdownInlineRun(value, _marks));
+      _runs.add(MarkdownInlineRun(value, _marks, linkIdentity: _linkIdentity));
       _legacy
         ..write(value.substring(0, leading))
         ..write(encoded)
@@ -137,6 +197,15 @@ final class MarkdownDeltaInlineEncoder {
   }
 
   void _validateLink() {
+    final font = _marks['font'];
+    if (font != null && !MarkdownTextFont.accepts(font)) {
+      throw const MarkdownCodecException('文字字体无法安全保存');
+    }
+    final color = _marks['color'];
+    if (color != null &&
+        (color is! String || !RegExp(r'^#[0-9A-F]{6}$').hasMatch(color))) {
+      throw const MarkdownCodecException('文字颜色无法安全保存');
+    }
     final link = _marks['link'];
     if (link != null) {
       final uri = link is String ? Uri.tryParse(link) : null;
@@ -155,6 +224,10 @@ final class MarkdownDeltaInlineEncoder {
     if (link != null) encoded = '[$encoded]($link)';
     if (_marks['italic'] == true) encoded = '*$encoded*';
     if (_marks['bold'] == true) encoded = '**$encoded**';
+    final opening = MarkdownTextColor.openingFor(_marks);
+    if (opening.isNotEmpty) {
+      encoded = '$opening$encoded</span>';
+    }
     return encoded;
   }
 

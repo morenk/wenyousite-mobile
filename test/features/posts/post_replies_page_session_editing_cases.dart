@@ -42,6 +42,7 @@ void registerPostRepliesPageSessionEditingCases() {
           content,
           postRepliesPageTestAuthor,
           version: version + 1,
+          editedAt: DateTime(2025, 2, 3),
         );
       },
     );
@@ -77,6 +78,11 @@ void registerPostRepliesPageSessionEditingCases() {
       '自己的回复',
     );
     expect(
+      repository.replies.singleWhere((post) => post.id == 'reply-own').editedAt,
+      isNull,
+    );
+    expect(find.textContaining('编辑于'), findsNothing);
+    expect(
       MarkdownDeltaCodec.encode(
         tester
             .state<QuillEditorState>(
@@ -97,6 +103,7 @@ void registerPostRepliesPageSessionEditingCases() {
     expect(find.byKey(const Key('post-composer-sheet')), findsNothing);
     expect(find.text('编辑失败后保留的内容'), findsOneWidget);
     expect(find.text('自己的回复'), findsNothing);
+    expect(find.textContaining('编辑于2025-02-03'), findsOneWidget);
   });
 
   testWidgets('会话切换丢弃旧账号迟到首屏并立即加载新会话', (tester) async {
@@ -174,7 +181,7 @@ void registerPostRepliesPageSessionEditingCases() {
     await postRepliesPageTestPumpUi(tester);
 
     expect(find.byKey(const Key('post-composer-sheet')), findsNothing);
-    expect(find.text('登录后发表回复'), findsOneWidget);
+    expect(find.byTooltip('登录后回复'), findsOneWidget);
 
     await container
         .read(sessionControllerProvider.notifier)
@@ -342,7 +349,7 @@ void registerPostRepliesPageSessionEditingCases() {
     for (final markdown in tester.widgetList<WenyouMarkdown>(
       find.byType(WenyouMarkdown),
     )) {
-      expect(markdown.bodyFontSize, 17);
+      expect(markdown.bodyFontSize, 16);
       expect(markdown.bodyHeight, 1.8);
     }
     final countCenter = tester.getCenter(
@@ -367,7 +374,7 @@ void registerPostRepliesPageSessionEditingCases() {
     expect(find.byKey(const Key('post-report-reply-own')), findsNothing);
     expect(find.byKey(const Key('post-report-reply-other')), findsNothing);
     expect(find.byKey(const Key('post-reply-compose')), findsOneWidget);
-    expect(find.text('发表回复…'), findsOneWidget);
+    expect(find.text('回复一下'), findsOneWidget);
     expect(find.byType(AnimatedContainer), findsNothing);
     expect(tester.takeException(), isNull);
 

@@ -12,6 +12,8 @@ part 'save_thread_aggregate_dto.g.dart';
 /// SaveThreadAggregateDto
 ///
 /// Properties:
+/// * [textFontVersion] - 1 支持字体 v1；2 支持 v1/v2 混合正文无损读写；新端始终发送，包括删除全部字体。新/原正文含字体未声明返回 409/40019；v1 新写受 textFontV1WriteEnabled 控制；v2 新写受 textFontV2WriteEnabled 与版本 pasteAllowed 控制。颜色组合还须 textColorVersion:1。
+/// * [textColorVersion] - 支持文本颜色 v1 无损读写；新端始终发送，包括删除全部颜色。新/原正文含颜色未声明返回 409/40016；新写受 textColorV1WriteEnabled 控制。
 /// * [markdownContractVersion] - 声明编辑器支持 Markdown 6 角色提及源的无损读取/编辑。服务端 capabilities.roleMentionsV6Supported 为 true 时新端始终发送，包括删光旧节点；未声明而新/原正文含 v6 返回 409/40014。新节点还须 roleMentionsV6WriteEnabled。
 /// * [identityId] - 本次新发言选择的帖内身份 ID；新客户端 RP 模式必须与该身份 token 一起发送。省略仅兼容旧单身份客户端；ACCOUNT 忽略，编辑旧正文不改变原身份
 /// * [identityToken] - GET 帖内身份返回的确认 token；新建正文或发言时使用。身份变化返回 409/40011，保留草稿并重新确认
@@ -29,6 +31,16 @@ part 'save_thread_aggregate_dto.g.dart';
 /// * [tagNames]
 @BuiltValue()
 abstract class SaveThreadAggregateDto implements Built<SaveThreadAggregateDto, SaveThreadAggregateDtoBuilder> {
+  /// 1 支持字体 v1；2 支持 v1/v2 混合正文无损读写；新端始终发送，包括删除全部字体。新/原正文含字体未声明返回 409/40019；v1 新写受 textFontV1WriteEnabled 控制；v2 新写受 textFontV2WriteEnabled 与版本 pasteAllowed 控制。颜色组合还须 textColorVersion:1。
+  @BuiltValueField(wireName: r'textFontVersion')
+  SaveThreadAggregateDtoTextFontVersionEnum? get textFontVersion;
+  // enum textFontVersionEnum {  1,  2,  };
+
+  /// 支持文本颜色 v1 无损读写；新端始终发送，包括删除全部颜色。新/原正文含颜色未声明返回 409/40016；新写受 textColorV1WriteEnabled 控制。
+  @BuiltValueField(wireName: r'textColorVersion')
+  SaveThreadAggregateDtoTextColorVersionEnum? get textColorVersion;
+  // enum textColorVersionEnum {  1,  };
+
   /// 声明编辑器支持 Markdown 6 角色提及源的无损读取/编辑。服务端 capabilities.roleMentionsV6Supported 为 true 时新端始终发送，包括删光旧节点；未声明而新/原正文含 v6 返回 409/40014。新节点还须 roleMentionsV6WriteEnabled。
   @BuiltValueField(wireName: r'markdownContractVersion')
   SaveThreadAggregateDtoMarkdownContractVersionEnum? get markdownContractVersion;
@@ -113,6 +125,20 @@ class _$SaveThreadAggregateDtoSerializer implements PrimitiveSerializer<SaveThre
     SaveThreadAggregateDto object, {
     FullType specifiedType = FullType.unspecified,
   }) sync* {
+    if (object.textFontVersion != null) {
+      yield r'textFontVersion';
+      yield serializers.serialize(
+        object.textFontVersion,
+        specifiedType: const FullType(SaveThreadAggregateDtoTextFontVersionEnum),
+      );
+    }
+    if (object.textColorVersion != null) {
+      yield r'textColorVersion';
+      yield serializers.serialize(
+        object.textColorVersion,
+        specifiedType: const FullType(SaveThreadAggregateDtoTextColorVersionEnum),
+      );
+    }
     if (object.markdownContractVersion != null) {
       yield r'markdownContractVersion';
       yield serializers.serialize(
@@ -233,6 +259,20 @@ class _$SaveThreadAggregateDtoSerializer implements PrimitiveSerializer<SaveThre
       final key = serializedList[i] as String;
       final value = serializedList[i + 1];
       switch (key) {
+        case r'textFontVersion':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(SaveThreadAggregateDtoTextFontVersionEnum),
+          ) as SaveThreadAggregateDtoTextFontVersionEnum;
+          result.textFontVersion = valueDes;
+          break;
+        case r'textColorVersion':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(SaveThreadAggregateDtoTextColorVersionEnum),
+          ) as SaveThreadAggregateDtoTextColorVersionEnum;
+          result.textColorVersion = valueDes;
+          break;
         case r'markdownContractVersion':
           final valueDes = serializers.deserialize(
             value,
@@ -365,6 +405,43 @@ class _$SaveThreadAggregateDtoSerializer implements PrimitiveSerializer<SaveThre
     );
     return result.build();
   }
+}
+
+class SaveThreadAggregateDtoTextFontVersionEnum extends EnumClass {
+
+  /// 1 支持字体 v1；2 支持 v1/v2 混合正文无损读写；新端始终发送，包括删除全部字体。新/原正文含字体未声明返回 409/40019；v1 新写受 textFontV1WriteEnabled 控制；v2 新写受 textFontV2WriteEnabled 与版本 pasteAllowed 控制。颜色组合还须 textColorVersion:1。
+  @BuiltValueEnumConst(wireNumber: 1)
+  static const SaveThreadAggregateDtoTextFontVersionEnum number1 = _$saveThreadAggregateDtoTextFontVersionEnum_number1;
+  /// 1 支持字体 v1；2 支持 v1/v2 混合正文无损读写；新端始终发送，包括删除全部字体。新/原正文含字体未声明返回 409/40019；v1 新写受 textFontV1WriteEnabled 控制；v2 新写受 textFontV2WriteEnabled 与版本 pasteAllowed 控制。颜色组合还须 textColorVersion:1。
+  @BuiltValueEnumConst(wireNumber: 2)
+  static const SaveThreadAggregateDtoTextFontVersionEnum number2 = _$saveThreadAggregateDtoTextFontVersionEnum_number2;
+  /// 1 支持字体 v1；2 支持 v1/v2 混合正文无损读写；新端始终发送，包括删除全部字体。新/原正文含字体未声明返回 409/40019；v1 新写受 textFontV1WriteEnabled 控制；v2 新写受 textFontV2WriteEnabled 与版本 pasteAllowed 控制。颜色组合还须 textColorVersion:1。
+  @BuiltValueEnumConst(wireNumber: 11184809, fallback: true)
+  static const SaveThreadAggregateDtoTextFontVersionEnum unknownDefaultOpenApi = _$saveThreadAggregateDtoTextFontVersionEnum_unknownDefaultOpenApi;
+
+  static Serializer<SaveThreadAggregateDtoTextFontVersionEnum> get serializer => _$saveThreadAggregateDtoTextFontVersionEnumSerializer;
+
+  const SaveThreadAggregateDtoTextFontVersionEnum._(String name): super(name);
+
+  static BuiltSet<SaveThreadAggregateDtoTextFontVersionEnum> get values => _$saveThreadAggregateDtoTextFontVersionEnumValues;
+  static SaveThreadAggregateDtoTextFontVersionEnum valueOf(String name) => _$saveThreadAggregateDtoTextFontVersionEnumValueOf(name);
+}
+
+class SaveThreadAggregateDtoTextColorVersionEnum extends EnumClass {
+
+  /// 支持文本颜色 v1 无损读写；新端始终发送，包括删除全部颜色。新/原正文含颜色未声明返回 409/40016；新写受 textColorV1WriteEnabled 控制。
+  @BuiltValueEnumConst(wireNumber: 1)
+  static const SaveThreadAggregateDtoTextColorVersionEnum number1 = _$saveThreadAggregateDtoTextColorVersionEnum_number1;
+  /// 支持文本颜色 v1 无损读写；新端始终发送，包括删除全部颜色。新/原正文含颜色未声明返回 409/40016；新写受 textColorV1WriteEnabled 控制。
+  @BuiltValueEnumConst(wireNumber: 11184809, fallback: true)
+  static const SaveThreadAggregateDtoTextColorVersionEnum unknownDefaultOpenApi = _$saveThreadAggregateDtoTextColorVersionEnum_unknownDefaultOpenApi;
+
+  static Serializer<SaveThreadAggregateDtoTextColorVersionEnum> get serializer => _$saveThreadAggregateDtoTextColorVersionEnumSerializer;
+
+  const SaveThreadAggregateDtoTextColorVersionEnum._(String name): super(name);
+
+  static BuiltSet<SaveThreadAggregateDtoTextColorVersionEnum> get values => _$saveThreadAggregateDtoTextColorVersionEnumValues;
+  static SaveThreadAggregateDtoTextColorVersionEnum valueOf(String name) => _$saveThreadAggregateDtoTextColorVersionEnumValueOf(name);
 }
 
 class SaveThreadAggregateDtoMarkdownContractVersionEnum extends EnumClass {

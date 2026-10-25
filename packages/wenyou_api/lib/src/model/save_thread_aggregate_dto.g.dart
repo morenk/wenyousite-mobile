@@ -6,6 +6,68 @@ part of 'save_thread_aggregate_dto.dart';
 // BuiltValueGenerator
 // **************************************************************************
 
+const SaveThreadAggregateDtoTextFontVersionEnum
+_$saveThreadAggregateDtoTextFontVersionEnum_number1 =
+    const SaveThreadAggregateDtoTextFontVersionEnum._('number1');
+const SaveThreadAggregateDtoTextFontVersionEnum
+_$saveThreadAggregateDtoTextFontVersionEnum_number2 =
+    const SaveThreadAggregateDtoTextFontVersionEnum._('number2');
+const SaveThreadAggregateDtoTextFontVersionEnum
+_$saveThreadAggregateDtoTextFontVersionEnum_unknownDefaultOpenApi =
+    const SaveThreadAggregateDtoTextFontVersionEnum._('unknownDefaultOpenApi');
+
+SaveThreadAggregateDtoTextFontVersionEnum
+_$saveThreadAggregateDtoTextFontVersionEnumValueOf(String name) {
+  switch (name) {
+    case 'number1':
+      return _$saveThreadAggregateDtoTextFontVersionEnum_number1;
+    case 'number2':
+      return _$saveThreadAggregateDtoTextFontVersionEnum_number2;
+    case 'unknownDefaultOpenApi':
+      return _$saveThreadAggregateDtoTextFontVersionEnum_unknownDefaultOpenApi;
+    default:
+      return _$saveThreadAggregateDtoTextFontVersionEnum_unknownDefaultOpenApi;
+  }
+}
+
+final BuiltSet<SaveThreadAggregateDtoTextFontVersionEnum>
+_$saveThreadAggregateDtoTextFontVersionEnumValues =
+    BuiltSet<SaveThreadAggregateDtoTextFontVersionEnum>(
+      const <SaveThreadAggregateDtoTextFontVersionEnum>[
+        _$saveThreadAggregateDtoTextFontVersionEnum_number1,
+        _$saveThreadAggregateDtoTextFontVersionEnum_number2,
+        _$saveThreadAggregateDtoTextFontVersionEnum_unknownDefaultOpenApi,
+      ],
+    );
+
+const SaveThreadAggregateDtoTextColorVersionEnum
+_$saveThreadAggregateDtoTextColorVersionEnum_number1 =
+    const SaveThreadAggregateDtoTextColorVersionEnum._('number1');
+const SaveThreadAggregateDtoTextColorVersionEnum
+_$saveThreadAggregateDtoTextColorVersionEnum_unknownDefaultOpenApi =
+    const SaveThreadAggregateDtoTextColorVersionEnum._('unknownDefaultOpenApi');
+
+SaveThreadAggregateDtoTextColorVersionEnum
+_$saveThreadAggregateDtoTextColorVersionEnumValueOf(String name) {
+  switch (name) {
+    case 'number1':
+      return _$saveThreadAggregateDtoTextColorVersionEnum_number1;
+    case 'unknownDefaultOpenApi':
+      return _$saveThreadAggregateDtoTextColorVersionEnum_unknownDefaultOpenApi;
+    default:
+      return _$saveThreadAggregateDtoTextColorVersionEnum_unknownDefaultOpenApi;
+  }
+}
+
+final BuiltSet<SaveThreadAggregateDtoTextColorVersionEnum>
+_$saveThreadAggregateDtoTextColorVersionEnumValues =
+    BuiltSet<SaveThreadAggregateDtoTextColorVersionEnum>(
+      const <SaveThreadAggregateDtoTextColorVersionEnum>[
+        _$saveThreadAggregateDtoTextColorVersionEnum_number1,
+        _$saveThreadAggregateDtoTextColorVersionEnum_unknownDefaultOpenApi,
+      ],
+    );
+
 const SaveThreadAggregateDtoMarkdownContractVersionEnum
 _$saveThreadAggregateDtoMarkdownContractVersionEnum_number6 =
     const SaveThreadAggregateDtoMarkdownContractVersionEnum._('number6');
@@ -191,6 +253,12 @@ _$saveThreadAggregateDtoDefaultSubthreadPostingPolicyEnumValues =
       _$saveThreadAggregateDtoDefaultSubthreadPostingPolicyEnum_unknownDefaultOpenApi,
     ]);
 
+Serializer<SaveThreadAggregateDtoTextFontVersionEnum>
+_$saveThreadAggregateDtoTextFontVersionEnumSerializer =
+    _$SaveThreadAggregateDtoTextFontVersionEnumSerializer();
+Serializer<SaveThreadAggregateDtoTextColorVersionEnum>
+_$saveThreadAggregateDtoTextColorVersionEnumSerializer =
+    _$SaveThreadAggregateDtoTextColorVersionEnumSerializer();
 Serializer<SaveThreadAggregateDtoMarkdownContractVersionEnum>
 _$saveThreadAggregateDtoMarkdownContractVersionEnumSerializer =
     _$SaveThreadAggregateDtoMarkdownContractVersionEnumSerializer();
@@ -206,6 +274,78 @@ _$saveThreadAggregateDtoVisibilityEnumSerializer =
 Serializer<SaveThreadAggregateDtoDefaultSubthreadPostingPolicyEnum>
 _$saveThreadAggregateDtoDefaultSubthreadPostingPolicyEnumSerializer =
     _$SaveThreadAggregateDtoDefaultSubthreadPostingPolicyEnumSerializer();
+
+class _$SaveThreadAggregateDtoTextFontVersionEnumSerializer
+    implements PrimitiveSerializer<SaveThreadAggregateDtoTextFontVersionEnum> {
+  static const Map<String, Object> _toWire = const <String, Object>{
+    'number1': 1,
+    'number2': 2,
+    'unknownDefaultOpenApi': 11184809,
+  };
+  static const Map<Object, String> _fromWire = const <Object, String>{
+    1: 'number1',
+    2: 'number2',
+    11184809: 'unknownDefaultOpenApi',
+  };
+
+  @override
+  final Iterable<Type> types = const <Type>[
+    SaveThreadAggregateDtoTextFontVersionEnum,
+  ];
+  @override
+  final String wireName = 'SaveThreadAggregateDtoTextFontVersionEnum';
+
+  @override
+  Object serialize(
+    Serializers serializers,
+    SaveThreadAggregateDtoTextFontVersionEnum object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => _toWire[object.name] ?? object.name;
+
+  @override
+  SaveThreadAggregateDtoTextFontVersionEnum deserialize(
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => SaveThreadAggregateDtoTextFontVersionEnum.valueOf(
+    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
+  );
+}
+
+class _$SaveThreadAggregateDtoTextColorVersionEnumSerializer
+    implements PrimitiveSerializer<SaveThreadAggregateDtoTextColorVersionEnum> {
+  static const Map<String, Object> _toWire = const <String, Object>{
+    'number1': 1,
+    'unknownDefaultOpenApi': 11184809,
+  };
+  static const Map<Object, String> _fromWire = const <Object, String>{
+    1: 'number1',
+    11184809: 'unknownDefaultOpenApi',
+  };
+
+  @override
+  final Iterable<Type> types = const <Type>[
+    SaveThreadAggregateDtoTextColorVersionEnum,
+  ];
+  @override
+  final String wireName = 'SaveThreadAggregateDtoTextColorVersionEnum';
+
+  @override
+  Object serialize(
+    Serializers serializers,
+    SaveThreadAggregateDtoTextColorVersionEnum object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => _toWire[object.name] ?? object.name;
+
+  @override
+  SaveThreadAggregateDtoTextColorVersionEnum deserialize(
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => SaveThreadAggregateDtoTextColorVersionEnum.valueOf(
+    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
+  );
+}
 
 class _$SaveThreadAggregateDtoMarkdownContractVersionEnumSerializer
     implements
@@ -399,6 +539,10 @@ class _$SaveThreadAggregateDtoDefaultSubthreadPostingPolicyEnumSerializer
 
 class _$SaveThreadAggregateDto extends SaveThreadAggregateDto {
   @override
+  final SaveThreadAggregateDtoTextFontVersionEnum? textFontVersion;
+  @override
+  final SaveThreadAggregateDtoTextColorVersionEnum? textColorVersion;
+  @override
   final SaveThreadAggregateDtoMarkdownContractVersionEnum?
   markdownContractVersion;
   @override
@@ -436,6 +580,8 @@ class _$SaveThreadAggregateDto extends SaveThreadAggregateDto {
   ]) => (SaveThreadAggregateDtoBuilder()..update(updates))._build();
 
   _$SaveThreadAggregateDto._({
+    this.textFontVersion,
+    this.textColorVersion,
     this.markdownContractVersion,
     this.identityId,
     this.identityToken,
@@ -465,6 +611,8 @@ class _$SaveThreadAggregateDto extends SaveThreadAggregateDto {
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
     return other is SaveThreadAggregateDto &&
+        textFontVersion == other.textFontVersion &&
+        textColorVersion == other.textColorVersion &&
         markdownContractVersion == other.markdownContractVersion &&
         identityId == other.identityId &&
         identityToken == other.identityToken &&
@@ -485,6 +633,8 @@ class _$SaveThreadAggregateDto extends SaveThreadAggregateDto {
   @override
   int get hashCode {
     var _$hash = 0;
+    _$hash = $jc(_$hash, textFontVersion.hashCode);
+    _$hash = $jc(_$hash, textColorVersion.hashCode);
     _$hash = $jc(_$hash, markdownContractVersion.hashCode);
     _$hash = $jc(_$hash, identityId.hashCode);
     _$hash = $jc(_$hash, identityToken.hashCode);
@@ -507,6 +657,8 @@ class _$SaveThreadAggregateDto extends SaveThreadAggregateDto {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'SaveThreadAggregateDto')
+          ..add('textFontVersion', textFontVersion)
+          ..add('textColorVersion', textColorVersion)
           ..add('markdownContractVersion', markdownContractVersion)
           ..add('identityId', identityId)
           ..add('identityToken', identityToken)
@@ -529,6 +681,20 @@ class _$SaveThreadAggregateDto extends SaveThreadAggregateDto {
 class SaveThreadAggregateDtoBuilder
     implements Builder<SaveThreadAggregateDto, SaveThreadAggregateDtoBuilder> {
   _$SaveThreadAggregateDto? _$v;
+
+  SaveThreadAggregateDtoTextFontVersionEnum? _textFontVersion;
+  SaveThreadAggregateDtoTextFontVersionEnum? get textFontVersion =>
+      _$this._textFontVersion;
+  set textFontVersion(
+    SaveThreadAggregateDtoTextFontVersionEnum? textFontVersion,
+  ) => _$this._textFontVersion = textFontVersion;
+
+  SaveThreadAggregateDtoTextColorVersionEnum? _textColorVersion;
+  SaveThreadAggregateDtoTextColorVersionEnum? get textColorVersion =>
+      _$this._textColorVersion;
+  set textColorVersion(
+    SaveThreadAggregateDtoTextColorVersionEnum? textColorVersion,
+  ) => _$this._textColorVersion = textColorVersion;
 
   SaveThreadAggregateDtoMarkdownContractVersionEnum? _markdownContractVersion;
   SaveThreadAggregateDtoMarkdownContractVersionEnum?
@@ -612,6 +778,8 @@ class SaveThreadAggregateDtoBuilder
   SaveThreadAggregateDtoBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
+      _textFontVersion = $v.textFontVersion;
+      _textColorVersion = $v.textColorVersion;
       _markdownContractVersion = $v.markdownContractVersion;
       _identityId = $v.identityId;
       _identityToken = $v.identityToken;
@@ -651,6 +819,8 @@ class SaveThreadAggregateDtoBuilder
       _$result =
           _$v ??
           _$SaveThreadAggregateDto._(
+            textFontVersion: textFontVersion,
+            textColorVersion: textColorVersion,
             markdownContractVersion: markdownContractVersion,
             identityId: identityId,
             identityToken: identityToken,

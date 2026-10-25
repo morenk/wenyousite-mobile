@@ -10,17 +10,13 @@ import 'package:flutter/services.dart';
 /// source remains free of custom font-family assignments. Neither this subset
 /// nor its license is declared in `pubspec.yaml`, so it cannot be bundled into
 /// an application artifact.
-Future<void> loadDeterministicTestFonts() async {
+Future<void> loadDeterministicTestFonts({
+  String fontPath = 'test/support/fonts/WenyouGoldenText-Variable.ttf',
+}) async {
   await Future.wait([
-    _loadFile('Ahem', File('test/support/fonts/WenyouGoldenText-Variable.ttf')),
-    _loadFile(
-      'Roboto',
-      File('test/support/fonts/WenyouGoldenText-Variable.ttf'),
-    ),
-    _loadFile(
-      'monospace',
-      File('test/support/fonts/WenyouGoldenText-Variable.ttf'),
-    ),
+    _loadFile('Ahem', File(fontPath)),
+    _loadFile('Roboto', File(fontPath)),
+    _loadFile('monospace', File(fontPath)),
     _loadMaterialIcons(),
   ]);
 }

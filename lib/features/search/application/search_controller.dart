@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wenyousite_mobile/core/application/cursor_page_request.dart';
 import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
 import 'package:wenyousite_mobile/core/application/request_epoch.dart';
 import 'package:wenyousite_mobile/core/application/visibility_cache_invalidation.dart';
@@ -63,54 +64,40 @@ class SearchController extends StateNotifier<SearchState> {
         isLoadingMore: true,
       ),
     );
-    try {
-      final page = await _repository.searchPosts(query, cursor: section.cursor);
-      if (!_isCurrent(queryEpoch, query, SearchResultTab.posts, requestEpoch)) {
-        return;
-      }
-      state = state.copyWith(
-        posts: SearchSectionState(
-          phase: SearchSectionPhase.ready,
-          items: mergeUniqueBy(
-            section.items,
-            page.items,
-            keyOf: (item) => item.id,
+    await loadCursorPage(
+      fetch: () => _repository.searchPosts(query, cursor: section.cursor),
+      isCurrent: () =>
+          _isCurrent(queryEpoch, query, SearchResultTab.posts, requestEpoch),
+      onPage: (page) {
+        state = state.copyWith(
+          posts: SearchSectionState(
+            phase: SearchSectionPhase.ready,
+            items: mergeUniqueBy(
+              section.items,
+              page.items,
+              keyOf: (item) => item.id,
+            ),
+            cursor: page.cursor,
+            hasMore: page.hasMore,
           ),
-          cursor: page.cursor,
-          hasMore: page.hasMore,
-        ),
-      );
-    } on ApiFailure catch (failure) {
-      if (!_isCurrent(queryEpoch, query, SearchResultTab.posts, requestEpoch)) {
-        return;
-      }
-      if (failure.isInvalidCursor) {
+        );
+      },
+      onInvalidCursor: () async {
         await _loadPosts(query, queryEpoch);
-        return;
-      }
-      state = state.copyWith(
-        posts: SearchSectionState(
-          phase: section.phase,
-          items: section.items,
-          cursor: section.cursor,
-          hasMore: section.hasMore,
-          failure: failure,
-        ),
-      );
-    } on Object catch (error) {
-      if (!_isCurrent(queryEpoch, query, SearchResultTab.posts, requestEpoch)) {
-        return;
-      }
-      state = state.copyWith(
-        posts: SearchSectionState(
-          phase: section.phase,
-          items: section.items,
-          cursor: section.cursor,
-          hasMore: section.hasMore,
-          failure: _asFailure(error, '加载更多搜索结果失败，请重试。'),
-        ),
-      );
-    }
+      },
+      mapFailure: (error) => _asFailure(error, '加载更多搜索结果失败，请重试。'),
+      onFailure: (failure) {
+        state = state.copyWith(
+          posts: SearchSectionState(
+            phase: section.phase,
+            items: section.items,
+            cursor: section.cursor,
+            hasMore: section.hasMore,
+            failure: failure,
+          ),
+        );
+      },
+    );
   }
 
   Future<void> loadMoreMoments() async {
@@ -133,72 +120,40 @@ class SearchController extends StateNotifier<SearchState> {
         isLoadingMore: true,
       ),
     );
-    try {
-      final page = await _repository.searchMoments(
-        query,
-        cursor: section.cursor,
-      );
-      if (!_isCurrent(
-        queryEpoch,
-        query,
-        SearchResultTab.moments,
-        requestEpoch,
-      )) {
-        return;
-      }
-      state = state.copyWith(
-        moments: SearchSectionState(
-          phase: SearchSectionPhase.ready,
-          items: mergeUniqueBy(
-            section.items,
-            page.items,
-            keyOf: (item) => item.id,
+    await loadCursorPage(
+      fetch: () => _repository.searchMoments(query, cursor: section.cursor),
+      isCurrent: () =>
+          _isCurrent(queryEpoch, query, SearchResultTab.moments, requestEpoch),
+      onPage: (page) {
+        state = state.copyWith(
+          moments: SearchSectionState(
+            phase: SearchSectionPhase.ready,
+            items: mergeUniqueBy(
+              section.items,
+              page.items,
+              keyOf: (item) => item.id,
+            ),
+            cursor: page.cursor,
+            hasMore: page.hasMore,
           ),
-          cursor: page.cursor,
-          hasMore: page.hasMore,
-        ),
-      );
-    } on ApiFailure catch (failure) {
-      if (!_isCurrent(
-        queryEpoch,
-        query,
-        SearchResultTab.moments,
-        requestEpoch,
-      )) {
-        return;
-      }
-      if (failure.isInvalidCursor) {
+        );
+      },
+      onInvalidCursor: () async {
         await _loadMoments(query, queryEpoch);
-        return;
-      }
-      state = state.copyWith(
-        moments: SearchSectionState(
-          phase: section.phase,
-          items: section.items,
-          cursor: section.cursor,
-          hasMore: section.hasMore,
-          failure: failure,
-        ),
-      );
-    } on Object catch (error) {
-      if (!_isCurrent(
-        queryEpoch,
-        query,
-        SearchResultTab.moments,
-        requestEpoch,
-      )) {
-        return;
-      }
-      state = state.copyWith(
-        moments: SearchSectionState(
-          phase: section.phase,
-          items: section.items,
-          cursor: section.cursor,
-          hasMore: section.hasMore,
-          failure: _asFailure(error, '加载更多动态搜索结果失败，请重试。'),
-        ),
-      );
-    }
+      },
+      mapFailure: (error) => _asFailure(error, '加载更多动态搜索结果失败，请重试。'),
+      onFailure: (failure) {
+        state = state.copyWith(
+          moments: SearchSectionState(
+            phase: section.phase,
+            items: section.items,
+            cursor: section.cursor,
+            hasMore: section.hasMore,
+            failure: failure,
+          ),
+        );
+      },
+    );
   }
 
   void clear() {
@@ -441,55 +396,45 @@ class ThreadPostSearchController extends StateNotifier<ThreadPostSearchState> {
         isLoadingMore: true,
       ),
     );
-    try {
-      final page = await _repository.searchThreadPosts(
+    await loadCursorPage(
+      fetch: () => _repository.searchThreadPosts(
         _threadId,
         query,
         cursor: section.cursor,
-      );
-      if (!_isCurrent(epoch, query)) return;
-      state = ThreadPostSearchState(
-        query: query,
-        results: SearchSectionState(
-          phase: SearchSectionPhase.ready,
-          items: mergeUniqueBy(
-            section.items,
-            page.items,
-            keyOf: (item) => item.id,
+      ),
+      isCurrent: () => _isCurrent(epoch, query),
+      onPage: (page) {
+        state = ThreadPostSearchState(
+          query: query,
+          results: SearchSectionState(
+            phase: SearchSectionPhase.ready,
+            items: mergeUniqueBy(
+              section.items,
+              page.items,
+              keyOf: (item) => item.id,
+            ),
+            cursor: page.cursor,
+            hasMore: page.hasMore,
           ),
-          cursor: page.cursor,
-          hasMore: page.hasMore,
-        ),
-      );
-    } on ApiFailure catch (failure) {
-      if (!_isCurrent(epoch, query)) return;
-      if (failure.isInvalidCursor) {
+        );
+      },
+      onInvalidCursor: () async {
         await _loadFirstPage(query);
-        return;
-      }
-      state = ThreadPostSearchState(
-        query: query,
-        results: SearchSectionState(
-          phase: section.phase,
-          items: section.items,
-          cursor: section.cursor,
-          hasMore: section.hasMore,
-          failure: failure,
-        ),
-      );
-    } on Object catch (error) {
-      if (!_isCurrent(epoch, query)) return;
-      state = ThreadPostSearchState(
-        query: query,
-        results: SearchSectionState(
-          phase: section.phase,
-          items: section.items,
-          cursor: section.cursor,
-          hasMore: section.hasMore,
-          failure: _asFailure(error, '加载更多主题内搜索结果失败，请重试。'),
-        ),
-      );
-    }
+      },
+      mapFailure: (error) => _asFailure(error, '加载更多主题内搜索结果失败，请重试。'),
+      onFailure: (failure) {
+        state = ThreadPostSearchState(
+          query: query,
+          results: SearchSectionState(
+            phase: section.phase,
+            items: section.items,
+            cursor: section.cursor,
+            hasMore: section.hasMore,
+            failure: failure,
+          ),
+        );
+      },
+    );
   }
 
   void clear() {
