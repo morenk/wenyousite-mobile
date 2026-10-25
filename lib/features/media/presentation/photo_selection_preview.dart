@@ -93,12 +93,14 @@ class PhotoSelectionMark extends StatelessWidget {
           key: ValueKey('photo-select-${photo.id}'),
           onPressed: controller.busy ? null : () => controller.toggle(photo),
           icon: Container(
-            width: 28,
-            height: 28,
+            width: 24,
+            height: 24,
             alignment: Alignment.center,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: number > 0 ? colors.primary : tokens.panel,
+              color: number > 0
+                  ? colors.primary.withValues(alpha: 0.82)
+                  : tokens.panel.withValues(alpha: 0.24),
               border: Border.all(
                 color: number > 0 ? colors.primary : tokens.mutedText,
               ),

@@ -1,6 +1,18 @@
 # PR #117 与 #118 组合测试候选
 
-状态：组合候选／待负责人真机验收。仅用于用户授权的同包验收，不合入 dev、不发布，也不代替原两项 Bug 的负责人验收。
+状态：原组合APK／待负责人真机验收。后续圆圈视觉反馈已由负责人明确授权修改后合并，见下节；不发布。原同包检查／APK证据仍固定到3d95ca49，不代替原手机场景验收。
+
+## 相册圆圈视觉反馈
+
+2026-10-25 用户对比新截图中本应用的大实心白圆与QQ半透明小圆，要求缩小并半透明，修改后直接合并分支，明确“跳过冗余测试”。本轮复用原Worktree／分支，只调整 `PhotoSelectionMark` 的视觉圆径28→24dp（直径减14.3%）；未选使用现有panel色alpha0.24、已选使用primary色alpha0.82，边框／序号主题色不变，外层minimumTouchTarget继续48dp，语义及交互不改。
+
+检查范围遵从本次用户指令：相关格式、变更文件静态分析、现有 `test/features/media/photo_selection_page_test.dart` 的8项页面用例；首次更新明／暗／320dp两倍字Golden并自看，整合最新dev后正常验证同8项。两次分别用于更新快照和验证整合结果，不重跑562／7798项或完整门禁，不构建APK，不启动真实App。Foundation只读fetch tags确认最新正式仍v7.6.0、与依赖一致；不引入新依赖。审批配置事实沿用下节说明，未设置／核验Auto-review。
+
+本轮开始时HEAD为1dd08c97；fetch发现origin/dev已到 `e32870272a611a94a0a22e90bf5dce280c671150`（PR #116），其增量无lib／原生／依赖／生成SDK运行代码变化。先提交本样式，再普通merge该dev提交到任务分支，保持最新 Backend `8a5d21858e04c69832c90e5a3a10f1e70fdcb545`／API `5.44.0-dev.20261024.3` 来源；下文33574ae7／.2是原合包历史。执行子任务只提交推送，最终PR与合入dev由治理任务执行，不改写分支历史。
+
+本轮日志在 `build/photo-mark-visual-evidence/`：相关格式1文件零修改（format.log），变更文件analyze零问题（analyze.log）；首次 `--update-goldens` 的8项全部通过（7秒，golden-update.log）。实际更新 `test/features/media/goldens/photo-picker-{light,dark,narrow-large}.png` 三张，已逐张查看：底图颜色／明暗分界可穿过未选圆圈，选中序号清楚，320dp两倍字无溢出；相册下拉的三张Golden字节未变。预览确认、返回取消及权限恢复复用既有行为断言，不添加镜像实现测试。整合后8项正常验证结果另补。
+
+无新真机画面；原 `app-debug-64e0a53c3ad3.apk` 不包含本轮24dp／半透明样式，不能作为新样式产物。
 
 ## 固定来源与范围
 
