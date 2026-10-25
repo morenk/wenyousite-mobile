@@ -9,6 +9,7 @@ import 'package:wenyousite_mobile/core/markdown/markdown_dice_contract.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_mention_target.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_paragraph_boundaries.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_text_color.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_text_font.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_reference.dart';
 
 /// Reconstructs only the allow-listed rich fragment emitted by Wenyou Web.
@@ -444,13 +445,26 @@ class _ClipboardInlineBuilder {
 
     final nested = switch (tag) {
       'span'
-          when node.attributes.length == 1 &&
-              MarkdownTextColor.rgb.hasMatch(
-                node.attributes['data-wenyou-color-v1'] ?? '',
+          when node.attributes.isNotEmpty &&
+              !(node.attributes.containsKey('data-wenyou-font-v1') &&
+                  node.attributes.containsKey('data-wenyou-font-v2')) &&
+              node.attributes.entries.every(
+                (entry) =>
+                    entry.key == 'data-wenyou-font-v1' ||
+                    entry.key == 'data-wenyou-font-v2' ||
+                    entry.key == 'data-wenyou-color-v1' &&
+                        MarkdownTextColor.rgb.hasMatch(entry.value),
               ) =>
         {
           ...attributes,
-          'color': node.attributes['data-wenyou-color-v1']!.toUpperCase(),
+          if (node.attributes['data-wenyou-color-v1'] case final String color)
+            'color': color.toUpperCase(),
+          if (node.attributes['data-wenyou-font-v1'] case final String font
+              when MarkdownTextFont.ids.contains(font))
+            'font': font,
+          if (node.attributes['data-wenyou-font-v2'] case final String font
+              when MarkdownTextFont.isVersionId(font))
+            'font': font,
         },
       'b' || 'strong' => {...attributes, 'bold': true},
       'i' || 'em' => {...attributes, 'italic': true},

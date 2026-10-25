@@ -23,6 +23,8 @@ const diagnosticApiRoutes = <String, String>{
   'GET /api/v1/admin/operations/settings': 'siteOperationalSettingsGet',
   'GET /api/v1/admin/reports': 'adminReportsFindAll',
   'GET /api/v1/admin/tags': 'adminTaxonomyListTags',
+  'GET /api/v1/admin/text-fonts': 'adminTextFontsList',
+  'GET /api/v1/admin/text-fonts/management': 'adminTextFontsManagement',
   'GET /api/v1/admin/thread-categories': 'adminTaxonomyListCategories',
   'GET /api/v1/admin/users': 'adminModerationListUsers',
   'GET /api/v1/admin/users/search': 'adminSearchUsers',
@@ -38,6 +40,11 @@ const diagnosticApiRoutes = <String, String>{
   'GET /api/v1/health': 'healthCheck',
   'GET /api/v1/image-gallery': 'galleryList',
   'GET /api/v1/meta': 'metaGetMeta',
+  'GET /api/v1/meta/text-fonts': 'textFontsGetCatalog',
+  'GET /api/v1/meta/text-fonts/runtime-policy': 'textFontsGetRuntimePolicy',
+  'GET /api/v1/meta/text-fonts/v2': 'textFontsV2GetCatalog',
+  'GET /api/v1/meta/text-fonts/v2/runtime-policy':
+      'textFontsV2GetRuntimePolicy',
   'GET /api/v1/mobile-releases': 'mobileReleasesList',
   'GET /api/v1/moderation/decisions/mine': 'userModerationAppealsMine',
   'GET /api/v1/moments': 'momentsList',
@@ -83,6 +90,8 @@ const diagnosticApiRoutes = <String, String>{
   'POST /api/v1/admin/notifications/system': 'adminSendSystemNotification',
   'POST /api/v1/admin/notifications/system/preview': 'adminPreviewRecipients',
   'POST /api/v1/admin/tags': 'adminTaxonomyCreateTag',
+  'POST /api/v1/admin/text-fonts': 'adminTextFontsCreate',
+  'POST /api/v1/admin/text-fonts/submissions': 'adminTextFontsCreateSubmission',
   'POST /api/v1/admin/thread-categories': 'adminTaxonomyCreateCategory',
   'POST /api/v1/auth/change-email/request-code': 'authRequestChangeEmailCode',
   'POST /api/v1/auth/change-email/verify': 'authVerifyChangeEmail',
@@ -116,6 +125,7 @@ const diagnosticApiRoutes = <String, String>{
   'POST /api/v1/tags': 'tagsCreate',
   'POST /api/v1/threads': 'threadsCreate',
   'POST /api/v1/wallet/check-in': 'economyCheckIn',
+  'PUT /api/v1/admin/text-fonts/order': 'adminTextFontsReorder',
   'PUT /api/v1/mobile/devices/current': 'mobileDeviceRegister',
   'PUT /api/v1/stickers/reorder': 'stickersReorder',
   'DELETE /api/v1/admin/accounts/invites/{id}': 'adminAccountsCancel',
@@ -147,6 +157,12 @@ const diagnosticApiRoutes = <String, String>{
   'GET /api/v1/admin/cases/{id}': 'moderationCasesGet',
   'GET /api/v1/admin/mobile-releases/{id}': 'adminMobileReleasesDetail',
   'GET /api/v1/admin/reports/{id}': 'adminReportsFindOne',
+  'GET /api/v1/admin/text-fonts/jobs/{jobId}': 'adminTextFontsGetJob',
+  'GET /api/v1/admin/text-fonts/submissions/{submissionId}':
+      'adminTextFontsSubmission',
+  'GET /api/v1/admin/text-fonts/versions/{versionId}/preview':
+      'adminTextFontsPreview',
+  'GET /api/v1/admin/text-fonts/{familyId}': 'adminTextFontsDetail',
   'GET /api/v1/admin/users/{id}': 'adminModerationGetUser',
   'GET /api/v1/app-downloads/android/{buildNumber}/file': 'appDownloadsFile',
   'GET /api/v1/direct-conversations/by-user/{userId}':
@@ -156,6 +172,8 @@ const diagnosticApiRoutes = <String, String>{
       'directConversationsMessages',
   'GET /api/v1/drafts/{id}': 'draftsFindById',
   'GET /api/v1/media/{id}': 'mediaGetMedia',
+  'GET /api/v1/meta/text-fonts/v2/versions/{versionId}':
+      'textFontsV2GetVersion',
   'GET /api/v1/moments/{id}': 'momentsDetail',
   'GET /api/v1/moments/{id}/comment-authors': 'momentsCommentAuthors',
   'GET /api/v1/moments/{id}/comments': 'momentsCommentsList',
@@ -193,6 +211,8 @@ const diagnosticApiRoutes = <String, String>{
       'adminContentUpdateTaxonomy',
   'PATCH /api/v1/admin/mobile-releases/{id}': 'adminMobileReleasesUpdate',
   'PATCH /api/v1/admin/tags/{id}': 'adminTaxonomyUpdateTag',
+  'PATCH /api/v1/admin/text-fonts/{familyId}': 'adminTextFontsUpdate',
+  'PATCH /api/v1/admin/text-fonts/{familyId}/enabled': 'adminTextFontsEnabled',
   'PATCH /api/v1/admin/thread-categories/{id}': 'adminTaxonomyUpdateCategory',
   'PATCH /api/v1/admin/users/{id}/role': 'adminModerationUpdateRole',
   'PATCH /api/v1/bookmarks/folders/{id}': 'bookmarksRenameFolder',
@@ -219,6 +239,13 @@ const diagnosticApiRoutes = <String, String>{
   'POST /api/v1/admin/mobile-releases/{id}/confirm':
       'adminMobileReleasesConfirm',
   'POST /api/v1/admin/reports/{id}/resolve': 'adminReportsResolve',
+  'POST /api/v1/admin/text-fonts/jobs/{jobId}/process': 'adminTextFontsProcess',
+  'POST /api/v1/admin/text-fonts/submissions/{submissionId}/process':
+      'adminTextFontsProcessSubmission',
+  'POST /api/v1/admin/text-fonts/versions/{versionId}/withdraw':
+      'adminTextFontsWithdraw',
+  'POST /api/v1/admin/text-fonts/{familyId}/publish': 'adminTextFontsPublish',
+  'POST /api/v1/admin/text-fonts/{familyId}/sources': 'adminTextFontsUpload',
   'POST /api/v1/admin/users/{id}/sanctions': 'adminModerationSanctionUser',
   'POST /api/v1/admin/users/{id}/sanctions/current/revoke':
       'adminModerationRevokeSanction',
@@ -252,6 +279,10 @@ const diagnosticApiRoutes = <String, String>{
       'rpIdentitiesRemove',
   'DELETE /api/v1/threads/{threadId}/tags/{tagId}': 'threadTagsRemove',
   'GET /api/v1/admin/content/{type}/{id}': 'adminContentDetail',
+  'GET /api/v1/admin/text-fonts/versions/{versionId}/assets/{asset}':
+      'adminTextFontsAsset',
+  'GET /api/v1/meta/text-fonts/v2/versions/{versionId}/assets/{asset}':
+      'textFontsV2GetAsset',
   'GET /api/v1/mobile-releases/{platform}/{buildNumber}':
       'mobileReleasesDetail',
   'GET /api/v1/moments/{id}/comments/{commentId}/context':

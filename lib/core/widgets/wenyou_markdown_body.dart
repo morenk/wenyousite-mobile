@@ -62,7 +62,23 @@ class WenyouMarkdownBody extends MarkdownBody {
           isBodyParagraph(blocks[index ~/ 2 + 1])) {
         continue;
       }
-      mapped.add(_allowInlineHeight(child));
+      final block = children.length == blocks.length * 2 - 1 && index.isEven
+          ? blocks[index ~/ 2]
+          : null;
+      // 多个行内样式合并后，上游根 TextSpan 不再携带标题样式，
+      // strut 会回退正文。用真实块类型保持标题自身的行高。
+      final headingStyle = block is md.Element
+          ? switch (block.tag) {
+              'h1' => styleSheet?.h1,
+              'h2' => styleSheet?.h2,
+              'h3' => styleSheet?.h3,
+              'h4' => styleSheet?.h4,
+              'h5' => styleSheet?.h5,
+              'h6' => styleSheet?.h6,
+              _ => null,
+            }
+          : null;
+      mapped.add(_allowInlineHeight(child, headingStyle));
     }
     return super.build(context, mapped);
   }
@@ -76,27 +92,28 @@ class WenyouMarkdownBody extends MarkdownBody {
           false);
 }
 
-Widget _allowInlineHeight(Widget widget) {
-  // 只放开含占位组件的段落；纯文字继续使用上游的固定行高。
+Widget _allowInlineHeight(Widget widget, [TextStyle? headingStyle]) {
+  // 纯文字使用所属块的固定行高；占位组件仍可按实际高度撑开。
   if (widget is Text &&
       widget.textSpan != null &&
       widget.strutStyle?.forceStrutHeight == true &&
-      _containsPlaceholder(widget.textSpan!)) {
+      (headingStyle != null || _containsPlaceholder(widget.textSpan!))) {
     final strut = widget.strutStyle!;
     return Text.rich(
       widget.textSpan!,
       key: widget.key,
       style: widget.style,
       strutStyle: StrutStyle(
-        fontFamily: strut.fontFamily,
-        fontFamilyFallback: strut.fontFamilyFallback,
-        fontSize: strut.fontSize,
-        height: strut.height,
+        fontFamily: headingStyle?.fontFamily ?? strut.fontFamily,
+        fontFamilyFallback:
+            headingStyle?.fontFamilyFallback ?? strut.fontFamilyFallback,
+        fontSize: headingStyle?.fontSize ?? strut.fontSize,
+        height: headingStyle?.height ?? strut.height,
         leadingDistribution: strut.leadingDistribution,
         leading: strut.leading,
         fontWeight: strut.fontWeight,
         fontStyle: strut.fontStyle,
-        forceStrutHeight: false,
+        forceStrutHeight: !_containsPlaceholder(widget.textSpan!),
       ),
       textAlign: widget.textAlign,
       textDirection: widget.textDirection,
@@ -124,7 +141,9 @@ Widget _allowInlineHeight(Widget widget) {
       verticalDirection: widget.verticalDirection,
       textBaseline: widget.textBaseline,
       spacing: widget.spacing,
-      children: widget.children.map(_allowInlineHeight).toList(),
+      children: widget.children
+          .map((child) => _allowInlineHeight(child, headingStyle))
+          .toList(),
     ),
     Row() => Row(
       key: widget.key,
@@ -135,7 +154,9 @@ Widget _allowInlineHeight(Widget widget) {
       verticalDirection: widget.verticalDirection,
       textBaseline: widget.textBaseline,
       spacing: widget.spacing,
-      children: widget.children.map(_allowInlineHeight).toList(),
+      children: widget.children
+          .map((child) => _allowInlineHeight(child, headingStyle))
+          .toList(),
     ),
     Wrap() => Wrap(
       key: widget.key,
@@ -148,24 +169,26 @@ Widget _allowInlineHeight(Widget widget) {
       textDirection: widget.textDirection,
       verticalDirection: widget.verticalDirection,
       clipBehavior: widget.clipBehavior,
-      children: widget.children.map(_allowInlineHeight).toList(),
+      children: widget.children
+          .map((child) => _allowInlineHeight(child, headingStyle))
+          .toList(),
     ),
     Padding(:final child?) => Padding(
       key: widget.key,
       padding: widget.padding,
-      child: _allowInlineHeight(child),
+      child: _allowInlineHeight(child, headingStyle),
     ),
     DecoratedBox(:final child?) => DecoratedBox(
       key: widget.key,
       decoration: widget.decoration,
       position: widget.position,
-      child: _allowInlineHeight(child),
+      child: _allowInlineHeight(child, headingStyle),
     ),
     Flexible() => Flexible(
       key: widget.key,
       flex: widget.flex,
       fit: widget.fit,
-      child: _allowInlineHeight(widget.child),
+      child: _allowInlineHeight(widget.child, headingStyle),
     ),
     _ => widget,
   };

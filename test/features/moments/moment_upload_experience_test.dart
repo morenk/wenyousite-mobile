@@ -23,7 +23,7 @@ import 'moment_pages_content_media_fixtures.dart';
 import 'moment_pages_session_wallet_fixtures.dart';
 
 void main() {
-  testWidgets('评论进入后台暂停并取消发布意图，回前台恢复图片', (tester) async {
+  testWidgets('评论进入后台取消发布意图，未取得身份的图片回前台等待重试', (tester) async {
     final gateway = MomentPagesTestControlledBatchUploadGateway();
     final sent = <MomentCommentInput>[];
     await tester.pumpWidget(
@@ -69,8 +69,20 @@ void main() {
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
     await tester.pump();
     await tester.pump();
-    expect(gateway.operations, hasLength(2));
+    expect(gateway.operations, hasLength(1));
     gateway.complete(0);
+    await tester.pumpAndSettle();
+    expect(sent, isEmpty);
+    final failedImage = find.byWidgetPredicate(
+      (widget) => widget is PendingImageOverlay && widget.failed,
+    );
+    expect(failedImage, findsOneWidget);
+    await tester.tap(failedImage);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('重试'));
+    await tester.pump();
+    await tester.pump();
+    expect(gateway.operations, hasLength(2));
     gateway.complete(1);
     await tester.pumpAndSettle();
     expect(sent, isEmpty);
@@ -492,7 +504,12 @@ class _TerminalFailureGateway
   }) {
     resumes++;
     return MomentPagesTestImmediateUploadOperation(
-      Future.error(const ApiFailure(userMessage: '图片处理失败')),
+      Future.error(
+        const ApiFailure(
+          userMessage: '图片处理失败',
+          diagnosticCode: 'media_processing_failed',
+        ),
+      ),
     );
   }
 

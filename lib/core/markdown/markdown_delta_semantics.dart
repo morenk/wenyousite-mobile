@@ -19,6 +19,29 @@ final class MarkdownDeltaSemantics {
   static bool equivalent(Delta before, Delta after) =>
       _signature(before) == _signature(after);
 
+  /// 复用原有严格比较结果，仅输出首个不等价语义行及固定类别。
+  static ({int line, String kind})? firstDifference(Delta before, Delta after) {
+    final left = jsonDecode(_signature(before)) as List;
+    final right = jsonDecode(_signature(after)) as List;
+    for (var index = 0; index < left.length && index < right.length; index++) {
+      if (jsonEncode(left[index]) == jsonEncode(right[index])) continue;
+      final a = left[index] as Map;
+      final b = right[index] as Map;
+      return (
+        line: index,
+        kind: jsonEncode(a['block']) != jsonEncode(b['block'])
+            ? 'block'
+            : 'inline',
+      );
+    }
+    return left.length == right.length
+        ? null
+        : (
+            line: left.length < right.length ? left.length : right.length,
+            kind: 'line_count',
+          );
+  }
+
   static String _signature(Delta source) {
     final delta = MarkdownDeltaLineMetadata.prepareForEncoding(source);
     final lines = <_SemanticLine>[];

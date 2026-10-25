@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:wenyousite_mobile/core/application/background_execution.dart';
 import 'package:wenyousite_mobile/core/application/background_online_reminders.dart';
+import 'package:wenyousite_mobile/core/network/network_recovery.dart';
 import 'package:wenyousite_mobile/features/app_shell/application/background_online_poller.dart';
 
 abstract interface class BackgroundOnlineReminderTimer {
@@ -27,7 +28,8 @@ class BackgroundOnlineReminderCoordinator {
     this.interval = const Duration(seconds: 30),
     this.timerFactory = _createTimer,
     this.diagnostics,
-  });
+    NetworkRecovery? recovery,
+  }) : recovery = recovery ?? NetworkRecovery();
 
   final BackgroundOnlinePollingSession pollingSession;
   final BackgroundNotificationGateway notificationGateway;
@@ -37,6 +39,7 @@ class BackgroundOnlineReminderCoordinator {
   final Duration interval;
   final BackgroundOnlineReminderTimerFactory timerFactory;
   final BackgroundOnlineReminderDiagnosticSink? diagnostics;
+  final NetworkRecovery recovery;
 
   BackgroundOnlineReminderTimer? _timer;
   bool _prepared = false;
@@ -53,7 +56,7 @@ class BackgroundOnlineReminderCoordinator {
     _resetForBackground(includeDirectMessages);
     final epoch = _epoch;
     _record('prepare', {'outcome': 'started'});
-    unawaited(_prepareBaseline(epoch));
+    unawaited(runAutomaticNetworkRequests(() => _prepareBaseline(epoch)));
   }
 
   void start({required bool includeDirectMessages}) {
@@ -98,6 +101,7 @@ class BackgroundOnlineReminderCoordinator {
   }
 
   Future<void> _prepareBaseline(int epoch) async {
+    final ticket = recovery.ticket;
     var stage = 'capability';
     try {
       if (!await _checkExecution(epoch)) return;
@@ -108,14 +112,17 @@ class BackgroundOnlineReminderCoordinator {
         await _denyPermissionAndStop(epoch);
         return;
       }
+      if (_skipDuringCooldown()) return;
       stage = 'baseline';
       final ready = await pollingSession.ensureBaseline(
         includeDirectMessages: _includeDirectMessages,
       );
       if (!_isPreparedEpochCurrent(epoch)) return;
+      if (ready) recovery.succeeded(ticket);
       _record(stage, {'outcome': ready ? 'ready' : 'stale'});
     } on Object catch (error) {
       if (_isPreparedEpochCurrent(epoch)) {
+        if (stage == 'baseline') recovery.failed(ticket, error);
         _record(stage, {
           'outcome': 'failed',
           'errorType': error.runtimeType.toString(),
@@ -132,10 +139,11 @@ class BackgroundOnlineReminderCoordinator {
     }
     _cycleInFlight = true;
     final epoch = _epoch;
-    unawaited(_runCycle(epoch));
+    unawaited(runAutomaticNetworkRequests(() => _runCycle(epoch)));
   }
 
   Future<void> _runCycle(int epoch) async {
+    final ticket = recovery.ticket;
     var stage = 'capability';
     try {
       if (!await _checkExecution(epoch)) return;
@@ -147,6 +155,7 @@ class BackgroundOnlineReminderCoordinator {
         return;
       }
 
+      if (_skipDuringCooldown()) return;
       stage = 'baseline';
       final hadBaseline = pollingSession.hasBaseline;
       final ready = await pollingSession.ensureBaseline(
@@ -158,6 +167,7 @@ class BackgroundOnlineReminderCoordinator {
         return;
       }
       if (!hadBaseline) {
+        recovery.succeeded(ticket);
         _record(stage, {'outcome': 'ready'});
         return;
       }
@@ -167,6 +177,7 @@ class BackgroundOnlineReminderCoordinator {
         includeDirectMessages: _includeDirectMessages,
       );
       if (!_isActiveEpochCurrent(epoch) || batch == null) return;
+      recovery.succeeded(ticket);
       _record(stage, {
         'outcome': 'collected',
         'alertCount': batch.alerts.length,
@@ -194,6 +205,9 @@ class BackgroundOnlineReminderCoordinator {
       _record(stage, {'outcome': committed ? 'committed' : 'stale'});
     } on Object catch (error) {
       if (_isActiveEpochCurrent(epoch)) {
+        if (stage == 'baseline' || stage == 'poll') {
+          recovery.failed(ticket, error);
+        }
         _record(stage, {
           'outcome': 'failed',
           'errorType': error.runtimeType.toString(),
@@ -206,6 +220,15 @@ class BackgroundOnlineReminderCoordinator {
 
   (int, String, String, String) _alertKey(BackgroundLocalAlert alert) =>
       (alert.id, alert.title, alert.body, alert.payload);
+
+  bool _skipDuringCooldown() {
+    if (!recovery.isCoolingDown) return false;
+    _record('poll', {
+      'outcome': 'skipped_cooldown',
+      'retryAfterMs': recovery.remaining.inMilliseconds,
+    });
+    return true;
+  }
 
   Future<void> _denyPermissionAndStop(int epoch) async {
     await onPermissionDenied();

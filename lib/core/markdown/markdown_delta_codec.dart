@@ -2,6 +2,7 @@ import 'package:flutter_quill/quill_delta.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_alignment.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_audio_embed.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_canonical_literal_decoder.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_codec_structure.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_codec_types.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_block_encoder.dart';
@@ -15,10 +16,12 @@ import 'package:wenyousite_mobile/core/markdown/markdown_delta_semantics.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_dice_contract.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_editor_document.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_editor_projection.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_inline_source.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_mention_target.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_paragraph_boundaries.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_quote_paragraphs.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_rich_line_decoder.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_text_font.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_reference.dart';
 
 export 'package:wenyousite_mobile/core/markdown/markdown_codec_types.dart';
@@ -105,6 +108,16 @@ class MarkdownDeltaCodec {
           break;
         case MarkdownEditorLineKind.text:
           final content = line.content;
+          if (MarkdownTextFont.hasUnknown(content)) {
+            _insertCompatibility(
+              delta,
+              issues,
+              MarkdownCodecIssueKind.unknownProtocol,
+              content,
+              '这段文字暂时无法编辑，原文已保留',
+            );
+            break;
+          }
           final rich = MarkdownContent.hasCanonicalLiteralEncoding(content)
               ? null
               : _tryDecodeRichLine(content);
@@ -158,14 +171,31 @@ class MarkdownDeltaCodec {
   }
 
   static String encode(Delta delta, {bool imageAlignment = false}) {
-    delta = MarkdownAudioEmbed.expand(delta, preserveLinkShape: true);
-    final encoded = _encode(delta, true, imageAlignment);
-    final reopened = _decode(encoded, false, imageAlignment).delta;
-    if (!MarkdownDeltaSemantics.equivalent(delta, reopened)) {
-      throw const MarkdownCodecException('正文无法安全保存，请撤销最近的格式操作');
+    try {
+      delta = MarkdownAudioEmbed.expand(delta, preserveLinkShape: true);
+      final encoded = _encode(delta, true, imageAlignment);
+      final reopened = _decode(encoded, false, imageAlignment).delta;
+      if (!MarkdownDeltaSemantics.equivalent(delta, reopened)) {
+        throw MarkdownCodecException(
+          '正文无法安全保存，请撤销最近的格式操作',
+          structure: MarkdownCodecStructure.inspect(
+            delta,
+            difference: MarkdownDeltaSemantics.firstDifference(delta, reopened),
+          ),
+        );
+      }
+      MarkdownDeltaBlockValidator.validateListReading(delta, encoded);
+      return encoded;
+    } on MarkdownCodecException catch (error, stack) {
+      if (error.structure != null) rethrow;
+      Error.throwWithStackTrace(
+        MarkdownCodecException(
+          error.message,
+          structure: MarkdownCodecStructure.inspect(delta),
+        ),
+        stack,
+      );
     }
-    MarkdownDeltaBlockValidator.validateListReading(delta, encoded);
-    return encoded;
   }
 
   static String _encode(
@@ -290,29 +320,28 @@ class MarkdownDeltaCodec {
       text.clear();
     }
 
+    final inlineSource = MarkdownInlineSource.analyze(line);
+    final protectedRanges = [...inlineSource.code, ...inlineSource.metadata]
+      ..sort((a, b) => a.start.compareTo(b.start));
+    var protectedIndex = 0;
     var index = 0;
     while (index < line.length) {
+      while (protectedIndex < protectedRanges.length &&
+          protectedRanges[protectedIndex].end <= index) {
+        protectedIndex++;
+      }
+      if (protectedIndex < protectedRanges.length &&
+          protectedRanges[protectedIndex].start == index) {
+        final end = protectedRanges[protectedIndex].end;
+        text.write(line.substring(index, end));
+        index = end;
+        continue;
+      }
       if (line[index] == r'\') {
         final end = index + 2 <= line.length ? index + 2 : line.length;
         text.write(line.substring(index, end));
         index = end;
         continue;
-      }
-
-      if (line[index] == '`') {
-        var runLength = 1;
-        while (index + runLength < line.length &&
-            line[index + runLength] == '`') {
-          runLength += 1;
-        }
-        final delimiter = '`' * runLength;
-        final closing = line.indexOf(delimiter, index + runLength);
-        if (closing >= 0) {
-          final end = closing + runLength;
-          text.write(line.substring(index, end));
-          index = end;
-          continue;
-        }
       }
 
       final remaining = line.substring(index);
@@ -530,6 +559,7 @@ class MarkdownDeltaCodec {
       }
       if (!isLineBreak) break;
       inline.flush(
+        literalSource: attributes?[literalLineAttribute] == true,
         preserveSourceWhitespace:
             attributes?[MarkdownDeltaLineMetadata.guardedWhitespaceKey] ==
                 true ||

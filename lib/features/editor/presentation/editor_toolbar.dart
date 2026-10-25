@@ -8,6 +8,7 @@ import 'package:uuid/uuid.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/application/editor_toolbar_layout.dart';
+import 'package:wenyousite_mobile/core/editor/quill_document_range.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_alignment.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
@@ -20,6 +21,7 @@ import 'package:wenyousite_mobile/features/editor/presentation/editor_dice_input
 import 'package:wenyousite_mobile/features/editor/presentation/editor_format_policy.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_heading_tray.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_more_tray.dart';
+import 'package:wenyousite_mobile/features/editor/presentation/editor_tool_area.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_toolbar_buttons.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_toolbar_input_tray.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/literal_text_quill_controller.dart';
@@ -95,6 +97,7 @@ class WenyouEditorToolbar extends StatefulWidget {
     this.surface = WenyouComposerSurface.page,
     this.capabilities = WenyouEditorCapabilities.richMarkdown,
     this.textColor,
+    this.textFont = false,
     this.layout = const EditorToolbarLayout.defaults(),
     super.key,
   });
@@ -122,6 +125,7 @@ class WenyouEditorToolbar extends StatefulWidget {
   final WenyouComposerSurface surface;
   final WenyouEditorCapabilities capabilities;
   final EditorTextColorConfiguration? textColor;
+  final bool textFont;
   final EditorToolbarLayout layout;
 
   @override
@@ -141,6 +145,7 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
   late final TextEditingController _diceModifierController;
   late _EditorDiceInputValue _lastSuccessfulDiceInput;
   TextSelection? _preservedSelection;
+  String? _linkDocumentSignature;
   String? _linkLabelError;
   String? _linkUrlError;
   EditorDiceInputErrors _diceErrors = noEditorDiceInputErrors;
@@ -429,7 +434,7 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
   }
 
   Widget _buildHeadingTray(BuildContext context) {
-    return WenyouEditorHeadingTray(
+    final tray = WenyouEditorHeadingTray(
       controller: widget.controller,
       enabled: widget.enabled,
       onHeading: _applyHeading,
@@ -456,6 +461,29 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
       },
       focusNode: widget.editorFocusNode,
       textColor: widget.textColor,
+      textFont: widget.textFont,
+    );
+    final available = EditorToolArea.heightOf(context);
+    // 取色盘已有自身约束且隐藏主栏；普通 T 托盘必须给主栏保留空间。
+    if (available == null) return tray;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final layout = _resolveLayout(
+          constraints.maxWidth -
+              WenyouEditorContract.toolbarHorizontalPadding * 2,
+        );
+        final tokens = context.wenyouTokens;
+        final primaryHeight = tokens.minimumTouchTarget + tokens.space8;
+        final reserved = _colorPickerOpen
+            ? 0
+            : primaryHeight * (layout.dedicatedDraft ? 2 : 1);
+        return ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: (available - reserved).clamp(0, double.infinity),
+          ),
+          child: SingleChildScrollView(primary: false, child: tray),
+        );
+      },
     );
   }
 
@@ -657,13 +685,17 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
 
   void _openLinkTray() {
     final selection = widget.controller.selection;
+    final selectedText = readQuillDocumentRange(
+      widget.controller.document,
+      selection.start,
+      selection.end - selection.start,
+    );
+    if (selectedText == null) return;
     _preservedSelection = selection;
-    _linkLabelController.text = selection.isCollapsed
-        ? ''
-        : widget.controller.document.getPlainText(
-            selection.start,
-            selection.end - selection.start,
-          );
+    _linkDocumentSignature = jsonEncode(
+      widget.controller.document.toDelta().toJson(),
+    );
+    _linkLabelController.text = selectedText;
     _linkUrlController.clear();
     _setTray(_EditorTray.link);
   }
@@ -685,12 +717,18 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
       return;
     }
     final selection = _preservedSelection ?? widget.controller.selection;
-    final selectedLabel = selection.isCollapsed
-        ? label
-        : widget.controller.document.getPlainText(
-            selection.start,
-            selection.end - selection.start,
-          );
+    final selectedText = readQuillDocumentRange(
+      widget.controller.document,
+      selection.start,
+      selection.end - selection.start,
+    );
+    if (selectedText == null ||
+        _linkDocumentSignature !=
+            jsonEncode(widget.controller.document.toDelta().toJson())) {
+      setState(() => _linkLabelError = '正文已发生变化，请重新选择文字');
+      return;
+    }
+    final selectedLabel = selection.isCollapsed ? label : selectedText;
     if (parseInternalReference(url) != null &&
         RegExp('[\n\r\uFFFC]').hasMatch(selectedLabel)) {
       setState(() => _linkLabelError = '站内链接请选择同一行的普通文字');

@@ -1,4 +1,5 @@
 import 'package:flutter_quill/quill_delta.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_codec_structure.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_editor_document.dart';
 
 enum MarkdownCodecIssueKind {
@@ -37,10 +38,18 @@ class MarkdownDeltaDocument {
 }
 
 class MarkdownCodecException implements Exception {
-  const MarkdownCodecException(this.message);
+  const MarkdownCodecException(this.message, {this.structure});
 
   final String message;
+  final MarkdownCodecStructure? structure;
 
   @override
   String toString() => 'MarkdownCodecException: $message';
+}
+
+/// 只携带兼容性判断的固定原因，不持有原文或转换后的正文。
+class MarkdownEditingBlockedException implements Exception {
+  const MarkdownEditingBlockedException(this.reason);
+
+  final String reason;
 }

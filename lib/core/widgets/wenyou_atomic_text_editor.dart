@@ -8,6 +8,7 @@ import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_quill/quill_delta.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/editor/quill_document_range.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_reference.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_internal_reference_text.dart';
@@ -20,6 +21,7 @@ class WenyouAtomicTextController extends ChangeNotifier {
   WenyouAtomicTextController({
     required String initialMarkdown,
     required this.maximumMarkdownLength,
+    this.readStructuredClipboard,
   }) {
     final document = Document.fromDelta(_decode(initialMarkdown));
     quillController = _AtomicTextQuillController(
@@ -36,6 +38,7 @@ class WenyouAtomicTextController extends ChangeNotifier {
   }
 
   final int maximumMarkdownLength;
+  final Future<Delta?> Function(String visibleText)? readStructuredClipboard;
 
   late final QuillController quillController;
   final FocusNode focusNode = FocusNode();
@@ -236,27 +239,56 @@ class WenyouAtomicTextController extends ChangeNotifier {
   }
 
   Future<bool> _performPaste() async {
+    final selection = quillController.selection;
+    final original = quillController.document.toDelta();
     final clipboard = await Clipboard.getData(Clipboard.kTextPlain);
     if (_disposed || quillController.readOnly) return false;
     final text = _normalizeClipboardText(clipboard?.text);
     if (text == null || text.isEmpty) return false;
 
-    return pasteText(text);
+    Delta? structured;
+    try {
+      structured = await readStructuredClipboard?.call(text);
+    } on Object {
+      if (!_disposed) {
+        _failure = '粘贴失败，请重试。';
+        notifyListeners();
+      }
+      return false;
+    }
+    if (_disposed ||
+        quillController.readOnly ||
+        quillController.selection != selection ||
+        quillController.document.toDelta() != original) {
+      return false;
+    }
+    return _pasteText(text, structured: structured);
   }
 
-  bool pasteText(String text) {
+  bool pasteText(String text) => _pasteText(text);
+
+  bool _pasteText(String text, {Delta? structured}) {
     if (_disposed || quillController.readOnly || text.isEmpty) return false;
 
     final selection = quillController.selection;
-    final start = selection.start.clamp(0, documentLength);
-    final end = selection.end.clamp(start, documentLength);
-    final selectedText = end == start
-        ? ''
-        : quillController.document.getPlainText(start, end - start);
+    final start = selection.start;
+    final end = selection.end;
+    final selectedText = readQuillDocumentRange(
+      quillController.document,
+      start,
+      end - start,
+    );
+    if (selectedText == null) return false;
     final stored = _atomicClipboard.resolve(text);
-    final insert = stored ?? _internalReferenceDelta(text, selectedText);
+    final insert =
+        structured ?? stored ?? _internalReferenceDelta(text, selectedText);
     final data = insert ?? text;
-    final insertedLength = insert?.length ?? text.length;
+    final insertedLength = insert == null
+        ? text.length
+        : insert.operations.fold<int>(
+            0,
+            (length, operation) => length + operation.length!,
+          );
     quillController.replaceText(
       start,
       end - start,
@@ -379,11 +411,15 @@ class _AtomicTextQuillController extends QuillController {
     bool ignoreFocus = false,
     bool shouldNotifyListeners = true,
   }) {
+    final selectedText = readQuillDocumentRange(
+      document,
+      index,
+      len,
+      includeTerminalNewline: true,
+    );
+    if (selectedText == null) return;
     final internalReference = data is String
-        ? _internalReferenceDelta(
-            data,
-            len == 0 ? '' : document.getPlainText(index, len),
-          )
+        ? _internalReferenceDelta(data, selectedText)
         : null;
     final effectiveData = internalReference ?? data;
     final effectiveSelection = internalReference == null

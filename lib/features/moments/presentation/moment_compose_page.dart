@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/application/atomic_editor_clipboard.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_atomic_text_editor.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
@@ -73,6 +74,7 @@ class _MomentComposePageState extends ConsumerState<_MomentComposeEditor>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _contentController = WenyouAtomicTextController(
+      readStructuredClipboard: ref.read(atomicEditorClipboardReaderProvider),
       initialMarkdown: '',
       maximumMarkdownLength: 1000,
     );
@@ -383,7 +385,7 @@ class _MomentComposePageState extends ConsumerState<_MomentComposeEditor>
     });
     _onDraftChanged();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _pumpImageUploads();
+      if (mounted) _pumpImageUploads(selected: uploads);
     });
   }
 
@@ -392,7 +394,7 @@ class _MomentComposePageState extends ConsumerState<_MomentComposeEditor>
         .where((item) => item.id == id)
         .firstOrNull;
     if (upload == null || upload.active || _waitingToPublish) return;
-    unawaited(_runImageUpload(upload));
+    unawaited(_runImageUpload(upload, allowTransfer: true));
   }
 
   void _pauseUploads() {
@@ -411,11 +413,13 @@ class _MomentComposePageState extends ConsumerState<_MomentComposeEditor>
     }
   }
 
-  void _pumpImageUploads() {
+  void _pumpImageUploads({List<MomentComposeUpload> selected = const []}) {
     for (final upload
         in _pendingImageUploads.where((item) => !item.started).toList()) {
       upload.started = true;
-      unawaited(_runImageUpload(upload));
+      unawaited(
+        _runImageUpload(upload, allowTransfer: selected.contains(upload)),
+      );
     }
   }
 
@@ -434,7 +438,10 @@ class _MomentComposePageState extends ConsumerState<_MomentComposeEditor>
     })().whenComplete(() => upload.persisting = null);
   }
 
-  Future<void> _runImageUpload(MomentComposeUpload upload) async {
+  Future<void> _runImageUpload(
+    MomentComposeUpload upload, {
+    bool allowTransfer = false,
+  }) async {
     final generation = ++upload.generation;
     upload
       ..active = true
@@ -479,9 +486,11 @@ class _MomentComposePageState extends ConsumerState<_MomentComposeEditor>
         !_pendingImageUploads.contains(upload)) {
       return;
     }
-    final image = upload.pending != null
-        ? await controller.resumeUpload(upload.input, upload.pending!)
-        : await controller.uploadInput(upload.input);
+    final image = await controller.resumeUpload(
+      upload.input,
+      upload.pending,
+      allowTransfer: allowTransfer,
+    );
     if (!mounted ||
         _leaving ||
         generation != upload.generation ||

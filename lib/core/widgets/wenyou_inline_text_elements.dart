@@ -87,12 +87,14 @@ class WenyouInlineCodeSurface extends StatelessWidget {
     required this.text,
     this.style,
     this.foregroundColor,
+    this.preserveTextFont = false,
     super.key,
   });
 
   final String text;
   final TextStyle? style;
   final Color? foregroundColor;
+  final bool preserveTextFont;
 
   @override
   Widget build(BuildContext context) {
@@ -113,7 +115,7 @@ class WenyouInlineCodeSurface extends StatelessWidget {
         style: resolvedStyle.copyWith(
           color: foregroundColor ?? tokens.text,
           backgroundColor: Colors.transparent,
-          fontFamily: 'monospace',
+          fontFamily: preserveTextFont ? resolvedStyle.fontFamily : 'monospace',
         ),
       ),
     );

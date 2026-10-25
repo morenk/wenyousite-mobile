@@ -24,10 +24,14 @@ class ApiThreadComposeRepository implements ThreadComposeRepository {
     this._categories,
     this._usersApi, {
     this.roleMentionsSupported = false,
+    this.textFontSupported = false,
+    this.textFontV2Supported = false,
     this.textColorSupported = false,
   });
 
   final bool roleMentionsSupported;
+  final bool textFontSupported;
+  final bool textFontV2Supported;
   final bool textColorSupported;
 
   final ThreadsApi _threadsApi;
@@ -167,6 +171,11 @@ class ApiThreadComposeRepository implements ThreadComposeRepository {
         payload.body,
         supported: roleMentionsSupported,
       );
+      requireTextFontWriteSupport(
+        payload.body,
+        supported: textFontSupported,
+        v2Supported: textFontV2Supported,
+      );
       requireTextColorWriteSupport(
         payload.body,
         supported: payload.textColorSupported ?? textColorSupported,
@@ -180,6 +189,11 @@ class ApiThreadComposeRepository implements ThreadComposeRepository {
           builder
             ..markdownContractVersion = roleMentionsSupported
                 ? CreateThreadDtoMarkdownContractVersionEnum.number6
+                : null
+            ..textFontVersion = textFontV2Supported
+                ? CreateThreadDtoTextFontVersionEnum.number2
+                : textFontSupported
+                ? CreateThreadDtoTextFontVersionEnum.number1
                 : null
             ..textColorVersion =
                 (payload.textColorSupported ?? textColorSupported)
@@ -219,6 +233,11 @@ class ApiThreadComposeRepository implements ThreadComposeRepository {
   }) async {
     try {
       requireMentionWriteSupport(body, supported: roleMentionsSupported);
+      requireTextFontWriteSupport(
+        body,
+        supported: textFontSupported,
+        v2Supported: textFontV2Supported,
+      );
       requireTextColorWriteSupport(body, supported: textColorSupported);
       final normalizedTitle = title.trim();
       final normalizedCategory = categorySlug?.trim();
@@ -228,6 +247,11 @@ class ApiThreadComposeRepository implements ThreadComposeRepository {
           builder
             ..markdownContractVersion = roleMentionsSupported
                 ? SaveThreadAggregateDtoMarkdownContractVersionEnum.number6
+                : null
+            ..textFontVersion = textFontV2Supported
+                ? SaveThreadAggregateDtoTextFontVersionEnum.number2
+                : textFontSupported
+                ? SaveThreadAggregateDtoTextFontVersionEnum.number1
                 : null
             ..textColorVersion = textColorSupported
                 ? SaveThreadAggregateDtoTextColorVersionEnum.number1
@@ -327,6 +351,8 @@ final apiThreadComposeRepositoryProvider = Provider<ThreadComposeRepository>((
     api.getThreadsApi(),
     ref.watch(threadCategoryCatalogRepositoryProvider),
     api.getUsersApi(),
+    textFontSupported: ref.watch(appCapabilitiesProvider).textFontSupported,
+    textFontV2Supported: ref.watch(appCapabilitiesProvider).textFontV2Supported,
     textColorSupported: ref.watch(appCapabilitiesProvider).textColorSupported,
     roleMentionsSupported: ref
         .watch(appCapabilitiesProvider)

@@ -179,12 +179,14 @@ class UploadedEditorImage {
   ]);
 }
 
-/// 已确认上传的媒体仍在处理；后续只能查询这个身份，不能重复上传。
+/// 已分配的媒体身份；恢复必须继续使用该身份，不能另建记录。
 class PendingMediaUpload {
   const PendingMediaUpload({
     required this.mediaId,
     required this.purpose,
     this.needsConfirmation = false,
+    this.needsTransfer = false,
+    this.contentSha256,
   });
 
   final String mediaId;
@@ -193,10 +195,18 @@ class PendingMediaUpload {
   /// 对象已传完但确认响应未收到时，恢复同一身份而不是重新直传。
   final bool needsConfirmation;
 
+  /// PUT 未成功或结果不明；只允许用户明确重试时重签同一对象。
+  final bool needsTransfer;
+
+  /// 仅供本机核对归一化文件；不包含临时上传地址。
+  final String? contentSha256;
+
   Map<String, Object?> toJson() => {
     'mediaId': mediaId,
     'purpose': purpose.name,
     'needsConfirmation': needsConfirmation,
+    if (needsTransfer) 'needsTransfer': true,
+    if (contentSha256 != null) 'contentSha256': contentSha256,
   };
 
   static PendingMediaUpload? fromJson(Map<String, Object?> json) {
@@ -209,6 +219,12 @@ class PendingMediaUpload {
       mediaId: mediaId,
       purpose: purpose,
       needsConfirmation: json['needsConfirmation'] == true,
+      needsTransfer: json['needsTransfer'] == true,
+      contentSha256: switch (json['contentSha256']) {
+        final String value when RegExp(r'^[a-f0-9]{64}$').hasMatch(value) =>
+          value,
+        _ => null,
+      },
     );
   }
 }
@@ -221,9 +237,16 @@ class MediaProcessingPending implements Exception {
 
 /// 查询失败不等于仍在处理；保留身份用于允许的显式恢复。
 class MediaProcessingLookupFailure implements Exception {
-  const MediaProcessingLookupFailure(this.upload, this.cause);
+  const MediaProcessingLookupFailure(
+    this.upload,
+    this.cause, {
+    this.transferFailed = false,
+  });
   final PendingMediaUpload upload;
   final Object cause;
+
+  /// 对象存储拒绝旧签名仍可重签，不等同业务 API 的媒体访问被禁止。
+  final bool transferFailed;
 }
 
 List<String> _orderedUrls(Iterable<String?> values) {

@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/application/atomic_editor_clipboard.dart';
 import 'package:wenyousite_mobile/core/media/media_display.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_atomic_text_editor.dart';
@@ -109,6 +110,7 @@ class _MomentCommentComposerState extends ConsumerState<MomentCommentComposer>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _textController = WenyouAtomicTextController(
+      readStructuredClipboard: ref.read(atomicEditorClipboardReaderProvider),
       initialMarkdown: widget.initialDraft.content,
       maximumMarkdownLength: 500,
     );
@@ -443,10 +445,10 @@ class _MomentCommentComposerState extends ConsumerState<MomentCommentComposer>
       _failed = false;
     });
     _notifyDraftChanged();
-    await _runImageUpload();
+    await _runImageUpload(allowTransfer: true);
   }
 
-  Future<void> _retryImage() => _runImageUpload();
+  Future<void> _retryImage() => _runImageUpload(allowTransfer: true);
 
   void _removePending() {
     _hideImageLimitHint();
@@ -479,7 +481,7 @@ class _MomentCommentComposerState extends ConsumerState<MomentCommentComposer>
         });
   }
 
-  Future<void> _runImageUpload() async {
+  Future<void> _runImageUpload({bool allowTransfer = false}) async {
     final input = _pendingInput;
     if (input == null) return;
     final generation = ++_generation;
@@ -503,9 +505,11 @@ class _MomentCommentComposerState extends ConsumerState<MomentCommentComposer>
       return;
     }
     if (!mounted || generation != _generation || _closing) return;
-    final image = _pendingUpload == null
-        ? await controller.uploadInput(_pendingInput!)
-        : await controller.resumeUpload(_pendingInput!, _pendingUpload!);
+    final image = await controller.resumeUpload(
+      _pendingInput!,
+      _pendingUpload,
+      allowTransfer: allowTransfer,
+    );
     if (!mounted || generation != _generation || _closing) return;
     if (image == null) {
       _pendingUpload = ref

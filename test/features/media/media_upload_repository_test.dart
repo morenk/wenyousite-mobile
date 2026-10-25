@@ -11,6 +11,35 @@ import 'package:wenyousite_mobile/features/media/data/media_upload_repository.da
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
 
 void main() {
+  test('旧上传仓库不支持重传时保留媒体身份和重新打开动作', () async {
+    final gateway = RepositoryMediaUploadGateway(_UnsupportedRepository());
+    final task = gateway.retryImageUpload(
+      MediaUploadInput(filename: 'retry.png', bytes: Uint8List.fromList([1])),
+      const PendingMediaUpload(
+        mediaId: 'pending',
+        purpose: MediaUploadPurpose.richContent,
+        needsTransfer: true,
+      ),
+    );
+    await expectLater(
+      task.result,
+      throwsA(
+        isA<MediaProcessingLookupFailure>()
+            .having((e) => e.upload.mediaId, 'media id', 'pending')
+            .having(
+              (e) => e.cause,
+              'typed failure',
+              isA<ApiFailure>()
+                  .having((e) => e.legacyUserMessage, 'legacy copy', isNull)
+                  .having(
+                    (e) => e.recoveryAction,
+                    'recovery',
+                    FailureRecoveryAction.reopen,
+                  ),
+            ),
+      ),
+    );
+  });
   test('旧上传仓库不支持续查时保留重新打开动作，不重新上传', () async {
     final gateway = RepositoryMediaUploadGateway(_UnsupportedRepository());
     final task = gateway.resumeImageProcessing(
@@ -419,14 +448,28 @@ void main() {
         ),
       ),
       throwsA(
-        isA<ApiFailure>()
+        isA<MediaProcessingLookupFailure>()
             .having(
-              (failure) => failure.userMessage,
-              'message',
-              '图片直传失败，请检查网络后重试。',
+              (failure) => failure.upload.mediaId,
+              'retained media',
+              'media-one',
             )
             .having(
-              (failure) => failure.toString(),
+              (failure) => failure.upload.needsTransfer,
+              'needs transfer',
+              isTrue,
+            )
+            .having(
+              (failure) => failure.cause,
+              'typed cause',
+              isA<ApiFailure>().having(
+                (cause) => cause.reason,
+                'reason',
+                FailureReason.timeout,
+              ),
+            )
+            .having(
+              (failure) => failure.cause.toString(),
               'safe string',
               isNot(contains('secret=value')),
             ),

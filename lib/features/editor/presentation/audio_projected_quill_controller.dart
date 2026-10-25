@@ -4,6 +4,7 @@ import 'dart:async';
 import 'package:flutter/services.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_quill/quill_delta.dart';
+import 'package:wenyousite_mobile/core/editor/quill_document_range.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_audio_embed.dart';
 import 'package:wenyousite_mobile/core/media/media_audio.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/literal_text_quill_controller.dart';
@@ -78,17 +79,27 @@ class AudioProjectedQuillController extends LiteralTextQuillController {
     TextSelection? textSelection, {
     bool ignoreFocus = false,
     bool shouldNotifyListeners = true,
-  }) => runEditCommand(() {
-    super.replaceText(
+  }) {
+    if (!isQuillDocumentRangeValid(
+      document,
       index,
       len,
-      data,
-      textSelection,
-      ignoreFocus: ignoreFocus,
-      shouldNotifyListeners: shouldNotifyListeners,
-    );
-    projectAudio(source: ChangeSource.local);
-  });
+      includeTerminalNewline: true,
+    )) {
+      return;
+    }
+    runEditCommand(() {
+      super.replaceText(
+        index,
+        len,
+        data,
+        textSelection,
+        ignoreFocus: ignoreFocus,
+        shouldNotifyListeners: shouldNotifyListeners,
+      );
+      projectAudio(source: ChangeSource.local);
+    });
+  }
 
   @override
   void formatText(

@@ -104,6 +104,7 @@ class _PostIdentityProfilePreviewState
       mainAxisSize: MainAxisSize.min,
       children: [
         PostReadingBody(
+          enableTextFonts: false,
           post: post,
           galleryTarget: ReadingGalleryTarget(
             scope: parent == null

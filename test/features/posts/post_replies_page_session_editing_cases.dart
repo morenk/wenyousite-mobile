@@ -181,7 +181,7 @@ void registerPostRepliesPageSessionEditingCases() {
     await postRepliesPageTestPumpUi(tester);
 
     expect(find.byKey(const Key('post-composer-sheet')), findsNothing);
-    expect(find.text('登录后发表回复'), findsOneWidget);
+    expect(find.byTooltip('登录后回复'), findsOneWidget);
 
     await container
         .read(sessionControllerProvider.notifier)
@@ -374,7 +374,7 @@ void registerPostRepliesPageSessionEditingCases() {
     expect(find.byKey(const Key('post-report-reply-own')), findsNothing);
     expect(find.byKey(const Key('post-report-reply-other')), findsNothing);
     expect(find.byKey(const Key('post-reply-compose')), findsOneWidget);
-    expect(find.text('发表回复…'), findsOneWidget);
+    expect(find.text('回复一下'), findsOneWidget);
     expect(find.byType(AnimatedContainer), findsNothing);
     expect(tester.takeException(), isNull);
 

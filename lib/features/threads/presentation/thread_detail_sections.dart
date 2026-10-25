@@ -168,6 +168,7 @@ class ThreadSubthreadBody extends ConsumerWidget {
             )
           else if (body.postId == null)
             WenyouMarkdown(
+              enableTextFonts: true,
               key: Key('thread-body-${subthread.id}'),
               bodyFontSize: ref.watch(threadBodyFontSizeProvider),
               data: body.markdown,
@@ -184,6 +185,7 @@ class ThreadSubthreadBody extends ConsumerWidget {
             )
           else
             StickerPostMarkdown(
+              enableTextFonts: true,
               key: Key('thread-body-${subthread.id}'),
               bodyFontSize: ref.watch(threadBodyFontSizeProvider),
               postId: body.postId!,
@@ -481,6 +483,7 @@ class ThreadFloorCard extends ConsumerWidget {
                     )
                   else
                     StickerPostMarkdown(
+                      enableTextFonts: true,
                       postId: floor.id,
                       bodyFontSize: ref.watch(threadBodyFontSizeProvider),
                       postVersion: floor.version,
@@ -668,6 +671,7 @@ class _FloorInlineReplyCard extends ConsumerWidget {
           else
             StickerPostMarkdown(
               postId: reply.id,
+              enableTextFonts: false,
               postVersion: reply.version,
               galleryTarget: ReadingGalleryTarget(
                 scope: ReadingGalleryScope.postReplies,

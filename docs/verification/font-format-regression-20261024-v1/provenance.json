@@ -1,0 +1,14 @@
+{
+  "archiveSha256": "88fec204b99b2b9b3b3dcf0f8e708063d01635fbd50e1114fb0d1177ae8b3b31",
+  "backendContractRevision": "2db4ef1254c7738966dc28b1cd1fc10dcb19da47",
+  "parametersVersion": 1,
+  "flutterVersion": "3.44.8",
+  "dartVersion": "3.12.2",
+  "engineRevision": "0cd610717bde95fd88343c64f81c11ba4e5c0010",
+  "platform": "Windows x64 flutter_tester",
+  "scope": "four core shards; parametersVersion=1; no Android device or parametersVersion=2 claim",
+  "toolSha256": {
+    "tool\\font_format_probe.dart": "ab972c15cc74b7a124ad8553cafacbe4fe951debb42c0445b40949a5a4be861a",
+    "tool\\font_format_probe_test.dart": "1026ce20604296f05d5c5500957b4ce09f8a96d84256213d6322ccb48bfd6484"
+  }
+}

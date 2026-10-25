@@ -15,6 +15,7 @@ import 'package:wenyousite_mobile/core/network/session_controller.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_anchored_popover.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_snack_bar.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_unread_indicator.dart';
+import 'package:wenyousite_mobile/features/app_shell/application/automatic_unread_refresh.dart';
 import 'package:wenyousite_mobile/features/app_shell/application/background_online_poller.dart';
 import 'package:wenyousite_mobile/features/app_shell/application/background_online_reminder_coordinator.dart';
 import 'package:wenyousite_mobile/features/app_shell/application/background_reminder_runtime.dart';
@@ -52,6 +53,7 @@ class _AppScaffoldState extends ConsumerState<AppScaffold>
   void initState() {
     super.initState();
     _backgroundCoordinator = BackgroundOnlineReminderCoordinator(
+      recovery: ref.read(sessionControllerProvider.notifier).recovery,
       pollingSession: ref.read(backgroundOnlinePollerProvider),
       notificationGateway: ref.read(backgroundNotificationGatewayProvider),
       executionGateway: ref.read(backgroundExecutionGatewayProvider),
@@ -352,11 +354,15 @@ class _AppScaffoldState extends ConsumerState<AppScaffold>
 
   void _refreshUnreadCounts() {
     unawaited(
-      ref.read(notificationUnreadControllerProvider.notifier).refresh(),
+      refreshAutomaticUnreadCounts(
+        ref.read(sessionControllerProvider.notifier).recovery,
+        [
+          ref.read(notificationUnreadControllerProvider.notifier).refresh,
+          if (_pollDirectMessages)
+            ref.read(directUnreadControllerProvider.notifier).refresh,
+        ],
+      ),
     );
-    if (_pollDirectMessages) {
-      unawaited(ref.read(directUnreadControllerProvider.notifier).refresh());
-    }
   }
 
   void _refreshOpenDirectConversationList() {

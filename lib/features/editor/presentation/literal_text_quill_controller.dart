@@ -2,11 +2,13 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_quill/quill_delta.dart';
+import 'package:wenyousite_mobile/core/editor/quill_document_range.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_line_metadata.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_link_identity.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_paragraph_boundaries.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_clipboard_paste.dart';
+import 'package:wenyousite_mobile/features/editor/presentation/editor_divider_structure.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_document_alignment.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_selection_history.dart';
 
@@ -16,6 +18,9 @@ typedef EditorTypingStyleSnapshot = ({
   bool hasColor,
   String? color,
   int generation,
+  bool hasFont,
+  String? font,
+  int fontGeneration,
 });
 
 /// Marks literal source at the exact offset before async changes can race.
@@ -32,6 +37,37 @@ class LiteralTextQuillController extends QuillController {
   int _editDepth = 0;
   bool _textColorInputEnabled = true;
   int _typingInputGeneration = 0;
+  bool _hasTypingFont = false;
+  String? _typingFont;
+  int _fontGeneration = 0;
+  String? _fontApplication;
+  int _fontApplicationGeneration = 0;
+  String? get fontApplication => _fontApplication;
+  int get fontApplicationGeneration => _fontApplicationGeneration;
+
+  /// 仅作者明确选用触发进度，草稿恢复/阅读/粘贴不产生选择意图。
+  void beginFontApplication(String? font) {
+    _fontApplication = font;
+    _fontApplicationGeneration++;
+    notifyListeners();
+  }
+
+  /// 字体仅属于当前光标，输入和 IME 保持，主动移位或历史操作退出。
+  void useFontForTyping(String? font) {
+    if (readOnly) return;
+    _hasTypingFont = true;
+    _typingFont = font;
+    document.history.lastRecorded = 0;
+    _restoreTypingStyle();
+    notifyListeners();
+  }
+
+  void _clearTypingFont({bool invalidateSnapshot = false}) {
+    _hasTypingFont = false;
+    _typingFont = null;
+    if (invalidateSnapshot) _fontGeneration++;
+    toggledStyle = toggledStyle.removeAll({Attribute.font});
+  }
 
   bool get textColorInputEnabled => _textColorInputEnabled;
   set textColorInputEnabled(bool enabled) {
@@ -49,7 +85,7 @@ class LiteralTextQuillController extends QuillController {
     _hasTypingColor = true;
     _typingColor = color;
     document.history.lastRecorded = 0;
-    _restoreTypingColor();
+    _restoreTypingStyle();
     notifyListeners();
   }
 
@@ -61,6 +97,9 @@ class LiteralTextQuillController extends QuillController {
     hasColor: _hasTypingColor,
     color: _typingColor,
     generation: _typingInputGeneration,
+    hasFont: _hasTypingFont,
+    font: _typingFont,
+    fontGeneration: _fontGeneration,
   );
 
   /// 工具面板恢复的是原输入位置，不能被当成主动移位清掉未落地样式。
@@ -71,18 +110,25 @@ class LiteralTextQuillController extends QuillController {
   }) {
     final saved = snapshot ?? captureTypingStyle();
     if (!identical(saved.document, document)) return;
-    _withTypingColorState(() {
+    _withTypingStyleState(() {
       final canRestoreColor =
           saved.generation == _typingInputGeneration &&
           _textColorInputEnabled &&
           !readOnly;
       _hasTypingColor = saved.hasColor && canRestoreColor;
       _typingColor = _hasTypingColor ? saved.color : null;
+      final canRestoreFont =
+          saved.fontGeneration == _fontGeneration && !readOnly;
+      _hasTypingFont = saved.hasFont && canRestoreFont;
+      _typingFont = _hasTypingFont ? saved.font : null;
       super.updateSelection(selected, ChangeSource.local);
       toggledStyle = canRestoreColor
           ? saved.style
           : saved.style.removeAll({Attribute.color});
-      _restoreTypingColor();
+      if (!canRestoreFont) {
+        toggledStyle = toggledStyle.removeAll({Attribute.font});
+      }
+      _restoreTypingStyle();
       notifyListeners();
     });
   }
@@ -90,6 +136,8 @@ class LiteralTextQuillController extends QuillController {
   @override
   set readOnly(bool value) {
     if (value) {
+      _fontApplication = null;
+      _clearTypingFont(invalidateSnapshot: true);
       _typingInputGeneration++;
       _hasTypingColor = false;
       _typingColor = null;
@@ -105,7 +153,12 @@ class LiteralTextQuillController extends QuillController {
       : super.getSelectionStyle().attributes[Attribute.color.key]?.value
             as String?;
 
-  void _restoreTypingColor() {
+  void _restoreTypingStyle() {
+    if (_hasTypingFont) {
+      toggledStyle = toggledStyle.put(
+        Attribute.clone(Attribute.font, _typingFont),
+      );
+    }
     if (_hasTypingColor || !_textColorInputEnabled) {
       toggledStyle = toggledStyle.put(
         Attribute.clone(Attribute.color, typingColor),
@@ -113,9 +166,9 @@ class LiteralTextQuillController extends QuillController {
     }
   }
 
-  /// 纯文本粘贴在提交时取色一次，验证和真正插入使用同一份 Delta。
-  /// 结构化片段不调用这里，颜色只属于非换行的普通字符。
-  Delta colorPlainTextPaste(Delta source) {
+  /// 纯文本粘贴在提交时取得输入色和字体，验证与插入使用同一份 Delta。
+  /// 结构化片段不调用这里，行内样式只属于非换行的普通字符。
+  Delta stylePlainTextPaste(Delta source) {
     final color = typingColor;
     final result = Delta();
     for (final operation in source.operations) {
@@ -131,12 +184,17 @@ class LiteralTextQuillController extends QuillController {
             operation.attributes ?? {},
           )..remove('color');
           if (color != null) attributes['color'] = color;
+          if (_hasTypingFont) {
+            attributes.remove('font');
+            if (_typingFont != null) attributes['font'] = _typingFont;
+          }
           result.insert(parts[index], attributes.isEmpty ? null : attributes);
         }
         if (index < parts.length - 1) {
-          final attributes = Map<String, dynamic>.from(
-            operation.attributes ?? {},
-          )..remove('color');
+          final attributes =
+              Map<String, dynamic>.from(operation.attributes ?? {})
+                ..remove('color')
+                ..remove('font');
           result.insert('\n', attributes.isEmpty ? null : attributes);
         }
       }
@@ -146,6 +204,8 @@ class LiteralTextQuillController extends QuillController {
 
   @override
   set document(Document value) {
+    _fontApplication = null;
+    _clearTypingFont(invalidateSnapshot: true);
     _hasTypingColor = false;
     _typingColor = null;
     toggledStyle = const Style();
@@ -161,37 +221,46 @@ class LiteralTextQuillController extends QuillController {
             textSelection.extentOffset != selection.extentOffset)) {
       _hasTypingColor = false;
       _typingColor = null;
+      _clearTypingFont();
     }
     super.updateSelection(textSelection, source);
-    _restoreTypingColor();
+    _restoreTypingStyle();
   }
 
   /// 复合命令的正文变化与最终选区一起附着于同一原生历史条目。
   void runEditCommand(void Function() command) =>
-      _withTypingColorState(() => _selectionHistory.record(this, command));
+      _withTypingStyleState(() => _selectionHistory.record(this, command));
 
   void projectDocumentView(Delta Function(Delta) project) =>
-      _withTypingColorState(() => _selectionHistory.projectView(this, project));
+      _withTypingStyleState(() => _selectionHistory.projectView(this, project));
 
-  void _withTypingColorState(void Function() command) {
+  void _withTypingStyleState(void Function() command) {
     _editDepth++;
     try {
       command();
     } finally {
       _editDepth--;
-      _restoreTypingColor();
+      _restoreTypingStyle();
     }
   }
 
   @override
-  void undo() => _withTypingColorState(
-    () => _selectionHistory.restore(this, super.undo, undo: true),
-  );
+  void undo() {
+    _fontApplication = null;
+    _clearTypingFont(invalidateSnapshot: true);
+    _withTypingStyleState(
+      () => _selectionHistory.restore(this, super.undo, undo: true),
+    );
+  }
 
   @override
-  void redo() => _withTypingColorState(
-    () => _selectionHistory.restore(this, super.redo, undo: false),
-  );
+  void redo() {
+    _fontApplication = null;
+    _clearTypingFont(invalidateSnapshot: true);
+    _withTypingStyleState(
+      () => _selectionHistory.restore(this, super.redo, undo: false),
+    );
+  }
 
   @override
   void formatText(
@@ -199,22 +268,29 @@ class LiteralTextQuillController extends QuillController {
     int len,
     Attribute? attribute, {
     bool shouldNotifyListeners = true,
-  }) => runEditCommand(
-    () => super.formatText(
+  }) => runEditCommand(() {
+    super.formatText(
       index,
       len,
       attribute,
       shouldNotifyListeners: shouldNotifyListeners,
-    ),
-  );
+    );
+    preserveEditorDividerBlocks(this);
+  });
 
   @override
   void compose(Delta delta, TextSelection textSelection, ChangeSource source) =>
-      runEditCommand(() => super.compose(delta, textSelection, source));
+      runEditCommand(() {
+        super.compose(delta, textSelection, source);
+        preserveEditorDividerBlocks(this);
+      });
 
   @override
   Style getSelectionStyle() {
     var selected = super.getSelectionStyle();
+    if (selection.isCollapsed && _hasTypingFont) {
+      selected = selected.put(Attribute.clone(Attribute.font, _typingFont));
+    }
     if (selection.isCollapsed && (_hasTypingColor || !_textColorInputEnabled)) {
       selected = selected.put(Attribute.clone(Attribute.color, typingColor));
     }
@@ -251,30 +327,44 @@ class LiteralTextQuillController extends QuillController {
     TextSelection? textSelection, {
     bool ignoreFocus = false,
     bool shouldNotifyListeners = true,
-  }) => runEditCommand(
-    () => _replaceLiteralText(
+  }) {
+    final selectedText = readQuillDocumentRange(
+      document,
       index,
       len,
-      data,
-      textSelection,
-      ignoreFocus: ignoreFocus,
-      shouldNotifyListeners: shouldNotifyListeners,
-    ),
-  );
+      includeTerminalNewline: true,
+    );
+    if (selectedText == null) return;
+    runEditCommand(() {
+      _replaceLiteralText(
+        index,
+        len,
+        data,
+        textSelection,
+        selectedText: selectedText,
+        ignoreFocus: ignoreFocus,
+        shouldNotifyListeners: shouldNotifyListeners,
+      );
+      preserveEditorDividerBlocks(this);
+    });
+  }
 
   void _replaceLiteralText(
     int index,
     int len,
     Object? data,
     TextSelection? textSelection, {
+    required String selectedText,
     required bool ignoreFocus,
     required bool shouldNotifyListeners,
   }) {
     final before = document.toDelta();
-    if (data is String) _restoreTypingColor();
-    // 外来 Delta 已携带完整颜色事实。Quill 的非 String 补样式只作用
-    // 第一个字符，不能让待输入色污染富文本／已校验的粘贴候选。
-    if (data is Delta) toggledStyle = toggledStyle.removeAll({Attribute.color});
+    if (data is String) _restoreTypingStyle();
+    // 外来 Delta 已携带完整颜色和字体事实。Quill 的非 String 补样式只作用
+    // 第一个字符，不能让光标处的待输入样式污染已校验的粘贴候选。
+    if (data is Delta) {
+      toggledStyle = toggledStyle.removeAll({Attribute.color, Attribute.font});
+    }
     final preservesLink =
         toggledStyle.attributes[Attribute.link.key]?.value != null ||
         document.collectStyle(index, 0).attributes[Attribute.link.key]?.value !=
@@ -291,10 +381,12 @@ class LiteralTextQuillController extends QuillController {
       }
     }
     final inputColor = typingColor;
+    final hasInputFont = _hasTypingFont;
+    final inputFont = _typingFont;
     final internalReference = data is String
         ? WenyouEditorClipboardPastePlanner.internalReferenceDelta(
             data,
-            len == 0 ? '' : document.getPlainText(index, len),
+            selectedText,
           )
         : null;
     final newline = _plainNewline(data, index);
@@ -331,6 +423,7 @@ class LiteralTextQuillController extends QuillController {
     // 单个回车继续使用原有块规则。事务结束再恢复临时输入色。
     toggledStyle = toggledStyle.removeAll({
       Attribute.color,
+      if (hasInputFont) Attribute.font,
       ...multilineStyle.values,
     });
     if (_containsEmbed(effectiveData)) {
@@ -365,8 +458,9 @@ class LiteralTextQuillController extends QuillController {
     if (sourceSeparatorPatch.isNotEmpty) {
       document.compose(sourceSeparatorPatch, ChangeSource.local);
     }
-    if (newline != null && effectiveSelection != null) {
-      // 显式换行 Delta 不经过插入规则，不应再次使用 Quill 的位置补偿。
+    if (effectiveData is Delta && effectiveSelection != null) {
+      // 调用方已按 Delta 的实际长度给出终点，不应再使用 Quill 将整个
+      // 片段当成单个 embed 的位置补偿；后续块边界补丁只转换一次。
       updateSelection(effectiveSelection, ChangeSource.local);
     }
     if (effectiveData is Delta &&
@@ -425,6 +519,7 @@ class LiteralTextQuillController extends QuillController {
           ...?multilineStyle.toJson(),
           MarkdownDeltaCodec.literalTextAttribute: true,
           Attribute.color.key: inputColor,
+          if (hasInputFont) Attribute.font.key: inputFont,
           // Quill 续写只继承公开 link 属性；仅明确位于同一原链接的
           // String 输入补回来源，外来 Delta 与相邻独立链接不能猜测合并。
           markdownLinkIdentityKey: preservesLink
