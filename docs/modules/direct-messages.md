@@ -17,6 +17,8 @@
 
 ## 3. 页面、入口和导航关系
 
+2026-10-24 候选／待负责人验收：图片附件统一从应用内相册单选，确认后仅显示本地附件；仍由用户点发送才上传。取消、返回与换号不发送附件。 选图权限、系统备用入口、验证与未验收边界见[编辑器与应用内相册候选](../architecture/compose-gallery-candidate.md)。
+
 轻表面（2026-10-07 负责人确认合并）：私聊会话列表沿用消息中心柔和页底，连续 panel 内容表面使用首尾圆角和内部轻分隔；保留会话／请求／归档筛选、摘要和角标。聊天正文与输入区保持既有样式。 详见[候选记录](../architecture/mobile-soft-surfaces-acceptance.md)。
 
 会话归档与移回操作使用统一锚点菜单，保留既有状态和确认／恢复行为。新建会话失败按钮统一为“重试”，错误与输入不会丢失。
@@ -134,6 +136,7 @@ capability 由 app 组合层从启动契约注入，前台生命周期由应用�
 
 本轮字体样张契约来源：Backend `8a5d21858e04c69832c90e5a3a10f1e70fdcb545`／API `5.44.0-dev.20261024.3`。HTTP 形状不变，仅统一后台自动样张文案；本模块运行逻辑不变。离线格式验证范围见[验证说明](../architecture/font-format-offline-probe.md)。
 
+2026-10-24 相册候选来源复核：已部署 Backend `33574ae73d88123aa216a93f9cc81eab60fb9ee9`／API `5.44.0-dev.20261024.2`，其第一父提交为原固定 `31f39ff317e56d6eb49b4c5e60ecdb93dfc9ec06`。机器契约及消费者指南零差异，仅同步来源与导出运维说明；本模块行为和已有验收边界保持，详见[来源同步](../architecture/compose-gallery-contract-source-sync.md)。
 
 2026-10-24 交付前来源复核：线上更新至 Backend `31f39ff317e56d6eb49b4c5e60ecdb93dfc9ec06`／API `5.44.0-dev.20261024.2`。机器契约零差异，仅字体 Worker 运维说明新增 8 行；同步来源与说明，应用及构建源码不变。完整门禁和窄复核分别见[集成验收记录](../architecture/alignment-font-integration-acceptance.md)。
 

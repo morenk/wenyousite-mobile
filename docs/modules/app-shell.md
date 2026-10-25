@@ -1,5 +1,7 @@
 # 应用壳
 
+2026-10-25 组合候选／待负责人真机验收：独立测试分支同时包含 PR #117 的相册宿主／路由保留与 PR #118 的同值元信息保位，实际更新检查与切号边界保留；见[组合记录](../architecture/pr117-118-combined-candidate.md)。
+
 状态：`in_progress`
 
 2026-10-24 动态字体候选／待真机验收：固定 Backend `f1025db4ef0d4986f53a4beffac6514d7ee16357`／API `5.44.0-dev.20261024.2`。解析textFontV2Supported与textFontV2WriteEnabled，缺失按false；读取能力与新字体选择开关独立。字体服务与引擎追加账本跨Provider/账号变化保持，前后台触发状态复核。v1 固定映射、防降级与撤回兼容已接入；本地检查与构建已执行，公网精确兼容随部署复核，产品 Android 同会话验收待完成，见[持续加载记录](../architecture/thread-fonts-mobile-continuous-loading.md)。
@@ -105,6 +107,8 @@ Android Manifest 明确关闭全量备份，Android 11 及以下和 Android 12+ 
 
 ## 9. 加载、空数据、错误、重试和冲突状态
 
+楼中楼恢复前台保位候选保留每次 `resumed` 的元信息及更新检查，继续处理真实强制升级与未知兼容版本；静默检查失败仍保留可用页面。帖子消费者按实际使用的四项支持能力比较，元信息对象更新不再无条件重建讨论状态。会话与可见性失效规则保持，进程回收后的阅读恢复不在本轮范围。证据与未验收项见[候选记录](../architecture/post-replies-resume-candidate.md)。
+
 收藏夹目录首次读取失败使用共享错误面板，保留收藏类型与原重试回调。 通用失败内容保留问题编号，取消请求不展示错误。2026-10-18 负责人真机验收通过，见[错误重试与瀑布流验收](../architecture/error-retry-waterfall-acceptance.md)。
 
 私有下载适配候选／待验收：429 的 `X-Download-Limit-Reason=device_daily_limit` 显示“此设备今日下载次数已用完，请在北京时间次日零点后重试。”，`ip_daily_limit` 显示“当前网络今日下载次数已用完，请在北京时间次日零点后重试。”；字节预算、频率、并发、带宽以及未知／缺失原因仍显示“下载请求较多，请稍后重试。”。503 继续显示“安装包暂时无法下载，请稍后重试。”，不因附带原因头改判。原因只读响应头，HEAD 无正文和 GET 空 429 均可处理。
@@ -178,6 +182,7 @@ Android 的 Debug、Profile 和 Release 均仅支持 `arm64-v8a`，使用 ARM64 
 
 本轮字体样张契约来源：Backend `8a5d21858e04c69832c90e5a3a10f1e70fdcb545`／API `5.44.0-dev.20261024.3`。HTTP 形状不变，仅统一后台自动样张文案；本模块运行逻辑不变。离线格式验证范围见[验证说明](../architecture/font-format-offline-probe.md)。
 
+2026-10-24 相册候选来源复核：已部署 Backend `33574ae73d88123aa216a93f9cc81eab60fb9ee9`／API `5.44.0-dev.20261024.2`，其第一父提交为原固定 `31f39ff317e56d6eb49b4c5e60ecdb93dfc9ec06`。机器契约及消费者指南零差异，仅同步来源与导出运维说明；本模块行为和已有验收边界保持，详见[来源同步](../architecture/compose-gallery-contract-source-sync.md)。
 
 2026-10-24 交付前来源复核：线上更新至 Backend `31f39ff317e56d6eb49b4c5e60ecdb93dfc9ec06`／API `5.44.0-dev.20261024.2`。机器契约零差异，仅字体 Worker 运维说明新增 8 行；同步来源与说明，应用及构建源码不变。完整门禁和窄复核分别见[集成验收记录](../architecture/alignment-font-integration-acceptance.md)。
 

@@ -604,13 +604,23 @@ class ApiPostRepository implements PostRepository {
 }
 
 final apiPostRepositoryProvider = Provider<PostRepository>((ref) {
+  // 前台元信息重查会产生新能力对象；只有写入所需能力真正变化时
+  // 才更换仓库，避免连带重建正在阅读的讨论窗口和编辑会话。
+  final capabilities = ref.watch(
+    appCapabilitiesProvider.select(
+      (value) => (
+        textFontSupported: value.textFontSupported,
+        textFontV2Supported: value.textFontV2Supported,
+        textColorSupported: value.textColorSupported,
+        roleMentionsSupported: value.roleMentionsSupported,
+      ),
+    ),
+  );
   return ApiPostRepository(
     ref.watch(wenyouApiProvider).getPostsApi(),
-    textFontSupported: ref.watch(appCapabilitiesProvider).textFontSupported,
-    textFontV2Supported: ref.watch(appCapabilitiesProvider).textFontV2Supported,
-    textColorSupported: ref.watch(appCapabilitiesProvider).textColorSupported,
-    roleMentionsSupported: ref
-        .watch(appCapabilitiesProvider)
-        .roleMentionsSupported,
+    textFontSupported: capabilities.textFontSupported,
+    textFontV2Supported: capabilities.textFontV2Supported,
+    textColorSupported: capabilities.textColorSupported,
+    roleMentionsSupported: capabilities.roleMentionsSupported,
   );
 });

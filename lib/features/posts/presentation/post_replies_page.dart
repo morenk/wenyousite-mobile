@@ -15,6 +15,7 @@ import 'package:wenyousite_mobile/core/widgets/discussion_target_cover.dart';
 import 'package:wenyousite_mobile/core/widgets/discussion_window_prefetch.dart';
 import 'package:wenyousite_mobile/core/widgets/reading_quick_scroll.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_reply_action_bar.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_controllers.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_discussion_author_directory_ports.dart';
@@ -420,14 +421,14 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
               (!isTargetEntry || _targetRevealed) &&
               state.transientFailure != null &&
               state.retryAction == PostDiscussionRetryAction.loadMore,
-          bottomObstructionKey: _composeObstructionKey,
           child: DiscussionSelectionScope(
             controller: _selection,
             child: readingWithTarget,
           ),
         ),
         // 保持测量节点稳定，避免切号期间 Scaffold 同时保留新旧发表入口。
-        floatingActionButton: KeyedSubtree(
+        // Scaffold 已将阅读视口缩短到底栏上缘，不再重复扣除底栏高度。
+        bottomNavigationBar: KeyedSubtree(
           key: _composeObstructionKey,
           child: ExcludeSemantics(
             excluding: isTargetEntry && !_targetRevealed,
@@ -435,28 +436,31 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
               ignoring: isTargetEntry && !_targetRevealed,
               child: readyRoot == null
                   ? const SizedBox.shrink()
-                  : WenyouComposerAction(
-                      key: const Key('post-reply-compose'),
-                      label: session.isAuthenticated ? '发表回复…' : '登录后发表回复',
-                      icon: session.isAuthenticated
-                          ? WenyouIconIds.actionReply
-                          : WenyouIconIds.actionLogin,
-                      onPressed: session.isAuthenticated
-                          ? () => _compose(
-                              context,
-                              ref,
-                              provider,
-                              postReplyTarget(readyRoot, readyRoot),
-                            )
-                          : () => context.pushNamed(
-                              'login',
-                              queryParameters: {'returnTo': _location()},
-                            ),
+                  : WenyouReplyActionBar(
+                      children: [
+                        Expanded(
+                          child: WenyouReplyFieldAction(
+                            key: const Key('post-reply-compose'),
+                            fieldKey: const Key('post-reply-compose-field'),
+                            authenticated: session.isAuthenticated,
+                            onPressed: session.isAuthenticated
+                                ? () => _compose(
+                                    context,
+                                    ref,
+                                    provider,
+                                    postReplyTarget(readyRoot, readyRoot),
+                                  )
+                                : () => context.pushNamed(
+                                    'login',
+                                    queryParameters: {'returnTo': _location()},
+                                  ),
+                          ),
+                        ),
+                      ],
                     ),
             ),
           ),
         ),
-        floatingActionButtonAnimator: FloatingActionButtonAnimator.noAnimation,
       ),
     );
   }
