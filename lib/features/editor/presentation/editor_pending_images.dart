@@ -204,14 +204,14 @@ class EditorPendingImages extends ChangeNotifier {
     final item = EditorPendingImage(const Uuid().v4(), input);
     images[item.id] = item;
     editor.insertLocalImage(item.id);
-    unawaited(_run(item));
+    unawaited(_run(item, allowTransfer: true));
     notifyListeners();
   }
 
   Future<void> retry(String id) async {
     final item = images[id];
     if (item == null || item.active || waitingToPublish) return;
-    await _run(item);
+    await _run(item, allowTransfer: true);
   }
 
   void remove(String id) {
@@ -222,7 +222,10 @@ class EditorPendingImages extends ChangeNotifier {
     unawaited(editor.flush());
   }
 
-  Future<void> _run(EditorPendingImage item) async {
+  Future<void> _run(
+    EditorPendingImage item, {
+    bool allowTransfer = false,
+  }) async {
     if (!isCurrent ||
         _paused ||
         item.active ||
@@ -280,9 +283,11 @@ class EditorPendingImages extends ChangeNotifier {
         mediaUploadTaskControllerProvider(item.taskId).notifier,
       );
       item.controller = controller;
-      final result = item.pending == null
-          ? await controller.uploadInput(item.input!)
-          : await controller.resumeUpload(item.input!, item.pending!);
+      final result = await controller.resumeUpload(
+        item.input!,
+        item.pending,
+        allowTransfer: allowTransfer,
+      );
       if (!isCurrent ||
           generation != item.generation ||
           !ids.contains(item.id)) {

@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:dio/dio.dart';
 import 'package:wenyou_api/wenyou_api.dart';
+import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
 
 enum FailureSource { expected, device, network, service, content, unknown }
 
@@ -220,6 +221,16 @@ class ApiFailure implements Exception {
   String get userMessage => legacyUserMessage ?? defaultFailureMessage(reason);
 
   bool get isExpiredAccessToken => businessCode == 40101;
+
+  /// 续期已成功，但原写请求未自动重放；仅恢复用户明确重试的入口。
+  bool get canRetryAfterSessionRefresh {
+    final error = cause;
+    return isExpiredAccessToken &&
+        error is DioException &&
+        error.requestOptions.extra[ApiRequestExtraKeys
+                .sessionRefreshedWithoutReplay] ==
+            true;
+  }
 
   bool get isCancellation => reason == FailureReason.cancelled;
 

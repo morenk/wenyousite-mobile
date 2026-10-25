@@ -40,4 +40,8 @@ abstract final class ApiRequestExtraKeys {
   static const noAutomaticReplay = 'noAutomaticReplay';
   static const automaticRecovery = 'wenyou.recovery.automatic';
   static const recoveryTicket = 'wenyou.recovery.ticket';
+
+  /// 仅拦截器在续期成功且未重放写请求后设置，不属于调用方请求策略。
+  static const sessionRefreshedWithoutReplay =
+      'wenyou.auth.sessionRefreshedWithoutReplay';
 }

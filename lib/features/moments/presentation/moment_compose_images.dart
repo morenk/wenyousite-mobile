@@ -179,6 +179,9 @@ class MomentPendingImageThumbnail extends StatefulWidget {
 }
 
 class _PendingThumbnailState extends State<MomentPendingImageThumbnail> {
+  bool get _canRetry =>
+      widget.onRetry != null && widget.pending.state.failure?.canRetry != false;
+
   Future<void> _showFailureActions() async {
     final slow =
         widget.pending.state.phase == MediaUploadTaskPhase.processingPending;
@@ -188,10 +191,10 @@ class _PendingThumbnailState extends State<MomentPendingImageThumbnail> {
       retryLabel: slow ? '继续等待' : '重试',
       removeLabel: '移除图片',
       detail: widget.pending.state.failure?.userMessage,
-      canRetry: widget.onRetry != null,
+      canRetry: _canRetry,
     );
     if (!mounted) return;
-    if (action == PendingImageAction.retry) widget.onRetry?.call();
+    if (action == PendingImageAction.retry && _canRetry) widget.onRetry?.call();
     if (action == PendingImageAction.remove) widget.onRemove?.call();
   }
 
