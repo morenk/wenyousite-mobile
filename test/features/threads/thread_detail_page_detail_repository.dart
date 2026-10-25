@@ -329,6 +329,8 @@ Future<Widget> threadDetailPageTestAuthenticatedDetailApp(
   ThreadDetailRepository repository, {
   required String userId,
   double? textScale,
+  String? targetPostId,
+  List<Override> extraOverrides = const [],
 }) async {
   final container = ProviderContainer(
     overrides: [
@@ -349,6 +351,7 @@ Future<Widget> threadDetailPageTestAuthenticatedDetailApp(
       postRepositoryProvider.overrideWithValue(
         ThreadDetailPageTestFakePostRepository(),
       ),
+      ...extraOverrides,
     ],
   );
   addTearDown(container.dispose);
@@ -367,7 +370,10 @@ Future<Widget> threadDetailPageTestAuthenticatedDetailApp(
               ).copyWith(textScaler: TextScaler.linear(textScale)),
               child: child!,
             ),
-      home: const ThreadDetailPage(threadId: 'thread-1'),
+      home: ThreadDetailPage(
+        threadId: 'thread-1',
+        entryTarget: ThreadDetailEntryTarget.fromQuery(postId: targetPostId),
+      ),
     ),
   );
 }
