@@ -1,0 +1,22 @@
+{
+  "archiveSha256": "91f4a48e683f08b965f7fcb24f6a87533cf8295dbf3ce79ce9e5894526461751",
+  "backendContractRevision": "2db4ef1254c7738966dc28b1cd1fc10dcb19da47",
+  "parametersVersion": 2,
+  "flutterVersion": "3.44.8",
+  "dartVersion": "3.12.2",
+  "engineRevision": "0cd610717bde95fd88343c64f81c11ba4e5c0010",
+  "platform": "Windows x64 flutter_tester",
+  "scope": "four core shards; parametersVersion=2; offline Windows Flutter engine; no Android device claim",
+  "toolSha256": {
+    "tool\\font_format_probe.dart": "ab972c15cc74b7a124ad8553cafacbe4fe951debb42c0445b40949a5a4be861a",
+    "tool\\font_format_probe_test.dart": "1026ce20604296f05d5c5500957b4ce09f8a96d84256213d6322ccb48bfd6484"
+  },
+  "compilerSha256": "824849c888cfaa571e35ae7b605c9afcedc75a68ed3c9bb2de4f2b32c7a70560",
+  "compilerVerifiedAtCommit": "2db4ef1254c7738966dc28b1cd1fc10dcb19da47",
+  "validation": {
+    "artifactProbe": "4 passed; 34 seconds",
+    "v1Comparison": "four identical rendered PNGs/pixels, ink counts and widths; font family/checksum bytes differ",
+    "toolChangedSinceV1": false,
+    "fullGateRepeated": false
+  }
+}

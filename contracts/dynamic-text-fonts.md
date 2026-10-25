@@ -57,6 +57,10 @@ Web 无固定家族数限制，活动预算 64 faces/16 MiB SFNT，使用 lease/
 
 持久化边界：family 保存可编辑草稿和当前版本指针；job 保存私有源身份、配置快照、幂等处理状态；artifact 保存按 buildKey 去重且不可变的产物身份；version 将 family 绑定至不可变 artifact/配置并保存发布时间与撤回墓碑；catalog head/release/items 保存单调修订、原子发布快照；审计复用不可修改 AuditLog。不得通过清空表、覆盖历史对象实现导入或回滚。
 
+两版编译器都将可变字体的所有轴固定到各自默认值。TrueType `glyf` 输出静态 TTF；只有包含 `CFF2` 的输入才执行 CFF2 → CFF1 转换并输出静态 OTF，Web 分片统一为 WOFF2。编译器摘要参与构建身份，修复后的重试按新摘要构建，不覆盖既有版本或产物。
+
+Worker 的 `font_build_failed` 日志仅记录 jobId、attempt、failureCode 和有限枚举的 stage/category，区分实例化、序列化、产物校验、存储和持久化等失败位置。子进程提供的诊断必须通过枚举校验；异常正文、路径、栈、原始 stderr 和字体元数据不进入日志或 HTTP 响应。HTTP 与数据库仍只保存既有 failureCode/failureReason。
+
 [28 款导入映射](../contracts/thread-font-v1-import-map.json) 固定来源 manifest SHA，仅供可重跑导入；不成为动态查询白名单。导入逐对象验证来源清单、SHA、长度及原 family，保留 `(assetSHA,family)`。v1/v2 在同一运行时共用注册账本，先读 v1 再读导入 v2 不产生新增原生注册或重复收费；不允许只按 SHA 合并不同 family，也不允许重置账本。共享零新增注册夹具是消费者必须执行的输入，不代替 Android 原生证据。小城保持 retired；v1 正文/资源不删除、不改写成 v2。
 
 ## v1 导入后的撤回边界
@@ -127,3 +131,21 @@ runner 先核验独立 PostgreSQL/Redis，再以应用角色导入固定历史�
 Backend 自身故障验证使用 `pnpm test:integration:text-font-v2`，其随机 ID 单独标记为非跨端核心证据。此套件以超过 11 MiB 的自制有效字体验证上传、处理、预览、发布与去重；暂停已构建产物的存储复验，核验真实数据库续租和恢复器不抢占；启动两个登记 Worker，检查全局单并发、真实 Worker SIGKILL 重试和工作目录清理，并执行真实沙箱的宿主文件读取、输入写入、网络、内存、墙钟及输出上限拒绝用例。
 
 功能套件在提供 `E2E_FONT_LEGACY_BUNDLE` 与 `E2E_FONT_LEGACY_SOURCES` 时执行真实 28 款导入及幂等复验；没有私人恢复材料的 CI 仅复用本轮真实 Worker 输出构造历史就绪记录，并明确标记 `synthetic-legacy-readiness-only`。该夹具不计作真实历史导入、原生兼容或跨端核心证据；真实导入证据必须另外完成。
+
+功能套件对两版参数分别运行静态 glyf TTF、静态 CFF OTF、单轴及双轴 TrueType/CFF2，并保留原 `BLED/SCAN` 自定义轴回归，经过真实上传、Worker 处理、预览、发布及匿名资产下载。新夹具使用 `wght=650`（范围 100–900）及 `TEST=20`（范围 -100–100）的非最小默认值，包含组合字形、GSUB 连字、GPOS 字距/附标、avar 和 HVAR/VVAR/MVAR；非默认 master 的轮廓与度量确实不同。此检查不代替浏览器或 Flutter 真机验收。
+
+`pnpm test:integration:font-formats` 是不连接业务数据库/API 的补充沙箱入口，顺序覆盖以下有界矩阵；所有外部字体读取、解析、实例化、子集化和渲染仍在同一非 root、离线、限额沙箱内。自制夹具生成器只处理仓库内几何定义，不接收外部字体。
+
+| 输入 | 两版编译器的检查 |
+| --- | --- |
+| 静态 TTF / CFF OTF | 完整码点覆盖、组合轮廓、字宽、连字/字距/附标、WOFF2 与 SFNT 一致 |
+| 单轴及双轴 TTF / CFF2 | 源默认位置的展开轮廓与 advance 精确相等；横向/纵向/全局度量、默认轴记录正确；输出移除 fvar/gvar/CFF2/avar/HVAR/VVAR/MVAR 等变化数据 |
+| TTC、COLR、SVG | `unsupported-font`，不静默转换 |
+| 截断字体、空 cmap | `invalid-font` |
+| 禁止嵌入 | `rights-required`，原授权门禁保留 |
+
+固定真实样本清单见 [regression-sources.json](../scripts/fonts/dynamic/regression-sources.json)：Train One（静态 TTF）、Source Han Sans（静态 CFF）、Orbitron（含 avar/HVAR 的 TrueType 变量）和 Adobe Source Serif 4（CFF2、wght/opsz 双轴）。每项固定官方 revision、源 SHA/长度与 OFL 原文 SHA；不提交二进制，也不在测试期间自动下载。将原件以 `<sourceSHA>.ttf/otf`、许可以 `<licenseSHA>` 放到只读来源目录后，使用 `FONT_FORMAT_SOURCE_ROOT=/absolute/path pnpm test:integration:font-formats`，先验证身份再运行两版矩阵。可选 `FONT_FORMAT_ARTIFACTS` 接收已验证产物和证据；退出清理本轮临时目录，失败不得把部分记录计作整轮通过。
+
+轮廓比较展开组件以排除子集内部重编号差异，保持零容差；GSUB/GPOS 通过真实 Raqm 字距/连字启停和自制附标位置验证。源默认轮廓是独立判据，PNG 文案则与序列化的静态默认实例精确比较。自制无 hint TTF 的变量/静态 FreeType 扫描曾产生最多 2/255 的 alpha 差异，RGB、文字边界和轮廓不变；这不作为放宽轮廓或像素容差的理由。分片按产品策略移除 hint，源 hinted 像素不能作为其逐像素基准。Pillow/FreeType 渲染证据不等同于 Flutter 或浏览器实际字体加载验收。
+
+私有故障复现可为同一入口传入 `E2E_FONT_REPRO_SOURCE` 和必填的 `E2E_FONT_REPRO_SHA256`，仅测试进程获得源路径；本轮先核验隔离资源及源摘要，再通过 v2 上传授权创建随机家族并执行同样旅程。可选 `E2E_FONT_REPRO_ARTIFACTS` 指向已存在的私有目录，套件在其下按 runId 导出验证产物与证据，不复制原件或凭据。原件不得提交；清理结果以 runner 最终结果为准，导出证据不代表跨端或线上发布验收。

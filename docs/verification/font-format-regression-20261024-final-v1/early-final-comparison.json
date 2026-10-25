@@ -1,0 +1,34 @@
+[
+  {
+    "id": "static-ttf",
+    "earlySha256": "8db33d8345608b195e720571d2df3b47c7261e05dae26fd78573e1cfb9f95709",
+    "finalSha256": "746b8310531d35a3c0a58a6ea484e579a434bcfa4633d4c96911e0647ad1305a",
+    "sameFontBytes": false,
+    "sameSamplePixelSha256": true,
+    "sameSamplePngBytes": true
+  },
+  {
+    "id": "static-cff",
+    "earlySha256": "40811c17b6768b0e110002f21ac1268dd6e82d3214d2a98b406238961fbf24dc",
+    "finalSha256": "7dfa6715f229ae9645efa8df7ac90ed840ce34bbe46f57a065f4de1474d1a40c",
+    "sameFontBytes": false,
+    "sameSamplePixelSha256": true,
+    "sameSamplePngBytes": true
+  },
+  {
+    "id": "variable-glyf",
+    "earlySha256": "ba8210939feb1ed9a0e03eb241cde6dcdb167c796abf6ee4e9fc60e46578101b",
+    "finalSha256": "ba8210939feb1ed9a0e03eb241cde6dcdb167c796abf6ee4e9fc60e46578101b",
+    "sameFontBytes": true,
+    "sameSamplePixelSha256": true,
+    "sameSamplePngBytes": true
+  },
+  {
+    "id": "variable-cff2",
+    "earlySha256": "2e11cca51372265ca044a76b0ed0946c0abc1e667c419e1b3fb85a4095af599c",
+    "finalSha256": "2e11cca51372265ca044a76b0ed0946c0abc1e667c419e1b3fb85a4095af599c",
+    "sameFontBytes": true,
+    "sameSamplePixelSha256": true,
+    "sameSamplePngBytes": true
+  }
+]
