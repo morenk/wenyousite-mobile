@@ -520,7 +520,10 @@ class MomentDetailController extends StateNotifier<MomentDetailState> {
     await loadCursorPage(
       fetch: () {
         if (cursor == null) {
-          throw const ApiFailure(userMessage: '评论加载失败，请重试。');
+          _commentRetryAction = _MomentCommentRetryAction.comments;
+          throw const ApiFailure.invalidResponse(
+            diagnosticCode: 'MOMENT_COMMENTS_CURSOR_MISSING',
+          );
         }
         return _repository.fetchComments(
           momentId: momentId,
@@ -535,7 +538,9 @@ class MomentDetailController extends StateNotifier<MomentDetailState> {
             (page.cursor == null ||
                 page.cursor == cursor ||
                 _consumedCommentCursors.contains(page.cursor))) {
-          throw const ApiFailure(userMessage: '评论加载失败，请重试。');
+          throw const ApiFailure.invalidResponse(
+            diagnosticCode: 'MOMENT_COMMENTS_CURSOR_NOT_ADVANCING',
+          );
         }
         _consumedCommentCursors.add(cursor!);
         state = state.copyWith(
@@ -557,8 +562,11 @@ class MomentDetailController extends StateNotifier<MomentDetailState> {
         state = state.copyWith(
           isLoadingMoreComments: false,
           commentPageFailure: const ApiFailure(
+            source: FailureSource.expected,
+            reason: FailureReason.conflict,
+            recoveryAction: FailureRecoveryAction.retry,
             businessCode: 40007,
-            userMessage: '评论加载失败，请重试。',
+            diagnosticCode: 'MOMENT_COMMENTS_CURSOR_RECOVERY_EXHAUSTED',
           ),
         );
       },
