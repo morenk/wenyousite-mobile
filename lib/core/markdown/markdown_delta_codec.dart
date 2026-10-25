@@ -20,6 +20,7 @@ import 'package:wenyousite_mobile/core/markdown/markdown_mention_target.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_paragraph_boundaries.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_quote_paragraphs.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_rich_line_decoder.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_text_font.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_reference.dart';
 
 export 'package:wenyousite_mobile/core/markdown/markdown_codec_types.dart';
@@ -106,6 +107,16 @@ class MarkdownDeltaCodec {
           break;
         case MarkdownEditorLineKind.text:
           final content = line.content;
+          if (MarkdownTextFont.hasUnknown(content)) {
+            _insertCompatibility(
+              delta,
+              issues,
+              MarkdownCodecIssueKind.unknownProtocol,
+              content,
+              '这段文字暂时无法编辑，原文已保留',
+            );
+            break;
+          }
           final rich = MarkdownContent.hasCanonicalLiteralEncoding(content)
               ? null
               : _tryDecodeRichLine(content);

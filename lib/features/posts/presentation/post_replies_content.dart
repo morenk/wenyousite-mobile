@@ -283,7 +283,7 @@ class PostDiscussionList extends StatelessWidget {
               horizontal,
               state.hasMore ? tokens.space12 : 0,
               horizontal,
-              tokens.minimumTouchTarget + tokens.space32 + tokens.space16,
+              tokens.space16,
             ),
             sliver: SliverToBoxAdapter(
               child: WenyouConstrainedWidth(
@@ -374,6 +374,7 @@ class _PostCard extends ConsumerWidget {
               )
             else
               PostReadingBody(
+                enableTextFonts: true,
                 post: post,
                 galleryTarget: galleryTarget,
                 onTapText: canTapReply ? onReply : null,

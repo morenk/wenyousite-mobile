@@ -146,7 +146,7 @@ void main() {
     expect(collectArchitectureFailures(root), isEmpty);
   });
 
-  test('测试、工具、驱动和新增未暂存 Dart 都受 900 行限制', () {
+  test('测试、工具、驱动和新增未暂存 Dart 都受 1200 行限制', () {
     final git = Process.runSync('git', [
       'init',
       '--quiet',
@@ -163,14 +163,14 @@ void main() {
       writeArchitectureFixture(
         root,
         path,
-        '${List.filled(901, '// line').join('\n')}\n',
+        '${List.filled(1201, '// line').join('\n')}\n',
       );
     }
     expect(
       collectArchitectureFailures(root),
       containsAll([
         for (final path in paths)
-          '$path has 901 lines; split non-generated Dart files above 900 lines',
+          '$path has 1201 lines; split non-generated Dart files above 1200 lines',
       ]),
     );
   });

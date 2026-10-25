@@ -5,7 +5,15 @@ import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_reader_paragraph_syntax.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_text_color.dart';
 
-const textColorMarkKeys = ['bold', 'italic', 'strike', 'code', 'link', 'color'];
+const textColorMarkKeys = [
+  'bold',
+  'italic',
+  'strike',
+  'code',
+  'link',
+  'color',
+  'font',
+];
 typedef ColorSegment = (String, Map<String, Object>);
 
 Map<String, Object> textColorMarks(int mask, [String? color = '#D14343']) => {
@@ -57,8 +65,7 @@ List<Object> colorReaderUnits(
         if (node.tag == 'del') 'strike': true,
         if (node.tag == 'code') 'code': true,
         if (node.tag == 'a') 'link': node.attributes['href']!,
-        if (node.tag == MarkdownTextColor.tag)
-          'color': node.attributes['color']!,
+        if (node.tag == MarkdownTextColor.tag) ...node.attributes,
       }),
 ];
 

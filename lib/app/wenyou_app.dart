@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/app/app_router.dart';
 import 'package:wenyousite_mobile/app/app_session_bootstrap.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
+import 'package:wenyousite_mobile/app/photo_selection_host.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/application/appearance_preference.dart';
 import 'package:wenyousite_mobile/core/diagnostics/debug_diagnostic_console.dart';
@@ -35,13 +36,21 @@ class WenyouApp extends StatelessWidget {
   }
 }
 
-class _WenyouMaterialApp extends ConsumerWidget {
+class _WenyouMaterialApp extends ConsumerStatefulWidget {
   const _WenyouMaterialApp({required this.enableDebugDiagnosticConsole});
 
   final bool enableDebugDiagnosticConsole;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_WenyouMaterialApp> createState() => _WenyouMaterialAppState();
+}
+
+class _WenyouMaterialAppState extends ConsumerState<_WenyouMaterialApp> {
+  // 首次插入键盘 MediaQuery 时搬移完整路由子树，保留已打开的图库和编辑会话。
+  final _keyboardContentKey = GlobalKey();
+
+  @override
+  Widget build(BuildContext context) {
     final appearance = ref.watch(
       appearancePreferenceControllerProvider.select(
         (state) => state.preference,
@@ -91,14 +100,20 @@ class _WenyouMaterialApp extends ConsumerWidget {
             systemNavigationBarDividerColor: tokens.border,
             systemNavigationBarIconBrightness: iconBrightness,
           ),
-          child: WenyouInstantKeyboardInsets(
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                enableDebugDiagnosticConsole
-                    ? WenyouDebugDiagnosticOverlay(child: app)
-                    : app,
-              ],
+          // Android 首次 inset 同步会改变内部 MediaQuery 层级；宿主保持在其外。
+          child: PhotoSelectionHost(
+            child: WenyouInstantKeyboardInsets(
+              child: KeyedSubtree(
+                key: _keyboardContentKey,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    widget.enableDebugDiagnosticConsole
+                        ? WenyouDebugDiagnosticOverlay(child: app)
+                        : app,
+                  ],
+                ),
+              ),
             ),
           ),
         );

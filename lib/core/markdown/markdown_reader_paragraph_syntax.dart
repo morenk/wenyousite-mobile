@@ -9,7 +9,9 @@ class MarkdownReaderParagraphSyntax extends md.ParagraphSyntax {
   @override
   bool canParse(md.BlockParser parser) {
     final line = parser.current.content;
-    if (line.trimLeft().startsWith('<span data-wenyou-color-v1=') &&
+    if (RegExp(
+          r'^<span data-wenyou-(?:color|font)-v1=',
+        ).hasMatch(line.trimLeft()) &&
         MarkdownTextColor.maskValidTags(line) != line) {
       return true;
     }

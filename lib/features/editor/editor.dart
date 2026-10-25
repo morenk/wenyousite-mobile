@@ -4,6 +4,8 @@ library;
 
 export 'presentation/editor_audio_embed_builder.dart'
     show editorAudioOwnsPointer;
+export 'presentation/editor_dynamic_font_paste.dart'
+    show prepareDynamicFontPaste;
 export 'presentation/editor_embed_builders.dart' show wenyouEditorEmbedBuilders;
 export 'presentation/editor_more_tray.dart' show WenyouEditorMoreTray;
 export 'presentation/editor_pending_image_widget.dart'
@@ -36,3 +38,4 @@ export 'presentation/editor_toolbar_buttons.dart'
 export 'presentation/mention_suggestions.dart' show MentionSuggestions;
 export 'presentation/rich_editor_session.dart'
     show RichEditorSelectionPlacement, RichEditorSession;
+export 'presentation/text_font_quill_editor.dart';
