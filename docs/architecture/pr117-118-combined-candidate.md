@@ -7,6 +7,7 @@
 - 治理 chat：`01a16e35-9e1e-7841-afb6-e7e3bbb3217d`；唯一执行子 agent：`investigate_replies_resume`。
 - Windows Worktree：`D:\codex-worktrees\mobile-117-118-test-20261025\wenyousite-mobile`；分支 `codex/20261025-mobile-117-118-test`，从本轮已更新的 `origin/dev=8ab9f1bdb031290d89d6e093177b0ecb6a680fa4` 建立。
 - PR #117 固定 `be89da38c14f71d202a5ac59225f5858c9708a38`；PR #118 固定 `746e6bdd4360f356cebee1cef14e423b1737910b`。先快进到 #117，再仅在本测试分支合入 #118，保留两条提交父链。原 PR、原 Worktree 及 dev 不修改，不创建第三个功能 PR。
+- 组合应用／测试提交：`3d95ca4902c6816e47e3d411025abb524ab51857`，两个直接父提交恰为上述 #117／#118 SHA。APK构建后提交同一冻结应用树；随后仅补此源码身份文档，不改变应用、测试或APK。只推送本独立测试分支供追溯，不自动创建PR。
 - 应用源码相对 #117 仅新增 #118 的 `post_repository.dart` 四能力 record/select；测试夹具与组合用例、本文及模块链接可增加。无额外生产改动；依赖、原生、生成客户端、上传／HTTP 协议均沿用 #117。
 - 契约来源以 #117 已提交记录为准：Backend `33574ae73d88123aa216a93f9cc81eab60fb9ee9`／API `5.44.0-dev.20261024.2`。其与 #118 原固定 `31f39ff3` 机器契约零差异；不引入之后的新字体协议。来源复核见[原记录](compose-gallery-contract-source-sync.md)。
 - Auto-review 默认偏好已传递，实际未设置／核验。当前宿主 `approval_policy=never`、unrestricted，工具无支持的审批配置入口；不能称为 Auto-review 已生效。
