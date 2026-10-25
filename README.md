@@ -2,7 +2,7 @@
 
 温油站的 Flutter 原生客户端。正式、Debug 和 Profile APK 均仅支持 Android 8+（API 26）的 ARM64 设备，手机竖屏优先。共享 Dart 代码保持 iOS 兼容，但当前不做 iOS 验收。
 
-当前版本：`0.10.0+100`（发布候选）。负责人已确认按已合入 `dev` 的范围准备正式版；发布范围、检查、签名制品与待验收事项见[0.10.0 发布准备](docs/architecture/mobile-0.10.0-release-preparation.md)。本轮为发布准备，尚未正式发布。普通应用构建连接公网 API `https://wenyou.site/api/v1`；开发反馈使用普通 Flutter Debug 与热重载，线上自动化只读。
+当前版本：`0.11.0+101`。负责人已确认六项组合候选验收通过，并授权将已合入 `dev` 的内容正式发布。发布范围、沿用检查、签名制品与发布结果见[0.11.0 发布记录](docs/architecture/mobile-0.11.0-release.md)。普通应用构建连接公网 API `https://wenyou.site/api/v1`；开发反馈使用普通 Flutter Debug 与热重载，线上自动化只读。
 
 ## 技术基线
 
