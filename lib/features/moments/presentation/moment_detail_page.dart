@@ -28,6 +28,7 @@ import 'package:wenyousite_mobile/features/moments/application/moment_controller
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_comment_composer.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_comment_navigation.dart';
+import 'package:wenyousite_mobile/features/moments/presentation/moment_comment_pagination.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_detail_comment_body.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_detail_interaction_bar.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_widgets.dart';
@@ -182,8 +183,14 @@ class _MomentDetailPageState extends ConsumerState<MomentDetailPage> {
               ),
           loading: state.isLoadingMoreComments,
           bottomObstructionKey: _composeObstructionKey,
-          child: NotificationListener<ScrollNotification>(
-            onNotification: _targetReveal.handleUserScroll,
+          child: MomentCommentPagination(
+            momentId: widget.momentId,
+            scrollController: _scrollController,
+            enabled:
+                !_commentComposerOpen &&
+                (ModalRoute.of(context)?.isCurrent ?? true) &&
+                MediaQuery.viewInsetsOf(context).bottom == 0,
+            onScroll: _targetReveal.handleUserScroll,
             child: NotificationListener<ScrollMetricsNotification>(
               onNotification: (notification) =>
                   _targetReveal.handleLayoutChange(
@@ -288,7 +295,8 @@ class _MomentDetailPageState extends ConsumerState<MomentDetailPage> {
                           );
                         },
                       ),
-                    if (state.hasMoreComments || state.isLoadingMoreComments)
+                    if (state.isLoadingMoreComments ||
+                        state.commentPageFailure != null)
                       SliverToBoxAdapter(
                         child: WenyouContentFrame(
                           top: context.wenyouTokens.space12,
@@ -296,14 +304,13 @@ class _MomentDetailPageState extends ConsumerState<MomentDetailPage> {
                             child: WenyouLoadMoreControl(
                               hasMore: state.hasMoreComments,
                               isLoading: state.isLoadingMoreComments,
+                              failure: state.commentPageFailure,
                               onLoadMore: () => ref
                                   .read(provider.notifier)
-                                  .loadMoreComments(),
-                              loadMoreLabel: '加载更多评论',
+                                  .loadMoreComments(retry: true),
+                              loadingLabel: '正在加载评论',
                               showEndLabel: false,
-                              loadMoreKey: const Key(
-                                'moment-comments-load-more',
-                              ),
+                              retryKey: const Key('moment-comments-retry'),
                             ),
                           ),
                         ),
