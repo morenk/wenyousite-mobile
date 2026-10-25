@@ -2,6 +2,7 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_quill/quill_delta.dart';
+import 'package:wenyousite_mobile/core/editor/quill_document_range.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_line_metadata.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_link_identity.dart';
@@ -321,22 +322,33 @@ class LiteralTextQuillController extends QuillController {
     TextSelection? textSelection, {
     bool ignoreFocus = false,
     bool shouldNotifyListeners = true,
-  }) => runEditCommand(
-    () => _replaceLiteralText(
+  }) {
+    final selectedText = readQuillDocumentRange(
+      document,
       index,
       len,
-      data,
-      textSelection,
-      ignoreFocus: ignoreFocus,
-      shouldNotifyListeners: shouldNotifyListeners,
-    ),
-  );
+      includeTerminalNewline: true,
+    );
+    if (selectedText == null) return;
+    runEditCommand(
+      () => _replaceLiteralText(
+        index,
+        len,
+        data,
+        textSelection,
+        selectedText: selectedText,
+        ignoreFocus: ignoreFocus,
+        shouldNotifyListeners: shouldNotifyListeners,
+      ),
+    );
+  }
 
   void _replaceLiteralText(
     int index,
     int len,
     Object? data,
     TextSelection? textSelection, {
+    required String selectedText,
     required bool ignoreFocus,
     required bool shouldNotifyListeners,
   }) {
@@ -368,7 +380,7 @@ class LiteralTextQuillController extends QuillController {
     final internalReference = data is String
         ? WenyouEditorClipboardPastePlanner.internalReferenceDelta(
             data,
-            len == 0 ? '' : document.getPlainText(index, len),
+            selectedText,
           )
         : null;
     final newline = _plainNewline(data, index);
