@@ -49,7 +49,7 @@ flutter test --no-pub tool/font_format_probe_test.dart --reporter expanded `
 
 ## 本轮契约范围
 
-锁定 Backend `2db4ef1254c7738966dc28b1cd1fc10dcb19da47` / API `5.44.0-dev.20261024.3`。OpenAPI 仅版本号变化；四类自动样张文案统一，历史快照保持。Mobile v2 读取后端 PNG，不实现样张文案生成或新增字体管理入口。同步共享夹具、生成客户端与契约来源记录；再生成后仅 SDK README 版本变化，应用及 SDK 可执行代码、依赖锁文件均无变化。
+当前锁定后端合并提交 `8a5d21858e04c69832c90e5a3a10f1e70fdcb545` / API `5.44.0-dev.20261024.3`，原候选契约来源为 `2db4ef1254c7738966dc28b1cd1fc10dcb19da47`，两者机器契约字节相同。OpenAPI 相对移动端基线仅版本号变化；四类自动样张文案统一，历史快照保持。Mobile v2 读取后端 PNG，不实现样张文案生成或新增字体管理入口。同步共享夹具、生成客户端与契约来源记录；再生成后仅 SDK README 版本变化，应用及 SDK 可执行代码、依赖锁文件均无变化。字体试验记录保留生成时的原始候选来源，不改写历史产物身份。
 
 ## 2026-10-24 早期候选 v1 结果（保留记录）
 
@@ -123,3 +123,7 @@ v1/v2 四组源字体 SHA 相同，输出字体 SHA 均不同。TTF 差异位于
 合并补查发现 API 排除清单的审查版本仍为 `.2`。逐字比较 OpenAPI，除 `info.version` 更新为 `.3` 外全部相同，因此保持全部排除项、分类和理由不变，仅更新 `tool/api_coverage_exclusions.json` 的审查版本。重新执行覆盖门禁通过：175/175、零缺失、96 项范围外（raw 175/271）。23 模块文档、diff 检查及最终八个字体结果的 PNG/工具摘要复核通过。
 
 严格公网来源核验当前失败：本地预期 `2db4ef12` / API `.3`，公网仍为 `33574ae7` / API `.2`、Markdown 5。此失败必须保留，不放宽校验器或冒称完整门禁通过。依赖后端合并部署后的最终来源核验由治理协调；若最终部署 SHA 不同，需按正式来源同步流程处理，不能只用 API 主版本相同替代精确来源核验。本任务仅准备合并，不执行合并、部署、APK 构建安装或清理。
+
+上述失败是最终来源同步前的历史检查。Backend PR #63 合并后，按正式 `sync_backend_contract.ps1 -Revision 8a5d21858e04c69832c90e5a3a10f1e70fdcb545` 同步 `origin/dev` 的已提交来源。相对 `2db4ef12`，Backend `contracts/` 与两版生产字体编译器完全相同；Mobile 导出差异仅来源 SHA 和字体格式回归说明（15 行新增、1 行替换）。更新来源断言及模块当前来源，保留原 Flutter 产物证据。机器契约和 SDK 均未变化，不重复再生成、完整应用门禁或 APK 构建。公网严格核验标为等待最终后端部署；收到部署完成通知后再执行原校验器，当前不将历史失败或未执行状态改记为通过。
+
+最终来源窄复核通过：OpenAPI 校验、独立固定来源校验、23 模块文档、API 覆盖 175/175（零缺失、96 项排除）、来源断言与字体管理消费两文件共 6 项 Flutter 测试、Windows 契约同步 1 项测试，以及变更测试文件格式和 diff 检查。日志存于治理交接目录 `D:\code\wenyousite\.artifacts\font-specimen-merge-20261025`，分别为 `mobile-final-source-sync.log`、`mobile-final-source-checks.log`、`mobile-final-source-tests.log` 与 `mobile-final-source-windows-test.log`。
