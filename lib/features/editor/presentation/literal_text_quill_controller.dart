@@ -8,6 +8,7 @@ import 'package:wenyousite_mobile/core/markdown/markdown_delta_line_metadata.dar
 import 'package:wenyousite_mobile/core/markdown/markdown_link_identity.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_paragraph_boundaries.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_clipboard_paste.dart';
+import 'package:wenyousite_mobile/features/editor/presentation/editor_divider_structure.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_document_alignment.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_selection_history.dart';
 
@@ -267,18 +268,22 @@ class LiteralTextQuillController extends QuillController {
     int len,
     Attribute? attribute, {
     bool shouldNotifyListeners = true,
-  }) => runEditCommand(
-    () => super.formatText(
+  }) => runEditCommand(() {
+    super.formatText(
       index,
       len,
       attribute,
       shouldNotifyListeners: shouldNotifyListeners,
-    ),
-  );
+    );
+    preserveEditorDividerBlocks(this);
+  });
 
   @override
   void compose(Delta delta, TextSelection textSelection, ChangeSource source) =>
-      runEditCommand(() => super.compose(delta, textSelection, source));
+      runEditCommand(() {
+        super.compose(delta, textSelection, source);
+        preserveEditorDividerBlocks(this);
+      });
 
   @override
   Style getSelectionStyle() {
@@ -330,8 +335,8 @@ class LiteralTextQuillController extends QuillController {
       includeTerminalNewline: true,
     );
     if (selectedText == null) return;
-    runEditCommand(
-      () => _replaceLiteralText(
+    runEditCommand(() {
+      _replaceLiteralText(
         index,
         len,
         data,
@@ -339,8 +344,9 @@ class LiteralTextQuillController extends QuillController {
         selectedText: selectedText,
         ignoreFocus: ignoreFocus,
         shouldNotifyListeners: shouldNotifyListeners,
-      ),
-    );
+      );
+      preserveEditorDividerBlocks(this);
+    });
   }
 
   void _replaceLiteralText(
@@ -452,8 +458,9 @@ class LiteralTextQuillController extends QuillController {
     if (sourceSeparatorPatch.isNotEmpty) {
       document.compose(sourceSeparatorPatch, ChangeSource.local);
     }
-    if (newline != null && effectiveSelection != null) {
-      // 显式换行 Delta 不经过插入规则，不应再次使用 Quill 的位置补偿。
+    if (effectiveData is Delta && effectiveSelection != null) {
+      // 调用方已按 Delta 的实际长度给出终点，不应再使用 Quill 将整个
+      // 片段当成单个 embed 的位置补偿；后续块边界补丁只转换一次。
       updateSelection(effectiveSelection, ChangeSource.local);
     }
     if (effectiveData is Delta &&

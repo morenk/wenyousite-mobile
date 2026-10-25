@@ -2,6 +2,7 @@ import 'package:flutter_quill/quill_delta.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_alignment.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_audio_embed.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_canonical_literal_decoder.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_codec_structure.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_codec_types.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_block_encoder.dart';
@@ -169,14 +170,31 @@ class MarkdownDeltaCodec {
   }
 
   static String encode(Delta delta, {bool imageAlignment = false}) {
-    delta = MarkdownAudioEmbed.expand(delta, preserveLinkShape: true);
-    final encoded = _encode(delta, true, imageAlignment);
-    final reopened = _decode(encoded, false, imageAlignment).delta;
-    if (!MarkdownDeltaSemantics.equivalent(delta, reopened)) {
-      throw const MarkdownCodecException('正文无法安全保存，请撤销最近的格式操作');
+    try {
+      delta = MarkdownAudioEmbed.expand(delta, preserveLinkShape: true);
+      final encoded = _encode(delta, true, imageAlignment);
+      final reopened = _decode(encoded, false, imageAlignment).delta;
+      if (!MarkdownDeltaSemantics.equivalent(delta, reopened)) {
+        throw MarkdownCodecException(
+          '正文无法安全保存，请撤销最近的格式操作',
+          structure: MarkdownCodecStructure.inspect(
+            delta,
+            difference: MarkdownDeltaSemantics.firstDifference(delta, reopened),
+          ),
+        );
+      }
+      MarkdownDeltaBlockValidator.validateListReading(delta, encoded);
+      return encoded;
+    } on MarkdownCodecException catch (error, stack) {
+      if (error.structure != null) rethrow;
+      Error.throwWithStackTrace(
+        MarkdownCodecException(
+          error.message,
+          structure: MarkdownCodecStructure.inspect(delta),
+        ),
+        stack,
+      );
     }
-    MarkdownDeltaBlockValidator.validateListReading(delta, encoded);
-    return encoded;
   }
 
   static String _encode(
