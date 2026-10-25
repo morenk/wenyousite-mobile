@@ -62,6 +62,7 @@ class WenyouMarkdown extends StatefulWidget {
     this.bodyFontSize = 17,
     this.bodyHeight = 1.8,
     this.enablePlainTextFastPath = true,
+    this.enableTextFonts = false,
     this.diagnosticRenderKey,
     super.key,
   });
@@ -81,6 +82,8 @@ class WenyouMarkdown extends StatefulWidget {
   final double bodyFontSize;
   final double bodyHeight;
   final bool enablePlainTextFastPath;
+
+  final bool enableTextFonts;
   final GlobalKey? diagnosticRenderKey;
 
   @override
@@ -129,6 +132,10 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
   @override
   void didUpdateWidget(covariant WenyouMarkdown oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.enableTextFonts != widget.enableTextFonts) {
+      _markdownParseKey = UniqueKey();
+      _renderedBody = null;
+    }
     if (!mapEquals(oldWidget.diceLabels, widget.diceLabels)) {
       _diceLabels.value = Map.unmodifiable(widget.diceLabels);
     }
@@ -336,6 +343,14 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
     final next = _renderSegments[index].markdown.trimLeft();
     final previousBlocks = md.Document().parse(previous);
     final nextBlocks = md.Document().parse(next);
+    // 显式空段在连续阅读时并入正文行，标题边界仍有块间距。
+    // 对齐拆段不能因相邻 <br /> 把这部分标题留白一起移除。
+    bool isHeading(md.Node node) =>
+        node is md.Element && RegExp(r'^h[1-6]$').hasMatch(node.tag);
+    if ((previousBlocks.isNotEmpty && isHeading(previousBlocks.last)) ||
+        (nextBlocks.isNotEmpty && isHeading(nextBlocks.first))) {
+      return true;
+    }
     if (previousBlocks.isNotEmpty &&
         nextBlocks.isNotEmpty &&
         WenyouMarkdownBody.isBodyParagraph(previousBlocks.last) &&
@@ -390,6 +405,7 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
     ],
     builders: {
       MarkdownTextColor.tag: MarkdownTextColorBuilder(
+        enableTextFonts: widget.enableTextFonts,
         onLink: (href) => _openLink(context, href),
         registerRecognizer: _colorRecognizers.add,
       ),

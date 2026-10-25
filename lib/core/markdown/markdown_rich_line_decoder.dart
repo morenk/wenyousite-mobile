@@ -197,7 +197,8 @@ class MarkdownRichLineDecoder {
     if (text.isEmpty) return;
     if (attributes.isEmpty ||
         attributes['code'] == true ||
-        attributes.containsKey('color')) {
+        attributes.containsKey('color') ||
+        attributes.containsKey('font')) {
       output.add(MarkdownRichSpan(text, _attributesOrNull(attributes)));
       return;
     }
@@ -242,7 +243,7 @@ class MarkdownRichLineDecoder {
       final attributes = Map<String, dynamic>.from(inherited);
       if (node.tag == MarkdownTextColor.tag) {
         if (inherited.isNotEmpty) return false;
-        attributes['color'] = node.attributes['color'];
+        attributes.addAll(node.attributes);
       } else if (node.tag == 'strong') {
         attributes['bold'] = true;
       } else if (node.tag == 'em') {

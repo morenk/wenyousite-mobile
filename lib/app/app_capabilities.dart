@@ -12,6 +12,10 @@ class AppCapabilities {
     this.legacySingleThreadIdentity = false,
     this.roleMentionsSupported = false,
     this.roleMentionsWriteEnabled = false,
+    this.textFontSupported = false,
+    this.textFontWriteEnabled = false,
+    this.textFontV2Supported = false,
+    this.textFontV2WriteEnabled = false,
     this.textColorSupported = false,
     this.textColorWriteEnabled = false,
     this.rpIdentityProfileSupported = false,
@@ -26,6 +30,10 @@ class AppCapabilities {
   final bool legacySingleThreadIdentity;
   final bool roleMentionsSupported;
   final bool roleMentionsWriteEnabled;
+  final bool textFontSupported;
+  final bool textFontWriteEnabled;
+  final bool textFontV2Supported;
+  final bool textFontV2WriteEnabled;
   final bool textColorSupported;
   final bool textColorWriteEnabled;
   final bool rpIdentityProfileSupported;

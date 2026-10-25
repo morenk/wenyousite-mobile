@@ -14,6 +14,8 @@
 
 ## 3. 页面、入口和导航关系
 
+2026-10-24 候选／待负责人验收：收藏表情导入统一从应用内相册单选，确认后沿用静态图取景、GIF 原样确认及 STICKER_SOURCE 上传，不改变来源收藏和容量约束。 选图权限、系统备用入口、验证与未验收边界见[编辑器与应用内相册候选](../architecture/compose-gallery-candidate.md)。
+
 2026-10-19 负责人真机热重载验收通过：表情包管理页及顶栏复用个人区柔和外底，收藏网格置于白色内容面板，暗色使用既有 Token。顶部保留简短的“长按排序”和容量计数，移除重复间距；网格列数按面板内可用宽度自适应，保留最小触控尺寸和添加入口。离线视觉使用合成缩略图验证窄屏、暗色和大字；负责人另行在真实 Debug 会话确认界面效果。
 
 收藏表情加载失败操作统一为“重试”；个人中心入口位于独立工具区并继续受能力开关控制。
@@ -66,6 +68,8 @@
 
 ## 10. 跨模块约束
 
+正文包装组件的字体作用域候选：StickerPostMarkdown 默认关闭自定义字体，不创建字体加载作用域；完整主题／子贴／楼层／展开回复的调用点显式传入 enableTextFonts。表情行为及源 Markdown 不变。 具体边界与待验收证据见[作用域候选](../architecture/thread-fonts-mobile-scope-candidate.md)。
+
 共享 StickerPostMarkdown 正文门面透传可信 mediaAudios 给普通 Markdown 播放器；收藏、插入、拖动和表情权限本身不变。
 
 本模块页面排版统一遵循[移动端视觉基线](../architecture/visual-baseline.md)中的 Foundation v6.9.0 语义文字角色，不自定义字号或直接依赖 Material 字体槽位。
@@ -94,6 +98,24 @@ media application 负责相册选择、格式校验、`STICKER_SOURCE` 用途和
 移动端相册入口当前一次选择一张，未实现 Web 的最多十张并发批量导入；动画只在发送或正文实际图片 URL 中播放，收藏网格使用缩略图。处理任务依靠前台轮询，不做后台通知；进程终止后重新进入即从服务端 pending 列表恢复观察。
 
 ## 13. 最近审查的契约版本和后端提交
+
+本轮字体样张契约来源：Backend `8a5d21858e04c69832c90e5a3a10f1e70fdcb545`／API `5.44.0-dev.20261024.3`。HTTP 形状不变，仅统一后台自动样张文案；本模块运行逻辑不变。离线格式验证范围见[验证说明](../architecture/font-format-offline-probe.md)。
+
+2026-10-24 相册候选来源复核：已部署 Backend `33574ae73d88123aa216a93f9cc81eab60fb9ee9`／API `5.44.0-dev.20261024.2`，其第一父提交为原固定 `31f39ff317e56d6eb49b4c5e60ecdb93dfc9ec06`。机器契约及消费者指南零差异，仅同步来源与导出运维说明；本模块行为和已有验收边界保持，详见[来源同步](../architecture/compose-gallery-contract-source-sync.md)。
+
+2026-10-24 交付前来源复核：线上更新至 Backend `31f39ff317e56d6eb49b4c5e60ecdb93dfc9ec06`／API `5.44.0-dev.20261024.2`。机器契约零差异，仅字体 Worker 运维说明新增 8 行；同步来源与说明，应用及构建源码不变。完整门禁和窄复核分别见[集成验收记录](../architecture/alignment-font-integration-acceptance.md)。
+
+2026-10-24 行距合并集成：保留已合并 PR #114 的完整字体能力与本次标题间距修复。固定 Backend `c80f015402e22647bbc85aecc9513d3d1a026096`／API `5.44.0-dev.20261024.2`；相对字体基线 `f1025db4`，同步脚本全部导出契约及说明字节无变化，仅来源 SHA 更新。历史候选的旧端无字体能力说明不再代表集成后客户端。详见[集成验收记录](../architecture/alignment-font-integration-acceptance.md)。
+
+2026-10-24 契约兼容同步：固定 Backend `bc1135b72557eb6025a541dbd10119cf528ff989`／API `5.43.0-dev.20261022.3`，完整同步机器契约、字体资源契约与生成客户端。新增字体能力均为可选；本候选不声明字体读写能力，服务端安全投影旧端正文并拒绝降级覆盖，拒绝时保留编辑内容。字体选择与缓存继续由独立 PR 114 验收，详见[兼容同步记录](../architecture/alignment-contract-compatibility-sync.md)。
+
+2026-10-24 字体管理契约审查：Backend `f1025db4ef0d4986f53a4beffac6514d7ee16357`／API `5.44.0-dev.20261024.2`。新增管理字体提交、分页和顺序接口；公开字体v2协议与本模块业务操作不变，Mobile不新增管理入口。产品候选已完成本地检查与构建，公网精确兼容随部署复核，真机验收未完成，见[持续加载记录](../architecture/thread-fonts-mobile-continuous-loading.md)。
+
+2026-10-22 28 款字体与进度超时契约同步：Backend `f27898ec3b168b9e027b5d5abef43a0d3dafa242`／API `5.42.0-dev.20261022.1`。目录更新为 1.2.0，28 款（中文 12／日文 10／英文 6）；历史小城 ID 与旧 v1 解析保留。v2 明确 15 秒无进度和 600 秒总上限，并移除原件专属字段。此提交仅同步契约与生成客户端，持续加载行为仍待候选验证。
+
+2026-10-22 字体运行策略契约同步：Backend `d86734e5aa229c5401a092096b8845b3d17546b0`／API `5.42.0-dev.20261021.1`。新增公开 `textFontsGetRuntimePolicy` 与 v2 固定策略、schema 和夹具；旧正文、目录、manifest 字节与资源不变。此提交仅同步契约与生成客户端，持续加载行为仍待候选验证。
+
+2026-10-21 来源同步：固定 Backend `102b825379eb5da462f0ff765b29dc8fd7fb93ad`／API `5.41.0-dev.20261021.2`，本次新增正文字体能力、目录与正文写入版本；本模块既有业务操作不变，共享网络声明字体读取版本。未将候选契约当作已部署状态，字体消费者与验收见[字体 revision 5 候选记录](../architecture/thread-fonts-mobile-r5-candidate.md)。
 
 2026-10-18 合并来源同步：Backend PR #55 已合并，固定最终提交 `6e00c4031a8f970609eef8cbf6fdefe3e6b12126`／API `5.40.0-dev.20261018.1`。契约字节与先前候选 `da68203a` 一致，本次只更新来源元数据；消费者验证和部署核验分别记录，不改变本模块既有范围。
 

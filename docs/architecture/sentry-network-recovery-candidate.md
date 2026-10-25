@@ -1,9 +1,24 @@
 # Sentry 后台网络恢复候选
 
-状态：最新 dev 整合候选／本轮官方完整门禁通过／待负责人验收。关联 WENYOUSITE-MOBILE-14、W、2H；不关闭 Sentry 问题、不合并或部署、不安装真机。
+状态：2026-10-25 最新 dev 整合候选／独立检查通过／六项组合完整门禁待执行／待负责人验收。关联 WENYOUSITE-MOBILE-14、W、2H；不关闭 Sentry 问题、不合并或部署、不安装真机。
 
-2026-10-21 新整合源码已通过单并发官方 `check:apk`，精确提交与产物见下一节。此前 2026-10-16 的 `npm run check:apk -- -TestConcurrency 2` 也曾完整退出 0 并在同次运行构建 Debug APK，绑定当时文档 HEAD `552993d2b8f306ea8ce49d82cb4c49f4a1410449` 与应用源码 `765778e4fbf2eeb2a1745560773628282b1eb66f`；其后的文档更正、首次失败及分项补检均保留在历史记录，不代替本轮新源码验证。负责人真机验收尚未执行。
+2026-10-21 历史整合源码已通过单并发官方 `check:apk`，精确提交与产物见对应历史节。此前 2026-10-16 的 `npm run check:apk -- -TestConcurrency 2` 也曾完整退出 0 并在同次运行构建 Debug APK，绑定当时文档 HEAD `552993d2b8f306ea8ce49d82cb4c49f4a1410449` 与应用源码 `765778e4fbf2eeb2a1745560773628282b1eb66f`；其后的文档更正、首次失败及分项补检均保留在历史记录，不代替本轮新源码验证。负责人真机验收尚未执行。
 
+## 2026-10-25 最新 dev 整合
+
+- 沿用 PR #101、分支 `codex/20261015-sentry-network-recovery` 与原 Worktree，原 HEAD `48db24ec1649e9f4b7312cad812880c4595f2d18` 普通合入 `origin/dev` `b7e1a4acf9433b38b29505834b5f1eea77598330`，不改写已共享历史。本轮只含本候选与最新 dev，不纳入其余未合并 PR。
+- 文本冲突仅位于 CHANGELOG 和应用壳错误章节，保留网络冷却与楼中楼恢复前台保位两边事实；应用、测试和工具自动合入。网络生产实现未作额外改动，保留共享失败预算、会话代次／票据、显式重试和业务写入重放边界；AST 文案审计保留既有实现与 418 上限。
+- 继承最新 dev 的字体、标题、相册、原生与依赖变化。Backend 来源 `8a5d21858e04c69832c90e5a3a10f1e70fdcb545`、API `5.44.0-dev.20261024.3`；Foundation 只读镜像已 fetch tags，最新正式版本与锁定均为 `v7.6.0`。本轮无新 HTTP、数据库或协议变化，不回退契约或手改生成文件。
+- 2026-10-25 治理任务继续授权仅检查、提交推送和更新原 Draft PR，状态保持候选／待负责人验收。默认审批偏好已传递，collaboration 无受支持设置入口，宿主明确为 `approval_policy=never`、`danger-full-access`，Auto-review 实际配置尚未设置／核验。
+- 负责人选择一个包含六项改动的组合验收 APK；治理任务据此将独立 PR 检查与最终组合交付分开。本 PR 本轮没有执行 `check:apk`、全量 Flutter 测试或 Windows 发布工具测试，也没有构建新的独立 APK；最终组合须执行完整 `npm run check:apk -- -TestConcurrency 1` 后才提供验收包。历史 APK 不作为当前源码产物。
+- 独立检查开始前冻结 Git 树 `e217b8382eda2ef1d5277fc3f95c949f9c0590ba`，索引清单 `D:\codex-worktrees\mobile-sentry-network\network-source-index-20261025.txt` 的 SHA-256 为 `8e718238f180d620648b2697239e142e5984fc80e4a95e82f716e4b3bb243955`。检查结束时树仍相同、生成客户端与锁文件无额外差异；随后仅补充本验收文档和 CHANGELOG。
+- 独立分项验证：OpenAPI、固定契约来源、客户端再生成零差异、匿名只读公网兼容、1556 文件格式（0 changed）、应用全量分析（299.4 秒，零问题）、生成客户端分析（零问题）、架构、23 模块文档和 API 覆盖全部通过。公网只读证据为 API `5.44.0-dev.20261024.3`、Backend `8a5d21858e04c69832c90e5a3a10f1e70fdcb545`、激活 Markdown v5 与主题列表兼容。
+- 定向命令：`flutter test --no-pub --concurrency=1 --reporter expanded test/core/network test/features/app_shell/automatic_unread_refresh_test.dart test/features/app_shell/background_online_reminder_coordinator_test.dart test/features/app_shell/background_online_reminders_test.dart test/features/app_shell/background_online_poller_test.dart test/features/app_shell/background_reminder_lifecycle_test.dart test/features/app_shell/background_reminder_runtime_test.dart test/features/notifications/notification_controllers_test.dart test/features/direct_messages/direct_optimistic_state_test.dart test/user_facing_copy_test.dart`。163 项通过、0 跳过、0 失败（3 分 8 秒），包含原两项无冷却回归、会话代次／票据、前台明确重试、不新增写入重放、通知去重与 AST 文案审计。
+- 历史旧红涉及的两份生产文件在 `d7168b61` 与本轮 `b7e1a4ac` 仍字节相同：`session_controller.dart` 的 blob 为 `f54b2922dd67356c5065aef0ac3693af51ddd174`，后台协调器为 `d0ea997e9b58911a43a44074316b8da491524360`。本轮未重新执行旧红，保留历史失败事实；上述 163 项实际执行了对应候选新绿。2H 原始现场、Android/Doze 真机调度、前台私聊会话与音频处理轮询仍未覆盖。
+- 首次独立检查在 `api:normalize` 遇到 Windows 文件映射占用 `.gitignore`（errno 1224）退出 1，当时存在并行 Git 读取，未证实具体锁持有者；停止并行读取后原样重跑越过该点。重跑随后复用 10 月 21 日旧 AOT/asset graph，生成进程持续等待、连续 CPU 采样无增长；核验所属 PID 22660 后显式终止，外层正式退出 1。确认无剩余 Dart 进程、lock 可独占打开后归档本包缓存并原样生成，新生成器正常输出，未改工具或门禁。
+- 第二次重跑通过生成／契约／格式，但应用分析扫到位于 `build/` 的旧缓存入口，报告缺失 builder URI 与非空断言共 2 项，退出 1。将归档移至同任务工作树外 `D:\codex-worktrees\mobile-sentry-network\wenyou-api-build-cache-1746` 后，仅重跑分析与后续阶段，最终退出 0；未调整 analyzer 排除，未删除失败证据。这些是分项检查及恢复记录，不能称为一次完整门禁退出 0。
+- 日志均在 `D:\codex-worktrees\mobile-sentry-network\`：首轮 `network-independent-check-20261025.log` SHA-256 `2b16190c399d717fe78ac271b3a4908ef2a933b720e5faebe96c162c8e120ede`；旧 AOT 等待及受控终止 `network-independent-check-20261025-retry1.log` 为 `d3535581393a10391f14816f2f514c4692d8442ff55fb6f3d9b6a9f3afbe2071`；包含生成／契约／格式通过及归档分析失败的 `network-independent-check-20261025-retry2.log` 为 `67df3695b348855c974327a0b5392eec8316c96fb9b9e9390b89b8b839c8c66e`；最终分析及定向测试通过的 `network-independent-remaining-20261025.log` 为 `d88d5edea1418ff03476087dfaaad43b8ee8273c2bbb0584437743535963b4f3`；缓存恢复记录 `network-generator-recovery-20261025.log` 为 `bec2daa317182d009c6634d90ec785b7b6d369898eac7dd8817b3fd3ed20ea8b`。
+- `npm ci` 退出 0，锁文件不变，日志 `network-dependencies-20261025.log` SHA-256 `cb077d8dba7b26793f5ecc617beb6c629f467a60f97666917606901f4e690a9e`；它报告锁定工具依赖 11 项审计告警（1 moderate、8 high、2 critical），本轮未执行自动升级。未安装或启动应用，故障注入全部为内存 fake／Dio adapter；没有写入 E2E、线上业务写入或新增隔离资源。重型检查结束后核验本 Worktree 无 Dart 子进程并交还检查时段。
 ## 2026-10-21 最新 dev 整合
 
 - 沿用 PR #101、原分支与 Worktree，从原 HEAD `e2542fe1c86d54e413c1a9146dc6b0148acfdb11` 合入已更新的 `origin/dev` `6f0064507a77e2034250ee4fd9f1d382e0a063a9`，不改写已共享历史。新基线包含音频、错误重试界面、公共分页流程和 `0.10.0+100` 发布准备，本候选全部保留，不扩展网络恢复接线范围。

@@ -6,6 +6,41 @@ part of 'create_thread_dto.dart';
 // BuiltValueGenerator
 // **************************************************************************
 
+const CreateThreadDtoTextFontVersionEnum
+_$createThreadDtoTextFontVersionEnum_number1 =
+    const CreateThreadDtoTextFontVersionEnum._('number1');
+const CreateThreadDtoTextFontVersionEnum
+_$createThreadDtoTextFontVersionEnum_number2 =
+    const CreateThreadDtoTextFontVersionEnum._('number2');
+const CreateThreadDtoTextFontVersionEnum
+_$createThreadDtoTextFontVersionEnum_unknownDefaultOpenApi =
+    const CreateThreadDtoTextFontVersionEnum._('unknownDefaultOpenApi');
+
+CreateThreadDtoTextFontVersionEnum _$createThreadDtoTextFontVersionEnumValueOf(
+  String name,
+) {
+  switch (name) {
+    case 'number1':
+      return _$createThreadDtoTextFontVersionEnum_number1;
+    case 'number2':
+      return _$createThreadDtoTextFontVersionEnum_number2;
+    case 'unknownDefaultOpenApi':
+      return _$createThreadDtoTextFontVersionEnum_unknownDefaultOpenApi;
+    default:
+      return _$createThreadDtoTextFontVersionEnum_unknownDefaultOpenApi;
+  }
+}
+
+final BuiltSet<CreateThreadDtoTextFontVersionEnum>
+_$createThreadDtoTextFontVersionEnumValues =
+    BuiltSet<CreateThreadDtoTextFontVersionEnum>(
+      const <CreateThreadDtoTextFontVersionEnum>[
+        _$createThreadDtoTextFontVersionEnum_number1,
+        _$createThreadDtoTextFontVersionEnum_number2,
+        _$createThreadDtoTextFontVersionEnum_unknownDefaultOpenApi,
+      ],
+    );
+
 const CreateThreadDtoTextColorVersionEnum
 _$createThreadDtoTextColorVersionEnum_number1 =
     const CreateThreadDtoTextColorVersionEnum._('number1');
@@ -94,6 +129,9 @@ _$createThreadDtoVisibilityEnumValues = BuiltSet<CreateThreadDtoVisibilityEnum>(
   ],
 );
 
+Serializer<CreateThreadDtoTextFontVersionEnum>
+_$createThreadDtoTextFontVersionEnumSerializer =
+    _$CreateThreadDtoTextFontVersionEnumSerializer();
 Serializer<CreateThreadDtoTextColorVersionEnum>
 _$createThreadDtoTextColorVersionEnumSerializer =
     _$CreateThreadDtoTextColorVersionEnumSerializer();
@@ -103,6 +141,41 @@ _$createThreadDtoMarkdownContractVersionEnumSerializer =
 Serializer<CreateThreadDtoVisibilityEnum>
 _$createThreadDtoVisibilityEnumSerializer =
     _$CreateThreadDtoVisibilityEnumSerializer();
+
+class _$CreateThreadDtoTextFontVersionEnumSerializer
+    implements PrimitiveSerializer<CreateThreadDtoTextFontVersionEnum> {
+  static const Map<String, Object> _toWire = const <String, Object>{
+    'number1': 1,
+    'number2': 2,
+    'unknownDefaultOpenApi': 11184809,
+  };
+  static const Map<Object, String> _fromWire = const <Object, String>{
+    1: 'number1',
+    2: 'number2',
+    11184809: 'unknownDefaultOpenApi',
+  };
+
+  @override
+  final Iterable<Type> types = const <Type>[CreateThreadDtoTextFontVersionEnum];
+  @override
+  final String wireName = 'CreateThreadDtoTextFontVersionEnum';
+
+  @override
+  Object serialize(
+    Serializers serializers,
+    CreateThreadDtoTextFontVersionEnum object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => _toWire[object.name] ?? object.name;
+
+  @override
+  CreateThreadDtoTextFontVersionEnum deserialize(
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => CreateThreadDtoTextFontVersionEnum.valueOf(
+    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
+  );
+}
 
 class _$CreateThreadDtoTextColorVersionEnumSerializer
     implements PrimitiveSerializer<CreateThreadDtoTextColorVersionEnum> {
@@ -211,6 +284,8 @@ class _$CreateThreadDtoVisibilityEnumSerializer
 
 class _$CreateThreadDto extends CreateThreadDto {
   @override
+  final CreateThreadDtoTextFontVersionEnum? textFontVersion;
+  @override
   final CreateThreadDtoTextColorVersionEnum? textColorVersion;
   @override
   final CreateThreadDtoMarkdownContractVersionEnum? markdownContractVersion;
@@ -233,6 +308,7 @@ class _$CreateThreadDto extends CreateThreadDto {
       (CreateThreadDtoBuilder()..update(updates))._build();
 
   _$CreateThreadDto._({
+    this.textFontVersion,
     this.textColorVersion,
     this.markdownContractVersion,
     this.clientRequestId,
@@ -254,6 +330,7 @@ class _$CreateThreadDto extends CreateThreadDto {
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
     return other is CreateThreadDto &&
+        textFontVersion == other.textFontVersion &&
         textColorVersion == other.textColorVersion &&
         markdownContractVersion == other.markdownContractVersion &&
         clientRequestId == other.clientRequestId &&
@@ -268,6 +345,7 @@ class _$CreateThreadDto extends CreateThreadDto {
   @override
   int get hashCode {
     var _$hash = 0;
+    _$hash = $jc(_$hash, textFontVersion.hashCode);
     _$hash = $jc(_$hash, textColorVersion.hashCode);
     _$hash = $jc(_$hash, markdownContractVersion.hashCode);
     _$hash = $jc(_$hash, clientRequestId.hashCode);
@@ -284,6 +362,7 @@ class _$CreateThreadDto extends CreateThreadDto {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'CreateThreadDto')
+          ..add('textFontVersion', textFontVersion)
           ..add('textColorVersion', textColorVersion)
           ..add('markdownContractVersion', markdownContractVersion)
           ..add('clientRequestId', clientRequestId)
@@ -300,6 +379,12 @@ class _$CreateThreadDto extends CreateThreadDto {
 class CreateThreadDtoBuilder
     implements Builder<CreateThreadDto, CreateThreadDtoBuilder> {
   _$CreateThreadDto? _$v;
+
+  CreateThreadDtoTextFontVersionEnum? _textFontVersion;
+  CreateThreadDtoTextFontVersionEnum? get textFontVersion =>
+      _$this._textFontVersion;
+  set textFontVersion(CreateThreadDtoTextFontVersionEnum? textFontVersion) =>
+      _$this._textFontVersion = textFontVersion;
 
   CreateThreadDtoTextColorVersionEnum? _textColorVersion;
   CreateThreadDtoTextColorVersionEnum? get textColorVersion =>
@@ -353,6 +438,7 @@ class CreateThreadDtoBuilder
   CreateThreadDtoBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
+      _textFontVersion = $v.textFontVersion;
       _textColorVersion = $v.textColorVersion;
       _markdownContractVersion = $v.markdownContractVersion;
       _clientRequestId = $v.clientRequestId;
@@ -386,6 +472,7 @@ class CreateThreadDtoBuilder
       _$result =
           _$v ??
           _$CreateThreadDto._(
+            textFontVersion: textFontVersion,
             textColorVersion: textColorVersion,
             markdownContractVersion: markdownContractVersion,
             clientRequestId: clientRequestId,

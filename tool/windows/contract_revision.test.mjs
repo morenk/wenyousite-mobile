@@ -7,6 +7,34 @@ import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 const repository = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
+const fontContractSources = [
+  'docs/dynamic-text-fonts.md',
+  'docs/admin-font-management.md',
+  'docs/deprecation-register.md',
+  'contracts/admin-font-management-v1-fixtures.json',
+  'docs/markdown-text-font-v1.md',
+  'docs/thread-font-assets.md',
+  'docs/thread-font-runtime-policy.md',
+  'contracts/markdown-text-font-v1.schema.json',
+  'contracts/markdown-text-font-v1-fixtures.json',
+  'contracts/markdown-text-font-v2.schema.json',
+  'contracts/markdown-text-font-v2-fixtures.json',
+  'contracts/thread-font-dynamic-v2-fixtures.json',
+  'contracts/thread-font-manifest-v2.schema.json',
+  'contracts/thread-font-runtime-policy-v3.json',
+  'contracts/thread-font-runtime-policy-v3.schema.json',
+  'contracts/thread-font-v1-import-map.json',
+  'contracts/thread-font-runtime-policy-v2.json',
+  'contracts/thread-font-runtime-policy-v2.schema.json',
+  'contracts/thread-font-runtime-policy-v2-fixtures.json',
+  'contracts/thread-font-catalog-v1.json',
+  'contracts/thread-font-catalog-v1.schema.json',
+  'contracts/thread-font-sources-v1.json',
+  'contracts/thread-font-sources-v1.schema.json',
+  'contracts/thread-font-manifest-v1.json',
+  'contracts/thread-font-manifest-v1.schema.json',
+  'contracts/archive/thread-font-xiaocheng-lafeng-v1.json',
+];
 
 test('固定部署祖先导出同一 SHA，拒绝远端 dev 以外提交且不改已有契约', () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'wenyou-contract-revision-'));
@@ -17,6 +45,11 @@ test('固定部署祖先导出同一 SHA，拒绝远端 dev 以外提交且不�
     fs.mkdirSync(backend);
     fs.mkdirSync(path.join(backend, 'docs'));
     fs.cpSync(path.join(repository, 'contracts'), path.join(backend, 'contracts'), { recursive: true });
+    for (const source of fontContractSources) {
+      const destination = path.join(backend, source);
+      fs.mkdirSync(path.dirname(destination), { recursive: true });
+      fs.copyFileSync(path.join(repository, 'contracts', source.replace(/^(docs|contracts)\//, '')), destination);
+    }
     const changelog = path.join(backend, 'contracts/CHANGELOG.md');
     fs.writeFileSync(changelog, '# API 合同变更\n\n## 编辑器测试语料更新\n\n' + fs.readFileSync(changelog, 'utf8'));
     fs.copyFileSync(path.join(repository, 'contracts/mobile-client-guide.md'), path.join(backend, 'docs/mobile-client-guide.md'));
@@ -26,6 +59,12 @@ test('固定部署祖先导出同一 SHA，拒绝远端 dev 以外提交且不�
     fs.copyFileSync(path.join(repository, 'contracts/media-display.md'), path.join(backend, 'docs/media-display.md'));
     fs.copyFileSync(path.join(repository, 'contracts/audio-upload.md'), path.join(backend, 'docs/audio-upload.md'));
     fs.copyFileSync(path.join(repository, 'contracts/markdown-text-color-v1.md'), path.join(backend, 'docs/markdown-text-color-v1.md'));
+    fs.copyFileSync(path.join(repository, 'contracts/markdown-text-font-v1.md'), path.join(backend, 'docs/markdown-text-font-v1.md'));
+    fs.copyFileSync(path.join(repository, 'contracts/thread-font-assets.md'), path.join(backend, 'docs/thread-font-assets.md'));
+    fs.copyFileSync(path.join(repository, 'contracts/thread-font-runtime-policy.md'), path.join(backend, 'docs/thread-font-runtime-policy.md'));
+    fs.copyFileSync(path.join(repository, 'contracts/dynamic-text-fonts.md'), path.join(backend, 'docs/dynamic-text-fonts.md'));
+    fs.copyFileSync(path.join(repository, 'contracts/admin-font-management.md'), path.join(backend, 'docs/admin-font-management.md'));
+    fs.copyFileSync(path.join(repository, 'contracts/deprecation-register.md'), path.join(backend, 'docs/deprecation-register.md'));
     fs.copyFileSync(path.join(repository, 'contracts/thread-identity.md'), path.join(backend, 'docs/thread-identity.md'));
     fs.copyFileSync(path.join(repository, 'contracts/markdown-v6-role-mentions.md'), path.join(backend, 'docs/markdown-v6-role-mentions.md'));
     fs.copyFileSync(path.join(repository, 'contracts/markdown-text-color-v1.md'), path.join(backend, 'docs/markdown-text-color-v1.md'));
@@ -63,6 +102,13 @@ test('固定部署祖先导出同一 SHA，拒绝远端 dev 以外提交且不�
     assert.ok(metadata.split('\n').includes(`contractVersion=${apiVersion}`));
     assert.doesNotMatch(metadata, new RegExp(branchHead));
     assert.equal(fs.readFileSync(path.join(mobile, 'contracts/CHANGELOG.md'), 'utf8'), git('show', `${deployed}:contracts/CHANGELOG.md`) + '\n');
+    for (const source of fontContractSources) {
+      assert.deepEqual(
+        fs.readFileSync(path.join(mobile, 'contracts', source.replace(/^(docs|contracts)\//, ''))),
+        fs.readFileSync(path.join(backend, source)),
+        `字体共享契约必须逐字同步：${source}`,
+      );
+    }
     for (const name of [
       'rich-text-behavior-v1-fixtures.json',
       'markdown-inline-combinations-v1-fixtures.json',
@@ -76,6 +122,32 @@ test('固定部署祖先导出同一 SHA，拒绝远端 dev 以外提交且不�
       'markdown-text-color-v1.md',
       'markdown-text-color-v1-fixtures.json',
       'markdown-text-color-v1.schema.json',
+      'markdown-text-font-v1.md',
+      'markdown-text-font-v1.schema.json',
+      'markdown-text-font-v1-fixtures.json',
+      'thread-font-catalog-v1.json',
+      'thread-font-catalog-v1.schema.json',
+      'thread-font-sources-v1.json',
+      'thread-font-sources-v1.schema.json',
+      'thread-font-manifest-v1.json',
+      'thread-font-manifest-v1.schema.json',
+      'archive/thread-font-xiaocheng-lafeng-v1.json',
+      'thread-font-assets.md',
+      'thread-font-runtime-policy-v2.json',
+      'thread-font-runtime-policy-v2.schema.json',
+      'thread-font-runtime-policy-v2-fixtures.json',
+      'thread-font-runtime-policy.md',
+      'dynamic-text-fonts.md',
+      'admin-font-management.md',
+      'admin-font-management-v1-fixtures.json',
+      'deprecation-register.md',
+      'markdown-text-font-v2.schema.json',
+      'markdown-text-font-v2-fixtures.json',
+      'thread-font-dynamic-v2-fixtures.json',
+      'thread-font-manifest-v2.schema.json',
+      'thread-font-runtime-policy-v3.json',
+      'thread-font-runtime-policy-v3.schema.json',
+      'thread-font-v1-import-map.json',
       'discussion-navigation.v1.json',
       'discussion-navigation.md',
       'mobile-release-operations.md',
