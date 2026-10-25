@@ -10,6 +10,7 @@ import 'package:wenyousite_mobile/features/editor/presentation/audio_projected_q
 const _url = 'https://example.invalid/audio.mp3';
 const _red = '#D14343';
 const _green = '#25855A';
+const _font = 'tfv_00000000000000000000000000000001';
 final _audios = {
   _url: MediaAudio.parse({
     'sourceUrl': _url,
@@ -25,7 +26,7 @@ void main() {
 
   for (final initiallyProjected in [false, true]) {
     for (final invalid in ['negative', 'sentinel', 'overflow', 'length']) {
-      test('音频投影=$initiallyProjected 的非法范围 $invalid 保留正文、输入色和两侧历史', () {
+      test('音频投影=$initiallyProjected 的非法范围 $invalid 保留正文、输入样式和两侧历史', () {
         var audios = initiallyProjected ? _audios : <String, MediaAudio>{};
         var projectionReads = 0;
         final decoded = MarkdownDeltaCodec.decode('[长音频标签]($_url)\n\n尾');
@@ -62,6 +63,7 @@ void main() {
         );
         controller.undo();
         controller.useColorForTyping(_red);
+        controller.useFontForTyping(_font);
 
         // 元数据已变化，但视图尚未刷新。拒绝输入不能顺便投影、改坐标或历史。
         audios = initiallyProjected ? <String, MediaAudio>{} : _audios;
@@ -91,6 +93,7 @@ void main() {
         expect(controller.document.toDelta(), before);
         expect(controller.selection, selection);
         expect(controller.typingColor, _red);
+        expect(controller.captureTypingStyle().font, _font);
         expect(controller.toggledStyle, style);
         expect(projectionReads, 0);
         expect(history.lastRecorded, lastRecorded);
@@ -110,6 +113,7 @@ void main() {
           initiallyProjected ? '长音频标签\n尾红😀' : '\uFFFC\n尾红😀',
         );
         expect(controller.typingColor, _red);
+        expect(controller.captureTypingStyle().font, _font);
         final projected = controller.document.toDelta();
         final at = controller.selection.start;
         controller.replaceText(
@@ -121,6 +125,10 @@ void main() {
         expect(
           controller.document.collectStyle(at, 1).attributes['color']?.value,
           _red,
+        );
+        expect(
+          controller.document.collectStyle(at, 1).attributes['font']?.value,
+          _font,
         );
         expect(controller.typingColor, _red);
         final after = controller.document.toDelta();

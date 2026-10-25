@@ -14,15 +14,18 @@ class PostReadingBody extends ConsumerWidget {
     required this.galleryTarget,
     this.onTapText,
     this.onLongPressNonText,
+    this.enableTextFonts = false,
     super.key,
   });
   final PostItem post;
   final ReadingGalleryTarget galleryTarget;
   final VoidCallback? onTapText;
   final VoidCallback? onLongPressNonText;
+  final bool enableTextFonts;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) => StickerPostMarkdown(
+    enableTextFonts: enableTextFonts,
     postId: post.id,
     postVersion: post.version,
     galleryTarget: galleryTarget,

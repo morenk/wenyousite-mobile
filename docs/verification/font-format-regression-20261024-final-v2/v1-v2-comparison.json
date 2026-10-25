@@ -1,0 +1,82 @@
+[
+  {
+    "id": "static-ttf",
+    "v1Sha256": "746b8310531d35a3c0a58a6ea484e579a434bcfa4633d4c96911e0647ad1305a",
+    "v2Sha256": "495a2271e14c012d3168e509e17c4b203eb809d1b85e9cf7983c92348360e09b",
+    "sameSourceSha256": true,
+    "identicalFontBytes": false,
+    "identicalPixelSha256": true,
+    "identicalPngBytes": true,
+    "identicalInkPixels": true,
+    "identicalLineWidth": true,
+    "changedTables": [
+      "head",
+      "name"
+    ],
+    "equalAfterFamilyAndChecksumNormalization": {
+      "head": true,
+      "name": true
+    }
+  },
+  {
+    "id": "static-cff",
+    "v1Sha256": "7dfa6715f229ae9645efa8df7ac90ed840ce34bbe46f57a065f4de1474d1a40c",
+    "v2Sha256": "46a8d0360c6357b06fb19257c62723ff530c59ab8f1dd60e4e98e59c7c815aab",
+    "sameSourceSha256": true,
+    "identicalFontBytes": false,
+    "identicalPixelSha256": true,
+    "identicalPngBytes": true,
+    "identicalInkPixels": true,
+    "identicalLineWidth": true,
+    "changedTables": [
+      "CFF ",
+      "head",
+      "name"
+    ],
+    "equalAfterFamilyAndChecksumNormalization": {
+      "CFF ": true,
+      "head": true,
+      "name": true
+    }
+  },
+  {
+    "id": "variable-glyf",
+    "v1Sha256": "ba8210939feb1ed9a0e03eb241cde6dcdb167c796abf6ee4e9fc60e46578101b",
+    "v2Sha256": "89f5df4cb21897c2156a91743e82b0e22ae27c3f6d9fdb9adccd707715f0f842",
+    "sameSourceSha256": true,
+    "identicalFontBytes": false,
+    "identicalPixelSha256": true,
+    "identicalPngBytes": true,
+    "identicalInkPixels": true,
+    "identicalLineWidth": true,
+    "changedTables": [
+      "head",
+      "name"
+    ],
+    "equalAfterFamilyAndChecksumNormalization": {
+      "head": true,
+      "name": true
+    }
+  },
+  {
+    "id": "variable-cff2",
+    "v1Sha256": "2e11cca51372265ca044a76b0ed0946c0abc1e667c419e1b3fb85a4095af599c",
+    "v2Sha256": "bdfe54c2293831911561fee7e668cdfb43e44697230c810f46c1b42328408886",
+    "sameSourceSha256": true,
+    "identicalFontBytes": false,
+    "identicalPixelSha256": true,
+    "identicalPngBytes": true,
+    "identicalInkPixels": true,
+    "identicalLineWidth": true,
+    "changedTables": [
+      "CFF ",
+      "head",
+      "name"
+    ],
+    "equalAfterFamilyAndChecksumNormalization": {
+      "CFF ": true,
+      "head": true,
+      "name": true
+    }
+  }
+]

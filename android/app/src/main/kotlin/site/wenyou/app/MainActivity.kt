@@ -30,6 +30,7 @@ class MainActivity : FlutterActivity() {
     }
 
     private var keyboardInsetsChannel: MethodChannel? = null
+    private var networkAvailabilityChannel: NetworkAvailabilityChannel? = null
     private var clipboardNavigationChannel: ClipboardNavigationChannel? = null
     private var imageGalleryChannel: ImageGalleryChannel? = null
     private var documentSaverChannel: DocumentSaverChannel? = null
@@ -47,6 +48,7 @@ class MainActivity : FlutterActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        networkAvailabilityChannel = NetworkAvailabilityChannel(applicationContext).also { it.register(flutterEngine) }
         EditorClipboardChannel(this).register(flutterEngine)
         clipboardNavigationChannel =
             ClipboardNavigationChannel(this).also { it.register(flutterEngine) }
@@ -134,6 +136,8 @@ class MainActivity : FlutterActivity() {
     }
 
     override fun cleanUpFlutterEngine(flutterEngine: FlutterEngine) {
+        networkAvailabilityChannel?.dispose()
+        networkAvailabilityChannel = null
         audioFilePickerChannel?.dispose()
         audioFilePickerChannel = null
         backgroundExecutionChannel?.dispose()

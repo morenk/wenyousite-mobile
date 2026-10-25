@@ -115,6 +115,30 @@ const AdminAuditLogResponseDtoActionEnum
 _$adminAuditLogResponseDtoActionEnum_MOBILE_RELEASE_UPDATED =
     const AdminAuditLogResponseDtoActionEnum._('MOBILE_RELEASE_UPDATED');
 const AdminAuditLogResponseDtoActionEnum
+_$adminAuditLogResponseDtoActionEnum_TEXT_FONT_DRAFT_UPDATED =
+    const AdminAuditLogResponseDtoActionEnum._('TEXT_FONT_DRAFT_UPDATED');
+const AdminAuditLogResponseDtoActionEnum
+_$adminAuditLogResponseDtoActionEnum_TEXT_FONT_SOURCE_UPLOADED =
+    const AdminAuditLogResponseDtoActionEnum._('TEXT_FONT_SOURCE_UPLOADED');
+const AdminAuditLogResponseDtoActionEnum
+_$adminAuditLogResponseDtoActionEnum_TEXT_FONT_PROCESS_REQUESTED =
+    const AdminAuditLogResponseDtoActionEnum._('TEXT_FONT_PROCESS_REQUESTED');
+const AdminAuditLogResponseDtoActionEnum
+_$adminAuditLogResponseDtoActionEnum_TEXT_FONT_VERSION_READY =
+    const AdminAuditLogResponseDtoActionEnum._('TEXT_FONT_VERSION_READY');
+const AdminAuditLogResponseDtoActionEnum
+_$adminAuditLogResponseDtoActionEnum_TEXT_FONT_PUBLISHED =
+    const AdminAuditLogResponseDtoActionEnum._('TEXT_FONT_PUBLISHED');
+const AdminAuditLogResponseDtoActionEnum
+_$adminAuditLogResponseDtoActionEnum_TEXT_FONT_ENABLED_UPDATED =
+    const AdminAuditLogResponseDtoActionEnum._('TEXT_FONT_ENABLED_UPDATED');
+const AdminAuditLogResponseDtoActionEnum
+_$adminAuditLogResponseDtoActionEnum_TEXT_FONT_WITHDRAWN =
+    const AdminAuditLogResponseDtoActionEnum._('TEXT_FONT_WITHDRAWN');
+const AdminAuditLogResponseDtoActionEnum
+_$adminAuditLogResponseDtoActionEnum_TEXT_FONT_IMPORTED =
+    const AdminAuditLogResponseDtoActionEnum._('TEXT_FONT_IMPORTED');
+const AdminAuditLogResponseDtoActionEnum
 _$adminAuditLogResponseDtoActionEnum_unknownDefaultOpenApi =
     const AdminAuditLogResponseDtoActionEnum._('unknownDefaultOpenApi');
 
@@ -190,6 +214,22 @@ AdminAuditLogResponseDtoActionEnum _$adminAuditLogResponseDtoActionEnumValueOf(
       return _$adminAuditLogResponseDtoActionEnum_SITE_SETTINGS_UPDATED;
     case 'MOBILE_RELEASE_UPDATED':
       return _$adminAuditLogResponseDtoActionEnum_MOBILE_RELEASE_UPDATED;
+    case 'TEXT_FONT_DRAFT_UPDATED':
+      return _$adminAuditLogResponseDtoActionEnum_TEXT_FONT_DRAFT_UPDATED;
+    case 'TEXT_FONT_SOURCE_UPLOADED':
+      return _$adminAuditLogResponseDtoActionEnum_TEXT_FONT_SOURCE_UPLOADED;
+    case 'TEXT_FONT_PROCESS_REQUESTED':
+      return _$adminAuditLogResponseDtoActionEnum_TEXT_FONT_PROCESS_REQUESTED;
+    case 'TEXT_FONT_VERSION_READY':
+      return _$adminAuditLogResponseDtoActionEnum_TEXT_FONT_VERSION_READY;
+    case 'TEXT_FONT_PUBLISHED':
+      return _$adminAuditLogResponseDtoActionEnum_TEXT_FONT_PUBLISHED;
+    case 'TEXT_FONT_ENABLED_UPDATED':
+      return _$adminAuditLogResponseDtoActionEnum_TEXT_FONT_ENABLED_UPDATED;
+    case 'TEXT_FONT_WITHDRAWN':
+      return _$adminAuditLogResponseDtoActionEnum_TEXT_FONT_WITHDRAWN;
+    case 'TEXT_FONT_IMPORTED':
+      return _$adminAuditLogResponseDtoActionEnum_TEXT_FONT_IMPORTED;
     case 'unknownDefaultOpenApi':
       return _$adminAuditLogResponseDtoActionEnum_unknownDefaultOpenApi;
     default:
@@ -235,6 +275,14 @@ _$adminAuditLogResponseDtoActionEnumValues =
         _$adminAuditLogResponseDtoActionEnum_TAG_MERGED,
         _$adminAuditLogResponseDtoActionEnum_SITE_SETTINGS_UPDATED,
         _$adminAuditLogResponseDtoActionEnum_MOBILE_RELEASE_UPDATED,
+        _$adminAuditLogResponseDtoActionEnum_TEXT_FONT_DRAFT_UPDATED,
+        _$adminAuditLogResponseDtoActionEnum_TEXT_FONT_SOURCE_UPLOADED,
+        _$adminAuditLogResponseDtoActionEnum_TEXT_FONT_PROCESS_REQUESTED,
+        _$adminAuditLogResponseDtoActionEnum_TEXT_FONT_VERSION_READY,
+        _$adminAuditLogResponseDtoActionEnum_TEXT_FONT_PUBLISHED,
+        _$adminAuditLogResponseDtoActionEnum_TEXT_FONT_ENABLED_UPDATED,
+        _$adminAuditLogResponseDtoActionEnum_TEXT_FONT_WITHDRAWN,
+        _$adminAuditLogResponseDtoActionEnum_TEXT_FONT_IMPORTED,
         _$adminAuditLogResponseDtoActionEnum_unknownDefaultOpenApi,
       ],
     );
@@ -291,6 +339,9 @@ const AdminAuditLogResponseDtoTargetTypeEnum
 _$adminAuditLogResponseDtoTargetTypeEnum_MOBILE_RELEASE =
     const AdminAuditLogResponseDtoTargetTypeEnum._('MOBILE_RELEASE');
 const AdminAuditLogResponseDtoTargetTypeEnum
+_$adminAuditLogResponseDtoTargetTypeEnum_TEXT_FONT =
+    const AdminAuditLogResponseDtoTargetTypeEnum._('TEXT_FONT');
+const AdminAuditLogResponseDtoTargetTypeEnum
 _$adminAuditLogResponseDtoTargetTypeEnum_unknownDefaultOpenApi =
     const AdminAuditLogResponseDtoTargetTypeEnum._('unknownDefaultOpenApi');
 
@@ -331,6 +382,8 @@ _$adminAuditLogResponseDtoTargetTypeEnumValueOf(String name) {
       return _$adminAuditLogResponseDtoTargetTypeEnum_SITE_SETTINGS;
     case 'MOBILE_RELEASE':
       return _$adminAuditLogResponseDtoTargetTypeEnum_MOBILE_RELEASE;
+    case 'TEXT_FONT':
+      return _$adminAuditLogResponseDtoTargetTypeEnum_TEXT_FONT;
     case 'unknownDefaultOpenApi':
       return _$adminAuditLogResponseDtoTargetTypeEnum_unknownDefaultOpenApi;
     default:
@@ -359,6 +412,7 @@ _$adminAuditLogResponseDtoTargetTypeEnumValues =
         _$adminAuditLogResponseDtoTargetTypeEnum_NOTIFICATION_CAMPAIGN,
         _$adminAuditLogResponseDtoTargetTypeEnum_SITE_SETTINGS,
         _$adminAuditLogResponseDtoTargetTypeEnum_MOBILE_RELEASE,
+        _$adminAuditLogResponseDtoTargetTypeEnum_TEXT_FONT,
         _$adminAuditLogResponseDtoTargetTypeEnum_unknownDefaultOpenApi,
       ],
     );
@@ -407,6 +461,14 @@ class _$AdminAuditLogResponseDtoActionEnumSerializer
     'TAG_MERGED': 'TAG_MERGED',
     'SITE_SETTINGS_UPDATED': 'SITE_SETTINGS_UPDATED',
     'MOBILE_RELEASE_UPDATED': 'MOBILE_RELEASE_UPDATED',
+    'TEXT_FONT_DRAFT_UPDATED': 'TEXT_FONT_DRAFT_UPDATED',
+    'TEXT_FONT_SOURCE_UPLOADED': 'TEXT_FONT_SOURCE_UPLOADED',
+    'TEXT_FONT_PROCESS_REQUESTED': 'TEXT_FONT_PROCESS_REQUESTED',
+    'TEXT_FONT_VERSION_READY': 'TEXT_FONT_VERSION_READY',
+    'TEXT_FONT_PUBLISHED': 'TEXT_FONT_PUBLISHED',
+    'TEXT_FONT_ENABLED_UPDATED': 'TEXT_FONT_ENABLED_UPDATED',
+    'TEXT_FONT_WITHDRAWN': 'TEXT_FONT_WITHDRAWN',
+    'TEXT_FONT_IMPORTED': 'TEXT_FONT_IMPORTED',
     'unknownDefaultOpenApi': 'unknown_default_open_api',
   };
   static const Map<Object, String> _fromWire = const <Object, String>{
@@ -444,6 +506,14 @@ class _$AdminAuditLogResponseDtoActionEnumSerializer
     'TAG_MERGED': 'TAG_MERGED',
     'SITE_SETTINGS_UPDATED': 'SITE_SETTINGS_UPDATED',
     'MOBILE_RELEASE_UPDATED': 'MOBILE_RELEASE_UPDATED',
+    'TEXT_FONT_DRAFT_UPDATED': 'TEXT_FONT_DRAFT_UPDATED',
+    'TEXT_FONT_SOURCE_UPLOADED': 'TEXT_FONT_SOURCE_UPLOADED',
+    'TEXT_FONT_PROCESS_REQUESTED': 'TEXT_FONT_PROCESS_REQUESTED',
+    'TEXT_FONT_VERSION_READY': 'TEXT_FONT_VERSION_READY',
+    'TEXT_FONT_PUBLISHED': 'TEXT_FONT_PUBLISHED',
+    'TEXT_FONT_ENABLED_UPDATED': 'TEXT_FONT_ENABLED_UPDATED',
+    'TEXT_FONT_WITHDRAWN': 'TEXT_FONT_WITHDRAWN',
+    'TEXT_FONT_IMPORTED': 'TEXT_FONT_IMPORTED',
     'unknown_default_open_api': 'unknownDefaultOpenApi',
   };
 
@@ -489,6 +559,7 @@ class _$AdminAuditLogResponseDtoTargetTypeEnumSerializer
     'NOTIFICATION_CAMPAIGN': 'NOTIFICATION_CAMPAIGN',
     'SITE_SETTINGS': 'SITE_SETTINGS',
     'MOBILE_RELEASE': 'MOBILE_RELEASE',
+    'TEXT_FONT': 'TEXT_FONT',
     'unknownDefaultOpenApi': 'unknown_default_open_api',
   };
   static const Map<Object, String> _fromWire = const <Object, String>{
@@ -509,6 +580,7 @@ class _$AdminAuditLogResponseDtoTargetTypeEnumSerializer
     'NOTIFICATION_CAMPAIGN': 'NOTIFICATION_CAMPAIGN',
     'SITE_SETTINGS': 'SITE_SETTINGS',
     'MOBILE_RELEASE': 'MOBILE_RELEASE',
+    'TEXT_FONT': 'TEXT_FONT',
     'unknown_default_open_api': 'unknownDefaultOpenApi',
   };
 

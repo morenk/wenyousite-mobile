@@ -2,6 +2,62 @@
 
 状态：候选／待负责人验收。关联 Sentry `WENYOUSITE-MOBILE-2W`，历史 `M/1Q` 仅作为相近调用路径参考；不关闭或合并 Sentry issue。
 
+## 2026-10-25 六项组合验收前的基线整合
+
+用户授权按 #101 → #103 → #100 → #76 → #104 → #92 推进，整合最新 `dev`、检查后交付一个包含六项的组合验收 APK，暂不合并。本 PR 仅处理 #103 的失效范围候选；组合源码的完整门禁和最终 APK 由治理任务统一记录。
+
+- 从原 HEAD `29b3ea84f1aa980facca4797571aad307eb6a8a9` 普通合入 `origin/dev@b7e1a4acf9433b38b29505834b5f1eea77598330`，不 rebase 或强推。唯一文本冲突为 CHANGELOG，保留两侧历史记录。
+- 继承最新字体 v1/v2、光标输入字体与颜色、粘贴完整文档签名、音频可逆投影、标题间距、相册与安全区行为。范围 guard 继续先于 `runEditCommand`／历史记录／音频投影；有效替换继续使用最新输入样式实现。未引入 #100 分隔线或 #76 HTML 解析候选。
+- 契约继承 Backend `8a5d21858e04c69832c90e5a3a10f1e70fdcb545`、API `5.44.0-dev.20261024.3`、Foundation `v7.6.0`，本轮无契约或依赖变更。
+- `editor_range_integration_test.dart` 在原 8 条音频边界回归中增加动态字体输入意图检查；`editor_range_font_integration_test.dart` 覆盖 v1/v2 的无效结构替换不污染待输入样式、真实粘贴入口保留来源字体及颜色、后续输入与撤销重做、保存重开，以及异步字体验证期间同长度样式变化拒绝迟到粘贴。预期文字与样式独立给定，不用 Codec 结果反推。
+- 本分支执行精确回归、直接受影响测试和全部改动 Dart 文件的格式／分析、架构与模块文档检查；应用与生成客户端全量分析、全量测试、完整门禁和新 APK 在六项最终组合源码统一执行。本分支定向结果不冒充完整门禁，以下 10 月 21 日及 10 月 16 日完整门禁均属于历史源码。
+- 宿主实际策略仍为 `approval_policy=never`、全访问；Auto-review 默认偏好已传递，但工具无受支持设置／核验入口，不能宣称已生效。原 Sentry 输入与真机顺序仍未取得，本轮不宣称原问题已修复。
+
+改动范围静态检查通过：以相对 `origin/dev` 的全部存续 Dart 变更加新文件去重，涵盖原候选和本轮新增共 14 个文件。`dart format --output=none --set-exit-if-changed` 报告 14 文件、0 变化；`flutter analyze --no-pub --fatal-infos --fatal-warnings` 对该 14 文件报告零问题，耗时 121.1 秒。`dart run tool/check_architecture.dart` 与 `dart run tool/check_docs.dart` 均退出 0，23 个功能模块文档完整；架构检查保留既有超 700 行评审提醒，未放宽上限。本任务检查按单并发串行执行；观察到整机另有早先启动的其他任务测试进程，未接管或停止，不宣称整机独占。
+
+本轮精确回归已通过：`editor_range_integration_test.dart` 与 `editor_range_font_integration_test.dart` 两文件共 12 项；另 21 文件 232 项通过，总计 23 文件 244 项。所有 Flutter 测试均以 `flutter test --no-pub -j 1 --reporter expanded` 执行，没有线上业务写入。另 21 文件为：
+
+```text
+test/features/editor/editor_document_range_test.dart
+test/features/editor/mention_suggestions_test.dart
+test/features/editor/editor_link_insertion_test.dart
+test/features/editor/editor_alignment_compatibility_test.dart
+test/features/editor/editor_alignment_clipboard_compatibility_test.dart
+test/features/editor/editor_audio_projection_test.dart
+test/features/editor/editor_audio_history_projection_test.dart
+test/features/editor/editor_selection_history_test.dart
+test/features/editor/editor_text_color_audio_integration_test.dart
+test/features/editor/editor_text_color_caret_paste_test.dart
+test/features/editor/editor_text_font_caret_test.dart
+test/features/editor/editor_text_font_selection_test.dart
+test/features/editor/editor_text_font_session_test.dart
+test/features/editor/editor_text_font_interaction_test.dart
+test/features/editor/editor_text_font_paste_scope_test.dart
+test/features/editor/editor_dynamic_font_paste_test.dart
+test/features/editor/editor_dynamic_font_toolbar_test.dart
+test/features/editor/editor_clipboard_input_method_test.dart
+test/features/editor/rich_editor_session_test.dart
+test/features/editor/editor_atomic_clipboard_test.dart
+test/features/posts/post_composer_composing_close_test.dart
+```
+
+反证在同一合并工作区只将两个控制器替换为 `origin/dev@b7e1a4ac`：Literal blob `70412def3ab5d214854753c4df019e441e274577`、Audio blob `d95f739ec8651839a89a40e01da37dce62c05fe8`。两文件共 12 项运行时，10 项失效范围用例发生 Quill 运行断言／区间错误，2 项已有异步签名保护用例通过；退出 1，不是编译失败。`finally` 按原字节恢复候选，Literal SHA-256 `85DBC67BC2773932D71423139392C79D7F50C3ABDC400288D427D81A25C9E352`、Audio `012F5CC5F47945236F511BD546A3F04A45076B5FFEDC493EA651E39F55679F96` 与替换前一致。首次尝试在 Windows `.bat` 中传入含 `|` 的 `--name` 正则，被命令解释器拆开，退出 255；该次未执行有效回归，不记为旧红，原日志保留后改为运行两份完整测试文件。
+
+日志保留在 `D:\codex-worktrees\mobile-sentry-range\`：
+
+| 日志 | 结果 | SHA-256 |
+| --- | --- | --- |
+| `range-new-regressions-old-dev-20261025.log` | 正则参数启动失败，退出 255，不计反证 | `42F9DC01BEE3FFE563ACAA3E66F280886E089823711C2B3E704032BDA4BC295C` |
+| `range-new-regressions-old-dev-20261025-2.log` | 10 项旧红、2 项既有保护通过，退出 1 | `F029982F32D0A33F8480731710E9246A5810C0699028F13126DDC83F8DAA4D51` |
+| `range-new-regressions-candidate-20261025.log` | 12 项通过，退出 0 | `169BDF42F3A60E5F5790A4DDC4467826101535F277BC0EE4D036FDE17053183E` |
+| `range-related-tests-20261025.log` | 21 文件 232 项通过，退出 0 | `F8C2DD47760A0CB778087C142C757C0055F2DBF4E4AF44728663496A3AFAD8E3` |
+| `range-changed-format-20261025.log` | 14 文件无格式变化，退出 0 | `96270A979B4BD53F90BC61DEF6839C6FB96DBBA459E1F873AAF4C9F481D988C7` |
+| `range-changed-analyze-20261025.log` | 14 文件分析零问题，退出 0 | `0F5FA2048319FC3B2215A2E06389C9C407C156BE63C7AF37DEC292F0DF656AAD` |
+| `range-architecture-20261025.log` | 架构检查通过，退出 0 | `D13E402F496ACACD5EF1AE27FB53B65D07B03EA7757214947C6A9F4B384C8C8C` |
+| `range-docs-20261025.log` | 23 模块文档完整，退出 0 | `8AB319EBD2B97E58F95897DD563CEBE6B4B90F3716AEB8EB263C0149C35E9E35` |
+
+## 2026-10-21 历史整合概述
+
 2026-10-21 最新 `dev` 整合：**官方完整门禁已通过，待负责人验收**。本轮在原分支与 PR #103 继续整合，原 HEAD 为 `2407dadb0bae6add7e85c5d2dd1185a147c5ece0`，以普通 merge 合入 `6f0064507a77e2034250ee4fd9f1d382e0a063a9`；不改写已共享历史。最终冻结树为 `799355264b86fe2a3564923f5bc1e1073dde61f8`，同一次 `npm run check:apk -- -TestConcurrency 1` 于 06:04 完成并退出 0。执行后核对应用、测试、工具、原生配置、契约、生成客户端和依赖清单均与冻结树无差异，提交前仅补充结果文档；本轮提交 SHA 记录在 PR #103。下列 10 月 16 日结果仅为历史证据。
 
 原候选官方完整门禁：2026-10-16 独占运行 `npm run check:apk -- -TestConcurrency 2`，同一次入口完成全量检查与 APK 构建，最终退出 0。运行时 HEAD 为 `ba4ff5384af0a362d909fd4ec69af83502a283a3`，与应用提交 `e7f895238e351498b85446e6cdfddc90339e98cf` 的差异仅为候选文档。以下首次 OOM 失败与分步补检历史分别保留；官方通过仍不替代负责人原场景验收。

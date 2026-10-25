@@ -579,11 +579,9 @@ packages:
   flutter_quill:
     dependency: "direct main"
     description:
-      path: "."
-      ref: c273155025d1255335a6dd3e6ecd3700d29f103e
-      resolved-ref: c273155025d1255335a6dd3e6ecd3700d29f103e
-      url: "https://github.com/singerdmx/flutter-quill.git"
-    source: git
+      path: "packages/flutter_quill"
+      relative: true
+    source: path
     version: "11.5.1"
   flutter_quill_delta_from_html:
     dependency: transitive
@@ -1117,6 +1115,14 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "7.0.2"
+  photo_manager:
+    dependency: "direct main"
+    description:
+      name: photo_manager
+      sha256: "2d00a785b501bf1e5f6180bbef772846e767be11d45d11112b63092ef54a419e"
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "3.12.0"
   platform:
     dependency: transitive
     description:
@@ -1693,11 +1699,11 @@ packages:
     dependency: "direct main"
     description:
       path: "packages/flutter"
-      ref: "v7.5.0"
-      resolved-ref: fef249d8856f5ed08f55eab69a2a2ed01b2742ce
+      ref: "v7.6.0"
+      resolved-ref: "1bbd5a5476b50c51d2bba1f2a218f9408a852c4a"
       url: "https://github.com/morenk/wenyousite-foundation.git"
     source: git
-    version: "7.5.0"
+    version: "7.6.0"
   win32:
     dependency: transitive
     description:

@@ -51,8 +51,16 @@ abstract final class MarkdownInlineRuns {
         continue;
       }
       final core = run.text.trim();
-      final left = {...leftEdges[index], 'color': ?run.marks['color']};
-      final right = {...rightEdges[index], 'color': ?run.marks['color']};
+      final left = {
+        ...leftEdges[index],
+        'color': ?run.marks['color'],
+        'font': ?run.marks['font'],
+      };
+      final right = {
+        ...rightEdges[index],
+        'color': ?run.marks['color'],
+        'font': ?run.marks['font'],
+      };
       if (core.isEmpty) {
         result.add(
           MarkdownInlineRun(run.text, {
@@ -87,6 +95,12 @@ abstract final class MarkdownInlineRuns {
         if (node is md.Text) {
           actual.add(MarkdownInlineRun(node.text, marks));
         } else if (node is md.Element) {
+          if (node.tag == MarkdownTextColor.tag) {
+            if (!visit(node.children ?? [], {...marks, ...node.attributes})) {
+              return false;
+            }
+            continue;
+          }
           final key = switch (node.tag) {
             'strong' => 'bold',
             'em' => 'italic',
@@ -163,7 +177,7 @@ abstract final class MarkdownInlineRuns {
           'italic' => italic,
           'strike' => '~~',
           'link' => '](${mark.value})',
-          'color' => '</span>',
+          'style' => '</span>',
           _ => '',
         });
       }
@@ -171,7 +185,10 @@ abstract final class MarkdownInlineRuns {
 
     for (final run in runs.where((run) => run.text.isNotEmpty)) {
       final next = [
-        for (final key in ['color', 'bold', 'italic', 'link', 'strike'])
+        if (MarkdownTextColor.openingFor(run.marks) case final String opening
+            when opening.isNotEmpty)
+          MapEntry('style', opening),
+        for (final key in ['bold', 'italic', 'link', 'strike'])
           if (run.marks[key] != null) MapEntry(key, run.marks[key]),
       ];
       var prefix = 0;
@@ -190,7 +207,7 @@ abstract final class MarkdownInlineRuns {
           'italic' => italic,
           'strike' => '~~',
           'link' => '[',
-          'color' => '<span data-wenyou-color-v1="${mark.value}">',
+          'style' => mark.value,
           _ => '',
         });
       }
