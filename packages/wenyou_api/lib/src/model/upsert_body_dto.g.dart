@@ -6,6 +6,41 @@ part of 'upsert_body_dto.dart';
 // BuiltValueGenerator
 // **************************************************************************
 
+const UpsertBodyDtoTextFontVersionEnum
+_$upsertBodyDtoTextFontVersionEnum_number1 =
+    const UpsertBodyDtoTextFontVersionEnum._('number1');
+const UpsertBodyDtoTextFontVersionEnum
+_$upsertBodyDtoTextFontVersionEnum_number2 =
+    const UpsertBodyDtoTextFontVersionEnum._('number2');
+const UpsertBodyDtoTextFontVersionEnum
+_$upsertBodyDtoTextFontVersionEnum_unknownDefaultOpenApi =
+    const UpsertBodyDtoTextFontVersionEnum._('unknownDefaultOpenApi');
+
+UpsertBodyDtoTextFontVersionEnum _$upsertBodyDtoTextFontVersionEnumValueOf(
+  String name,
+) {
+  switch (name) {
+    case 'number1':
+      return _$upsertBodyDtoTextFontVersionEnum_number1;
+    case 'number2':
+      return _$upsertBodyDtoTextFontVersionEnum_number2;
+    case 'unknownDefaultOpenApi':
+      return _$upsertBodyDtoTextFontVersionEnum_unknownDefaultOpenApi;
+    default:
+      return _$upsertBodyDtoTextFontVersionEnum_unknownDefaultOpenApi;
+  }
+}
+
+final BuiltSet<UpsertBodyDtoTextFontVersionEnum>
+_$upsertBodyDtoTextFontVersionEnumValues =
+    BuiltSet<UpsertBodyDtoTextFontVersionEnum>(
+      const <UpsertBodyDtoTextFontVersionEnum>[
+        _$upsertBodyDtoTextFontVersionEnum_number1,
+        _$upsertBodyDtoTextFontVersionEnum_number2,
+        _$upsertBodyDtoTextFontVersionEnum_unknownDefaultOpenApi,
+      ],
+    );
+
 const UpsertBodyDtoTextColorVersionEnum
 _$upsertBodyDtoTextColorVersionEnum_number1 =
     const UpsertBodyDtoTextColorVersionEnum._('number1');
@@ -95,6 +130,9 @@ _$upsertBodyDtoIdentityModeEnumValues = BuiltSet<UpsertBodyDtoIdentityModeEnum>(
   ],
 );
 
+Serializer<UpsertBodyDtoTextFontVersionEnum>
+_$upsertBodyDtoTextFontVersionEnumSerializer =
+    _$UpsertBodyDtoTextFontVersionEnumSerializer();
 Serializer<UpsertBodyDtoTextColorVersionEnum>
 _$upsertBodyDtoTextColorVersionEnumSerializer =
     _$UpsertBodyDtoTextColorVersionEnumSerializer();
@@ -104,6 +142,41 @@ _$upsertBodyDtoMarkdownContractVersionEnumSerializer =
 Serializer<UpsertBodyDtoIdentityModeEnum>
 _$upsertBodyDtoIdentityModeEnumSerializer =
     _$UpsertBodyDtoIdentityModeEnumSerializer();
+
+class _$UpsertBodyDtoTextFontVersionEnumSerializer
+    implements PrimitiveSerializer<UpsertBodyDtoTextFontVersionEnum> {
+  static const Map<String, Object> _toWire = const <String, Object>{
+    'number1': 1,
+    'number2': 2,
+    'unknownDefaultOpenApi': 11184809,
+  };
+  static const Map<Object, String> _fromWire = const <Object, String>{
+    1: 'number1',
+    2: 'number2',
+    11184809: 'unknownDefaultOpenApi',
+  };
+
+  @override
+  final Iterable<Type> types = const <Type>[UpsertBodyDtoTextFontVersionEnum];
+  @override
+  final String wireName = 'UpsertBodyDtoTextFontVersionEnum';
+
+  @override
+  Object serialize(
+    Serializers serializers,
+    UpsertBodyDtoTextFontVersionEnum object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => _toWire[object.name] ?? object.name;
+
+  @override
+  UpsertBodyDtoTextFontVersionEnum deserialize(
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => UpsertBodyDtoTextFontVersionEnum.valueOf(
+    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
+  );
+}
 
 class _$UpsertBodyDtoTextColorVersionEnumSerializer
     implements PrimitiveSerializer<UpsertBodyDtoTextColorVersionEnum> {
@@ -210,6 +283,8 @@ class _$UpsertBodyDtoIdentityModeEnumSerializer
 
 class _$UpsertBodyDto extends UpsertBodyDto {
   @override
+  final UpsertBodyDtoTextFontVersionEnum? textFontVersion;
+  @override
   final UpsertBodyDtoTextColorVersionEnum? textColorVersion;
   @override
   final UpsertBodyDtoMarkdownContractVersionEnum? markdownContractVersion;
@@ -228,6 +303,7 @@ class _$UpsertBodyDto extends UpsertBodyDto {
       (UpsertBodyDtoBuilder()..update(updates))._build();
 
   _$UpsertBodyDto._({
+    this.textFontVersion,
     this.textColorVersion,
     this.markdownContractVersion,
     this.identityId,
@@ -247,6 +323,7 @@ class _$UpsertBodyDto extends UpsertBodyDto {
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
     return other is UpsertBodyDto &&
+        textFontVersion == other.textFontVersion &&
         textColorVersion == other.textColorVersion &&
         markdownContractVersion == other.markdownContractVersion &&
         identityId == other.identityId &&
@@ -259,6 +336,7 @@ class _$UpsertBodyDto extends UpsertBodyDto {
   @override
   int get hashCode {
     var _$hash = 0;
+    _$hash = $jc(_$hash, textFontVersion.hashCode);
     _$hash = $jc(_$hash, textColorVersion.hashCode);
     _$hash = $jc(_$hash, markdownContractVersion.hashCode);
     _$hash = $jc(_$hash, identityId.hashCode);
@@ -273,6 +351,7 @@ class _$UpsertBodyDto extends UpsertBodyDto {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'UpsertBodyDto')
+          ..add('textFontVersion', textFontVersion)
           ..add('textColorVersion', textColorVersion)
           ..add('markdownContractVersion', markdownContractVersion)
           ..add('identityId', identityId)
@@ -287,6 +366,12 @@ class _$UpsertBodyDto extends UpsertBodyDto {
 class UpsertBodyDtoBuilder
     implements Builder<UpsertBodyDto, UpsertBodyDtoBuilder> {
   _$UpsertBodyDto? _$v;
+
+  UpsertBodyDtoTextFontVersionEnum? _textFontVersion;
+  UpsertBodyDtoTextFontVersionEnum? get textFontVersion =>
+      _$this._textFontVersion;
+  set textFontVersion(UpsertBodyDtoTextFontVersionEnum? textFontVersion) =>
+      _$this._textFontVersion = textFontVersion;
 
   UpsertBodyDtoTextColorVersionEnum? _textColorVersion;
   UpsertBodyDtoTextColorVersionEnum? get textColorVersion =>
@@ -330,6 +415,7 @@ class UpsertBodyDtoBuilder
   UpsertBodyDtoBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
+      _textFontVersion = $v.textFontVersion;
       _textColorVersion = $v.textColorVersion;
       _markdownContractVersion = $v.markdownContractVersion;
       _identityId = $v.identityId;
@@ -359,6 +445,7 @@ class UpsertBodyDtoBuilder
     final _$result =
         _$v ??
         _$UpsertBodyDto._(
+          textFontVersion: textFontVersion,
           textColorVersion: textColorVersion,
           markdownContractVersion: markdownContractVersion,
           identityId: identityId,

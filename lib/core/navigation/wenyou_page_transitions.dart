@@ -73,7 +73,7 @@ Future<T?> pushWenyouFullscreenPage<T>({
           fullscreenDialog: true,
           builder: builder,
         )
-      : _wenyouFullscreenRoute<T>(
+      : wenyouFullscreenRoute<T>(
           context: context,
           builder: builder,
           settings: settings,
@@ -81,7 +81,7 @@ Future<T?> pushWenyouFullscreenPage<T>({
   return Navigator.of(context).push<T>(route);
 }
 
-Route<T> _wenyouFullscreenRoute<T>({
+Route<T> wenyouFullscreenRoute<T>({
   required BuildContext context,
   required WidgetBuilder builder,
   RouteSettings? settings,

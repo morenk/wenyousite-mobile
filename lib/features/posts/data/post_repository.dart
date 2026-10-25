@@ -22,10 +22,14 @@ class ApiPostRepository implements PostRepository {
   ApiPostRepository(
     this._api, {
     this.roleMentionsSupported = false,
+    this.textFontSupported = false,
+    this.textFontV2Supported = false,
     this.textColorSupported = false,
   });
 
   final bool roleMentionsSupported;
+  final bool textFontSupported;
+  final bool textFontV2Supported;
   final bool textColorSupported;
 
   final PostsApi _api;
@@ -147,6 +151,11 @@ class ApiPostRepository implements PostRepository {
         input.content,
         supported: roleMentionsSupported,
       );
+      requireTextFontWriteSupport(
+        input.content,
+        supported: textFontSupported,
+        v2Supported: textFontV2Supported,
+      );
       requireTextColorWriteSupport(
         input.content,
         supported: input.textColorSupported ?? textColorSupported,
@@ -155,6 +164,11 @@ class ApiPostRepository implements PostRepository {
         builder
           ..markdownContractVersion = roleMentionsSupported
               ? CreatePostDtoMarkdownContractVersionEnum.number6
+              : null
+          ..textFontVersion = textFontV2Supported
+              ? CreatePostDtoTextFontVersionEnum.number2
+              : textFontSupported
+              ? CreatePostDtoTextFontVersionEnum.number1
               : null
           ..textColorVersion = (input.textColorSupported ?? textColorSupported)
               ? CreatePostDtoTextColorVersionEnum.number1
@@ -204,11 +218,21 @@ class ApiPostRepository implements PostRepository {
   }) async {
     try {
       requireMentionWriteSupport(content, supported: roleMentionsSupported);
+      requireTextFontWriteSupport(
+        content,
+        supported: textFontSupported,
+        v2Supported: textFontV2Supported,
+      );
       requireTextColorWriteSupport(content, supported: textColorSupported);
       final payload = UpdatePostDto(
         (builder) => builder
           ..markdownContractVersion = roleMentionsSupported
               ? UpdatePostDtoMarkdownContractVersionEnum.number6
+              : null
+          ..textFontVersion = textFontV2Supported
+              ? UpdatePostDtoTextFontVersionEnum.number2
+              : textFontSupported
+              ? UpdatePostDtoTextFontVersionEnum.number1
               : null
           ..textColorVersion = textColorSupported
               ? UpdatePostDtoTextColorVersionEnum.number1
@@ -246,6 +270,11 @@ class ApiPostRepository implements PostRepository {
   }) async {
     try {
       requireMentionWriteSupport(content, supported: roleMentionsSupported);
+      requireTextFontWriteSupport(
+        content,
+        supported: textFontSupported,
+        v2Supported: textFontV2Supported,
+      );
       requireTextColorWriteSupport(
         content,
         supported: textColorSupported ?? this.textColorSupported,
@@ -253,6 +282,11 @@ class ApiPostRepository implements PostRepository {
       final payload = UpsertBodyDto((builder) {
         builder.markdownContractVersion = roleMentionsSupported
             ? UpsertBodyDtoMarkdownContractVersionEnum.number6
+            : null;
+        builder.textFontVersion = textFontV2Supported
+            ? UpsertBodyDtoTextFontVersionEnum.number2
+            : textFontSupported
+            ? UpsertBodyDtoTextFontVersionEnum.number1
             : null;
         builder.textColorVersion =
             (textColorSupported ?? this.textColorSupported)
@@ -570,11 +604,23 @@ class ApiPostRepository implements PostRepository {
 }
 
 final apiPostRepositoryProvider = Provider<PostRepository>((ref) {
+  // 前台元信息重查会产生新能力对象；只有写入所需能力真正变化时
+  // 才更换仓库，避免连带重建正在阅读的讨论窗口和编辑会话。
+  final capabilities = ref.watch(
+    appCapabilitiesProvider.select(
+      (value) => (
+        textFontSupported: value.textFontSupported,
+        textFontV2Supported: value.textFontV2Supported,
+        textColorSupported: value.textColorSupported,
+        roleMentionsSupported: value.roleMentionsSupported,
+      ),
+    ),
+  );
   return ApiPostRepository(
     ref.watch(wenyouApiProvider).getPostsApi(),
-    textColorSupported: ref.watch(appCapabilitiesProvider).textColorSupported,
-    roleMentionsSupported: ref
-        .watch(appCapabilitiesProvider)
-        .roleMentionsSupported,
+    textFontSupported: capabilities.textFontSupported,
+    textFontV2Supported: capabilities.textFontV2Supported,
+    textColorSupported: capabilities.textColorSupported,
+    roleMentionsSupported: capabilities.roleMentionsSupported,
   );
 });

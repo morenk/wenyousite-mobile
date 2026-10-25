@@ -39,9 +39,9 @@ final class MarkdownInlineSource {
       source.contains('<') ? _replace(source, analyze(source).html) : source;
 
   /// 编辑器中的可见文字（如由 `&lt;` 解码的 `<tag>`）写回时不能变成 HTML。
-  static String escapeHtml(String source, {bool preserveTextColor = false}) {
+  static String escapeHtml(String source, {bool preserveTextStyle = false}) {
     if (!source.contains('<')) return source;
-    final htmlSource = preserveTextColor
+    final htmlSource = preserveTextStyle
         ? MarkdownTextColor.maskValidTags(source)
         : source;
     var result = source;

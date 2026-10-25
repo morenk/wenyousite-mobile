@@ -204,6 +204,7 @@ void main() {
       final repository = ApiPostRepository(
         api,
         roleMentionsSupported: supports,
+        textFontV2Supported: true,
         textColorSupported: supports,
       );
 
@@ -244,6 +245,18 @@ void main() {
       );
       expect(createPayload.parentPostId, 'floor');
       expect(createPayload.replyToPostId, 'reply-target');
+      expect(
+        createPayload.textFontVersion,
+        CreatePostDtoTextFontVersionEnum.number2,
+      );
+      expect(
+        updatePayload.textFontVersion,
+        UpdatePostDtoTextFontVersionEnum.number2,
+      );
+      expect(
+        bodyPayload.textFontVersion,
+        UpsertBodyDtoTextFontVersionEnum.number2,
+      );
       expect(updatePayload.content, '编辑后的内容');
       expect(updatePayload.version, 3);
       expect(updated.version, 4);

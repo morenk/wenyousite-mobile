@@ -1,0 +1,23 @@
+{
+  "validation": {
+    "apiValidate": "passed",
+    "apiGenerate": "passed; executable generated source unchanged; README version only",
+    "dartFormat": "1530 files; 0 changes",
+    "applicationAnalyze": "No issues found; 275.5 seconds",
+    "generatedApiAnalyze": "No issues found",
+    "moduleDocs": "23 modules passed",
+    "architecture": "passed",
+    "pinnedContractSources": "passed",
+    "windowsContractRevisionTest": "1 passed",
+    "targetedFlutterTests": "23 passed",
+    "backendArtifactProbe": "4 samples passed; parametersVersion=1; 44 seconds"
+  },
+  "notExecuted": [
+    "full Flutter suite",
+    "npm run check",
+    "APK build or installation",
+    "Android device acceptance",
+    "parametersVersion=2 artifacts",
+    "production login or writes"
+  ]
+}

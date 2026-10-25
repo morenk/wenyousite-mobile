@@ -6,6 +6,8 @@ import 'package:wenyousite_mobile/core/markdown/markdown_inline_code_source.dart
 import 'package:wenyousite_mobile/core/markdown/markdown_inline_runs.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_inline_source.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_link_identity.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_text_color.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_text_font.dart';
 
 /// Input provenance controls escaping inside a run, never its style boundary.
 final class MarkdownDeltaInlineEncoder {
@@ -13,7 +15,15 @@ final class MarkdownDeltaInlineEncoder {
 
   static const literalTextKey = 'wenyou_literal_text';
   static const keepLinkShapeKey = 'wenyou_audio_link_shape';
-  static const markKeys = {'bold', 'italic', 'strike', 'code', 'link', 'color'};
+  static const markKeys = {
+    'bold',
+    'italic',
+    'strike',
+    'code',
+    'link',
+    'color',
+    'font',
+  };
 
   final StringBuffer output;
   final _pieces = <({String text, bool literal})>[];
@@ -62,13 +72,15 @@ final class MarkdownDeltaInlineEncoder {
       legacy = hasMarks
           ? MarkdownInlineSource.escapeHtml(
               canonical,
-              preserveTextColor: normalized.any(
-                (run) => run.marks.containsKey('color'),
+              preserveTextStyle: normalized.any(
+                (run) =>
+                    run.marks.containsKey('color') ||
+                    run.marks.containsKey('font'),
               ),
             )
           : MarkdownInlineSource.escapeHtml(
                   canonical,
-                  preserveTextColor: !_hasLiteralInput,
+                  preserveTextStyle: !_hasLiteralInput,
                 ) !=
                 canonical
           ? MarkdownContent.literalizeInlineText(
@@ -212,6 +224,10 @@ final class MarkdownDeltaInlineEncoder {
   }
 
   void _validateLink() {
+    final font = _marks['font'];
+    if (font != null && !MarkdownTextFont.accepts(font)) {
+      throw const MarkdownCodecException('文字字体无法安全保存');
+    }
     final color = _marks['color'];
     if (color != null &&
         (color is! String || !RegExp(r'^#[0-9A-F]{6}$').hasMatch(color))) {
@@ -235,8 +251,9 @@ final class MarkdownDeltaInlineEncoder {
     if (link != null) encoded = '[$encoded]($link)';
     if (_marks['italic'] == true) encoded = '*$encoded*';
     if (_marks['bold'] == true) encoded = '**$encoded**';
-    if (_marks['color'] case final color?) {
-      encoded = '<span data-wenyou-color-v1="$color">$encoded</span>';
+    final opening = MarkdownTextColor.openingFor(_marks);
+    if (opening.isNotEmpty) {
+      encoded = '$opening$encoded</span>';
     }
     return encoded;
   }

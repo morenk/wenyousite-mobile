@@ -233,10 +233,10 @@ final class MarkdownSourceProtection {
 
     visit(inline.code, code: true);
     visit(inline.metadata);
-    // 仅完整通过颜色契约校验的标签是样式；未知／损坏 HTML 仍保护原文。
-    final htmlSource = source.contains('<span data-wenyou-color-v1=')
-        ? MarkdownTextColor.maskValidTags(source)
-        : source;
+    // 字体与颜色共用受控 span；仅屏蔽契约合法标签，未知／损坏 HTML 仍保护原文。
+    final htmlSource = inline.html.isEmpty
+        ? source
+        : MarkdownTextColor.maskValidTags(source);
     visit(
       inline.html.where(
         (range) =>
