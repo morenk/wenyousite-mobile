@@ -1,5 +1,7 @@
 # 应用壳
 
+2026-10-25 组合候选／待负责人真机验收：独立测试分支同时包含 PR #117 的相册宿主／路由保留与 PR #118 的同值元信息保位，实际更新检查与切号边界保留；见[组合记录](../architecture/pr117-118-combined-candidate.md)。
+
 状态：`in_progress`
 
 2026-10-24 动态字体候选／待真机验收：固定 Backend `f1025db4ef0d4986f53a4beffac6514d7ee16357`／API `5.44.0-dev.20261024.2`。解析textFontV2Supported与textFontV2WriteEnabled，缺失按false；读取能力与新字体选择开关独立。字体服务与引擎追加账本跨Provider/账号变化保持，前后台触发状态复核。v1 固定映射、防降级与撤回兼容已接入；本地检查与构建已执行，公网精确兼容随部署复核，产品 Android 同会话验收待完成，见[持续加载记录](../architecture/thread-fonts-mobile-continuous-loading.md)。
@@ -104,6 +106,8 @@ Android Manifest 明确关闭全量备份，Android 11 及以下和 Android 12+ 
 设备开关由 BackgroundReminderPreferenceController 管理，SharedPreferences 键为 background.reminder.enabled.v1，缺省开启；读取失败先关闭并提供重试，写入中停止提醒且禁止重复操作，写入失败恢复原选择。后台消息指纹只存当前进程；退出/切号清除基线但不清除设备选择。
 
 ## 9. 加载、空数据、错误、重试和冲突状态
+
+楼中楼恢复前台保位候选保留每次 `resumed` 的元信息及更新检查，继续处理真实强制升级与未知兼容版本；静默检查失败仍保留可用页面。帖子消费者按实际使用的四项支持能力比较，元信息对象更新不再无条件重建讨论状态。会话与可见性失效规则保持，进程回收后的阅读恢复不在本轮范围。证据与未验收项见[候选记录](../architecture/post-replies-resume-candidate.md)。
 
 收藏夹目录首次读取失败使用共享错误面板，保留收藏类型与原重试回调。 通用失败内容保留问题编号，取消请求不展示错误。2026-10-18 负责人真机验收通过，见[错误重试与瀑布流验收](../architecture/error-retry-waterfall-acceptance.md)。
 

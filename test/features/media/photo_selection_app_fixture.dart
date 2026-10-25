@@ -43,6 +43,7 @@ class PhotoEntryAppFixture {
     List<Override> overrides = const [],
     bool stickers = false,
     MeProfileRepository? profiles,
+    bool readyStartup = true,
   }) {
     dio.interceptors.add(
       InterceptorsWrapper(
@@ -55,7 +56,8 @@ class PhotoEntryAppFixture {
     container = ProviderContainer(
       overrides: [
         ...productionProviderOverrides(),
-        startupControllerProvider.overrideWith((ref) => _ReadyStartup()),
+        if (readyStartup)
+          startupControllerProvider.overrideWith((ref) => _ReadyStartup()),
         tokenStoreProvider.overrideWithValue(MePageTestMemoryTokenStore()),
         sessionRemoteProvider.overrideWithValue(MePageTestFakeSessionRemote()),
         stickersEnabledProvider.overrideWithValue(stickers),
