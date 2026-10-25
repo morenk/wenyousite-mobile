@@ -24,6 +24,7 @@ import 'package:wenyousite_mobile/features/editor/presentation/editor_clipboard_
 import 'package:wenyousite_mobile/features/editor/presentation/editor_clipboard_paste.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_divider_structure.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_document_alignment.dart';
+import 'package:wenyousite_mobile/features/editor/presentation/editor_opening_diagnostics.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_site_clipboard.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/rich_editor_operation_failure.dart';
 
@@ -128,6 +129,7 @@ class RichEditorSession extends ChangeNotifier {
   bool _dirty = false;
   bool _externallyReadOnly = false;
   String? _protectedSourceSignature;
+  final _openingDiagnostics = EditorOpeningDiagnostics();
   int _documentGeneration = 0;
   int _scheduledExternalRevision = -1;
   String _lastMarkdown = '';
@@ -170,6 +172,9 @@ class RichEditorSession extends ChangeNotifier {
         : _documentSignature();
     _codecFailure = compatibility.edit ? null : '这段内容暂不支持编辑，原文已保留。';
     controller.readOnly = _externallyReadOnly || isSourceProtected;
+    if (!compatibility.edit) {
+      diagnosticId = _openingDiagnostics.capture(source, compatibility.reason);
+    }
   }
 
   Map<ShortcutActivator, Intent> get clipboardShortcuts => {
