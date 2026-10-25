@@ -175,12 +175,55 @@ void main() {
     expect(repository.requests.map((e) => e.cursor), [null, 'next', null]);
     expect(controller.state.comments.single.id, 'fresh');
     await controller.loadMoreComments();
-    expect(controller.state.commentPageFailure, isNotNull);
+    _expectCursorFailure(
+      controller.state.commentPageFailure,
+      diagnosticCode: 'MOMENT_COMMENTS_CURSOR_RECOVERY_EXHAUSTED',
+      reason: FailureReason.conflict,
+      source: FailureSource.expected,
+      recoveryAction: FailureRecoveryAction.retry,
+      businessCode: 40007,
+    );
     await controller.loadMoreComments();
     expect(repository.requests, hasLength(4));
     repository.onComments = (_) => commentPage(['recovered']);
     await controller.loadMoreComments(retry: true);
     expect(controller.state.commentPageFailure, isNull);
+  });
+
+  test('当前游标缺失暂停自动请求，明确重试从首页恢复且失败后可再试', () async {
+    repository.onComments = (_) =>
+        CursorPage(items: [paginationComment('first')], hasMore: true);
+    await controller.load();
+    await controller.loadMoreComments();
+    _expectCursorFailure(
+      controller.state.commentPageFailure,
+      diagnosticCode: 'MOMENT_COMMENTS_CURSOR_MISSING',
+    );
+    expect(controller.state.comments.single.id, 'first');
+    await controller.loadMoreComments();
+    expect(repository.requests.map((e) => e.cursor), [null]);
+
+    final firstRetry = Completer<CursorPage<MomentRootComment>>();
+    repository.onComments = (_) => firstRetry.future;
+    final retrying = controller.loadMoreComments(retry: true);
+    await controller.loadMoreComments(retry: true);
+    expect(repository.requests.map((e) => e.cursor), [null, null]);
+    firstRetry.completeError(StateError('offline'));
+    await retrying;
+    expect(controller.state.commentPageFailure, isNotNull);
+    expect(controller.state.isLoadingMoreComments, isFalse);
+    await controller.loadMoreComments();
+    expect(repository.requests, hasLength(2));
+
+    repository.onComments = (_) => commentPage(['fresh'], cursor: 'fresh-next');
+    await controller.loadMoreComments(retry: true);
+    expect(repository.requests.map((e) => e.cursor), [null, null, null]);
+    expect(controller.state.commentPageFailure, isNull);
+    expect(controller.state.comments.single.id, 'fresh');
+    repository.onComments = (_) => commentPage(['second']);
+    await controller.loadMoreComments();
+    expect(repository.requests.last.cursor, 'fresh-next');
+    expect(controller.state.comments.map((e) => e.id), ['fresh', 'second']);
   });
 
   for (final cursor in ['next', null]) {
@@ -192,10 +235,21 @@ void main() {
         hasMore: true,
       );
       await controller.loadMoreComments();
-      expect(controller.state.commentPageFailure, isNotNull);
+      _expectCursorFailure(
+        controller.state.commentPageFailure,
+        diagnosticCode: 'MOMENT_COMMENTS_CURSOR_NOT_ADVANCING',
+      );
       expect(controller.state.comments.single.id, 'first');
       await controller.loadMoreComments();
       expect(repository.requests, hasLength(2));
+      repository.onComments = (_) => commentPage(['recovered']);
+      await controller.loadMoreComments(retry: true);
+      expect(repository.requests.last.cursor, 'next');
+      expect(controller.state.commentPageFailure, isNull);
+      expect(controller.state.comments.map((e) => e.id), [
+        'first',
+        'recovered',
+      ]);
     });
   }
 
@@ -205,9 +259,28 @@ void main() {
     await controller.loadMoreComments();
     repository.onComments = (_) => commentPage(['third'], cursor: 'next');
     await controller.loadMoreComments();
-    expect(controller.state.commentPageFailure, isNotNull);
+    _expectCursorFailure(
+      controller.state.commentPageFailure,
+      diagnosticCode: 'MOMENT_COMMENTS_CURSOR_NOT_ADVANCING',
+    );
     expect(controller.state.commentCursor, 'third');
     await controller.loadMoreComments();
     expect(repository.requests, hasLength(3));
   });
+}
+
+void _expectCursorFailure(
+  ApiFailure? failure, {
+  required String diagnosticCode,
+  FailureReason reason = FailureReason.contractViolation,
+  FailureSource source = FailureSource.content,
+  FailureRecoveryAction recoveryAction = FailureRecoveryAction.refresh,
+  int? businessCode,
+}) {
+  expect(failure, isNotNull);
+  expect(failure!.reason, reason);
+  expect(failure.effectiveSource, source);
+  expect(failure.recoveryAction, recoveryAction);
+  expect(failure.diagnosticCode, diagnosticCode);
+  expect(failure.businessCode, businessCode);
 }

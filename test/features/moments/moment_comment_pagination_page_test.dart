@@ -109,6 +109,28 @@ void main() {
     expect(find.text('楼中楼回复'), findsOneWidget);
   });
 
+  testWidgets('缺失游标由展示层提示加载失败，明确重试首页后恢复自动续页', (tester) async {
+    final repository = CommentPaginationRepository();
+    repository.onComments = (_) =>
+        CursorPage(items: [paginationComment('first')], hasMore: true);
+    await tester.pumpWidget(_app(repository));
+    await tester.pumpAndSettle();
+    expect(find.text('当前内容暂时无法显示，请重新加载。'), findsOneWidget);
+    expect(find.textContaining('MOMENT_COMMENTS_CURSOR_MISSING'), findsNothing);
+    expect(find.byKey(const Key('moment-comments-retry')), findsOneWidget);
+    expect(repository.requests.map((e) => e.cursor), [null]);
+    repository.onComments = (request) => request.cursor == null
+        ? commentPage(['fresh'], cursor: 'next')
+        : commentPage(['second']);
+    await tester.ensureVisible(find.byKey(const Key('moment-comments-retry')));
+    await tester.tap(find.byKey(const Key('moment-comments-retry')));
+    await tester.pumpAndSettle();
+    expect(repository.requests.map((e) => e.cursor), [null, null, 'next']);
+    expect(find.text('评论 fresh'), findsOneWidget);
+    expect(find.text('评论 second'), findsOneWidget);
+    expect(find.byKey(const Key('moment-comments-retry')), findsNothing);
+  });
+
   testWidgets('自动追加后深链保持目标开头，手动阅读后不拉回', (tester) async {
     _phone(tester);
     final repository = CommentPaginationRepository();
@@ -188,6 +210,11 @@ void main() {
       'B',
     ]);
     expect(find.byKey(const Key('moment-comments-retry')), findsOneWidget);
+    expect(find.text('内容已有更新，请刷新后重试。'), findsOneWidget);
+    expect(
+      find.textContaining('MOMENT_COMMENTS_CURSOR_RECOVERY_EXHAUSTED'),
+      findsNothing,
+    );
     await tester.drag(find.byType(CustomScrollView), const Offset(0, -100));
     await tester.pumpAndSettle();
     expect(repository.requests, hasLength(6));
