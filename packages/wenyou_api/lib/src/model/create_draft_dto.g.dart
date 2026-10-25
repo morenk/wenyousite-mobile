@@ -6,6 +6,41 @@ part of 'create_draft_dto.dart';
 // BuiltValueGenerator
 // **************************************************************************
 
+const CreateDraftDtoTextFontVersionEnum
+_$createDraftDtoTextFontVersionEnum_number1 =
+    const CreateDraftDtoTextFontVersionEnum._('number1');
+const CreateDraftDtoTextFontVersionEnum
+_$createDraftDtoTextFontVersionEnum_number2 =
+    const CreateDraftDtoTextFontVersionEnum._('number2');
+const CreateDraftDtoTextFontVersionEnum
+_$createDraftDtoTextFontVersionEnum_unknownDefaultOpenApi =
+    const CreateDraftDtoTextFontVersionEnum._('unknownDefaultOpenApi');
+
+CreateDraftDtoTextFontVersionEnum _$createDraftDtoTextFontVersionEnumValueOf(
+  String name,
+) {
+  switch (name) {
+    case 'number1':
+      return _$createDraftDtoTextFontVersionEnum_number1;
+    case 'number2':
+      return _$createDraftDtoTextFontVersionEnum_number2;
+    case 'unknownDefaultOpenApi':
+      return _$createDraftDtoTextFontVersionEnum_unknownDefaultOpenApi;
+    default:
+      return _$createDraftDtoTextFontVersionEnum_unknownDefaultOpenApi;
+  }
+}
+
+final BuiltSet<CreateDraftDtoTextFontVersionEnum>
+_$createDraftDtoTextFontVersionEnumValues =
+    BuiltSet<CreateDraftDtoTextFontVersionEnum>(
+      const <CreateDraftDtoTextFontVersionEnum>[
+        _$createDraftDtoTextFontVersionEnum_number1,
+        _$createDraftDtoTextFontVersionEnum_number2,
+        _$createDraftDtoTextFontVersionEnum_unknownDefaultOpenApi,
+      ],
+    );
+
 const CreateDraftDtoTextColorVersionEnum
 _$createDraftDtoTextColorVersionEnum_number1 =
     const CreateDraftDtoTextColorVersionEnum._('number1');
@@ -63,12 +98,50 @@ _$createDraftDtoMarkdownContractVersionEnumValues =
       ],
     );
 
+Serializer<CreateDraftDtoTextFontVersionEnum>
+_$createDraftDtoTextFontVersionEnumSerializer =
+    _$CreateDraftDtoTextFontVersionEnumSerializer();
 Serializer<CreateDraftDtoTextColorVersionEnum>
 _$createDraftDtoTextColorVersionEnumSerializer =
     _$CreateDraftDtoTextColorVersionEnumSerializer();
 Serializer<CreateDraftDtoMarkdownContractVersionEnum>
 _$createDraftDtoMarkdownContractVersionEnumSerializer =
     _$CreateDraftDtoMarkdownContractVersionEnumSerializer();
+
+class _$CreateDraftDtoTextFontVersionEnumSerializer
+    implements PrimitiveSerializer<CreateDraftDtoTextFontVersionEnum> {
+  static const Map<String, Object> _toWire = const <String, Object>{
+    'number1': 1,
+    'number2': 2,
+    'unknownDefaultOpenApi': 11184809,
+  };
+  static const Map<Object, String> _fromWire = const <Object, String>{
+    1: 'number1',
+    2: 'number2',
+    11184809: 'unknownDefaultOpenApi',
+  };
+
+  @override
+  final Iterable<Type> types = const <Type>[CreateDraftDtoTextFontVersionEnum];
+  @override
+  final String wireName = 'CreateDraftDtoTextFontVersionEnum';
+
+  @override
+  Object serialize(
+    Serializers serializers,
+    CreateDraftDtoTextFontVersionEnum object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => _toWire[object.name] ?? object.name;
+
+  @override
+  CreateDraftDtoTextFontVersionEnum deserialize(
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => CreateDraftDtoTextFontVersionEnum.valueOf(
+    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
+  );
+}
 
 class _$CreateDraftDtoTextColorVersionEnumSerializer
     implements PrimitiveSerializer<CreateDraftDtoTextColorVersionEnum> {
@@ -140,6 +213,8 @@ class _$CreateDraftDtoMarkdownContractVersionEnumSerializer
 
 class _$CreateDraftDto extends CreateDraftDto {
   @override
+  final CreateDraftDtoTextFontVersionEnum? textFontVersion;
+  @override
   final CreateDraftDtoTextColorVersionEnum? textColorVersion;
   @override
   final CreateDraftDtoMarkdownContractVersionEnum? markdownContractVersion;
@@ -156,6 +231,7 @@ class _$CreateDraftDto extends CreateDraftDto {
       (CreateDraftDtoBuilder()..update(updates))._build();
 
   _$CreateDraftDto._({
+    this.textFontVersion,
     this.textColorVersion,
     this.markdownContractVersion,
     this.clientRequestId,
@@ -174,6 +250,7 @@ class _$CreateDraftDto extends CreateDraftDto {
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
     return other is CreateDraftDto &&
+        textFontVersion == other.textFontVersion &&
         textColorVersion == other.textColorVersion &&
         markdownContractVersion == other.markdownContractVersion &&
         clientRequestId == other.clientRequestId &&
@@ -185,6 +262,7 @@ class _$CreateDraftDto extends CreateDraftDto {
   @override
   int get hashCode {
     var _$hash = 0;
+    _$hash = $jc(_$hash, textFontVersion.hashCode);
     _$hash = $jc(_$hash, textColorVersion.hashCode);
     _$hash = $jc(_$hash, markdownContractVersion.hashCode);
     _$hash = $jc(_$hash, clientRequestId.hashCode);
@@ -198,6 +276,7 @@ class _$CreateDraftDto extends CreateDraftDto {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'CreateDraftDto')
+          ..add('textFontVersion', textFontVersion)
           ..add('textColorVersion', textColorVersion)
           ..add('markdownContractVersion', markdownContractVersion)
           ..add('clientRequestId', clientRequestId)
@@ -211,6 +290,12 @@ class _$CreateDraftDto extends CreateDraftDto {
 class CreateDraftDtoBuilder
     implements Builder<CreateDraftDto, CreateDraftDtoBuilder> {
   _$CreateDraftDto? _$v;
+
+  CreateDraftDtoTextFontVersionEnum? _textFontVersion;
+  CreateDraftDtoTextFontVersionEnum? get textFontVersion =>
+      _$this._textFontVersion;
+  set textFontVersion(CreateDraftDtoTextFontVersionEnum? textFontVersion) =>
+      _$this._textFontVersion = textFontVersion;
 
   CreateDraftDtoTextColorVersionEnum? _textColorVersion;
   CreateDraftDtoTextColorVersionEnum? get textColorVersion =>
@@ -249,6 +334,7 @@ class CreateDraftDtoBuilder
   CreateDraftDtoBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
+      _textFontVersion = $v.textFontVersion;
       _textColorVersion = $v.textColorVersion;
       _markdownContractVersion = $v.markdownContractVersion;
       _clientRequestId = $v.clientRequestId;
@@ -277,6 +363,7 @@ class CreateDraftDtoBuilder
     final _$result =
         _$v ??
         _$CreateDraftDto._(
+          textFontVersion: textFontVersion,
           textColorVersion: textColorVersion,
           markdownContractVersion: markdownContractVersion,
           clientRequestId: clientRequestId,

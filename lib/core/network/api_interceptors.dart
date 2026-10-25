@@ -26,6 +26,8 @@ class RequestContextInterceptor extends Interceptor {
 
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
+    options.extra = Map.of(options.extra)
+      ..remove(ApiRequestExtraKeys.sessionRefreshedWithoutReplay);
     RequestSessionBinding.bind(options, _sessionController);
     options.headers.putIfAbsent('X-Request-ID', _uuid.v4);
     if (_needsMobileHeader(options.path)) {
@@ -105,9 +107,18 @@ class RequestContextInterceptor extends Interceptor {
     }
     if (!_canReplayAfterRefresh(err.requestOptions)) {
       _sessionController.refresh().then(
-        (_) => handler.next(
-          RequestSessionBinding.cancellation(err.requestOptions) ?? err,
-        ),
+        (_) {
+          final cancelled = RequestSessionBinding.cancellation(
+            err.requestOptions,
+          );
+          if (cancelled == null) {
+            err.requestOptions.extra = {
+              ...err.requestOptions.extra,
+              ApiRequestExtraKeys.sessionRefreshedWithoutReplay: true,
+            };
+          }
+          handler.next(cancelled ?? err);
+        },
         onError: (_) => handler.next(
           RequestSessionBinding.cancellation(err.requestOptions) ?? err,
         ),

@@ -22,6 +22,7 @@ import 'package:wenyou_api/src/api/admin_moderation_api.dart';
 import 'package:wenyou_api/src/api/admin_operations_api.dart';
 import 'package:wenyou_api/src/api/admin_reports_api.dart';
 import 'package:wenyou_api/src/api/admin_taxonomy_api.dart';
+import 'package:wenyou_api/src/api/admin_text_fonts_api.dart';
 import 'package:wenyou_api/src/api/app_downloads_api.dart';
 import 'package:wenyou_api/src/api/auth_api.dart';
 import 'package:wenyou_api/src/api/bookmarks_api.dart';
@@ -219,6 +220,12 @@ class WenyouApi {
   /// by doing that all interceptors will not be executed
   AdminTaxonomyApi getAdminTaxonomyApi() {
     return AdminTaxonomyApi(dio, serializers);
+  }
+
+  /// Get AdminTextFontsApi instance, base route and serializer can be overridden by a given but be careful,
+  /// by doing that all interceptors will not be executed
+  AdminTextFontsApi getAdminTextFontsApi() {
+    return AdminTextFontsApi(dio, serializers);
   }
 
   /// Get AppDownloadsApi instance, base route and serializer can be overridden by a given but be careful,

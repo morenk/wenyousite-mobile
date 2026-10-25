@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/application/atomic_editor_clipboard.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_atomic_text_editor.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
@@ -73,6 +74,7 @@ class _MomentComposePageState extends ConsumerState<_MomentComposeEditor>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _contentController = WenyouAtomicTextController(
+      readStructuredClipboard: ref.read(atomicEditorClipboardReaderProvider),
       initialMarkdown: '',
       maximumMarkdownLength: 1000,
     );

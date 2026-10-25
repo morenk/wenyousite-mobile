@@ -2,6 +2,20 @@
 
 状态：候选／待负责人验收；不关闭 Sentry issue，不合并或部署。
 
+## 2026-10-25 组合验收准备
+
+- 沿用 PR #104，从原 HEAD `d31fa975372dde6f421978196dc1933729fbfc95` 普通 merge `origin/dev` `b7e1a4acf9433b38b29505834b5f1eea77598330`。当前固定 Backend 为 `8a5d21858e04c69832c90e5a3a10f1e70fdcb545`、API `5.44.0-dev.20261024.3`，Foundation 为 `v7.6.0`；契约、生成客户端、依赖和原生配置沿用该基线。
+- 合并时生产代码自动合入；仅变更日志及媒体模块文档冲突，保留新统一图库、字体、剪贴板、安全区与楼中楼恢复前台行为。上传候选仍只有首次选择与明确重试允许传输；待重传草稿只查询，既有待确认状态保留同 ID 幂等确认，不自动发布。
+- 新增 `test/features/media/photo_selection_upload_recovery_test.dart`，串联真实 `PhotoSelectionHost`、`UnifiedImagePicker`、评论页面、共享上传控制器及 Repository/Dio 离线夹具，检查图库路由刷新后的选图、PUT 失败身份保留、重开只查、明确同 ID 重传和再次明确发送。该场景不使用真实图库或线上写入，不能替代负责人原设备断网复验。
+- 组合审查发现重签／确认 POST 返回 `40101` 后，拦截器按原策略只续期、不重放，但上传任务把原 401 一律归为不可重试，成功续期也失去手动恢复入口。本轮在拦截器成功续期且会话仍有效时留下仅请求内存的标记，每次发请求先清除；上传任务仅据此保留同 ID 的明确重试。刷新失败、会话失效和普通 401 不放开，也不新增 POST 自动重放。`media_upload_auth_recovery_test.dart` 使用真实 `RequestContextInterceptor`、生成客户端及内存 HTTP adapter 覆盖成功、失败与失效边界。
+- 动态／评论共用的附件缩略图按任务 `canRetry` 提供动作，并在弹层返回时再次核对，防止旧动作绕过当前限制；处理中继续等待、移除和重新打开后按新状态恢复的行为保留。`moment_upload_retry_actions_test.dart` 的 8 项真实 Widget 回归覆盖上述边界。
+- 旧实现红证据：将上传控制器临时替换为原 HEAD 的版本，重签和确认两项在 `canRetry` 预期 true、实际 false 失败；finally 按原始字节恢复并核验 SHA-256 `E66688C139986F9E764020A6089BF7376F6D1D8C697BD3C0F3069E48E53771DB`。日志 `D:/codex-worktrees/mobile-sentry-upload/upload-auth-baseline-red-20261025.log`，SHA-256 `894CC9A2843EBC2A69187E0122F038FDAEA7EFB321C5ED388421C4AAEAC2F082`。缩略图先新增测试再修改实现，旧实现 2 通过／6 失败，证实错误露出重试及失效后仍调用回调；日志 `upload-retry-actions-red-20261025.log`，SHA-256 `F26FDF73DFF442352C3DE3992A6F2AA8BE93CCEF7AA88D252B044D5D2DE87E36`。
+- 本轮最终应用冻结树 `34095c09a659b5c05c04fda741f004964cb6d764` 定向 417 项通过、0 失败、退出 0，测试耗时 3:56；日志 `D:/codex-worktrees/mobile-sentry-upload/upload-targeted-20261025-2.log`，SHA-256 `A4D9D78353AAE4AF339FC980B4298AC3CA50A3CAD21422E14F8743C454AB9918`。实际命令为 `flutter test --no-pub --concurrency=1 test/features/media test/features/editor/editor_pending_images_test.dart test/features/editor/editor_image_upload_completion_test.dart test/features/editor/editor_publish_preparation_test.dart test/features/editor/editor_text_color_audio_integration_test.dart test/features/editor/editor_pending_audios_test.dart test/features/editor/editor_text_font_session_test.dart test/features/moments/moment_upload_experience_test.dart test/features/moments/moment_comment_attachment_lifecycle_test.dart test/features/moments/moment_upload_retry_actions_test.dart test/features/direct_messages/direct_message_media_test.dart test/core/network test/user_facing_copy_test.dart`。后续仅补文档，不改变该应用／测试源码。
+- 失败记录保留：图库首轮误把轻量 `onDraftChanged` 当成持久化快照，改为真实草稿存储；第二、三轮未同时推进弹层动画和真实文件 IO，最终采用有界交替驱动通过。第二轮文件句柄导致临时目录清理失败，运行器退出后仅回收精确登记目录 `D:/dev-cache/tmp/wenyou-pending-test-7b21c7e`，最终回归清理通过。首轮矩阵 408 通过／1 失败：原鉴权测试使用不可变 `extra`，新增标记原地写入抛异常并超时；已改为保留原键的新 Map 赋值，原测试保持。该日志 `upload-targeted-20261025.log`，SHA-256 `0A5C16DFD91E8F0D101C13831CFDCD5F0CB94D28AA48D5F1F8BE2A4DC1AD0A22`。各失败均不计通过。
+- 最终相对 `origin/dev` 的 23 个差异 Dart 文件格式检查通过（0 改动），`flutter analyze --no-pub --fatal-infos --fatal-warnings` 对同一清单分析通过（153.3 秒、0 问题）；对应日志 `upload-format-20261025-final.log`／`upload-analyze-20261025.log` 的 SHA-256 分别为 `B51EA7019B33A55084A3B43BE500E31C6C79683937D0160FF001811AB823A1A1`／`2A77CC2059C13DEB61AB3338858E4013F7E20C4AEFF2032FB0DEE5660FC5496D`。本轮未重复全应用和生成 SDK 分析。
+- `dart run tool/check_architecture.dart` 通过，保留超过 700 行文件的常规评审提示；`dart run tool/check_docs.dart` 通过（23 个模块）。日志 `upload-architecture-20261025.log`／`upload-docs-20261025.log` 的 SHA-256 分别为 `16C5D997BCCE268DC4294BA52BD275AA81E62A3E796697EDE4E6D4F1D9AC69EF`／`8AB319EBD2B97E58F95897DD563CEBE6B4B90F3716AEB8EB263C0149C35E9E35`，均位于 `D:/codex-worktrees/mobile-sentry-upload/`。冻结后核验应用、测试、工具、契约、生成包、锁文件及原生配置无漂移，`git diff --check` 通过；检查完成后仅补充本文交付证据。
+- 完整 `check:apk` 由治理在包含六项改动的最终组合分支统一执行。本轮未构建、安装或启动 APK，未进行线上业务写入。下方 2026-10-21、2026-10-16 的完整门禁与 APK 均为历史证据，不代表本轮已通过完整门禁或已有新包；负责人原设备复验仍待完成。
+
 ## 2026-10-21 最新 dev 整合
 
 - 沿用原分支 `codex/20261015-sentry-upload-recovery` 与 PR #104，从原 HEAD `ecb9251152b6107133da0326c71ea0e8d93e5237` 使用 merge 整合 `origin/dev` `6f0064507a77e2034250ee4fd9f1d382e0a063a9`，不改写共享历史、不吸收其他候选 PR。

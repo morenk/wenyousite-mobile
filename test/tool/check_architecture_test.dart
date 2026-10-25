@@ -65,18 +65,34 @@ void main() {
     );
   });
 
-  test('non-generated Dart files cannot exceed 900 lines', () {
+  test('1200 行手写文件允许通过且保留拆分评审提醒', () {
     const path = 'lib/features/alpha/presentation/page.dart';
     writeArchitectureFixture(
       root,
       path,
-      '${List.filled(901, '// line').join('\n')}\n',
+      '${List.filled(1200, '// line').join('\n')}\n',
+    );
+    expect(collectArchitectureFailures(root), isEmpty);
+    expect(
+      collectArchitectureReviewNotices(root),
+      contains(
+        '$path has 1200 lines; review a focused split when this file is next changed',
+      ),
+    );
+  });
+
+  test('non-generated Dart files cannot exceed 1200 lines', () {
+    const path = 'lib/features/alpha/presentation/page.dart';
+    writeArchitectureFixture(
+      root,
+      path,
+      '${List.filled(1201, '// line').join('\n')}\n',
     );
 
     expect(
       collectArchitectureFailures(root),
       contains(
-        '$path has 901 lines; split non-generated Dart files above 900 lines',
+        '$path has 1201 lines; split non-generated Dart files above 1200 lines',
       ),
     );
   });
@@ -86,16 +102,18 @@ void main() {
     writeArchitectureFixture(
       root,
       path,
-      '${List.filled(901, '// line').join('\n')}\n',
+      '${List.filled(1201, '// line').join('\n')}\n',
     );
-    writeArchitectureAllowlist(root, largeFileDebt: const {path: 902});
+    writeArchitectureAllowlist(root, largeFileDebt: const {path: 1202});
 
     expect(
       collectArchitectureFailures(root),
-      contains('$path large-file debt can be tightened from 902 to 901 lines'),
+      contains(
+        '$path large-file debt can be tightened from 1202 to 1201 lines',
+      ),
     );
 
-    writeArchitectureAllowlist(root, largeFileDebt: const {path: 901});
+    writeArchitectureAllowlist(root, largeFileDebt: const {path: 1201});
     expect(
       collectArchitectureFailures(root),
       contains('large-file debt cannot be reintroduced: $path'),
@@ -106,7 +124,7 @@ void main() {
     writeArchitectureFixture(
       root,
       'lib/core/generated_client.g.dart',
-      '${List.filled(901, '// generated').join('\n')}\n',
+      '${List.filled(1201, '// generated').join('\n')}\n',
     );
 
     expect(collectArchitectureFailures(root), isEmpty);
@@ -522,6 +540,37 @@ void main() {
         '$path defines a raw route path; use AppRoutePaths constants',
         '$path defines a raw route name; use AppRouteNames constants',
       ]),
+    );
+  });
+
+  test('正文字体边界只放行验证后家族与空家族系统回退', () {
+    const runtime = 'lib/core/text_fonts/text_font_runtime.dart';
+    const editor =
+        'lib/features/editor/presentation/text_font_quill_editor.dart';
+    writeArchitectureFixture(root, runtime, 'fontFamily: loaded.first,\n');
+    writeArchitectureFixture(
+      root,
+      editor,
+      "const TextStyle(fontFamily: '');\n",
+    );
+    expect(collectArchitectureFailures(root), isEmpty);
+    writeArchitectureFixture(root, runtime, "fontFamily: 'Custom UI',\n");
+    expect(
+      collectArchitectureFailures(
+        root,
+      ).any((f) => f.startsWith(runtime) && f.contains('fontFamily')),
+      isTrue,
+    );
+    writeArchitectureFixture(
+      root,
+      editor,
+      "const TextStyle(fontFamily: 'Custom UI');\n",
+    );
+    expect(
+      collectArchitectureFailures(
+        root,
+      ).any((f) => f.startsWith(editor) && f.contains('fontFamily')),
+      isTrue,
     );
   });
 

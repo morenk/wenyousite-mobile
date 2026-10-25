@@ -1,13 +1,51 @@
 import 'package:markdown/markdown.dart' as md;
+import 'package:wenyousite_mobile/core/markdown/markdown_text_font.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_reference.dart';
 
-/// 文本颜色 v1：严格受控的单行、不透明 RGB 标记。
+/// 字体与颜色共用一个受控 span，禁止嵌套、任意 HTML 属性及跨行。
 abstract final class MarkdownTextColor {
   static const tag = 'wenyou-text-color';
   static final opening = RegExp(
-    r'<span data-wenyou-color-v1="(#[0-9a-fA-F]{6})">',
+    r'<span (data-wenyou-(?:color-v1|font-v[12])="[^"<>\r\n]+"(?: data-wenyou-(?:color-v1|font-v[12])="[^"<>\r\n]+")?)>',
   );
   static final rgb = RegExp(r'^#[0-9A-Fa-f]{6}$');
+
+  static Map<String, String>? attributes(
+    Match match, {
+    bool allowUnknownFonts = false,
+  }) {
+    final result = <String, String>{};
+    final fields = RegExp(
+      r'data-wenyou-(color|font)-v([12])="([^"]+)"',
+    ).allMatches(match[1]!);
+    for (final field in fields) {
+      final key = field[1]!;
+      final version = field[2]!;
+      final value = field[3]!;
+      if (result.containsKey(key) ||
+          (key == 'color'
+              ? version != '1' || !rgb.hasMatch(value)
+              : version == '2'
+              ? !MarkdownTextFont.isVersionId(value)
+              : !MarkdownTextFont.ids.contains(value) &&
+                    !(allowUnknownFonts &&
+                        RegExp(r'^[a-z][a-z0-9-]*$').hasMatch(value)))) {
+        return null;
+      }
+      result[key] = key == 'color' ? value.toUpperCase() : value;
+    }
+    return result.isEmpty ? null : result;
+  }
+
+  static String openingFor(Map<String, dynamic> marks) {
+    final fields = [
+      if (marks['font'] case final String font)
+        'data-wenyou-font-v${MarkdownTextFont.isVersionId(font) ? 2 : 1}="$font"',
+      if (marks['color'] case final String color)
+        'data-wenyou-color-v1="$color"',
+    ];
+    return fields.isEmpty ? '' : '<span ${fields.join(' ')}>';
+  }
 
   static String _maskCode(String source) => source.replaceAllMapped(
     md.CodeSyntax().pattern,
@@ -61,7 +99,9 @@ abstract final class MarkdownTextColor {
     bool visit(List<md.Node> nodes, bool styled) => nodes.any((node) {
       if (node is md.Text) {
         return styled &&
-            RegExp(r'<span data-wenyou-color-v1=|</span>').hasMatch(node.text);
+            RegExp(
+              r'<span data-wenyou-(?:color-v1|font-v[12])=|</span>',
+            ).hasMatch(node.text);
       }
       if (node is! md.Element || node.tag == 'code') return false;
       return visit(
@@ -98,7 +138,8 @@ abstract final class MarkdownTextColor {
         slashCount++;
       }
       final found = range(line, match);
-      if (slashCount.isOdd ||
+      if (attributes(match, allowUnknownFonts: true) == null ||
+          slashCount.isOdd ||
           found == null ||
           parseInner(found.inner) == null) {
         continue;
@@ -120,6 +161,11 @@ class MarkdownTextColorSyntax extends md.InlineSyntax {
       startMatchPos ?? parser.pos,
     );
     if (match == null) return false;
+    final attributes = MarkdownTextColor.attributes(
+      match,
+      allowUnknownFonts: true,
+    );
+    if (attributes == null) return false;
     if (MarkdownTextColor.hasCrossingMarks(parser.source)) return false;
     final range = MarkdownTextColor.range(parser.source, match);
     if (range == null) return false;
@@ -127,8 +173,7 @@ class MarkdownTextColorSyntax extends md.InlineSyntax {
     if (nodes == null) return false;
     parser.writeText();
     parser.addNode(
-      md.Element(MarkdownTextColor.tag, nodes)
-        ..attributes['color'] = match[1]!.toUpperCase(),
+      md.Element(MarkdownTextColor.tag, nodes)..attributes.addAll(attributes),
     );
     parser.consume(range.end - match.start);
     return true;

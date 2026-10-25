@@ -9,6 +9,7 @@ import 'package:wenyousite_mobile/features/editor/application/editor_text_color_
 import 'package:wenyousite_mobile/features/editor/presentation/editor_rgb_picker_tray.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_text_color_palette.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_text_color_selection.dart';
+import 'package:wenyousite_mobile/features/editor/presentation/editor_text_font_picker.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_toolbar_buttons.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/literal_text_quill_controller.dart';
 
@@ -36,6 +37,7 @@ class WenyouEditorHeadingTray extends StatefulWidget {
     required this.onPickerChanged,
     this.focusNode,
     this.textColor,
+    this.textFont = false,
     super.key,
   });
   final QuillController controller;
@@ -45,6 +47,7 @@ class WenyouEditorHeadingTray extends StatefulWidget {
   final ValueChanged<bool> onPickerChanged;
   final FocusNode? focusNode;
   final EditorTextColorConfiguration? textColor;
+  final bool textFont;
 
   @override
   State<WenyouEditorHeadingTray> createState() =>
@@ -196,24 +199,49 @@ class _WenyouEditorHeadingTrayState extends State<WenyouEditorHeadingTray> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          SegmentedButton<int>(
-            showSelectedIcon: false,
-            style: wenyouEditorSegmentedButtonStyle(context),
-            segments: const [
-              ButtonSegment(value: 0, label: Text('正文')),
-              ButtonSegment(value: 2, label: Text('H2')),
-              ButtonSegment(value: 3, label: Text('H3')),
-            ],
-            selected: {
-              header == 2
-                  ? 2
-                  : header == 3
-                  ? 3
-                  : 0,
-            },
-            onSelectionChanged: widget.enabled
-                ? (value) => widget.onHeading(value.single)
-                : null,
+          LayoutBuilder(
+            builder: (context, constraints) => SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minWidth: constraints.maxWidth),
+                child: IntrinsicWidth(
+                  child: Row(
+                    key: const Key('editor-font-heading-row'),
+                    children: [
+                      if (widget.textFont) ...[
+                        EditorTextFontPicker(
+                          controller: widget.controller,
+                          enabled: widget.enabled,
+                          focusNode: widget.focusNode,
+                        ),
+                        SizedBox(width: tokens.space8),
+                      ],
+                      Expanded(
+                        child: SegmentedButton<int>(
+                          showSelectedIcon: false,
+                          style: wenyouEditorSegmentedButtonStyle(context),
+                          segments: const [
+                            ButtonSegment(value: 0, label: Text('正文')),
+                            ButtonSegment(value: 2, label: Text('H2')),
+                            ButtonSegment(value: 3, label: Text('H3')),
+                          ],
+                          selected: {
+                            header == 2
+                                ? 2
+                                : header == 3
+                                ? 3
+                                : 0,
+                          },
+                          onSelectionChanged: widget.enabled
+                              ? (value) => widget.onHeading(value.single)
+                              : null,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
           ),
           if (widget.textColor case final config?)
             EditorTextColorPalette(

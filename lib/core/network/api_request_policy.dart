@@ -38,4 +38,8 @@ abstract final class ApiRequestExtraKeys {
   static const explicitCredentials = 'explicitCredentials';
   static const idempotentCreate = 'idempotentCreate';
   static const noAutomaticReplay = 'noAutomaticReplay';
+
+  /// 仅拦截器在续期成功且未重放写请求后设置，不属于调用方请求策略。
+  static const sessionRefreshedWithoutReplay =
+      'wenyou.auth.sessionRefreshedWithoutReplay';
 }

@@ -67,6 +67,7 @@ void main() {
     final repository = ApiThreadManagementRepository(
       threadsApi,
       ApiThreadCategoryCatalogRepository(categoriesApi),
+      textFontV2Supported: true,
     );
 
     final updated = await repository.update(
@@ -91,6 +92,10 @@ void main() {
             ).captured.single
             as SaveThreadAggregateDto;
     expect(captured.version, 7);
+    expect(
+      captured.textFontVersion,
+      SaveThreadAggregateDtoTextFontVersionEnum.number2,
+    );
     expect(captured.defaultSubthreadVersion, 3);
     expect(captured.bodyVersion, 4);
     expect(captured.content, '主正文');

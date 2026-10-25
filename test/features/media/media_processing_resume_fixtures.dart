@@ -166,6 +166,7 @@ class MediaRecoveryApiFixture {
   var status = 'PROCESSING';
   var displayUrl = 'https://cdn.example/full.webp';
   var queryId = 'media-one';
+  var purpose = 'RICH_CONTENT';
   var missingQueryData = false;
   MediaUploadInput get input => MediaUploadInput(
     filename: 'original.gif',
@@ -183,7 +184,7 @@ class MediaRecoveryApiFixture {
     'size': 1383,
     'width': 320,
     'height': 180,
-    'purpose': 'RICH_CONTENT',
+    'purpose': purpose,
     'animated': true,
     'status': status,
     'createdAt': '2026-09-12T00:00:00Z',

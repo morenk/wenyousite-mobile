@@ -310,6 +310,7 @@ class StickerPostMarkdown extends ConsumerWidget {
     this.bodyFontSize = 17,
     this.bodyHeight = 1.8,
     this.enablePlainTextFastPath = true,
+    this.enableTextFonts = false,
     this.diagnosticRenderKey,
     super.key,
   });
@@ -330,6 +331,7 @@ class StickerPostMarkdown extends ConsumerWidget {
   final double bodyFontSize;
   final double bodyHeight;
   final bool enablePlainTextFastPath;
+  final bool enableTextFonts;
   final GlobalKey? diagnosticRenderKey;
 
   @override
@@ -339,6 +341,7 @@ class StickerPostMarkdown extends ConsumerWidget {
       sessionControllerProvider.select((session) => session.isAuthenticated),
     );
     return WenyouMarkdown(
+      enableTextFonts: enableTextFonts,
       data: data,
       onOpenImage: galleryTarget == null
           ? null

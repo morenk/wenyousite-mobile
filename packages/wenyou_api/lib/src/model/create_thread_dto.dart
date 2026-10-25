@@ -12,6 +12,7 @@ part 'create_thread_dto.g.dart';
 /// CreateThreadDto
 ///
 /// Properties:
+/// * [textFontVersion] - 1 支持字体 v1；2 支持 v1/v2 混合正文无损读写；新端始终发送，包括删除全部字体。新/原正文含字体未声明返回 409/40019；v1 新写受 textFontV1WriteEnabled 控制；v2 新写受 textFontV2WriteEnabled 与版本 pasteAllowed 控制。颜色组合还须 textColorVersion:1。
 /// * [textColorVersion] - 支持文本颜色 v1 无损读写；新端始终发送，包括删除全部颜色。新/原正文含颜色未声明返回 409/40016；新写受 textColorV1WriteEnabled 控制。
 /// * [markdownContractVersion] - 声明编辑器支持 Markdown 6 角色提及源的无损读取/编辑。服务端 capabilities.roleMentionsV6Supported 为 true 时新端始终发送，包括删光旧节点；未声明而新/原正文含 v6 返回 409/40014。新节点还须 roleMentionsV6WriteEnabled。
 /// * [clientRequestId] - 客户端创建幂等键；同一次提交和网络重试必须复用
@@ -23,6 +24,11 @@ part 'create_thread_dto.g.dart';
 /// * [visibility] - 可见性
 @BuiltValue()
 abstract class CreateThreadDto implements Built<CreateThreadDto, CreateThreadDtoBuilder> {
+  /// 1 支持字体 v1；2 支持 v1/v2 混合正文无损读写；新端始终发送，包括删除全部字体。新/原正文含字体未声明返回 409/40019；v1 新写受 textFontV1WriteEnabled 控制；v2 新写受 textFontV2WriteEnabled 与版本 pasteAllowed 控制。颜色组合还须 textColorVersion:1。
+  @BuiltValueField(wireName: r'textFontVersion')
+  CreateThreadDtoTextFontVersionEnum? get textFontVersion;
+  // enum textFontVersionEnum {  1,  2,  };
+
   /// 支持文本颜色 v1 无损读写；新端始终发送，包括删除全部颜色。新/原正文含颜色未声明返回 409/40016；新写受 textColorV1WriteEnabled 控制。
   @BuiltValueField(wireName: r'textColorVersion')
   CreateThreadDtoTextColorVersionEnum? get textColorVersion;
@@ -86,6 +92,13 @@ class _$CreateThreadDtoSerializer implements PrimitiveSerializer<CreateThreadDto
     CreateThreadDto object, {
     FullType specifiedType = FullType.unspecified,
   }) sync* {
+    if (object.textFontVersion != null) {
+      yield r'textFontVersion';
+      yield serializers.serialize(
+        object.textFontVersion,
+        specifiedType: const FullType(CreateThreadDtoTextFontVersionEnum),
+      );
+    }
     if (object.textColorVersion != null) {
       yield r'textColorVersion';
       yield serializers.serialize(
@@ -172,6 +185,13 @@ class _$CreateThreadDtoSerializer implements PrimitiveSerializer<CreateThreadDto
       final key = serializedList[i] as String;
       final value = serializedList[i + 1];
       switch (key) {
+        case r'textFontVersion':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(CreateThreadDtoTextFontVersionEnum),
+          ) as CreateThreadDtoTextFontVersionEnum;
+          result.textFontVersion = valueDes;
+          break;
         case r'textColorVersion':
           final valueDes = serializers.deserialize(
             value,
@@ -262,6 +282,26 @@ class _$CreateThreadDtoSerializer implements PrimitiveSerializer<CreateThreadDto
     );
     return result.build();
   }
+}
+
+class CreateThreadDtoTextFontVersionEnum extends EnumClass {
+
+  /// 1 支持字体 v1；2 支持 v1/v2 混合正文无损读写；新端始终发送，包括删除全部字体。新/原正文含字体未声明返回 409/40019；v1 新写受 textFontV1WriteEnabled 控制；v2 新写受 textFontV2WriteEnabled 与版本 pasteAllowed 控制。颜色组合还须 textColorVersion:1。
+  @BuiltValueEnumConst(wireNumber: 1)
+  static const CreateThreadDtoTextFontVersionEnum number1 = _$createThreadDtoTextFontVersionEnum_number1;
+  /// 1 支持字体 v1；2 支持 v1/v2 混合正文无损读写；新端始终发送，包括删除全部字体。新/原正文含字体未声明返回 409/40019；v1 新写受 textFontV1WriteEnabled 控制；v2 新写受 textFontV2WriteEnabled 与版本 pasteAllowed 控制。颜色组合还须 textColorVersion:1。
+  @BuiltValueEnumConst(wireNumber: 2)
+  static const CreateThreadDtoTextFontVersionEnum number2 = _$createThreadDtoTextFontVersionEnum_number2;
+  /// 1 支持字体 v1；2 支持 v1/v2 混合正文无损读写；新端始终发送，包括删除全部字体。新/原正文含字体未声明返回 409/40019；v1 新写受 textFontV1WriteEnabled 控制；v2 新写受 textFontV2WriteEnabled 与版本 pasteAllowed 控制。颜色组合还须 textColorVersion:1。
+  @BuiltValueEnumConst(wireNumber: 11184809, fallback: true)
+  static const CreateThreadDtoTextFontVersionEnum unknownDefaultOpenApi = _$createThreadDtoTextFontVersionEnum_unknownDefaultOpenApi;
+
+  static Serializer<CreateThreadDtoTextFontVersionEnum> get serializer => _$createThreadDtoTextFontVersionEnumSerializer;
+
+  const CreateThreadDtoTextFontVersionEnum._(String name): super(name);
+
+  static BuiltSet<CreateThreadDtoTextFontVersionEnum> get values => _$createThreadDtoTextFontVersionEnumValues;
+  static CreateThreadDtoTextFontVersionEnum valueOf(String name) => _$createThreadDtoTextFontVersionEnumValueOf(name);
 }
 
 class CreateThreadDtoTextColorVersionEnum extends EnumClass {

@@ -1,0 +1,105 @@
+diff --git a/WENYOU_VENDOR.md b/WENYOU_VENDOR.md
+new file mode 100644
+index 00000000..821c8381
+--- /dev/null
++++ b/WENYOU_VENDOR.md
+@@ -0,0 +1,15 @@
++# Flutter Quill 固定源码
++
++来源：https://github.com/singerdmx/flutter-quill.git
++
++固定提交：`c273155025d1255335a6dd3e6ecd3700d29f103e`，保留原有 Android IME 选区同步修复。
++
++只收录构建所需 `lib/`、`pubspec.yaml`、`LICENSE`、`analysis_options.yaml`、`l10n.yaml`。上游文件由该提交的 `git archive` 导出并统一为 LF，全部改动记录在仓库 `tool/patches/flutter-quill-heading-spacing.patch`；不跟随浮动分支，不修改全局 Pub 缓存。
++
++补丁在 `EditableTextBlock._getSpacingForLine` 从当前行读取标题属性，并保留标题完整上下间距。对齐分组不再把标题当作普通正文，也不因标题位于分组首尾而裁减留白；非标题仍按原有列表、引用等块规则计算。
++
++同一补丁另含静态分析兼容整理：为键盘回调参数标注 `FocusNode`、为删除规则参数标注 `Operation?`，将未使用的双下划线参数改为通配符 `_`；这三处不改变运行语义。移除 `pubspec.yaml` 仅供上游发布展示的四张 `screenshots` 元数据，避免引用未收录的示例图片；运行依赖和原生配置保持原样。上游分析规则保留，未关闭 lint。
++
++本地复核清单与每个文件的 SHA-256 位于 `tool/vendor/flutter-quill.json`。维护时先更新明确的上游提交，在独立 checkout 核对补丁，再重新生成清单，并执行编辑、选区、输入、撤销重做、Markdown 往返和完整应用门禁。不得通过修改清单掩盖未评审的源码差异。
++
++当前上游尚未包含本问题修复。后续升级前检查相同行为回归；上游满足回归后通过独立依赖变更撤回补丁和固定源码。源码使用上游 `LICENSE` 所列许可证。
+diff --git a/lib/src/editor/raw_editor/keyboard_shortcuts/editor_keyboard_shortcuts.dart b/lib/src/editor/raw_editor/keyboard_shortcuts/editor_keyboard_shortcuts.dart
+index fb18317d..c58f5ea6 100644
+--- a/lib/src/editor/raw_editor/keyboard_shortcuts/editor_keyboard_shortcuts.dart
++++ b/lib/src/editor/raw_editor/keyboard_shortcuts/editor_keyboard_shortcuts.dart
+@@ -71,7 +71,7 @@ class EditorKeyboardShortcuts extends StatelessWidget {
+     );
+   }
+ 
+-  KeyEventResult _onKeyEvent(node, KeyEvent event) {
++  KeyEventResult _onKeyEvent(FocusNode node, KeyEvent event) {
+     final onKey = onKeyPressed;
+     if (onKey != null) {
+       // Find the current node the user is on.
+diff --git a/lib/src/editor/widgets/text/text_block.dart b/lib/src/editor/widgets/text/text_block.dart
+index 93a0abcf..f0012c37 100644
+--- a/lib/src/editor/widgets/text/text_block.dart
++++ b/lib/src/editor/widgets/text/text_block.dart
+@@ -359,8 +359,9 @@ class EditableTextBlock extends StatelessWidget {
+     var top = 0.0, bottom = 0.0;
+ 
+     final attrs = block.style.attributes;
+-    if (attrs.containsKey(Attribute.header.key)) {
+-      final level = attrs[Attribute.header.key]!.value;
++    final header = node.style.attributes[Attribute.header.key];
++    if (header != null) {
++      final level = header.value;
+       switch (level) {
+         case 1:
+           top = defaultStyles!.h1!.verticalSpacing.top;
+@@ -389,6 +390,7 @@ class EditableTextBlock extends StatelessWidget {
+         default:
+           throw ArgumentError('Invalid level $level');
+       }
++      return VerticalSpacing(top, bottom);
+     } else {
+       final VerticalSpacing lineSpacing;
+       if (attrs.containsKey(Attribute.blockQuote.key)) {
+diff --git a/lib/src/rules/delete.dart b/lib/src/rules/delete.dart
+index 0282f281..3a84d153 100644
+--- a/lib/src/rules/delete.dart
++++ b/lib/src/rules/delete.dart
+@@ -223,7 +223,7 @@ class EnsureEmbedLineRule extends DeleteRule {
+       ..delete(len! + lengthDelta);
+   }
+ 
+-  bool _isVideo(op) {
++  bool _isVideo(Operation? op) {
+     return op != null &&
+         op.data is! String &&
+         !(op.data as Map).containsKey(BlockEmbed.videoType);
+diff --git a/lib/src/toolbar/buttons/arrow_indicated_list_button.dart b/lib/src/toolbar/buttons/arrow_indicated_list_button.dart
+index 30bc6e72..b35d5fe5 100644
+--- a/lib/src/toolbar/buttons/arrow_indicated_list_button.dart
++++ b/lib/src/toolbar/buttons/arrow_indicated_list_button.dart
+@@ -151,7 +151,7 @@ class QuillToolbarArrowIndicatedButtonListState
+ 
+ /// ScrollBehavior without the Material glow effect.
+ class _NoGlowBehavior extends ScrollBehavior {
+-  Widget buildViewportChrome(BuildContext _, Widget child, AxisDirection __) {
++  Widget buildViewportChrome(BuildContext _, Widget child, AxisDirection _) {
+     return child;
+   }
+ }
+diff --git a/pubspec.yaml b/pubspec.yaml
+index 64bf5dc5..020fbb2a 100644
+--- a/pubspec.yaml
++++ b/pubspec.yaml
+@@ -7,16 +7,6 @@ issue_tracker: https://github.com/singerdmx/flutter-quill/issues/
+ documentation: https://github.com/singerdmx/flutter-quill/
+ topics: [editor, text, rich-text-editor, quill, flutter-quill]
+ 
+-screenshots:
+-  - description: "iOS Light Mode"
+-    path: example/assets/images/screenshot_1.png
+-  - description: "macOS Dark Mode"
+-    path: example/assets/images/screenshot_2.png
+-  - description: "Android Dark Mode Search Dialog"
+-    path: example/assets/images/screenshot_3.png
+-  - description: "Web Select Color Dialog"
+-    path: example/assets/images/screenshot_4.png
+-
+ environment:
+   sdk: ^3.12.0
+   flutter: ">=3.44.0"

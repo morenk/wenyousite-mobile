@@ -371,10 +371,12 @@ class MediaUploadTaskController
           lookup.upload.needsTransfer && cause.businessCode == 40419;
       final transferPending =
           objectMissing || cause.diagnosticCode == 'media_transfer_pending';
+      final sessionRefreshed = cause.canRetryAfterSessionRefresh;
       final canRetry =
           terminal ||
           objectMissing ||
           lookup.transferFailed ||
+          sessionRefreshed ||
           (!{
                 FailureReason.unauthenticated,
                 FailureReason.sessionInvalid,
@@ -392,12 +394,15 @@ class MediaUploadTaskController
           presentation: UserFacingFailure.fromApi(
             cause,
             title: lookup.upload.needsTransfer ? '图片上传失败' : '图片查询失败',
-            message: transferPending
+            message: sessionRefreshed
+                ? '图片已保留，请重试。'
+                : transferPending
                 ? '图片尚未上传完成，请重试。'
                 : lookup.transferFailed
                 ? '图片没有上传成功，请重试。'
                 : null,
-            recoveryAction: transferPending || lookup.transferFailed
+            recoveryAction:
+                sessionRefreshed || transferPending || lookup.transferFailed
                 ? FailureRecoveryAction.retry
                 : null,
             retainContent: true,
