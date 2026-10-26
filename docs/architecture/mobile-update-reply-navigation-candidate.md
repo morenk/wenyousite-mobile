@@ -67,6 +67,7 @@
 
 - 最终 `candidate:apk` 退出 0：全仓格式、应用及生成客户端全量静态分析零问题、上述 12 文件 184 项测试、ARM64 Debug APK 构建通过。`docs:check`（23 模块）、`architecture:check`、diff 检查通过。
 - 应用 `lib` tree：`cf64354ad08226fd6c301ed68cc268cf7c48072f`。检查后未再修改应用源码。
+- 应用候选提交：`66d4c0c59873738386a1c499e6eddc1f40458bc9`；后续仅补充本文源码身份，不使原检查或 APK 失效。
 - APK：`D:/codex-worktrees/mobile-update-reply-navigation-20261027/wenyousite-mobile/build/app/outputs/flutter-apk/app-debug.apk`。
 - 包名 `site.wenyou.app.debug`，版本 `0.11.0-debug`／101，仅 `arm64-v8a`，已用 Android `aapt` 核对。
 - 大小 114346769 bytes，SHA-256：`2F083648F9399CDE391DDE804F6E41681377E059BE1C0AD041B0493DCBC20E1C`，构建入口与独立重算一致。
