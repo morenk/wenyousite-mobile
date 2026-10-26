@@ -87,7 +87,7 @@
 
 ## 最终完整门禁与新制品
 
-- 最终应用 `lib` tree：`a762b71c9970e171fe134624c3b6daf70b4cd759`。门禁在 `6e16371c6ce6326a7c68ab22db8f8bfb0915a658` 加本轮暂存的纯文本修正上执行；提交前后核对同一应用树，后续仅记录证据不重建。
+- 最终应用提交：`479ac82d9dd366dfd281d15f16a71d6c609cb731`，`lib` tree：`a762b71c9970e171fe134624c3b6daf70b4cd759`。门禁在 `6e16371c6ce6326a7c68ab22db8f8bfb0915a658` 加本轮暂存的纯文本修正上执行；提交前后核对同一应用树，后续仅记录证据不重建。
 - 纯文本与来源修正定向预检 4 文件 29 项通过，六个改动 Dart 文件静态分析零问题，23 模块文档及 175/175 API 覆盖通过。
 - 唯一完整入口 `npm run check:apk -- -TestConcurrency 2` 退出 0：契约校验、固定来源、SDK 再生成一致性、生产来源核验、全仓格式、应用与生成 SDK 全量分析、架构、文档、API 覆盖全部通过；Flutter **8120 通过、1 项既有跳过、0 失败**，Windows 工具 **49/49** 通过，并在同批构建 ARM64 Debug APK（68.1s）。
 - 唯一跳过为 `test/core/diagnostics/diagnostic_live_receipt_test.dart` 的 Sentry 显式接收验收：未启用既有 `WENYOU_VALIDATE_SENTRY` 条件；没有新增跳过或放宽检查。历史收集轮次的非零退出没有被冒充通过。
