@@ -49,7 +49,9 @@ C：动态创建／普通编辑每次明确提交创建独立诊断尝试，同�
 - APK SHA-256：`ddfc3876b87ce0670ecb4e33e0ff8a0c926fe6badae9f9c4e1f90d07fea239c4`。
 - `aapt dump badging` 核验：`site.wenyou.app.debug`、`0.11.0-debug`／versionCode `101`、标签“温油站 Debug”、minSdk `26`、targetSdk `36`、仅 `arm64-v8a`。`apksigner verify --verbose` 退出 0，v2 签名有效。
 - 构建前后 Git 可见应用源码清单（`lib`、`android`、`pubspec.yaml/lock`、`packages/wenyou_api`、`packages/flutter_quill`，2,400 文件）SHA-256 同为 `5473cf146f28d1cd7712f7e844d7292f939839f4efe28778b524807511465681`；清单保留于 `D:\dev-cache\tmp\compose-candidate-source-final.txt`。门禁日志为 `D:\dev-cache\tmp\compose-check-apk.log`，前两次停止日志另存，未覆盖失败证据。
-- 构建后 ADB 仍无设备，未安装、未启动、未取得设备内 APK 哈希；不能把本地包校验写成手机已更新。应用源码提交和 PR 在交付记录补充；只补文档不重复相同源码门禁。
+- 构建后 ADB 仍无设备，未安装、未启动、未取得设备内 APK 哈希；不能把本地包校验写成手机已更新。
+- 候选应用源码提交：`a7586612595c63969dc18a32153a669181cd00af`；`lib` Git tree 为 `6fe09215831788daa8957cab24cf2aae54d18d86`，`android` 为 `948213a0815ae4c46530b60cb3ff4c3799605213`。独立来源同步提交为 `de054d60`。提交后工作区干净，任务分支已推送。
+- 中文 Draft PR：[Mobile #126](https://github.com/morenk/wenyousite-mobile/pull/126)，目标 `dev`。本次后续只补交付证据，不修改应用源码、不重复相同源码门禁；无负责人验收，不标记可合并。任务 Worktree／分支／候选文件保留，未合并、发布、部署或归档。
 
 ## 负责人复验清单
 
