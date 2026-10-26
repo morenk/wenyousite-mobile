@@ -1,5 +1,7 @@
 # 应用壳
 
+2026-10-27 候选／待负责人验收：设置的主动检查每次重读实际安装版本与最新策略，复用更新说明与安全下载／安装动作，不受自动提示去重影响。没有新建历史浏览页；检查失败、缺少策略和安装包未就绪分别保留重试，不显示为已是最新版。详见[候选与定位调查](../architecture/mobile-update-reply-navigation-candidate.md)。
+
 2026-10-25 组合候选／待负责人真机验收：独立测试分支同时包含 PR #117 的相册宿主／路由保留与 PR #118 的同值元信息保位，实际更新检查与切号边界保留；见[组合记录](../architecture/pr117-118-combined-candidate.md)。
 
 状态：`in_progress`
@@ -181,6 +183,8 @@ Android 的 Debug、Profile 和 Release 均仅支持 `arm64-v8a`，使用 ARM64 
 当前已完成构建策略门禁、全局亮色/黑夜外观、推荐更新忽略、Android HTTPS 在线下载、双层完整性/身份校验与系统安装器、iOS TestFlight 外跳、本地一键发布入口；后台常驻与横幅提醒为候选／待负责人验收。Debug 构建使用独立 `site.wenyou.app.debug` 包名，Profile 性能构建使用 `site.wenyou.app.profile`，两者都避免占用正式更新链；完整门禁与发布入口均会核对线上契约、后端 revision 和 Markdown 版本。自动测试以伪 APK 固定下载与缓存状态机，Android 原生包解析、系统覆盖和后台尽力轮询仍需用 Android 8+ 真机完成最终验收；iOS 构建与上传必须在配置签名的 macOS 上执行。后台 30 秒节拍依赖当前 Flutter 进程与系统调度，留在最近任务不代表 Dart isolate 会持续运行；Doze、厂商省电、网络中断或进程终止都可能延迟/停止检查，不承诺实时送达。V1 不申请豁免、不做 App Links、FCM、WebSocket 或开机恢复。Profile 基线只覆盖固定离线关键交互，不能替代全部真实业务路径的人工手感验收。原生启动层在 Flutter 首帧前仍是静态白色。
 
 ## 13. 最近审查的契约版本和后端提交
+
+2026-10-27 来源复核：固定已部署 Backend `d54313346681eae8f62584d63d07f3315e42381b`／API `5.44.0-dev.20261024.3`。受支持同步入口只更新来源身份与后台字体说明镜像；机器契约、生成客户端及本模块消费行为和既有验收状态不变，详见[来源复核](../architecture/mobile-update-reply-contract-source-review.md)。
 
 本轮字体样张契约来源：Backend `8a5d21858e04c69832c90e5a3a10f1e70fdcb545`／API `5.44.0-dev.20261024.3`。HTTP 形状不变，仅统一后台自动样张文案；本模块运行逻辑不变。离线格式验证范围见[验证说明](../architecture/font-format-offline-probe.md)。
 

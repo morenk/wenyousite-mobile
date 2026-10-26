@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/core/application/bookmark_folder_catalog.dart';
 import 'package:wenyousite_mobile/features/app_shell/presentation/bookmark_folder_catalog_page.dart';
+import 'package:wenyousite_mobile/features/app_shell/presentation/mobile_update_settings_link.dart';
 import 'package:wenyousite_mobile/features/moderation/presentation/moderation_appeal_page.dart';
 import 'package:wenyousite_mobile/features/moments/application/moment_controllers.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
@@ -132,7 +133,8 @@ List<RouteBase> buildAccountRoutes(Ref ref) => [
   GoRoute(
     path: AppRoutePaths.meSettings,
     name: AppRouteNames.meSettings,
-    builder: (context, state) => const MeSettingsPage(),
+    builder: (context, state) =>
+        const MeSettingsPage(updateSettingsEntry: MobileUpdateSettingsLink()),
   ),
   GoRoute(
     path: AppRoutePaths.wallet,

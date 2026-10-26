@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_atomic_text_editor.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_composer_sheet.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_ports.dart';
@@ -13,11 +14,67 @@ import 'package:wenyousite_mobile/features/media/application/media_upload_task_c
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
 import 'package:wenyousite_mobile/features/media/media_ui.dart';
 import 'package:wenyousite_mobile/features/moments/application/moment_draft_store_ports.dart';
+import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_comment_composer.dart';
 
 import '../../support/memory_pending_media_file_store.dart';
 
 void main() {
+  for (final content in [
+    '---',
+    '>',
+    '<br />',
+    '**',
+    '&amp;',
+    '&#32;',
+    '[@玩家](/users/cmsewdo0h000x7qv6aa77ll1v)',
+    '[原帖](/threads/cmsewdo0h000x7qv6aa77ll1v)',
+  ]) {
+    testWidgets('动态回复纯文本保留原文并允许发送：$content', (tester) async {
+      final fixture = _Fixture()..draft = MomentCommentDraft(content: content);
+      await fixture.pump(tester);
+      if (content.startsWith('[原帖]')) {
+        final editor = tester.widget<WenyouAtomicTextEditor>(
+          find.byType(WenyouAtomicTextEditor),
+        );
+        expect(
+          editor.controller.quillController.document.toDelta().operations.any(
+            (operation) => operation.data is Map,
+          ),
+          isTrue,
+        );
+      }
+      await tester.tap(find.byKey(_sendKey));
+      await tester.pumpAndSettle();
+      expect(fixture.sendCalls, 1);
+      expect(fixture.lastInput?.content, content);
+      expect(find.text('消息框不能为空。'), findsNothing);
+    });
+  }
+
+  testWidgets('零宽与空白动态回复仅提示且不调用发送', (tester) async {
+    final fixture = _Fixture()
+      ..draft = const MomentCommentDraft(content: '\u200b \n');
+    await fixture.pump(tester);
+    await tester.tap(find.byKey(_sendKey));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.text('消息框不能为空。'), findsOneWidget);
+    expect(fixture.sendCalls, 0);
+  });
+
+  testWidgets('空动态回复仅提示，保留输入框且不调用发送', (tester) async {
+    final fixture = _Fixture()
+      ..draft = const MomentCommentDraft(content: ' \n');
+    await fixture.pump(tester);
+    await tester.tap(find.byKey(_sendKey));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.text('消息框不能为空。'), findsOneWidget);
+    expect(fixture.sendCalls, 0);
+    expect(fixture.closeCalls, 0);
+  });
+
   for (final sample in [
     (size: const Size(320, 760), scale: 2.0, keyboard: 280.0),
     (size: const Size(390, 844), scale: 1.0, keyboard: 340.0),
@@ -244,6 +301,7 @@ class _Fixture {
   final gateway = _Gateway();
   var closeCalls = 0;
   var sendCalls = 0;
+  MomentCommentInput? lastInput;
   Completer<bool>? sendResult;
   var draft = const MomentCommentDraft(content: '保留文字', image: _oldImage);
 
@@ -258,8 +316,9 @@ class _Fixture {
         if (sheet) Navigator.of(context).pop();
       },
       onDraftChanged: (value) => draft = value,
-      onSend: (_) async {
+      onSend: (input) async {
         sendCalls++;
+        lastInput = input;
         return sendResult == null ? false : await sendResult!.future;
       },
     );

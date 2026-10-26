@@ -74,6 +74,8 @@ domain 只包含不可变 RP 展示值、身份模式和更新输入。applicati
 
 ## 13. 最近审查的契约版本和后端提交
 
+2026-10-27 来源复核：固定已部署 Backend `d54313346681eae8f62584d63d07f3315e42381b`／API `5.44.0-dev.20261024.3`。受支持同步入口只更新来源身份与后台字体说明镜像；机器契约、生成客户端及本模块消费行为和既有验收状态不变，详见[来源复核](../architecture/mobile-update-reply-contract-source-review.md)。
+
 本轮字体样张契约来源：Backend `8a5d21858e04c69832c90e5a3a10f1e70fdcb545`／API `5.44.0-dev.20261024.3`。HTTP 形状不变，仅统一后台自动样张文案；本模块运行逻辑不变。离线格式验证范围见[验证说明](../architecture/font-format-offline-probe.md)。
 
 2026-10-24 相册候选来源复核：已部署 Backend `33574ae73d88123aa216a93f9cc81eab60fb9ee9`／API `5.44.0-dev.20261024.2`，其第一父提交为原固定 `31f39ff317e56d6eb49b4c5e60ecdb93dfc9ec06`。机器契约及消费者指南零差异，仅同步来源与导出运维说明；本模块行为和已有验收边界保持，详见[来源同步](../architecture/compose-gallery-contract-source-sync.md)。

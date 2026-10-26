@@ -33,7 +33,7 @@ void main() {
     ).readAsStringSync();
     expect(
       manifest,
-      contains('backendRevision=8a5d21858e04c69832c90e5a3a10f1e70fdcb545'),
+      contains('backendRevision=d54313346681eae8f62584d63d07f3315e42381b'),
     );
   });
 }
