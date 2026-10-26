@@ -1,6 +1,10 @@
 # 主动检查更新、空回复提示候选与原帖定位调查
 
-状态：前两项候选／待负责人验收；第三项仍在调查，未复现／未解决。不合并、不发布。
+状态：负责人本轮明确授权将前两项合并到 `dev`，未另提供新增真机验收结果。第三项由负责人明确跳过，不再推进、未修复；历史调查仅保留证据。不发布、不部署。
+
+## 本轮合并授权
+
+负责人原话：“不用排查第三个了，跳过，然后合并分支吧”。本轮只推进主动检查更新和空回复提示；停止第三项调查，不再请求设备信息，不将其标记为已修复。来源同步环节未改变应用源码；随后发现并修正动态合法纯文本误判，最终执行唯一完整入口 `npm run check:apk -- -TestConcurrency 2`，通过完整门禁后同批集中构建新 Debug APK。合并成功后按默认授权保留新旧必要制品和日志，再核验并清理仅供本任务使用的分支与 Worktree。授权范围不包含正式发布、部署、其他任务或自动归档。
 
 ## 范围与来源
 
@@ -8,7 +12,7 @@
 - Worktree：`D:/codex-worktrees/mobile-update-reply-navigation-20261027/wenyousite-mobile`。
 - 分支：`codex/20261027-mobile-update-reply-navigation`，从更新后的 `origin/dev@6601eea95ad783acf082f5ab6abc472b950b2488` 创建。宿主 Worktree 工具无法指定 Mobile 仓库，故用 `git worktree add` 隔离创建；不接管其他任务的 checkout 或 Debug 会话。
 - 默认审批偏好已传递；宿主没有审批设置／核验入口，实际 Auto-review 配置尚未设置／核验。
-- 固定 API `5.44.0-dev.20261024.3`，记录来源 `8a5d21858e04c69832c90e5a3a10f1e70fdcb545`；本轮 fetch 的 Backend `origin/dev` 与公网 `/meta` 均为 `d54313346681eae8f62584d63d07f3315e42381b`。两版本的 `contracts/` 和 `docs/mobile-client-guide.md` 无差异，不改契约或生成客户端。
+- 固定 API `5.44.0-dev.20261024.3`；首次候选来源为 `8a5d21858e04c69832c90e5a3a10f1e70fdcb545`，Backend `origin/dev` 与公网 `/meta` 为 `d54313346681eae8f62584d63d07f3315e42381b`。合并前完整门禁要求精确 SHA 一致，已通过受支持入口同步来源及后台字体说明镜像；OpenAPI、机器契约、生成 SDK 和应用源码无变化，详见[来源复核](mobile-update-reply-contract-source-review.md)。
 - Foundation fetch 后最新正式 Tag 为 `v7.6.0`，与已锁版本一致；该版只扩展 Web 颜色选择，不要求本轮迁移。
 
 ## 原始需求与候选行为
@@ -55,22 +59,38 @@
 - `test/features/threads/thread_latest_real_window_test.dart`
 - `test/features/users/me_page_test.dart`
 
-另执行模块文档、架构和 diff 检查；完整 `npm run check` 在负责人验收后、合并前执行。
+另执行模块文档、架构和 diff 检查；本轮按负责人明确合并指令补跑完整门禁，不把该指令写成新增真机验收通过。
 
-## 负责人真机复验
+## 合并前纯文本修正与失败证据
+
+- 全量收集轮次：Flutter 8108 通过、1 项既有 Sentry 显式验收跳过、1 项失败（唯一旧 Backend SHA 精确断言）；Windows 工具 49/49 通过，完整入口仍以失败退出，没有据此合并。失败日志为 `.mobile-update-reply-full-check-assertion-failed.log`。
+- `WenyouAtomicTextController` 对普通字符串直接输出原文，动态不是通用 Markdown。旧应用 `lib` tree `cf64354a` 的新增真实编辑器 8 项输入回归有 5 项失败：`---`、`>`、`<br />`、`**`、`&#32;` 的发送回调未调用；`&amp;`、用户提及字面文字和真实原子传送门 3 项通过，见 `.mobile-update-reply-plain-text-baseline.log`。
+- 共享校验新增明确的 `plainText` 模式，默认仍是 Markdown；动态仅在判空时调用现有 `literalizeInlineText`，不复制 Unicode 空白逻辑，也不改写发送正文。回归同时核对零宽／空白仍为空、实体保持字面、真实原子传送门进入 Delta 及 `onSend` 收到原文；默认 Markdown 的图片、音频、骰子与提及保持有效。
+- 原候选 APK 属于上述旧 `lib` tree；后续纯文本补丁后的最终源码和 APK 单独登记，不能复用首轮制品冒充新候选。
+
+## 真机验证边界与后续手测参考
 
 1. 打开本轮 Debug 应用 `site.wenyou.app.debug`，在账号设置点击“检查更新”。与公网推荐构建均为 101 时会显示最新版，发现新版／下载安装路径以 mock 测试验证，不为测试修改线上策略或降低版本。Debug 与正式版数据独立，本候选不代表正式应用已更新。
 2. 主题帖楼层／楼中楼与动态评论／回复分别发送空字符串、仅空格换行，确认只出现空消息提示而无故障面板；输入文字或有效附件后仍可操作。线上写入由负责人手动决定，代理不自动验收写入。
-3. 原问题已确认来自正式版。后续需要精确版本号和设备现场，核对登录态请求、目标、窗口、实际字体／字号和布局；继续同一任务调查，不把此前本地通过等同于正式版故障已解决。
+3. 原问题已确认来自正式版，但负责人本轮明确跳过，停止后续调查和设备信息请求；保留历史只读证据，不将此前本地通过等同于故障已解决。
 
-## 独立候选制品
+## 首轮独立候选制品（历史）
 
-- 最终 `candidate:apk` 退出 0：全仓格式、应用及生成客户端全量静态分析零问题、上述 12 文件 184 项测试、ARM64 Debug APK 构建通过。`docs:check`（23 模块）、`architecture:check`、diff 检查通过。
-- 应用 `lib` tree：`cf64354ad08226fd6c301ed68cc268cf7c48072f`。检查后未再修改应用源码。
-- 应用候选提交：`66d4c0c59873738386a1c499e6eddc1f40458bc9`；后续仅补充本文源码身份，不使原检查或 APK 失效。
-- APK：`D:/codex-worktrees/mobile-update-reply-navigation-20261027/wenyousite-mobile/build/app/outputs/flutter-apk/app-debug.apk`。
+- 首轮 `candidate:apk` 退出 0：全仓格式、应用及生成客户端全量静态分析零问题、上述 12 文件 184 项测试、ARM64 Debug APK 构建通过；这是纯文本补丁前的历史证据。
+- 首轮应用 `lib` tree：`cf64354ad08226fd6c301ed68cc268cf7c48072f`，提交 `66d4c0c59873738386a1c499e6eddc1f40458bc9`；其后的 `16bff7c9` 只补文档身份，随后新增的纯文本修正另行验证。
+- 首轮 APK 清理保留路径：`D:/code/wenyousite/recovery/mobile-update-reply-pr125-20261027/app-debug-original-66d4c0c5.apk`。
 - 包名 `site.wenyou.app.debug`，版本 `0.11.0-debug`／101，仅 `arm64-v8a`，已用 Android `aapt` 核对。
 - 大小 114346769 bytes，SHA-256：`2F083648F9399CDE391DDE804F6E41681377E059BE1C0AD041B0493DCBC20E1C`，构建入口与独立重算一致。
 - 构建有既有 KGP 与 SDK XML 警告，退出 0；没有改动依赖或原生配置。
 - 完整日志保留在本 Worktree 的 `build/validation/mobile-update-reply-20261027/`；原帖原文没有进入该目录或 Git。
-- 无连接设备，没有 ADB 安装、Debug 运行或负责人真机验收，未更新正式应用；Worktree／分支与制品保留供复验和第三项继续调查。
+- 无连接设备，没有 ADB 安装、Debug 运行或负责人新增真机验收，未更新正式应用。负责人已明确授权合并前两项并跳过第三项；完成合并核验后保留必要制品和日志，再按默认授权清理任务分支与 Worktree。
+
+## 最终完整门禁与新制品
+
+- 最终应用 `lib` tree：`a762b71c9970e171fe134624c3b6daf70b4cd759`。门禁在 `6e16371c6ce6326a7c68ab22db8f8bfb0915a658` 加本轮暂存的纯文本修正上执行；提交前后核对同一应用树，后续仅记录证据不重建。
+- 纯文本与来源修正定向预检 4 文件 29 项通过，六个改动 Dart 文件静态分析零问题，23 模块文档及 175/175 API 覆盖通过。
+- 唯一完整入口 `npm run check:apk -- -TestConcurrency 2` 退出 0：契约校验、固定来源、SDK 再生成一致性、生产来源核验、全仓格式、应用与生成 SDK 全量分析、架构、文档、API 覆盖全部通过；Flutter **8120 通过、1 项既有跳过、0 失败**，Windows 工具 **49/49** 通过，并在同批构建 ARM64 Debug APK（68.1s）。
+- 唯一跳过为 `test/core/diagnostics/diagnostic_live_receipt_test.dart` 的 Sentry 显式接收验收：未启用既有 `WENYOU_VALIDATE_SENTRY` 条件；没有新增跳过或放宽检查。历史收集轮次的非零退出没有被冒充通过。
+- 新 APK：`site.wenyou.app.debug`，`0.11.0-debug`／101，仅 `arm64-v8a`，`aapt` 读取核对；114346769 bytes，SHA-256 **`E1B9524051AA10D4BDDDAD34901C5327874C0AFF5A86781A97FAC965D2A08A1F`**。与首轮历史 APK 摘要不同，不替换原正式应用，没有安装或启动。
+- 新 APK 保留到 `D:/code/wenyousite/recovery/mobile-update-reply-pr125-20261027/app-debug.apk`；完整日志为同目录 `logs/.mobile-update-reply-final-check-apk.log`，失败基线与前置预检也保留。旧 APK 独立保留，不冒充最终候选。
+- 本轮合并决策依据为负责人的明确合并指令，未另提供新增真机结果；第三项按指令跳过、未修复。只合并 `dev`，不发布、部署或写入线上业务数据。合并与清理的精确提交、工作目录状态和制品校验记录保留在上述 recovery 目录。

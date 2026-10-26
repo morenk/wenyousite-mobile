@@ -568,6 +568,7 @@ class _MomentCommentComposerState extends ConsumerState<MomentCommentComposer>
     if (!validateReplyContent(
       context,
       _textController.markdown,
+      plainText: true,
       hasAttachment: _image != null || _sticker != null,
     )) {
       return;
