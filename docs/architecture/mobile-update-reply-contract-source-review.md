@@ -15,6 +15,8 @@ pwsh -NoProfile -File tool/sync_backend_contract.ps1 -BackendPath D:/code/wenyou
 
 OpenAPI、机器 fixtures、移动端指南、生成 SDK、应用 `lib` 和依赖锁文件均无变化。固定 editor-list 与行内组合语料来源保留，没有 Foundation、弃用协议或消费者行为迁移。API 再生成一致性已在失败前通过，来源同步后生产只读校验通过：`sourceMarkdown=4`、`deployedMarkdown=5`，客户端原有支持范围包含两者，`GET /threads` Schema 兼容。
 
+第二轮完整门禁已通过应用／生成 SDK 全量分析及架构检查，但文档门禁要求全部 23 模块登记精确 Backend revision。现已在各模块第 13 节追加本轮来源复核和本记录链接，保留原历史 SHA，不更改检查脚本或模块原有验收结论；随后先预检文档、API 覆盖与 Windows 工具测试，再从唯一完整入口重跑。
+
 同步、失败门禁与单独来源复核日志分别为 `.mobile-update-reply-contract-source-sync.log`、`.mobile-update-reply-full-check-source-failed.log`、`.mobile-update-reply-source-verify.log`；最终完整门禁另行从唯一入口重跑，结果汇入[候选和合并记录](mobile-update-reply-navigation-candidate.md)。
 
 应用 `lib` tree 仍为 `cf64354ad08226fd6c301ed68cc268cf7c48072f`，原候选 APK 继续有效，不重新构建或安装。此来源同步不代表负责人新增真机验收，也不恢复已明确跳过的第三项定位调查。
