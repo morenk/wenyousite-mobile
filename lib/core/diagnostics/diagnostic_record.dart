@@ -8,6 +8,8 @@ enum DiagnosticOperation {
   apiWrite,
   postCreate,
   postEdit,
+  momentCreate,
+  momentEdit,
   bodySave,
   mediaUpload,
   editorOpen,
@@ -27,6 +29,10 @@ enum DiagnosticStage {
   uploadConfirm,
   mediaProcessing,
   encode,
+  localSave,
+  requestReady,
+  localCleanup,
+  confirmationSave,
   authorize,
   request,
   response,
@@ -193,16 +199,26 @@ Map<String, Object?> sanitizeDiagnosticFields(Map<String, Object?> input) {
     final value = input[key];
     if (value is int && value >= 0 && value <= 100000000) result[key] = value;
   }
-  for (final key in const ['responseReceived', 'apiEnvelopeReceived']) {
+  for (final key in const [
+    'responseReceived',
+    'apiEnvelopeReceived',
+    'resultConfirmed',
+  ]) {
     if (input[key] is bool) result[key] = input[key];
   }
-  final type = input['errorType'];
-  if (type is String &&
-      RegExp(r'^[A-Za-z_][A-Za-z0-9_]{0,79}$').hasMatch(type)) {
-    result['errorType'] = type;
+  for (final key in const ['errorType', 'recoveryErrorType']) {
+    final type = input[key];
+    if (type is String &&
+        RegExp(r'^[A-Za-z_][A-Za-z0-9_]{0,79}$').hasMatch(type)) {
+      result[key] = type;
+    }
   }
   final stack = input['stack'];
   if (stack is List) result['stack'] = sanitizeDiagnosticStackLines(stack);
+  final recoveryStack = input['recoveryStack'];
+  if (recoveryStack is List) {
+    result['recoveryStack'] = sanitizeDiagnosticStackLines(recoveryStack);
+  }
   for (final key in const ['diagnosticCode', 'apiOperation', 'screen']) {
     final value = input[key];
     if (value is String &&
@@ -272,6 +288,8 @@ bool shouldSendDiagnostic(ApiFailure failure, DiagnosticOperation operation) {
   if (const {
         DiagnosticOperation.postCreate,
         DiagnosticOperation.postEdit,
+        DiagnosticOperation.momentCreate,
+        DiagnosticOperation.momentEdit,
         DiagnosticOperation.bodySave,
       }.contains(operation) &&
       const {40000, 40001, 40006, 40009}.contains(failure.businessCode)) {

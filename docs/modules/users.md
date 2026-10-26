@@ -172,6 +172,8 @@ Android 账号设置新增“后台消息提醒”设备开关，默认开启；
 
 ## 13. 最近审查的契约版本和后端提交
 
+当前契约来源复核：Backend `d54313346681eae8f62584d63d07f3315e42381b`／API `5.44.0-dev.20261024.3`。相对原固定来源，HTTP、DTO、Markdown 与推送机器契约无变化，仅来源记录与后端字体验证说明更新；本模块已有行为与验收边界保持。见[来源核对](../architecture/backend-contract-source-20261027.md)，本轮创作行为候选另见对应模块章节。
+
 本轮字体样张契约来源：Backend `8a5d21858e04c69832c90e5a3a10f1e70fdcb545`／API `5.44.0-dev.20261024.3`。HTTP 形状不变，仅统一后台自动样张文案；本模块运行逻辑不变。离线格式验证范围见[验证说明](../architecture/font-format-offline-probe.md)。
 
 2026-10-24 相册候选来源复核：已部署 Backend `33574ae73d88123aa216a93f9cc81eab60fb9ee9`／API `5.44.0-dev.20261024.2`，其第一父提交为原固定 `31f39ff317e56d6eb49b4c5e60ecdb93dfc9ec06`。机器契约及消费者指南零差异，仅同步来源与导出运维说明；本模块行为和已有验收边界保持，详见[来源同步](../architecture/compose-gallery-contract-source-sync.md)。

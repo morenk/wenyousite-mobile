@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
+import 'package:wenyousite_mobile/core/diagnostics/failure_diagnostics.dart';
 import 'package:wenyousite_mobile/core/models/editor_models.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
@@ -46,7 +47,9 @@ class MomentComposerController extends StateNotifier<MomentComposerState> {
     this.momentId,
     bool autoStart = true,
     MomentComposerRequestIdFactory? requestIdFactory,
+    FailureDiagnostics? diagnostics,
   }) : _requestIdFactory = requestIdFactory ?? const Uuid().v4,
+       _diagnostics = diagnostics ?? FailureDiagnostics.instance,
        _createRequestId = (requestIdFactory ?? const Uuid().v4)(),
        super(const MomentComposerState()) {
     if (autoStart) unawaited(load());
@@ -57,6 +60,8 @@ class MomentComposerController extends StateNotifier<MomentComposerState> {
   final MomentComposerOwnerResolver resolveOwner;
   final String? momentId;
   final MomentComposerRequestIdFactory _requestIdFactory;
+  final FailureDiagnostics _diagnostics;
+  final String _diagnosticSessionId = const Uuid().v4();
   String _createRequestId;
   String? _ownerId;
   PendingCreateOperation? _pendingCreate;
@@ -151,6 +156,18 @@ class MomentComposerController extends StateNotifier<MomentComposerState> {
   Future<MomentDetail?> submit(
     MomentDraftInput input, {
     MomentLocalDraft? draft,
+  }) => _diagnostics
+      .attempt(
+        momentId == null
+            ? DiagnosticOperation.momentCreate
+            : DiagnosticOperation.momentEdit,
+        sessionId: _diagnosticSessionId,
+      )
+      .run(() => _submit(input, draft: draft));
+
+  Future<MomentDetail?> _submit(
+    MomentDraftInput input, {
+    MomentLocalDraft? draft,
   }) async {
     final ownerId = _ownerId;
     if (ownerId == null || state.phase != MomentComposerPhase.editing) {
@@ -162,8 +179,10 @@ class MomentComposerController extends StateNotifier<MomentComposerState> {
       initialDetail: initial,
       pendingCreate: _pendingCreate,
     );
-    var sent = false;
+    var reconcilePending = false;
+    final attempt = DiagnosticAttempt.current!;
     try {
+      attempt.mark(DiagnosticStage.encode);
       MomentDetail saved;
       if (momentId == null) {
         if (_pendingCreate == null) {
@@ -192,6 +211,7 @@ class MomentComposerController extends StateNotifier<MomentComposerState> {
                         updatedAt: DateTime.now(),
                       ))
                   .withPersistence(operation.clientRequestId);
+          attempt.mark(DiagnosticStage.localSave);
           await _enqueueSave(
             () => draftStore.beginCreate(ownerId, snapshot, operation),
           );
@@ -199,15 +219,22 @@ class MomentComposerController extends StateNotifier<MomentComposerState> {
           _pendingCreate = operation;
           _submissionDraft = snapshot;
         }
-        sent = true;
-        saved =
-            _confirmedResult ??
-            await _repository.create(
-              _pendingInput(),
-              clientRequestId: _pendingCreate!.clientRequestId,
-            );
+        if (_confirmedResult case final confirmed?) {
+          reconcilePending = true;
+          saved = confirmed;
+        } else {
+          final pendingInput = _pendingInput();
+          attempt.mark(DiagnosticStage.requestReady);
+          reconcilePending = true;
+          saved = await _repository.create(
+            pendingInput,
+            clientRequestId: _pendingCreate!.clientRequestId,
+          );
+        }
         if (!mounted) return null;
         _confirmedResult = saved;
+        attempt.statistics['resultConfirmed'] = true;
+        attempt.mark(DiagnosticStage.localCleanup);
         await _enqueueSave(
           () => draftStore.finishCreate(
             ownerId,
@@ -221,6 +248,7 @@ class MomentComposerController extends StateNotifier<MomentComposerState> {
         _confirmedResult = null;
         _createRequestId = _requestIdFactory();
       } else {
+        attempt.mark(DiagnosticStage.requestReady);
         saved = await _repository.update(
           momentId!,
           input,
@@ -233,15 +261,24 @@ class MomentComposerController extends StateNotifier<MomentComposerState> {
         initialDetail: saved,
         savedDetail: saved,
       );
+      attempt.mark(DiagnosticStage.complete);
       return saved;
-    } on Object catch (error) {
+    } on Object catch (error, stack) {
       if (!mounted) return null;
-      var failure = _asFailure(
+      final failure = _asFailure(
         error,
         momentId == null ? '发布失败，请重试。' : '保存失败，请重试。',
       );
-      if (sent && _pendingCreate != null) {
+      // 补偿保存不能覆盖原失败阶段、捕获堆栈和“已收到响应”的证据。
+      final failureStage =
+          attempt.stage == DiagnosticStage.response &&
+              failure.httpStatus != null &&
+              failure.httpStatus! < 400
+          ? DiagnosticStage.decode
+          : attempt.stage;
+      if (reconcilePending && _pendingCreate != null) {
         try {
+          attempt.mark(DiagnosticStage.confirmationSave);
           if (_confirmedResult == null && _definitelyRejected(failure)) {
             await _enqueueSave(
               () => draftStore.finishCreate(
@@ -270,10 +307,20 @@ class MomentComposerController extends StateNotifier<MomentComposerState> {
               ),
             );
           }
-        } on Object catch (storageError) {
-          failure = _asFailure(storageError, '草稿保存失败，请重试。');
+        } on Object catch (storageError, storageStack) {
+          attempt.statistics['recoveryErrorType'] = storageError.runtimeType
+              .toString();
+          attempt.statistics['recoveryStack'] = safeDiagnosticStack(
+            storageStack,
+          );
         }
       }
+      _diagnostics.capture(
+        error,
+        stackTrace: stack,
+        failure: failure,
+        stage: failureStage,
+      );
       if (!mounted) return null;
       state = MomentComposerState(
         phase: MomentComposerPhase.editing,
@@ -392,6 +439,7 @@ final momentComposerControllerProvider = StateNotifierProvider.autoDispose
           resolveOwner: () => scope.accountId == null
               ? resolver()
               : Future.value(scope.accountId!),
+          diagnostics: ref.watch(failureDiagnosticsProvider),
         );
       },
       dependencies: [
@@ -399,5 +447,6 @@ final momentComposerControllerProvider = StateNotifierProvider.autoDispose
         momentDraftStoreProvider,
         momentComposerOwnerResolverProvider,
         sessionScopeProvider,
+        failureDiagnosticsProvider,
       ],
     );

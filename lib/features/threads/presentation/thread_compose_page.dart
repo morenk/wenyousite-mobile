@@ -245,7 +245,7 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
           constraints: const BoxConstraints(maxWidth: 800),
           child: LayoutBuilder(
             builder: (context, pageConstraints) {
-              // 短屏返回正文时键盘仍在，标题和元信息待键盘收起后恢复。
+              // 取色时暂让出正文空间；键盘高度不能决定标题是否可编辑。
               final compact =
                   _colorPickerOpen ||
                   pageConstraints.maxHeight <
@@ -254,80 +254,98 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   EditorPublishWaiting(images: _pendingImages),
-                  ThreadComposeStatusArea(
-                    state: state,
-                    documentIssues: _editorSession.issues,
-                    codecFailure: _editorSession.codecFailure,
-                    operationFailure: _editorSession.operationFailure?.message,
-                    onRefreshBootstrap: () => ref
-                        .read(threadComposeControllerProvider.notifier)
-                        .refreshBootstrap(),
-                  ),
-                  Visibility(
-                    visible: !compact,
-                    maintainState: true,
-                    child: Column(
-                      children: [
-                        Padding(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: horizontalPadding,
+                  ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxHeight: pageConstraints.maxHeight * .55,
+                    ),
+                    child: SingleChildScrollView(
+                      key: const Key('compose-header-scroll'),
+                      child: Column(
+                        children: [
+                          ThreadComposeStatusArea(
+                            state: state,
+                            documentIssues: _editorSession.issues,
+                            codecFailure: _editorSession.codecFailure,
+                            operationFailure:
+                                _editorSession.operationFailure?.message,
+                            onRefreshBootstrap: () => ref
+                                .read(threadComposeControllerProvider.notifier)
+                                .refreshBootstrap(),
                           ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                '主题标题',
-                                key: const Key('compose-title-label'),
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .wenyouCaptionEmphasis
-                                    .copyWith(color: tokens.mutedText),
-                              ),
-                              TextField(
-                                key: const Key('compose-title'),
-                                controller: _titleController,
-                                enabled: !locked,
-                                maxLength: 100,
-                                maxLines: _editorSession.hasFocus ? 1 : 3,
-                                minLines: 1,
-                                textInputAction: TextInputAction.next,
-                                style: Theme.of(
-                                  context,
-                                ).textTheme.wenyouPageTitle,
-                                decoration: const InputDecoration(
-                                  hintText: '一句话说明这个主题',
-                                  counterText: '',
-                                  filled: false,
-                                  border: InputBorder.none,
-                                  enabledBorder: InputBorder.none,
-                                  disabledBorder: InputBorder.none,
-                                  focusedBorder: InputBorder.none,
-                                  contentPadding: EdgeInsets.symmetric(
-                                    vertical: 4,
+                          Visibility(
+                            visible: !_colorPickerOpen,
+                            maintainState: true,
+                            child: Column(
+                              children: [
+                                Padding(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: horizontalPadding,
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        '主题标题',
+                                        key: const Key('compose-title-label'),
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .wenyouCaptionEmphasis
+                                            .copyWith(color: tokens.mutedText),
+                                      ),
+                                      TextField(
+                                        key: const Key('compose-title'),
+                                        controller: _titleController,
+                                        enabled: !locked,
+                                        maxLength: 100,
+                                        maxLines:
+                                            compact || _editorSession.hasFocus
+                                            ? 1
+                                            : 3,
+                                        minLines: 1,
+                                        textInputAction: TextInputAction.next,
+                                        style: Theme.of(
+                                          context,
+                                        ).textTheme.wenyouPageTitle,
+                                        decoration: const InputDecoration(
+                                          hintText: '一句话说明这个主题',
+                                          counterText: '',
+                                          filled: false,
+                                          border: InputBorder.none,
+                                          enabledBorder: InputBorder.none,
+                                          disabledBorder: InputBorder.none,
+                                          focusedBorder: InputBorder.none,
+                                          contentPadding: EdgeInsets.symmetric(
+                                            vertical: 4,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
-                              ),
-                            ],
+                                ThreadComposeMetadataBar(
+                                  categoryValue:
+                                      selectedCategory?.name ?? '未选择',
+                                  visibilityValue: state.visibility.label,
+                                  tagsValue: state.tags.isEmpty
+                                      ? '未添加'
+                                      : '${state.tags.length} 个',
+                                  activePanel: _metadataPanel,
+                                  enabled: !locked,
+                                  onPanelChanged: (panel) {
+                                    setState(() {
+                                      _metadataPanel = _metadataPanel == panel
+                                          ? null
+                                          : panel;
+                                    });
+                                  },
+                                ),
+                                _buildMetadataPanel(state, locked),
+                              ],
+                            ),
                           ),
-                        ),
-                        ThreadComposeMetadataBar(
-                          categoryValue: selectedCategory?.name ?? '未选择',
-                          visibilityValue: state.visibility.label,
-                          tagsValue: state.tags.isEmpty
-                              ? '未添加'
-                              : '${state.tags.length} 个',
-                          activePanel: _metadataPanel,
-                          enabled: !locked,
-                          onPanelChanged: (panel) {
-                            setState(() {
-                              _metadataPanel = _metadataPanel == panel
-                                  ? null
-                                  : panel;
-                            });
-                          },
-                        ),
-                        _buildMetadataPanel(state, locked),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                   Expanded(

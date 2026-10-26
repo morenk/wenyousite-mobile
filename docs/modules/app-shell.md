@@ -58,6 +58,8 @@ Android 后台消息提醒默认开启，可在账号设置按设备关闭，选
 
 ## 6. 状态模型和数据流
 
+创作可靠性候选／待负责人验收：系统返回由应用 `WenyouRouterDelegate` 处理空初始化配置，并将连续返回合并为一次在途操作；正常 Navigator／Shell、弹层、PopScope 与根 `onExit` 保留优先级。等待退出期间配置变化时终止旧返回，不返回新页面。诊断遇空配置清空旧路由名称。离线证据与 HONOR 未覆盖边界见[创作候选](../architecture/compose-reliability-candidate.md)。
+
 独立文本颜色能力由 `/meta.capabilities.textColorV1Supported` 与 `textColorV1WriteEnabled` 映射，缺失视为 false。正文读取发送 `X-Text-Color-Version: 1`，与已有 `X-Markdown-Contract-Version: 6` 并存；后端缓存和旧端投影负责隔离有色原文。UI 只在支持时显示颜色区，关闭新写时保留读取并禁用改色。最近色存储按当前账号键隔离，由生产组合根注入编辑器端口。
 
 可选 meta.audioUpload 经真实 JSON 数字 version=1 解析为新上传能力；缺失或未知版本安全关闭入口。此开关不控制已授权正文 mediaAudios 的历史播放。生成客户端对该单一数字枚举使用 wireNumber，避免把数字 1 错当字符串。
@@ -181,6 +183,8 @@ Android 的 Debug、Profile 和 Release 均仅支持 `arm64-v8a`，使用 ARM64 
 当前已完成构建策略门禁、全局亮色/黑夜外观、推荐更新忽略、Android HTTPS 在线下载、双层完整性/身份校验与系统安装器、iOS TestFlight 外跳、本地一键发布入口；后台常驻与横幅提醒为候选／待负责人验收。Debug 构建使用独立 `site.wenyou.app.debug` 包名，Profile 性能构建使用 `site.wenyou.app.profile`，两者都避免占用正式更新链；完整门禁与发布入口均会核对线上契约、后端 revision 和 Markdown 版本。自动测试以伪 APK 固定下载与缓存状态机，Android 原生包解析、系统覆盖和后台尽力轮询仍需用 Android 8+ 真机完成最终验收；iOS 构建与上传必须在配置签名的 macOS 上执行。后台 30 秒节拍依赖当前 Flutter 进程与系统调度，留在最近任务不代表 Dart isolate 会持续运行；Doze、厂商省电、网络中断或进程终止都可能延迟/停止检查，不承诺实时送达。V1 不申请豁免、不做 App Links、FCM、WebSocket 或开机恢复。Profile 基线只覆盖固定离线关键交互，不能替代全部真实业务路径的人工手感验收。原生启动层在 Flutter 首帧前仍是静态白色。
 
 ## 13. 最近审查的契约版本和后端提交
+
+当前契约来源复核：Backend `d54313346681eae8f62584d63d07f3315e42381b`／API `5.44.0-dev.20261024.3`。相对原固定来源，HTTP、DTO、Markdown 与推送机器契约无变化，仅来源记录与后端字体验证说明更新；本模块已有行为与验收边界保持。见[来源核对](../architecture/backend-contract-source-20261027.md)，本轮创作行为候选另见对应模块章节。
 
 本轮字体样张契约来源：Backend `8a5d21858e04c69832c90e5a3a10f1e70fdcb545`／API `5.44.0-dev.20261024.3`。HTTP 形状不变，仅统一后台自动样张文案；本模块运行逻辑不变。离线格式验证范围见[验证说明](../architecture/font-format-offline-probe.md)。
 

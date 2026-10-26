@@ -66,7 +66,7 @@ class _WenyouMaterialAppState extends ConsumerState<_WenyouMaterialApp> {
       locale: const Locale('zh', 'CN'),
       supportedLocales: const [Locale('zh', 'CN')],
       localizationsDelegates: wenyouLocalizationsDelegates,
-      routerConfig: ref.watch(appRouterProvider),
+      routerConfig: ref.watch(appRouterConfigProvider),
       builder: (context, child) {
         final theme = Theme.of(context);
         final tokens = context.wenyouTokens;
