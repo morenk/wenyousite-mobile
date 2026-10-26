@@ -9,6 +9,7 @@ import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/application/atomic_editor_clipboard.dart';
 import 'package:wenyousite_mobile/core/media/media_display.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/core/widgets/reply_content_validation.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_atomic_text_editor.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_inline_composer_dock.dart';
@@ -564,6 +565,13 @@ class _MomentCommentComposerState extends ConsumerState<MomentCommentComposer>
 
   Future<void> _sendReady() async {
     if (_sending || !mounted) return;
+    if (!validateReplyContent(
+      context,
+      _textController.markdown,
+      hasAttachment: _image != null || _sticker != null,
+    )) {
+      return;
+    }
     setState(() {
       _waitingToSend = false;
       _sending = true;

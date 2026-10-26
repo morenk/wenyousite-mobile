@@ -18,6 +18,18 @@ import 'package:wenyousite_mobile/features/moments/presentation/moment_comment_c
 import '../../support/memory_pending_media_file_store.dart';
 
 void main() {
+  testWidgets('空动态回复仅提示，保留输入框且不调用发送', (tester) async {
+    final fixture = _Fixture()
+      ..draft = const MomentCommentDraft(content: ' \n');
+    await fixture.pump(tester);
+    await tester.tap(find.byKey(_sendKey));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.text('消息框不能为空。'), findsOneWidget);
+    expect(fixture.sendCalls, 0);
+    expect(fixture.closeCalls, 0);
+  });
+
   for (final sample in [
     (size: const Size(320, 760), scale: 2.0, keyboard: 280.0),
     (size: const Size(390, 844), scale: 1.0, keyboard: 340.0),

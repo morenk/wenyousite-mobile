@@ -1,5 +1,7 @@
 # 动态
 
+2026-10-27 候选／待负责人验收：动态评论及嵌套回复与主题帖复用提交前空内容校验和中性提示“消息框不能为空。”，不调用空内容发送回调，保留文字／图片／表情及等待图片后发送路径。详见[候选与定位调查](../architecture/mobile-update-reply-navigation-candidate.md)。
+
 2026-10-19 映射内部重构候选：动态作者与图片 DTO 共用 MomentDtoMapper；搜索和信息流各自的错误标签、诊断码、封面及互动权限校验不变。详见[公共流程验收](../architecture/shared-flows-acceptance.md)。
 
 

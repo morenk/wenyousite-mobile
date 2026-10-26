@@ -45,14 +45,17 @@ void _showRefreshFailure(BuildContext context, ApiFailure failure) {
 }
 
 class MePage extends ConsumerWidget {
-  const MePage({this.userMoments, super.key});
+  const MePage({this.userMoments, this.updateSettingsEntry, super.key});
 
   final MeUserMomentsIntegration? userMoments;
+  final Widget? updateSettingsEntry;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final session = ref.watch(sessionControllerProvider);
-    if (!session.isAuthenticated) return const _GuestMePage();
+    if (!session.isAuthenticated) {
+      return _GuestMePage(updateSettingsEntry: updateSettingsEntry);
+    }
     return MeProfileRefreshBoundary(
       child: _AuthenticatedMePage(userMoments: userMoments),
     );
@@ -60,7 +63,9 @@ class MePage extends ConsumerWidget {
 }
 
 class _GuestMePage extends StatelessWidget {
-  const _GuestMePage();
+  const _GuestMePage({this.updateSettingsEntry});
+
+  final Widget? updateSettingsEntry;
 
   @override
   Widget build(BuildContext context) {
@@ -105,6 +110,7 @@ class _GuestMePage extends StatelessWidget {
             WenyouSettingsGroup(
               title: '帮助',
               children: [
+                ?updateSettingsEntry,
                 WenyouSettingsLink(
                   icon: WenyouIconIds.statusInfo,
                   title: '故障诊断',
@@ -364,7 +370,9 @@ class _MeProfileSaveBar extends StatelessWidget {
 }
 
 class MeSettingsPage extends ConsumerWidget {
-  const MeSettingsPage({super.key});
+  const MeSettingsPage({this.updateSettingsEntry, super.key});
+
+  final Widget? updateSettingsEntry;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -396,6 +404,7 @@ class MeSettingsPage extends ConsumerWidget {
           WenyouSettingsGroup(
             title: '帮助',
             children: [
+              ?updateSettingsEntry,
               WenyouSettingsLink(
                 key: const Key('me-open-moderation-appeals'),
                 icon: WenyouIconIds.moderationDecision,
