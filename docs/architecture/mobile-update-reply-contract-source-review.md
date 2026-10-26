@@ -19,4 +19,6 @@ OpenAPI、机器 fixtures、移动端指南、生成 SDK、应用 `lib` 和依�
 
 同步、失败门禁与单独来源复核日志分别为 `.mobile-update-reply-contract-source-sync.log`、`.mobile-update-reply-full-check-source-failed.log`、`.mobile-update-reply-source-verify.log`；最终完整门禁另行从唯一入口重跑，结果汇入[候选和合并记录](mobile-update-reply-navigation-candidate.md)。
 
-应用 `lib` tree 仍为 `cf64354ad08226fd6c301ed68cc268cf7c48072f`，原候选 APK 继续有效，不重新构建或安装。此来源同步不代表负责人新增真机验收，也不恢复已明确跳过的第三项定位调查。
+来源同步环节的应用 `lib` tree 为 `cf64354ad08226fd6c301ed68cc268cf7c48072f`，当时没有重建 APK。随后在前两项范围内发现动态合法纯文本会被 Markdown 判空误拒绝，补丁改变应用源码，最终将通过完整 `check:apk` 重新验证并生成新包；新旧身份以[候选和合并记录](mobile-update-reply-navigation-candidate.md)分别登记。来源同步和后续补丁均不代表负责人新增真机验收，也不恢复已明确跳过的第三项定位调查。
+
+完整收集还发现 `test/core/network/audio_budget_contract_test.dart` 固定旧来源 SHA 的唯一断言未同步；现已将其精确值对齐已独立核验的 `d54313346681eae8f62584d63d07f3315e42381b`，保留所有既有错误码、Schema 和旧 `42900` 兼容断言，没有泛化为任意 SHA 或跳过测试。
