@@ -68,4 +68,11 @@ C：动态创建／普通编辑每次明确提交创建独立诊断尝试，同�
 
 验收对应已交付实现 `a7586612595c63969dc18a32153a669181cd00af`／交付记录 `ddd537cfdbb4076a4c1c32c4f6c03cf0398133bb`，独立 APK 及摘要见上文。上文“待验收、未合并”等描述是 2026-10-27 候选时点的历史状态，以本节后续记录为准。
 
-最新 `origin/dev` 为 `7f0c6417b4d140167ae64b3ec5a32d2f5b701759`，已含主动更新检查和空回复提示。合入任务分支时冲突仅为 CHANGELOG 与 23 个模块的同一 Backend 来源说明，保留双方行为、记录与链接；本任务已验收的应用代码无冲突修改。最终集成源码须完成一次完整门禁，检查结果和清理记录在通过后补记；未执行部署、正式发布或线上业务写入。
+最新 `origin/dev` 为 `7f0c6417b4d140167ae64b3ec5a32d2f5b701759`，已含主动更新检查和空回复提示。合入任务分支时冲突仅为 CHANGELOG 与 23 个模块的同一 Backend 来源说明，保留双方行为、记录与链接；本任务已验收的应用代码无冲突修改。集成提交为 `5298f3d54109ef7580688f7278dd82e2520e1ea2`。
+
+最终集成源码完整执行 `npm run check:apk -- -TestConcurrency 2`，退出 0；Flutter **8,134 项通过、1 项条件收件测试跳过**，Windows 工具 **49 项全部通过**，静态分析、契约、文档、架构及 API 覆盖均通过，同次构建 ARM64 Debug APK 成功。插件 Kotlin 迁移和 Android SDK XML 版本提示未影响本次构建。集成 diff 自查无新增问题；没有线上写入 E2E，未安装、启动、发布或部署应用。
+
+- 验证源码：`lib` tree `d04adcb9e90b5048a141fb21ee715bcfd88b4940`，`android` tree `948213a0815ae4c46530b60cb3ff4c3799605213`；构建前后源码清单一致，清单 SHA-256 为 `f7b5c24c17f0000fe58a47a0a56370d7728618b15439916a1140bf51edab5f9f`。后续只补本文档，不重复应用门禁。
+- 集成 APK：`D:\dev-cache\candidates\20261029-compose-reliability-integration\wenyou-compose-integration-0133ba7f-debug.apk`，114,345,005 bytes，SHA-256 `0133ba7f13b91c6b1e5d8fe28ed8001953f01b57873f37cfded31b22bb587c8d`。原已验收候选 APK 仍独立保留。
+- 完整日志、源码清单、制品摘要和合并清理审计保留在 `D:\dev-cache\candidates\20261029-compose-reliability-integration`，位于待清理 Worktree 外。完整日志 SHA-256 为 `9e58266808a6586bb01a76faca31be83bc1d37306f22f181522d9cbf149fd27e`。
+- 按负责人授权合并 PR #126 后，核验远端 `dev` 保留完整任务提交、任务分支没有新增提交、工作区干净且无使用中的进程，再清理本任务本地／远端分支和临时 Worktree；实际结果记录在外部 `merge-cleanup-record.json`，不归档 chat。
