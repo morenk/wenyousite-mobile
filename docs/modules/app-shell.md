@@ -60,6 +60,8 @@ Android 后台消息提醒默认开启，可在账号设置按设备关闭，选
 
 ## 6. 状态模型和数据流
 
+创作可靠性候选／待负责人验收：系统返回由应用 `WenyouRouterDelegate` 处理空初始化配置，并将连续返回合并为一次在途操作；正常 Navigator／Shell、弹层、PopScope 与根 `onExit` 保留优先级。等待退出期间配置变化时终止旧返回，不返回新页面。诊断遇空配置清空旧路由名称。离线证据与 HONOR 未覆盖边界见[创作候选](../architecture/compose-reliability-candidate.md)。
+
 独立文本颜色能力由 `/meta.capabilities.textColorV1Supported` 与 `textColorV1WriteEnabled` 映射，缺失视为 false。正文读取发送 `X-Text-Color-Version: 1`，与已有 `X-Markdown-Contract-Version: 6` 并存；后端缓存和旧端投影负责隔离有色原文。UI 只在支持时显示颜色区，关闭新写时保留读取并禁用改色。最近色存储按当前账号键隔离，由生产组合根注入编辑器端口。
 
 可选 meta.audioUpload 经真实 JSON 数字 version=1 解析为新上传能力；缺失或未知版本安全关闭入口。此开关不控制已授权正文 mediaAudios 的历史播放。生成客户端对该单一数字枚举使用 wireNumber，避免把数字 1 错当字符串。
@@ -184,7 +186,7 @@ Android 的 Debug、Profile 和 Release 均仅支持 `arm64-v8a`，使用 ARM64 
 
 ## 13. 最近审查的契约版本和后端提交
 
-2026-10-27 来源复核：固定已部署 Backend `d54313346681eae8f62584d63d07f3315e42381b`／API `5.44.0-dev.20261024.3`。受支持同步入口只更新来源身份与后台字体说明镜像；机器契约、生成客户端及本模块消费行为和既有验收状态不变，详见[来源复核](../architecture/mobile-update-reply-contract-source-review.md)。
+2026-10-27 来源复核：固定已部署 Backend `d54313346681eae8f62584d63d07f3315e42381b`／API `5.44.0-dev.20261024.3`。两项任务的来源同步均只更新来源身份与后端字体验证说明，机器契约及生成客户端不变；各自应用行为和验收状态见对应章节。来源证据见[创作可靠性来源核对](../architecture/backend-contract-source-20261027.md)及[更新与回复来源复核](../architecture/mobile-update-reply-contract-source-review.md)。
 
 本轮字体样张契约来源：Backend `8a5d21858e04c69832c90e5a3a10f1e70fdcb545`／API `5.44.0-dev.20261024.3`。HTTP 形状不变，仅统一后台自动样张文案；本模块运行逻辑不变。离线格式验证范围见[验证说明](../architecture/font-format-offline-probe.md)。
 

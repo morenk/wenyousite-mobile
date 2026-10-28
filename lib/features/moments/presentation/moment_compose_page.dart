@@ -8,6 +8,8 @@ import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/application/atomic_editor_clipboard.dart';
+import 'package:wenyousite_mobile/core/diagnostics/diagnostic_widgets.dart';
+import 'package:wenyousite_mobile/core/diagnostics/failure_diagnostics.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_atomic_text_editor.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
@@ -224,6 +226,7 @@ class _MomentComposePageState extends ConsumerState<_MomentComposeEditor>
   ) {
     final tokens = context.wenyouTokens;
     final horizontal = wenyouHorizontalPagePadding(context);
+    final diagnosticId = FailureDiagnostics.instance.idFor(state.failure);
     return SafeArea(
       child: Padding(
         padding: EdgeInsets.fromLTRB(
@@ -246,18 +249,27 @@ class _MomentComposePageState extends ConsumerState<_MomentComposeEditor>
                     message: state.awaitingConfirmation
                         ? '发布结果暂时无法获取。内容已保留，请点“查看结果”后继续。'
                         : state.failure!.userMessage,
-                    detail: wenyouFailureDetail(
-                      state.failure,
-                      treatAsWrite: true,
-                    ),
+                    detail:
+                        wenyouProblemDetailFromId(diagnosticId) ??
+                        wenyouFailureDetail(state.failure, treatAsWrite: true),
                     tone: WenyouStatusTone.error,
-                    action: state.failure?.businessCode == 40002
-                        ? TextButton(
-                            key: const Key('moment-compose-resolve-conflict'),
-                            onPressed: _resolveConflict,
-                            child: const Text('处理'),
-                          )
-                        : null,
+                    action:
+                        diagnosticId == null &&
+                            state.failure?.businessCode != 40002
+                        ? null
+                        : Wrap(
+                            children: [
+                              if (state.failure?.businessCode == 40002)
+                                TextButton(
+                                  key: const Key(
+                                    'moment-compose-resolve-conflict',
+                                  ),
+                                  onPressed: _resolveConflict,
+                                  child: const Text('处理'),
+                                ),
+                              CopyDiagnosticButton(failure: state.failure),
+                            ],
+                          ),
                   ),
                   SizedBox(height: tokens.space8),
                 ],

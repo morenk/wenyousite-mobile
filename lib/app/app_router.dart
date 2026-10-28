@@ -1,3 +1,4 @@
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_mobile/app/app_route_access.dart';
@@ -7,6 +8,7 @@ import 'package:wenyousite_mobile/app/routes/account_routes.dart';
 import 'package:wenyousite_mobile/app/routes/app_shell_routes.dart';
 import 'package:wenyousite_mobile/app/routes/auth_routes.dart';
 import 'package:wenyousite_mobile/app/routes/content_routes.dart';
+import 'package:wenyousite_mobile/app/wenyou_router_delegate.dart';
 import 'package:wenyousite_mobile/core/diagnostics/failure_diagnostics.dart';
 import 'package:wenyousite_mobile/core/navigation/wenyou_feedback_visibility.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
@@ -48,15 +50,27 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   return router;
 });
 
+final appRouterConfigProvider = Provider<RouterConfig<RouteMatchList>>((ref) {
+  final router = ref.watch(appRouterProvider);
+  final delegate = WenyouRouterDelegate(router);
+  ref.onDispose(delegate.dispose);
+  return RouterConfig(
+    routeInformationProvider: router.routeInformationProvider,
+    routeInformationParser: router.routeInformationParser,
+    routerDelegate: delegate,
+    backButtonDispatcher: RootBackButtonDispatcher(),
+  );
+});
+
 void Function() bindRouterDiagnostics(
   GoRouter router,
   FailureDiagnostics diagnostics,
 ) {
   void updateDiagnosticScreen() {
     // 只记录代码定义的路由名称，不读取 URI、参数、搜索词或实体 ID。
-    if (router.routerDelegate.currentConfiguration.isNotEmpty) {
-      diagnostics.screen = router.state.name;
-    }
+    diagnostics.screen = router.routerDelegate.currentConfiguration.isNotEmpty
+        ? router.state.name
+        : null;
   }
 
   router.routerDelegate.addListener(updateDiagnosticScreen);

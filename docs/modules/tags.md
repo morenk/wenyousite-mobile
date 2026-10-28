@@ -82,7 +82,7 @@
 
 ## 13. 最近审查的契约版本和后端提交
 
-2026-10-27 来源复核：固定已部署 Backend `d54313346681eae8f62584d63d07f3315e42381b`／API `5.44.0-dev.20261024.3`。受支持同步入口只更新来源身份与后台字体说明镜像；机器契约、生成客户端及本模块消费行为和既有验收状态不变，详见[来源复核](../architecture/mobile-update-reply-contract-source-review.md)。
+2026-10-27 来源复核：固定已部署 Backend `d54313346681eae8f62584d63d07f3315e42381b`／API `5.44.0-dev.20261024.3`。两项任务的来源同步均只更新来源身份与后端字体验证说明，机器契约及生成客户端不变；各自应用行为和验收状态见对应章节。来源证据见[创作可靠性来源核对](../architecture/backend-contract-source-20261027.md)及[更新与回复来源复核](../architecture/mobile-update-reply-contract-source-review.md)。
 
 本轮字体样张契约来源：Backend `8a5d21858e04c69832c90e5a3a10f1e70fdcb545`／API `5.44.0-dev.20261024.3`。HTTP 形状不变，仅统一后台自动样张文案；本模块运行逻辑不变。离线格式验证范围见[验证说明](../architecture/font-format-offline-probe.md)。
 

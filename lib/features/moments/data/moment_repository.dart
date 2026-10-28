@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
+import 'package:wenyousite_mobile/core/diagnostics/failure_diagnostics.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
@@ -138,6 +139,7 @@ class ApiMomentRepository implements MomentRepository {
             ..clientRequestId = requestId,
         ),
       )).data?.data;
+      DiagnosticAttempt.current?.mark(DiagnosticStage.decode);
       if (dto == null) {
         throw const ApiFailure(userMessage: '发布失败，请重试。');
       }
@@ -170,6 +172,7 @@ class ApiMomentRepository implements MomentRepository {
             ..version = version,
         ),
       )).data?.data;
+      DiagnosticAttempt.current?.mark(DiagnosticStage.decode);
       if (dto == null) {
         throw const ApiFailure(userMessage: '修改失败，请重新加载。');
       }

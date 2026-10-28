@@ -53,6 +53,8 @@ String diagnosticOperationLabel(DiagnosticOperation operation) =>
     switch (operation) {
       DiagnosticOperation.postEdit => '楼层保存失败',
       DiagnosticOperation.postCreate => '楼层发布失败',
+      DiagnosticOperation.momentCreate => '动态发布失败',
+      DiagnosticOperation.momentEdit => '动态保存失败',
       DiagnosticOperation.bodySave => '正文保存失败',
       DiagnosticOperation.mediaUpload => '图片上传失败',
       DiagnosticOperation.editorOpen => '正文无法编辑',
