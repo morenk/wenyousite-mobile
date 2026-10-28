@@ -293,7 +293,7 @@ S5 于 2026-09-10 启动，已按要求安装 Debug 候选并核验设备内 APK
 
 ## 13. 最近审查的契约版本和后端提交
 
-当前契约来源复核：Backend `d54313346681eae8f62584d63d07f3315e42381b`／API `5.44.0-dev.20261024.3`。相对原固定来源，HTTP、DTO、Markdown 与推送机器契约无变化，仅来源记录与后端字体验证说明更新；本模块已有行为与验收边界保持。见[来源核对](../architecture/backend-contract-source-20261027.md)，本轮创作行为候选另见对应模块章节。
+2026-10-27 来源复核：固定已部署 Backend `d54313346681eae8f62584d63d07f3315e42381b`／API `5.44.0-dev.20261024.3`。两项任务的来源同步均只更新来源身份与后端字体验证说明，机器契约及生成客户端不变；各自应用行为和验收状态见对应章节。来源证据见[创作可靠性来源核对](../architecture/backend-contract-source-20261027.md)及[更新与回复来源复核](../architecture/mobile-update-reply-contract-source-review.md)。
 
 PR #76 本轮候选在 `b7e1a4ac` 基线上适配真实字体 v1/v2 的受控标签保留，并维持实体标签文字保护；契约与依赖沿用基线，未新增协议。定向检查、负责人未验收项与六项组合 APK 边界见[本轮记录](../architecture/editor-angle-integration-20261025.md)。
 

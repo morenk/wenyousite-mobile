@@ -5,6 +5,7 @@ import 'package:wenyousite_mobile/core/navigation/wenyou_feedback_visibility.dar
 import 'package:wenyousite_mobile/core/navigation/wenyou_page_transitions.dart';
 import 'package:wenyousite_mobile/features/app_shell/presentation/app_scaffold.dart';
 import 'package:wenyousite_mobile/features/app_shell/presentation/message_center_page.dart';
+import 'package:wenyousite_mobile/features/app_shell/presentation/mobile_update_settings_link.dart';
 import 'package:wenyousite_mobile/features/home/presentation/home_page.dart';
 import 'package:wenyousite_mobile/features/moments/application/moment_controllers.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
@@ -61,6 +62,7 @@ RouteBase buildAppShellRoute(
             path: AppRoutePaths.me,
             name: AppRouteNames.me,
             builder: (context, state) => MePage(
+              updateSettingsEntry: const MobileUpdateSettingsLink(),
               userMoments: MeUserMomentsIntegration(
                 builder: (userId) => MomentFeedList(
                   target: MomentFeedTarget.user(userId),

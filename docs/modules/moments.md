@@ -1,5 +1,7 @@
 # 动态
 
+2026-10-27 候选／负责人已明确授权合并，未另提供新增真机结果：动态评论及嵌套回复与主题帖复用提交前空内容校验和中性提示“消息框不能为空。”；动态按纯文本语义保留标点、类似格式的字面文字及实体原文，不改写发送正文。空白／零宽不调用发送回调，保留图片／表情及等待图片后发送路径。详见[候选与定位调查](../architecture/mobile-update-reply-navigation-candidate.md)。
+
 2026-10-19 映射内部重构候选：动态作者与图片 DTO 共用 MomentDtoMapper；搜索和信息流各自的错误标签、诊断码、封面及互动权限校验不变。详见[公共流程验收](../architecture/shared-flows-acceptance.md)。
 
 
@@ -221,7 +223,7 @@ media/application 提供相册与上传端口、唯一任务状态、取消、�
 
 ## 13. 最近审查的契约版本和后端提交
 
-当前契约来源复核：Backend `d54313346681eae8f62584d63d07f3315e42381b`／API `5.44.0-dev.20261024.3`。相对原固定来源，HTTP、DTO、Markdown 与推送机器契约无变化，仅来源记录与后端字体验证说明更新；本模块已有行为与验收边界保持。见[来源核对](../architecture/backend-contract-source-20261027.md)，本轮创作行为候选另见对应模块章节。
+2026-10-27 来源复核：固定已部署 Backend `d54313346681eae8f62584d63d07f3315e42381b`／API `5.44.0-dev.20261024.3`。两项任务的来源同步均只更新来源身份与后端字体验证说明，机器契约及生成客户端不变；各自应用行为和验收状态见对应章节。来源证据见[创作可靠性来源核对](../architecture/backend-contract-source-20261027.md)及[更新与回复来源复核](../architecture/mobile-update-reply-contract-source-review.md)。
 
 本轮字体样张契约来源：Backend `8a5d21858e04c69832c90e5a3a10f1e70fdcb545`／API `5.44.0-dev.20261024.3`。HTTP 形状不变，仅统一后台自动样张文案；本模块运行逻辑不变。离线格式验证范围见[验证说明](../architecture/font-format-offline-probe.md)。
 

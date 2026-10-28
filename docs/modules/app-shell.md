@@ -1,5 +1,7 @@
 # 应用壳
 
+2026-10-27 候选／待负责人验收：设置的主动检查每次重读实际安装版本与最新策略，复用更新说明与安全下载／安装动作，不受自动提示去重影响。没有新建历史浏览页；检查失败、缺少策略和安装包未就绪分别保留重试，不显示为已是最新版。详见[候选与定位调查](../architecture/mobile-update-reply-navigation-candidate.md)。
+
 2026-10-25 组合候选／待负责人真机验收：独立测试分支同时包含 PR #117 的相册宿主／路由保留与 PR #118 的同值元信息保位，实际更新检查与切号边界保留；见[组合记录](../architecture/pr117-118-combined-candidate.md)。
 
 状态：`in_progress`
@@ -184,7 +186,7 @@ Android 的 Debug、Profile 和 Release 均仅支持 `arm64-v8a`，使用 ARM64 
 
 ## 13. 最近审查的契约版本和后端提交
 
-当前契约来源复核：Backend `d54313346681eae8f62584d63d07f3315e42381b`／API `5.44.0-dev.20261024.3`。相对原固定来源，HTTP、DTO、Markdown 与推送机器契约无变化，仅来源记录与后端字体验证说明更新；本模块已有行为与验收边界保持。见[来源核对](../architecture/backend-contract-source-20261027.md)，本轮创作行为候选另见对应模块章节。
+2026-10-27 来源复核：固定已部署 Backend `d54313346681eae8f62584d63d07f3315e42381b`／API `5.44.0-dev.20261024.3`。两项任务的来源同步均只更新来源身份与后端字体验证说明，机器契约及生成客户端不变；各自应用行为和验收状态见对应章节。来源证据见[创作可靠性来源核对](../architecture/backend-contract-source-20261027.md)及[更新与回复来源复核](../architecture/mobile-update-reply-contract-source-review.md)。
 
 本轮字体样张契约来源：Backend `8a5d21858e04c69832c90e5a3a10f1e70fdcb545`／API `5.44.0-dev.20261024.3`。HTTP 形状不变，仅统一后台自动样张文案；本模块运行逻辑不变。离线格式验证范围见[验证说明](../architecture/font-format-offline-probe.md)。
 

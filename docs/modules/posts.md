@@ -1,5 +1,7 @@
 # 楼层与回复
 
+2026-10-27 候选／待负责人验收：回复提交在图片准备和正文编码后与动态复用空内容校验，空白／仅格式内容只以中性短提示“消息框不能为空。”提醒，保留编辑器且不产生故障记录；合法附件与骰子仍有效。详见[候选与定位调查](../architecture/mobile-update-reply-navigation-candidate.md)。
+
 2026-10-25 组合候选／待负责人真机验收：PR #117 的安全区／共享回复栏／相册与 PR #118 的四能力依赖收紧在独立测试分支合包；同值恢复检查保留当前窗口和阅读锚点，能力真变、切号及可见性失效仍刷新。跨图库与恢复生命周期回归及同包真机清单见[组合记录](../architecture/pr117-118-combined-candidate.md)。
 
 状态：`in_progress`
@@ -269,7 +271,7 @@ v5 图片在写入 `postsUpdate`、`postsUpsertBody` 或创建接口前会规范
 
 ## 13. 最近审查的契约版本和后端提交
 
-当前契约来源复核：Backend `d54313346681eae8f62584d63d07f3315e42381b`／API `5.44.0-dev.20261024.3`。相对原固定来源，HTTP、DTO、Markdown 与推送机器契约无变化，仅来源记录与后端字体验证说明更新；本模块已有行为与验收边界保持。见[来源核对](../architecture/backend-contract-source-20261027.md)，本轮创作行为候选另见对应模块章节。
+2026-10-27 来源复核：固定已部署 Backend `d54313346681eae8f62584d63d07f3315e42381b`／API `5.44.0-dev.20261024.3`。两项任务的来源同步均只更新来源身份与后端字体验证说明，机器契约及生成客户端不变；各自应用行为和验收状态见对应章节。来源证据见[创作可靠性来源核对](../architecture/backend-contract-source-20261027.md)及[更新与回复来源复核](../architecture/mobile-update-reply-contract-source-review.md)。
 
 本轮字体样张契约来源：Backend `8a5d21858e04c69832c90e5a3a10f1e70fdcb545`／API `5.44.0-dev.20261024.3`。HTTP 形状不变，仅统一后台自动样张文案；本模块运行逻辑不变。离线格式验证范围见[验证说明](../architecture/font-format-offline-probe.md)。
 
