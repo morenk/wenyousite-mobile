@@ -205,3 +205,5 @@ media application 负责相册选择、格式校验、`STICKER_SOURCE` 用途和
 跨模块调用统一通过 `lib/features/stickers/stickers.dart` 的显式导出入口；本次仅为阅读页拆分整理引用，业务行为与状态模型不变。
 
 端口、控制器与状态：`lib/features/stickers/application/`；API 适配器：`lib/features/stickers/data/`；页面：`lib/features/stickers/presentation/`。参见[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)、[媒体](media.md)、[编辑器](editor.md)与[站内私聊](direct-messages.md)。
+
+2026-10-31 发布来源复核：固定已部署 Backend `19a6c4ed48829a781182527faaafce6e788e9e2e`／API `5.44.0-dev.20261024.3`；机器契约和客户端行为不变，见[0.12.0 来源复核](../architecture/backend-contract-source-20261031.md)。

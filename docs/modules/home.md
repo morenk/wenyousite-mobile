@@ -198,3 +198,5 @@
 ## 14. 相关代码与架构文档
 
 代码入口：`lib/features/home/application/home_repository_ports.dart`、`lib/features/home/data/`、`lib/features/home/presentation/home_page.dart`、`lib/main.dart`。参见[网络与会话](../architecture/networking.md)、[Foundation v6.9.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.9.0/docs/platforms/mobile.md)、[语义图标](../architecture/icons.md)、[主题](threads.md)、[标签](tags.md)。
+
+2026-10-31 发布来源复核：固定已部署 Backend `19a6c4ed48829a781182527faaafce6e788e9e2e`／API `5.44.0-dev.20261024.3`；机器契约和客户端行为不变，见[0.12.0 来源复核](../architecture/backend-contract-source-20261031.md)。

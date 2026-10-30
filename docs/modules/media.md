@@ -276,3 +276,5 @@ galleryList：读取 GalleryList200Response / GalleryPageDto / GalleryImageDto�
 ## 14. 相关代码与架构文档
 
 端口、头像格式策略、归一化取景模型与任务状态位于 `lib/features/media/application/`，系统相册、图片限制校验、native WebP 归一化、引擎图片处理、分阶段计时与 Dio adapter 位于 `lib/features/media/data/`，直接选图入口与通用取景窗口位于 `lib/features/media/presentation/`，Android 原生编码冒烟位于 `integration_test/media_static_webp_encoder_test.dart`，组合根绑定位于 `lib/app/production_overrides.dart`；正文插入入口分别位于 `lib/features/threads/presentation/thread_compose_page.dart` 和 `lib/features/posts/presentation/post_composer_sheet.dart`，共同使用 editor 公共会话。头像与背景仓储及写入状态位于 `lib/features/users/`。参见[用户与资料](users.md)、[编辑器](editor.md)、[网络与会话](../architecture/networking.md)。
+
+2026-10-31 发布来源复核：固定已部署 Backend `19a6c4ed48829a781182527faaafce6e788e9e2e`／API `5.44.0-dev.20261024.3`；机器契约和客户端行为不变，见[0.12.0 来源复核](../architecture/backend-contract-source-20261031.md)。

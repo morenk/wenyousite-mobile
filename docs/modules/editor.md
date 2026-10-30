@@ -407,3 +407,5 @@ PR #76 本轮候选在 `b7e1a4ac` 基线上适配真实字体 v1/v2 的受控标
 跨端稳定性工作按[专项实施计划](../architecture/rich-text-stability-plan.md)、[基线与问题台账](../architecture/rich-text-stability-baseline.md)和[首批操作矩阵提案](../architecture/rich-text-stability-matrix.md)推进；这些文档不替代当前正文契约或原问题的负责人验收记录。
 
 通用会话、工具栏、提及和快照端口：`lib/features/editor/`；跨 feature 只通过根级 `editor.dart` / `editor_persistence.dart` façade 消费。主题创作页面、控制器与 API 适配器：`lib/features/threads/`；帖子工作流：`lib/features/posts/`；普通 Markdown 中立解析与 Delta Codec：`lib/core/markdown/`；数据库：`lib/core/storage/app_database.dart`。参见[Codec 架构](../architecture/editor-codec.md)、[Foundation 实现审计](../architecture/foundation-compliance-audit.md)、[草稿](drafts.md)、[媒体](media.md)、[语义图标](../architecture/icons.md)、[Foundation v6.9.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.9.0/docs/platforms/mobile.md)。
+
+2026-10-31 发布来源复核：固定已部署 Backend `19a6c4ed48829a781182527faaafce6e788e9e2e`／API `5.44.0-dev.20261024.3`；机器契约和客户端行为不变，见[0.12.0 来源复核](../architecture/backend-contract-source-20261031.md)。
