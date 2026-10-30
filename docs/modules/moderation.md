@@ -181,3 +181,5 @@ auth 只提供登录页入口和普通会话；settings 只提供已登录入口
 ## 14. 相关代码与架构文档
 
 代码入口：`lib/features/moderation/application/moderation_appeal_repository_ports.dart`、`lib/features/moderation/data/`、`lib/main.dart`；登录入口：`lib/features/auth/presentation/login_page.dart`；设置入口：`lib/features/users/presentation/me_page.dart`。参见[认证](auth.md)、[设置](settings.md)、[社区举报](reports.md)、[网络与会话](../architecture/networking.md)、[导航](../architecture/navigation.md)与[API 生成和覆盖审计](../architecture/api-generation.md)。
+
+2026-10-31 发布来源复核：固定已部署 Backend `19a6c4ed48829a781182527faaafce6e788e9e2e`／API `5.44.0-dev.20261024.3`；机器契约和客户端行为不变，见[0.12.0 来源复核](../architecture/backend-contract-source-20261031.md)。

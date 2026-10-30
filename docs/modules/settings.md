@@ -258,3 +258,5 @@ Android 账号设置新增“后台消息提醒”设备开关，默认开启；
 ## 14. 相关代码与架构文档
 
 入口：`lib/features/users/presentation/me_page.dart`、`lib/features/settings/presentation/appearance_settings_page.dart`；外观状态：`lib/core/application/appearance_preference.dart`；本地存储：`lib/core/storage/shared_preferences_appearance_store.dart`；settings 端口：`lib/features/settings/application/settings_repository_ports.dart`；data 适配器：`lib/features/settings/data/`；组合根：`lib/main.dart`。参见[认证](auth.md)、[用户与资料](users.md)、[应用壳](app-shell.md)、[站内通知](notifications.md)、[本地持久化](../architecture/persistence.md)、[网络与会话](../architecture/networking.md)和[移动端性能基线](../architecture/performance.md)。
+
+2026-10-31 发布来源复核：固定已部署 Backend `19a6c4ed48829a781182527faaafce6e788e9e2e`／API `5.44.0-dev.20261024.3`；机器契约和客户端行为不变，见[0.12.0 来源复核](../architecture/backend-contract-source-20261031.md)。
