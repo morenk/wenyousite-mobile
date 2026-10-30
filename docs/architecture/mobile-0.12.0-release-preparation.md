@@ -34,8 +34,25 @@
 
 ## 制品与待办
 
-签名 APK 尚待构建。本地证据目录为 `D:\codex-artifacts\mobile-release-0.12.0-102`；本任务不自动安装、启动应用或执行线上写入 E2E。
+标准 Windows 入口 `tool/release-mobile-from-local.sh --version 0.12.0 --build 102 --platform android --build-only --skip-checks` 已退出 0，Gradle Release 构建耗时 543.4 秒。构建时工作区干净且 HEAD 与远端任务分支一致；复用本轮成功门禁，不上传、不切换推荐策略。
+
+| 项目 | 结果 |
+| --- | --- |
+| 构建源码 | `53c13f544305c039aaee10a80fbdf6fee0d971a2` |
+| applicationId | `site.wenyou.app` |
+| versionName / versionCode | `0.12.0` / `102` |
+| APK 字节数 | `37849945` |
+| APK SHA-256 | `75343f11ee1e93cd7ad16872f8d7ec6a885b391000c9ae47a267cc8d2d2f0154` |
+| 签名证书 SHA-256 | `4b19f9ba1890480d1e1ac72450f00027a635be57958b702ba3a8e80f2db24839` |
+| 完整门禁日志 SHA-256 | `46cda03c55c7db8fbecc8ed40fb07ad4168a223be780e93a7cb08492a7138cc9` |
+| 构建日志 SHA-256 | `d0c82402f27cd93a713c03ec0faf8c03b80093b50e3194ce9e5af0be7a26d9e2` |
+
+APK 为单 ARM64，5 个原生库、0 个应用 UI 字体、1 个功能字体。标准入口的正式签名、包名／版本、ZIP 与 ELF 的 16 KB 对齐校验通过；证书与上一正式 build 101 一致。构建带入既有仓库外独立诊断配置，凭据和 DSN 不进入 Git。既有 Kotlin 插件迁移、SDK XML 与 CupertinoIcons 提示保留，不以本轮升级依赖。
+
+制品与日志独立保存于 `D:\codex-artifacts\mobile-release-0.12.0-102`，APK 为 `wenyou-0.12.0-102.apk`，同目录保留 `.apk.sha256`、制品 JSON、`verification.json`、检查／构建日志及更新说明建议稿。复制后重新计算 SHA-256，与标准入口清单一致。新旧 APK 总大小恰好相同，另核对新包 `libapp.so` SHA-256 为 `c1517b15b5a0f92e7000cd8be79736aafd00b196e2a67858faff56f583ceaea8`，与旧版不同，记录于 `native-app-comparison.json`。
+
+BuildOnly 的 `notesConfirmedRevision` 为 null，不是已确认发布制品。构建后只读 `/meta` 仍推荐 build 101、最低支持构建号 null，Backend 来源仍为 `19a6c4ed`。ADB 没有连接设备，未安装、启动应用或执行线上写入 E2E；本版 Release 真机验收尚未取得。
 
 负责人手测正式包 `site.wenyou.app` 覆盖升级并保留原有数据：核对 `0.12.0 (102)`、登录状态和草稿；检查账号设置的主动更新入口、空回复与合法符号回复；复验带图正文下的标题输入、键盘和系统返回。动态发布若再失败，使用本版问题详情反馈；不要将 Debug 新数据成功视为原正式数据故障已解决。
 
-完成本地检查和签名制品后提交发布准备 PR。负责人完成候选验收、后台 Android／`0.12.0`／102 的更新说明确认并明确授权正式发布后，按既有标准入口执行说明 revision 预检、合并晋级、正式 Tag、不可变上传与管理员网关晋级；最终以线上只读回读及完整下载摘要核验收口。
+发布准备 [PR #128](https://github.com/morenk/wenyousite-mobile/pull/128) 已推送，保持 Draft／待验收。源码同步独立提交 `e138891a`，版本与构建源码为上表 `53c13f54`；后续只补充本记录，不改变应用源码或重建候选。负责人完成候选验收、后台 Android／`0.12.0`／102 的更新说明确认并明确授权正式发布后，按既有标准入口执行说明 revision 预检、合并晋级、正式 Tag、不可变上传与管理员网关晋级；最终以线上只读回读及完整下载摘要核验收口。本轮不清理候选分支或现场，不归档 chat。
