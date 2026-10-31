@@ -539,30 +539,52 @@ class ThreadDetailController extends StateNotifier<ThreadDetailState> {
       return null;
     }
     final epoch = ++_requestEpoch;
-    state = state.copyWith(isLoadingMore: false, isPrefetchingFloors: false);
-    bool current() => _isCurrent(epoch) && active();
-    final result = await _readWindow(
-      subthreadId: subthreadId,
-      order: order,
-      authorId: authorId,
-      number: number,
-      postId: postId,
-      active: current,
+    state = state.copyWith(
+      isLoadingMore: false,
+      isPrefetchingFloors: true,
+      transientFailure: null,
     );
-    if (!current()) return null;
-    final id = result.page.targetId;
-    if (id == null) throw const ApiFailure(userMessage: '未找到该楼层。');
-    state = _withWindow(DiscussionWindowBuffer(result.page), pins: const [])
-        .copyWith(
-          selectedSubthreadId: subthreadId,
-          floorOrder: order,
-          floorAuthorId: result.author,
-        );
-    visibleFloorId = id;
-    return (id: id, clearedAuthor: result.cleared);
+    bool current() => _isCurrent(epoch) && active();
+    try {
+      final result = await _readWindow(
+        subthreadId: subthreadId,
+        order: order,
+        authorId: authorId,
+        number: number,
+        postId: postId,
+        active: current,
+      );
+      if (!current()) return null;
+      final id = result.page.targetId;
+      if (id == null ||
+          (postId != null && id != postId) ||
+          !result.page.items.any((item) => item.id == id)) {
+        throw const ApiFailure(userMessage: '未找到该楼层，请重试。');
+      }
+      state = _withWindow(DiscussionWindowBuffer(result.page), pins: const [])
+          .copyWith(
+            selectedSubthreadId: subthreadId,
+            floorOrder: order,
+            floorAuthorId: result.author,
+          );
+      visibleFloorId = id;
+      return (id: id, clearedAuthor: result.cleared);
+    } on Object catch (error) {
+      final failure = _asFailure(error, '定位失败，请重试。');
+      if (current() && failure.httpStatus == 403) {
+        _hideRestrictedContent(failure);
+      }
+      rethrow;
+    } finally {
+      // 关闭导航也要释放本次加载状态；迟到请求不能释放新请求的状态。
+      if (_isCurrent(epoch) && state.isPrefetchingFloors) {
+        state = state.copyWith(isPrefetchingFloors: false);
+      }
+    }
   }
 
   Future<void> locateFloor(String id) async {
+    if (state.isPrefetchingFloors) return;
     if (state.floors.any((item) => item.id == id)) return;
     final scope = state.selectedSubthreadId;
     if (scope == null) return;
