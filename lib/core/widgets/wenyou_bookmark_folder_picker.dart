@@ -6,6 +6,7 @@ import 'package:wenyousite_mobile/core/application/bookmark_folder_catalog.dart'
 import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
 import 'package:wenyousite_mobile/core/models/bookmark_folder_models.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_progress_indicator.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 
 export 'package:wenyousite_mobile/core/application/bookmark_folder_catalog.dart'
@@ -269,7 +270,9 @@ class _BookmarkFolderPickerSheetState extends State<BookmarkFolderPickerSheet> {
                   child: _isConfirming
                       ? const SizedBox.square(
                           dimension: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
+                          child: WenyouCircularProgressIndicator(
+                            strokeWidth: 2,
+                          ),
                         )
                       : const Text('确认'),
                 ),
@@ -288,7 +291,7 @@ class _BookmarkFolderPickerSheetState extends State<BookmarkFolderPickerSheet> {
       return Center(
         child: Semantics(
           label: '正在加载收藏夹',
-          child: const CircularProgressIndicator(),
+          child: const WenyouCircularProgressIndicator(),
         ),
       );
     }
@@ -372,7 +375,7 @@ class _BookmarkFolderPickerSheetState extends State<BookmarkFolderPickerSheet> {
             icon: _isCreating
                 ? const SizedBox.square(
                     dimension: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+                    child: WenyouCircularProgressIndicator(strokeWidth: 2),
                   )
                 : const WenyouIcon(WenyouIconIds.actionConfirm),
           ),

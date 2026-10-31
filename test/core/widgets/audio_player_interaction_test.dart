@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
@@ -12,7 +11,6 @@ import 'package:wenyousite_mobile/core/media/media_audio.dart';
 import 'package:wenyousite_mobile/core/widgets/audio_playback_button.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_audio_player.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_markdown.dart';
-
 import '../../support/audio_download.dart';
 import '../../support/audio_driver.dart';
 import '../../support/audio_test_fonts.dart';
@@ -573,7 +571,7 @@ void main() {
             find.byType(CircularProgressIndicator),
           )
           .value,
-      .7,
+      isNull,
     );
     expect(tester.binding.hasScheduledFrame, isFalse);
     await tester.pumpWidget(const SizedBox());

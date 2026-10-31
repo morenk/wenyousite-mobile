@@ -56,6 +56,8 @@ galleryList：读取 GalleryList200Response / GalleryPageDto / GalleryImageDto�
 
 ## 6. 状态模型和数据流
 
+性能候选／待负责人验收：只对本进程引擎生成且不可变、尺寸匹配的 PNG 复用其规范编码；恢复文件和其他输入仍完整处理，最终 WebP 校验保留。3 MB 图片约 5 秒是负责人原观察，尚未测得各阶段耗时或确认网络归因，详见[性能候选](../architecture/mobile-performance-candidate.md)。
+
 上传恢复候选：PUT 前即保留媒体身份与归一化文件摘要；网络失败、重签失败及对象缺失不会另建媒体。明确重试先查询同 ID，仍待上传时重签原对象；恢复草稿不申请、重签或 PUT，无身份附件等待手动重试，待重传附件只查询。旧 pending 沿用同 ID 幂等确认/处理查询；只有服务端明确 FAILED 才释放旧身份并允许手动重新上传。预签名地址不持久化。详见 [Sentry 上传恢复候选](../architecture/sentry-upload-recovery-candidate.md)。
 
 同 ID 重签或确认遇到 `40101` 时仍不自动重放 POST；仅会话已成功续期且仍有效的请求允许用户再次明确重试，保留媒体身份。续期失败、普通 401／403／404 与无效会话不开放该恢复入口。
@@ -113,6 +115,8 @@ galleryList：读取 GalleryList200Response / GalleryPageDto / GalleryImageDto�
 预签名 URL 与归一化缓存不持久化；本轮创作入口在应用私有目录保留确认选择后的附件文件、处理身份和本机草稿，按账号与目标隔离。Android 只在打开系统选图器前以 SharedPreferences 记录不含路径或内容的编辑用途；冷启动通过 `retrieveLostData()` 恢复系统返回的选择句柄，由原创作入口询问“继续使用 / 放弃”，绝不自动上传或发布。上传完成后富正文仍只把服务端主 URL 随完整 Markdown 写入快照，避免破坏媒体引用绑定；动态本机草稿可保存服务端明确返回的派生 URL 和动画标记。滚动内容按用途优先 thumbnail/feed/medium，加载失败时才按响应中已有地址逐级回退，显式全屏查看优先主 URL；客户端不猜测对象键。头像媒体 ID 只在当前 autoDispose 状态中保留到设置成功或页面释放。头像设置/移除成功立即采用服务端结果并淘汰旧 URL 缓存。
 
 ## 9. 加载、空数据、错误、重试和冲突状态
+
+本模块加载与下拉刷新复用公共进度组件：未知进度不伪造百分比，系统减少动画时保留静态忙碌反馈和请求生命周期。全项目入口及候选验证范围见[动效实现与复用边界](../architecture/motion-implementation.md)。
 
 音频上传的本机校验、保存和传输超时使用 `AudioUploadFailureReason` 分类；网络层不携带这些新增展示文案。编辑器统一映射具体失败与恢复提示，其他 API 失败经 `UserFacingFailure` 展示；原取消、草稿保留、预算错误身份与重试语义不变。
 

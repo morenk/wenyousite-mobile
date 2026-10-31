@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -10,6 +9,7 @@ import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_anchored_popover.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_nested_scroll.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_refresh_indicator.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/reports/domain/report_models.dart';
 import 'package:wenyousite_mobile/features/reports/presentation/report_widgets.dart';
@@ -75,7 +75,7 @@ class _PublicUserPageState extends ConsumerState<PublicUserPage> {
           detail: wenyouFailureDetail(state.failure),
           onRetry: () => ref.read(provider.notifier).load(),
         ),
-        PublicUserPhase.ready => RefreshIndicator(
+        PublicUserPhase.ready => WenyouRefreshIndicator(
           onRefresh: () async {
             await ref.read(provider.notifier).load();
             if (_showMoments) await widget.userMoments?.refresh(widget.userId);

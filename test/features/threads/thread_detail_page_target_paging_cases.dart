@@ -361,7 +361,7 @@ void registerThreadDetailPageTargetPagingCases() {
     expect(repository.requestedCursors, [null, null]);
   });
 
-  testWidgets('发表楼层后重读真实列表并定位到新楼层', (tester) async {
+  testWidgets('发表楼层后只读目标窗口，不重复查询帖子和默认窗口', (tester) async {
     tester.view.physicalSize = const Size(360, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -377,12 +377,7 @@ void registerThreadDetailPageTargetPagingCases() {
       replies: const [],
     );
     final detailRepository = ThreadDetailPageTestFakeThreadDetailRepository(
-      postTarget: ThreadPostTargetModel(
-        requestedPostId: 'floor-created',
-        threadId: 'thread-1',
-        subthreadId: 'subthread-1',
-        floor: createdFloor,
-      ),
+      mainFloors: [threadDetailPageTestMainFloor],
     );
     final postRepository = ThreadDetailPageTestCreatingPostRepository();
     final authorDirectory =
@@ -439,6 +434,7 @@ void registerThreadDetailPageTargetPagingCases() {
     await tester.tap(find.byKey(const Key('thread-floor-compose')));
     await tester.pumpAndSettle();
     await threadDetailPageTestReplacePostComposerText(tester, '刚发表的楼层');
+    detailRepository.mainFloors.add(createdFloor);
     await tester.tap(find.byKey(const Key('editor-submit')));
     await tester.pumpAndSettle();
 
@@ -446,9 +442,9 @@ void registerThreadDetailPageTargetPagingCases() {
     expect(postRepository.createInputs.single.parentPostId, isNull);
     expect(
       router.routeInformationProvider.value.uri.queryParameters['post'],
-      'floor-created',
+      isNull,
     );
-    expect(detailRepository.targetPostIds, ['floor-created']);
+    expect(detailRepository.targetPostIds, isEmpty);
     expect(detailRepository.requestedSubthreads, [
       'subthread-1',
       'subthread-1',

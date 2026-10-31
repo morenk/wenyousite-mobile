@@ -1,5 +1,4 @@
 import 'dart:ui' as ui;
-
 import 'package:flutter/foundation.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/media/data/media_image_validation.dart';
@@ -97,12 +96,25 @@ ApiFailure mediaImageDecodeFailure(Object error) => ApiFailure(
   cause: error,
 );
 
+// 只标记本进程引擎生成的不可变 PNG；磁盘恢复或任意外部输入仍须完整解码。
+final _canonicalPngs = Expando<({int width, int height})>();
+
+bool isCanonicalMediaPng(
+  Uint8List bytes, {
+  required int width,
+  required int height,
+}) => _canonicalPngs[bytes] == (width: width, height: height);
+
 Future<Uint8List> mediaImagePng(ui.Image image) async {
   final data = await image.toByteData(format: ui.ImageByteFormat.png);
   if (data == null) {
     throw mediaImageDecodeFailure(StateError('Image PNG encoding failed'));
   }
-  return data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
+  final bytes = data.buffer
+      .asUint8List(data.offsetInBytes, data.lengthInBytes)
+      .asUnmodifiableView();
+  _canonicalPngs[bytes] = (width: image.width, height: image.height);
+  return bytes;
 }
 
 /// 在已校正方向的像素坐标内裁剪；PNG 中间图避免最终 WebP 前再次有损编码。

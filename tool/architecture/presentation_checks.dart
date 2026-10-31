@@ -46,10 +46,24 @@ void checkFeatureSpinnerBudget(
   List<String> failures,
   Directory root,
 ) {
-  final pattern = RegExp(r'\bCircularProgressIndicator\s*\(');
+  final pattern = RegExp(r'\bWenyouCircularProgressIndicator\s*\(');
   var count = 0;
   for (final file in files) {
     final path = relativePath(file.path, root);
+    if (path != 'lib/core/widgets/wenyou_progress_indicator.dart' &&
+        RegExp(
+          r'\b(?:CircularProgressIndicator|LinearProgressIndicator)\s*\(',
+        ).hasMatch(file.readAsStringSync())) {
+      failures.add(
+        '$path bypasses shared progress repaint/reduced-motion policy',
+      );
+    }
+    if (path != 'lib/core/widgets/wenyou_refresh_indicator.dart' &&
+        RegExp(
+          r'\bRefreshIndicator(?:\.\w+)?\s*\(',
+        ).hasMatch(file.readAsStringSync())) {
+      failures.add('$path bypasses shared refresh reduced-motion policy');
+    }
     if (!path.startsWith('lib/features/') || !path.contains('/presentation/')) {
       continue;
     }

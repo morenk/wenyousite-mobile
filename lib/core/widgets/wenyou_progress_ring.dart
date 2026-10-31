@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_progress_indicator.dart';
 
 /// 图片等紧凑异步区域共用进度环；仅可量化的传输传入 value。
 class WenyouProgressRing extends StatelessWidget {
@@ -10,6 +11,6 @@ class WenyouProgressRing extends StatelessWidget {
   @override
   Widget build(BuildContext context) => SizedBox.square(
     dimension: size,
-    child: CircularProgressIndicator(value: value, strokeWidth: 2),
+    child: WenyouCircularProgressIndicator(value: value, strokeWidth: 2),
   );
 }

@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/painting.dart';
 import 'package:flutter/services.dart';
@@ -7,6 +6,7 @@ import 'package:wenyousite_mobile/core/markdown/markdown_text_font.dart';
 import 'package:wenyousite_mobile/core/text_fonts/text_font_cache.dart';
 import 'package:wenyousite_mobile/core/text_fonts/text_font_demand_queue.dart';
 import 'package:wenyousite_mobile/core/text_fonts/text_font_download_window.dart';
+import 'package:wenyousite_mobile/core/text_fonts/text_font_integrity.dart';
 import 'package:wenyousite_mobile/core/text_fonts/text_font_manifest.dart';
 import 'package:wenyousite_mobile/core/text_fonts/text_font_native_ledger.dart';
 import 'package:wenyousite_mobile/core/text_fonts/text_font_native_snapshot.dart';
@@ -200,7 +200,9 @@ class TextFontRuntime extends ChangeNotifier {
     final bytes = await download(
       descriptor,
     ).timeout(const Duration(seconds: 15));
-    if (!descriptor.verifies(bytes)) throw const FormatException('字体资源校验失败');
+    if (!await verifyTextFontAsset(descriptor, bytes)) {
+      throw const FormatException('字体资源校验失败');
+    }
     await cache.write(descriptor, bytes);
     return bytes;
   }

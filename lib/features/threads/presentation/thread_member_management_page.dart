@@ -8,6 +8,7 @@ import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_progress_indicator.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_settings_body.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_member_management_controller.dart';
@@ -240,7 +241,7 @@ class _MemberRow extends ConsumerWidget {
               icon: playerPending
                   ? SizedBox.square(
                       dimension: 18,
-                      child: CircularProgressIndicator(
+                      child: WenyouCircularProgressIndicator(
                         strokeWidth: 2,
                         color: member.playerMarked
                             ? tokens.onActionSurface
@@ -269,7 +270,7 @@ class _MemberRow extends ConsumerWidget {
                 icon: rolePending
                     ? SizedBox.square(
                         dimension: 18,
-                        child: CircularProgressIndicator(
+                        child: WenyouCircularProgressIndicator(
                           strokeWidth: 2,
                           color:
                               member.role ==

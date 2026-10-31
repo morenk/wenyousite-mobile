@@ -1,9 +1,9 @@
 import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_progress_indicator.dart';
 
 enum WenyouPopoverPlacement { above, below }
 
@@ -295,7 +295,7 @@ class _WenyouPopoverActionButton<T> extends StatelessWidget {
                 if (action.loading)
                   SizedBox.square(
                     dimension: 22,
-                    child: CircularProgressIndicator(
+                    child: WenyouCircularProgressIndicator(
                       strokeWidth: 2,
                       color: tokens.brandForeground,
                     ),

@@ -50,6 +50,7 @@ void main() {
       final imageKey = GlobalKey();
       final f = FontTestFixture(shardBytes: 3000000), cache = MemoryFontCache();
       final transfer = Completer<void>(), registration = Completer<void>();
+      final registrationStarted = Completer<void>();
       final runtime = TextFontRuntime(
         cache: cache,
         download: (_) async => throw StateError('unused'),
@@ -60,7 +61,10 @@ void main() {
           if (asset.hash == f.a.hash) await transfer.future;
           return f.data[asset.hash]!;
         },
-        register: (_, _) => registration.future,
+        register: (_, _) {
+          if (!registrationStarted.isCompleted) registrationStarted.complete();
+          return registration.future;
+        },
         snapshot: TextFontNativeSnapshot(
           manifest: f.manifest,
           assetCount: 2,
@@ -206,6 +210,16 @@ void main() {
       );
       transfer.complete();
       await tester.pump();
+      // 大分片在工作 isolate 校验；虚拟帧不能替代真实任务完成边界。
+      final verificationWait = Stopwatch()..start();
+      while (!registrationStarted.isCompleted &&
+          verificationWait.elapsed < const Duration(seconds: 10)) {
+        await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 20)),
+        );
+        await tester.pump();
+      }
+      expect(registrationStarted.isCompleted, isTrue);
       await tester.pump();
       expect(find.text('正在应用'), findsOneWidget);
       await captureProgress(

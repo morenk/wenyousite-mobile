@@ -1,5 +1,4 @@
 import 'dart:math' as math;
-
 import 'package:flutter/foundation.dart' show precisionErrorTolerance;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -7,6 +6,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_progress_indicator.dart';
 
 /// Shows a single destination action only when content is visually clipped or
 /// when the caller knows additional items were not included in [child].
@@ -176,7 +176,7 @@ class _ActionIcon extends StatelessWidget {
     if (!loading) return WenyouIcon(icon, size: 16);
     return const SizedBox.square(
       dimension: 16,
-      child: CircularProgressIndicator(strokeWidth: 2),
+      child: WenyouCircularProgressIndicator(strokeWidth: 2),
     );
   }
 }

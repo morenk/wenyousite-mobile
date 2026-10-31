@@ -1,8 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/core/widgets/discussion_target_cover.dart';
+import 'package:wenyousite_mobile/core/widgets/discussion_target_loading.dart';
 
 void main() {
+  testWidgets('性能回归：定位进度动画不反复绘制静态骨架', (tester) async {
+    var paints = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: CustomPaint(
+            foregroundPainter: _CountingPainter(() => paints++),
+            child: const DiscussionTargetLoading(label: '正在定位目标楼层'),
+          ),
+        ),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 20));
+    final initial = paints;
+    for (var i = 0; i < 10; i++) {
+      await tester.pump(const Duration(milliseconds: 16));
+    }
+    expect(initial, greaterThan(0));
+    expect(paints, initial);
+    await tester.pumpWidget(const SizedBox());
+  });
+
   testWidgets('目标已读后移出有限窗口，不重新盖住正文或追回旧目标', (tester) async {
     final targetKey = GlobalKey();
     final itemListKey = GlobalKey();
@@ -107,4 +130,17 @@ void main() {
     expect(returned, isTrue);
     semantics.dispose();
   });
+}
+
+class _CountingPainter extends CustomPainter {
+  _CountingPainter(this.onPaint);
+  final VoidCallback onPaint;
+  @override
+  void paint(Canvas canvas, Size size) {
+    onPaint();
+    canvas.drawRect(Offset.zero & size, Paint()..color = Colors.white);
+  }
+
+  @override
+  bool shouldRepaint(covariant _CountingPainter oldDelegate) => false;
 }

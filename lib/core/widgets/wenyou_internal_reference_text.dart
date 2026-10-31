@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/animation/wenyou_motion.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_link.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_reference.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_selectable_action_region.dart';
@@ -227,7 +228,8 @@ class WenyouInternalReferenceSurface extends StatelessWidget {
     );
     return AnimatedContainer(
       key: surfaceKey,
-      duration: WenyouFoundationMotion.fast,
+      duration: wenyouMotionDuration(context, WenyouFoundationMotion.fast),
+      curve: wenyouStandardMotionCurve,
       padding: EdgeInsets.symmetric(
         horizontal:
             fontSize * WenyouElementContract.internalReferencePaddingInline,

@@ -6,6 +6,8 @@ import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_pagination.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_progress_indicator.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_refresh_indicator.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/search/application/search_controller.dart';
 import 'package:wenyousite_mobile/features/search/domain/search_models.dart';
@@ -62,7 +64,7 @@ class _ThreadPostSearchPageState extends ConsumerState<ThreadPostSearchPage> {
         backgroundColor: wenyouBrowsePageBackground(context),
         title: const Text('主题内搜索'),
       ),
-      body: RefreshIndicator(
+      body: WenyouRefreshIndicator(
         onRefresh: state.isQueryValid
             ? () => ref.read(provider.notifier).retry()
             : () async {},
@@ -161,7 +163,7 @@ class _ThreadSearchResults extends ConsumerWidget {
           children: [
             const SizedBox.square(
               dimension: 20,
-              child: CircularProgressIndicator(strokeWidth: 2),
+              child: WenyouCircularProgressIndicator(strokeWidth: 2),
             ),
             SizedBox(width: tokens.space12),
             const Text('正在搜索当前主题…'),

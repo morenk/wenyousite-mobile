@@ -1,11 +1,11 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/navigation/wenyou_feedback_visibility.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_progress_indicator.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/app_shell/application/startup_controller.dart';
 import 'package:wenyousite_mobile/features/app_shell/domain/mobile_update.dart';
@@ -186,7 +186,7 @@ class StartupCheckingPage extends StatelessWidget {
                                 .copyWith(color: tokens.brandForeground),
                           ),
                           SizedBox(height: tokens.space32),
-                          CircularProgressIndicator(
+                          WenyouCircularProgressIndicator(
                             color: tokens.brandForeground,
                           ),
                           SizedBox(height: tokens.space12),

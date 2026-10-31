@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_refresh_indicator.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_sheet.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/moderation/application/moderation_appeal_controller.dart';
@@ -34,7 +35,7 @@ class _ModerationAppealPageState extends ConsumerState<ModerationAppealPage> {
     final state = ref.watch(moderationAppealControllerProvider);
     return Scaffold(
       appBar: AppBar(title: const Text('治理决定与申诉')),
-      body: RefreshIndicator(
+      body: WenyouRefreshIndicator(
         onRefresh: state.phase == ModerationAppealPhase.ready
             ? ref.read(moderationAppealControllerProvider.notifier).retry
             : () async {},
