@@ -39,6 +39,26 @@ class DiscussionWindowBuffer<T> {
   final int maxNumber;
   final int total;
 
+  /// 原位替换条目，不改变窗口边界、游标和总数。
+  DiscussionWindowBuffer<T> mapItems(T Function(T) update) =>
+      DiscussionWindowBuffer._(
+        List.unmodifiable([
+          for (final page in pages)
+            DiscussionWindow<T>(
+              items: List.unmodifiable(page.items.map(update)),
+              pinnedItems: List.unmodifiable(page.pinnedItems.map(update)),
+              total: page.total,
+              maxNumber: page.maxNumber,
+              targetId: page.targetId,
+              targetNumber: page.targetNumber,
+              beforeCursor: page.beforeCursor,
+              afterCursor: page.afterCursor,
+            ),
+        ]),
+        maxNumber,
+        total,
+      );
+
   DiscussionWindowBuffer<T> removeWhere(bool Function(T) remove) {
     final removedCount = items.where(remove).length;
     return DiscussionWindowBuffer._(

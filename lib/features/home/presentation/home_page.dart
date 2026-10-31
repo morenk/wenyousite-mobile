@@ -6,6 +6,7 @@ import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_pagination.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_refresh_indicator.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/home/application/home_feed_controller.dart';
 import 'package:wenyousite_mobile/features/home/domain/home_models.dart';
@@ -91,7 +92,7 @@ class _HomePageState extends ConsumerState<HomePage> {
               onSelected: (slug) => ref
                   .read(homeFeedControllerProvider.notifier)
                   .selectCategory(slug),
-              child: RefreshIndicator(
+              child: WenyouRefreshIndicator(
                 onRefresh: () =>
                     ref.read(homeFeedControllerProvider.notifier).refresh(),
                 child: CustomScrollView(

@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -9,6 +8,8 @@ import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_bookmark_folder_picker.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_bookmark_manage_sheet.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_pagination.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_progress_indicator.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_refresh_indicator.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/social/application/bookmark_list_controller.dart';
 import 'package:wenyousite_mobile/features/social/application/bookmark_list_repository_ports.dart';
@@ -176,7 +177,7 @@ class _ReadyBookmarkList extends StatelessWidget {
       context,
       availableWidth: width,
     );
-    return RefreshIndicator(
+    return WenyouRefreshIndicator(
       onRefresh: state.isBusy ? () async {} : onRefresh,
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
@@ -223,7 +224,7 @@ class _ReadyBookmarkList extends StatelessWidget {
               padding: EdgeInsets.symmetric(
                 vertical: tokens.space24 + tokens.space24,
               ),
-              child: const Center(child: CircularProgressIndicator()),
+              child: const Center(child: WenyouCircularProgressIndicator()),
             )
           else if (state.failure != null && state.items.isEmpty)
             _CenteredContent(

@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -14,6 +13,7 @@ import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/text_fonts/text_font_service.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_anchored_popover.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_progress_indicator.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/drafts/application/content_drafts_controller.dart';
 import 'package:wenyousite_mobile/features/drafts/presentation/content_drafts_sheet.dart';
@@ -214,7 +214,7 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
         ),
         body: switch (state.phase) {
           ThreadComposePhase.loading => const Center(
-            child: CircularProgressIndicator(),
+            child: WenyouCircularProgressIndicator(),
           ),
           ThreadComposePhase.failed => ThreadComposeLoadFailure(
             failure: state.failure,

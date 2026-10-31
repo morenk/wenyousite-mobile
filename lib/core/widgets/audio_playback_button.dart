@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/animation/wenyou_motion.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_progress_indicator.dart';
 
 /// 缩放仅作用于内部视觉，按钮命中与读屏区域始终保持 48dp。
 class AudioPlaybackButton extends StatefulWidget {
@@ -34,9 +36,9 @@ class _AudioPlaybackButtonState extends State<AudioPlaybackButton> {
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
-    final duration = widget.reduceMotion
-        ? Duration.zero
-        : const Duration(milliseconds: 120);
+    final reduceMotion =
+        widget.reduceMotion || wenyouAnimationsDisabled(context);
+    final duration = reduceMotion ? Duration.zero : WenyouFoundationMotion.fast;
     return Semantics(
       label: '${widget.label}，${widget.playing ? '暂停' : '播放'}',
       button: true,
@@ -56,12 +58,11 @@ class _AudioPlaybackButtonState extends State<AudioPlaybackButton> {
             listenable: _states,
             builder: (context, _) => AnimatedScale(
               scale:
-                  !widget.reduceMotion &&
-                      _states.value.contains(WidgetState.pressed)
+                  !reduceMotion && _states.value.contains(WidgetState.pressed)
                   ? 0.96
                   : 1,
               duration: duration,
-              curve: Curves.easeOut,
+              curve: wenyouStandardMotionCurve,
               child: Container(
                 width: 36,
                 height: 36,
@@ -77,8 +78,8 @@ class _AudioPlaybackButtonState extends State<AudioPlaybackButton> {
                           key: const ValueKey('loading'),
                           width: 18,
                           height: 18,
-                          child: CircularProgressIndicator(
-                            value: widget.reduceMotion ? 0.7 : null,
+                          child: WenyouCircularProgressIndicator(
+                            reduceMotion: widget.reduceMotion,
                             strokeWidth: 2,
                           ),
                         )

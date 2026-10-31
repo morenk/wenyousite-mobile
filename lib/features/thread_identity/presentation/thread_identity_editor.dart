@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/app/app_capabilities.dart';
@@ -9,6 +8,7 @@ import 'package:wenyousite_mobile/core/domain/domain_validation_exception.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_feedback.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_progress_indicator.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_sheet.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart'
     show showWenyouSnackBar;
@@ -206,7 +206,7 @@ class _ThreadIdentityEditorState extends ConsumerState<_ThreadIdentityEditor> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       if (_error == null)
-                        const CircularProgressIndicator()
+                        const WenyouCircularProgressIndicator()
                       else ...[
                         Text(_error!),
                         TextButton(onPressed: _load, child: const Text('重试')),

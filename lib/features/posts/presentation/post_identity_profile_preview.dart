@@ -6,6 +6,7 @@ import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/application/visibility_cache_invalidation.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_progress_indicator.dart';
 import 'package:wenyousite_mobile/features/media/reading_gallery.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_repository_ports.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
@@ -74,7 +75,7 @@ class _PostIdentityProfilePreviewState
           loading: () => const Padding(
             key: Key('identity-profile-loading'),
             padding: EdgeInsets.symmetric(vertical: 12),
-            child: LinearProgressIndicator(),
+            child: WenyouLinearProgressIndicator(),
           ),
           error: (_, _) => Align(
             alignment: AlignmentDirectional.centerStart,

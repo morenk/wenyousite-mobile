@@ -1,11 +1,11 @@
 import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/navigation/wenyou_page_transitions.dart';
 import 'package:wenyousite_mobile/core/widgets/content_image_viewer_page.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_progress_indicator.dart';
 import 'package:wenyousite_mobile/features/direct_messages/domain/direct_message_models.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
 import 'package:wenyousite_mobile/features/media/media_ui.dart';
@@ -240,7 +240,7 @@ class _DirectMessageImageState extends StatelessWidget {
       color: tokens.softPanel,
       child: Center(
         child: loading
-            ? const CircularProgressIndicator()
+            ? const WenyouCircularProgressIndicator()
             : WenyouIcon(
                 WenyouIconIds.statusImageUnavailable,
                 color: tokens.mutedText,

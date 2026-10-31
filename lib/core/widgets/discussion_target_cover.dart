@@ -292,7 +292,7 @@ class _DiscussionTargetCoverState extends State<DiscussionTargetCover>
                   onNotification: _onMetrics,
                   child: DiscussionTargetVisibility(
                     visible: _revealed,
-                    child: widget.child,
+                    child: RepaintBoundary(child: widget.child),
                   ),
                 ),
               ),

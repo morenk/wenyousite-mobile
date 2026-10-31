@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_progress_indicator.dart';
 
 export 'package:wenyousite_mobile/core/widgets/wenyou_actions.dart';
 export 'package:wenyousite_mobile/core/widgets/wenyou_async_button.dart';
@@ -310,7 +311,7 @@ class WenyouIconLabelAction extends StatelessWidget {
                   SizedBox.square(
                     dimension: 22,
                     child: loading
-                        ? CircularProgressIndicator(
+                        ? WenyouCircularProgressIndicator(
                             strokeWidth: 2,
                             color: color,
                           )
@@ -604,7 +605,7 @@ class WenyouComposerSubmitButton extends StatelessWidget {
               label: '$label，处理中',
               child: SizedBox.square(
                 dimension: 18,
-                child: CircularProgressIndicator(
+                child: WenyouCircularProgressIndicator(
                   strokeWidth: 2,
                   color: scheme.onPrimary,
                 ),

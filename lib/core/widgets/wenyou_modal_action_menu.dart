@@ -1,11 +1,11 @@
 import 'dart:async';
 import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_anchored_popover.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_progress_indicator.dart';
 
 /// Opens a compact action window in the center of a dimmed modal barrier.
 ///
@@ -246,7 +246,7 @@ class _ModalActionButton<T> extends StatelessWidget {
                 SizedBox.square(
                   dimension: 22,
                   child: action.loading
-                      ? CircularProgressIndicator(
+                      ? WenyouCircularProgressIndicator(
                           strokeWidth: 2,
                           color: tokens.brandForeground,
                         )

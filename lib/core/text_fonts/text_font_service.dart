@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
-
 import 'package:dio/dio.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -124,9 +123,14 @@ class TextFontService with WidgetsBindingObserver {
   Future<TextFontRuntime> retain(Object owner, Map<String, String> texts) {
     final previous = _owners[owner];
     _owners[owner] = Map.of(texts);
-    // 字符增长交给分片队列；只有新增字体身份才需要重新收集元数据。
+    // 按进程已解析身份判断；新页面 owner 复用同一字体时不能等待无关下载。
+    // 已撤回或被清单容量淘汰的身份不在 manifest，仍走元数据校验。
     if (dynamicEnabled &&
-        texts.keys.any((id) => previous?.containsKey(id) != true)) {
+        texts.keys.any(
+          (id) =>
+              previous?.containsKey(id) != true &&
+              _runtime?.manifest?.fonts.containsKey(id) != true,
+        )) {
       _dynamicDirty = true;
     }
     _runtime?.setDemand(owner, texts);

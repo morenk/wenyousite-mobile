@@ -1,7 +1,5 @@
 import 'dart:io';
-
 import 'package:flutter_test/flutter_test.dart';
-
 import '../../tool/check_architecture.dart';
 import 'architecture_test_workspace.dart';
 
@@ -21,6 +19,32 @@ void main() {
       'class Item {}\n',
     );
 
+    expect(collectArchitectureFailures(root), isEmpty);
+  });
+
+  test('加载和刷新必须经过统一重绘与减少动画入口', () {
+    const path = 'lib/features/alpha/presentation/loading.dart';
+    writeArchitectureFixture(
+      root,
+      path,
+      'final spinner = CircularProgressIndicator();\n'
+      'final refresh = RefreshIndicator(onRefresh: load, child: child);\n',
+    );
+    final failures = collectArchitectureFailures(root);
+    expect(
+      failures,
+      contains('$path bypasses shared progress repaint/reduced-motion policy'),
+    );
+    expect(
+      failures,
+      contains('$path bypasses shared refresh reduced-motion policy'),
+    );
+    writeArchitectureFixture(
+      root,
+      path,
+      'final spinner = WenyouCircularProgressIndicator();\n'
+      'final refresh = WenyouRefreshIndicator(onRefresh: load, child: child);\n',
+    );
     expect(collectArchitectureFailures(root), isEmpty);
   });
 
