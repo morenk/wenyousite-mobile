@@ -444,6 +444,8 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
             isLoadingPage: state.isLoadingFloors || state.isPrefetchingFloors,
             hasMore: state.window != null,
             targetOffset: _navigation.targetOffset,
+            targetOffsetResolver: () =>
+                _quickScroll.offsetForBookmark(_navigation.targetBookmark),
             onLoadMore: () => unawaited(
               ref
                   .read(provider.notifier)

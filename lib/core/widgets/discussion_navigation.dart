@@ -30,6 +30,7 @@ class DiscussionNavigation<S> extends ChangeNotifier {
 
   String? targetId;
   double? targetOffset;
+  ReadingBookmark? targetBookmark;
   int revision = 0;
   bool get canReturn => _previous != null;
 
@@ -111,6 +112,7 @@ class DiscussionNavigation<S> extends ChangeNotifier {
         }
         targetId = target.id;
         targetOffset = restore?.offset;
+        targetBookmark = restore;
         revision++;
         notifyListeners();
         return target;
@@ -134,6 +136,7 @@ class DiscussionNavigation<S> extends ChangeNotifier {
     _pendingActive = null;
     targetId = null;
     targetOffset = null;
+    targetBookmark = null;
   }
 
   void clear() {

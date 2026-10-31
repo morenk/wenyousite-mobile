@@ -92,6 +92,7 @@ void main() {
     expect(requests.last, (number: null, id: 'old', scope: 'old-scope'));
     expect(navigation.targetId, 'old');
     expect(navigation.targetOffset, 137);
+    expect(navigation.targetBookmark, same(reading.bookmark));
     expect(navigation.canReturn, isFalse);
   });
 
