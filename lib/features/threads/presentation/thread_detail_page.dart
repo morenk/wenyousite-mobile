@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
+import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
 import 'package:wenyousite_mobile/core/application/visibility_cache_invalidation.dart';
 import 'package:wenyousite_mobile/core/diagnostics/debug_diagnostic_console.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
@@ -67,14 +68,17 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
   final _itemListKey = GlobalKey();
   final _entryTargetCoordinator = ThreadDetailEntryTargetCoordinator();
   final _publishedNavigation = ThreadPublishedFloorNavigation();
-  late final _quickScroll = ReadingQuickScrollController(
-    scrollController: _subthreadScroll.controller,
-    pinnedHeaderKey: _subthreadScroll.headerKey,
-    onUserNavigation: () {
-      _entryTargetCoordinator.cancelForUserSelection();
-      _publishedNavigation.release();
-    },
-  );
+  int? _publishedMetadataRevision;
+  late final ReadingQuickScrollController _quickScroll =
+      ReadingQuickScrollController(
+        scrollController: _subthreadScroll.controller,
+        pinnedHeaderKey: _subthreadScroll.headerKey,
+        onUserNavigation: () {
+          _entryTargetCoordinator.cancelForUserSelection();
+          _publishedNavigation.release();
+          _navigation.cancelTarget();
+        },
+      );
   String? _lastOpenedReplyTargetId;
   final _selection = DiscussionSelectionController();
   late final _prefetch = DiscussionWindowPrefetch(
@@ -148,7 +152,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
   }
 
   void _openNumber() {
-    _publishedNavigation.clear();
+    setState(_cancelNumberNavigation);
     unawaited(
       showDiscussionNavigation(
         context: context,
@@ -214,14 +218,6 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
       final postId = widget.entryTarget.postId;
       if (postId != null) {
         ref.invalidate(threadPostTargetProvider(postId));
-        if (postId != oldWidget.entryTarget.postId) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (!mounted || widget.entryTarget.postId != postId) return;
-            if (ref.read(_detailProvider).phase == ThreadDetailPhase.ready) {
-              unawaited(ref.read(_detailProvider.notifier).retryFloors());
-            }
-          });
-        }
       }
     }
   }
@@ -482,6 +478,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
             onUserScroll: () {
               _entryTargetCoordinator.cancelForUserSelection();
               _publishedNavigation.release();
+              _navigation.cancelTarget();
             },
             child: readingBody,
           );
@@ -593,6 +590,8 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
   get _detailProvider => threadDetailControllerProvider((
     threadId: widget.threadId,
     pageInstanceToken: _pageInstanceToken,
+    initialPostId: widget.entryTarget.postId,
+    initialSubthreadId: widget.entryTarget.subthreadId,
   ));
 
   String get _location => AppRouteLocations.thread(
@@ -667,7 +666,13 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     final postId = widget.entryTarget.postId;
     if (postId != null) ref.invalidate(threadPostTargetProvider(postId));
     if (ref.read(_detailProvider).phase == ThreadDetailPhase.ready) {
-      unawaited(ref.read(_detailProvider.notifier).retryFloors());
+      final controller = ref.read(_detailProvider.notifier);
+      final localTarget = _navigation.targetId;
+      unawaited(
+        localTarget == null
+            ? controller.loadInitial()
+            : controller.locateFloor(localTarget),
+      );
     }
     setState(() {});
   }
@@ -854,6 +859,13 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
   void _publishedChanged() {
     if (!mounted) return;
     setState(() {});
+    if (_publishedNavigation.aligned &&
+        _publishedMetadataRevision != _publishedNavigation.revision) {
+      _publishedMetadataRevision = _publishedNavigation.revision;
+      unawaited(
+        ref.read(_detailProvider.notifier).refreshMetadata(background: true),
+      );
+    }
   }
 
   Future<void> _locatePublished(PostItem post) async {
@@ -867,6 +879,16 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
       controller: controller,
       order: ref.read(_detailProvider).floorOrder,
       authorId: ref.read(_detailProvider).floorAuthorId,
+      readTarget: (active) => _navigation.goToPost(
+        post.id,
+        scope: (
+          subthreadId: post.subthreadId,
+          order: ref.read(_detailProvider).floorOrder,
+          authorId: ref.read(_detailProvider).floorAuthorId,
+        ),
+        active: active,
+        rememberPrevious: false,
+      ),
       active: () =>
           mounted &&
           ref.read(sessionScopeProvider) == scope &&
@@ -877,23 +899,8 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
         _publishedNavigation.post?.id != post.id) {
       return;
     }
-    final floor = ref
-        .read(_detailProvider)
-        .floors
-        .where((item) => item.id == post.id)
-        .firstOrNull;
-    if (floor == null) return;
     setState(() {
-      _navigation.targetId = post.id;
-      _numberTarget = ThreadPostTargetModel(
-        requestedPostId: post.id,
-        threadId: post.threadId,
-        subthreadId: post.subthreadId,
-        floor: floor,
-      );
-      _targetAttempt++;
       _targetRevealed = true;
-      _entryTargetCoordinator.rearmForRetry();
     });
   }
 
@@ -909,25 +916,51 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     );
   }
 
-  void _openLatestPost(ThreadLatestPostModel target) {
+  Future<void> _openLatestPost(ThreadLatestPostModel target) async {
     final parentPostId = target.parentPostId;
     if (parentPostId != null) {
-      context.pushNamed(
-        'post-replies',
-        pathParameters: {'threadId': widget.threadId, 'postId': parentPostId},
-        queryParameters: {'post': target.id},
+      unawaited(
+        context.pushNamed<void>(
+          'post-replies',
+          pathParameters: {'threadId': widget.threadId, 'postId': parentPostId},
+          queryParameters: {'post': target.id},
+        ),
       );
       return;
     }
-    if (widget.entryTarget.postId == target.id) {
-      _navigation.clear();
-      _numberTarget = null;
-      _retryEntryTarget();
-      return;
+    final session = ref.read(sessionScopeProvider);
+    final state = ref.read(_detailProvider);
+    if (state.selectedSubthreadId == null) return;
+    setState(() {
+      _publishedNavigation.clear();
+      _entryTargetCoordinator.cancelForUserSelection();
+    });
+    bool active() => mounted && ref.read(sessionScopeProvider) == session;
+    try {
+      final result = await _navigation.goToPost(
+        target.id,
+        scope: (
+          subthreadId: target.subthreadId,
+          order: state.floorOrder,
+          authorId: state.floorAuthorId,
+        ),
+        active: active,
+      );
+      if (!mounted || !active() || result == null) return;
+      showDiscussionNavigationResult(
+        context: context,
+        navigation: _navigation,
+        replies: false,
+        cleared: result.clearedAuthor,
+      );
+    } on Object catch (error) {
+      if (!mounted || !active()) return;
+      showWenyouSnackBar(
+        context,
+        mapApplicationFailure(error, '定位失败，请重试。').userMessage,
+        tone: WenyouSnackBarTone.error,
+      );
     }
-    context.replace(
-      AppRouteLocations.thread(widget.threadId, postId: target.id),
-    );
   }
 
   Future<void> _deleteFloor(ThreadFloorModel floor) async {

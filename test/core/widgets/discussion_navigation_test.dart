@@ -24,6 +24,44 @@ class _Reading extends ReadingQuickScrollController {
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  test('重复 ID 导航共享在途请求，切换目标丢弃旧结果，失败后可重试', () async {
+    final reading = _Reading();
+    final requests = <Completer<DiscussionLocatedTarget?>>[];
+    final validity = <bool Function()>[];
+    final navigation = DiscussionNavigation<String>(
+      reading: reading,
+      currentScope: () => 'scope',
+      locate: ({number, postId, required scope, required active}) {
+        final pending = Completer<DiscussionLocatedTarget?>();
+        requests.add(pending);
+        validity.add(active);
+        return pending.future;
+      },
+    );
+    addTearDown(reading.dispose);
+    addTearDown(navigation.dispose);
+    final first = navigation.goToPost('one', active: () => true);
+    final repeated = navigation.goToPost('one', active: () => true);
+    expect(identical(first, repeated), isTrue);
+    expect(requests, hasLength(1));
+    final second = navigation.goToPost('two', active: () => true);
+    expect(validity.first(), isFalse);
+    requests.first.completeError(StateError('old failure'));
+    expect(await first, isNull);
+    requests.last.complete((id: 'two', clearedAuthor: false));
+    await second;
+    expect(navigation.targetId, 'two');
+    final failed = navigation.goToPost('three', active: () => true);
+    requests.last.completeError(StateError('offline'));
+    await expectLater(failed, throwsStateError);
+    expect(navigation.targetId, 'two');
+    final retry = navigation.goToPost('three', active: () => true);
+    requests.last.complete((id: 'three', clearedAuthor: false));
+    await retry;
+    expect(requests, hasLength(4));
+    expect(navigation.targetId, 'three');
+  });
+
   test('返回保留原 ID、条目内位置和原筛选作用域', () async {
     final reading = _Reading()
       ..bookmark = const ReadingBookmark(

@@ -9,6 +9,17 @@ class PublishedFloorRepository
   PublishedFloorRepository({super.mainFloors, super.postTarget});
   final targets = <({String id, String subthread, String? author})>[];
   final requests = <Completer<DiscussionWindow<ThreadFloorModel>>>[];
+  bool delayMetadata = false;
+  final metadataRequests = <Completer<ThreadDetailModel>>[];
+
+  @override
+  Future<ThreadDetailModel> fetchThread(String threadId) {
+    if (!delayMetadata) return super.fetchThread(threadId);
+    threadCalls++;
+    final pending = Completer<ThreadDetailModel>();
+    metadataRequests.add(pending);
+    return pending.future;
+  }
 
   @override
   Future<DiscussionWindow<ThreadFloorModel>> fetchFloorWindow({

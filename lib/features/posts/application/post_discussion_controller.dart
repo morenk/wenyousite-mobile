@@ -210,27 +210,52 @@ class PostDiscussionController extends StateNotifier<PostDiscussionState> {
   }) async {
     if (state.phase != PostDiscussionPhase.ready) return null;
     final epoch = ++_epoch;
-    state = state.copyWith(isLoadingMore: false, isPrefetchingReplies: false);
-    bool current() => _current(epoch) && active();
-    final result = await _read(
-      order: order,
-      authorId: authorId,
-      number: number,
-      postId: postId,
-      active: current,
+    state = state.copyWith(
+      isLoadingMore: false,
+      isPrefetchingReplies: true,
+      transientFailure: null,
     );
-    if (!current()) return null;
-    _assertReplies(state.root!, result.page.items);
-    final id = result.page.targetId;
-    if (id == null) throw const ApiFailure(userMessage: '未找到该回复。');
-    state = _withWindow(
-      DiscussionWindowBuffer(result.page),
-    ).copyWith(order: order, authorId: result.author);
-    visibleReplyId = id;
-    return (id: id, clearedAuthor: result.cleared);
+    bool current() => _current(epoch) && active();
+    try {
+      final result = await _read(
+        order: order,
+        authorId: authorId,
+        number: number,
+        postId: postId,
+        active: current,
+      );
+      if (!current()) return null;
+      _assertReplies(state.root!, result.page.items);
+      final id = result.page.targetId;
+      if (id == null ||
+          (postId != null && id != postId) ||
+          !result.page.items.any((reply) => reply.id == id)) {
+        throw const ApiFailure(userMessage: '未找到该回复。');
+      }
+      state = _withWindow(
+        DiscussionWindowBuffer(result.page),
+      ).copyWith(order: order, authorId: result.author);
+      visibleReplyId = id;
+      return (id: id, clearedAuthor: result.cleared);
+    } on Object catch (error) {
+      final failure = mapApplicationFailure(error, '定位失败，请重试。');
+      if (current() && failure.httpStatus == 403) {
+        _epoch++;
+        state = PostDiscussionState(
+          phase: PostDiscussionPhase.restricted,
+          failure: failure,
+        );
+      }
+      rethrow;
+    } finally {
+      if (_current(epoch) && state.isPrefetchingReplies) {
+        state = state.copyWith(isPrefetchingReplies: false);
+      }
+    }
   }
 
   Future<void> locateReply(String id) async {
+    if (state.isPrefetchingReplies) return;
     if (state.replies.any((reply) => reply.id == id)) return;
     final epoch = _epoch;
     try {
