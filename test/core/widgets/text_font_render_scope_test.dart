@@ -105,7 +105,7 @@ void main() {
           ),
         );
         final fontText = texts.singleWhere(
-          (text) => text.text.toPlainText() == '标题文字',
+          (text) => text.text.toPlainText() == '标题文字后半标题',
         );
         TextSpan? fontSpan;
         fontText.text.visitChildren((span) {
