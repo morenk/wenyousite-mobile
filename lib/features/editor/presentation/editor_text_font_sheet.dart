@@ -5,6 +5,7 @@ import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_text_font.dart';
 import 'package:wenyousite_mobile/core/text_fonts/text_font_runtime.dart';
 import 'package:wenyousite_mobile/core/text_fonts/text_font_service.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_progress_indicator.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_dynamic_font_list.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_font_panel.dart';
 
@@ -92,7 +93,7 @@ class _EditorTextFontSheetState extends State<EditorTextFontSheet> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     if (_loading) ...[
-                      const CircularProgressIndicator(),
+                      const WenyouCircularProgressIndicator(),
                       SizedBox(height: context.wenyouTokens.space16),
                       const Text('正在加载字体'),
                     ] else ...[

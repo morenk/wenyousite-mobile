@@ -3,6 +3,7 @@ import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/animation/wenyou_motion.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_progress_indicator.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 
 /// 保持讨论卡的阅读结构；等待时不使用循环装饰或虚构进度。
@@ -121,10 +122,12 @@ class _DiscussionSkeletonCard extends StatelessWidget {
                       height: tokens.space4,
                       child: ColoredBox(color: tokens.brandSurface),
                     )
-                  : LinearProgressIndicator(
-                      minHeight: tokens.space4,
-                      color: tokens.brandForeground,
-                      backgroundColor: tokens.softPanel,
+                  : RepaintBoundary(
+                      child: WenyouLinearProgressIndicator(
+                        minHeight: tokens.space4,
+                        color: tokens.brandForeground,
+                        backgroundColor: tokens.softPanel,
+                      ),
                     ),
             ),
           ],

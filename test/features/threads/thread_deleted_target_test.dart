@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -16,7 +17,6 @@ import 'package:wenyousite_mobile/features/threads/data/thread_detail_repository
 import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_page.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_target_utils.dart';
-
 import '../../support/deterministic_test_fonts.dart';
 import '../../support/memory_pending_media_file_store.dart';
 import 'thread_detail_page_test_support.dart';
@@ -67,6 +67,43 @@ void main() {
     });
   }
 
+  testWidgets('性能回归：定位入口连续编辑同一楼层，保存立即显示新版且不重新定位', (tester) async {
+    final posts = _MutablePosts();
+    final repository = _MutableDetail(posts);
+    await _pumpPage(tester, posts, repository);
+    final reads = repository.floorReads;
+    final targetReads = repository.targetPostIds.length;
+    for (final content in ['第一次修改', '第二次修改']) {
+      await tester.ensureVisible(
+        find.byKey(const Key('thread-floor-number-floor-1')),
+      );
+      await tester.longPress(
+        find.byKey(const Key('thread-floor-number-floor-1')),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const Key('thread-floor-action-floor-1-edit')),
+      );
+      await tester.pumpAndSettle();
+      final editor = tester.widget<QuillEditor>(
+        find.byKey(const Key('post-composer-body')),
+      );
+      editor.controller.replaceText(
+        0,
+        editor.controller.document.length - 1,
+        content,
+        TextSelection.collapsed(offset: content.length),
+      );
+      await tester.pump();
+      await tester.tap(find.byKey(const Key('editor-submit')));
+      await tester.pumpAndSettle();
+      expect(find.text(content), findsOneWidget);
+      expect(repository.floorReads, reads);
+      expect(repository.targetPostIds.length, targetReads);
+      expect(find.text('正在定位目标楼层'), findsNothing);
+    }
+  });
+
   testWidgets('普通入口编辑保存后删除楼层，原文立即移除且刷新不补回', (tester) async {
     final posts = _MutablePosts();
     final repository = _MutableDetail(posts);
@@ -87,9 +124,9 @@ void main() {
     expect(posts.content, '编辑后的楼层原文');
     expect(
       router.routeInformationProvider.value.uri.queryParameters['post'],
-      'floor-1',
+      isNull,
     );
-    expect(repository.targetPostIds, contains('floor-1'));
+    expect(repository.targetPostIds, isEmpty);
     expect(find.text('编辑后的楼层原文'), findsOneWidget);
     await _deleteTarget(tester);
     expect(find.text('楼层已删除。'), findsOneWidget);
@@ -101,7 +138,7 @@ void main() {
     );
     expect(
       router.routeInformationProvider.value.uri.queryParameters['subthread'],
-      'subthread-1',
+      isNull,
     );
     expect(find.text('编辑后的楼层原文'), findsNothing);
     expect(find.byKey(const Key('thread-floor-card-floor-1')), findsNothing);

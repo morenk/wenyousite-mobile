@@ -1,17 +1,18 @@
 import 'dart:async';
 import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/animation/wenyou_motion.dart';
 import 'package:wenyousite_mobile/core/diagnostics/diagnostic_widgets.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_edit_button.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_progress_indicator.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_sheet.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/media/application/image_crop_ports.dart';
@@ -615,7 +616,7 @@ class _AvatarTaskFeedback extends StatelessWidget {
           SizedBox(height: context.wenyouTokens.space8),
           Semantics(
             label: '头像更新进度 ${(fraction * 100).round()}%',
-            child: LinearProgressIndicator(value: fraction),
+            child: WenyouLinearProgressIndicator(value: fraction),
           ),
         ],
       ],
@@ -669,7 +670,7 @@ class _CoverTaskFeedback extends StatelessWidget {
           SizedBox(height: context.wenyouTokens.space8),
           Semantics(
             label: '主页背景更新进度 ${(fraction * 100).round()}%',
-            child: LinearProgressIndicator(value: fraction),
+            child: WenyouLinearProgressIndicator(value: fraction),
           ),
         ],
       ],
@@ -708,8 +709,11 @@ class _MediaFailureNoticeState extends State<_MediaFailureNotice> {
       Scrollable.ensureVisible(
         context,
         alignment: .8,
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeOutCubic,
+        duration: wenyouMotionDuration(
+          context,
+          WenyouFoundationMotion.standard,
+        ),
+        curve: wenyouStandardMotionCurve,
       );
     });
   }

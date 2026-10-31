@@ -4,7 +4,9 @@ import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
 import 'package:wenyousite_mobile/core/application/visibility_cache_invalidation.dart';
 import 'package:wenyousite_mobile/core/models/discussion_window.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_detail_repository_ports.dart';
+import 'package:wenyousite_mobile/features/threads/application/thread_saved_post.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.dart';
 
 enum ThreadDetailPhase { loading, ready, failed }
@@ -128,6 +130,31 @@ class ThreadDetailController extends StateNotifier<ThreadDetailState> {
   String? visibleFloorId;
   bool Function()? canApplyPage;
   void Function()? beforeWindowApply;
+
+  /// 只接收本页同会话确认的保存结果；旧刷新／分页不得覆盖新版正文。
+  bool applySavedFloor(PostItem post) {
+    final window = state.window;
+    if (post.threadId != threadId ||
+        post.subthreadId != state.selectedSubthreadId ||
+        post.isBody ||
+        post.isDeleted ||
+        post.parentPostId != null ||
+        window == null ||
+        !state.floors.any((floor) => floor.id == post.id)) {
+      return false;
+    }
+    _requestEpoch++;
+    ThreadFloorModel update(ThreadFloorModel floor) =>
+        floor.id == post.id && floor.version <= post.version
+        ? savedPostAsFloor(post, replies: floor.replies)
+        : floor;
+    beforeWindowApply?.call();
+    state = _withWindow(
+      window.mapItems(update),
+      pins: state.pinnedFloors.map(update).toList(growable: false),
+    );
+    return true;
+  }
 
   Future<void> loadInitial() async {
     final epoch = ++_requestEpoch;

@@ -1,5 +1,4 @@
 import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
@@ -12,6 +11,7 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_image_viewer_page.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_interaction_toggle.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_progress_indicator.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_time_text.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/media/reading_gallery.dart';
@@ -580,7 +580,9 @@ class MomentCoverImage extends StatelessWidget {
       cacheWidth: 320,
       placeholder: (_, _) => ColoredBox(
         color: tokens.softPanel,
-        child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+        child: const Center(
+          child: WenyouCircularProgressIndicator(strokeWidth: 2),
+        ),
       ),
       errorWidget: (_, _, _) => ColoredBox(
         color: tokens.softPanel,

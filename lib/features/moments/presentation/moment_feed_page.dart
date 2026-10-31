@@ -7,6 +7,7 @@ import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_nested_scroll.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_pagination.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_refresh_indicator.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/moments/application/moment_controllers.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
@@ -207,7 +208,7 @@ class _MomentFeedListState extends ConsumerState<MomentFeedList> {
       container: true,
       label: '动态瀑布流',
       child: widget.pullToRefreshEnabled
-          ? RefreshIndicator(
+          ? WenyouRefreshIndicator(
               onRefresh: () => ref.read(provider.notifier).refresh(),
               child: scrollView,
             )

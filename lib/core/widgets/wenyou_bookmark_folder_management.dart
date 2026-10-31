@@ -4,6 +4,7 @@ import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/application/user_facing_failure.dart';
 import 'package:wenyousite_mobile/core/models/bookmark_folder_models.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_progress_indicator.dart';
 
 enum BookmarkFolderManagementAction { rename, delete }
 
@@ -189,7 +190,7 @@ class _BookmarkFolderRenameDialogState
           child: _submitting
               ? const SizedBox.square(
                   dimension: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2),
+                  child: WenyouCircularProgressIndicator(strokeWidth: 2),
                 )
               : const Text('保存'),
         ),
@@ -273,7 +274,7 @@ Future<BookmarkFolderDeleteResult?> showWenyouBookmarkFolderDeleteDialog({
                 child: deleting
                     ? const SizedBox.square(
                         dimension: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
+                        child: WenyouCircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Text('删除收藏夹'),
               ),

@@ -29,6 +29,9 @@ class MarkdownTextColorBuilder extends MarkdownElementBuilder {
     final base = (parentStyle ?? DefaultTextStyle.of(context).style).copyWith(
       color: color,
     );
+    // 字体分片逐步到达会重建 span；同一 AST 链接只登记一个手势对象。
+    // 其生命周期仍由外层 Markdown 渲染树统一释放。
+    final links = <md.Element, TapGestureRecognizer>{};
     List<InlineSpan> render(
       List<md.Node> nodes,
       TextStyle style,
@@ -63,9 +66,12 @@ class MarkdownTextColorBuilder extends MarkdownElementBuilder {
             TextDecoration.underline,
           ]),
         );
-        tap = TapGestureRecognizer()
-          ..onTap = () => onLink(child.attributes['href']!);
-        registerRecognizer(tap);
+        tap = links.putIfAbsent(child, () {
+          final value = TapGestureRecognizer()
+            ..onTap = () => onLink(child.attributes['href']!);
+          registerRecognizer(value);
+          return value;
+        });
       }
       if (child.tag == 'code') {
         return [

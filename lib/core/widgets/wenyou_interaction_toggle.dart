@@ -3,6 +3,7 @@ import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_compact_action_content.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_progress_indicator.dart';
 
 enum WenyouInteractionKind { like, bookmark }
 
@@ -63,7 +64,7 @@ class WenyouInteractionToggle extends StatelessWidget {
                 top: -4,
                 child: SizedBox.square(
                   dimension: 9,
-                  child: CircularProgressIndicator(
+                  child: WenyouCircularProgressIndicator(
                     strokeWidth: 1.5,
                     color: foreground,
                   ),

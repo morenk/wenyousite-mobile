@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:wenyousite_mobile/core/diagnostics/diagnostic_widgets.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_progress_indicator.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
 
@@ -58,7 +59,7 @@ class MediaUploadStatusBanner extends StatelessWidget {
       action: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          LinearProgressIndicator(value: state.progress?.fraction),
+          WenyouLinearProgressIndicator(value: state.progress?.fraction),
           Align(
             alignment: Alignment.centerLeft,
             child: TextButton(

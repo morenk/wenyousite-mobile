@@ -1,8 +1,6 @@
 import 'dart:io';
-
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
-
 import 'source_files.dart';
 
 // 专用表单、冲突决策及剪贴板持久化确认保留自己的生命周期。
@@ -62,7 +60,9 @@ void checkComponentBoundaries(
         continue;
       }
       final source = node.toSource();
-      if (RegExp(r'\bCircularProgressIndicator\s*\(').hasMatch(source) &&
+      if (RegExp(
+            r'\b(?:Wenyou)?CircularProgressIndicator\s*\(',
+          ).hasMatch(source) &&
           !_asyncButtonExceptions.contains(location)) {
         failures.add(
           '$location constructs a loading button outside shared async controls',

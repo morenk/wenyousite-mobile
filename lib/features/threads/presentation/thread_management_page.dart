@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -12,6 +11,7 @@ import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_edit_conflict_dialog.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_progress_indicator.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_settings_body.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_sheet.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
@@ -564,7 +564,9 @@ class _ThreadManagementAutosaveIndicator extends StatelessWidget {
                         if (status == ThreadManagementAutosaveStatus.saving)
                           const SizedBox.square(
                             dimension: 14,
-                            child: CircularProgressIndicator(strokeWidth: 2),
+                            child: WenyouCircularProgressIndicator(
+                              strokeWidth: 2,
+                            ),
                           )
                         else
                           WenyouIcon(

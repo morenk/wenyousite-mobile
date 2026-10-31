@@ -10,6 +10,7 @@ import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_markdown.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_progress_indicator.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/media/reading_gallery.dart';
 import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
@@ -163,7 +164,7 @@ class _StickerPickerPanelState extends ConsumerState<StickerPickerPanel> {
   ) {
     if (state.phase == StickerCollectionPhase.loading &&
         state.collection == null) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(child: WenyouCircularProgressIndicator());
     }
     if (state.phase == StickerCollectionPhase.failed) {
       return WenyouEmptyState(

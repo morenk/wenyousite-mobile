@@ -1,10 +1,11 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/animation/wenyou_motion.dart';
 import 'package:wenyousite_mobile/core/application/audio_playback.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_audio_projection.dart';
 import 'package:wenyousite_mobile/core/media/media_audio.dart';
@@ -205,7 +206,7 @@ class _WenyouAudioPlayerState extends ConsumerState<WenyouAudioPlayer>
       final label = widget.label.trim().isEmpty ? '音频' : widget.label;
       final tokens = context.wenyouTokens;
       final reduceMotion =
-          MediaQuery.disableAnimationsOf(context) ||
+          wenyouAnimationsDisabled(context) ||
           MediaQuery.accessibleNavigationOf(context);
       final animate = _foreground && _activeRoute && _visible && !reduceMotion;
       final playing = state.playing && !state.completed && _foreground;
@@ -216,10 +217,8 @@ class _WenyouAudioPlayerState extends ConsumerState<WenyouAudioPlayer>
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 6),
           child: AnimatedContainer(
-            duration: animate
-                ? const Duration(milliseconds: 180)
-                : Duration.zero,
-            curve: Curves.easeOut,
+            duration: animate ? WenyouFoundationMotion.standard : Duration.zero,
+            curve: wenyouStandardMotionCurve,
             decoration: BoxDecoration(
               color: tokens.panel,
               border: Border.all(
@@ -355,9 +354,9 @@ class _WenyouAudioPlayerState extends ConsumerState<WenyouAudioPlayer>
                                             : 4,
                                       ),
                                       duration: animate
-                                          ? const Duration(milliseconds: 120)
+                                          ? WenyouFoundationMotion.fast
                                           : Duration.zero,
-                                      curve: Curves.easeOut,
+                                      curve: wenyouStandardMotionCurve,
                                       builder: (context, radius, _) => SliderTheme(
                                         data: SliderTheme.of(context).copyWith(
                                           activeTrackColor: context

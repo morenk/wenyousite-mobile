@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -21,6 +20,7 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_discussion_scroll_policy.d
 import 'package:wenyousite_mobile/core/widgets/wenyou_internal_reference_text.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_overflow_content.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_pagination.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_refresh_indicator.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_transient_target_frame.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/media/domain/reading_image_gallery.dart';
@@ -197,7 +197,7 @@ class _MomentDetailPageState extends ConsumerState<MomentDetailPage> {
                     isMounted: () => mounted,
                     requestRebuild: () => setState(() {}),
                   ),
-              child: RefreshIndicator(
+              child: WenyouRefreshIndicator(
                 onRefresh: () => _refresh(provider),
                 child: CustomScrollView(
                   key: const PageStorageKey('moment-detail-scroll'),

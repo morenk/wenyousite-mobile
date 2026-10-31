@@ -14,6 +14,7 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_dice_node.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_inline_text_elements.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_internal_reference_text.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_progress_indicator.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_audio_embed_builder.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_pending_image_widget.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_pending_images.dart';
@@ -356,7 +357,7 @@ class _ImageLoadingPlaceholder extends StatelessWidget {
   Widget build(BuildContext context) {
     return ColoredBox(
       color: context.wenyouTokens.softPanel,
-      child: const Center(child: CircularProgressIndicator()),
+      child: const Center(child: WenyouCircularProgressIndicator()),
     );
   }
 }

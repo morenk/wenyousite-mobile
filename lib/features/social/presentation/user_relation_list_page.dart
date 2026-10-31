@@ -7,6 +7,7 @@ import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_level_badge.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_refresh_indicator.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/social/application/user_relation_list_controller.dart';
 import 'package:wenyousite_mobile/features/social/domain/user_relation_list_models.dart';
@@ -97,7 +98,7 @@ class _ReadyRelationList extends StatelessWidget {
       context,
       availableWidth: width,
     );
-    return RefreshIndicator(
+    return WenyouRefreshIndicator(
       onRefresh: state.isMutating ? () async {} : onRefresh,
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),

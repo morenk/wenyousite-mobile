@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -17,6 +16,7 @@ import 'package:wenyousite_mobile/core/widgets/discussion_window_prefetch.dart';
 import 'package:wenyousite_mobile/core/widgets/reading_quick_scroll.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_discussion_scroll_policy.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_refresh_indicator.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_controllers.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_discussion_author_directory_ports.dart';
@@ -28,6 +28,7 @@ import 'package:wenyousite_mobile/features/reports/domain/report_models.dart';
 import 'package:wenyousite_mobile/features/reports/presentation/report_widgets.dart';
 import 'package:wenyousite_mobile/features/social/application/thread_subscription_controller.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_detail_controller.dart';
+import 'package:wenyousite_mobile/features/threads/application/thread_saved_post.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_app_bar_actions.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_bottom_bar.dart';
@@ -359,7 +360,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
         failure: state.failure,
         onRetry: () => ref.read(provider.notifier).loadInitial(),
       ),
-      ThreadDetailPhase.ready => RefreshIndicator(
+      ThreadDetailPhase.ready => WenyouRefreshIndicator(
         onRefresh: _refreshDetail,
         child: KeyedSubtree(
           key: _renderGeometry.scrollViewportKey,
@@ -779,13 +780,43 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     if (target.kind == PostComposerKind.createFloor) {
       ref.invalidate(postFloorDiscussionAuthorsProvider(target.subthreadId));
     }
-    ref.invalidate(threadPostTargetProvider(result.id));
-    await ref.read(_detailProvider.notifier).refreshMetadata();
-    if (!mounted) return;
+    final controller = ref.read(_detailProvider.notifier);
+    if (target.kind == PostComposerKind.editPost &&
+        controller.applySavedFloor(result)) {
+      // 同楼层保存保位，不重走入口定位，也不让 GET 目标拖住阅读更新。
+      if (_numberTarget?.floor.id == result.id) {
+        _numberTarget = ThreadPostTargetModel(
+          requestedPostId: result.id,
+          threadId: result.threadId,
+          subthreadId: result.subthreadId,
+          floor: savedPostAsFloor(result),
+        );
+      }
+      unawaited(controller.refreshMetadata());
+      return;
+    }
+    await controller.refreshMetadata();
+    if (!mounted || ref.read(sessionScopeProvider) != openedSessionScope) {
+      return;
+    }
     switch (target.kind) {
-      case PostComposerKind.createFloor ||
-          PostComposerKind.createReply ||
-          PostComposerKind.editPost:
+      case PostComposerKind.createFloor || PostComposerKind.editPost:
+        // 保存结果已核验坐标，无需再 GET 同一帖子或重读默认窗口。
+        setState(() {
+          _navigation.clear();
+          _navigation.targetId = result.id;
+          _numberTarget = ThreadPostTargetModel(
+            requestedPostId: result.id,
+            threadId: result.threadId,
+            subthreadId: result.subthreadId,
+            floor: savedPostAsFloor(result),
+          );
+          _targetAttempt++;
+          _targetRevealed = false;
+          _entryTargetCoordinator.rearmForRetry();
+        });
+      case PostComposerKind.createReply:
+        ref.invalidate(threadPostTargetProvider(result.id));
         context.replace(
           AppRouteLocations.thread(widget.threadId, postId: result.id),
         );

@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'dart:io';
-
 import 'package:flutter/foundation.dart';
 import 'package:wenyousite_mobile/core/text_fonts/text_font_cache.dart';
 import 'package:wenyousite_mobile/core/text_fonts/text_font_download_window.dart';
+import 'package:wenyousite_mobile/core/text_fonts/text_font_integrity.dart';
 import 'package:wenyousite_mobile/core/text_fonts/text_font_manifest.dart';
 import 'package:wenyousite_mobile/core/text_fonts/text_font_native_snapshot.dart';
 import 'package:wenyousite_mobile/core/text_fonts/text_font_progress.dart';
@@ -315,7 +315,9 @@ class TextFontDemandQueue extends ChangeNotifier {
           } finally {
             _activeDownload = null;
           }
-          if (!asset.verifies(bytes)) throw const FormatException('字体资源校验失败');
+          if (!await verifyTextFontAsset(asset, bytes)) {
+            throw const FormatException('字体资源校验失败');
+          }
           if (work.shards.isNotEmpty) progress.applying(asset, bytes.length);
           verifiedDownloadBytes += bytes.length;
           try {

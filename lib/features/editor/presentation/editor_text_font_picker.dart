@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wenyousite_mobile/app/app_capabilities.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/animation/wenyou_motion.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_text_font.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/text_fonts/text_font_service.dart';
@@ -107,7 +108,10 @@ class _EditorTextFontPickerState extends ConsumerState<EditorTextFontPicker> {
         useSafeArea: true,
         requestFocus: true,
         builder: (context) => AnimatedPadding(
-          duration: context.wenyouTokens.feedbackDuration,
+          duration: wenyouMotionDuration(
+            context,
+            context.wenyouTokens.feedbackDuration,
+          ),
           padding: EdgeInsets.only(
             bottom: MediaQuery.viewInsetsOf(context).bottom,
           ),

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_mobile/app/app_capabilities.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_progress_indicator.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_sheet.dart';
 import 'package:wenyousite_mobile/features/thread_identity/identity_models.dart';
 import 'package:wenyousite_mobile/features/thread_identity/identity_ports.dart';
@@ -81,7 +82,8 @@ Future<void> showThreadIdentityCard({
                   onOpenAccount: () =>
                       Navigator.of(context).pop(AppRouteLocations.user(userId)),
                 ),
-                loading: () => const Center(child: CircularProgressIndicator()),
+                loading: () =>
+                    const Center(child: WenyouCircularProgressIndicator()),
                 error: (_, _) => Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [

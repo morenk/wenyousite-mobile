@@ -1,10 +1,10 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/audio_playback_button.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_progress_indicator.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_pending_audios.dart';
 import 'package:wenyousite_mobile/features/media/domain/audio_upload_models.dart';
 
@@ -29,7 +29,7 @@ class EditorPendingAudioWidget extends StatelessWidget {
             if (audios.selecting && !audios.preparingSelection)
               Row(
                 children: [
-                  const Expanded(child: LinearProgressIndicator()),
+                  const Expanded(child: WenyouLinearProgressIndicator()),
                   TextButton(
                     onPressed: () => unawaited(audios.cancelSelection()),
                     child: const Text('取消选择'),
@@ -154,7 +154,7 @@ class EditorPendingAudioCard extends StatelessWidget {
                         final track = SizedBox(
                           height: 48,
                           child: Center(
-                            child: LinearProgressIndicator(
+                            child: WenyouLinearProgressIndicator(
                               value:
                                   stage == AudioUploadStage.confirming ||
                                       stage == AudioUploadStage.processing
