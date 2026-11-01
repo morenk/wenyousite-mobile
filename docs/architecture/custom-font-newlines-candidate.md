@@ -4,7 +4,16 @@
 
 负责人对上一轮交付明确回复“验收通过，直接合并吧”。对应候选提交 `46b94038b87ff006481fc2b5de57016fcd787dfa`，APK SHA-256 为 `C7ACBB29598C758E02B878A9408A7BB53100E7F4F18BD6001E68DA98376EF604`；该确认完成本问题验收并授权合入 `dev`。不推断未提供的设备信息或额外逐项操作记录。
 
-合并前同步 `origin/dev@36a76ab5` 的发布定位变更，代码无冲突，CHANGELOG 保留双方记录；本字体修复的应用实现没有追加修改。对整合后的最终源码执行一次 `npm run check -- -TestConcurrency 3`，结果在完成后追加。以下候选阶段记录保留其当时的证据边界。
+合并前同步 `origin/dev@36a76ab5` 的发布定位变更，代码无冲突，CHANGELOG 保留双方记录；本字体修复的应用实现没有追加修改。以下候选阶段记录保留其当时的证据边界。
+
+## 合并前完整门禁
+
+- 2026-11-01 在 Windows 对整合提交 `b8cfcdaccb98518c8f6b0101d5cfbe0b222406d8` 执行 `npm run check -- -TestConcurrency 3`，退出码为 0。
+- 全仓格式、应用及生成客户端静态分析、架构、模块文档、API 覆盖、契约校验及再生成一致性全部通过；公网只读兼容性检查通过，没有执行线上写入。
+- 全量 Flutter 测试 8192 项通过、1 项既有条件跳过；Windows 工具测试 49/49 通过。本次先选字体后输入 5/6 次回车的四项页面回归均包含在完整测试中。
+- 整合源码的 `lib` Git tree 为 `013c1252cfa0c9147f28b773eb2ef6c6dc85e19f`。门禁结束后只补充文档与 PR 记录，没有再修改应用代码、依赖或构建配置。
+- 完整日志保留于 `D:\dev-cache\artifacts\wenyousite-mobile\20261101-custom-font-newlines\integration-check.log`。本次不重新构建或安装 APK，保留已验收候选与原始证据。
+- 合并评审：[PR #132](https://github.com/morenk/wenyousite-mobile/pull/132)，目标分支 `dev`；不涉及正式发布或打 Tag。
 
 ## 原始反馈与复现边界
 
