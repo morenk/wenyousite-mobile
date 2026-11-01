@@ -8,7 +8,18 @@
 
 按负责人要求复用刚完成的检查与真机结果，不重复全量测试。实际全量批次 8,364 通过／1 既有条件跳过／2 失败；两项失败已修正并分别通过链接与文案 46 项、阅读恢复 14 项及相册组合 1 项。Windows 发布／调试工具 49/49 通过，契约、生成一致性、全量分析及架构检查已完成；完整失败和补验过程见[文字修复验收记录](reading-text-style-candidate.md)。不将分段接续验证描述成单次全量零失败。
 
-本轮通过标准 `--build-only --skip-checks` 入口重新构建正式签名包，完成包名、版本、ARM64、16 KB 对齐和证书核验。构建结果完成后补记；此时尚未上传、晋级 main 或打正式 Tag。当前授权按“正式版准备推送”执行，实际对用户推送仍需通过后台说明预检。
+本轮通过标准 `--build-only --skip-checks` 入口重新构建正式签名包，2026-11-01 22:20 完成，退出 0，Gradle 构建 239.3 秒。包名、版本、单 ARM64、ZIP／ELF 16 KB 对齐和正式签名均通过；证书与上一正式 build 101 一致。当前授权按“正式版准备推送”执行，尚未上传、晋级 main 或打正式 Tag，实际对用户推送仍需通过后台说明预检。
+
+| 本轮制品 | 结果 |
+| --- | --- |
+| 构建源码 | `e6484698d83f48a1de4893289eaccb608576371b` |
+| applicationId | `site.wenyou.app` |
+| versionName / versionCode | `0.12.0` / `102` |
+| APK 字节数 | `37981017` |
+| APK SHA-256 | `3cadf36fa8db5ba7763d39fd196ee3866baf5d023fdaf3a51a602a1a1439df05` |
+| 签名证书 SHA-256 | `4b19f9ba1890480d1e1ac72450f00027a635be57958b702ba3a8e80f2db24839` |
+
+APK、摘要、JSON 清单、构建日志、更新说明草稿与线上只读状态保存于 `D:\codex-artifacts\mobile-release-0.12.0-102-20261101`，复制后哈希已核验。后续仅补充此文档，不改变源码制品；旧目录 `mobile-release-0.12.0-102` 的 10 月 31 日 APK 仅作历史保留。公网 `/meta` 仍推荐 build 101、最低支持构建号 null，Backend 为 `19a6c4ed`。
 
 后台只读预检 `--gateway --preflight --version 0.12.0 --build 102` 本轮仍返回 `MOBILE_RELEASE_COMMAND_FAILED`，未取得 `confirmedRevision`；不能仅凭通用错误确定原因，也不绕过预检。本轮未自动执行线上业务写入，未安装或启动 Release 覆盖用户正式包。
 
