@@ -1,12 +1,20 @@
 # 阅读性能后续切片
 
-状态：负责人真机验收通过，完整 Windows 门禁与 20 分钟离线 Profile 通过，待合并授权。当前分支为 `codex/20261101-mobile-reading-navigation`，PR #131；本次验收不包含合并或正式发布授权。此次确认针对后续 Debug 候选，独立于 PR #130 的原场景验收。
+状态：负责人真机验收通过，完整 Windows 门禁与 20 分钟离线 Profile 通过；2026-11-01 负责人明确授权合并 PR #131。当前分支为 `codex/20261101-mobile-reading-navigation`，实际合并状态以 PR 为准；本次不包含正式发布。此次真机确认针对后续 Debug 候选，独立于 PR #130 的原场景验收。
 
 ## 负责人验收结果
 
 2026-11-01，负责人针对 15:22:22 更新的“温油站 Debug”明确反馈“没问题了”。本次询问与确认覆盖：连续两次发布均正常定位；长文跳转后“回到刚才”返回原文字；图片出现及向前／向后翻页时阅读位置稳定。按该范围记录真机验收通过，不把未单独反馈的矩阵项扩写为人工逐项复验。
 
 对应候选记录提交 `e3a365ca58329c459c80be1e85beff417a4ac4e7`，应用 `lib` tree `4fd7ee29261bb0c0e1670a16d61c8a30e282f33d`，Debug APK SHA-256 `E1BBF3E10F3D80B72E3FD593D187AEA7B1A346640F7155FF271B58E167405FFD`。本次只更新验收文档，复用同一应用源码的完整门禁、构建和 Profile 证据，不重复运行应用测试或重建。已测得的 244.066 ms 单帧构建峰值仍保留为后续优化项，验收通过不抹去该限制。
+
+## 合并前整合验证
+
+2026-11-01 负责人明确授权合并 PR #131 后，整合 `origin/dev@78fd7883535c528ec8030540687a779e6cccd79c`（PR #132 自定义字体换行与混排修复）。唯一冲突为 CHANGELOG，保留双方记录；正文解析复用与字体段落合并实现自动合并后已审查。整合后应用 `lib` tree 为 `6c49332c30ca6f6d5dabc15e66f483e80b8cae0c`，Android tree 仍为 `948213a0815ae4c46530b60cb3ff4c3799605213`。
+
+整合源码执行 `npm run check:apk -- -TestConcurrency 3`，退出码 0：Flutter 8,208 项通过、1 项既有 Sentry 条件跳过，Windows 工具 49/49；格式、全量静态分析、架构、23 个模块文档、API 覆盖、契约及生成一致性全部通过，ARM64 Debug 构建成功。归档目录 `D:\\codex-artifacts\\wenyousite-mobile\\pr131-integration-20261101` 保存完整门禁日志、APK 与历史工作区证据。
+
+整合 APK 为 `site.wenyou.app.debug`／`0.11.0-debug (101)`，114,379,841 字节，SHA-256 `509496E7B188BA3CCDEF5CF002B2DC699501D8529B6CB766F21AA50D012FECB8`；仅 ARM64、最低 API 26、v2 签名通过。此包未安装，前述真机验收与 20 分钟 Profile 仍绑定原 `4fd7ee29` 候选，不以原测量冒充整合包的手机测量。门禁结束后只补充文档，不改变已验证应用源码。
 
 ## 当前行为与边界
 
@@ -69,7 +77,7 @@
 - 2026-11-01 下午负责人连接手机后，原 Profile 包成功安装，设备内 SHA-256 与 `6E14766B…7E7B8` 一致；USB 安装阻塞解除。首次运行停在全局 `pumpAndSettle` 等待，未产出采样，主动停止并保留日志，不计入 20 分钟测量。测试随后改为自然帧调度、有时限的交互等待与目标状态校验，并保存失败时的部分数据。
 - Profile 试跑进一步暴露测试输入问题：默认 integration binding 不登记模拟键盘，`tester.enterText` 使用 `-1` client ID，而 Flutter `text_input.dart` 只在 Debug 断言路径接受该 ID，因此 Profile 中输入未生效、按钮仍禁用、目标请求为零。先前补输入后等待的尝试未解决，失败记录保留。测试专用 binding 显式登记模拟输入，使用真实 client ID；仍点击真实编号按钮并核验目标与返回，不将此脚本当作原生键盘验收。此轮只更改 `integration_test`／驱动，应用 `lib` 与 Android 配置未改。
 - 随后返回校验曾在预期第 3 层时读到第 6 层；把书签取值移至点击时点后仍失败，未据此认定应用修复完成。进一步发现等待函数会在旧窗口仍可见时通过条件，再固定等待 250 ms 后不复查新请求／新遮罩。改为同时确认仓储在途请求归零、实际目标条目已布局、输入与遮罩均消失，并连续三次检查。`test/features/threads/thread_reading_profile_return_test.dart` 使用相同长短文夹具、DPR 3，新增组合 Widget 回归通过（楼层与偏移），但它与手机系统字体不同，不冒充原场景复现证据。修正后的手机首轮目标读取、返回和采样于 15:01 正常通过；完整 20 分钟结果见上节。
-- 最终 `npm run check:apk -- -TestConcurrency 3` 返回 0（`reading-final-gate-complete.log`）：Flutter 8,180 项通过、1 项既有 Sentry 联网验收跳过，Windows 工具 49/49；格式、应用与生成客户端静态分析、架构、23 个模块文档、API 覆盖、契约校验／再生成一致性和公网只读契约检查均通过，ARM64 Debug 构建成功。应用源码与上述 `lib`／Android tree 一致；后续验收文档更新不改变此证据。
+- 原验收候选的 `npm run check:apk -- -TestConcurrency 3` 返回 0（`reading-final-gate-complete.log`）：Flutter 8,180 项通过、1 项既有 Sentry 联网验收跳过，Windows 工具 49/49；格式、应用与生成客户端静态分析、架构、23 个模块文档、API 覆盖、契约校验／再生成一致性和公网只读契约检查均通过，ARM64 Debug 构建成功。应用源码与上述 `lib`／Android tree 一致；后续验收文档更新不改变此证据。
 - Debug 候选归档：`D:\codex-artifacts\wenyousite-mobile\reading-navigation-4fd7ee29\app-debug.apk`，`site.wenyou.app.debug`／`0.11.0-debug (101)`，114,374,101 字节，SHA-256 `E1BBF3E10F3D80B72E3FD593D187AEA7B1A346640F7155FF271B58E167405FFD`。仅 ARM64、最低 API 26，APK v2 签名通过，证书 SHA-256 `a3d950270933203c9f0abae0db0f0c112a5f162fba9199d8dec534cf55803fd7`。此包已于 2026-11-01 15:22:22 保留数据安装至 Debug，设备内哈希一致；代理未自动启动，后续已由负责人验收通过。
 - 门禁首次产物为 157,831,429 字节，ZIP 有约 43 MB 增量空洞；保留为 `app-debug-incremental.apk`。只删除当前 Worktree 两个生成 APK 输出文件，以完全相同 `flutter build apk --debug --target-platform android-arm64` 参数重新打包，未改变应用源码、依赖或 Android 配置，也未重复全量测试。重打包后 733 个 ZIP 条目数量与未压缩长度不变；`kernel_blob.bin` 的构建字节与压缩长度有变化，不声称两个 APK 二进制相同。构建日志与比较结果同目录归档，当前交付哈希以上述紧凑包为准。
 - 全量回归曾暴露 `thread_detail_stack_test.dart` 的旧夹具：带 `postId` 的窗口仍返回 `target: null`，被未改动的 `mapDiscussionWindow` 精确目标校验拒绝。已核对 Backend `19a6c4ed` 的 `docs/discussion-navigation.md`：精确响应 target 非空。按该独立契约改为随请求返回 `target.id / number`，并加强整栈断言为所属子贴一次窗口、准确 `postId`、不读默认子贴；应用源码未因此调整。该文件 6 项重跑通过（`reading-stack-fixture-recheck.log`），原失败轮次保留，随后完整门禁通过。
@@ -89,7 +97,7 @@
 - `thread_detail_controller_test.dart` 覆盖后台统计期间预取继续，以及统计撤权后迟到正文不能回填。
 - 入口扩大回归 `thread_detail_page_test.dart`、`thread_deleted_target_test.dart`：95 项通过（`reading-entry-window-recheck.log`）；直接窗口、编号和发布组合 `discussion_window_controller_test.dart`、`discussion_number_page_test.dart`、`thread_publish_locate_flow_test.dart`：22 项通过（`reading-unified-window.log`）。
 - `thread_latest_real_window_test.dart`：四种视口／字体组合通过（`reading-latest-window.log`）。目标窗口的 Mock 游标显式覆盖还有下一页的场景，继续核验揭开后的普通预取错误只在列表提示。
-- 首批直接受影响 Dart 文件静态分析零问题（`reading-navigation-final-analyze-recheck.log`）；用户接管取消导航后重跑发布与导航 14 项全部通过（`reading-user-navigation-recheck.log`）；23 个模块文档检查通过。完整门禁与 APK 证据见本节最终记录，后续真机验收仍未完成。
+- 首批直接受影响 Dart 文件静态分析零问题（`reading-navigation-final-analyze-recheck.log`）；用户接管取消导航后重跑发布与导航 14 项全部通过（`reading-user-navigation-recheck.log`）；23 个模块文档检查通过。该批次当时尚未完成真机验收，后续确认范围见开头验收结果。
 - 初次开发检查存在源文件修改与编译交叠导致的无效编译记录，保留 `reading-metadata-before.log`、`reading-metadata-after.log`，不将其作为旧行为失败证据；可靠旧行为证据以上述 `baseline` 命名的固定源码运行记录为准。
 
 Backend `origin/dev`、已记录 revision 和公网只读检查一致：`19a6c4ed48829a781182527faaafce6e788e9e2e`，API `5.44.0-dev.20261024.3`。Foundation 已 fetch tags，最新正式版本仍为已锁定的 `v7.6.0`。本切片不更改跨端协议或视觉 Token。

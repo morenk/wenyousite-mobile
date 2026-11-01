@@ -2,7 +2,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:markdown/markdown.dart' as md;
-import 'package:wenyousite_mobile/core/text_fonts/text_font_scope.dart';
+import 'package:wenyousite_mobile/core/widgets/markdown_font_paragraph.dart';
 import 'package:wenyousite_mobile/core/widgets/markdown_text_color_builder.dart';
 
 void main() {
@@ -33,9 +33,9 @@ void main() {
                       null,
                       null,
                     )!
-                    as TextFontScope;
+                    as MarkdownFontInline;
             for (var i = 0; i < 100; i++) {
-              scope.builder(context, null);
+              scope.buildText(context, null);
             }
             return const SizedBox();
           },
