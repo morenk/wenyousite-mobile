@@ -65,6 +65,7 @@ class DiscussionTargetRevealCoordinator {
     required bool Function() isMounted,
     required VoidCallback requestRebuild,
     double? targetOffset,
+    double? Function()? targetOffsetResolver,
     VoidCallback? onAligned,
   }) {
     if (_scopeSignature != scopeSignature) {
@@ -98,7 +99,7 @@ class DiscussionTargetRevealCoordinator {
         alignDiscussionTarget(
           targetContext,
           scrollController,
-          offset: targetOffset,
+          offset: targetOffsetResolver?.call() ?? targetOffset,
         );
         _lastContentSignature = contentSignature;
         _attemptTargetId = null;

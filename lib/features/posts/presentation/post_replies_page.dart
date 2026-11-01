@@ -367,6 +367,8 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
             isLoadingPage: state.isPrefetchingReplies,
             hasMore: state.window != null,
             targetOffset: _navigation.targetOffset,
+            targetOffsetResolver: () =>
+                _quickScroll.offsetForBookmark(_navigation.targetBookmark),
             navigationRevision: _navigationRevision,
             onLoadMore: () => unawaited(
               ref.read(provider.notifier).locateReply(focusedReplyId!),

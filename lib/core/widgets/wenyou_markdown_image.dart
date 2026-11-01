@@ -73,8 +73,10 @@ class WenyouMarkdownImage extends StatelessWidget {
         child: WenyouIcon(WenyouIconIds.actionImage, color: tokens.mutedText),
       ),
     );
-    final image = WenyouCachedImage(
+    Widget image({int? cacheWidth, int? cacheHeight}) => WenyouCachedImage(
       imageUrl: display?.url ?? uri.toString(),
+      cacheWidth: cacheWidth,
+      cacheHeight: cacheHeight,
       enableRetry: display != null,
       fit: BoxFit.contain,
       placeholder: (_, _) => fallback,
@@ -86,7 +88,7 @@ class WenyouMarkdownImage extends StatelessWidget {
     final imageContent = ClipRRect(
       borderRadius: BorderRadius.circular(tokens.radiusCompact),
       child: isSticker
-          ? SizedBox.square(dimension: 96, child: image)
+          ? SizedBox.square(dimension: 96, child: image(cacheWidth: 96))
           : display != null
           ? LayoutBuilder(
               builder: (context, constraints) {
@@ -103,13 +105,23 @@ class WenyouMarkdownImage extends StatelessWidget {
                 return SizedBox(
                   width: media.width * scale,
                   height: media.height * scale,
-                  child: image,
+                  child: image(
+                    cacheWidth: (media.width * scale).ceil(),
+                    cacheHeight: (media.height * scale).ceil(),
+                  ),
                 );
               },
             )
-          : ConstrainedBox(
-              constraints: const BoxConstraints(maxHeight: 420),
-              child: image,
+          : LayoutBuilder(
+              builder: (context, constraints) => ConstrainedBox(
+                constraints: const BoxConstraints(maxHeight: 420),
+                // 旧内容缺少比例时只约束宽度，保留原图比例。
+                child: image(
+                  cacheWidth: constraints.maxWidth.isFinite
+                      ? constraints.maxWidth.ceil()
+                      : null,
+                ),
+              ),
             ),
     );
     if (isSticker) {
