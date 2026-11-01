@@ -171,6 +171,8 @@ media/application 提供相册与上传端口、唯一任务状态、取消、�
 
 ## 11. 测试场景与验收条件
 
+- 文字排版候选／待负责人验收：动态详情与评论中的站内传送门由外层文字布局统一缩放，避免大字号下文字二次放大。真实详情页／评论组件覆盖明暗主题、320dp、1×／1.5×／2× 字号；纯文本语义及路由交互保持。见[验收记录](../architecture/reading-text-style-candidate.md)。
+
 主题与动态底栏统一为视觉候选／待负责人真机验收，精准测试、组件／整页画面、独立 Debug APK 与未覆盖项见[紧凑底栏验收](../architecture/compact-bottom-actions-acceptance.md)。
 
 - [ ] 一级评论自动分页候选／待负责人验收：覆盖无按钮、实际滚动阈值、短页补足、并发去重、到底、失败暂停与明确重试、排序／刷新竞态、游标异常、楼中楼仍手动展开及深链不拉回。离线检查和待验证真机步骤见[候选记录](../architecture/moment-comment-autoload-candidate.md)。

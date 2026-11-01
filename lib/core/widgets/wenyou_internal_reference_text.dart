@@ -50,18 +50,21 @@ class _WenyouInternalReferenceTextState
             WidgetSpan(
               alignment: PlaceholderAlignment.baseline,
               baseline: TextBaseline.alphabetic,
-              child: WenyouInternalReferenceChip(
-                key: ValueKey('wenyou-internal-reference-$index'),
-                surfaceKey: ValueKey(
-                  'wenyou-internal-reference-surface-$index',
+              // WidgetSpan 已按段落字号缩放，内部文字不能再次缩放。
+              child: MediaQuery.withNoTextScaling(
+                child: WenyouInternalReferenceChip(
+                  key: ValueKey('wenyou-internal-reference-$index'),
+                  surfaceKey: ValueKey(
+                    'wenyou-internal-reference-surface-$index',
+                  ),
+                  label: label,
+                  style: resolvedStyle,
+                  onTap: () =>
+                      openInternalWenyouLink(context, reference.location),
+                  onLongPress: widget.onLongPressNonText == null
+                      ? null
+                      : _handleNonTextLongPress,
                 ),
-                label: label,
-                style: resolvedStyle,
-                onTap: () =>
-                    openInternalWenyouLink(context, reference.location),
-                onLongPress: widget.onLongPressNonText == null
-                    ? null
-                    : _handleNonTextLongPress,
               ),
             ),
           );
