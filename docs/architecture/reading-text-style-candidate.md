@@ -5,6 +5,7 @@
 ## 范围与基线
 
 - 分支：`codex/20261101-text-style-regressions`，起点 `origin/dev@faf3ed07`。
+- 候选应用源码提交：`5595cbfedc29c6562d2658e7238f4932e6df0b8d`；之后仅补充本条追溯记录，应用源码未变，现有测试与 Debug 会话证据仍有效。
 - Windows 工作区：`D:\code\wenyousite\wenyousite-mobile`。
 - Foundation 已 fetch tags，最新正式版及锁定依赖均为 v7.6.0；已核对该版本 CHANGELOG 与系统文字缩放／Flutter 字体契约。
 - 已记录后端、镜像 `origin/dev` 和公网 `/meta.buildSha` 均为 `19a6c4ed48829a781182527faaafce6e788e9e2e`；契约版本 `5.44.0-dev.20261024.3`，未发生漂移。
