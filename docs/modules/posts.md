@@ -231,9 +231,9 @@ v5 图片在写入 `postsUpdate`、`postsUpsertBody` 或创建接口前会规范
 
 ## 11. 测试场景与验收条件
 
-- 分享链接保存候选／待负责人验收：真实回复页使用“希尔薇”及负责人提供的完整抖音分享文本，核对链接面板输入、保存、阅读文字与重开后的目标仅包含实际网址；多余分享口令不成为链接属性。原设备主题详情场景仍由负责人复验，见[候选记录](../architecture/reading-text-style-candidate.md)。
+- 分享链接保存（2026-11-01 负责人验收通过）：真实回复页使用“希尔薇”及负责人提供的完整抖音分享文本，核对链接面板输入、保存、阅读文字与重开后的目标仅包含实际网址；多余分享口令不成为链接属性。负责人已确认原设备候选可用并授权合并，见[候选记录](../architecture/reading-text-style-candidate.md)。
 
-- 文字样式候选／待负责人验收：楼层与独立讨论共用的正文保持字体、颜色、链接、强调和代码组合；着色代码不改变字号／行高，独立空段跟随系统缩放。`PostReadingBody` 的真实包装入口与阅读字号回归见[验收记录](../architecture/reading-text-style-candidate.md)。
+- 文字样式（2026-11-01 负责人验收通过）：楼层与独立讨论共用的正文保持字体、颜色、链接、强调和代码组合；着色代码不改变字号／行高，独立空段跟随系统缩放。`PostReadingBody` 的真实包装入口与阅读字号回归见[验收记录](../architecture/reading-text-style-candidate.md)。
 
 站内超链接候选／待负责人验收：`test/features/posts/post_hyperlink_edit_test.dart` 通过真实回复页面的打开编辑、输入“你好”、链接面板插入合法楼层地址、保存、阅读和重开编辑核对原子传送门与可见文字；仓储为内存替身，不访问线上。真机原始主题详情场景仍由负责人复验，见[超链接候选记录](../architecture/editor-hyperlink-acceptance.md)。
 
