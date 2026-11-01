@@ -103,6 +103,8 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
   late final ValueNotifier<Map<String, WenyouDiceRollDetail>> _diceDetails;
   late String _normalizedData;
   List<MarkdownRenderSegment> _renderSegments = const [];
+  List<int> _segmentImageStarts = const [];
+  List<bool> _segmentSeparators = const [];
   List<InternalReferencePortal> _internalReferences = const [];
   Map<String, md.LinkReference> _imageReferences = const {};
   MarkdownStyleSheet? _styleSheet;
@@ -272,8 +274,31 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
     final referenceDocument = md.Document(
       extensionSet: md.ExtensionSet.gitHubFlavored,
     );
-    referenceDocument.parse(_normalizedData);
+    // 没有引用定义起始行时，避免为图片引用映射再解析整篇正文。
+    if (RegExp(r'\]\s*:').hasMatch(_normalizedData)) {
+      referenceDocument.parse(_normalizedData);
+    }
     _imageReferences = referenceDocument.linkReferences;
+    var imageIndex = 0;
+    _segmentImageStarts = _renderSegments.length == 1
+        ? [0]
+        : [
+            for (final segment in _renderSegments)
+              () {
+                final start = imageIndex;
+                imageIndex += MarkdownImageOccurrenceSyntax.count(
+                  segment.markdown,
+                  references: _imageReferences,
+                );
+                return start;
+              }(),
+          ];
+    _segmentSeparators = _renderSegments.length == 1
+        ? [false]
+        : [
+            for (var i = 0; i < _renderSegments.length; i++)
+              _separatesRenderSegments(i),
+          ];
     _usesPlainTextFastPath =
         widget.enablePlainTextFastPath &&
         prepared.references.isEmpty &&
@@ -290,7 +315,7 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         for (var index = 0; index < _renderSegments.length; index++) ...[
-          if (_separatesRenderSegments(index))
+          if (_segmentSeparators[index])
             SizedBox(height: _styleSheet?.blockSpacing ?? 0),
           KeyedSubtree(
             key: ValueKey(
@@ -302,17 +327,7 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
               _alignedStyleSheet(_renderSegments[index].alignment),
               expandBlockWidth: _renderSegments[index].isAligned,
               alignment: _renderSegments[index].alignment,
-              imageStartIndex: _renderSegments
-                  .take(index)
-                  .fold<int>(
-                    0,
-                    (count, segment) =>
-                        count +
-                        MarkdownImageOccurrenceSyntax.count(
-                          segment.markdown,
-                          references: _imageReferences,
-                        ),
-                  ),
+              imageStartIndex: _segmentImageStarts[index],
             ),
           ),
         ],
@@ -366,6 +381,7 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
     int imageStartIndex = 0,
   }) => WenyouMarkdownBody(
     data: data,
+    parseRevision: (_markdownParseKey, imageStartIndex, _imageReferences),
     mediaAudios: widget.mediaAudios,
     selectable: false,
     // MarkdownBody defaults to fitContent=true, which shrink-wraps its inner

@@ -23,6 +23,8 @@ class ThreadPublishedFloorNavigation extends ChangeNotifier {
     required ThreadFloorOrder order,
     required String? authorId,
     required bool Function() active,
+    Future<({String id, bool clearedAuthor})?> Function(bool Function() active)?
+    readTarget,
   }) async {
     if (loading && post?.id == saved.id) return;
     final epoch = ++_epoch;
@@ -35,13 +37,15 @@ class ThreadPublishedFloorNavigation extends ChangeNotifier {
     notifyListeners();
     bool current() => !_disposed && epoch == _epoch && active();
     try {
-      final result = await controller.locate(
-        postId: saved.id,
-        subthreadId: saved.subthreadId,
-        order: order,
-        authorId: authorId,
-        active: current,
-      );
+      final result = readTarget != null
+          ? await readTarget(current)
+          : await controller.locate(
+              postId: saved.id,
+              subthreadId: saved.subthreadId,
+              order: order,
+              authorId: authorId,
+              active: current,
+            );
       if (!current()) return;
       if (result == null) {
         throw const ApiFailure(userMessage: '定位失败，请重试。');

@@ -117,14 +117,21 @@ class ThreadDetailController extends StateNotifier<ThreadDetailState> {
     this._repository,
     this.threadId, {
     bool autoStart = true,
+    this.initialPostId,
+    this.initialSubthreadId,
+    this.resolveEntryTarget,
   }) : super(const ThreadDetailState()) {
     if (autoStart) unawaited(loadInitial());
   }
 
   final ThreadDetailRepository _repository;
   final String threadId;
+  final String? initialPostId;
+  final String? initialSubthreadId;
+  final Future<ThreadPostTargetModel> Function(String)? resolveEntryTarget;
   int _requestEpoch = 0;
   int _actionCountsEpoch = 0;
+  int _metadataEpoch = 0;
   ApiFailure? _actionCountsFailure;
   bool _retryBefore = false;
   String? visibleFloorId;
@@ -162,14 +169,49 @@ class ThreadDetailController extends StateNotifier<ThreadDetailState> {
     try {
       final detail = await _repository.fetchThread(threadId);
       if (!_isCurrent(epoch)) return;
-      final selectedId = detail.preferredSubthreadId();
+      ThreadPostTargetModel? target;
+      if (initialPostId case final postId?) {
+        try {
+          target = await (resolveEntryTarget ?? _repository.fetchPostTarget)(
+            postId,
+          );
+        } on Object catch (error) {
+          if (!_isCurrent(epoch)) return;
+          // 归属读取错误由坐标状态呈现，只重试坐标，不回退加载默认正文。
+          state = state.copyWith(
+            phase: ThreadDetailPhase.ready,
+            detail: detail,
+            transientFailure: _asFailure(error, '定位失败，请重试。'),
+            selectedSubthreadId: detail.preferredSubthreadId(
+              initialSubthreadId,
+            ),
+          );
+          return;
+        }
+        if (!_isCurrent(epoch)) return;
+      }
+      final validTarget =
+          target != null &&
+          target.threadId == threadId &&
+          detail.subthreadById(target.subthreadId) != null;
+      final selectedId = detail.preferredSubthreadId(
+        validTarget ? target.subthreadId : initialSubthreadId,
+      );
       state = state.copyWith(
         phase: ThreadDetailPhase.ready,
         detail: detail,
         selectedSubthreadId: selectedId,
-        isLoadingFloors: selectedId != null,
+        isLoadingFloors: selectedId != null && initialPostId == null,
       );
-      if (selectedId != null) {
+      if (initialPostId != null) {
+        if (!validTarget ||
+            target.floor.isDeleted ||
+            target.focusedReplyId != null) {
+          return;
+        }
+        // 搜索／通知直接读取目标窗口；不先加载默认页或跨子贴首屏。
+        await locateFloor(target.floor.id, subthreadId: target.subthreadId);
+      } else if (selectedId != null) {
         await _loadFirstFloors(epoch, selectedId);
       }
     } on Object catch (error) {
@@ -246,7 +288,10 @@ class ThreadDetailController extends StateNotifier<ThreadDetailState> {
       if (!_isCurrent(epoch)) return;
       beforeWindowApply?.call();
       state = _withWindow(
-        DiscussionWindowBuffer(result.page),
+        DiscussionWindowBuffer(
+          result.page,
+          weightOf: (item) => item.contentWeight,
+        ),
         pins: const [],
       ).copyWith(floorAuthorId: result.author);
     } on Object catch (error) {
@@ -325,20 +370,24 @@ class ThreadDetailController extends StateNotifier<ThreadDetailState> {
   }
 
   /// 刷新统计、权限和元数据，保留当前楼层窗口及阅读位置。
-  Future<void> refreshMetadata() async {
+  Future<void> refreshMetadata({bool background = false}) async {
     final previousSelectedId = state.selectedSubthreadId;
     final previousIdentityEnabled = state.detail?.rpIdentityEnabled;
     final wasLoadingFloors = state.isLoadingFloors;
-    final epoch = ++_requestEpoch;
-    state = state.copyWith(
-      transientFailure: null,
-      isLoadingMore: false,
-      isPrefetchingFloors: false,
-      retryAction: null,
-    );
+    final epoch = background ? _requestEpoch : ++_requestEpoch;
+    final metadataEpoch = ++_metadataEpoch;
+    bool current() => _isCurrent(epoch) && metadataEpoch == _metadataEpoch;
+    if (!background) {
+      state = state.copyWith(
+        transientFailure: null,
+        isLoadingMore: false,
+        isPrefetchingFloors: false,
+        retryAction: null,
+      );
+    }
     try {
       final detail = await _repository.fetchThread(threadId);
-      if (!_isCurrent(epoch)) return;
+      if (!current()) return;
       final selectedId = detail.preferredSubthreadId(previousSelectedId);
       final selectionChanged = selectedId != previousSelectedId;
       final shouldReloadFloors =
@@ -346,6 +395,8 @@ class ThreadDetailController extends StateNotifier<ThreadDetailState> {
           (selectionChanged ||
               wasLoadingFloors ||
               detail.rpIdentityEnabled != previousIdentityEnabled);
+      // 后台统计不取消阅读预取；身份投影或目录变化则必须失效旧窗口读取。
+      final reloadEpoch = shouldReloadFloors ? ++_requestEpoch : epoch;
       state = state.copyWith(
         phase: ThreadDetailPhase.ready,
         detail: detail,
@@ -357,13 +408,17 @@ class ThreadDetailController extends StateNotifier<ThreadDetailState> {
         cursor: shouldReloadFloors ? null : state.cursor,
         hasMore: shouldReloadFloors ? false : state.hasMore,
         isLoadingFloors: shouldReloadFloors,
+        isLoadingMore: shouldReloadFloors ? false : state.isLoadingMore,
+        isPrefetchingFloors: shouldReloadFloors
+            ? false
+            : state.isPrefetchingFloors,
         failure: null,
       );
       if (shouldReloadFloors) {
-        await _loadFirstFloors(epoch, selectedId);
+        await _loadFirstFloors(reloadEpoch, selectedId);
       }
     } on Object catch (error) {
-      if (!_isCurrent(epoch)) return;
+      if (!current()) return;
       final failure = _asFailure(error, '主题信息刷新失败，请稍后重试。');
       if (_isRestricted(failure)) {
         _hideRestrictedContent(failure);
@@ -561,8 +616,14 @@ class ThreadDetailController extends StateNotifier<ThreadDetailState> {
           !result.page.items.any((item) => item.id == id)) {
         throw const ApiFailure(userMessage: '未找到该楼层，请重试。');
       }
-      state = _withWindow(DiscussionWindowBuffer(result.page), pins: const [])
-          .copyWith(
+      state =
+          _withWindow(
+            DiscussionWindowBuffer(
+              result.page,
+              weightOf: (item) => item.contentWeight,
+            ),
+            pins: const [],
+          ).copyWith(
             selectedSubthreadId: subthreadId,
             floorOrder: order,
             floorAuthorId: result.author,
@@ -583,10 +644,10 @@ class ThreadDetailController extends StateNotifier<ThreadDetailState> {
     }
   }
 
-  Future<void> locateFloor(String id) async {
+  Future<void> locateFloor(String id, {String? subthreadId}) async {
     if (state.isPrefetchingFloors) return;
     if (state.floors.any((item) => item.id == id)) return;
-    final scope = state.selectedSubthreadId;
+    final scope = subthreadId ?? state.selectedSubthreadId;
     if (scope == null) return;
     final epoch = _requestEpoch;
     try {
@@ -658,7 +719,7 @@ class ThreadDetailController extends StateNotifier<ThreadDetailState> {
         throw const ApiFailure(userMessage: '楼层位置没有更新，请重试。');
       }
       final next = replace
-          ? DiscussionWindowBuffer(page)
+          ? DiscussionWindowBuffer(page, weightOf: (item) => item.contentWeight)
           : window!.extend(
               page,
               before: before,
@@ -689,7 +750,10 @@ class ThreadDetailController extends StateNotifier<ThreadDetailState> {
         return;
       }
       visibleFloorId = null;
-      state = _withWindow(DiscussionWindowBuffer(page), pins: page.pinnedItems);
+      state = _withWindow(
+        DiscussionWindowBuffer(page, weightOf: (item) => item.contentWeight),
+        pins: page.pinnedItems,
+      );
     } on Object catch (error) {
       if (!_isCurrent(epoch) || state.selectedSubthreadId != subthreadId) {
         return;
@@ -723,6 +787,10 @@ class ThreadDetailController extends StateNotifier<ThreadDetailState> {
       failure.httpStatus == 403 || failure.httpStatus == 404;
 
   void _hideRestrictedContent(ApiFailure failure) {
+    // 后台权限核验可与预取并行；撤权后所有旧正文请求都必须失效。
+    _requestEpoch++;
+    _metadataEpoch++;
+    _actionCountsEpoch++;
     state = state.copyWith(
       phase: ThreadDetailPhase.failed,
       detail: null,
@@ -750,6 +818,8 @@ class ThreadDetailController extends StateNotifier<ThreadDetailState> {
 typedef ThreadDetailControllerScope = ({
   String threadId,
   Object pageInstanceToken,
+  String? initialPostId,
+  String? initialSubthreadId,
 });
 
 final threadDetailControllerProvider = StateNotifierProvider.autoDispose
@@ -762,6 +832,10 @@ final threadDetailControllerProvider = StateNotifierProvider.autoDispose
       return ThreadDetailController(
         ref.watch(threadDetailRepositoryProvider),
         scope.threadId,
+        initialPostId: scope.initialPostId,
+        initialSubthreadId: scope.initialSubthreadId,
+        resolveEntryTarget: (id) =>
+            ref.read(threadPostTargetProvider(id).future),
       );
     }, dependencies: [viewerScopeProvider, threadDetailRepositoryProvider]);
 

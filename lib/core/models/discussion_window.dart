@@ -23,15 +23,25 @@ class DiscussionWindow<T> {
 
 /// 最多保留 120 条正文。页边界保留各自的游标，裁剪后仍能反向读取。
 class DiscussionWindowBuffer<T> {
-  DiscussionWindowBuffer(DiscussionWindow<T> first)
+  DiscussionWindowBuffer(DiscussionWindow<T> first, {this.weightOf})
     : pages = List.unmodifiable([first]),
       maxNumber = first.maxNumber,
       total = first.total;
 
-  DiscussionWindowBuffer._(this.pages, this.maxNumber, this.total);
+  DiscussionWindowBuffer._(
+    this.pages,
+    this.maxNumber,
+    this.total,
+    this.weightOf,
+  );
 
   static const maximumItems = 120;
+  static const maximumContentWeight = 1024 * 1024;
+  static const minimumRetainedPages = 3;
   final List<DiscussionWindow<T>> pages;
+  final int Function(T)? weightOf;
+  int get contentWeight =>
+      items.fold(0, (sum, item) => sum + (weightOf?.call(item) ?? 0));
 
   List<T> get items => List.unmodifiable(pages.expand((page) => page.items));
   String? get beforeCursor => pages.first.beforeCursor;
@@ -57,6 +67,7 @@ class DiscussionWindowBuffer<T> {
         ]),
         maxNumber,
         total,
+        weightOf,
       );
 
   DiscussionWindowBuffer<T> removeWhere(bool Function(T) remove) {
@@ -74,6 +85,7 @@ class DiscussionWindowBuffer<T> {
       ]),
       maxNumber,
       (total - removedCount).clamp(0, total),
+      weightOf,
     );
   }
 
@@ -96,7 +108,14 @@ class DiscussionWindowBuffer<T> {
     );
     final next = before ? [normalized, ...pages] : [...pages, normalized];
     while (next.fold(0, (sum, value) => sum + value.items.length) >
-        maximumItems) {
+            maximumItems ||
+        (weightOf != null &&
+            next.where((page) => page.items.isNotEmpty).length >
+                minimumRetainedPages &&
+            next
+                    .expand((page) => page.items)
+                    .fold(0, (sum, item) => sum + weightOf!(item)) >
+                maximumContentWeight)) {
       final removed = before ? next.last : next.first;
       if (visibleId != null &&
           removed.items.any((item) => idOf(item) == visibleId)) {
@@ -133,6 +152,7 @@ class DiscussionWindowBuffer<T> {
       List.unmodifiable(next),
       page.maxNumber,
       page.total,
+      weightOf,
     );
   }
 }

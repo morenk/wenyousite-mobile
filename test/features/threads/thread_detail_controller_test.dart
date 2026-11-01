@@ -8,6 +8,53 @@ import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.d
 import '../../support/discussion_window_fixture.dart';
 
 void main() {
+  for (final restricted in [false, true]) {
+    test('后台统计不打断预取，撤权时拒绝迟到正文 restricted=$restricted', () async {
+      final metadata = Completer<ThreadDetailModel>();
+      final page = Completer<CursorPage<ThreadFloorModel>>();
+      var reads = 0;
+      final repository = _FakeThreadDetailRepository(
+        onThread: (_) async => ++reads == 1 ? _detail : metadata.future,
+        onFloors: (_, cursor) async => cursor == null
+            ? CursorPage(
+                items: [_floor('first')],
+                cursor: 'next',
+                hasMore: true,
+              )
+            : page.future,
+      );
+      final controller = ThreadDetailController(
+        repository,
+        'thread-1',
+        autoStart: false,
+      );
+      addTearDown(controller.dispose);
+      await controller.loadInitial();
+      final prefetch = controller.loadAdjacent();
+      final refresh = controller.refreshMetadata(background: true);
+      expect(controller.state.isPrefetchingFloors, isTrue);
+      if (restricted) {
+        metadata.completeError(
+          const ApiFailure(httpStatus: 403, userMessage: '无法查看'),
+        );
+      } else {
+        metadata.complete(_detail);
+      }
+      await refresh;
+      page.complete(CursorPage(items: [_floor('late')], hasMore: false));
+      await prefetch;
+      expect(
+        controller.state.floors.map((floor) => floor.id),
+        restricted ? isEmpty : ['first', 'late'],
+      );
+      expect(
+        controller.state.phase,
+        restricted ? ThreadDetailPhase.failed : ThreadDetailPhase.ready,
+      );
+      expect(controller.state.isPrefetchingFloors, isFalse);
+    });
+  }
+
   for (final metadataFails in [false, true]) {
     test('删除保留楼层窗口并拒绝迟到分页，统计刷新失败=$metadataFails', () async {
       final stalePage = Completer<CursorPage<ThreadFloorModel>>();

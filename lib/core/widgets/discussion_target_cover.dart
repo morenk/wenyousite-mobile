@@ -31,6 +31,7 @@ class DiscussionTargetCover extends StatefulWidget {
     required this.onBack,
     this.navigationRevision = 0,
     this.targetOffset,
+    this.targetOffsetResolver,
     this.issue,
     this.onRevealed,
     this.onCovered,
@@ -55,6 +56,7 @@ class DiscussionTargetCover extends StatefulWidget {
   final VoidCallback onBack;
   final int navigationRevision;
   final double? targetOffset;
+  final double? Function()? targetOffsetResolver;
   final Widget? issue;
   final VoidCallback? onRevealed;
   final VoidCallback? onCovered;
@@ -187,7 +189,7 @@ class _DiscussionTargetCoverState extends State<DiscussionTargetCover>
         alignDiscussionTarget(
           targetContext,
           widget.scrollController,
-          offset: widget.targetOffset,
+          offset: widget.targetOffsetResolver?.call() ?? widget.targetOffset,
         );
       } else {
         _reveal.handleLayoutChange(
@@ -216,6 +218,8 @@ class _DiscussionTargetCoverState extends State<DiscussionTargetCover>
     _slowTimer?.cancel();
     _revealing = false;
     setState(() => _revealed = true);
+    // 已揭开的正文由阅读锚点保留位置，迟到图片／字体不重新拉回目标顶端。
+    _reveal.releaseForUserNavigation();
     widget.onRevealed?.call();
     unawaited(
       SemanticsService.sendAnnouncement(
@@ -258,6 +262,7 @@ class _DiscussionTargetCoverState extends State<DiscussionTargetCover>
         requestRebuild: () => setState(() {}),
         onAligned: _onAligned,
         targetOffset: widget.targetOffset,
+        targetOffsetResolver: widget.targetOffsetResolver,
       );
     } else {
       _pageScheduler.schedule(

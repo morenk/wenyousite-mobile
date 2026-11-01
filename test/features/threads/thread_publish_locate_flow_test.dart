@@ -13,11 +13,64 @@ import 'package:wenyousite_mobile/features/threads/data/thread_detail_repository
 import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_page.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_target_utils.dart';
+import 'package:wenyousite_mobile/features/threads/presentation/thread_floor_filters.dart';
 import '../../support/memory_pending_media_file_store.dart';
 import 'thread_detail_page_test_support.dart';
 import 'thread_publish_locate_support.dart';
 
 void main() {
+  testWidgets('新楼层先显示再后台同步详情，旧统计迟到不覆盖第二次发布', (tester) async {
+    final repository = PublishedFloorRepository();
+    final posts = PublishingPostRepository();
+    await _mount(tester, repository, posts);
+    repository.delayMetadata = true;
+    await _publish(tester, 2);
+    expect(repository.metadataRequests, isEmpty);
+    repository.requests.single.complete(publishedWindow(2));
+    await tester.pumpAndSettle();
+    expect(find.text('已发表的第 2 楼').hitTestable(), findsOneWidget);
+    expect(repository.metadataRequests, hasLength(1));
+    await _publish(tester, 3);
+    repository.requests.last.complete(publishedWindow(3));
+    await tester.pumpAndSettle();
+    expect(find.text('已发表的第 3 楼').hitTestable(), findsOneWidget);
+    expect(repository.metadataRequests, hasLength(2));
+    repository.metadataRequests.last.complete(
+      threadDetailPageTestCopyThreadDetail(
+        repository.detail,
+        subthreads: [
+          const ThreadSubthreadModel(
+            id: 'subthread-1',
+            title: '主线',
+            sortOrder: 1,
+            postCount: 11,
+            postingPolicyLabel: '参与者发言',
+          ),
+          repository.detail.subthreads.last,
+        ],
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      tester
+          .widget<ThreadFloorFilters>(find.byType(ThreadFloorFilters))
+          .floorCount,
+      11,
+    );
+    repository.metadataRequests.first.complete(repository.detail);
+    await tester.pumpAndSettle();
+    expect(
+      tester
+          .widget<ThreadFloorFilters>(find.byType(ThreadFloorFilters))
+          .floorCount,
+      11,
+    );
+    expect(find.text('已发表的第 3 楼'), findsOneWidget);
+    expect(repository.targets, hasLength(2));
+    expect(posts.createInputs, hasLength(2));
+    expect(tester.takeException(), isNull);
+  });
+
   for (final entry in ['plain', 'empty', 'subthread', 'post', 'long']) {
     testWidgets('$entry 入口连续两次发布各读取一次目标窗口，真实文本可见', (tester) async {
       final repository = PublishedFloorRepository(
@@ -47,7 +100,7 @@ void main() {
           find.byKey(const Key('thread-floor-compose')).hitTestable(),
           findsOneWidget,
         );
-        expect(repository.threadCalls, initialThreadCalls);
+        expect(repository.threadCalls, initialThreadCalls + publication - 1);
         if (entry == 'subthread') {
           expect(repository.targets.last.subthread, 'subthread-2');
         }

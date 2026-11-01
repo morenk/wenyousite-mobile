@@ -490,7 +490,8 @@ void registerThreadDetailPageSubthreadNavigationCases() {
     await tester.pumpAndSettle();
 
     expect(repository.latestThreadIds, ['thread-1']);
-    expect(repository.targetPostIds, ['floor-target']);
+    expect(repository.targetPostIds, isEmpty);
+    expect(repository.requestedSubthreads, ['subthread-1', 'subthread-2']);
     expect(find.text('目标楼层内容'), findsOneWidget);
     expect(find.byKey(const Key('discussion-target-cover')), findsNothing);
 
@@ -498,7 +499,12 @@ void registerThreadDetailPageSubthreadNavigationCases() {
     await tester.pumpAndSettle();
 
     expect(repository.latestThreadIds, ['thread-1', 'thread-1']);
-    expect(repository.targetPostIds, ['floor-target', 'floor-target']);
+    expect(repository.targetPostIds, isEmpty);
+    expect(repository.requestedSubthreads, [
+      'subthread-1',
+      'subthread-2',
+      'subthread-2',
+    ]);
   });
 
   testWidgets('最新发言为楼中楼时直接进入父楼层讨论并聚焦回复', (tester) async {

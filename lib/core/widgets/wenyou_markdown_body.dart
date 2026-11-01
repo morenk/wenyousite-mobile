@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:markdown/markdown.dart' as md;
@@ -12,6 +15,7 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_audio_player.dart';
 class WenyouMarkdownBody extends MarkdownBody {
   const WenyouMarkdownBody({
     this.mediaAudios = const {},
+    this.parseRevision,
     required super.data,
     super.selectable,
     super.fitContent,
@@ -26,19 +30,22 @@ class WenyouMarkdownBody extends MarkdownBody {
   });
   final Map<String, MediaAudio> mediaAudios;
 
+  /// 语法语义的显式版本；不包含颜色、字号或字体加载状态。
+  final Object? parseRevision;
+
   @override
-  Widget build(BuildContext context, List<Widget>? children) {
-    final blocks = md.Document(
-      blockSyntaxes: blockSyntaxes,
-      inlineSyntaxes: inlineSyntaxes,
-      extensionSet: extensionSet ?? md.ExtensionSet.gitHubFlavored,
-      encodeHtml: false,
-    ).parse(data);
+  State<MarkdownWidget> createState() => _WenyouMarkdownBodyState();
+
+  Widget buildFromNodes(
+    BuildContext context,
+    List<Widget> children,
+    List<md.Node> blocks,
+  ) {
     // 上游在相邻顶层块之间插入 SizedBox。只收紧正文段落之间的
     // 间距；标题、列表、引用及图片仍保持既有块间距和内部结构。
     final mapped = <Widget>[];
-    for (var index = 0; index < (children?.length ?? 0); index++) {
-      final child = children![index];
+    for (var index = 0; index < children.length; index++) {
+      final child = children[index];
       if (children.length == blocks.length * 2 - 1 && index.isEven) {
         final audio = MarkdownAudioProjection.fromBlock(
           blocks[index ~/ 2],
@@ -91,6 +98,106 @@ class WenyouMarkdownBody extends MarkdownBody {
             (child) => child is md.Element && child.tag == 'img',
           ) ??
           false);
+}
+
+/// 使用上游公开 builder，AST 只属于此正文 State，销毁时随正文释放。
+class _WenyouMarkdownBodyState extends State<WenyouMarkdownBody>
+    implements MarkdownBuilderDelegate {
+  List<md.Node>? _nodes;
+  List<Widget>? _children;
+  final _recognizers = <GestureRecognizer>[];
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _children = null;
+  }
+
+  @override
+  void didUpdateWidget(covariant WenyouMarkdownBody oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.data != oldWidget.data ||
+        widget.parseRevision != oldWidget.parseRevision ||
+        widget.extensionSet != oldWidget.extensionSet ||
+        (widget.parseRevision == null &&
+            (!listEquals(widget.blockSyntaxes, oldWidget.blockSyntaxes) ||
+                !listEquals(
+                  widget.inlineSyntaxes,
+                  oldWidget.inlineSyntaxes,
+                )))) {
+      _nodes = null;
+    }
+    _children = null;
+  }
+
+  @override
+  void reassemble() {
+    super.reassemble();
+    _nodes = null;
+    _children = null;
+  }
+
+  void _disposeRecognizers() {
+    for (final recognizer in _recognizers) {
+      recognizer.dispose();
+    }
+    _recognizers.clear();
+  }
+
+  @override
+  void dispose() {
+    _disposeRecognizers();
+    super.dispose();
+  }
+
+  @override
+  GestureRecognizer createLink(String text, String? href, String title) {
+    final recognizer = TapGestureRecognizer()
+      ..onTap = () => widget.onTapLink?.call(text, href, title);
+    _recognizers.add(recognizer);
+    return recognizer;
+  }
+
+  @override
+  TextSpan formatText(MarkdownStyleSheet styleSheet, String code) =>
+      widget.syntaxHighlighter?.format(code.replaceFirst(RegExp(r'\n$'), '')) ??
+      TextSpan(
+        style: styleSheet.code,
+        text: code.replaceFirst(RegExp(r'\n$'), ''),
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    final nodes = _nodes ??= md.Document(
+      blockSyntaxes: widget.blockSyntaxes,
+      inlineSyntaxes: widget.inlineSyntaxes,
+      extensionSet: widget.extensionSet ?? md.ExtensionSet.gitHubFlavored,
+      encodeHtml: false,
+    ).parseLines(const LineSplitter().convert(widget.data));
+    if (_children == null) {
+      _disposeRecognizers();
+      _children = MarkdownBuilder(
+        delegate: this,
+        selectable: widget.selectable,
+        styleSheet: MarkdownStyleSheet.fromTheme(
+          Theme.of(context),
+        ).merge(widget.styleSheet),
+        imageDirectory: widget.imageDirectory,
+        imageBuilder: widget.imageBuilder,
+        checkboxBuilder: widget.checkboxBuilder,
+        bulletBuilder: widget.bulletBuilder,
+        builders: widget.builders,
+        paddingBuilders: widget.paddingBuilders,
+        fitContent: widget.fitContent,
+        listItemCrossAxisAlignment: widget.listItemCrossAxisAlignment,
+        onSelectionChanged: widget.onSelectionChanged,
+        onTapText: widget.onTapText,
+        contextMenuBuilder: widget.contextMenuBuilder,
+        softLineBreak: widget.softLineBreak,
+      ).build(nodes);
+    }
+    return widget.buildFromNodes(context, _children!, nodes);
+  }
 }
 
 Widget _allowInlineHeight(Widget widget, [TextStyle? headingStyle]) {

@@ -11,6 +11,36 @@ import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.d
 import '../threads/thread_detail_page_collaboration_repositories.dart';
 
 void main() {
+  test('回复自动定位跨重建只读一次目标窗口，失败停止并允许显式重试', () async {
+    final repo = _Repository(1000);
+    final controller = PostDiscussionController(repo, (
+      rootPostId: 'root',
+      focusedReplyId: null,
+    ), autoStart: false);
+    addTearDown(controller.dispose);
+    await controller.load();
+    final initial = repo.requests.length;
+    final pending = Completer<void>();
+    repo.pending = pending;
+    repo.failure = const ApiFailure(httpStatus: 429, userMessage: '请稍后重试');
+    final reads = [
+      for (var frame = 0; frame < 20; frame++) controller.locateReply('400'),
+    ];
+    final loading = controller.state.isPrefetchingReplies;
+    final attempts = repo.requests.length - initial;
+    pending.complete();
+    await Future.wait(reads);
+    expect(attempts, 1);
+    expect(loading, isTrue);
+    expect(controller.state.isPrefetchingReplies, isFalse);
+    expect(controller.state.transientFailure?.httpStatus, 429);
+    repo.pending = null;
+    repo.failure = null;
+    await controller.locateReply('400');
+    expect(repo.requests.length, initial + 2);
+    expect(controller.state.replies.any((reply) => reply.id == '400'), isTrue);
+  });
+
   for (final count in [1000, 5000, 10000]) {
     test('两种讨论 $count 条长短正文与图片混排，定位一请求且双向缓存不超过 120', () async {
       final repo = _Repository(count);
