@@ -12,7 +12,8 @@ import '../test/features/threads/thread_detail_page_test_support.dart';
 import 'reading_profile_fixture.dart';
 
 void main() {
-  final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+  final binding = _ReadingProfileBinding();
+  binding.framePolicy = LiveTestWidgetsFlutterBindingFramePolicy.fullyLive;
   testWidgets('离线千层连续阅读、折返和慢响应', (tester) async {
     expect(kProfileMode, isTrue, reason: '仅允许真机 Profile 性能测量');
     final previousHttp = HttpOverrides.current;
@@ -60,7 +61,8 @@ void main() {
           child: threadDetailPageTestDetailApp(repository),
         ),
       );
-      await _waitForReading(tester);
+      await _waitForReading(tester, repository);
+      debugPrint('READING_PROFILE ready; begin measured interactions');
       const seconds = int.fromEnvironment(
         'READING_SECONDS',
         defaultValue: 1200,
@@ -78,15 +80,19 @@ void main() {
           Offset(0, cycle % 4 == 3 ? 500 : -650),
           1100,
         );
-        await tester.pumpAndSettle(const Duration(milliseconds: 100));
+        // 真机保留自然帧调度，不以全局停止请求帧作为阅读操作完成条件。
+        await tester.pump(const Duration(milliseconds: 1200));
         if (cycle % 6 == 0) {
-          final before = reading.captureBookmark();
           final target =
               (cycle * 137 + 45) % ReadingProfileRepository.count + 1;
           final started = Stopwatch()..start();
           final priorRequests = repository.requests.length;
-          await _jump(tester, target);
-          await _waitForReading(tester);
+          final before = await _jump(
+            tester,
+            target,
+            beforeSubmit: reading.captureBookmark,
+          );
+          await _waitForReading(tester, repository, targetId: '$target');
           expect(find.byKey(Key('thread-floor-card-$target')), findsOneWidget);
           navigation.add({
             'target': target,
@@ -100,8 +106,15 @@ void main() {
           final back = find.text('回到刚才');
           if (before != null && back.evaluate().isNotEmpty) {
             await tester.tap(back);
-            await _waitForReading(tester);
-            expect(reading.captureBookmark()?.id, before.id);
+            await _waitForReading(tester, repository, targetId: before.id);
+            final returned = reading.captureBookmark();
+            navigation.last.addAll({
+              'beforeId': before.id,
+              'returnedId': returned?.id ?? 'missing',
+              'beforeOffset': before.offset,
+              'returnedOffset': returned?.offset ?? -1,
+            });
+            expect(returned?.id, before.id);
           }
         }
         // 在已有阅读窗口上模拟断网，失败之后只通过下一次显式导航恢复。
@@ -115,7 +128,7 @@ void main() {
           Navigator.of(
             tester.element(find.byKey(const Key('discussion-number-input'))),
           ).pop();
-          await tester.pumpAndSettle();
+          await tester.pump(const Duration(milliseconds: 300));
         }
         if (wall.elapsed.inSeconds - sampledAt >= 30) {
           sampledAt = wall.elapsed.inSeconds;
@@ -138,6 +151,9 @@ void main() {
             'liveImages': cache.liveImageCount,
             'pendingImages': cache.pendingImageCount,
             'windowReads': repository.requests.length,
+            'frameScheduled': binding.hasScheduledFrame,
+            'scrolling':
+                reading.scrollController.position.isScrollingNotifier.value,
             ...frames.take(),
           });
           debugPrint(
@@ -148,7 +164,7 @@ void main() {
         await tester.pump(const Duration(milliseconds: 300));
       }
       await tester.pumpWidget(const SizedBox.shrink());
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 1));
       expect(
         find.byType(ReadingPositionAnchor, skipOffstage: false),
         findsNothing,
@@ -169,6 +185,14 @@ void main() {
         'listenerMetric': '有监听器的 Riverpod provider 数，非全进程订阅数',
       };
     } finally {
+      binding.reportData ??= {};
+      binding.reportData!['reading_profile_partial'] = {
+        'elapsedSeconds': wall.elapsed.inSeconds,
+        'samples': samples,
+        'navigation': navigation,
+        'requests': repository.requests,
+        'imageRequests': imageRequests,
+      };
       binding.removeTimingsCallback(frames.add);
       await tester.pumpWidget(const SizedBox.shrink());
       root.dispose();
@@ -179,34 +203,70 @@ void main() {
   }, timeout: const Timeout(Duration(minutes: 30)));
 }
 
-Future<void> _waitForReading(WidgetTester tester) async {
+Future<void> _waitForReading(
+  WidgetTester tester,
+  ReadingProfileRepository repository, {
+  String? targetId,
+}) async {
+  var stable = 0;
   for (var i = 0; i < 120; i++) {
     await tester.pump(const Duration(milliseconds: 100));
-    if (find.byType(ReadingProgressViewport).evaluate().isNotEmpty &&
+    if (repository.active == 0 &&
+        (targetId == null ||
+            find
+                .byKey(Key('thread-floor-card-$targetId'))
+                .evaluate()
+                .isNotEmpty) &&
+        find.byType(ReadingProgressViewport).evaluate().isNotEmpty &&
         find.byType(ReadingPositionAnchor).evaluate().isNotEmpty &&
         find.byKey(const Key('discussion-number-input')).evaluate().isEmpty &&
         find.byKey(const Key('discussion-target-cover')).evaluate().isEmpty) {
-      await tester.pump(const Duration(milliseconds: 250));
-      return;
+      // 旧窗口仍可见不代表新请求已完成；目标揭开后连续三帧确认。
+      if (++stable >= 3) return;
+    } else {
+      stable = 0;
     }
   }
-  fail('合成阅读页面未在 12 秒内完成定位');
+  fail(
+    '合成阅读页面未在 12 秒内完成定位：'
+    'input=${find.byKey(const Key('discussion-number-input')).evaluate().length}, '
+    'cover=${find.byKey(const Key('discussion-target-cover')).evaluate().length}',
+  );
 }
 
-Future<void> _jump(WidgetTester tester, int number) async {
+Future<ReadingBookmark?> _jump(
+  WidgetTester tester,
+  int number, {
+  ReadingBookmark? Function()? beforeSubmit,
+}) async {
   final capsule = find.byKey(const Key('discussion-position-button'));
   final button = capsule.evaluate().isNotEmpty
       ? capsule
       : find.byKey(const Key('thread-floors-count'));
   await tester.ensureVisible(button);
   await tester.tap(button);
-  await tester.pumpAndSettle();
+  await tester.pump(const Duration(milliseconds: 300));
   await tester.enterText(
     find.byKey(const Key('discussion-number-input')),
     '$number',
   );
-  await tester.tap(find.byKey(const Key('discussion-number-submit')));
-  await tester.pumpAndSettle();
+  // 输入后的 setState 必须完成，才能点击已启用的按钮。
+  await tester.pump(const Duration(milliseconds: 600));
+  final submit = find.byKey(const Key('discussion-number-submit'));
+  expect(tester.widget<FilledButton>(submit).onPressed, isNotNull);
+  await tester.ensureVisible(submit);
+  // 与应用保存书签的点击时点一致，不能取惯性滚动中的更早位置。
+  final bookmark = beforeSubmit?.call();
+  await tester.tap(submit);
+  await tester.pump(const Duration(milliseconds: 300));
+  return bookmark;
+}
+
+/// Profile 不接受测试输入默认的 -1 client ID；登记模拟输入以使用真实 ID。
+/// 这里只测阅读与导航，不把模拟键盘当作原生 IME 性能验收。
+class _ReadingProfileBinding extends IntegrationTestWidgetsFlutterBinding {
+  @override
+  bool get registerTestTextInput => true;
 }
 
 class _Frames {
