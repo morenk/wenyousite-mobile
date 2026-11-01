@@ -30,7 +30,7 @@ EditorLinkInput resolveEditorLinkInput(String input) {
   if (_unsupportedLinkCharacters.hasMatch(candidate) ||
       ((uri.scheme == 'http' || uri.scheme == 'https') && uri.host.isEmpty) ||
       (uri.scheme == 'mailto' && uri.path.isEmpty)) {
-    return (url: null, error: '链接地址不完整或包含无效字符，请检查后重试', extracted: false);
+    return (url: null, error: '链接地址有误，请检查后重试', extracted: false);
   }
   return (url: candidate, error: null, extracted: extracted);
 }
