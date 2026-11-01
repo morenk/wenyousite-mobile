@@ -1,8 +1,8 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_progress_indicator.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_sheet.dart';
 
 enum PendingImageAction { retry, remove }
@@ -123,7 +123,7 @@ class _PendingImageOverlayState extends State<PendingImageOverlay> {
                   child: Center(
                     child: SizedBox.square(
                       dimension: 24,
-                      child: CircularProgressIndicator(
+                      child: WenyouCircularProgressIndicator(
                         strokeWidth: 2,
                         color: tokens.onBrandSurface,
                       ),

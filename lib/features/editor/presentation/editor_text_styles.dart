@@ -8,9 +8,15 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_rich_text_style_spec.dart'
 const wenyouEditorBodyFontSize = WenyouRichTextStyleSpec.defaultBodyFontSize;
 const wenyouEditorBodyHeight = WenyouRichTextStyleSpec.defaultBodyHeight;
 
-DefaultStyles wenyouEditorTextStyles(BuildContext context) {
+DefaultStyles wenyouEditorTextStyles(
+  BuildContext context, {
+  double bodyFontSize = wenyouEditorBodyFontSize,
+}) {
   final tokens = context.wenyouTokens;
-  final spec = WenyouRichTextStyleSpec.resolve(context);
+  final spec = WenyouRichTextStyleSpec.resolve(
+    context,
+    bodyFontSize: bodyFontSize,
+  );
   final textScaler = MediaQuery.textScalerOf(context);
   final markerWidths = <(double, int), double>{};
   double markerWidth(double fontSize, int count) =>
@@ -153,8 +159,14 @@ DefaultStyles wenyouEditorTextStyles(BuildContext context) {
   );
 }
 
-LeadingBlockNodeBuilder wenyouEditorLeadingBlockBuilder(BuildContext context) {
-  final markerStyle = WenyouRichTextStyleSpec.resolve(context).listMarker;
+LeadingBlockNodeBuilder wenyouEditorLeadingBlockBuilder(
+  BuildContext context, {
+  double bodyFontSize = wenyouEditorBodyFontSize,
+}) {
+  final markerStyle = WenyouRichTextStyleSpec.resolve(
+    context,
+    bodyFontSize: bodyFontSize,
+  ).listMarker;
   return (node, config) {
     if (config.attribute != Attribute.ol && config.attribute != Attribute.ul) {
       return null;

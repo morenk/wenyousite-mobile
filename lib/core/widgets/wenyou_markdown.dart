@@ -25,6 +25,7 @@ import 'package:wenyousite_mobile/core/media/media_display.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_link.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_reference.dart';
 import 'package:wenyousite_mobile/core/widgets/discussion_selection_scope.dart';
+import 'package:wenyousite_mobile/core/widgets/markdown_internal_reference_projection.dart';
 import 'package:wenyousite_mobile/core/widgets/markdown_text_color_builder.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_body_divider.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_dice_node.dart';
@@ -102,6 +103,8 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
   late final ValueNotifier<Map<String, WenyouDiceRollDetail>> _diceDetails;
   late String _normalizedData;
   List<MarkdownRenderSegment> _renderSegments = const [];
+  List<int> _segmentImageStarts = const [];
+  List<bool> _segmentSeparators = const [];
   List<InternalReferencePortal> _internalReferences = const [];
   Map<String, md.LinkReference> _imageReferences = const {};
   MarkdownStyleSheet? _styleSheet;
@@ -260,22 +263,42 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
       ),
       imageAlignment: true,
     );
-    final prepared = _prepareInternalReferences(
-      MarkdownInlineBoundary.canonicalizeDocument(normalized),
+    final prepared = projectMarkdownInternalReferences(
+      MarkdownEmptyParagraphs.prepareForLineEditor(
+        MarkdownInlineBoundary.canonicalizeDocument(normalized),
+      ),
     );
-    _normalizedData = MarkdownEmptyParagraphs.prepareForLineEditor(
-      prepared.data,
-    );
-    _renderSegments = MarkdownAlignmentContract.renderSegments(
-      _normalizedData,
-      imageAlignment: true,
-    );
+    _normalizedData = prepared.data;
+    _renderSegments = prepared.segments;
     _internalReferences = prepared.references;
     final referenceDocument = md.Document(
       extensionSet: md.ExtensionSet.gitHubFlavored,
     );
-    referenceDocument.parse(_normalizedData);
+    // 没有引用定义起始行时，避免为图片引用映射再解析整篇正文。
+    if (RegExp(r'\]\s*:').hasMatch(_normalizedData)) {
+      referenceDocument.parse(_normalizedData);
+    }
     _imageReferences = referenceDocument.linkReferences;
+    var imageIndex = 0;
+    _segmentImageStarts = _renderSegments.length == 1
+        ? [0]
+        : [
+            for (final segment in _renderSegments)
+              () {
+                final start = imageIndex;
+                imageIndex += MarkdownImageOccurrenceSyntax.count(
+                  segment.markdown,
+                  references: _imageReferences,
+                );
+                return start;
+              }(),
+          ];
+    _segmentSeparators = _renderSegments.length == 1
+        ? [false]
+        : [
+            for (var i = 0; i < _renderSegments.length; i++)
+              _separatesRenderSegments(i),
+          ];
     _usesPlainTextFastPath =
         widget.enablePlainTextFastPath &&
         prepared.references.isEmpty &&
@@ -292,7 +315,7 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         for (var index = 0; index < _renderSegments.length; index++) ...[
-          if (_separatesRenderSegments(index))
+          if (_segmentSeparators[index])
             SizedBox(height: _styleSheet?.blockSpacing ?? 0),
           KeyedSubtree(
             key: ValueKey(
@@ -304,17 +327,7 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
               _alignedStyleSheet(_renderSegments[index].alignment),
               expandBlockWidth: _renderSegments[index].isAligned,
               alignment: _renderSegments[index].alignment,
-              imageStartIndex: _renderSegments
-                  .take(index)
-                  .fold<int>(
-                    0,
-                    (count, segment) =>
-                        count +
-                        MarkdownImageOccurrenceSyntax.count(
-                          segment.markdown,
-                          references: _imageReferences,
-                        ),
-                  ),
+              imageStartIndex: _segmentImageStarts[index],
             ),
           ),
         ],
@@ -368,6 +381,7 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
     int imageStartIndex = 0,
   }) => WenyouMarkdownBody(
     data: data,
+    parseRevision: (_markdownParseKey, imageStartIndex, _imageReferences),
     mediaAudios: widget.mediaAudios,
     selectable: false,
     // MarkdownBody defaults to fitContent=true, which shrink-wraps its inner
@@ -405,6 +419,9 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
     ],
     builders: {
       MarkdownTextColor.tag: MarkdownTextColorBuilder(
+        codeStyle: styleSheet?.code,
+        strongStyle: styleSheet?.strong,
+        linkStyle: styleSheet?.a,
         enableTextFonts: widget.enableTextFonts,
         onLink: (href) => _openLink(context, href),
         registerRecognizer: _colorRecognizers.add,
@@ -435,7 +452,8 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
         return image;
       }),
       _emptyParagraphTag: _EmptyParagraphMarkdownBuilder(
-        lineHeight: widget.bodyFontSize * widget.bodyHeight,
+        fontSize: widget.bodyFontSize,
+        height: widget.bodyHeight,
       ),
       'wenyou-internal-reference': _InternalReferenceMarkdownBuilder(
         _internalReferences,
@@ -583,20 +601,29 @@ class _EmptyParagraphBlockSyntax extends md.BlockSyntax {
 }
 
 class _EmptyParagraphMarkdownBuilder extends MarkdownElementBuilder {
-  _EmptyParagraphMarkdownBuilder({required this.lineHeight});
+  _EmptyParagraphMarkdownBuilder({
+    required this.fontSize,
+    required this.height,
+  });
 
-  final double lineHeight;
+  final double fontSize;
+  final double height;
 
   @override
   bool isBlockElement() => true;
 
   @override
-  Widget? visitElementAfter(md.Element element, TextStyle? preferredStyle) {
+  Widget? visitElementAfterWithContext(
+    BuildContext context,
+    md.Element element,
+    TextStyle? preferredStyle,
+    TextStyle? parentStyle,
+  ) {
     return SizedBox(
       key: ValueKey(
         'wenyou-markdown-empty-paragraph-${element.attributes['index']}',
       ),
-      height: lineHeight,
+      height: MediaQuery.textScalerOf(context).scale(fontSize) * height,
     );
   }
 }
@@ -737,53 +764,6 @@ class _HorizontalRuleMarkdownBuilder extends MarkdownElementBuilder {
     TextStyle? preferredStyle,
     TextStyle? parentStyle,
   ) => WenyouBodyDivider(fontSize: fontSize);
-}
-
-final _markdownCodePattern = RegExp(
-  r'(`{3,}[^\r\n]*\r?\n[\s\S]*?\r?\n`{3,}|~{3,}[^\r\n]*\r?\n[\s\S]*?\r?\n~{3,}|`[^`\r\n]*`)',
-  unicode: true,
-);
-
-({String data, List<InternalReferencePortal> references})
-_prepareInternalReferences(String source) {
-  final output = StringBuffer();
-  final references = <InternalReferencePortal>[];
-  var offset = 0;
-  for (final match in _markdownCodePattern.allMatches(source)) {
-    _appendInternalReferenceChunk(
-      source.substring(offset, match.start),
-      output,
-      references,
-    );
-    output.write(match.group(0));
-    offset = match.end;
-  }
-  _appendInternalReferenceChunk(source.substring(offset), output, references);
-  return (data: output.toString(), references: List.unmodifiable(references));
-}
-
-void _appendInternalReferenceChunk(
-  String source,
-  StringBuffer output,
-  List<InternalReferencePortal> references,
-) {
-  for (final segment in tokenizeInternalReferenceText(source)) {
-    switch (segment) {
-      case InternalReferencePlainText(:final value):
-        output.write(value);
-      case InternalReferencePortal(:final label, :final reference):
-        final previous = output.isEmpty
-            ? ''
-            : output.toString()[output.length - 1];
-        if (previous == '!' || previous == r'\') {
-          output.write('[$label](${reference.location})');
-          continue;
-        }
-        final index = references.length;
-        references.add(segment);
-        output.write('[[wenyou-internal-reference:v1:$index]]');
-    }
-  }
 }
 
 class _InternalReferenceInlineSyntax extends md.InlineSyntax {

@@ -7,6 +7,8 @@ import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_pagination.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_progress_indicator.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_refresh_indicator.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_settings_body.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_sliver_panel.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
@@ -29,7 +31,7 @@ class WalletPage extends ConsumerWidget {
         backgroundColor: wenyouPersonalPageBackground(context),
         title: const Text('油卡'),
       ),
-      body: RefreshIndicator(
+      body: WenyouRefreshIndicator(
         onRefresh: () => ref.read(provider.notifier).refresh(),
         child: CustomScrollView(
           key: const PageStorageKey('wallet-page-scroll'),
@@ -517,7 +519,7 @@ class _WalletLoading extends StatelessWidget {
         padding: EdgeInsets.symmetric(vertical: tokens.space24),
         child: Column(
           children: [
-            const CircularProgressIndicator(),
+            const WenyouCircularProgressIndicator(),
             SizedBox(height: tokens.space12),
             Text(label),
           ],

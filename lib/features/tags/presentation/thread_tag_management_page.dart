@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -8,6 +7,7 @@ import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_progress_indicator.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_tag_chip.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/tags/application/thread_tag_management_controller.dart';
@@ -148,7 +148,9 @@ class _ThreadTagManagementPageState
                     suffixIcon: state.isSearching
                         ? const Padding(
                             padding: EdgeInsets.all(14),
-                            child: CircularProgressIndicator(strokeWidth: 2),
+                            child: WenyouCircularProgressIndicator(
+                              strokeWidth: 2,
+                            ),
                           )
                         : _searchController.text.isEmpty
                         ? null
@@ -208,7 +210,9 @@ class _ThreadTagManagementPageState
                       trailing: state.mutatingTagId == tag.id
                           ? const SizedBox.square(
                               dimension: 22,
-                              child: CircularProgressIndicator(strokeWidth: 2),
+                              child: WenyouCircularProgressIndicator(
+                                strokeWidth: 2,
+                              ),
                             )
                           : const WenyouIcon(WenyouIconIds.actionAdd),
                       enabled: !state.isBusy && !atLimit,

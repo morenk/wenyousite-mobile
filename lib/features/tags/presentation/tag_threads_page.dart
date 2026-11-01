@@ -7,6 +7,7 @@ import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_page_failure_state.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_pagination.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_refresh_indicator.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_tag_chip.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/tags/application/tag_threads_controller.dart';
@@ -79,7 +80,7 @@ class _TagThreadsPageState extends ConsumerState<TagThreadsPage> {
     final transientCount = state.transientFailure == null ? 0 : 1;
     final contentCount = state.items.isEmpty ? 1 : state.items.length;
     final footerCount = state.items.isEmpty ? 0 : 1;
-    return RefreshIndicator(
+    return WenyouRefreshIndicator(
       onRefresh: () => ref.read(provider.notifier).refresh(),
       child: ListView.builder(
         key: PageStorageKey('tag-threads-${widget.tagId}'),

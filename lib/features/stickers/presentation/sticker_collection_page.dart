@@ -4,6 +4,7 @@ import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_refresh_indicator.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_settings_body.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
@@ -124,7 +125,7 @@ class _StickerCollectionPageState extends ConsumerState<StickerCollectionPage> {
     final collection = state.collection!;
     final tokens = context.wenyouTokens;
     final horizontal = wenyouHorizontalPagePadding(context);
-    return RefreshIndicator(
+    return WenyouRefreshIndicator(
       notificationPredicate: (_) => !_dragging && !state.isBusy,
       onRefresh: notifier.load,
       child: ListView(

@@ -18,7 +18,7 @@ import '../../support/thread_font_store.dart';
 void main() {
   setUpAll(loadDeterministicTestFonts);
 
-  testWidgets('默认居中，七个数字左右等距且点击对应刻度选择准确字号', (tester) async {
+  testWidgets('默认 15，七个数字左右等距且点击对应刻度选择准确字号', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(320, 800);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -30,7 +30,7 @@ void main() {
     expect(widget.min, 0);
     expect(widget.max, 6);
     expect(widget.divisions, 6);
-    expect(widget.value, 3);
+    expect(widget.value, 2);
     final bounds = tester.getRect(slider);
     final centers = [
       for (var size = 13; size <= 19; size++)
@@ -74,7 +74,7 @@ void main() {
     await tester.ensureVisible(entry);
     await tester.tap(entry);
     await tester.pumpAndSettle();
-    expect(_preview(tester), 16);
+    expect(_preview(tester), 15);
     final slider = find.byKey(const Key('thread-font-slider'));
     await tester.ensureVisible(slider);
     final bounds = tester.getRect(slider);
@@ -97,7 +97,7 @@ void main() {
     await tester.ensureVisible(find.byKey(const Key('thread-font-reset')));
     await tester.tap(find.byKey(const Key('thread-font-reset')));
     await tester.pumpAndSettle();
-    expect(_preview(tester), 16);
+    expect(_preview(tester), 15);
     expect(store.saved, ThreadFontPreference.standard);
   });
 
@@ -114,7 +114,7 @@ void main() {
     expect(tester.widget<Slider>(slider).onChanged, isNull);
     store.pending!.complete();
     await tester.pumpAndSettle();
-    expect(_preview(tester), 16);
+    expect(_preview(tester), 15);
     expect(find.text('字号设置保存失败，请重试。'), findsOneWidget);
     store.failWrite = false;
     await tester.ensureVisible(find.byKey(const Key('thread-font-retry')));
@@ -128,12 +128,12 @@ void main() {
     final store = TestThreadFontStore();
     await tester.pumpWidget(_app(store));
     await tester.pumpAndSettle();
-    final node = tester.getSemantics(find.bySemanticsLabel('16'));
-    expect(node.getSemanticsData().value, '16，默认字号');
+    final node = tester.getSemantics(find.bySemanticsLabel('15'));
+    expect(node.getSemanticsData().value, '15，默认字号');
     node.owner!.performAction(node.id, SemanticsAction.increase);
     await tester.pumpAndSettle();
-    expect(_preview(tester), 17);
-    expect(store.saved, ThreadFontPreference.size17);
+    expect(_preview(tester), 16);
+    expect(store.saved, ThreadFontPreference.size16);
     handle.dispose();
   });
 
@@ -176,7 +176,7 @@ void main() {
       await tester.ensureVisible(reset);
       await tester.tap(reset);
       await tester.pumpAndSettle();
-      expect(_preview(tester), 16);
+      expect(_preview(tester), 15);
       expect(tester.takeException(), isNull);
     });
   }

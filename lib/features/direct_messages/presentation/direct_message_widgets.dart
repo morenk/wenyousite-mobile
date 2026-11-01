@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
@@ -17,6 +16,7 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_anchored_popover.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_atomic_text_editor.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_inline_composer_dock.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_internal_reference_text.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_progress_indicator.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/direct_messages/application/direct_message_pending_media.dart';
 import 'package:wenyousite_mobile/features/direct_messages/domain/direct_message_models.dart';
@@ -665,7 +665,9 @@ class _DirectMessageBubbleState extends ConsumerState<DirectMessageBubble> {
                       padding: EdgeInsets.only(right: 6, bottom: 8),
                       child: SizedBox.square(
                         dimension: 14,
-                        child: CircularProgressIndicator(strokeWidth: 1.5),
+                        child: WenyouCircularProgressIndicator(
+                          strokeWidth: 1.5,
+                        ),
                       ),
                     ),
                   )

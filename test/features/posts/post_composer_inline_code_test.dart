@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:markdown/markdown.dart' as md;
 import 'package:wenyousite_mobile/core/widgets/wenyou_inline_text_elements.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
 
@@ -130,6 +131,12 @@ void main() {
     await postRepliesPageTestPumpUi(tester);
     expect(find.byKey(const Key('post-composer-sheet')), findsNothing);
     expect(repository.updateRequests.single.content, _editedSource);
+    final blocks = md.Document()
+        .parseLines(repository.updateRequests.single.content.split('\n'))
+        .cast<md.Element>();
+    expect(blocks.first.tag, 'blockquote');
+    expect(blocks.first.textContent, '123');
+    expect(blocks.elementAt(1).tag, 'p');
     expect(
       find.byWidgetPredicate(
         (widget) => widget is WenyouInlineCodeSurface && widget.text == '1423',
@@ -147,7 +154,9 @@ void main() {
 
 // 精确复用反馈楼层正文；读写均使用本地仓储，不改动线上楼层。
 const _source = '> 123\n123\n<br />\n`123`\n123\n<br />\n~~123~~\n`123`';
-const _editedSource = '> 123\n123\n<br />\n`1423`\n123\n<br />\n~~123~~\n`123`';
+// 首行之外均为框外正文，保存必须写出引用结束分隔。
+const _editedSource =
+    '> 123\n\n123\n<br />\n`1423`\n123\n<br />\n~~123~~\n`123`';
 
 class _InlineCodePostRepository extends PostRepliesPageTestFakePostRepository {
   PostItem root = postRepliesPageTestRootWithContent(_source);

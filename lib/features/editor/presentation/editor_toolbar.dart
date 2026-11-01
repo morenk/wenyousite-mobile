@@ -10,7 +10,6 @@ import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/application/editor_toolbar_layout.dart';
 import 'package:wenyousite_mobile/core/editor/quill_document_range.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_alignment.dart';
-import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_dice_contract.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_reference.dart';
@@ -20,6 +19,7 @@ import 'package:wenyousite_mobile/features/editor/presentation/editor_clipboard_
 import 'package:wenyousite_mobile/features/editor/presentation/editor_dice_input_tray.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_format_policy.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_heading_tray.dart';
+import 'package:wenyousite_mobile/features/editor/presentation/editor_link_input.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_more_tray.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_tool_area.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_toolbar_buttons.dart';
@@ -502,6 +502,7 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
   }
 
   Widget _buildLinkTray(BuildContext context) {
+    final link = resolveEditorLinkInput(_linkUrlController.text);
     return EditorInlineInputTray(
       key: const Key('editor-link-tray'),
       primaryController: _linkLabelController,
@@ -510,6 +511,7 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
       secondaryLabel: '链接地址',
       primaryError: _linkLabelError,
       secondaryError: _linkUrlError,
+      secondaryHelper: link.extracted ? '将使用链接：${link.url}' : null,
       onBack: () => _setTray(_EditorTray.more),
       onConfirm: _insertLink,
       onInputChanged: _clearLinkErrors,
@@ -702,17 +704,13 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
 
   void _insertLink() {
     final label = _linkLabelController.text.trim();
-    final url = _linkUrlController.text.trim();
-    final uri = Uri.tryParse(url);
+    final link = resolveEditorLinkInput(_linkUrlController.text);
+    final url = link.url;
     final labelError = label.isEmpty ? '请填写显示文字' : null;
-    final urlError =
-        uri == null || !uri.hasScheme || !MarkdownContent.isSafeLink(uri)
-        ? '仅支持 HTTP(S) 或 mailto 链接'
-        : null;
-    if (labelError != null || urlError != null) {
+    if (labelError != null || url == null) {
       setState(() {
         _linkLabelError = labelError;
-        _linkUrlError = urlError;
+        _linkUrlError = link.error;
       });
       return;
     }
@@ -837,7 +835,6 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
   }
 
   void _clearLinkErrors() {
-    if (_linkLabelError == null && _linkUrlError == null) return;
     setState(() {
       _linkLabelError = null;
       _linkUrlError = null;

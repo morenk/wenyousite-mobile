@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
+import 'package:wenyousite_mobile/core/models/discussion_window.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/discussion_target_loading.dart';
@@ -17,6 +18,41 @@ import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_pa
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_target_utils.dart';
 import '../../support/memory_pending_media_file_store.dart';
 import 'thread_detail_page_test_support.dart';
+
+class _TargetWithNextPageRepository
+    extends ThreadDetailPageTestFakeThreadDetailRepository {
+  _TargetWithNextPageRepository({super.postTarget, super.loadMoreFailure});
+
+  @override
+  Future<DiscussionWindow<ThreadFloorModel>> fetchFloorWindow({
+    required String subthreadId,
+    int? number,
+    String? postId,
+    String? cursor,
+    int limit = 20,
+    ThreadFloorOrder order = ThreadFloorOrder.oldest,
+    String? authorId,
+  }) async {
+    final page = await super.fetchFloorWindow(
+      subthreadId: subthreadId,
+      number: number,
+      postId: postId,
+      cursor: cursor,
+      limit: limit,
+      order: order,
+      authorId: authorId,
+    );
+    return DiscussionWindow(
+      items: page.items,
+      total: page.total,
+      maxNumber: page.maxNumber,
+      targetId: page.targetId,
+      targetNumber: page.targetNumber,
+      beforeCursor: page.beforeCursor,
+      afterCursor: postId != null ? 'next-cursor' : page.afterCursor,
+    );
+  }
+}
 
 void registerThreadDetailPageTargetPagingCases() {
   testWidgets('慢目标请求只显示稳定骨架，完成后直接显示目标楼层', (tester) async {
@@ -281,7 +317,7 @@ void registerThreadDetailPageTargetPagingCases() {
   });
 
   testWidgets('目标揭开后普通楼层预取失败只在列表内提示', (tester) async {
-    final repository = ThreadDetailPageTestFakeThreadDetailRepository(
+    final repository = _TargetWithNextPageRepository(
       postTarget: ThreadPostTargetModel(
         requestedPostId: 'floor-1',
         threadId: 'thread-1',
@@ -357,11 +393,11 @@ void registerThreadDetailPageTargetPagingCases() {
     );
     await tester.pump(const Duration(milliseconds: 200));
     expect(tester.getRect(targetFinder), targetRect);
-    expect(repository.requestedSubthreads, ['subthread-1', 'subthread-1']);
-    expect(repository.requestedCursors, [null, null]);
+    expect(repository.requestedSubthreads, ['subthread-1']);
+    expect(repository.requestedCursors, [null]);
   });
 
-  testWidgets('发表楼层后重读真实列表并定位到新楼层', (tester) async {
+  testWidgets('发表楼层后只读目标窗口，不重复查询帖子和默认窗口', (tester) async {
     tester.view.physicalSize = const Size(360, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -377,12 +413,7 @@ void registerThreadDetailPageTargetPagingCases() {
       replies: const [],
     );
     final detailRepository = ThreadDetailPageTestFakeThreadDetailRepository(
-      postTarget: ThreadPostTargetModel(
-        requestedPostId: 'floor-created',
-        threadId: 'thread-1',
-        subthreadId: 'subthread-1',
-        floor: createdFloor,
-      ),
+      mainFloors: [threadDetailPageTestMainFloor],
     );
     final postRepository = ThreadDetailPageTestCreatingPostRepository();
     final authorDirectory =
@@ -439,6 +470,7 @@ void registerThreadDetailPageTargetPagingCases() {
     await tester.tap(find.byKey(const Key('thread-floor-compose')));
     await tester.pumpAndSettle();
     await threadDetailPageTestReplacePostComposerText(tester, '刚发表的楼层');
+    detailRepository.mainFloors.add(createdFloor);
     await tester.tap(find.byKey(const Key('editor-submit')));
     await tester.pumpAndSettle();
 
@@ -446,9 +478,9 @@ void registerThreadDetailPageTargetPagingCases() {
     expect(postRepository.createInputs.single.parentPostId, isNull);
     expect(
       router.routeInformationProvider.value.uri.queryParameters['post'],
-      'floor-created',
+      isNull,
     );
-    expect(detailRepository.targetPostIds, ['floor-created']);
+    expect(detailRepository.targetPostIds, isEmpty);
     expect(detailRepository.requestedSubthreads, [
       'subthread-1',
       'subthread-1',

@@ -56,6 +56,8 @@ galleryList：读取 GalleryList200Response / GalleryPageDto / GalleryImageDto�
 
 ## 6. 状态模型和数据流
 
+性能候选／待负责人验收：只对本进程引擎生成且不可变、尺寸匹配的 PNG 复用其规范编码；恢复文件和其他输入仍完整处理，最终 WebP 校验保留。3 MB 图片约 5 秒是负责人原观察，尚未测得各阶段耗时或确认网络归因，详见[性能候选](../architecture/mobile-performance-candidate.md)。
+
 上传恢复候选：PUT 前即保留媒体身份与归一化文件摘要；网络失败、重签失败及对象缺失不会另建媒体。明确重试先查询同 ID，仍待上传时重签原对象；恢复草稿不申请、重签或 PUT，无身份附件等待手动重试，待重传附件只查询。旧 pending 沿用同 ID 幂等确认/处理查询；只有服务端明确 FAILED 才释放旧身份并允许手动重新上传。预签名地址不持久化。详见 [Sentry 上传恢复候选](../architecture/sentry-upload-recovery-candidate.md)。
 
 同 ID 重签或确认遇到 `40101` 时仍不自动重放 POST；仅会话已成功续期且仍有效的请求允许用户再次明确重试，保留媒体身份。续期失败、普通 401／403／404 与无效会话不开放该恢复入口。
@@ -114,6 +116,8 @@ galleryList：读取 GalleryList200Response / GalleryPageDto / GalleryImageDto�
 
 ## 9. 加载、空数据、错误、重试和冲突状态
 
+本模块加载与下拉刷新复用公共进度组件：未知进度不伪造百分比，系统减少动画时保留静态忙碌反馈和请求生命周期。全项目入口及候选验证范围见[动效实现与复用边界](../architecture/motion-implementation.md)。
+
 音频上传的本机校验、保存和传输超时使用 `AudioUploadFailureReason` 分类；网络层不携带这些新增展示文案。编辑器统一映射具体失败与恢复提示，其他 API 失败经 `UserFacingFailure` 展示；原取消、草稿保留、预算错误身份与重试语义不变。
 
 媒体绑定 409 按冲突展示失败并保留手动重试；不自动重发结果不明确的业务写入。
@@ -171,6 +175,8 @@ galleryList：读取 GalleryList200Response / GalleryPageDto / GalleryImageDto�
 服务端用户 DTO 未提供头像或主页背景的 thumbnail/medium 字段，因此资料页只使用明确原地址。原图、预览、取景框与失败上传输入只在当前页面/autoDispose 生命周期内短暂保留，也不提供后台队列；页面释放、主动取消后需重新选择，进程在 Android 系统选图期间被终止时仅保底恢复富正文、动态/评论和私聊的待选文件，头像与主页背景仍需重新选择。`flutter_image_compress` 没有取消在途 native 编码的接口：用户取消后不会开始对象存储上传且迟到结果会被丢弃，但已经进入平台编码的任务仍可能运行到返回；当前以全局单路准备、像素上限和 Debug 分阶段计时控制与观测风险，是否进一步降低像素阈值需以 Profile/Release 大图数据决定。当前 `flutter_image_compress_common` 仍由插件应用 Kotlin Gradle Plugin，Flutter 已提示未来需迁移到 Built-in Kotlin；现有可解析版本尚未提供该迁移，后续按上游兼容版本单独处理。同一 `mediaId` 的对象缺失恢复、重签、重传与取消边界已进入独立高风险候选，待负责人真机验收；详见 Sentry 上传恢复候选。契约 5.26 新增内容图片图集查询，但当前查看器仍只浏览调用页面已经加载的图片；跨页双向游标、锚点失效与索引未就绪恢复需在独立媒体切片接入。相册浏览和确认取文件由 photo_manager 管理；image_picker 与 Android 系统 Photo Picker 仅承担明确备用选择及既有 lost-data 恢复。
 
 ## 13. 最近审查的契约版本和后端提交
+
+2026-11-01 来源复核：固定已部署 Backend `19a6c4ed48829a781182527faaafce6e788e9e2e`／API `5.44.0-dev.20261024.3`。机器契约与生成客户端无变化，来源同步不改变本模块业务；见[已部署来源核对](../architecture/backend-contract-source-20261101.md)。
 
 2026-10-27 来源复核：固定已部署 Backend `d54313346681eae8f62584d63d07f3315e42381b`／API `5.44.0-dev.20261024.3`。两项任务的来源同步均只更新来源身份与后端字体验证说明，机器契约及生成客户端不变；各自应用行为和验收状态见对应章节。来源证据见[创作可靠性来源核对](../architecture/backend-contract-source-20261027.md)及[更新与回复来源复核](../architecture/mobile-update-reply-contract-source-review.md)。
 

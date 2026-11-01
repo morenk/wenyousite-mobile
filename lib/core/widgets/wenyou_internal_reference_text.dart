@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/animation/wenyou_motion.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_link.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_reference.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_selectable_action_region.dart';
@@ -49,18 +50,21 @@ class _WenyouInternalReferenceTextState
             WidgetSpan(
               alignment: PlaceholderAlignment.baseline,
               baseline: TextBaseline.alphabetic,
-              child: WenyouInternalReferenceChip(
-                key: ValueKey('wenyou-internal-reference-$index'),
-                surfaceKey: ValueKey(
-                  'wenyou-internal-reference-surface-$index',
+              // WidgetSpan 已按段落字号缩放，内部文字不能再次缩放。
+              child: MediaQuery.withNoTextScaling(
+                child: WenyouInternalReferenceChip(
+                  key: ValueKey('wenyou-internal-reference-$index'),
+                  surfaceKey: ValueKey(
+                    'wenyou-internal-reference-surface-$index',
+                  ),
+                  label: label,
+                  style: resolvedStyle,
+                  onTap: () =>
+                      openInternalWenyouLink(context, reference.location),
+                  onLongPress: widget.onLongPressNonText == null
+                      ? null
+                      : _handleNonTextLongPress,
                 ),
-                label: label,
-                style: resolvedStyle,
-                onTap: () =>
-                    openInternalWenyouLink(context, reference.location),
-                onLongPress: widget.onLongPressNonText == null
-                    ? null
-                    : _handleNonTextLongPress,
               ),
             ),
           );
@@ -114,7 +118,7 @@ class _WenyouInternalReferenceTextState
 
 /// Foundation `content.internal-reference` 的移动端阅读态实现。
 ///
-/// 视觉胶囊按正文 em 计算，透明外层保证独立交互仍满足 48dp 命中区。
+/// 行内胶囊按正文 em 计算，不用独立按钮的最小高度撑大正文行。
 class WenyouInternalReferenceChip extends StatefulWidget {
   const WenyouInternalReferenceChip({
     required this.label,
@@ -177,21 +181,11 @@ class _WenyouInternalReferenceChipState
           onTapDown: (_) => setState(() => _pressed = true),
           onTapUp: (_) => setState(() => _pressed = false),
           onTapCancel: () => setState(() => _pressed = false),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(
-              minWidth: WenyouElementContract.interactiveMinimumTarget,
-              minHeight: WenyouElementContract.interactiveMinimumTarget,
-            ),
-            child: Align(
-              widthFactor: 1,
-              heightFactor: 1,
-              child: WenyouInternalReferenceSurface(
-                surfaceKey: widget.surfaceKey,
-                label: widget.label,
-                style: widget.style,
-                stateOpacity: stateOpacity,
-              ),
-            ),
+          child: WenyouInternalReferenceSurface(
+            surfaceKey: widget.surfaceKey,
+            label: widget.label,
+            style: widget.style,
+            stateOpacity: stateOpacity,
           ),
         ),
       ),
@@ -227,7 +221,8 @@ class WenyouInternalReferenceSurface extends StatelessWidget {
     );
     return AnimatedContainer(
       key: surfaceKey,
-      duration: WenyouFoundationMotion.fast,
+      duration: wenyouMotionDuration(context, WenyouFoundationMotion.fast),
+      curve: wenyouStandardMotionCurve,
       padding: EdgeInsets.symmetric(
         horizontal:
             fontSize * WenyouElementContract.internalReferencePaddingInline,
@@ -256,6 +251,7 @@ class WenyouInternalReferenceSurface extends StatelessWidget {
               label,
               softWrap: true,
               style: baseStyle.copyWith(
+                height: WenyouElementContract.internalReferenceLineHeight,
                 color: foreground,
                 fontWeight: FontWeight.w600,
                 decoration: TextDecoration.none,

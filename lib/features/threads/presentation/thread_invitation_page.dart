@@ -7,6 +7,7 @@ import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_progress_indicator.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/thread_feed/thread_feed_catalog.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_invitation_controller.dart';
@@ -24,7 +25,7 @@ class ThreadInvitationPage extends ConsumerWidget {
       appBar: AppBar(title: const Text('私密主题邀请')),
       body: switch (state.phase) {
         ThreadInvitationAccessPhase.loading => const Center(
-          child: CircularProgressIndicator(),
+          child: WenyouCircularProgressIndicator(),
         ),
         ThreadInvitationAccessPhase.failed => _InvitationFailure(
           failure: state.failure,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_progress_indicator.dart';
 
 /// 设置入口的语义图标保持轻底色，不独立成为可点击控件。
 class WenyouSettingsIcon extends StatelessWidget {
@@ -102,7 +103,7 @@ class WenyouSettingsLink extends StatelessWidget {
       trailing: isBusy
           ? SizedBox.square(
               dimension: tokens.space20,
-              child: const CircularProgressIndicator(strokeWidth: 2),
+              child: const WenyouCircularProgressIndicator(strokeWidth: 2),
             )
           : actionable
           ? WenyouIcon(WenyouIconIds.navigationNext, color: color)

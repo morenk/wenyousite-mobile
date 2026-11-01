@@ -16,6 +16,92 @@ import '../../support/editor_link_toolbar.dart';
 void main() {
   setUpAll(loadDeterministicTestFonts);
 
+  testWidgets('当前错误链接可在原选区重新设置并恢复保存', (tester) async {
+    const source = 'https://v.douyin.com/QIwpF-JdM4A/ :6pm mDu:/ H@V.Yz 08/08';
+    final session = RichEditorSession(
+      initialMarkdown: '希尔薇',
+      onMarkdownChanged: (_) {},
+    );
+    addTearDown(session.dispose);
+    session.controller.formatText(0, 3, const LinkAttribute(source));
+    expect(await session.flush(), isFalse);
+    session.controller.updateSelection(
+      const TextSelection(baseOffset: 0, extentOffset: 3),
+      ChangeSource.local,
+    );
+    await _pumpEditor(tester, session);
+    await insertToolbarLink(tester, '希尔薇', source);
+    expect(await session.flush(), isTrue, reason: session.codecFailure);
+    expect(session.codecFailure, isNull);
+    expect(session.controller.document.toPlainText(), '希尔薇\n');
+    expect(session.localMarkdown, '[希尔薇](https://v.douyin.com/QIwpF-JdM4A/)');
+  });
+
+  testWidgets('分享网址在确认前预览，多网址和非法字符不污染原正文', (tester) async {
+    final session = RichEditorSession(
+      initialMarkdown: '希尔薇',
+      onMarkdownChanged: (_) {},
+    );
+    addTearDown(session.dispose);
+    await _pumpEditor(tester, session);
+    await tester.tap(find.byKey(const Key('editor-more')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('链接'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.widgetWithText(TextField, '显示文字'), '希尔薇');
+    await tester.enterText(
+      find.widgetWithText(TextField, '链接地址'),
+      'https://v.douyin.com/QIwpF-JdM4A/ :6pm mDu:/ H@V.Yz 08/08',
+    );
+    await tester.pumpAndSettle();
+    expect(
+      find.text('将使用链接：https://v.douyin.com/QIwpF-JdM4A/'),
+      findsOneWidget,
+    );
+    final before = session.controller.document.toDelta().toJson();
+    for (final invalid in [
+      'https://one.example https://two.example',
+      'https://example.com/a(b)',
+    ]) {
+      await tester.enterText(find.widgetWithText(TextField, '链接地址'), invalid);
+      await tester.tap(find.byKey(const Key('editor-link-insert')));
+      await tester.pumpAndSettle();
+      expect(session.controller.document.toDelta().toJson(), before);
+      expect(find.byKey(const Key('editor-link-tray')), findsOneWidget);
+      expect(await session.flush(), isTrue);
+    }
+  });
+
+  for (final selected in [false, true]) {
+    testWidgets('抖音分享文本只将有效网址写入希尔薇链接 selected=$selected', (tester) async {
+      final session = RichEditorSession(
+        initialMarkdown: selected ? '希尔薇' : '',
+        onMarkdownChanged: (_) {},
+      );
+      addTearDown(session.dispose);
+      session.controller.updateSelection(
+        TextSelection(baseOffset: 0, extentOffset: selected ? 3 : 0),
+        ChangeSource.local,
+      );
+      await _pumpEditor(tester, session);
+      await insertToolbarLink(
+        tester,
+        '希尔薇',
+        'https://v.douyin.com/QIwpF-JdM4A/ :6pm mDu:/ H@V.Yz 08/08',
+      );
+      expect(await session.flush(), isTrue, reason: session.codecFailure);
+      expect(session.localMarkdown, '[希尔薇](https://v.douyin.com/QIwpF-JdM4A/)');
+      final reopened = MarkdownDeltaCodec.decode(session.localMarkdown).delta;
+      expect(reopened.operations.first.data, '希尔薇');
+      expect(
+        reopened.operations.first.attributes?['link'],
+        'https://v.douyin.com/QIwpF-JdM4A/',
+      );
+      expect(find.byType(WenyouInternalReferenceSurface), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+  }
+
   for (final replacement in ['短', '已被替换的正文']) {
     testWidgets('链接托盘保留的选区过期时不覆盖变化后的正文：$replacement', (tester) async {
       final session = RichEditorSession(

@@ -13,6 +13,7 @@ class EditorInlineInputTray extends StatelessWidget {
     this.secondaryLabel,
     this.primaryError,
     this.secondaryError,
+    this.secondaryHelper,
     super.key,
   });
 
@@ -22,6 +23,7 @@ class EditorInlineInputTray extends StatelessWidget {
   final String? secondaryLabel;
   final String? primaryError;
   final String? secondaryError;
+  final String? secondaryHelper;
   final VoidCallback onBack;
   final VoidCallback onConfirm;
   final VoidCallback onInputChanged;
@@ -53,6 +55,8 @@ class EditorInlineInputTray extends StatelessWidget {
               isDense: true,
               labelText: secondaryLabel,
               errorText: secondaryError,
+              helperText: secondaryHelper,
+              helperMaxLines: 3,
             ),
             onChanged: (_) => onInputChanged(),
             onSubmitted: (_) => onConfirm(),

@@ -349,7 +349,19 @@ void _checkSystemFontBoundary(
         );
       }
     }
-    for (final line in source.split('\n')) {
+    // 组合样式仅转发已经解析的正文／代码字体，不引入新的字体家族。
+    // 按文件和完整表达式限定，硬编码家族及页面赋值仍由下方规则拒绝。
+    final fontAssignments =
+        path == 'lib/core/widgets/markdown_text_color_builder.dart'
+        ? source.replaceAll(
+            RegExp(
+              r'fontFamily:\s*(?:nested\.fontFamily|preserveFont\s*'
+              r'\?\s*nested\.fontFamily\s*:\s*codeStyle\?\.fontFamily)\s*,',
+            ),
+            '',
+          )
+        : source;
+    for (final line in fontAssignments.split('\n')) {
       if (!line.contains('fontFamily:')) continue;
       if (line.contains("'monospace'") || line.contains('strut.fontFamily')) {
         continue;

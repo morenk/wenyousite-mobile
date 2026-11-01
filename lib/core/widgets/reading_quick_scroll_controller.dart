@@ -4,6 +4,7 @@ import 'package:flutter/widgets.dart';
 import 'package:wenyousite_mobile/core/widgets/reading_scroll_spec.dart';
 import 'package:wenyousite_mobile/core/widgets/reading_scroll_velocity_tracker.dart';
 import 'package:wenyousite_mobile/core/widgets/reading_scroll_visibility.dart';
+import 'package:wenyousite_mobile/core/widgets/reading_text_anchor.dart';
 
 /// 只属于当前页面的阅读锚点；编号用于显示，ID 和条目内偏移用于恢复。
 class ReadingBookmark {
@@ -12,12 +13,14 @@ class ReadingBookmark {
     required this.number,
     required this.offset,
     required this.scope,
+    this.textAnchor,
   });
 
   final String id;
   final int? number;
   final double offset;
   final Object? scope;
+  final ReadingTextAnchor? textAnchor;
 }
 
 typedef _AnchorInfo = ({String label, String? id, int? number});
@@ -37,6 +40,8 @@ class ReadingQuickScrollController extends ChangeNotifier {
   final VoidCallback onUserNavigation;
   final GlobalKey? pinnedHeaderKey;
   final _anchors = <RenderBox, _AnchorInfo>{};
+  final _textAnchors = ReadingTextAnchors();
+  double? _snapshotPixels;
   ReadingBookmark? _pendingBookmark;
   ReadingBookmark? _visibleBookmark;
   Object? _scope;
@@ -351,6 +356,7 @@ class ReadingQuickScrollController extends ChangeNotifier {
     }
     if (_dragging) return false;
     if (notification is ScrollStartNotification) {
+      _pendingBookmark = null;
       _fingerScrolling =
           notification.dragDetails?.kind == PointerDeviceKind.touch;
       if (_fingerScrolling) _cancelMovement();
@@ -431,6 +437,7 @@ class ReadingQuickScrollController extends ChangeNotifier {
 
   /// 在窗口数据变化前调用；下一次布局中校正，不先绘制错误位置。
   void preserveVisiblePosition() {
+    if (_fingerScrolling || _dragging) return;
     final bookmark = captureBookmark();
     _pendingBookmark = bookmark;
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -440,7 +447,12 @@ class ReadingQuickScrollController extends ChangeNotifier {
 
   double? _adjustForBookmark(ScrollMetrics metrics) {
     final bookmark = _pendingBookmark;
-    if (bookmark == null || bookmark.scope != _scope) return null;
+    if (_fingerScrolling ||
+        _dragging ||
+        bookmark == null ||
+        bookmark.scope != _scope) {
+      return null;
+    }
     for (final entry in _anchors.entries) {
       if (entry.value.id != bookmark.id) continue;
       final box = entry.key;
@@ -451,7 +463,7 @@ class ReadingQuickScrollController extends ChangeNotifier {
       if (viewport == null) return null;
       final delta =
           box.localToGlobal(Offset.zero, ancestor: viewport).dy +
-          bookmark.offset;
+          _offsetInBox(box, bookmark);
       if (delta.abs() <= .5) {
         _pendingBookmark = null;
         return null;
@@ -459,6 +471,37 @@ class ReadingQuickScrollController extends ChangeNotifier {
       return metrics.pixels + delta;
     }
     return null;
+  }
+
+  double _offsetInBox(RenderBox box, ReadingBookmark bookmark) =>
+      bookmark.textAnchor == null
+      ? bookmark.offset
+      : _textAnchors.offset(box, bookmark.textAnchor!) ?? bookmark.offset;
+
+  double? offsetForBookmark(ReadingBookmark? bookmark) {
+    if (bookmark == null) return null;
+    for (final entry in _anchors.entries) {
+      if (entry.value.id == bookmark.id &&
+          entry.key.attached &&
+          entry.key.hasSize) {
+        return _offsetInBox(entry.key, bookmark);
+      }
+    }
+    return bookmark.offset;
+  }
+
+  void _beforeAnchorLayout() {
+    if (!_enabled ||
+        _fingerScrolling ||
+        _dragging ||
+        !scrollController.hasClients ||
+        scrollController.position.isScrollingNotifier.value ||
+        _snapshotPixels == null ||
+        (scrollController.offset - _snapshotPixels!).abs() > .5) {
+      return;
+    }
+    _pendingBookmark ??= _visibleBookmark;
+    scheduleSnapshot();
   }
 
   void scheduleSnapshot() {
@@ -470,6 +513,18 @@ class ReadingQuickScrollController extends ChangeNotifier {
       _configureVisibility();
       if (scrollController.hasClients) {
         final p = scrollController.position;
+        if (p.hasContentDimensions && _pendingBookmark != null) {
+          final adjusted = _adjustForBookmark(p);
+          _pendingBookmark = null;
+          if (adjusted != null && (adjusted - p.pixels).abs() > .5) {
+            _snapshotPixels = null;
+            scrollController.jumpTo(
+              adjusted.clamp(p.minScrollExtent, p.maxScrollExtent),
+            );
+            scheduleSnapshot();
+            return;
+          }
+        }
         if (p.hasContentDimensions && isFollowingEnd) {
           _dragMin = p.minScrollExtent;
           _dragMax = p.maxScrollExtent;
@@ -487,6 +542,7 @@ class ReadingQuickScrollController extends ChangeNotifier {
               : ((p.pixels - p.minScrollExtent) / range).clamp(0, 1);
         }
         _location = _visibleLocation();
+        _snapshotPixels = p.pixels;
       }
       notifyListeners();
     });
@@ -526,6 +582,12 @@ class ReadingQuickScrollController extends ChangeNotifier {
                 number: entry.value.number,
                 offset: viewportTop - y,
                 scope: _scope,
+                textAnchor: _textAnchors.capture(
+                  box,
+                  readingTop: top,
+                  viewportTop: viewportTop,
+                  viewportBottom: bottom,
+                ),
               );
       }
     }
@@ -630,6 +692,7 @@ class _ReadingAnchor extends RenderProxyBox {
 
   @override
   void performLayout() {
+    if (_lastSize != null) controller._beforeAnchorLayout();
     super.performLayout();
     if (_lastSize != null && _lastSize != size) {
       controller._invalidateMeasuredRange();

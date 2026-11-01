@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
@@ -13,6 +12,7 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_discussion_reply_card.dart
 import 'package:wenyousite_mobile/core/widgets/wenyou_markdown.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_overflow_content.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_pagination.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_progress_indicator.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_transient_target_frame.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/editor/editor.dart';
@@ -354,7 +354,7 @@ class ThreadFloorsLoadingState extends StatelessWidget {
         children: [
           const SizedBox.square(
             dimension: 20,
-            child: CircularProgressIndicator(strokeWidth: 2),
+            child: WenyouCircularProgressIndicator(strokeWidth: 2),
           ),
           SizedBox(width: tokens.space12),
           const Expanded(child: Text('正在加载这个子贴的楼层…')),

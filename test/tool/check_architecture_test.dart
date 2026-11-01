@@ -1,7 +1,5 @@
 import 'dart:io';
-
 import 'package:flutter_test/flutter_test.dart';
-
 import '../../tool/check_architecture.dart';
 import 'architecture_test_workspace.dart';
 
@@ -21,6 +19,32 @@ void main() {
       'class Item {}\n',
     );
 
+    expect(collectArchitectureFailures(root), isEmpty);
+  });
+
+  test('加载和刷新必须经过统一重绘与减少动画入口', () {
+    const path = 'lib/features/alpha/presentation/loading.dart';
+    writeArchitectureFixture(
+      root,
+      path,
+      'final spinner = CircularProgressIndicator();\n'
+      'final refresh = RefreshIndicator(onRefresh: load, child: child);\n',
+    );
+    final failures = collectArchitectureFailures(root);
+    expect(
+      failures,
+      contains('$path bypasses shared progress repaint/reduced-motion policy'),
+    );
+    expect(
+      failures,
+      contains('$path bypasses shared refresh reduced-motion policy'),
+    );
+    writeArchitectureFixture(
+      root,
+      path,
+      'final spinner = WenyouCircularProgressIndicator();\n'
+      'final refresh = WenyouRefreshIndicator(onRefresh: load, child: child);\n',
+    );
     expect(collectArchitectureFailures(root), isEmpty);
   });
 
@@ -570,6 +594,42 @@ void main() {
       collectArchitectureFailures(
         root,
       ).any((f) => f.startsWith(editor) && f.contains('fontFamily')),
+      isTrue,
+    );
+  });
+
+  test('Markdown 组合样式允许继承现有字体但不能硬编码字体', () {
+    const builder = 'lib/core/widgets/markdown_text_color_builder.dart';
+    const inherited = '''
+fontFamily: nested.fontFamily,
+fontFamily: preserveFont
+    ? nested.fontFamily
+    : codeStyle?.fontFamily,
+''';
+    writeArchitectureFixture(root, builder, inherited);
+    expect(collectArchitectureFailures(root), isEmpty);
+
+    for (final value in [
+      "'Custom UI'",
+      "preserveFont ? nested.fontFamily : 'Custom UI'",
+      'other.fontFamily',
+    ]) {
+      writeArchitectureFixture(root, builder, 'fontFamily: $value,\n');
+      expect(
+        collectArchitectureFailures(root).any(
+          (failure) =>
+              failure.startsWith(builder) && failure.contains('fontFamily'),
+        ),
+        isTrue,
+      );
+    }
+    writeArchitectureFixture(root, builder, inherited);
+    const page = 'lib/features/alpha/presentation/page.dart';
+    writeArchitectureFixture(root, page, inherited);
+    expect(
+      collectArchitectureFailures(root).any(
+        (failure) => failure.startsWith(page) && failure.contains('fontFamily'),
+      ),
       isTrue,
     );
   });

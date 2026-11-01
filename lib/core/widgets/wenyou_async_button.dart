@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_progress_indicator.dart';
 
 enum WenyouAsyncButtonVariant { filled, tonal, outlined, text }
 
@@ -162,7 +163,7 @@ class WenyouAsyncButton extends StatelessWidget {
           if (isLoading)
             const SizedBox.square(
               dimension: 20,
-              child: CircularProgressIndicator(strokeWidth: 2),
+              child: WenyouCircularProgressIndicator(strokeWidth: 2),
             ),
         ],
       ),

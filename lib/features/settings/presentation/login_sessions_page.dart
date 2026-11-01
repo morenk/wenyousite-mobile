@@ -4,6 +4,7 @@ import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_refresh_indicator.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_settings_body.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/settings/application/login_sessions_controller.dart';
@@ -85,7 +86,7 @@ class _ReadyLoginSessions extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
     final horizontal = wenyouHorizontalPagePadding(context);
-    return RefreshIndicator(
+    return WenyouRefreshIndicator(
       onRefresh: state.isMutating ? () async {} : onRefresh,
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),

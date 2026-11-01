@@ -111,6 +111,8 @@ Android Manifest 明确关闭全量备份，Android 11 及以下和 Android 12+ 
 
 ## 9. 加载、空数据、错误、重试和冲突状态
 
+本模块加载与下拉刷新复用公共进度组件：未知进度不伪造百分比，系统减少动画时保留静态忙碌反馈和请求生命周期。全项目入口及候选验证范围见[动效实现与复用边界](../architecture/motion-implementation.md)。
+
 后台网络恢复候选／待负责人验收：传输失败或 5xx 后，后台基线／轮询与自动会话续期共享 30、60、120、240、300 秒失败冷却，附加有限抖动且总上限五分钟，既有 30 秒计时器在冷却期间跳过网络工作。成功后继续正常节拍，前后台切换不绕过冷却；普通前台操作可立即尝试并继续共享在途续期。账号变化清空冷却，旧周期不更新新账号状态。系统通知展示、权限、本地解析和非传输未知异常不进入网络退避；无响应 Dio unknown 包装的 HttpException 仅增加调度退避，保留原诊断。已展示卡片的去重与提交规则保持。具体故障注入及真机步骤见[网络恢复候选](../architecture/sentry-network-recovery-candidate.md)。
 
 楼中楼恢复前台保位候选保留每次 `resumed` 的元信息及更新检查，继续处理真实强制升级与未知兼容版本；静默检查失败仍保留可用页面。帖子消费者按实际使用的四项支持能力比较，元信息对象更新不再无条件重建讨论状态。会话与可见性失效规则保持，进程回收后的阅读恢复不在本轮范围。证据与未验收项见[候选记录](../architecture/post-replies-resume-candidate.md)。
@@ -185,6 +187,8 @@ Android 的 Debug、Profile 和 Release 均仅支持 `arm64-v8a`，使用 ARM64 
 当前已完成构建策略门禁、全局亮色/黑夜外观、推荐更新忽略、Android HTTPS 在线下载、双层完整性/身份校验与系统安装器、iOS TestFlight 外跳、本地一键发布入口；后台常驻与横幅提醒为候选／待负责人验收。Debug 构建使用独立 `site.wenyou.app.debug` 包名，Profile 性能构建使用 `site.wenyou.app.profile`，两者都避免占用正式更新链；完整门禁与发布入口均会核对线上契约、后端 revision 和 Markdown 版本。自动测试以伪 APK 固定下载与缓存状态机，Android 原生包解析、系统覆盖和后台尽力轮询仍需用 Android 8+ 真机完成最终验收；iOS 构建与上传必须在配置签名的 macOS 上执行。后台 30 秒节拍依赖当前 Flutter 进程与系统调度，留在最近任务不代表 Dart isolate 会持续运行；Doze、厂商省电、网络中断或进程终止都可能延迟/停止检查，不承诺实时送达。V1 不申请豁免、不做 App Links、FCM、WebSocket 或开机恢复。Profile 基线只覆盖固定离线关键交互，不能替代全部真实业务路径的人工手感验收。原生启动层在 Flutter 首帧前仍是静态白色。
 
 ## 13. 最近审查的契约版本和后端提交
+
+2026-11-01 来源复核：固定已部署 Backend `19a6c4ed48829a781182527faaafce6e788e9e2e`／API `5.44.0-dev.20261024.3`。机器契约与生成客户端无变化，来源同步不改变本模块业务；见[已部署来源核对](../architecture/backend-contract-source-20261101.md)。
 
 2026-10-27 来源复核：固定已部署 Backend `d54313346681eae8f62584d63d07f3315e42381b`／API `5.44.0-dev.20261024.3`。两项任务的来源同步均只更新来源身份与后端字体验证说明，机器契约及生成客户端不变；各自应用行为和验收状态见对应章节。来源证据见[创作可靠性来源核对](../architecture/backend-contract-source-20261027.md)及[更新与回复来源复核](../architecture/mobile-update-reply-contract-source-review.md)。
 

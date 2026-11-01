@@ -1,10 +1,10 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/core/application/audio_download.dart';
 import 'package:wenyousite_mobile/core/media/media_audio.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_progress_indicator.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_snack_bar.dart';
 
 class AudioSaveButton extends ConsumerStatefulWidget {
@@ -68,10 +68,7 @@ class _AudioSaveButtonState extends ConsumerState<AudioSaveButton> {
           : SizedBox(
               width: 18,
               height: 18,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                value: MediaQuery.disableAnimationsOf(context) ? 0.7 : null,
-              ),
+              child: WenyouCircularProgressIndicator(strokeWidth: 2),
             ),
     );
   }
