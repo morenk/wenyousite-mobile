@@ -20,6 +20,10 @@
 - 日志：同一 artifacts 目录内 `share-link-before.log`（旧实现两项失败）、`share-link-after.log`、`share-link-regression.log`、`share-link-analyze.log`。工具栏超过 700 行，本轮把输入解析放入独立 `editor_link_input.dart`，未向工具栏继续堆叠解析职责。
 - 原终端 67176 热重载时返回 `Lost connection to device`；附着原进程的尝试也失败，未将此记录为更新成功。负责人明确确认“内容已保存或无需保留，可以重启 Debug”后，才停止旧 Debug 进程并重新启动本任务，保留应用数据。
 - 复验：选中文字“希尔薇”，打开“更多 → 链接”，粘贴完整分享文本，应先看到提取后的网址，再插入并保存；阅读与重开应保留文字和真实目标。已插入的旧错误链接也可在同一选区重新设置后恢复保存。
+- 本轮源码提交 `06b31dad7c3cc8fb45134bcca01407c481061e54`，在原 `e3fb99a3` 候选上补充入口修复；仍包含最新 `dev@b9ec7403`。
+- 2026-11-01 21:24，按负责人授权通过 `npm run dev -- -d 4b9c39b5 --no-pub --dart-define=API_BASE_URL=https://wenyou.site/api/v1` 重启并保留数据安装。包 `site.wenyou.app.debug`，版本 `0.11.0-debug`／101，仅 ARM64；设备更新时间 `2026-11-01 21:24:03`，本地 APK 与设备内 APK SHA-256 均为 `5215b3acad4dfd2a8c2b4864f0fc77380b147930188ad085dae5c76f12a57f24`。
+- 会话 19705 启动并同步文件成功，随后 `r` 再次返回 `Lost connection to device`，不报告热重载成功。应用进程 32016 仍在，设备截图显示应用已进入主题详情；本次交付依据为包含上述源码的已安装 Debug APK，而不是失联会话。截图 `device-share-link-candidate.png` 与三份新增／修改应用文件的 `share-link-source-sha256.txt` 保存在前述 artifacts 目录。
+- 本次 Debug 安装产物来自普通开发入口，不是正式发布，也未执行线上写入 E2E。负责人使用原输入的保存和样式复验仍待确认。
 
 ## 最新 dev 基线整合
 
