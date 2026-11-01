@@ -28,6 +28,7 @@ import 'package:wenyousite_mobile/features/reports/domain/report_models.dart';
 import 'package:wenyousite_mobile/features/reports/presentation/report_widgets.dart';
 import 'package:wenyousite_mobile/features/social/application/thread_subscription_controller.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_detail_controller.dart';
+import 'package:wenyousite_mobile/features/threads/application/thread_published_floor_navigation.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_saved_post.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_app_bar_actions.dart';
@@ -38,6 +39,7 @@ import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_re
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_sections.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_target_utils.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_membership_controls.dart';
+import 'package:wenyousite_mobile/features/threads/presentation/thread_published_floor_reading.dart';
 import 'package:wenyousite_mobile/features/wallet/domain/wallet_models.dart';
 import 'package:wenyousite_mobile/features/wallet/presentation/wallet_widgets.dart';
 
@@ -64,11 +66,13 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
   final _countKey = GlobalKey();
   final _itemListKey = GlobalKey();
   final _entryTargetCoordinator = ThreadDetailEntryTargetCoordinator();
+  final _publishedNavigation = ThreadPublishedFloorNavigation();
   late final _quickScroll = ReadingQuickScrollController(
     scrollController: _subthreadScroll.controller,
     pinnedHeaderKey: _subthreadScroll.headerKey,
     onUserNavigation: () {
       _entryTargetCoordinator.cancelForUserSelection();
+      _publishedNavigation.release();
     },
   );
   String? _lastOpenedReplyTargetId;
@@ -139,18 +143,24 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
   void initState() {
     super.initState();
     _quickScroll.addListener(_readingChanged);
+    _publishedNavigation.addListener(_publishedChanged);
     _selection.addListener(() => _prefetch.resume());
   }
 
-  void _openNumber() => unawaited(
-    showDiscussionNavigation(
-      context: context,
-      navigation: _navigation,
-      replies: false,
-      maxNumber: ref.read(_detailProvider).maxNumber,
-    ),
-  );
+  void _openNumber() {
+    _publishedNavigation.clear();
+    unawaited(
+      showDiscussionNavigation(
+        context: context,
+        navigation: _navigation,
+        replies: false,
+        maxNumber: ref.read(_detailProvider).maxNumber,
+      ),
+    );
+  }
+
   void _cancelNumberNavigation() {
+    _publishedNavigation.clear();
     _navigation.clear();
     _numberTarget = null;
     _entryTargetCoordinator.cancelForUserSelection();
@@ -180,6 +190,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
 
   @override
   void dispose() {
+    _publishedNavigation.dispose();
     _selection.dispose();
     _prefetch.dispose();
     _navigation.dispose();
@@ -195,6 +206,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     if (oldWidget.threadId != widget.threadId ||
         oldWidget.entryTarget != widget.entryTarget) {
       _lastOpenedReplyTargetId = null;
+      _publishedNavigation.clear();
       _navigation.clear();
       _numberTarget = null;
       _targetAttempt += 1;
@@ -226,9 +238,12 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     );
     final targetPostId = _entryTarget.postId;
     final isPostTarget =
-        targetPostId != null && _entryTargetCoordinator.allowsTargetEffects;
+        _publishedNavigation.post == null &&
+        targetPostId != null &&
+        _entryTargetCoordinator.allowsTargetEffects;
     ref.listen(sessionScopeProvider, (previous, next) {
       if (previous == null || previous == next) return;
+      _publishedNavigation.clear();
       _navigation.clear();
       _numberTarget = null;
       _targetAttempt += 1;
@@ -287,6 +302,8 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     _prefetch.update(
       ids: state.floors.map((item) => item.id).toList(),
       ready:
+          !_publishedNavigation.loading &&
+          !(_publishedNavigation.ready && !_publishedNavigation.aligned) &&
           (!isPostTarget || _targetRevealed) &&
           state.phase == ThreadDetailPhase.ready &&
           !state.isLoadingFloors &&
@@ -451,7 +468,23 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
             },
             child: readingBody,
           )
-        : readingBody;
+        : ThreadPublishedFloorReading(
+            navigation: _publishedNavigation,
+            targetKey: _targetKey,
+            itemListKey: _itemListKey,
+            scrollController: _subthreadScroll.controller,
+            targetIndex: targetIndex,
+            itemCount: state.floors.length,
+            onRetry: () {
+              final post = _publishedNavigation.post;
+              if (post != null) unawaited(_locatePublished(post));
+            },
+            onUserScroll: () {
+              _entryTargetCoordinator.cancelForUserSelection();
+              _publishedNavigation.release();
+            },
+            child: readingBody,
+          );
     final canPop = Navigator.maybeOf(context)?.canPop() ?? false;
     final scaffold = Scaffold(
       key: _renderGeometry.scaffoldKey,
@@ -640,6 +673,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
   }
 
   Future<void> _refreshDetail() async {
+    if (_publishedNavigation.post != null) _cancelNumberNavigation();
     final selected = ref.read(_detailProvider).selectedSubthreadId;
     if (selected != null) {
       ref.invalidate(postFloorDiscussionAuthorsProvider(selected));
@@ -795,26 +829,18 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
       unawaited(controller.refreshMetadata());
       return;
     }
+    if (target.kind == PostComposerKind.createFloor ||
+        target.kind == PostComposerKind.editPost) {
+      await _locatePublished(result);
+      return;
+    }
     await controller.refreshMetadata();
     if (!mounted || ref.read(sessionScopeProvider) != openedSessionScope) {
       return;
     }
     switch (target.kind) {
       case PostComposerKind.createFloor || PostComposerKind.editPost:
-        // 保存结果已核验坐标，无需再 GET 同一帖子或重读默认窗口。
-        setState(() {
-          _navigation.clear();
-          _navigation.targetId = result.id;
-          _numberTarget = ThreadPostTargetModel(
-            requestedPostId: result.id,
-            threadId: result.threadId,
-            subthreadId: result.subthreadId,
-            floor: savedPostAsFloor(result),
-          );
-          _targetAttempt++;
-          _targetRevealed = false;
-          _entryTargetCoordinator.rearmForRetry();
-        });
+        break;
       case PostComposerKind.createReply:
         ref.invalidate(threadPostTargetProvider(result.id));
         context.replace(
@@ -823,6 +849,52 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
       case PostComposerKind.upsertBody:
         break;
     }
+  }
+
+  void _publishedChanged() {
+    if (!mounted) return;
+    setState(() {});
+  }
+
+  Future<void> _locatePublished(PostItem post) async {
+    final scope = ref.read(sessionScopeProvider);
+    final controller = ref.read(_detailProvider.notifier);
+    _navigation.clear();
+    _numberTarget = null;
+    _entryTargetCoordinator.cancelForUserSelection();
+    await _publishedNavigation.locate(
+      saved: post,
+      controller: controller,
+      order: ref.read(_detailProvider).floorOrder,
+      authorId: ref.read(_detailProvider).floorAuthorId,
+      active: () =>
+          mounted &&
+          ref.read(sessionScopeProvider) == scope &&
+          ModalRoute.of(context)?.isCurrent == true,
+    );
+    if (!mounted ||
+        !_publishedNavigation.ready ||
+        _publishedNavigation.post?.id != post.id) {
+      return;
+    }
+    final floor = ref
+        .read(_detailProvider)
+        .floors
+        .where((item) => item.id == post.id)
+        .firstOrNull;
+    if (floor == null) return;
+    setState(() {
+      _navigation.targetId = post.id;
+      _numberTarget = ThreadPostTargetModel(
+        requestedPostId: post.id,
+        threadId: post.threadId,
+        subthreadId: post.subthreadId,
+        floor: floor,
+      );
+      _targetAttempt++;
+      _targetRevealed = true;
+      _entryTargetCoordinator.rearmForRetry();
+    });
   }
 
   void _requireLogin() {
