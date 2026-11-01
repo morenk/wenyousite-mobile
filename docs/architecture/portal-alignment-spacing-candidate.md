@@ -55,6 +55,7 @@
 
 ## 候选安装包
 
+- 应用源码提交：`a071b51f4f5dbe192e0debd5b678272e813b7bae`，基于已验收字体修复 `78fd7883`；之后仅补充本条证据，不改变已检查的应用源码和 APK。
 - 应用：`温油站 Debug`，包名 `site.wenyou.app.debug`，版本 `0.11.0-debug`，构建号 `101`，仅 `arm64-v8a`，最低 API 26。
 - 路径：`D:\codex-worktrees\portal-alignment-spacing\wenyousite-mobile\build\app\outputs\flutter-apk\app-debug.apk`。
 - 大小：114386325 字节；构建产物时间：2026-11-01 18:14:41（北京时间）。
