@@ -131,6 +131,11 @@ abstract final class MarkdownEditorProjection {
       if (block == null && i > 0 && i + 1 < owned.length) {
         final next = owned[i + 1].block;
         if (next is MarkdownListItemBlock && next.content.isEmpty) continue;
+        // 引用到正文的一行空白只终止引用，不生成可编辑空段。
+        if (owned[i - 1].block is MarkdownQuoteBlock &&
+            next is MarkdownParagraphBlock) {
+          continue;
+        }
       }
       var end = i;
       var source = raw;

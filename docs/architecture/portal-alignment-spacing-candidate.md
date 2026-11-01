@@ -17,7 +17,7 @@
 - 按局部纯样式例外，仅检查 2 个应用文件和 5 个改动测试文件的格式、静态分析以及上述直接回归，不重复全量门禁。大文件只更新原有尺寸断言，未新增职责或耦合。
 - 受影响 7 个 Dart 文件格式检查与静态分析通过（零问题）；17 项视觉测试在不更新基线的复跑中再次通过，共 130 项直接相关测试通过。ADB 无设备，未启动或接管 Debug 会话。
 - 独立候选仅增量构建一次：`flutter build apk --debug --target-platform android-arm64 --no-pub`，成功（64 秒），v2 签名核验通过。包名 `site.wenyou.app.debug`，应用名 `温油站 Debug`，版本 `0.11.0-debug (101)`，仅 ARM64；未安装、未执行线上写入。
-- 新包：`D:\codex-worktrees\portal-alignment-spacing\wenyousite-mobile\build\app\outputs\flutter-apk\app-debug.apk`，114386325 字节，2026-11-01 18:29:55（北京时间）；SHA-256：`025A4B10DA64EB7D5CFE8018BB8284D3B50917813DC7C45ECBC8C3DB89A53B7C`。
+- 新包：`D:\codex-worktrees\portal-alignment-spacing\wenyousite-mobile\build\app\outputs\flutter-apk\app-debug-57731d5d.apk`，114386325 字节，2026-11-01 18:29:55（北京时间）；SHA-256：`025A4B10DA64EB7D5CFE8018BB8284D3B50917813DC7C45ECBC8C3DB89A53B7C`。
 - 本轮复验：在原帖同一段的连续三行中插入短传送门，确认加门前后行高不变、背景不重叠，编辑／阅读保持相同对齐；13／15／19 字号和系统大字各检查一次。长标签允许自然换行。
 
 ## 原始现象与边界
@@ -88,3 +88,7 @@
 4. 保留普通回车、真正空白行、H2／H3、列表以及传送门点击；编辑态传送门不导航，阅读态指向原目标。
 
 未验证：原私帖完整输入、服务端保存链路、负责人实际字体资源、Android 真机画面与负责人验收。设备检查为空，未安装、未接管其他任务 Debug 会话，也未用 Widget／Golden 冒称原问题已修复。
+
+## 最终负责人验收
+
+2026-11-01 负责人在持续 Debug 会话确认本任务全部改动验收通过并授权提交合并，包括传送门对齐、紧凑行高、字号同步／默认 15 号和后续引用结束边界；最新安装与会话证据见[引用结束边界记录](quote-exit-boundary-candidate.md)。以上候选描述为当时的历史验证记录。

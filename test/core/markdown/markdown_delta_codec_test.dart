@@ -521,7 +521,7 @@ void main() {
     expect(
       MarkdownDeltaCodec.encode(delta),
       '## 标题\n***粗斜***[链接](https://wenyou.site/help)\n'
-      '- 父项\n  - 条目\n\n> 引用\n``a`b``',
+      '- 父项\n  - 条目\n\n> 引用\n\n``a`b``',
     );
   });
 
@@ -574,7 +574,10 @@ void main() {
         ),
       ),
     );
-    expect(MarkdownDeltaCodec.encode(document.delta), source);
+    expect(
+      MarkdownDeltaCodec.encode(document.delta),
+      source.replaceFirst('> 引用\n', '> 引用\n\n'),
+    );
   });
 
   test('未支持的任务列表按 v3 转为安全字面文本', () {
