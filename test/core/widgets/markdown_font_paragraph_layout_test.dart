@@ -68,7 +68,7 @@ void main() {
             .shift(paragraph.localToGlobal(Offset.zero));
         final first = line(0, 3);
         final second = line(4, 7);
-        expect(second.top - first.top, greaterThanOrEqualTo(47.9));
+        expect(second.top - first.top, closeTo(17 * 1.8, 1));
         expect(
           alignment == 'center' ? first.center.dx : first.right,
           closeTo(alignment == 'center' ? 160 : 320, 1),

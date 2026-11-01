@@ -66,11 +66,9 @@ class _InternalReferenceEmbedBuilder extends EmbedBuilder {
       excludeSemantics: true,
       // WidgetSpan 已随段落缩放；内部文字不能再次消费系统缩放。
       child: MediaQuery.withNoTextScaling(
-        child: WenyouInternalReferenceLayout(
-          child: WenyouInternalReferenceSurface(
-            label: label,
-            style: embedContext.textStyle,
-          ),
+        child: WenyouInternalReferenceSurface(
+          label: label,
+          style: embedContext.textStyle,
         ),
       ),
     );

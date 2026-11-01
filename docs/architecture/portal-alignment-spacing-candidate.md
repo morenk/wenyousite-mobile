@@ -1,6 +1,22 @@
 # 同行传送门对齐与行距候选
 
-状态：候选修复，待负责人验收；完整门禁、APK 构建与包信息核验已通过。
+状态：紧凑样式候选／待负责人验收；当前证据见下方“传送门紧凑样式反馈”。上一候选的完整门禁与 APK 证据保留，不代表本轮新源码。
+
+## 传送门紧凑样式反馈
+
+2026-11-01 负责人进一步要求缩小传送门样式，避免同行传送门改变正文行高。上一候选虽然让两态都使用 48dp 行盒，但仍撑高普通正文，因此继续调整，尚未验收完成。
+
+本轮只修改两个展示文件：移除传送门的固定最小尺寸外框，编辑与阅读直接使用相同的 Foundation 紧凑表面；正文 15 号时表面约 23.7dp，可容纳在约 27dp 的正文行内。点击区域跟随胶囊自然尺寸，保留导航、长按、键盘和链接语义。按负责人本轮要求将其作为行内链接，不再套用独立按钮的 48dp 占行尺寸；不修改全局尺寸或 Foundation 发布依赖。长标签仍完整显示并允许自然换行。
+
+- Foundation 再次 fetch tags，最新仍为 `v7.6.0`，与锁定版本一致。
+- 精确回归先在旧样式运行失败：预期 27dp，实测 48dp；取消外框后通过。
+- `test/features/editor/editor_portal_alignment_spacing_test.dart`、`test/core/widgets/markdown_font_paragraph_layout_test.dart`、`test/core/widgets/wenyou_internal_reference_text_test.dart` 共 113 项通过，覆盖三种对齐、13／15／19 字号、明暗、1x／2x、字体 v1／v2、导航和长按。回归直接约束含传送门行与普通正文行高一致。
+- 直接视觉测试为 `test/core/widgets/wenyou_markdown_test.dart`、`test/core/widgets/wenyou_inline_composer_dock_test.dart`、`test/features/editor/editor_embed_builders_test.dart`、`test/features/editor/editor_link_insertion_test.dart`、`test/features/editor/editor_wysiwyg_parity_test.dart`、`test/features/direct_messages/direct_conversation_page_test.dart` 中匹配 `传送门|配对视觉基线|600dp 私信气泡` 的 17 项。已逐图核对 9 张变化的基线。
+- 按局部纯样式例外，仅检查 2 个应用文件和 5 个改动测试文件的格式、静态分析以及上述直接回归，不重复全量门禁。大文件只更新原有尺寸断言，未新增职责或耦合。
+- 受影响 7 个 Dart 文件格式检查与静态分析通过（零问题）；17 项视觉测试在不更新基线的复跑中再次通过，共 130 项直接相关测试通过。ADB 无设备，未启动或接管 Debug 会话。
+- 独立候选仅增量构建一次：`flutter build apk --debug --target-platform android-arm64 --no-pub`，成功（64 秒），v2 签名核验通过。包名 `site.wenyou.app.debug`，应用名 `温油站 Debug`，版本 `0.11.0-debug (101)`，仅 ARM64；未安装、未执行线上写入。
+- 新包：`D:\codex-worktrees\portal-alignment-spacing\wenyousite-mobile\build\app\outputs\flutter-apk\app-debug.apk`，114386325 字节，2026-11-01 18:29:55（北京时间）；SHA-256：`025A4B10DA64EB7D5CFE8018BB8284D3B50917813DC7C45ECBC8C3DB89A53B7C`。
+- 本轮复验：在原帖同一段的连续三行中插入短传送门，确认加门前后行高不变、背景不重叠，编辑／阅读保持相同对齐；13／15／19 字号和系统大字各检查一次。长标签允许自然换行。
 
 ## 原始现象与边界
 
@@ -20,7 +36,7 @@
 - 后端只读镜像 `origin/dev` 与公网 `/meta` 同为 `19a6c4ed48829a781182527faaafce6e788e9e2e`，API `5.44.0-dev.20261024.3`。
 - ADB 初次检查没有已连接设备，无法启动真机 Debug 会话。
 
-## 排查与验证
+## 上一候选的排查与验证
 
 已证实的本地根因与修改：
 
@@ -45,7 +61,7 @@
 
 由于本轮包括旧字号枚举读取映射，采用完整门禁和独立候选包，不套用局部纯样式例外。第二轮 `npm run check:apk -- -TestConcurrency 2` 的格式、全量分析、契约、架构、文档与覆盖检查通过，Flutter 测试为 8196 通过、1 按配置跳过、51 个旧视觉基线失败，未进入构建。失败图已逐图核对并更新；包括账号设置／游客入口中字号摘要从 16 到 15 的单字变化。之后的 4 并发门禁在约 3000 项通过、零失败时，因 `dev` 已合入负责人验收的字体换行修复而主动停止；整合已提交源码后重新验证，不把中止记录当成完整通过。最终验证结果见下节。API、依赖、生成客户端和 Markdown 写入协议不变。
 
-## 最终本地验证
+## 上一候选的本地验证
 
 - 整合后的最终入口：`npm run check:apk -- -TestConcurrency 3`。
 - 全仓格式、应用／生成客户端静态分析、架构、模块文档、API 覆盖、固定契约来源、公网只读兼容检查与生成一致性均通过。
@@ -53,11 +69,11 @@
 - 已逐图核对 65 张受默认 15 号与传送门行盒影响的既有基线，最终全量运行无 Golden 失败。应用只改动 8 个文件（含新提取的投影辅助文件），其余为测试与文档；依赖、锁文件和生成客户端无变化。
 - ARM64 Debug 构建通过，最终门禁返回 0；`apksigner verify --verbose` 验证通过，使用 v2 签名。最终 ADB 检查仍没有设备，未安装候选。
 
-## 候选安装包
+## 上一候选安装包
 
 - 应用源码提交：`a071b51f4f5dbe192e0debd5b678272e813b7bae`，基于已验收字体修复 `78fd7883`；之后仅补充本条证据，不改变已检查的应用源码和 APK。
 - 应用：`温油站 Debug`，包名 `site.wenyou.app.debug`，版本 `0.11.0-debug`，构建号 `101`，仅 `arm64-v8a`，最低 API 26。
-- 路径：`D:\codex-worktrees\portal-alignment-spacing\wenyousite-mobile\build\app\outputs\flutter-apk\app-debug.apk`。
+- 路径：`D:\codex-worktrees\portal-alignment-spacing\wenyousite-mobile\build\app\outputs\flutter-apk\app-debug-a071b51f.apk`（旧包已归档，哈希复核一致）。
 - 大小：114386325 字节；构建产物时间：2026-11-01 18:14:41（北京时间）。
 - SHA-256：`A04C5CD9CC21908F16FCDFC82DB592A789BD7668EEB7F459188187DB9F8A0C10`。
 - 构建未覆盖 API define，使用原默认 `https://wenyou.site/api/v1`；未启动真机会话、未执行线上写入 E2E。该包与正式应用数据独立，复验时应打开 `温油站 Debug`。

@@ -206,6 +206,11 @@ void main() {
                     closeTo(read[i].top - read[i - 1].top, .1),
                     reason: 'edit=$edited read=$read',
                   );
+                  expect(
+                    edited[i].top - edited[i - 1].top,
+                    closeTo(fontSize * wenyouEditorBodyHeight * scale, 1),
+                    reason: '同行传送门不应撑高正文行：edit=$edited',
+                  );
                 }
                 expect(tester.takeException(), isNull);
               },

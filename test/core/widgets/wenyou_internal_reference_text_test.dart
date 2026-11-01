@@ -45,13 +45,15 @@ void main() {
     expect(find.byType(SelectionArea), findsOneWidget);
     expect(find.bySemanticsLabel(RegExp('站内传送门：设定 A')), findsOneWidget);
     final portal = find.byKey(const ValueKey('wenyou-internal-reference-0'));
-    expect(tester.getSize(portal).width, greaterThanOrEqualTo(48));
-    expect(tester.getSize(portal).height, greaterThanOrEqualTo(48));
     final icon = tester.widget<WenyouIcon>(
       find.descendant(of: portal, matching: find.byType(WenyouIcon)),
     );
     expect(icon.semanticId, WenyouIconIds.contentInternalReference);
     final label = tester.widget<Text>(find.text('设定 A'));
+    expect(
+      tester.getSize(portal).height,
+      lessThanOrEqualTo(label.style!.fontSize! * 1.8),
+    );
     expect(label.style?.fontWeight, FontWeight.w600);
     expect(label.style?.decoration, TextDecoration.none);
     final surface = tester.widget<AnimatedContainer>(
