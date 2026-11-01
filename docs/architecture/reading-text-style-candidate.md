@@ -2,6 +2,25 @@
 
 状态：候选／待负责人真机验收。自动检查不代表负责人验收通过。
 
+## 本轮验收反馈：分享链接无法保存
+
+负责人于 2026-11-01 21:04 的原设备反馈无法安全保存，原候选按“验收失败／继续排查”处理，未记录为修复完成。已补充分享链接入口候选，待负责人复验；此前四项文字修复和测试记录保留。
+
+- 原始文字：`希尔薇`；链接输入：`https://v.douyin.com/QIwpF-JdM4A/ :6pm mDu:/ H@V.Yz 08/08`，保留原空格与字符。
+- 设备诊断：`editorEncode`／`markdown.unsafe_link`，`MarkdownCodecException`，一行、3 个文字单元、1 个样式区间、0 个 embed；失败点 `markdown_delta_inline_encoder.dart` 的链接校验，尚未发出保存请求。
+- 已确认根因：面板仅检查 URI 协议，允许整段分享口令成为普通 link 属性；Codec 拒绝含空格的目标。使用原文字与完整输入，空光标／选区两条路径在旧实现均失败，日志 `share-link-before.log`。不放宽 Codec 校验。
+- 新候选仅在链接面板解析单个 HTTP(S) 网址，确认前显示将采用的地址；多网址、无效字符和不完整地址在写入正文前拒绝。普通正文粘贴、已有 Markdown 和已插入的错误链接不静默重写；已有错误链接可重新选择原文字，在链接面板再次设置后恢复保存。
+- 历史样式核对：`2da94487`（PR #78）明确把合法站内链接转为传送门、普通外链保留下划线；本次抖音是外链，此规则保持。
+- 新增原输入、当前错误链接修复恢复、确认前预览、非法输入无损拒绝及真实回复页保存／阅读／重开回归。测试使用内存仓储，未自动提交线上内容；负责人原主题详情的真机保存仍待复验。
+
+本轮涉及链接表单行为，按普通中风险候选执行精确回归、直接受影响测试和全量静态分析；不将前轮纯样式定向检查视为本轮检查结果。
+
+- 检查结果：213 项定向测试通过（以下前 3 个文件 40 项，后 5 个文件 173 项），全量应用静态分析零问题，6 个变更 Dart 文件格式、模块文档与 diff 检查通过。无 Codec、依赖或原生配置变更。
+- 实际测试文件：`test/features/editor/editor_link_input_test.dart`、`test/features/editor/editor_link_insertion_test.dart`、`test/features/posts/post_hyperlink_edit_test.dart`、`test/features/editor/editor_toolbar_test.dart`、`test/features/editor/editor_format_policy_test.dart`、`test/features/editor/editor_selection_history_test.dart`、`test/core/markdown/markdown_delta_semantic_safety_test.dart`、`test/core/markdown/markdown_delta_codec_test.dart`。
+- 日志：同一 artifacts 目录内 `share-link-before.log`（旧实现两项失败）、`share-link-after.log`、`share-link-regression.log`、`share-link-analyze.log`。工具栏超过 700 行，本轮把输入解析放入独立 `editor_link_input.dart`，未向工具栏继续堆叠解析职责。
+- 原终端 67176 热重载时返回 `Lost connection to device`；附着原进程的尝试也失败，未将此记录为更新成功。负责人明确确认“内容已保存或无需保留，可以重启 Debug”后，才停止旧 Debug 进程并重新启动本任务，保留应用数据。
+- 复验：选中文字“希尔薇”，打开“更多 → 链接”，粘贴完整分享文本，应先看到提取后的网址，再插入并保存；阅读与重开应保留文字和真实目标。已插入的旧错误链接也可在同一选区重新设置后恢复保存。
+
 ## 最新 dev 基线整合
 
 - 按负责人要求更新到 `origin/dev@b9ec74038bd71c5563f4c97f3a2d5f9f3528b973`（PR #133）。在原任务分支合入最新 dev，保留已推送的候选历史，不修改 dev。
