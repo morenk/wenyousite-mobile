@@ -1,6 +1,6 @@
-# 引用结束边界候选验收
+# 引用结束边界验收
 
-状态：负责人于 2026-11-01 真机验收通过；集成验证进行中。
+状态：负责人于 2026-11-01 真机验收通过；最终完整门禁通过，修复完成。合并记录见 PR #133。
 
 ## 原始反馈与复现
 
@@ -68,3 +68,14 @@
 首次完整入口 `npm run check -- -TestConcurrency 3` 完成契约、生成一致性、格式、全量静态分析、架构、文档及 API 覆盖检查。Flutter 结果为 8296 项通过／1 项条件跳过／1 项失败，日志 `.dart_tool/quote-exit-integration.log`；失败仅为历史 `post_composer_inline_code_test.dart` 仍要求保存 `> 123\n123`，即未终止引用的旧输出。入口据此正确返回非零，未执行 Windows 工具阶段，不能当作完整门禁通过。
 
 将该测试的保存预期更新为 `> 123\n\n123`，保留原始输入、可见行、空段、逐段样式和重开断言，并新增独立 CommonMark 引用归属核对。该文件 3 项全部重跑通过，日志 `.dart_tool/quote-exit-inline-code-verify.log`。应用源码没有变化，持续 Debug 仍对应 `3866fd0d` 的应用内容。随后重新运行完整入口收敛最终结果。
+
+## 最终完整门禁
+
+2026-11-01 Windows 本地执行 `npm run check -- -TestConcurrency 3 -ContinueAfterFailure`，进程退出码 0，末行 `Wenyou mobile quality gate passed.`。绑定提交 `88439851b7d3a3078ffe673e2cec8bed685a27ca`；它相对 `3866fd0d` 仅更新测试和验收文档，应用源码未变。
+
+- Flutter：8297 项通过、1 项既有条件跳过、0 项失败，22 分 31 秒完成。
+- Windows 发布／调试工具：49/49 通过，0 跳过。
+- OpenAPI、固定契约来源、生成客户端一致性、线上只读兼容、格式、应用／生成包全量静态分析、架构、23 个模块文档与 API 覆盖检查全部通过。
+- 日志：`.dart_tool/quote-exit-integration-final.log`。后续只补验收记录，不再重复应用检查。
+- 结束核验时 ADB 列表为空，原 Debug 会话已报告 `Lost connection to device.` 并退出，不能再声称会话在线。真机验收时的版本和热重载记录保留；本地验收 APK 与日志仍位于该 Worktree，暂保留工作区与任务分支，便于复查和续接调试。
+- PR：https://github.com/morenk/wenyousite-mobile/pull/133。负责人已明确授权合并全部改动，不涉及正式发布或版本晋级。
