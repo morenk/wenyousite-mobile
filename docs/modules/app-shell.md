@@ -304,3 +304,5 @@ Android 的 Debug、Profile 和 Release 均仅支持 `arm64-v8a`，使用 ARM64 
 复制链接后恢复前台提示的候选与定向回归见[验收记录](../architecture/clipboard-own-link-acceptance.md)，原问题仍待负责人真机复验。
 
 5.33 单身份兼容由已读取的精确契约系列识别，映射到内部 legacySingleThreadIdentity；未知契约不猜测支持，不以集合端点错误或 roleMentions 新写关闭替代版本事实。
+
+2026-10-31 发布来源复核：固定已部署 Backend `19a6c4ed48829a781182527faaafce6e788e9e2e`／API `5.44.0-dev.20261024.3`；机器契约和客户端行为不变，见[0.12.0 来源复核](../architecture/backend-contract-source-20261031.md)。

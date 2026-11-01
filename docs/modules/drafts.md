@@ -228,3 +228,5 @@ Markdown 规范化和可见性由编辑器与核心 Markdown 能力保持，数�
 ## 14. 相关代码与架构文档
 
 五槽位正文草稿端口与状态：`lib/features/drafts/application/`；其 API 实现：`lib/features/drafts/data/`；主题创作端口、控制器与 API 适配器：`lib/features/threads/`；通用编辑快照端口与 Drift 适配器：`lib/features/editor/`；数据库：`lib/core/storage/app_database.dart`。参见[编辑器](editor.md)、[持久化](../architecture/persistence.md)。
+
+2026-10-31 发布来源复核：固定已部署 Backend `19a6c4ed48829a781182527faaafce6e788e9e2e`／API `5.44.0-dev.20261024.3`；机器契约和客户端行为不变，见[0.12.0 来源复核](../architecture/backend-contract-source-20261031.md)。

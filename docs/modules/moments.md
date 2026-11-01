@@ -337,3 +337,5 @@ media/application 提供相册与上传端口、唯一任务状态、取消、�
 ## 14. 相关代码与架构文档
 
 端口与状态：`lib/features/moments/application/`；API 与本机草稿适配器：`lib/features/moments/data/`；页面：`lib/features/moments/presentation/`。参见[导航](../architecture/navigation.md)、[API 生成与覆盖审计](../architecture/api-generation.md)、[媒体](media.md)、[收藏表情](stickers.md)、[温油钱包](wallet.md)、[社区举报](reports.md)、[通知](notifications.md)与[用户](users.md)。
+
+2026-10-31 发布来源复核：固定已部署 Backend `19a6c4ed48829a781182527faaafce6e788e9e2e`／API `5.44.0-dev.20261024.3`；机器契约和客户端行为不变，见[0.12.0 来源复核](../architecture/backend-contract-source-20261031.md)。

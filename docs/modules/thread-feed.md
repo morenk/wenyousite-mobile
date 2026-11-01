@@ -201,3 +201,5 @@ Foundation v7.1.0 时间呈现候选／待验收：普通内容不足 72 小时�
 代码：`lib/features/thread_feed/`。参见[依赖边界](../architecture/dependencies.md)、[发现](home.md)、[标签](tags.md)、[主题](threads.md)和[视觉基线](../architecture/visual-baseline.md)。
 
 多播性能边界：16 MiB 仅限制编码字节缓存，128 MiB 限制专用磁盘缓存，待写入最多两项／32 MiB；这些限制不是全部进程内存上限。每个活动播放器独立持有 codec 和当前帧，同 URL 只合并下载。系统内存压力清理编码内存缓存，后台／隐藏页／离屏回收对应解码资源。无并播上限可能提高解码内存、CPU、网络和耗电，受控 Profile 测量与负责人复验见[验收记录](../architecture/thread-cover-start-acceptance.md)。
+
+2026-10-31 发布来源复核：固定已部署 Backend `19a6c4ed48829a781182527faaafce6e788e9e2e`／API `5.44.0-dev.20261024.3`；机器契约和客户端行为不变，见[0.12.0 来源复核](../architecture/backend-contract-source-20261031.md)。

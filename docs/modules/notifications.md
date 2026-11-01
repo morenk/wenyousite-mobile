@@ -243,3 +243,5 @@ V1 仅 API 拉取，不做 FCM、WebSocket、SSE、后台唤醒或后台角标�
 ## 14. 相关代码与架构文档
 
 代码入口：`lib/features/notifications/application/notification_repository_ports.dart`、`lib/features/notifications/application/notification_copy.dart`、`lib/features/notifications/application/notification_navigation.dart`、`lib/features/notifications/data/`、`lib/features/app_shell/application/background_online_poller.dart`、`lib/features/app_shell/presentation/app_scaffold.dart`、`lib/main.dart`。参见[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)、[动态](moments.md)、[站内私聊](direct-messages.md)。
+
+2026-10-31 发布来源复核：固定已部署 Backend `19a6c4ed48829a781182527faaafce6e788e9e2e`／API `5.44.0-dev.20261024.3`；机器契约和客户端行为不变，见[0.12.0 来源复核](../architecture/backend-contract-source-20261031.md)。

@@ -124,3 +124,5 @@ Backend 基线 `5.36.0-dev.20261005.1`／`b5f0e3bb0b99a3f9763b31e3080cb4d4f2e640
 - [原生工具历史反馈记录](../architecture/native-toolbox-candidate.md)
 - [可选历史起名候选](../architecture/historical-names-candidate.md)
 - [进阶起名 v2 反馈候选](../architecture/advanced-names-candidate.md)
+
+2026-10-31 发布来源复核：固定已部署 Backend `19a6c4ed48829a781182527faaafce6e788e9e2e`／API `5.44.0-dev.20261024.3`；机器契约和客户端行为不变，见[0.12.0 来源复核](../architecture/backend-contract-source-20261031.md)。

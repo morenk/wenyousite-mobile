@@ -410,3 +410,5 @@ v5 图片在写入 `postsUpdate`、`postsUpsertBody` 或创建接口前会规范
 独立讨论的主楼层和回复使用共享显式链接复制端口，系统复制成功立即由应用壳记录事件，切出返回不反向提示；普通正文／富文本复制保持原有协议。此行为为待真机复验候选，见[验收记录](../architecture/clipboard-own-link-acceptance.md)。
 
 已知 5.33 单身份环境的首次楼层／回复／BODY 在创建冻结请求前省略 wire identityId，正文、模式、token 和 UUID 继续冻结；草稿外层仍保留所选角色 ID。恢复未知结果后，即使服务已升级，也发送原冻结载荷，不能补上 ID 变成另一请求。
+
+2026-10-31 发布来源复核：固定已部署 Backend `19a6c4ed48829a781182527faaafce6e788e9e2e`／API `5.44.0-dev.20261024.3`；机器契约和客户端行为不变，见[0.12.0 来源复核](../architecture/backend-contract-source-20261031.md)。

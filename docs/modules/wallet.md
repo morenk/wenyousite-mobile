@@ -213,3 +213,5 @@ app-shell 只负责会话、前后台与北京时间边界的签到调度及非�
 ## 14. 相关代码与架构文档
 
 代码入口：`lib/app/app_session_bootstrap.dart`、`lib/features/wallet/application/wallet_repository_ports.dart`、`lib/features/wallet/data/`。参见[应用壳](app-shell.md)、[用户](users.md)、[主题](threads.md)、[动态](moments.md)、[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)、[API 生成和覆盖审计](../architecture/api-generation.md)与[主题帖测试审计](../architecture/thread-detail-test-audit.md)。
+
+2026-10-31 发布来源复核：固定已部署 Backend `19a6c4ed48829a781182527faaafce6e788e9e2e`／API `5.44.0-dev.20261024.3`；机器契约和客户端行为不变，见[0.12.0 来源复核](../architecture/backend-contract-source-20261031.md)。
