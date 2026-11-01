@@ -10,7 +10,16 @@
 - 本轮重新执行原 12 个相关测试文件，并追加传送门、引用边界、字号偏好与 Markdown 入口共 6 个文件；完整清单与结果位于 `D:\codex-artifacts\wenyousite-mobile\text-audit-20261101\latest-dev-test-paths.txt`、`latest-dev-tests.log`。
 - 本轮 18 个文件、253 项定向测试全部通过；8 个受影响 Dart 文件格式与静态分析零问题，23 个模块文档检查及 diff 检查通过。提交前再次 fetch，最新 dev 仍为 `b9ec7403`。
 - 追加的 6 个文件为 `test/features/editor/editor_portal_alignment_spacing_test.dart`、`test/features/posts/post_portal_alignment_test.dart`、`test/features/editor/editor_quote_exit_boundary_test.dart`、`test/features/posts/post_quote_exit_boundary_test.dart`、`test/core/application/thread_font_preference_test.dart`、`test/core/widgets/wenyou_markdown_test.dart`。
-- 当前 ADB 未检测到设备，旧 Debug 会话已不在运行；最新整合候选尚未更新真机，不能用下面首轮截图、安装哈希和 reload 记录代表最新源码。已请求负责人重新连接设备。
+- 整合完成时设备曾断开；负责人重新连接后，已于 2026-11-01 21:03 更新最新基线候选并热重载。最新设备证据见下一节，首轮证据仅作历史保留。
+
+## 最新基线 Debug 真机候选（2026-11-01 21:03）
+
+- 交付源码：`e3fb99a328adc475789ba0f879a95d41af677ecc`，应用源码无未提交修改；更新前核对远端 dev 仍为 `b9ec7403`。253 项定向回归及静态分析结果绑定此源码，本轮仅补充设备记录。
+- 设备 `4b9c39b5`（`2509FPN0BC`），包名 `site.wenyou.app.debug`，版本 `0.11.0-debug`／101；aapt 核验仅含 `arm64-v8a`。旧应用与调试进程已结束，使用本工作区普通 Debug 入口重新启动，保留应用数据。
+- 启动命令：`npm run dev -- -d 4b9c39b5 --no-pub --dart-define=API_BASE_URL=https://wenyou.site/api/v1`；API `/meta` 可达且后端 revision 未变。
+- 包更新时间 `2026-11-01 21:02:44`；本地 `build/app/outputs/flutter-apk/app-debug.apk` 与设备内 `base.apk` SHA-256 均为 `f0c26d7f6dbb5fa782ec2257569369df9a28f1d1e91d2444cce262d771f27544`。
+- 本任务终端会话 67176，启动已包含最新源码；发送 `r` 后返回 `Reloaded 0 libraries in 1,658ms (compile: 123 ms, reload: 0 ms, reassemble: 107 ms)`，reassemble 成功。此会话供负责人继续真机验收。
+- 已查看热重载后的首页截图，正常显示；文件 `D:\codex-artifacts\wenyousite-mobile\text-audit-20261101\device-latest-dev.png`。首页启动检查不替代四处文字问题的负责人验收，未自动发帖或发送私信。
 
 下方首轮基线、测试数和真机记录保留为历史追溯，不作为本轮真机交付凭据。
 
