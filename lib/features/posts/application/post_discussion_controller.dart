@@ -105,12 +105,18 @@ class PostDiscussionController extends StateNotifier<PostDiscussionState> {
       );
       if (!_current(epoch)) return;
       _assertReplies(root, result.page.items);
-      state = _withWindow(DiscussionWindowBuffer(result.page)).copyWith(
-        phase: PostDiscussionPhase.ready,
-        root: root,
-        order: order,
-        authorId: result.author,
-      );
+      state =
+          _withWindow(
+            DiscussionWindowBuffer(
+              result.page,
+              weightOf: (item) => item.contentWeight,
+            ),
+          ).copyWith(
+            phase: PostDiscussionPhase.ready,
+            root: root,
+            order: order,
+            authorId: result.author,
+          );
     } on Object catch (error) {
       if (!_current(epoch)) return;
       final failure = mapApplicationFailure(error, '楼中楼讨论加载失败，请稍后重试。');
@@ -151,7 +157,10 @@ class PostDiscussionController extends StateNotifier<PostDiscussionState> {
       _assertReplies(root, result.page.items);
       beforeWindowApply?.call();
       state = _withWindow(
-        DiscussionWindowBuffer(result.page),
+        DiscussionWindowBuffer(
+          result.page,
+          weightOf: (item) => item.contentWeight,
+        ),
       ).copyWith(root: root, authorId: result.author, isRefreshing: false);
     } on Object catch (error) {
       if (!_current(epoch)) return;
@@ -233,7 +242,10 @@ class PostDiscussionController extends StateNotifier<PostDiscussionState> {
         throw const ApiFailure(userMessage: '未找到该回复。');
       }
       state = _withWindow(
-        DiscussionWindowBuffer(result.page),
+        DiscussionWindowBuffer(
+          result.page,
+          weightOf: (item) => item.contentWeight,
+        ),
       ).copyWith(order: order, authorId: result.author);
       visibleReplyId = id;
       return (id: id, clearedAuthor: result.cleared);
@@ -323,7 +335,7 @@ class PostDiscussionController extends StateNotifier<PostDiscussionState> {
         throw const ApiFailure(userMessage: '回复位置没有更新，请重试。');
       }
       final next = replace
-          ? DiscussionWindowBuffer(page)
+          ? DiscussionWindowBuffer(page, weightOf: (item) => item.contentWeight)
           : window!.extend(
               page,
               before: before,

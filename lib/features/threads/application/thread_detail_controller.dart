@@ -288,7 +288,10 @@ class ThreadDetailController extends StateNotifier<ThreadDetailState> {
       if (!_isCurrent(epoch)) return;
       beforeWindowApply?.call();
       state = _withWindow(
-        DiscussionWindowBuffer(result.page),
+        DiscussionWindowBuffer(
+          result.page,
+          weightOf: (item) => item.contentWeight,
+        ),
         pins: const [],
       ).copyWith(floorAuthorId: result.author);
     } on Object catch (error) {
@@ -613,8 +616,14 @@ class ThreadDetailController extends StateNotifier<ThreadDetailState> {
           !result.page.items.any((item) => item.id == id)) {
         throw const ApiFailure(userMessage: '未找到该楼层，请重试。');
       }
-      state = _withWindow(DiscussionWindowBuffer(result.page), pins: const [])
-          .copyWith(
+      state =
+          _withWindow(
+            DiscussionWindowBuffer(
+              result.page,
+              weightOf: (item) => item.contentWeight,
+            ),
+            pins: const [],
+          ).copyWith(
             selectedSubthreadId: subthreadId,
             floorOrder: order,
             floorAuthorId: result.author,
@@ -710,7 +719,7 @@ class ThreadDetailController extends StateNotifier<ThreadDetailState> {
         throw const ApiFailure(userMessage: '楼层位置没有更新，请重试。');
       }
       final next = replace
-          ? DiscussionWindowBuffer(page)
+          ? DiscussionWindowBuffer(page, weightOf: (item) => item.contentWeight)
           : window!.extend(
               page,
               before: before,
@@ -741,7 +750,10 @@ class ThreadDetailController extends StateNotifier<ThreadDetailState> {
         return;
       }
       visibleFloorId = null;
-      state = _withWindow(DiscussionWindowBuffer(page), pins: page.pinnedItems);
+      state = _withWindow(
+        DiscussionWindowBuffer(page, weightOf: (item) => item.contentWeight),
+        pins: page.pinnedItems,
+      );
     } on Object catch (error) {
       if (!_isCurrent(epoch) || state.selectedSubthreadId != subthreadId) {
         return;

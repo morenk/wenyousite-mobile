@@ -36,6 +36,40 @@ void main() {
     });
   }
 
+  test('短正文保留120项，长正文预算裁剪整页且反向游标与可见页保留', () {
+    var short = DiscussionWindowBuffer(page(1, 1000), weightOf: (_) => 200);
+    var long = DiscussionWindowBuffer(page(1, 1000), weightOf: (_) => 26800);
+    for (var start = 21; start <= 101; start += 20) {
+      short = short.extend(page(start, 1000), before: false, idOf: (i) => '$i');
+      long = long.extend(page(start, 1000), before: false, idOf: (i) => '$i');
+    }
+    expect(short.items.length, 120);
+    expect(long.items, List.generate(60, (i) => i + 61));
+    expect(long.beforeCursor, 'before-61');
+    expect(long.contentWeight, 60 * 26800);
+    final protected = long.extend(
+      page(121, 1000),
+      before: false,
+      idOf: (i) => '$i',
+      visibleId: '65',
+    );
+    expect(protected, same(long));
+    final back = long.extend(
+      page(41, 1000),
+      before: true,
+      idOf: (i) => '$i',
+      visibleId: '65',
+    );
+    expect(back.items.first, 41);
+    expect(back.items, contains(65));
+    expect(back.afterCursor, 'after-100');
+    expect(back.mapItems((i) => i).contentWeight, back.contentWeight);
+    expect(
+      back.removeWhere((i) => i == 50).contentWeight,
+      back.contentWeight - 26800,
+    );
+  });
+
   test('读者在请求期间折返时，迟到的新页不挤掉其锚点', () {
     var buffer = DiscussionWindowBuffer(page(1, 1000));
     for (var start = 21; start <= 101; start += 20) {
