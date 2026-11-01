@@ -114,6 +114,8 @@ capability 由 app 组合层从启动契约注入，前台生命周期由应用�
 
 ## 11. 测试场景与验收条件
 
+- 文字排版（2026-11-01 负责人验收通过）：收到和发出的消息中的站内传送门只随段落缩放一次；覆盖明暗主题、320dp、1×／1.5×／2× 字号，长标签可折行，保留独立点击与长按。见[验收记录](../architecture/reading-text-style-candidate.md)。
+
 - [ ] 后台常驻与系统顶部横幅候选：保留原消息频道及用户偏好，服务停止/切号后的旧结果不得展示。双消息、横幅关闭/勿扰/锁屏和持续 30 分钟的真机结果见[候选验收](../architecture/background-reminders-acceptance.md)。
 
 - [x] 11 个 Direct Messages operationId 的读取、写入、生成 DTO 和空响应均有仓储测试。

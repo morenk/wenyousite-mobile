@@ -419,6 +419,9 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
     ],
     builders: {
       MarkdownTextColor.tag: MarkdownTextColorBuilder(
+        codeStyle: styleSheet?.code,
+        strongStyle: styleSheet?.strong,
+        linkStyle: styleSheet?.a,
         enableTextFonts: widget.enableTextFonts,
         onLink: (href) => _openLink(context, href),
         registerRecognizer: _colorRecognizers.add,
@@ -449,7 +452,8 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
         return image;
       }),
       _emptyParagraphTag: _EmptyParagraphMarkdownBuilder(
-        lineHeight: widget.bodyFontSize * widget.bodyHeight,
+        fontSize: widget.bodyFontSize,
+        height: widget.bodyHeight,
       ),
       'wenyou-internal-reference': _InternalReferenceMarkdownBuilder(
         _internalReferences,
@@ -597,20 +601,29 @@ class _EmptyParagraphBlockSyntax extends md.BlockSyntax {
 }
 
 class _EmptyParagraphMarkdownBuilder extends MarkdownElementBuilder {
-  _EmptyParagraphMarkdownBuilder({required this.lineHeight});
+  _EmptyParagraphMarkdownBuilder({
+    required this.fontSize,
+    required this.height,
+  });
 
-  final double lineHeight;
+  final double fontSize;
+  final double height;
 
   @override
   bool isBlockElement() => true;
 
   @override
-  Widget? visitElementAfter(md.Element element, TextStyle? preferredStyle) {
+  Widget? visitElementAfterWithContext(
+    BuildContext context,
+    md.Element element,
+    TextStyle? preferredStyle,
+    TextStyle? parentStyle,
+  ) {
     return SizedBox(
       key: ValueKey(
         'wenyou-markdown-empty-paragraph-${element.attributes['index']}',
       ),
-      height: lineHeight,
+      height: MediaQuery.textScalerOf(context).scale(fontSize) * height,
     );
   }
 }

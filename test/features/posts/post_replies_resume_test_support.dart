@@ -168,7 +168,20 @@ class RepliesResumeHarness {
     await tester.ensureVisible(finder);
     await pumpReplies(tester);
     final scroll = reading(tester).scrollController;
-    scroll.jumpTo(scroll.offset + 90);
+    // 懒列表完成布局后，ensureVisible 的估算偏移不保证条目已经顶齐。
+    // 按实际几何位置进入目标回复中段，再验证恢复前台是否保持该位置。
+    final viewport = find.byKey(const Key('post-replies-list'));
+    final offset =
+        scroll.offset +
+        tester.getTopLeft(finder).dy -
+        tester.getTopLeft(viewport).dy +
+        90;
+    scroll.jumpTo(
+      offset.clamp(
+        scroll.position.minScrollExtent,
+        scroll.position.maxScrollExtent,
+      ),
+    );
     await pumpReplies(tester);
     final bookmark = reading(tester).captureBookmark()!;
     expect(bookmark.id, 'reply-$number');

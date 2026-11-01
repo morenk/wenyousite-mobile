@@ -598,6 +598,42 @@ void main() {
     );
   });
 
+  test('Markdown 组合样式允许继承现有字体但不能硬编码字体', () {
+    const builder = 'lib/core/widgets/markdown_text_color_builder.dart';
+    const inherited = '''
+fontFamily: nested.fontFamily,
+fontFamily: preserveFont
+    ? nested.fontFamily
+    : codeStyle?.fontFamily,
+''';
+    writeArchitectureFixture(root, builder, inherited);
+    expect(collectArchitectureFailures(root), isEmpty);
+
+    for (final value in [
+      "'Custom UI'",
+      "preserveFont ? nested.fontFamily : 'Custom UI'",
+      'other.fontFamily',
+    ]) {
+      writeArchitectureFixture(root, builder, 'fontFamily: $value,\n');
+      expect(
+        collectArchitectureFailures(root).any(
+          (failure) =>
+              failure.startsWith(builder) && failure.contains('fontFamily'),
+        ),
+        isTrue,
+      );
+    }
+    writeArchitectureFixture(root, builder, inherited);
+    const page = 'lib/features/alpha/presentation/page.dart';
+    writeArchitectureFixture(root, page, inherited);
+    expect(
+      collectArchitectureFailures(root).any(
+        (failure) => failure.startsWith(page) && failure.contains('fontFamily'),
+      ),
+      isTrue,
+    );
+  });
+
   test('README Foundation version must match pubspec ref', () {
     writeArchitectureFixture(
       root,
