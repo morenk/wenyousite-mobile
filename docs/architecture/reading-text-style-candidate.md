@@ -2,6 +2,17 @@
 
 状态：候选／待负责人真机验收。自动检查不代表负责人验收通过。
 
+## 最新 dev 基线整合
+
+- 按负责人要求更新到 `origin/dev@b9ec74038bd71c5563f4c97f3a2d5f9f3528b973`（PR #133）。在原任务分支合入最新 dev，保留已推送的候选历史，不修改 dev。
+- 保留最新 dev 的传送门紧凑高度、发布对齐投影、引用结束边界和字号统一，再叠加本任务四处修复。三个应用文件自动合并后逐项复核；变更记录冲突保留两侧条目。
+- 本轮重新执行原 12 个相关测试文件，并追加传送门、引用边界、字号偏好与 Markdown 入口共 6 个文件；完整清单与结果位于 `D:\codex-artifacts\wenyousite-mobile\text-audit-20261101\latest-dev-test-paths.txt`、`latest-dev-tests.log`。
+- 本轮 18 个文件、253 项定向测试全部通过；8 个受影响 Dart 文件格式与静态分析零问题，23 个模块文档检查及 diff 检查通过。提交前再次 fetch，最新 dev 仍为 `b9ec7403`。
+- 追加的 6 个文件为 `test/features/editor/editor_portal_alignment_spacing_test.dart`、`test/features/posts/post_portal_alignment_test.dart`、`test/features/editor/editor_quote_exit_boundary_test.dart`、`test/features/posts/post_quote_exit_boundary_test.dart`、`test/core/application/thread_font_preference_test.dart`、`test/core/widgets/wenyou_markdown_test.dart`。
+- 当前 ADB 未检测到设备，旧 Debug 会话已不在运行；最新整合候选尚未更新真机，不能用下面首轮截图、安装哈希和 reload 记录代表最新源码。已请求负责人重新连接设备。
+
+下方首轮基线、测试数和真机记录保留为历史追溯，不作为本轮真机交付凭据。
+
 ## 范围与基线
 
 - 分支：`codex/20261101-text-style-regressions`，起点 `origin/dev@faf3ed07`。
@@ -45,7 +56,7 @@
 
 受影响的 8 个 Dart 文件格式检查与 Flutter 静态分析通过、零问题；`npm run docs:check` 通过（23 个模块），`git diff --check` 通过。首次 Dart 分析未完成，已结束后改用 Flutter 分析入口；最终证据为 `flutter-analyze-final.log`。
 
-## Debug 会话
+## 首轮 Debug 会话（历史记录）
 
 负责人已明确授权结束原“修复传送门发布后左对齐”任务的 Debug 会话并切换到本任务。切换时未发现仍连接设备的原 Flutter run／attach 进程，已停止旧 Debug 应用进程后使用本工作区启动普通 Debug，保留应用数据。
 
@@ -53,7 +64,7 @@
 - 目标包：`site.wenyou.app.debug`，版本 `0.11.0-debug`，构建号 101。
 - API：显式 `https://wenyou.site/api/v1`；启动前 `/meta` 可达。
 - 入口：`npm run dev -- -d 4b9c39b5 --dart-define=API_BASE_URL=https://wenyou.site/api/v1`。
-- 会话终端：15990，保持运行供负责人验收；切换工作区后首次编译启动完成，再于 2026-11-01 19:33（北京时间）发送 `r` 热重载。
+- 首轮会话终端：15990（目前已结束）；切换工作区后首次编译启动完成，再于 2026-11-01 19:33（北京时间）发送 `r` 热重载。
 - Reload：`Reloaded 0 libraries in 2,112ms (compile: 141 ms, reload: 0 ms, reassemble: 130 ms)`。本次启动已包含候选代码，因此热重载无需重新加载库，reassemble 成功；不是把另一工作区的旧运行状态当作本候选。
 - 设备包更新时间：`2026-11-01 19:32:32`。本地 `build/app/outputs/flutter-apk/app-debug.apk` 与设备内 `base.apk` 的 SHA-256 均为 `e451bb14e40627b7d066c1c7b69f057c4a3f0c1b33be05c10af69a49b536d6e3`。这是普通 Debug 启动产物，未另造发布包。
 - 已查看设备首页截图，应用正常显示；截图仅证明启动画面，四个问题仍由负责人进入对应内容复验。启动时出现一次私聊未读 GET 网络失败日志，未更换 API，未发起业务写入。

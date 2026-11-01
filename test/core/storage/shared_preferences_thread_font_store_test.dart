@@ -7,10 +7,17 @@ void main() {
   const store = SharedPreferencesThreadFontStore();
   const key = SharedPreferencesThreadFontStore.storageKey;
 
-  test('旧五档保留可用字号，超出上限的 20 和 22 回到 19，读取不改写', () async {
+  test('旧默认改为 15，显式字号保持，读取不改写', () async {
     for (final entry in {
       'small': 14,
-      'standard': 16,
+      'standard': 15,
+      'size15': 15,
+      'size16': 16,
+      'size13': 13,
+      'size14': 14,
+      'size17': 17,
+      'size18': 18,
+      'size19': 19,
       'large': 18,
       'extraLarge': 19,
       'largest': 19,

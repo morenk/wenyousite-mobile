@@ -211,7 +211,7 @@ void registerThreadDetailPageReadingFiltersCases() {
     );
     expect(replyMarkdown, findsOneWidget);
     for (final markdown in tester.widgetList<WenyouMarkdown>(replyMarkdown)) {
-      expect(markdown.bodyFontSize, 16);
+      expect(markdown.bodyFontSize, 15);
       expect(markdown.bodyHeight, 1.8);
     }
     expect(
