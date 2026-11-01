@@ -27,7 +27,7 @@ void main() {
     final container = ProviderScope.containerOf(context);
     final title = Theme.of(context).textTheme.wenyouPageTitle;
     expect(find.byType(WenyouMarkdown), findsAtLeastNWidgets(3));
-    _expectSizes(tester, 16);
+    _expectSizes(tester, 15);
     await container
         .read(threadFontPreferenceControllerProvider.notifier)
         .select(ThreadFontPreference.size19);
@@ -45,7 +45,7 @@ void main() {
     await tester.pumpWidget(postRepliesPageTestPostRepliesApp(container));
     await tester.pumpAndSettle();
     expect(find.byType(WenyouMarkdown), findsAtLeastNWidgets(2));
-    _expectSizes(tester, 16);
+    _expectSizes(tester, 15);
     await container
         .read(threadFontPreferenceControllerProvider.notifier)
         .select(ThreadFontPreference.size14);
@@ -53,7 +53,7 @@ void main() {
     _expectSizes(tester, 14);
   });
 
-  testWidgets('设置不改变其他 Markdown、编辑器基准和系统缩放；富文本保持层级', (tester) async {
+  testWidgets('设置不改变其他 Markdown、共享样式基准和系统缩放；富文本保持层级', (tester) async {
     final container = ProviderContainer();
     addTearDown(container.dispose);
     await container

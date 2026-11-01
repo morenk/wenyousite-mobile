@@ -7,8 +7,8 @@ import 'package:wenyousite_mobile/core/application/thread_font_preference.dart';
 import '../../support/thread_font_store.dart';
 
 void main() {
-  test('七档按 1sp 等距递增，默认 16 位于中央且只用数字标记', () {
-    expect(ThreadFontPreference.standard.fontSize, 16);
+  test('七档按 1sp 等距递增，默认 15 且只用数字标记', () {
+    expect(ThreadFontPreference.standard.fontSize, 15);
     expect(ThreadFontPreference.values.map((value) => value.fontSize), [
       13,
       14,
@@ -18,7 +18,7 @@ void main() {
       18,
       19,
     ]);
-    expect(ThreadFontPreference.standard.index, 3);
+    expect(ThreadFontPreference.standard.index, 2);
     expect(ThreadFontPreference.values.map((value) => value.label), [
       '13',
       '14',
@@ -39,7 +39,7 @@ void main() {
     final controller = container.read(
       threadFontPreferenceControllerProvider.notifier,
     );
-    expect(container.read(threadBodyFontSizeProvider), 16);
+    expect(container.read(threadBodyFontSizeProvider), 15);
     expect(initial.readFailed, isTrue);
     store.failRead = false;
     await controller.retry();
@@ -60,7 +60,7 @@ void main() {
     final save = controller.select(ThreadFontPreference.size18);
     expect(container.read(threadBodyFontSizeProvider), 18);
     await save;
-    expect(container.read(threadBodyFontSizeProvider), 16);
+    expect(container.read(threadBodyFontSizeProvider), 15);
     expect(
       container.read(threadFontPreferenceControllerProvider).failedPreference,
       ThreadFontPreference.size18,

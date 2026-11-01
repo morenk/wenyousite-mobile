@@ -17,6 +17,7 @@ final class MarkdownDeltaEncodingBuffer {
   var _previousLineWasParagraphShape = false;
   var _previousLineWasImageBlock = false;
   var _previousLineWasLiteral = false;
+  var _previousLineWasQuote = false;
   final _listRows = <MarkdownListRow>[];
   bool _listEndsWithBreak = false;
 
@@ -30,6 +31,7 @@ final class MarkdownDeltaEncodingBuffer {
     if (_listEndsWithBreak) output.write('\n');
     _listRows.clear();
     _previousLineWasParagraphShape = false;
+    _previousLineWasQuote = false;
     _openParagraphAlignment = null;
   }
 
@@ -85,6 +87,12 @@ final class MarkdownDeltaEncodingBuffer {
     final isImageBlock = imageAlignment && isStandaloneRegularImage;
     final isParagraphShape = hasContent && !isHeading && !isExcludedBlock;
     final joinsMarkdownParagraph = isParagraphShape && !isImageBlock;
+
+    // CommonMark 会把紧邻引用的普通行当作 lazy continuation；编辑器
+    // 已退出引用时必须写入结构分隔，不能只依赖下一行没有 > 标记。
+    if (_previousLineWasQuote && joinsMarkdownParagraph) {
+      _ensureBlankLine();
+    }
 
     if (alignment != WenyouTextAlignment.left &&
         (!hasContent ||
@@ -149,6 +157,7 @@ final class MarkdownDeltaEncodingBuffer {
     _previousLineWasParagraphShape = joinsMarkdownParagraph;
     _previousLineWasImageBlock = isImageBlock;
     _previousLineWasLiteral = isLiteral;
+    _previousLineWasQuote = attributes?['blockquote'] == true;
     if (!joinsMarkdownParagraph) {
       _openParagraphAlignment = null;
       _openParagraphHasRegularImage = false;

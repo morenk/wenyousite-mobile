@@ -115,7 +115,7 @@ class _WenyouInternalReferenceTextState
 
 /// Foundation `content.internal-reference` 的移动端阅读态实现。
 ///
-/// 视觉胶囊按正文 em 计算，透明外层保证独立交互仍满足 48dp 命中区。
+/// 行内胶囊按正文 em 计算，不用独立按钮的最小高度撑大正文行。
 class WenyouInternalReferenceChip extends StatefulWidget {
   const WenyouInternalReferenceChip({
     required this.label,
@@ -178,21 +178,11 @@ class _WenyouInternalReferenceChipState
           onTapDown: (_) => setState(() => _pressed = true),
           onTapUp: (_) => setState(() => _pressed = false),
           onTapCancel: () => setState(() => _pressed = false),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(
-              minWidth: WenyouElementContract.interactiveMinimumTarget,
-              minHeight: WenyouElementContract.interactiveMinimumTarget,
-            ),
-            child: Align(
-              widthFactor: 1,
-              heightFactor: 1,
-              child: WenyouInternalReferenceSurface(
-                surfaceKey: widget.surfaceKey,
-                label: widget.label,
-                style: widget.style,
-                stateOpacity: stateOpacity,
-              ),
-            ),
+          child: WenyouInternalReferenceSurface(
+            surfaceKey: widget.surfaceKey,
+            label: widget.label,
+            style: widget.style,
+            stateOpacity: stateOpacity,
           ),
         ),
       ),
@@ -258,6 +248,7 @@ class WenyouInternalReferenceSurface extends StatelessWidget {
               label,
               softWrap: true,
               style: baseStyle.copyWith(
+                height: WenyouElementContract.internalReferenceLineHeight,
                 color: foreground,
                 fontWeight: FontWeight.w600,
                 decoration: TextDecoration.none,

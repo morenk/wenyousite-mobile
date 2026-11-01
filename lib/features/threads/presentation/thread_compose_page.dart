@@ -9,6 +9,7 @@ import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/application/editor_toolbar_preference.dart';
+import 'package:wenyousite_mobile/core/application/thread_font_preference.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/text_fonts/text_font_service.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_anchored_popover.dart';
@@ -396,12 +397,18 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
                                         placeholder: '从这里开始写正文…',
                                         customStyles: wenyouEditorTextStyles(
                                           context,
+                                          bodyFontSize: ref.watch(
+                                            threadBodyFontSizeProvider,
+                                          ),
                                         ),
                                         // Flutter Quill 尚未稳定开放自定义块前导渲染入口。
                                         // ignore: experimental_member_use
                                         customLeadingBlockBuilder:
                                             wenyouEditorLeadingBlockBuilder(
                                               context,
+                                              bodyFontSize: ref.watch(
+                                                threadBodyFontSizeProvider,
+                                              ),
                                             ),
                                         embedBuilders:
                                             wenyouEditorEmbedBuilders(
