@@ -199,6 +199,26 @@ void main() {
     service.release(owner);
   });
 
+  test('性能回归：新片段复用已加载字体，不等待另一字体下载', () async {
+    final owner = Object();
+    final runtime = await service.retain(owner, {first.id: 'A'});
+    await runtime.demandQueue!.settle();
+    expect(runtime.loadedFamilies(first.id), [first.family]);
+    holdFont = true;
+    await service.retain(Object(), {second.id: 'A'});
+    await fontStarted.future.timeout(const Duration(seconds: 2));
+    final nextOwner = Object();
+    final reused = await service
+        .retain(nextOwner, {first.id: 'A'})
+        .timeout(const Duration(milliseconds: 200));
+    expect(reused.loadedFamilies(first.id), [first.family]);
+    expect(fontCancel!.isCancelled, isFalse);
+    releaseFont.complete();
+    await runtime.demandQueue!.settle();
+    expect(registrations, 2);
+    expect(peak, 1);
+  });
+
   test('迟到需求期间离线不循环请求，恢复在线后继续加载', () async {
     holdDescriptor = true;
     final owner = Object();

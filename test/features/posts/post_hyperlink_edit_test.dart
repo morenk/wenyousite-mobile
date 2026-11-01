@@ -11,6 +11,63 @@ import 'post_replies_page_test_support.dart';
 void main() {
   setUpAll(loadDeterministicTestFonts);
 
+  testWidgets('真实回复页面插入抖音分享链接后可保存、阅读并重开', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(400, 1000);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    final repository = PostRepliesPageTestFakePostRepository();
+    final container = await postRepliesPageTestPostContainer(
+      repository,
+      userId: 'author-1',
+    );
+    addTearDown(container.dispose);
+    await tester.pumpWidget(postRepliesPageTestPostRepliesApp(container));
+    await postRepliesPageTestPumpUi(tester);
+    Future<QuillController> openEditor() async {
+      await postRepliesPageTestLongPressPostMetadata(tester, 'reply-own');
+      await postRepliesPageTestPumpUi(tester);
+      await tester.tap(
+        find.byKey(const Key('post-card-action-reply-own-edit')),
+      );
+      await postRepliesPageTestPumpUi(tester);
+      return tester
+          .widget<QuillEditor>(find.byKey(const Key('post-composer-body')))
+          .controller;
+    }
+
+    final controller = await openEditor();
+    await postRepliesPageTestReplaceComposerText(tester, '希尔薇');
+    controller.updateSelection(
+      const TextSelection(baseOffset: 0, extentOffset: 3),
+      ChangeSource.local,
+    );
+    await insertToolbarLink(
+      tester,
+      '希尔薇',
+      'https://v.douyin.com/QIwpF-JdM4A/ :6pm mDu:/ H@V.Yz 08/08',
+    );
+    await tester.tap(find.byKey(const Key('editor-submit')));
+    await postRepliesPageTestPumpUi(tester);
+    expect(find.byKey(const Key('post-composer-sheet')), findsNothing);
+    expect(
+      repository.replies.singleWhere((post) => post.id == 'reply-own').content,
+      '[希尔薇](https://v.douyin.com/QIwpF-JdM4A/)',
+    );
+    expect(find.text('希尔薇', findRichText: true), findsOneWidget);
+    expect(find.byType(WenyouInternalReferenceSurface), findsNothing);
+    final reopened = await openEditor();
+    expect(reopened.document.toPlainText(), '希尔薇\n');
+    expect(reopened.document.root.children, hasLength(1));
+    expect(
+      reopened.document.toDelta().operations.first.attributes?['link'],
+      'https://v.douyin.com/QIwpF-JdM4A/',
+    );
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpAndSettle();
+  });
+
   testWidgets('真实回复页面输入站内楼层链接，保存后阅读和重开编辑均保留传送门', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(400, 1000);

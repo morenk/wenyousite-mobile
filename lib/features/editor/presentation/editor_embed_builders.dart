@@ -14,6 +14,7 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_dice_node.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_inline_text_elements.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_internal_reference_text.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_progress_indicator.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_audio_embed_builder.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_pending_image_widget.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_pending_images.dart';
@@ -63,9 +64,12 @@ class _InternalReferenceEmbedBuilder extends EmbedBuilder {
       key: const Key('editor-internal-reference'),
       label: '站内传送门：$label',
       excludeSemantics: true,
-      child: WenyouInternalReferenceSurface(
-        label: label,
-        style: embedContext.textStyle,
+      // WidgetSpan 已随段落缩放；内部文字不能再次消费系统缩放。
+      child: MediaQuery.withNoTextScaling(
+        child: WenyouInternalReferenceSurface(
+          label: label,
+          style: embedContext.textStyle,
+        ),
       ),
     );
   }
@@ -356,7 +360,7 @@ class _ImageLoadingPlaceholder extends StatelessWidget {
   Widget build(BuildContext context) {
     return ColoredBox(
       color: context.wenyouTokens.softPanel,
-      child: const Center(child: CircularProgressIndicator()),
+      child: const Center(child: WenyouCircularProgressIndicator()),
     );
   }
 }

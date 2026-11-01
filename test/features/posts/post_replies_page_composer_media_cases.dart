@@ -328,7 +328,7 @@ void registerPostRepliesPageComposerMediaCases() {
     expect(dock.surface, WenyouComposerSurface.expandableSheet);
     expect(dock.capabilities, WenyouEditorCapabilities.richMarkdown);
     expect(editor.config.paintCursorAboveText, isTrue);
-    expect(editor.config.customStyles?.paragraph?.style.fontSize, 17);
+    expect(editor.config.customStyles?.paragraph?.style.fontSize, 15);
     expect(editor.config.customStyles?.paragraph?.style.height, 1.8);
     expect(editor.focusNode.hasFocus, isTrue);
     final toolbar = find.byKey(const Key('post-composer-toolbar'));

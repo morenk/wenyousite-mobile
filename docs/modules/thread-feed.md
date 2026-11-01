@@ -93,6 +93,10 @@ Foundation v7.1.0 时间呈现候选／待验收：普通内容不足 72 小时�
 
 ## 13. 最近审查的契约版本和后端提交
 
+2026-11-01 来源复核：固定已部署 Backend `19a6c4ed48829a781182527faaafce6e788e9e2e`／API `5.44.0-dev.20261024.3`。机器契约与生成客户端无变化，来源同步不改变本模块业务；见[已部署来源核对](../architecture/backend-contract-source-20261101.md)。
+
+2026-10-27 来源复核：固定已部署 Backend `d54313346681eae8f62584d63d07f3315e42381b`／API `5.44.0-dev.20261024.3`。两项任务的来源同步均只更新来源身份与后端字体验证说明，机器契约及生成客户端不变；各自应用行为和验收状态见对应章节。来源证据见[创作可靠性来源核对](../architecture/backend-contract-source-20261027.md)及[更新与回复来源复核](../architecture/mobile-update-reply-contract-source-review.md)。
+
 本轮字体样张契约来源：Backend `8a5d21858e04c69832c90e5a3a10f1e70fdcb545`／API `5.44.0-dev.20261024.3`。HTTP 形状不变，仅统一后台自动样张文案；本模块运行逻辑不变。离线格式验证范围见[验证说明](../architecture/font-format-offline-probe.md)。
 
 2026-10-24 相册候选来源复核：已部署 Backend `33574ae73d88123aa216a93f9cc81eab60fb9ee9`／API `5.44.0-dev.20261024.2`，其第一父提交为原固定 `31f39ff317e56d6eb49b4c5e60ecdb93dfc9ec06`。机器契约及消费者指南零差异，仅同步来源与导出运维说明；本模块行为和已有验收边界保持，详见[来源同步](../architecture/compose-gallery-contract-source-sync.md)。
@@ -197,3 +201,5 @@ Foundation v7.1.0 时间呈现候选／待验收：普通内容不足 72 小时�
 代码：`lib/features/thread_feed/`。参见[依赖边界](../architecture/dependencies.md)、[发现](home.md)、[标签](tags.md)、[主题](threads.md)和[视觉基线](../architecture/visual-baseline.md)。
 
 多播性能边界：16 MiB 仅限制编码字节缓存，128 MiB 限制专用磁盘缓存，待写入最多两项／32 MiB；这些限制不是全部进程内存上限。每个活动播放器独立持有 codec 和当前帧，同 URL 只合并下载。系统内存压力清理编码内存缓存，后台／隐藏页／离屏回收对应解码资源。无并播上限可能提高解码内存、CPU、网络和耗电，受控 Profile 测量与负责人复验见[验收记录](../architecture/thread-cover-start-acceptance.md)。
+
+2026-10-31 发布来源复核：固定已部署 Backend `19a6c4ed48829a781182527faaafce6e788e9e2e`／API `5.44.0-dev.20261024.3`；机器契约和客户端行为不变，见[0.12.0 来源复核](../architecture/backend-contract-source-20261031.md)。

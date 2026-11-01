@@ -82,6 +82,8 @@
 
 ## 9. 加载、空数据、错误、重试和冲突状态
 
+本模块加载与下拉刷新复用公共进度组件：未知进度不伪造百分比，系统减少动画时保留静态忙碌反馈和请求生命周期。全项目入口及候选验证范围见[动效实现与复用边界](../architecture/motion-implementation.md)。
+
 反馈简化（2026-09-09 负责人验收通过，源码 `15d4b6b`）：正文草稿保存和删除成功以短 Snackbar 确认，不在面板常驻成功横幅；列表立即反映确认结果。自动保存状态、版本冲突和失败重试继续保留。页面回归检查成功提示退场以及恢复、取消和冲突路径。
 
 全模块错误遵循[网络与会话](../architecture/networking.md)统一分级：可操作的预期失败只给恢复提示；本机、网络连接、温油站服务与内容处理异常才标注问题环节，只有可核对的服务/内容异常及结果待核对写入显示问题编号。普通页面不展示 HTTP、业务或内部诊断码，Debug 现场诊断可复制安全技术字段。
@@ -121,6 +123,10 @@ Markdown 规范化和可见性由编辑器与核心 Markdown 能力保持，数�
 槽位 1 自动保存开关只属于当前编辑器会话，重新进入编辑器需再次开启；应用退到后台或进程结束后不会持续运行。云端冲突只支持停止自动保存，或在手动流程中“保留云端 / 用当前全文覆盖最新版”，不做逐段差异、自动合并和历史版本恢复。完整主题草稿箱按后端固定顺序展示且不分页；切换会明确覆盖当前单份本机工作快照，不保留本机历史版本。用户主动放弃并删除纯本地主题快照的入口仍待实现。
 
 ## 13. 最近审查的契约版本和后端提交
+
+2026-11-01 来源复核：固定已部署 Backend `19a6c4ed48829a781182527faaafce6e788e9e2e`／API `5.44.0-dev.20261024.3`。机器契约与生成客户端无变化，来源同步不改变本模块业务；见[已部署来源核对](../architecture/backend-contract-source-20261101.md)。
+
+2026-10-27 来源复核：固定已部署 Backend `d54313346681eae8f62584d63d07f3315e42381b`／API `5.44.0-dev.20261024.3`。两项任务的来源同步均只更新来源身份与后端字体验证说明，机器契约及生成客户端不变；各自应用行为和验收状态见对应章节。来源证据见[创作可靠性来源核对](../architecture/backend-contract-source-20261027.md)及[更新与回复来源复核](../architecture/mobile-update-reply-contract-source-review.md)。
 
 本轮字体样张契约来源：Backend `8a5d21858e04c69832c90e5a3a10f1e70fdcb545`／API `5.44.0-dev.20261024.3`。HTTP 形状不变，仅统一后台自动样张文案；本模块运行逻辑不变。离线格式验证范围见[验证说明](../architecture/font-format-offline-probe.md)。
 
@@ -222,3 +228,5 @@ Markdown 规范化和可见性由编辑器与核心 Markdown 能力保持，数�
 ## 14. 相关代码与架构文档
 
 五槽位正文草稿端口与状态：`lib/features/drafts/application/`；其 API 实现：`lib/features/drafts/data/`；主题创作端口、控制器与 API 适配器：`lib/features/threads/`；通用编辑快照端口与 Drift 适配器：`lib/features/editor/`；数据库：`lib/core/storage/app_database.dart`。参见[编辑器](editor.md)、[持久化](../architecture/persistence.md)。
+
+2026-10-31 发布来源复核：固定已部署 Backend `19a6c4ed48829a781182527faaafce6e788e9e2e`／API `5.44.0-dev.20261024.3`；机器契约和客户端行为不变，见[0.12.0 来源复核](../architecture/backend-contract-source-20261031.md)。

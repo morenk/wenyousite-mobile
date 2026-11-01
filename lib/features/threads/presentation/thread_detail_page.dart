@@ -1,9 +1,9 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
+import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
 import 'package:wenyousite_mobile/core/application/visibility_cache_invalidation.dart';
 import 'package:wenyousite_mobile/core/diagnostics/debug_diagnostic_console.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
@@ -17,6 +17,7 @@ import 'package:wenyousite_mobile/core/widgets/discussion_window_prefetch.dart';
 import 'package:wenyousite_mobile/core/widgets/reading_quick_scroll.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_discussion_scroll_policy.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_refresh_indicator.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_controllers.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_discussion_author_directory_ports.dart';
@@ -28,6 +29,8 @@ import 'package:wenyousite_mobile/features/reports/domain/report_models.dart';
 import 'package:wenyousite_mobile/features/reports/presentation/report_widgets.dart';
 import 'package:wenyousite_mobile/features/social/application/thread_subscription_controller.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_detail_controller.dart';
+import 'package:wenyousite_mobile/features/threads/application/thread_published_floor_navigation.dart';
+import 'package:wenyousite_mobile/features/threads/application/thread_saved_post.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_app_bar_actions.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_bottom_bar.dart';
@@ -37,6 +40,7 @@ import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_re
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_sections.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_target_utils.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_membership_controls.dart';
+import 'package:wenyousite_mobile/features/threads/presentation/thread_published_floor_reading.dart';
 import 'package:wenyousite_mobile/features/wallet/domain/wallet_models.dart';
 import 'package:wenyousite_mobile/features/wallet/presentation/wallet_widgets.dart';
 
@@ -63,13 +67,18 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
   final _countKey = GlobalKey();
   final _itemListKey = GlobalKey();
   final _entryTargetCoordinator = ThreadDetailEntryTargetCoordinator();
-  late final _quickScroll = ReadingQuickScrollController(
-    scrollController: _subthreadScroll.controller,
-    pinnedHeaderKey: _subthreadScroll.headerKey,
-    onUserNavigation: () {
-      _entryTargetCoordinator.cancelForUserSelection();
-    },
-  );
+  final _publishedNavigation = ThreadPublishedFloorNavigation();
+  int? _publishedMetadataRevision;
+  late final ReadingQuickScrollController _quickScroll =
+      ReadingQuickScrollController(
+        scrollController: _subthreadScroll.controller,
+        pinnedHeaderKey: _subthreadScroll.headerKey,
+        onUserNavigation: () {
+          _entryTargetCoordinator.cancelForUserSelection();
+          _publishedNavigation.release();
+          _navigation.cancelTarget();
+        },
+      );
   String? _lastOpenedReplyTargetId;
   final _selection = DiscussionSelectionController();
   late final _prefetch = DiscussionWindowPrefetch(
@@ -138,18 +147,24 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
   void initState() {
     super.initState();
     _quickScroll.addListener(_readingChanged);
+    _publishedNavigation.addListener(_publishedChanged);
     _selection.addListener(() => _prefetch.resume());
   }
 
-  void _openNumber() => unawaited(
-    showDiscussionNavigation(
-      context: context,
-      navigation: _navigation,
-      replies: false,
-      maxNumber: ref.read(_detailProvider).maxNumber,
-    ),
-  );
+  void _openNumber() {
+    setState(_cancelNumberNavigation);
+    unawaited(
+      showDiscussionNavigation(
+        context: context,
+        navigation: _navigation,
+        replies: false,
+        maxNumber: ref.read(_detailProvider).maxNumber,
+      ),
+    );
+  }
+
   void _cancelNumberNavigation() {
+    _publishedNavigation.clear();
     _navigation.clear();
     _numberTarget = null;
     _entryTargetCoordinator.cancelForUserSelection();
@@ -179,6 +194,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
 
   @override
   void dispose() {
+    _publishedNavigation.dispose();
     _selection.dispose();
     _prefetch.dispose();
     _navigation.dispose();
@@ -194,6 +210,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     if (oldWidget.threadId != widget.threadId ||
         oldWidget.entryTarget != widget.entryTarget) {
       _lastOpenedReplyTargetId = null;
+      _publishedNavigation.clear();
       _navigation.clear();
       _numberTarget = null;
       _targetAttempt += 1;
@@ -201,14 +218,6 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
       final postId = widget.entryTarget.postId;
       if (postId != null) {
         ref.invalidate(threadPostTargetProvider(postId));
-        if (postId != oldWidget.entryTarget.postId) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (!mounted || widget.entryTarget.postId != postId) return;
-            if (ref.read(_detailProvider).phase == ThreadDetailPhase.ready) {
-              unawaited(ref.read(_detailProvider.notifier).retryFloors());
-            }
-          });
-        }
       }
     }
   }
@@ -225,9 +234,12 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     );
     final targetPostId = _entryTarget.postId;
     final isPostTarget =
-        targetPostId != null && _entryTargetCoordinator.allowsTargetEffects;
+        _publishedNavigation.post == null &&
+        targetPostId != null &&
+        _entryTargetCoordinator.allowsTargetEffects;
     ref.listen(sessionScopeProvider, (previous, next) {
       if (previous == null || previous == next) return;
+      _publishedNavigation.clear();
       _navigation.clear();
       _numberTarget = null;
       _targetAttempt += 1;
@@ -286,6 +298,8 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     _prefetch.update(
       ids: state.floors.map((item) => item.id).toList(),
       ready:
+          !_publishedNavigation.loading &&
+          !(_publishedNavigation.ready && !_publishedNavigation.aligned) &&
           (!isPostTarget || _targetRevealed) &&
           state.phase == ThreadDetailPhase.ready &&
           !state.isLoadingFloors &&
@@ -359,7 +373,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
         failure: state.failure,
         onRetry: () => ref.read(provider.notifier).loadInitial(),
       ),
-      ThreadDetailPhase.ready => RefreshIndicator(
+      ThreadDetailPhase.ready => WenyouRefreshIndicator(
         onRefresh: _refreshDetail,
         child: KeyedSubtree(
           key: _renderGeometry.scrollViewportKey,
@@ -430,6 +444,8 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
             isLoadingPage: state.isLoadingFloors || state.isPrefetchingFloors,
             hasMore: state.window != null,
             targetOffset: _navigation.targetOffset,
+            targetOffsetResolver: () =>
+                _quickScroll.offsetForBookmark(_navigation.targetBookmark),
             onLoadMore: () => unawaited(
               ref
                   .read(provider.notifier)
@@ -450,7 +466,24 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
             },
             child: readingBody,
           )
-        : readingBody;
+        : ThreadPublishedFloorReading(
+            navigation: _publishedNavigation,
+            targetKey: _targetKey,
+            itemListKey: _itemListKey,
+            scrollController: _subthreadScroll.controller,
+            targetIndex: targetIndex,
+            itemCount: state.floors.length,
+            onRetry: () {
+              final post = _publishedNavigation.post;
+              if (post != null) unawaited(_locatePublished(post));
+            },
+            onUserScroll: () {
+              _entryTargetCoordinator.cancelForUserSelection();
+              _publishedNavigation.release();
+              _navigation.cancelTarget();
+            },
+            child: readingBody,
+          );
     final canPop = Navigator.maybeOf(context)?.canPop() ?? false;
     final scaffold = Scaffold(
       key: _renderGeometry.scaffoldKey,
@@ -559,6 +592,8 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
   get _detailProvider => threadDetailControllerProvider((
     threadId: widget.threadId,
     pageInstanceToken: _pageInstanceToken,
+    initialPostId: widget.entryTarget.postId,
+    initialSubthreadId: widget.entryTarget.subthreadId,
   ));
 
   String get _location => AppRouteLocations.thread(
@@ -633,12 +668,19 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     final postId = widget.entryTarget.postId;
     if (postId != null) ref.invalidate(threadPostTargetProvider(postId));
     if (ref.read(_detailProvider).phase == ThreadDetailPhase.ready) {
-      unawaited(ref.read(_detailProvider.notifier).retryFloors());
+      final controller = ref.read(_detailProvider.notifier);
+      final localTarget = _navigation.targetId;
+      unawaited(
+        localTarget == null
+            ? controller.loadInitial()
+            : controller.locateFloor(localTarget),
+      );
     }
     setState(() {});
   }
 
   Future<void> _refreshDetail() async {
+    if (_publishedNavigation.post != null) _cancelNumberNavigation();
     final selected = ref.read(_detailProvider).selectedSubthreadId;
     if (selected != null) {
       ref.invalidate(postFloorDiscussionAuthorsProvider(selected));
@@ -779,19 +821,89 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     if (target.kind == PostComposerKind.createFloor) {
       ref.invalidate(postFloorDiscussionAuthorsProvider(target.subthreadId));
     }
-    ref.invalidate(threadPostTargetProvider(result.id));
-    await ref.read(_detailProvider.notifier).refreshMetadata();
-    if (!mounted) return;
+    final controller = ref.read(_detailProvider.notifier);
+    if (target.kind == PostComposerKind.editPost &&
+        controller.applySavedFloor(result)) {
+      // 同楼层保存保位，不重走入口定位，也不让 GET 目标拖住阅读更新。
+      if (_numberTarget?.floor.id == result.id) {
+        _numberTarget = ThreadPostTargetModel(
+          requestedPostId: result.id,
+          threadId: result.threadId,
+          subthreadId: result.subthreadId,
+          floor: savedPostAsFloor(result),
+        );
+      }
+      unawaited(controller.refreshMetadata());
+      return;
+    }
+    if (target.kind == PostComposerKind.createFloor ||
+        target.kind == PostComposerKind.editPost) {
+      await _locatePublished(result);
+      return;
+    }
+    await controller.refreshMetadata();
+    if (!mounted || ref.read(sessionScopeProvider) != openedSessionScope) {
+      return;
+    }
     switch (target.kind) {
-      case PostComposerKind.createFloor ||
-          PostComposerKind.createReply ||
-          PostComposerKind.editPost:
+      case PostComposerKind.createFloor || PostComposerKind.editPost:
+        break;
+      case PostComposerKind.createReply:
+        ref.invalidate(threadPostTargetProvider(result.id));
         context.replace(
           AppRouteLocations.thread(widget.threadId, postId: result.id),
         );
       case PostComposerKind.upsertBody:
         break;
     }
+  }
+
+  void _publishedChanged() {
+    if (!mounted) return;
+    setState(() {});
+    if (_publishedNavigation.aligned &&
+        _publishedMetadataRevision != _publishedNavigation.revision) {
+      _publishedMetadataRevision = _publishedNavigation.revision;
+      unawaited(
+        ref.read(_detailProvider.notifier).refreshMetadata(background: true),
+      );
+    }
+  }
+
+  Future<void> _locatePublished(PostItem post) async {
+    final scope = ref.read(sessionScopeProvider);
+    final controller = ref.read(_detailProvider.notifier);
+    _navigation.clear();
+    _numberTarget = null;
+    _entryTargetCoordinator.cancelForUserSelection();
+    await _publishedNavigation.locate(
+      saved: post,
+      controller: controller,
+      order: ref.read(_detailProvider).floorOrder,
+      authorId: ref.read(_detailProvider).floorAuthorId,
+      readTarget: (active) => _navigation.goToPost(
+        post.id,
+        scope: (
+          subthreadId: post.subthreadId,
+          order: ref.read(_detailProvider).floorOrder,
+          authorId: ref.read(_detailProvider).floorAuthorId,
+        ),
+        active: active,
+        rememberPrevious: false,
+      ),
+      active: () =>
+          mounted &&
+          ref.read(sessionScopeProvider) == scope &&
+          ModalRoute.of(context)?.isCurrent == true,
+    );
+    if (!mounted ||
+        !_publishedNavigation.ready ||
+        _publishedNavigation.post?.id != post.id) {
+      return;
+    }
+    setState(() {
+      _targetRevealed = true;
+    });
   }
 
   void _requireLogin() {
@@ -806,25 +918,51 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     );
   }
 
-  void _openLatestPost(ThreadLatestPostModel target) {
+  Future<void> _openLatestPost(ThreadLatestPostModel target) async {
     final parentPostId = target.parentPostId;
     if (parentPostId != null) {
-      context.pushNamed(
-        'post-replies',
-        pathParameters: {'threadId': widget.threadId, 'postId': parentPostId},
-        queryParameters: {'post': target.id},
+      unawaited(
+        context.pushNamed<void>(
+          'post-replies',
+          pathParameters: {'threadId': widget.threadId, 'postId': parentPostId},
+          queryParameters: {'post': target.id},
+        ),
       );
       return;
     }
-    if (widget.entryTarget.postId == target.id) {
-      _navigation.clear();
-      _numberTarget = null;
-      _retryEntryTarget();
-      return;
+    final session = ref.read(sessionScopeProvider);
+    final state = ref.read(_detailProvider);
+    if (state.selectedSubthreadId == null) return;
+    setState(() {
+      _publishedNavigation.clear();
+      _entryTargetCoordinator.cancelForUserSelection();
+    });
+    bool active() => mounted && ref.read(sessionScopeProvider) == session;
+    try {
+      final result = await _navigation.goToPost(
+        target.id,
+        scope: (
+          subthreadId: target.subthreadId,
+          order: state.floorOrder,
+          authorId: state.floorAuthorId,
+        ),
+        active: active,
+      );
+      if (!mounted || !active() || result == null) return;
+      showDiscussionNavigationResult(
+        context: context,
+        navigation: _navigation,
+        replies: false,
+        cleared: result.clearedAuthor,
+      );
+    } on Object catch (error) {
+      if (!mounted || !active()) return;
+      showWenyouSnackBar(
+        context,
+        mapApplicationFailure(error, '定位失败，请重试。').userMessage,
+        tone: WenyouSnackBarTone.error,
+      );
     }
-    context.replace(
-      AppRouteLocations.thread(widget.threadId, postId: target.id),
-    );
   }
 
   Future<void> _deleteFloor(ThreadFloorModel floor) async {

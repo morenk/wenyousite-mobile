@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:wenyousite_mobile/core/models/bookmark_folder_models.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_feedback.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_progress_indicator.dart';
 
 Future<BookmarkFolderItem?> showWenyouBookmarkFolderCreateDialog({
   required BuildContext context,
@@ -81,7 +82,7 @@ Future<BookmarkFolderItem?> showWenyouBookmarkFolderCreateDialog({
               child: submitting
                   ? const SizedBox.square(
                       dimension: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
+                      child: WenyouCircularProgressIndicator(strokeWidth: 2),
                     )
                   : const Text('新建'),
             ),

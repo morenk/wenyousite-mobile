@@ -60,6 +60,8 @@
 
 ## 9. 加载、空数据、错误、重试和冲突状态
 
+本模块加载与下拉刷新复用公共进度组件：未知进度不伪造百分比，系统减少动画时保留静态忙碌反馈和请求生命周期。全项目入口及候选验证范围见[动效实现与复用边界](../architecture/motion-implementation.md)。
+
 收藏表情首次读取失败使用共享错误面板；上传、导入及排序恢复仍走原有业务状态。 通用失败内容保留问题编号，取消请求不展示错误。2026-10-18 负责人真机验收通过，见[错误重试与瀑布流验收](../architecture/error-retry-waterfall-acceptance.md)。
 
 全模块错误遵循[网络与会话](../architecture/networking.md)统一分级：可操作的预期失败只给恢复提示；本机、网络连接、温油站服务与内容处理异常才标注问题环节，只有可核对的服务/内容异常及结果待核对写入显示问题编号。普通页面不展示 HTTP、业务或内部诊断码，Debug 现场诊断可复制安全技术字段。
@@ -98,6 +100,10 @@ media application 负责相册选择、格式校验、`STICKER_SOURCE` 用途和
 移动端相册入口当前一次选择一张，未实现 Web 的最多十张并发批量导入；动画只在发送或正文实际图片 URL 中播放，收藏网格使用缩略图。处理任务依靠前台轮询，不做后台通知；进程终止后重新进入即从服务端 pending 列表恢复观察。
 
 ## 13. 最近审查的契约版本和后端提交
+
+2026-11-01 来源复核：固定已部署 Backend `19a6c4ed48829a781182527faaafce6e788e9e2e`／API `5.44.0-dev.20261024.3`。机器契约与生成客户端无变化，来源同步不改变本模块业务；见[已部署来源核对](../architecture/backend-contract-source-20261101.md)。
+
+2026-10-27 来源复核：固定已部署 Backend `d54313346681eae8f62584d63d07f3315e42381b`／API `5.44.0-dev.20261024.3`。两项任务的来源同步均只更新来源身份与后端字体验证说明，机器契约及生成客户端不变；各自应用行为和验收状态见对应章节。来源证据见[创作可靠性来源核对](../architecture/backend-contract-source-20261027.md)及[更新与回复来源复核](../architecture/mobile-update-reply-contract-source-review.md)。
 
 本轮字体样张契约来源：Backend `8a5d21858e04c69832c90e5a3a10f1e70fdcb545`／API `5.44.0-dev.20261024.3`。HTTP 形状不变，仅统一后台自动样张文案；本模块运行逻辑不变。离线格式验证范围见[验证说明](../architecture/font-format-offline-probe.md)。
 
@@ -203,3 +209,5 @@ media application 负责相册选择、格式校验、`STICKER_SOURCE` 用途和
 跨模块调用统一通过 `lib/features/stickers/stickers.dart` 的显式导出入口；本次仅为阅读页拆分整理引用，业务行为与状态模型不变。
 
 端口、控制器与状态：`lib/features/stickers/application/`；API 适配器：`lib/features/stickers/data/`；页面：`lib/features/stickers/presentation/`。参见[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)、[媒体](media.md)、[编辑器](editor.md)与[站内私聊](direct-messages.md)。
+
+2026-10-31 发布来源复核：固定已部署 Backend `19a6c4ed48829a781182527faaafce6e788e9e2e`／API `5.44.0-dev.20261024.3`；机器契约和客户端行为不变，见[0.12.0 来源复核](../architecture/backend-contract-source-20261031.md)。

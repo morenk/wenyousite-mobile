@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -15,6 +14,7 @@ import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_nested_scroll.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_refresh_indicator.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_settings_body.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
@@ -45,14 +45,17 @@ void _showRefreshFailure(BuildContext context, ApiFailure failure) {
 }
 
 class MePage extends ConsumerWidget {
-  const MePage({this.userMoments, super.key});
+  const MePage({this.userMoments, this.updateSettingsEntry, super.key});
 
   final MeUserMomentsIntegration? userMoments;
+  final Widget? updateSettingsEntry;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final session = ref.watch(sessionControllerProvider);
-    if (!session.isAuthenticated) return const _GuestMePage();
+    if (!session.isAuthenticated) {
+      return _GuestMePage(updateSettingsEntry: updateSettingsEntry);
+    }
     return MeProfileRefreshBoundary(
       child: _AuthenticatedMePage(userMoments: userMoments),
     );
@@ -60,7 +63,9 @@ class MePage extends ConsumerWidget {
 }
 
 class _GuestMePage extends StatelessWidget {
-  const _GuestMePage();
+  const _GuestMePage({this.updateSettingsEntry});
+
+  final Widget? updateSettingsEntry;
 
   @override
   Widget build(BuildContext context) {
@@ -105,6 +110,7 @@ class _GuestMePage extends StatelessWidget {
             WenyouSettingsGroup(
               title: '帮助',
               children: [
+                ?updateSettingsEntry,
                 WenyouSettingsLink(
                   icon: WenyouIconIds.statusInfo,
                   title: '故障诊断',
@@ -364,7 +370,9 @@ class _MeProfileSaveBar extends StatelessWidget {
 }
 
 class MeSettingsPage extends ConsumerWidget {
-  const MeSettingsPage({super.key});
+  const MeSettingsPage({this.updateSettingsEntry, super.key});
+
+  final Widget? updateSettingsEntry;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -396,6 +404,7 @@ class MeSettingsPage extends ConsumerWidget {
           WenyouSettingsGroup(
             title: '帮助',
             children: [
+              ?updateSettingsEntry,
               WenyouSettingsLink(
                 key: const Key('me-open-moderation-appeals'),
                 icon: WenyouIconIds.moderationDecision,
@@ -566,7 +575,7 @@ class _MeDashboardState extends ConsumerState<_MeDashboard> {
         }
       },
     );
-    return RefreshIndicator(
+    return WenyouRefreshIndicator(
       key: const Key('me-dashboard-refresh'),
       semanticsLabel: '刷新我的主页',
       notificationPredicate: _refreshNotificationPredicate,

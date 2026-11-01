@@ -24,57 +24,119 @@ class DiscussionNavigation<S> extends ChangeNotifier {
   ({ReadingBookmark bookmark, S scope})? _previous;
   var _epoch = 0;
   var _disposed = false;
+  ({int? number, String? id, S scope, bool returning})? _pendingTarget;
+  Future<DiscussionLocatedTarget?>? _pending;
+  bool Function()? _pendingActive;
 
   String? targetId;
   double? targetOffset;
+  ReadingBookmark? targetBookmark;
   int revision = 0;
   bool get canReturn => _previous != null;
 
   void forgetPrevious() => _previous = null;
 
-  Future<bool> jump(int number, bool Function() active) async {
-    final epoch = ++_epoch;
-    final bookmark = reading.captureBookmark();
-    final scope = currentScope();
-    bool isActive() => !_disposed && epoch == _epoch && active();
-    final target = await locate(number: number, scope: scope, active: isActive);
-    if (!isActive() || target == null) return false;
-    _previous = bookmark == null ? null : (bookmark: bookmark, scope: scope);
-    targetId = target.id;
-    targetOffset = null;
-    revision++;
-    notifyListeners();
-    return target.clearedAuthor;
-  }
+  Future<bool> jump(int number, bool Function() active) async =>
+      (await _navigate(
+        number: number,
+        scope: currentScope(),
+        active: active,
+      ))?.clearedAuthor ??
+      false;
+
+  /// 发布、最新发言和外部坐标共用数字跳转的请求代次与返回书签。
+  Future<DiscussionLocatedTarget?> goToPost(
+    String postId, {
+    S? scope,
+    required bool Function() active,
+    bool rememberPrevious = true,
+  }) => _navigate(
+    postId: postId,
+    scope: scope ?? currentScope(),
+    active: active,
+    rememberPrevious: rememberPrevious,
+  );
 
   Future<void> returnToPrevious() async {
     final previous = _previous;
     if (previous == null) return;
-    final epoch = ++_epoch;
-    bool isActive() => !_disposed && epoch == _epoch;
-    DiscussionLocatedTarget? target;
-    try {
-      target = await locate(
-        postId: previous.bookmark.id,
-        scope: previous.scope,
-        active: isActive,
-      );
-    } on Object {
-      if (!isActive()) return;
-      rethrow;
+    await _navigate(
+      postId: previous.bookmark.id,
+      scope: previous.scope,
+      active: () => !_disposed,
+      restore: previous.bookmark,
+    );
+  }
+
+  Future<DiscussionLocatedTarget?> _navigate({
+    int? number,
+    String? postId,
+    required S scope,
+    required bool Function() active,
+    bool rememberPrevious = true,
+    ReadingBookmark? restore,
+  }) {
+    if (_disposed || !active()) return Future.value();
+    final key = (
+      number: number,
+      id: postId,
+      scope: scope,
+      returning: restore != null,
+    );
+    if (_pending != null &&
+        _pendingTarget == key &&
+        _pendingActive?.call() == true) {
+      return _pending!;
     }
-    if (!isActive() || target == null) return;
-    targetId = target.id;
-    targetOffset = previous.bookmark.offset;
-    _previous = null;
-    revision++;
-    notifyListeners();
+    final epoch = ++_epoch;
+    final bookmark = rememberPrevious ? reading.captureBookmark() : null;
+    final previousScope = currentScope();
+    bool isActive() => !_disposed && epoch == _epoch && active();
+    _pendingTarget = key;
+    _pendingActive = isActive;
+    return _pending = () async {
+      try {
+        final target = await locate(
+          number: number,
+          postId: postId,
+          scope: scope,
+          active: isActive,
+        );
+        if (!isActive() || target == null) return null;
+        if (restore != null) {
+          _previous = null;
+        } else if (rememberPrevious) {
+          _previous = bookmark == null
+              ? null
+              : (bookmark: bookmark, scope: previousScope);
+        }
+        targetId = target.id;
+        targetOffset = restore?.offset;
+        targetBookmark = restore;
+        revision++;
+        notifyListeners();
+        return target;
+      } on Object {
+        if (!isActive()) return null;
+        rethrow;
+      } finally {
+        if (epoch == _epoch) {
+          _pending = null;
+          _pendingTarget = null;
+          _pendingActive = null;
+        }
+      }
+    }();
   }
 
   void cancelTarget() {
     _epoch++;
+    _pending = null;
+    _pendingTarget = null;
+    _pendingActive = null;
     targetId = null;
     targetOffset = null;
+    targetBookmark = null;
   }
 
   void clear() {

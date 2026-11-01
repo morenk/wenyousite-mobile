@@ -9,6 +9,7 @@ import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_pagination.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_refresh_indicator.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_widgets.dart';
@@ -87,7 +88,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
           ),
           WenyouConstrainedWidth(child: _SearchTabs(state: state)),
           Expanded(
-            child: RefreshIndicator(
+            child: WenyouRefreshIndicator(
               onRefresh: state.hasQuery
                   ? () => Future.wait([
                       ref

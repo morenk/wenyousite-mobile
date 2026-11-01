@@ -5,6 +5,7 @@ import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_level_badge.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_progress_indicator.dart';
 import 'package:wenyousite_mobile/features/users/domain/profile_cover_models.dart';
 
 class UserProfileStatItem {
@@ -169,7 +170,7 @@ class _ProfileLevelProgress extends StatelessWidget {
       builder: (context, constraints) => Row(
         children: [
           Expanded(
-            child: LinearProgressIndicator(
+            child: WenyouLinearProgressIndicator(
               value: value,
               semanticsLabel: '等级进度',
             ),

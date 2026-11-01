@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_progress_indicator.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/app_shell/application/mobile_release_controller.dart';
 import 'package:wenyousite_mobile/features/app_shell/application/mobile_update_controller.dart';
@@ -87,7 +88,7 @@ class MobileUpdateStatus extends ConsumerWidget {
           if (action.status == MobileUpdateActionStatus.downloading)
             Semantics(
               label: '安装包下载进度 ${((action.progress ?? 0) * 100).round()}%',
-              child: LinearProgressIndicator(value: action.progress),
+              child: WenyouLinearProgressIndicator(value: action.progress),
             ),
         ],
       ),

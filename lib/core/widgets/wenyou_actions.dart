@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_async_button.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_progress_indicator.dart';
 
 /// 主操作保留按钮层级；大字号时将次要操作另起一行，避免挤压文字。
 class WenyouPrimaryActionRow extends StatelessWidget {
@@ -91,7 +92,7 @@ class WenyouAsyncIconButton extends StatelessWidget {
             ? ExcludeSemantics(
                 child: SizedBox.square(
                   dimension: 20,
-                  child: CircularProgressIndicator(
+                  child: WenyouCircularProgressIndicator(
                     strokeWidth: 2,
                     color: tone == WenyouAsyncButtonTone.destructive
                         ? scheme.error

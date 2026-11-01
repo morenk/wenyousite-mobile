@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/application/thread_font_preference.dart';
 import 'package:wenyousite_mobile/features/editor/editor.dart';
 
 class PostComposerSheetHeader extends StatelessWidget {
@@ -80,7 +82,7 @@ class PostComposerSheetHeader extends StatelessWidget {
   }
 }
 
-class PostComposerEditorRegion extends StatelessWidget {
+class PostComposerEditorRegion extends ConsumerWidget {
   const PostComposerEditorRegion({
     required this.editorSession,
     this.pendingImages,
@@ -107,7 +109,8 @@ class PostComposerEditorRegion extends StatelessWidget {
   final Widget toolbar;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final bodyFontSize = ref.watch(threadBodyFontSizeProvider);
     final tokens = context.wenyouTokens;
     return Expanded(
       child: KeyedSubtree(
@@ -152,11 +155,17 @@ class PostComposerEditorRegion extends StatelessWidget {
                             paintCursorAboveText: true,
                             padding: EdgeInsets.all(tokens.space16),
                             placeholder: placeholder,
-                            customStyles: wenyouEditorTextStyles(context),
+                            customStyles: wenyouEditorTextStyles(
+                              context,
+                              bodyFontSize: bodyFontSize,
+                            ),
                             // Flutter Quill 尚未稳定开放自定义块前导渲染入口。
                             // ignore: experimental_member_use
                             customLeadingBlockBuilder:
-                                wenyouEditorLeadingBlockBuilder(context),
+                                wenyouEditorLeadingBlockBuilder(
+                                  context,
+                                  bodyFontSize: bodyFontSize,
+                                ),
                             embedBuilders: wenyouEditorEmbedBuilders(
                               mentionLabels: mentionLabels,
                               mediaDisplays: editorSession.mediaDisplays,

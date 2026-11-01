@@ -49,6 +49,8 @@
 
 ## 9. 加载、空数据、错误、重试和冲突状态
 
+本模块加载与下拉刷新复用公共进度组件：未知进度不伪造百分比，系统减少动画时保留静态忙碌反馈和请求生命周期。全项目入口及候选验证范围见[动效实现与复用边界](../architecture/motion-implementation.md)。
+
 治理决定首次读取失败复用共享错误面板与原重试回调；凭据过期、身份恢复和申诉提交状态保持原流程。2026-10-18 负责人真机验收通过，见[错误重试与瀑布流验收](../architecture/error-retry-waterfall-acceptance.md)。
 
 全模块错误遵循[网络与会话](../architecture/networking.md)统一分级：可操作的预期失败只给恢复提示；本机、网络连接、温油站服务与内容处理异常才标注问题环节，只有可核对的服务/内容异常及结果待核对写入显示问题编号。普通页面不展示 HTTP、业务或内部诊断码，Debug 现场诊断可复制安全技术字段。
@@ -76,6 +78,10 @@ auth 只提供登录页入口和普通会话；settings 只提供已登录入口
 移动端不展示 30 天之外的历史决定，不支持撤回或补充已提交申诉，也不做后台到期提醒。公开决定 DTO 的既有 `appeal` 仍是开放 map，仓储只在必需字段完整时显示；后端未来应将其收敛为 typed DTO。管理员申诉列表、案件处置和审计继续保持移动端产品范围外；现场隐藏能力在角色投影、二次确认、成功后的内容失效和 `40308` 降级全部闭环前保持隐藏。
 
 ## 13. 最近审查的契约版本和后端提交
+
+2026-11-01 来源复核：固定已部署 Backend `19a6c4ed48829a781182527faaafce6e788e9e2e`／API `5.44.0-dev.20261024.3`。机器契约与生成客户端无变化，来源同步不改变本模块业务；见[已部署来源核对](../architecture/backend-contract-source-20261101.md)。
+
+2026-10-27 来源复核：固定已部署 Backend `d54313346681eae8f62584d63d07f3315e42381b`／API `5.44.0-dev.20261024.3`。两项任务的来源同步均只更新来源身份与后端字体验证说明，机器契约及生成客户端不变；各自应用行为和验收状态见对应章节。来源证据见[创作可靠性来源核对](../architecture/backend-contract-source-20261027.md)及[更新与回复来源复核](../architecture/mobile-update-reply-contract-source-review.md)。
 
 本轮字体样张契约来源：Backend `8a5d21858e04c69832c90e5a3a10f1e70fdcb545`／API `5.44.0-dev.20261024.3`。HTTP 形状不变，仅统一后台自动样张文案；本模块运行逻辑不变。离线格式验证范围见[验证说明](../architecture/font-format-offline-probe.md)。
 
@@ -179,3 +185,5 @@ auth 只提供登录页入口和普通会话；settings 只提供已登录入口
 ## 14. 相关代码与架构文档
 
 代码入口：`lib/features/moderation/application/moderation_appeal_repository_ports.dart`、`lib/features/moderation/data/`、`lib/main.dart`；登录入口：`lib/features/auth/presentation/login_page.dart`；设置入口：`lib/features/users/presentation/me_page.dart`。参见[认证](auth.md)、[设置](settings.md)、[社区举报](reports.md)、[网络与会话](../architecture/networking.md)、[导航](../architecture/navigation.md)与[API 生成和覆盖审计](../architecture/api-generation.md)。
+
+2026-10-31 发布来源复核：固定已部署 Backend `19a6c4ed48829a781182527faaafce6e788e9e2e`／API `5.44.0-dev.20261024.3`；机器契约和客户端行为不变，见[0.12.0 来源复核](../architecture/backend-contract-source-20261031.md)。

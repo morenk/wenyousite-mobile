@@ -1,8 +1,9 @@
 import 'dart:async';
-
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/core/animation/wenyou_motion.dart';
 import 'package:wenyousite_mobile/core/media/media_audio.dart';
 import 'package:wenyousite_mobile/core/media/media_display.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
@@ -85,7 +86,10 @@ class EditorPendingImages extends ChangeNotifier {
       if (context != null) {
         await Scrollable.ensureVisible(
           context,
-          duration: const Duration(milliseconds: 250),
+          duration: wenyouMotionDuration(
+            context,
+            WenyouFoundationMotion.standard,
+          ),
           alignment: 0.2,
         );
       }

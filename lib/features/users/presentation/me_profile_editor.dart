@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/animation/wenyou_motion.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_settings_body.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_sheet.dart';
@@ -332,8 +333,11 @@ class _SubmissionFailureState extends State<_SubmissionFailure> {
       Scrollable.ensureVisible(
         context,
         alignment: .85,
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeOutCubic,
+        duration: wenyouMotionDuration(
+          context,
+          WenyouFoundationMotion.standard,
+        ),
+        curve: wenyouStandardMotionCurve,
       );
     });
   }
@@ -400,7 +404,7 @@ class _UsernameEditorSheetState extends ConsumerState<_UsernameEditorSheet> {
     return PopScope(
       canPop: !submitting,
       child: AnimatedPadding(
-        duration: tokens.feedbackDuration,
+        duration: wenyouMotionDuration(context, tokens.feedbackDuration),
         padding: EdgeInsets.only(bottom: 0),
         child: SingleChildScrollView(
           padding: EdgeInsets.fromLTRB(

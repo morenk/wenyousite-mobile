@@ -493,7 +493,7 @@ $diceNode
     final portal = find.byKey(const ValueKey('markdown-internal-reference-0'));
     expect(portal, findsOneWidget);
     expect(tester.getSize(portal).width, lessThan(100));
-    expect(tester.getSize(portal).height, greaterThanOrEqualTo(48));
+    expect(tester.getSize(portal).height, lessThanOrEqualTo(17 * 1.8));
     expect(tester.getTopLeft(portal).dx, lessThan(120));
     final inlineParagraph = tester
         .renderObjectList<RenderParagraph>(find.byType(RichText))

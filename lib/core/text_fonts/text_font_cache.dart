@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'dart:typed_data';
-
+import 'package:wenyousite_mobile/core/text_fonts/text_font_integrity.dart';
 import 'package:wenyousite_mobile/core/text_fonts/text_font_manifest.dart';
 
 /// 只存哈希对象；每次读取重新验证，不将损坏字体交给原生引擎。
@@ -34,7 +34,7 @@ class TextFontCache {
       return null;
     }
     final bytes = await file.readAsBytes();
-    if (!asset.verifies(bytes)) {
+    if (!await verifyTextFontAsset(asset, bytes)) {
       await file.delete();
       return null;
     }
@@ -47,7 +47,9 @@ class TextFontCache {
   }
 
   Future<void> write(TextFontAsset asset, Uint8List data) async {
-    if (!asset.verifies(data)) throw const FormatException('字体资源校验失败');
+    if (!await verifyTextFontAsset(asset, data)) {
+      throw const FormatException('字体资源校验失败');
+    }
     try {
       await _write(asset, data);
     } on FileSystemException {

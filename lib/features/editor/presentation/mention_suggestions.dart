@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,6 +10,7 @@ import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_feedback.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_progress_indicator.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_selection_menu.dart';
 import 'package:wenyousite_mobile/features/editor/application/mention_candidates_controller.dart';
 import 'package:wenyousite_mobile/features/editor/domain/mention_models.dart';
@@ -302,7 +302,7 @@ class _MentionSuggestionsState extends ConsumerState<MentionSuggestions> {
               key: Key('mention-loading'),
               icon: SizedBox.square(
                 dimension: 18,
-                child: CircularProgressIndicator(strokeWidth: 2),
+                child: WenyouCircularProgressIndicator(strokeWidth: 2),
               ),
               message: '正在查找可提及用户…',
             )

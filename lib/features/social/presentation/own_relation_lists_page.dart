@@ -9,6 +9,7 @@ import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_level_badge.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_refresh_indicator.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/social/application/own_relation_lists_controller.dart';
 import 'package:wenyousite_mobile/features/social/domain/user_relation_list_models.dart';
@@ -249,7 +250,7 @@ class _OwnRelationListViewState extends State<_OwnRelationListView>
         ),
       );
     }
-    return RefreshIndicator(
+    return WenyouRefreshIndicator(
       onRefresh: widget.onRefresh,
       child: ListView(
         key: PageStorageKey('own-relations-${widget.kind.name}'),

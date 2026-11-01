@@ -1,10 +1,10 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/text_fonts/text_font_progress.dart';
 import 'package:wenyousite_mobile/core/text_fonts/text_font_runtime.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_progress_indicator.dart';
 
 /// 只订阅本编辑器主动选择所需的分片，不将传输进度传播为正文重建。
 class EditorFontDownloadProgress extends StatefulWidget {
@@ -140,7 +140,7 @@ class _EditorFontDownloadProgressState
               ),
               SizedBox(height: tokens.space4),
               if (progress.phase != TextFontProgressPhase.failed)
-                LinearProgressIndicator(
+                WenyouLinearProgressIndicator(
                   key: const Key('editor-font-download-line'),
                   value: progress.fraction,
                   minHeight: 2,

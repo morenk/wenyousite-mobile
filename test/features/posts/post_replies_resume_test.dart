@@ -84,6 +84,10 @@ void main() {
     final h = RepliesResumeHarness(focusedReplyId: 'reply-3');
     addTearDown(h.close);
     await h.mount(tester);
+    // 深链目标揭开及相邻窗口保位结束后，用户才开始下一段阅读。
+    await _waitForTarget(tester);
+    await pumpReplies(tester);
+    expect(h.state.isPrefetchingReplies, isFalse);
     final before = await h.readAt(tester, 14);
     final requests = h.postRequests.length;
 

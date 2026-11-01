@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/animation/wenyou_motion.dart';
 import 'package:wenyousite_mobile/core/media/media_display.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 
@@ -120,19 +121,23 @@ class _WenyouImageViewerPageState extends State<WenyouImageViewerPage> {
         0,
         widget.items.length - 1,
       );
-      _pageController.animateToPage(
-        next,
-        duration: const Duration(milliseconds: 180),
-        curve: Curves.easeOut,
-      );
+      _settlePage(next);
       _pageChanged(next);
     } else if (delta.dy > 80 && delta.dy > delta.dx.abs()) {
       Navigator.maybePop(context);
     } else {
+      _settlePage(_gestureStartIndex);
+    }
+  }
+
+  void _settlePage(int index) {
+    if (wenyouAnimationsDisabled(context)) {
+      _pageController.jumpToPage(index);
+    } else {
       _pageController.animateToPage(
-        _gestureStartIndex,
-        duration: const Duration(milliseconds: 180),
-        curve: Curves.easeOut,
+        index,
+        duration: WenyouFoundationMotion.standard,
+        curve: wenyouStandardMotionCurve,
       );
     }
   }

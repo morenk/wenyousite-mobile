@@ -1,15 +1,30 @@
 import 'dart:convert';
 import 'dart:typed_data';
-
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as image;
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/features/media/data/engine_media_image.dart';
 import 'package:wenyousite_mobile/features/media/data/media_image_validation.dart';
 import 'package:wenyousite_mobile/features/media/data/media_upload_normalizer.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  test('性能回归：引擎裁剪的不可变 PNG 直接编码 WebP，不再生成重复中间图', () async {
+    final source = await EngineMediaImage.open(_staticInput());
+    final pixels = await source.decode();
+    final canonical = await mediaImagePng(pixels);
+    pixels.dispose();
+    source.dispose();
+    expect(() => canonical[0] = 0, throwsUnsupportedError);
+    final encoder = _RecordingWebpEncoder();
+    final output = await FlutterMediaUploadNormalizer(
+      encoder: encoder,
+    ).normalize(MediaUploadInput(filename: 'cropped.png', bytes: canonical));
+    expect(encoder.input, same(canonical));
+    expect(image.decodeImage(output.bytes)!.width, 40);
+    expect(image.decodeImage(output.bytes)!.height, 20);
+  });
   test('静态图按用途转为 WebP 且同一输入重试不重复压缩', () async {
     final encoder = _RecordingWebpEncoder();
     final normalizer = FlutterMediaUploadNormalizer(encoder: encoder);
@@ -177,6 +192,7 @@ MediaUploadInput _staticInput({
 }
 
 class _RecordingWebpEncoder implements StaticWebpEncoder {
+  Uint8List? input;
   int calls = 0;
   int? targetWidth;
   int? targetHeight;
@@ -190,6 +206,7 @@ class _RecordingWebpEncoder implements StaticWebpEncoder {
     required int quality,
   }) async {
     calls += 1;
+    input = bytes;
     this.targetWidth = targetWidth;
     this.targetHeight = targetHeight;
     this.quality = quality;

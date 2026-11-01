@@ -1,5 +1,7 @@
 # 动态
 
+2026-10-27 候选／负责人已明确授权合并，未另提供新增真机结果：动态评论及嵌套回复与主题帖复用提交前空内容校验和中性提示“消息框不能为空。”；动态按纯文本语义保留标点、类似格式的字面文字及实体原文，不改写发送正文。空白／零宽不调用发送回调，保留图片／表情及等待图片后发送路径。详见[候选与定位调查](../architecture/mobile-update-reply-navigation-candidate.md)。
+
 2026-10-19 映射内部重构候选：动态作者与图片 DTO 共用 MomentDtoMapper；搜索和信息流各自的错误标签、诊断码、封面及互动权限校验不变。详见[公共流程验收](../architecture/shared-flows-acceptance.md)。
 
 
@@ -133,6 +135,10 @@ Foundation v7.1.0 时间呈现候选／待验收：普通内容不足 72 小时�
 
 ## 9. 加载、空数据、错误、重试和冲突状态
 
+本模块加载与下拉刷新复用公共进度组件：未知进度不伪造百分比，系统减少动画时保留静态忙碌反馈和请求生命周期。全项目入口及候选验证范围见[动效实现与复用边界](../architecture/motion-implementation.md)。
+
+动态发布诊断候选／原问题继续排查：创建和普通编辑提交主动记录本地编码／保存、仓储调用准备、网络请求／返回、映射与完成清理的安全阶段、捕获堆栈和同一尝试的问题编号。补偿保存失败不覆盖原错误或响应证据，只附加脱敏原因；错误区可复制详情。发送开关、导出及清除／切号约束沿用全局诊断。提交前落盘失败不发请求，已成功但清理失败在原页面只重试清理，旧待确认草稿保留原载荷及幂等 ID。没有改写数据库或清空旧数据；注入测试不能证明 HONOR 旧数据根因，见[创作候选](../architecture/compose-reliability-candidate.md)。
+
 动态编辑冲突复用 `showWenyouEditConflictDialog` 返回明确选择，保留“使用最新内容／保留我的内容”文案和两按钮结构；关闭弹窗不提交。读取最新版本、保留当前正文重试与成功清理仍由动态模块负责；公共流程候选待负责人验收。
 
 发现／关注／用户动态与动态收藏共用 MomentWaterfallSliver 和加载骨架，列数遵循 Foundation moments-feed 策略，保留 600dp 内容上限、8dp 卡间距、稳定条目身份与全宽 footer。首次失败复用共享错误面板；空态、滚动、刷新、预加载与业务操作由页面继续维护。 通用失败内容保留问题编号，取消请求不展示错误。2026-10-18 负责人真机验收通过，见[错误重试与瀑布流验收](../architecture/error-retry-waterfall-acceptance.md)。
@@ -164,6 +170,8 @@ Foundation v7.1.0 时间呈现候选／待验收：普通内容不足 72 小时�
 media/application 提供相册与上传端口、唯一任务状态、取消、失败和同文件重试；动态和评论以图片内简短状态展示任务进度，完整诊断阶段仍由共享上传任务保存。moments presentation 不直接导入 media/data 或 Dio，只消费完成结果并维护最多九图、封面顺序及评论图片/表情互斥。stickers 提供用户私有收藏选择器；notifications 只传稳定 momentId 和可选 momentCommentId；users 暴露公开用户动态入口；search 复用动态卡片；wallet 维护加油幂等写入；reports 管理举报。动态正文和评论始终是纯文本，不进入 Markdown/Quill Codec。合法站内坐标由共享阅读组件渲染成 Foundation v6.9.0 传送门胶囊。视觉只消费 Foundation v6.9.0 Token、元素契约、语义图标与图片角色；发现、关注、收藏和用户信息流显式消费双列瀑布流领域例外，详情保持单列和不超过 600dp，独立操作命中区不小于 48dp。
 
 ## 11. 测试场景与验收条件
+
+- 文字排版（2026-11-01 负责人验收通过）：动态详情与评论中的站内传送门由外层文字布局统一缩放，避免大字号下文字二次放大。真实详情页／评论组件覆盖明暗主题、320dp、1×／1.5×／2× 字号；纯文本语义及路由交互保持。见[验收记录](../architecture/reading-text-style-candidate.md)。
 
 主题与动态底栏统一为视觉候选／待负责人真机验收，精准测试、组件／整页画面、独立 Debug APK 与未覆盖项见[紧凑底栏验收](../architecture/compact-bottom-actions-acceptance.md)。
 
@@ -218,6 +226,10 @@ media/application 提供相册与上传端口、唯一任务状态、取消、�
 动态发布支持按剩余容量一次多选、不经裁剪并以有界流水线处理，评论附件仍一次一张且同样不经裁剪；本机草稿不跨设备同步，也不后台自动发布。未完成本地缩略图只存在于当前发布页，页面或进程释放后不能恢复。全屏图库具备规范核心手势，但暂不显示下载/分享入口。动态加油已由 wallet 接入；当前不在信息流卡片直接弹出写入，以详情作为稳定确认上下文。本人动态收藏已按独立目录和收藏夹筛选；公开用户页尚未接入公开动态收藏分页。本轮候选补齐 `canInteract` 对新增点赞、评论/回复和加油入口的限制，已点赞和已收藏仍可撤回，待负责人验收。传送门 v1 只做语法识别，不预取目标标题或权限，最终可见性由目标页面服务端请求决定；邀请 token 除正文/评论本身外不写日志、诊断或独立缓存。
 
 ## 13. 最近审查的契约版本和后端提交
+
+2026-11-01 来源复核：固定已部署 Backend `19a6c4ed48829a781182527faaafce6e788e9e2e`／API `5.44.0-dev.20261024.3`。机器契约与生成客户端无变化，来源同步不改变本模块业务；见[已部署来源核对](../architecture/backend-contract-source-20261101.md)。
+
+2026-10-27 来源复核：固定已部署 Backend `d54313346681eae8f62584d63d07f3315e42381b`／API `5.44.0-dev.20261024.3`。两项任务的来源同步均只更新来源身份与后端字体验证说明，机器契约及生成客户端不变；各自应用行为和验收状态见对应章节。来源证据见[创作可靠性来源核对](../architecture/backend-contract-source-20261027.md)及[更新与回复来源复核](../architecture/mobile-update-reply-contract-source-review.md)。
 
 本轮字体样张契约来源：Backend `8a5d21858e04c69832c90e5a3a10f1e70fdcb545`／API `5.44.0-dev.20261024.3`。HTTP 形状不变，仅统一后台自动样张文案；本模块运行逻辑不变。离线格式验证范围见[验证说明](../architecture/font-format-offline-probe.md)。
 
@@ -325,3 +337,5 @@ media/application 提供相册与上传端口、唯一任务状态、取消、�
 ## 14. 相关代码与架构文档
 
 端口与状态：`lib/features/moments/application/`；API 与本机草稿适配器：`lib/features/moments/data/`；页面：`lib/features/moments/presentation/`。参见[导航](../architecture/navigation.md)、[API 生成与覆盖审计](../architecture/api-generation.md)、[媒体](media.md)、[收藏表情](stickers.md)、[温油钱包](wallet.md)、[社区举报](reports.md)、[通知](notifications.md)与[用户](users.md)。
+
+2026-10-31 发布来源复核：固定已部署 Backend `19a6c4ed48829a781182527faaafce6e788e9e2e`／API `5.44.0-dev.20261024.3`；机器契约和客户端行为不变，见[0.12.0 来源复核](../architecture/backend-contract-source-20261031.md)。

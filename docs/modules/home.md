@@ -54,6 +54,8 @@
 
 ## 9. 加载、空数据、错误、重试和冲突状态
 
+本模块加载与下拉刷新复用公共进度组件：未知进度不伪造百分比，系统减少动画时保留静态忙碌反馈和请求生命周期。全项目入口及候选验证范围见[动效实现与复用边界](../architecture/motion-implementation.md)。
+
 首屏错误使用共享面板与描边重试；保留已有主题时使用共享局部错误与文字重试。分类和滚动容器、原加载回调不变。 通用失败内容保留问题编号，取消请求不展示错误。2026-10-18 负责人真机验收通过，见[错误重试与瀑布流验收](../architecture/error-retry-waterfall-acceptance.md)。
 
 拉黑或解除后清除已有推荐/公开内容投影并重新加载；推荐 503 保留可恢复错误与重试入口。
@@ -93,6 +95,10 @@
 当前首页不做多标签组合筛选、离线流、阅读进度和复杂个性化解释；单标签浏览由 tags 模块的独立公开页承接。主题卡片遵循视觉基础，复杂动效后置。
 
 ## 13. 最近审查的契约版本和后端提交
+
+2026-11-01 来源复核：固定已部署 Backend `19a6c4ed48829a781182527faaafce6e788e9e2e`／API `5.44.0-dev.20261024.3`。机器契约与生成客户端无变化，来源同步不改变本模块业务；见[已部署来源核对](../architecture/backend-contract-source-20261101.md)。
+
+2026-10-27 来源复核：固定已部署 Backend `d54313346681eae8f62584d63d07f3315e42381b`／API `5.44.0-dev.20261024.3`。两项任务的来源同步均只更新来源身份与后端字体验证说明，机器契约及生成客户端不变；各自应用行为和验收状态见对应章节。来源证据见[创作可靠性来源核对](../architecture/backend-contract-source-20261027.md)及[更新与回复来源复核](../architecture/mobile-update-reply-contract-source-review.md)。
 
 本轮字体样张契约来源：Backend `8a5d21858e04c69832c90e5a3a10f1e70fdcb545`／API `5.44.0-dev.20261024.3`。HTTP 形状不变，仅统一后台自动样张文案；本模块运行逻辑不变。离线格式验证范围见[验证说明](../architecture/font-format-offline-probe.md)。
 
@@ -196,3 +202,5 @@
 ## 14. 相关代码与架构文档
 
 代码入口：`lib/features/home/application/home_repository_ports.dart`、`lib/features/home/data/`、`lib/features/home/presentation/home_page.dart`、`lib/main.dart`。参见[网络与会话](../architecture/networking.md)、[Foundation v6.9.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.9.0/docs/platforms/mobile.md)、[语义图标](../architecture/icons.md)、[主题](threads.md)、[标签](tags.md)。
+
+2026-10-31 发布来源复核：固定已部署 Backend `19a6c4ed48829a781182527faaafce6e788e9e2e`／API `5.44.0-dev.20261024.3`；机器契约和客户端行为不变，见[0.12.0 来源复核](../architecture/backend-contract-source-20261031.md)。

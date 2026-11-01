@@ -1,5 +1,7 @@
 # 用户与资料
 
+2026-10-27 候选／待负责人验收：本人账号设置与游客“我的”的帮助组均提供“检查更新”，复用设置组件，不依赖本人资料成功加载；详见[设置](settings.md)。
+
 2026-10-19 公共流程候选：普通单向分页的请求完成、过期响应和失效游标分支共用协调函数；业务状态、权限、筛选与刷新策略保留。范围、定向回归和未验收项见[公共流程验收](../architecture/shared-flows-acceptance.md)。
 
 
@@ -100,6 +102,8 @@ Android 账号设置新增“后台消息提醒”设备开关，默认开启；
 
 ## 9. 加载、空数据、错误、重试和冲突状态
 
+本模块加载与下拉刷新复用公共进度组件：未知进度不伪造百分比，系统减少动画时保留静态忙碌反馈和请求生命周期。全项目入口及候选验证范围见[动效实现与复用边界](../architecture/motion-implementation.md)。
+
 本人资料、资料编辑前读取及公开内容标签页的失败使用共享错误面板，保留隐私变更提示和原重试回调。 通用失败内容保留问题编号，取消请求不展示错误。2026-10-18 负责人真机验收通过，见[错误重试与瀑布流验收](../architecture/error-retry-waterfall-acceptance.md)。
 
 头像与背景共用 media 真实文件头校验；声明类型冲突时提示重新导出，未知文件不能仅凭扩展名进入处理。图片输入兼容性原图问题已获负责人真机验收通过，完整多入口矩阵仍待补充，见[验收记录](../architecture/image-input-compatibility-acceptance.md)。
@@ -171,6 +175,10 @@ Android 账号设置新增“后台消息提醒”设备开关，默认开启；
 不做资料离线缓存、复杂勋章系统或后台用户管理。头像和主页背景只提供当前选图会话内的手动取景，不持久化原图或未确认的取景状态。密码、邮箱、终端与注销已交由 settings/auth 的独立页面管理。“我的”本次不展示本地或云端草稿；契约 5.9 已提供本人协作主题分页，但移动端尚未建立列表入口与任免后的失效链路。契约 5.25 已提供本人关注/粉丝列表的双向关系投影与移除粉丝端点，当前移动端列表仍保持只读，管理按钮、冲突恢复和跨页面缓存失效另行接入。勋章和跨页面关系同步后续接入，公开路由不会绕过关闭的隐私字段。
 
 ## 13. 最近审查的契约版本和后端提交
+
+2026-11-01 来源复核：固定已部署 Backend `19a6c4ed48829a781182527faaafce6e788e9e2e`／API `5.44.0-dev.20261024.3`。机器契约与生成客户端无变化，来源同步不改变本模块业务；见[已部署来源核对](../architecture/backend-contract-source-20261101.md)。
+
+2026-10-27 来源复核：固定已部署 Backend `d54313346681eae8f62584d63d07f3315e42381b`／API `5.44.0-dev.20261024.3`。两项任务的来源同步均只更新来源身份与后端字体验证说明，机器契约及生成客户端不变；各自应用行为和验收状态见对应章节。来源证据见[创作可靠性来源核对](../architecture/backend-contract-source-20261027.md)及[更新与回复来源复核](../architecture/mobile-update-reply-contract-source-review.md)。
 
 本轮字体样张契约来源：Backend `8a5d21858e04c69832c90e5a3a10f1e70fdcb545`／API `5.44.0-dev.20261024.3`。HTTP 形状不变，仅统一后台自动样张文案；本模块运行逻辑不变。离线格式验证范围见[验证说明](../architecture/font-format-offline-probe.md)。
 
@@ -280,3 +288,5 @@ Android 账号设置新增“后台消息提醒”设备开关，默认开启；
 代码入口：`lib/features/users/application/user_repository_ports.dart`、`lib/features/users/data/`、`lib/main.dart`。参见[动态](moments.md)、[搜索](search.md)、[社交关系](social.md)、[温油钱包](wallet.md)、[社区举报](reports.md)、[治理决定与申诉](moderation.md)、[站内私聊](direct-messages.md)、[设置](settings.md)、[Foundation v6.9.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.9.0/docs/platforms/mobile.md)。
 
 个人简介的可见计数、读屏剩余字数和提交校验统一按 trim 后的 Unicode 码点计数；组合 emoji 超过 255 时保留输入并在提交前拦截。
+
+2026-10-31 发布来源复核：固定已部署 Backend `19a6c4ed48829a781182527faaafce6e788e9e2e`／API `5.44.0-dev.20261024.3`；机器契约和客户端行为不变，见[0.12.0 来源复核](../architecture/backend-contract-source-20261031.md)。

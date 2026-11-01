@@ -82,7 +82,7 @@ void registerThreadComposePageLayoutDraftsCases() {
     final editor = tester.widget<QuillEditor>(
       find.byKey(const Key('compose-body')),
     );
-    expect(editor.config.customStyles?.paragraph?.style.fontSize, 17);
+    expect(editor.config.customStyles?.paragraph?.style.fontSize, 15);
     expect(editor.config.customStyles?.paragraph?.style.height, 1.8);
     editor.focusNode.requestFocus();
     tester.view.viewInsets = const FakeViewPadding(bottom: 300);

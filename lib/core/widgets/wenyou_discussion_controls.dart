@@ -4,6 +4,7 @@ import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_author_picker.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_progress_indicator.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 
 export 'wenyou_author_picker.dart' show WenyouDiscussionAuthorOption;
@@ -630,7 +631,9 @@ class _WenyouDiscussionSettingsSheetState<T extends Object>
                       child: const Center(
                         child: SizedBox.square(
                           dimension: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
+                          child: WenyouCircularProgressIndicator(
+                            strokeWidth: 2,
+                          ),
                         ),
                       ),
                     )

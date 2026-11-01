@@ -15,6 +15,7 @@ import 'package:wenyousite_mobile/core/widgets/discussion_target_cover.dart';
 import 'package:wenyousite_mobile/core/widgets/discussion_window_prefetch.dart';
 import 'package:wenyousite_mobile/core/widgets/reading_quick_scroll.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_refresh_indicator.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_reply_action_bar.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_controllers.dart';
@@ -292,7 +293,7 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
       PostDiscussionPhase.ready =>
         readyRoot == null
             ? const PostRouteMismatch()
-            : RefreshIndicator(
+            : WenyouRefreshIndicator(
                 onRefresh: () => _refreshDiscussion(provider),
                 child: PostDiscussionList(
                   ownerId: threadContext?.ownerId,
@@ -366,6 +367,8 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
             isLoadingPage: state.isPrefetchingReplies,
             hasMore: state.window != null,
             targetOffset: _navigation.targetOffset,
+            targetOffsetResolver: () =>
+                _quickScroll.offsetForBookmark(_navigation.targetBookmark),
             navigationRevision: _navigationRevision,
             onLoadMore: () => unawaited(
               ref.read(provider.notifier).locateReply(focusedReplyId!),

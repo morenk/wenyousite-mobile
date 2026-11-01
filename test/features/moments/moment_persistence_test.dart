@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:wenyousite_mobile/core/diagnostics/failure_diagnostics.dart';
 import 'package:wenyousite_mobile/core/models/editor_models.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/storage/app_database.dart';
@@ -155,6 +156,147 @@ void main() {
     expect(await controller.submit(_input(), draft: _draft('提交内容')), isNotNull);
   });
 
+  test('提交前本地异常有同编号导出、脱敏捕获栈和发送，禁用后不发送', () async {
+    final sender = _DiagnosticSender();
+    final diagnostics = FailureDiagnostics(sender: sender);
+    addTearDown(diagnostics.dispose);
+    final repository = _Repository();
+    final failing = _ControlledStore(store)..failBegin = true;
+    final controller = _controller(
+      repository,
+      failing,
+      diagnostics: diagnostics,
+    );
+    addTearDown(controller.dispose);
+    await controller.load();
+    await controller.submit(
+      _input(title: 'private-title'),
+      draft: _draft('private-title'),
+    );
+    await diagnostics.settled;
+    final record = diagnostics.records.single;
+    expect(record.operation, DiagnosticOperation.momentCreate);
+    expect(record.stage, DiagnosticStage.localSave);
+    expect(record.fields['stages'], ['encode', 'localSave']);
+    expect(record.fields['responseReceived'], false);
+    expect(record.fields['stackOrigin'], 'caught');
+    expect(record.fields['stackStatus'], 'captured');
+    expect(diagnostics.idFor(controller.state.failure), record.id);
+    expect(sender.records.single.id, record.id);
+    expect(repository.requests, isEmpty);
+    final exported = diagnostics.export();
+    for (final secret in [
+      'private-title',
+      '完整正文',
+      'media-a',
+      'example.com',
+      'Test persistence failure',
+      'ownerId',
+      'normalizedPayload',
+    ]) {
+      expect(exported, isNot(contains(secret)));
+    }
+    diagnostics.capture(controller.state.failure!);
+    expect(diagnostics.records, hasLength(1));
+    await diagnostics.setAutomaticSending(false);
+    await controller.submit(_input());
+    await diagnostics.settled;
+    expect(diagnostics.records, hasLength(2));
+    expect(sender.records, hasLength(1));
+    expect(
+      diagnostics.records.map((r) => r.fields['sessionId']).toSet(),
+      hasLength(1),
+    );
+    expect(
+      diagnostics.records.map((r) => r.fields['attemptId']).toSet(),
+      hasLength(2),
+    );
+  });
+
+  test('响应后清理失败保留响应证据与原问题编号，恢复仅清理不重发', () async {
+    final diagnostics = FailureDiagnostics();
+    addTearDown(diagnostics.dispose);
+    final repository = _Repository()
+      ..onCreate = () {
+        final attempt = DiagnosticAttempt.current!;
+        attempt.requestId = '550e8400-e29b-41d4-a716-446655440000';
+        attempt.responseReceived = true;
+        attempt.apiEnvelopeReceived = true;
+        attempt.httpStatus = 201;
+        attempt.mark(DiagnosticStage.request);
+        attempt.mark(DiagnosticStage.response);
+        attempt.mark(DiagnosticStage.decode);
+      };
+    final failing = _ControlledStore(store)..failFinish = true;
+    final controller = _controller(
+      repository,
+      failing,
+      diagnostics: diagnostics,
+    );
+    addTearDown(controller.dispose);
+    await controller.load();
+    expect(await controller.submit(_input()), isNull);
+    final record = diagnostics.records.single;
+    expect(record.stage, DiagnosticStage.localCleanup);
+    expect(record.fields['responseReceived'], true);
+    expect(record.fields['apiEnvelopeReceived'], true);
+    expect(record.fields['httpStatus'], 201);
+    expect(record.fields['resultConfirmed'], true);
+    expect(
+      record.fields['stages'],
+      containsAllInOrder([
+        'localSave',
+        'requestReady',
+        'request',
+        'response',
+        'decode',
+        'localCleanup',
+        'confirmationSave',
+      ]),
+    );
+    expect(diagnostics.idFor(controller.state.failure), record.id);
+    expect(controller.state.awaitingConfirmation, true);
+    final pending = await store.read('a', null);
+    expect(pending?.pendingCreate, isNotNull);
+    expect(await controller.submit(_input()), isNull);
+    final cleanupRetry = diagnostics.records.first;
+    expect(cleanupRetry.stage, DiagnosticStage.localCleanup);
+    expect(cleanupRetry.fields['resultConfirmed'], true);
+    expect(cleanupRetry.fields['stages'], isNot(contains('requestReady')));
+    expect(repository.requests, hasLength(1));
+    failing.failFinish = false;
+    expect(await controller.submit(_input(title: '不可替换')), isNotNull);
+    expect(repository.requests, hasLength(1));
+    expect(await store.read('a', null), isNull);
+  });
+
+  test('旧待确认冲突与补偿保存失败分别保留草稿，不掩盖原请求阶段', () async {
+    await store.beginCreate('a', _draft('旧待确认'), _operation());
+    final diagnostics = FailureDiagnostics();
+    addTearDown(diagnostics.dispose);
+    final repository = _Repository()
+      ..failure = const ApiFailure(httpStatus: 503);
+    final failing = _ControlledStore(store)..failBegin = true;
+    final controller = _controller(
+      repository,
+      failing,
+      diagnostics: diagnostics,
+    );
+    addTearDown(controller.dispose);
+    await controller.load();
+    expect(repository.requests, isEmpty);
+    expect(await controller.submit(_input(title: '新输入')), isNull);
+    expect(repository.requests.single.$1, 'request-a');
+    expect(repository.requests.single.$2.title, '提交内容');
+    final record = diagnostics.records.single;
+    expect(record.stage, DiagnosticStage.requestReady);
+    expect(record.fields['recoveryErrorType'], 'StateError');
+    expect(record.fields['recoveryStack'], isA<List<String>>());
+    expect(diagnostics.idFor(controller.state.failure), record.id);
+    expect((await store.read('a', null))?.title, '旧待确认');
+    expect(controller.state.awaitingConfirmation, true);
+  });
+
   test('成功但本机清理失败时原页面只重试清理，不重复创建', () async {
     final repository = _Repository();
     final failing = _ControlledStore(store)..failFinish = true;
@@ -213,12 +355,14 @@ void main() {
 
 MomentComposerController _controller(
   MomentRepository repository,
-  MomentDraftStore store,
-) => MomentComposerController(
+  MomentDraftStore store, {
+  FailureDiagnostics? diagnostics,
+}) => MomentComposerController(
   repository,
   draftStore: store,
   resolveOwner: () async => 'a',
   autoStart: false,
+  diagnostics: diagnostics,
 );
 
 MomentDraftInput _input({String title = '提交内容'}) => MomentDraftInput(
@@ -262,6 +406,7 @@ PendingCreateOperation _operation({String title = '提交内容'}) =>
 class _Repository extends Fake implements MomentRepository {
   final requests = <(String, MomentDraftInput)>[];
   ApiFailure? failure;
+  void Function()? onCreate;
 
   @override
   Future<MomentDetail> create(
@@ -269,6 +414,7 @@ class _Repository extends Fake implements MomentRepository {
     required String clientRequestId,
   }) async {
     requests.add((clientRequestId, input));
+    onCreate?.call();
     if (failure case final error?) throw error;
     return MomentDetail(
       card: MomentCard(
@@ -295,6 +441,20 @@ class _Repository extends Fake implements MomentRepository {
       canDelete: true,
     );
   }
+}
+
+class _DiagnosticSender implements DiagnosticSender {
+  final records = <DiagnosticRecord>[];
+  @override
+  bool get available => true;
+  @override
+  Future<bool> send(DiagnosticRecord record) async {
+    records.add(record);
+    return true;
+  }
+
+  @override
+  void cancel() {}
 }
 
 class _ControlledStore implements MomentDraftStore {

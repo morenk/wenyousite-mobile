@@ -105,13 +105,21 @@ class FlutterMediaUploadNormalizer implements MediaUploadNormalizer {
         inputBytes: input.bytes.length,
         outputBytes: (output) => output.length,
         operation: () async {
-          final pixels = await opened.decode(maximumEdge: maximumEdge);
           late final Uint8List canonical;
-          try {
-            // 编码器仅接收引擎输出的标准 PNG，避免不同入口再次解释原始元数据。
-            canonical = await mediaImagePng(pixels);
-          } finally {
-            pixels.dispose();
+          if (isCanonicalMediaPng(
+            input.bytes,
+            width: targetWidth,
+            height: targetHeight,
+          )) {
+            // 裁剪已输出校正方向的无损 PNG，直接送编码器，避免再解码/编码 PNG。
+            canonical = input.bytes;
+          } else {
+            final pixels = await opened.decode(maximumEdge: maximumEdge);
+            try {
+              canonical = await mediaImagePng(pixels);
+            } finally {
+              pixels.dispose();
+            }
           }
           return encoder.encode(
             canonical,

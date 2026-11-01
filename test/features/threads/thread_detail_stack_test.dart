@@ -89,6 +89,7 @@ void main() {
               subthreadId: 'subthread-2',
               floorId: 'floor-target',
               content: '网络深链目标楼层',
+              targetPostId: request.queryParameters['postId'] as String?,
             ),
           ),
         _ => ScriptedHttpResponse.json({
@@ -119,6 +120,12 @@ void main() {
         '/api/v1/subthreads/subthread-2/posts/window',
       ]),
     );
+    final windows = adapter.requests.where(
+      (request) => request.path.endsWith('/posts/window'),
+    );
+    expect(windows, hasLength(1));
+    expect(windows.single.path, '/api/v1/subthreads/subthread-2/posts/window');
+    expect(windows.single.queryParameters['postId'], 'floor-target');
   });
 
   test('楼层筛选经生成客户端保留不透明游标和查询参数', () async {
@@ -481,6 +488,7 @@ Map<String, Object?> _floorWindowEnvelope({
   String subthreadId = 'subthread-1',
   String floorId = 'floor-1',
   String content = '真实楼层内容',
+  String? targetPostId,
 }) {
   final envelope = _floorsEnvelope(
     subthreadId: subthreadId,
@@ -495,7 +503,7 @@ Map<String, Object?> _floorWindowEnvelope({
       'pinnedItems': [],
       'total': items.length,
       'maxNumber': 1,
-      'target': null,
+      'target': targetPostId == null ? null : {'id': targetPostId, 'number': 1},
       'beforeCursor': null,
       'afterCursor': null,
       'hasBefore': false,

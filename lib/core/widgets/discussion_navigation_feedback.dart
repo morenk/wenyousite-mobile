@@ -25,6 +25,20 @@ Future<void> showDiscussionNavigation<S>({
     },
   );
   if (!context.mounted || !completed) return;
+  showDiscussionNavigationResult(
+    context: context,
+    navigation: navigation,
+    replies: replies,
+    cleared: cleared,
+  );
+}
+
+void showDiscussionNavigationResult<S>({
+  required BuildContext context,
+  required DiscussionNavigation<S> navigation,
+  required bool replies,
+  required bool cleared,
+}) {
   Future<void> returnToPrevious() async {
     try {
       await navigation.returnToPrevious();
