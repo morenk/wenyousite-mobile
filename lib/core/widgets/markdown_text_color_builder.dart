@@ -2,7 +2,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:markdown/markdown.dart' as md;
-import 'package:wenyousite_mobile/core/text_fonts/text_font_scope.dart';
+import 'package:wenyousite_mobile/core/widgets/markdown_font_paragraph.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_inline_text_elements.dart';
 
 class MarkdownTextColorBuilder extends MarkdownElementBuilder {
@@ -101,9 +101,10 @@ class MarkdownTextColorBuilder extends MarkdownElementBuilder {
         TextSpan(children: render(element.children!, base, null)),
       );
     }
-    return TextFontScope(
+    return MarkdownFontInline(
       texts: {font: element.textContent},
-      builder: (context, runtime) => Text.rich(
+      baseStyle: base,
+      buildText: (context, runtime) => Text.rich(
         TextSpan(
           children: render(
             element.children!,

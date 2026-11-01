@@ -3,6 +3,7 @@ import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:markdown/markdown.dart' as md;
 import 'package:wenyousite_mobile/core/markdown/markdown_audio_projection.dart';
 import 'package:wenyousite_mobile/core/media/media_audio.dart';
+import 'package:wenyousite_mobile/core/widgets/markdown_font_paragraph.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_audio_player.dart';
 
 /// flutter_markdown_plus 1.0.12 对所有段落强制固定 strut；多行代码、
@@ -169,9 +170,11 @@ Widget _allowInlineHeight(Widget widget, [TextStyle? headingStyle]) {
       textDirection: widget.textDirection,
       verticalDirection: widget.verticalDirection,
       clipBehavior: widget.clipBehavior,
-      children: widget.children
-          .map((child) => _allowInlineHeight(child, headingStyle))
-          .toList(),
+      children: mergeMarkdownFontInlines(
+        widget.children,
+        alignment: widget.alignment,
+        adaptText: (child) => _allowInlineHeight(child, headingStyle),
+      ).map((child) => _allowInlineHeight(child, headingStyle)).toList(),
     ),
     Padding(:final child?) => Padding(
       key: widget.key,
