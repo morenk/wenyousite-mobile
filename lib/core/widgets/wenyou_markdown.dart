@@ -25,6 +25,7 @@ import 'package:wenyousite_mobile/core/media/media_display.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_link.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_reference.dart';
 import 'package:wenyousite_mobile/core/widgets/discussion_selection_scope.dart';
+import 'package:wenyousite_mobile/core/widgets/markdown_internal_reference_projection.dart';
 import 'package:wenyousite_mobile/core/widgets/markdown_text_color_builder.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_body_divider.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_dice_node.dart';
@@ -260,16 +261,13 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
       ),
       imageAlignment: true,
     );
-    final prepared = _prepareInternalReferences(
-      MarkdownInlineBoundary.canonicalizeDocument(normalized),
+    final prepared = projectMarkdownInternalReferences(
+      MarkdownEmptyParagraphs.prepareForLineEditor(
+        MarkdownInlineBoundary.canonicalizeDocument(normalized),
+      ),
     );
-    _normalizedData = MarkdownEmptyParagraphs.prepareForLineEditor(
-      prepared.data,
-    );
-    _renderSegments = MarkdownAlignmentContract.renderSegments(
-      _normalizedData,
-      imageAlignment: true,
-    );
+    _normalizedData = prepared.data;
+    _renderSegments = prepared.segments;
     _internalReferences = prepared.references;
     final referenceDocument = md.Document(
       extensionSet: md.ExtensionSet.gitHubFlavored,
@@ -737,53 +735,6 @@ class _HorizontalRuleMarkdownBuilder extends MarkdownElementBuilder {
     TextStyle? preferredStyle,
     TextStyle? parentStyle,
   ) => WenyouBodyDivider(fontSize: fontSize);
-}
-
-final _markdownCodePattern = RegExp(
-  r'(`{3,}[^\r\n]*\r?\n[\s\S]*?\r?\n`{3,}|~{3,}[^\r\n]*\r?\n[\s\S]*?\r?\n~{3,}|`[^`\r\n]*`)',
-  unicode: true,
-);
-
-({String data, List<InternalReferencePortal> references})
-_prepareInternalReferences(String source) {
-  final output = StringBuffer();
-  final references = <InternalReferencePortal>[];
-  var offset = 0;
-  for (final match in _markdownCodePattern.allMatches(source)) {
-    _appendInternalReferenceChunk(
-      source.substring(offset, match.start),
-      output,
-      references,
-    );
-    output.write(match.group(0));
-    offset = match.end;
-  }
-  _appendInternalReferenceChunk(source.substring(offset), output, references);
-  return (data: output.toString(), references: List.unmodifiable(references));
-}
-
-void _appendInternalReferenceChunk(
-  String source,
-  StringBuffer output,
-  List<InternalReferencePortal> references,
-) {
-  for (final segment in tokenizeInternalReferenceText(source)) {
-    switch (segment) {
-      case InternalReferencePlainText(:final value):
-        output.write(value);
-      case InternalReferencePortal(:final label, :final reference):
-        final previous = output.isEmpty
-            ? ''
-            : output.toString()[output.length - 1];
-        if (previous == '!' || previous == r'\') {
-          output.write('[$label](${reference.location})');
-          continue;
-        }
-        final index = references.length;
-        references.add(segment);
-        output.write('[[wenyou-internal-reference:v1:$index]]');
-    }
-  }
 }
 
 class _InternalReferenceInlineSyntax extends md.InlineSyntax {

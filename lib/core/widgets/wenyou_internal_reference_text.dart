@@ -178,26 +178,34 @@ class _WenyouInternalReferenceChipState
           onTapDown: (_) => setState(() => _pressed = true),
           onTapUp: (_) => setState(() => _pressed = false),
           onTapCancel: () => setState(() => _pressed = false),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(
-              minWidth: WenyouElementContract.interactiveMinimumTarget,
-              minHeight: WenyouElementContract.interactiveMinimumTarget,
-            ),
-            child: Align(
-              widthFactor: 1,
-              heightFactor: 1,
-              child: WenyouInternalReferenceSurface(
-                surfaceKey: widget.surfaceKey,
-                label: widget.label,
-                style: widget.style,
-                stateOpacity: stateOpacity,
-              ),
+          child: WenyouInternalReferenceLayout(
+            child: WenyouInternalReferenceSurface(
+              surfaceKey: widget.surfaceKey,
+              label: widget.label,
+              style: widget.style,
+              stateOpacity: stateOpacity,
             ),
           ),
         ),
       ),
     );
   }
+}
+
+/// 阅读态的触控行盒也用于编辑态，避免发布后才撑高含传送门的行。
+class WenyouInternalReferenceLayout extends StatelessWidget {
+  const WenyouInternalReferenceLayout({required this.child, super.key});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => ConstrainedBox(
+    constraints: const BoxConstraints(
+      minWidth: WenyouElementContract.interactiveMinimumTarget,
+      minHeight: WenyouElementContract.interactiveMinimumTarget,
+    ),
+    child: Align(widthFactor: 1, heightFactor: 1, child: child),
+  );
 }
 
 /// The compact, non-interactive Foundation surface shared by reading and edit
@@ -258,6 +266,7 @@ class WenyouInternalReferenceSurface extends StatelessWidget {
               label,
               softWrap: true,
               style: baseStyle.copyWith(
+                height: WenyouElementContract.internalReferenceLineHeight,
                 color: foreground,
                 fontWeight: FontWeight.w600,
                 decoration: TextDecoration.none,

@@ -1,12 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 
-/// 设备阅读偏好只覆盖主题帖正文，不改变全局文字角色或系统缩放。
+/// 设备字号偏好覆盖主题帖阅读与编辑正文，不改变全局文字角色或系统缩放。
 enum ThreadFontPreference {
   size13(-3),
   size14(-2),
-  size15(-1),
-  standard(0),
+  standard(-1),
+  size16(0),
   size17(1),
   size18(2),
   size19(3);
@@ -15,7 +15,7 @@ enum ThreadFontPreference {
 
   final int step;
 
-  // 默认沿用 Foundation body（16sp），比原 reading（17sp）小一号。
+  // 档位继续基于 Foundation body（16sp），产品默认选择 15sp。
   double get fontSize => WenyouFoundationTypography.mobileSizes['body']! + step;
 
   String get label => fontSize.toStringAsFixed(0);
@@ -25,6 +25,7 @@ enum ThreadFontPreference {
   static ThreadFontPreference fromStorage(Object? value) {
     // 旧档位保留实际字号，已移除的 20／22 收敛到新的上限。
     return switch (value) {
+      'size15' => standard,
       'small' => size14,
       'large' => size18,
       'extraLarge' || 'largest' => size19,

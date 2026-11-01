@@ -64,9 +64,14 @@ class _InternalReferenceEmbedBuilder extends EmbedBuilder {
       key: const Key('editor-internal-reference'),
       label: '站内传送门：$label',
       excludeSemantics: true,
-      child: WenyouInternalReferenceSurface(
-        label: label,
-        style: embedContext.textStyle,
+      // WidgetSpan 已随段落缩放；内部文字不能再次消费系统缩放。
+      child: MediaQuery.withNoTextScaling(
+        child: WenyouInternalReferenceLayout(
+          child: WenyouInternalReferenceSurface(
+            label: label,
+            style: embedContext.textStyle,
+          ),
+        ),
       ),
     );
   }

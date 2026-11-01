@@ -46,6 +46,37 @@ void main() {
     String span(String text) =>
         '<span data-wenyou-font-v$version="$font">$text</span>';
 
+    for (final alignment in ['center', 'right']) {
+      testWidgets('字体 v$version 与连续同行传送门保留 $alignment 对齐和行距', (tester) async {
+        const portal = '[入口](/threads/cmsewdo0h000x7qv6aa77ll1v)';
+        await _pump(
+          tester,
+          '[wenyousite-align-v1-$alignment]: #\n'
+          '${span('甲')} $portal\n${span('乙')} $portal',
+        );
+        final paragraph = _paragraph(tester, '甲 \uFFFC\n乙 \uFFFC');
+        expect(
+          paragraph.textAlign,
+          alignment == 'center' ? TextAlign.center : TextAlign.end,
+        );
+        Rect line(int start, int end) => paragraph
+            .getBoxesForSelection(
+              TextSelection(baseOffset: start, extentOffset: end),
+            )
+            .map((box) => box.toRect())
+            .reduce((a, b) => a.expandToInclude(b))
+            .shift(paragraph.localToGlobal(Offset.zero));
+        final first = line(0, 3);
+        final second = line(4, 7);
+        expect(second.top - first.top, greaterThanOrEqualTo(47.9));
+        expect(
+          alignment == 'center' ? first.center.dx : first.right,
+          closeTo(alignment == 'center' ? 160 : 320, 1),
+        );
+        expect(tester.takeException(), isNull);
+      });
+    }
+
     testWidgets('字体 v$version 的回车和连续空行留在同一文字段落中', (tester) async {
       await _pump(tester, '${span('哈哈哈')}\n<br />\n<br />\n${span('姐姐')}');
       final paragraph = _paragraph(tester, '哈哈哈\n\n\n姐姐');

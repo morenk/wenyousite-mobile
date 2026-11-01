@@ -287,7 +287,7 @@ void main() {
     final portal = find.byKey(const Key('editor-internal-reference'));
     expect(portal, findsOneWidget);
     expect(tester.getSize(portal).width, lessThan(100));
-    expect(tester.getSize(portal).height, lessThanOrEqualTo(32));
+    expect(tester.getSize(portal).height, 48);
     expect(tester.getTopLeft(portal).dx, lessThan(120));
     expect(tester.takeException(), isNull);
 
